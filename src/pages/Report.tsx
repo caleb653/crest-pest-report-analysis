@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Home, Share2, Loader2, Send, FileDown, Plus, Minus } from "lucide-react";
+import { Home, Share2, Loader2, Send, FileDown, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
@@ -349,6 +349,20 @@ const Report = () => {
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 1, 15));
 
+  // Pan map by pixel amount (approximate Web Mercator math)
+  const panBy = (dxPx: number, dyPx: number) => {
+    setCoordinates(prev => {
+      if (!prev) return prev;
+      const latRad = (prev.lat * Math.PI) / 180;
+      const metersPerPixel = 156543.03392 * Math.cos(latRad) / Math.pow(2, zoomLevel);
+      const metersX = dxPx * metersPerPixel;
+      const metersY = dyPx * metersPerPixel;
+      const deltaLng = metersX / (111320 * Math.cos(latRad));
+      const deltaLat = -metersY / 110540;
+      return { lat: prev.lat + deltaLat, lng: prev.lng + deltaLng };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -460,13 +474,35 @@ const Report = () => {
           {mapUrl ? (
             <div className="relative h-full w-full">
               <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
-              <div className="no-print absolute bottom-4 left-4 flex flex-col gap-2 z-10">
-                <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="secondary" onClick={handleZoomOut} aria-label="Zoom out" title="Zoom out">
-                  <Minus className="w-4 h-4" />
-                </Button>
+
+              {/* Pan controls */}
+              <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
+                <div className="flex flex-col gap-2">
+                  <Button size="icon" variant="secondary" onClick={() => panBy(0, -200)} title="Pan up">
+                    <ArrowUp className="w-4 h-4" />
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="icon" variant="secondary" onClick={() => panBy(-200, 0)} title="Pan left">
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon" variant="secondary" onClick={() => panBy(200, 0)} title="Pan right">
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button size="icon" variant="secondary" onClick={() => panBy(0, 200)} title="Pan down">
+                    <ArrowDown className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Zoom controls */}
+                <div className="flex flex-col gap-2">
+                  <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button size="icon" variant="secondary" onClick={handleZoomOut} aria-label="Zoom out" title="Zoom out">
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
