@@ -1,1 +1,7 @@
 project_id = "dbalmswufjanxswboxxp"
+
+[functions.extract-address]
+verify_jwt = false
+
+[functions.analyze-findings]
+verify_jwt = false
