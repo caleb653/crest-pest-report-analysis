@@ -10,7 +10,6 @@ import crestLogo from "@/assets/crest-logo-black.png";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,30 +18,19 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabase.functions.invoke('verify-admin-password', {
+        body: { password }
       });
 
       if (error) throw error;
 
-      // Check if user has admin role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', data.user.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (roleError || !roleData) {
-        await supabase.auth.signOut();
-        toast.error("You don't have admin access");
-        setLoading(false);
-        return;
+      if (data.valid) {
+        localStorage.setItem('admin_session', data.sessionToken);
+        toast.success("Logged in successfully");
+        navigate('/admin-dashboard');
+      } else {
+        toast.error("Incorrect password");
       }
-
-      toast.success("Logged in successfully");
-      navigate('/admin-dashboard');
     } catch (error: any) {
       toast.error(error.message || "Failed to login");
     } finally {
@@ -57,32 +45,22 @@ const AdminLogin = () => {
           <img src={crestLogo} alt="Crest Logo" className="w-32 mx-auto mb-4" />
           <CardTitle className="text-2xl md:text-3xl">Admin Sign In</CardTitle>
           <CardDescription className="text-base">
-            Access the admin dashboard
+            Enter password to access admin dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@crest.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="text-base"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter admin password"
                 required
-                className="text-base"
+                className="text-lg h-12"
+                autoFocus
               />
             </div>
             <Button
