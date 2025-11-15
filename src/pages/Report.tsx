@@ -360,36 +360,50 @@ const Report = () => {
       
       document.body.appendChild(pdfContent);
       
-      // Capture the map section from the screen (both iframe and canvas)
-      const mapContainer = isMobile 
-        ? document.querySelector('.h-\\[50vh\\]')?.parentElement
-        : document.querySelector('.w-1\\/2');
-      
-      if (mapContainer) {
-        try {
-          // Capture the entire map section with iframe and canvas overlay
-          const mapImage = await html2canvas(mapContainer as HTMLElement, {
-            allowTaint: true,
-            useCORS: true,
-            scale: 2,
-            logging: false,
-            backgroundColor: '#ffffff',
-          });
-          
-          const mapImg = document.createElement('img');
-          mapImg.src = mapImage.toDataURL('image/png');
-          mapImg.style.width = '100%';
-          mapImg.style.height = '100%';
-          mapImg.style.objectFit = 'cover';
-          
-          const mapPlaceholder = pdfContent.querySelector('#map-placeholder');
-          if (mapPlaceholder) {
-            mapPlaceholder.innerHTML = '';
-            mapPlaceholder.appendChild(mapImg);
-          }
-        } catch (err) {
-          console.error('Error capturing map:', err);
+      // Build static map + overlay to avoid iframe capture issues
+      const mapPlaceholder = pdfContent.querySelector('#map-placeholder') as HTMLElement | null;
+      if (mapPlaceholder) {
+        mapPlaceholder.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+
+        // Base static map image (OpenStreetMap)
+        const mapImg = document.createElement('img');
+        if (coordinates) {
+          const width = 1200; // high-res for PDF, will scale down
+          const height = 700;
+          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
+          mapImg.src = staticUrl;
+        } else {
+          mapImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700"><rect width="100%" height="100%" fill="#f5f5f5"/></svg>`);
         }
+        mapImg.style.width = '100%';
+        mapImg.style.height = '100%';
+        mapImg.style.objectFit = 'cover';
+        wrapper.appendChild(mapImg);
+
+        // Overlay: Fabric canvas drawing exported as image
+        const overlayCanvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement | null;
+        if (overlayCanvas) {
+          const overlayImg = document.createElement('img');
+          overlayImg.src = overlayCanvas.toDataURL('image/png');
+          overlayImg.style.position = 'absolute';
+          overlayImg.style.left = '0';
+          overlayImg.style.top = '0';
+          overlayImg.style.width = '100%';
+          overlayImg.style.height = '100%';
+          overlayImg.style.objectFit = 'contain';
+          wrapper.appendChild(overlayImg);
+        }
+
+        mapPlaceholder.appendChild(wrapper);
+        // Give images time to load
+        await new Promise((resolve) => {
+          if (mapImg.complete) resolve(null);
+          else mapImg.onload = () => resolve(null);
+        });
       }
       
       // Small delay to ensure images are loaded
@@ -563,32 +577,6 @@ const Report = () => {
               />
               <div className="absolute inset-0">
                 <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
-              </div>
-              <div className="absolute top-6 right-6 flex flex-col gap-2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 border border-border z-30">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleZoomIn}
-                  title="Zoom in"
-                  className="h-10 w-10"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
-                  </svg>
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleZoomOut}
-                  title="Zoom out"
-                  className="h-10 w-10"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="M21 21l-4.35-4.35M8 11h6" />
-                  </svg>
-                </Button>
               </div>
             </div>
           ) : (
