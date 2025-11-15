@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Download, Share2, CheckCircle, MapPin, Calendar, Loader2 } from "lucide-react";
+import { Home, Download, Share2, Loader2, Edit3, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+interface AnalysisData {
+  findings: string[];
+  recommendations: string[];
+  areasTreated: string[];
+  safetyNotes: string[];
+}
 
 const Report = () => {
   const location = useLocation();
@@ -14,21 +22,37 @@ const Report = () => {
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Editable fields
+  const [editableFindings, setEditableFindings] = useState<string[]>([]);
+  const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
+  const [editableAreas, setEditableAreas] = useState<string[]>([]);
+  const [editableSafety, setEditableSafety] = useState<string[]>([]);
+  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
-    // If we have screenshots, process them for address extraction
     if (screenshots && screenshots.length > 0) {
       processScreenshots();
+      analyzeFindings();
     } else if (address) {
-      // If manually entered address, geocode it
       geocodeAddress(address);
     }
-  }, [screenshots, address]);
+  }, []);
+
+  useEffect(() => {
+    if (analysis) {
+      setEditableFindings(analysis.findings || []);
+      setEditableRecommendations(analysis.recommendations || []);
+      setEditableAreas(analysis.areasTreated || []);
+      setEditableSafety(analysis.safetyNotes || []);
+    }
+  }, [analysis]);
 
   const processScreenshots = async () => {
     setIsProcessing(true);
     try {
-      // Convert File objects to base64 data URLs
       const imagePromises = screenshots.map((file: File) => {
         return new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -40,36 +64,63 @@ const Report = () => {
 
       const imageDataUrls = await Promise.all(imagePromises);
 
-      console.log('Calling extract-address function with', imageDataUrls.length, 'images');
-
-      // Call edge function to extract address
       const { data, error } = await supabase.functions.invoke('extract-address', {
         body: { images: imageDataUrls }
       });
 
       if (error) {
         console.error('Error extracting address:', error);
-        toast.error('Failed to extract address from screenshots');
         return;
       }
 
-      console.log('Extract-address response:', data);
-
       if (data.address && data.address !== 'Address not found') {
         setExtractedAddress(data.address);
-        toast.success('Address extracted from screenshots!');
         
         if (data.coordinates) {
           setCoordinates(data.coordinates);
         }
-      } else {
-        toast.warning('Could not find address in screenshots');
       }
     } catch (error) {
       console.error('Error processing screenshots:', error);
-      toast.error('Error processing screenshots');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const analyzeFindings = async () => {
+    setIsAnalyzing(true);
+    try {
+      const imagePromises = screenshots.map((file: File) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const imageDataUrls = await Promise.all(imagePromises);
+
+      const { data, error } = await supabase.functions.invoke('analyze-findings', {
+        body: { 
+          images: imageDataUrls,
+          address: extractedAddress || address 
+        }
+      });
+
+      if (error) {
+        console.error('Error analyzing findings:', error);
+        toast.error('Failed to analyze findings');
+        return;
+      }
+
+      setAnalysis(data);
+      toast.success('Report generated successfully!');
+    } catch (error) {
+      console.error('Error analyzing findings:', error);
+      toast.error('Error generating report');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -105,173 +156,180 @@ const Report = () => {
     toast.success("Report downloaded!");
   };
 
-  const currentDate = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-
   const displayAddress = extractedAddress || address || "Not provided";
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Success Message */}
-        <div className="bg-secondary/10 border-2 border-secondary rounded-xl p-6 mb-6 text-center">
-          <CheckCircle className="w-12 h-12 mx-auto mb-3 text-secondary" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Report Generated!</h2>
-          <p className="text-muted-foreground">Review and share with your team</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-primary text-primary-foreground px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Pest Control Service Report</h1>
+            <p className="text-sm opacity-90">Technician: {technicianName || "Not specified"} • {displayAddress}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="bg-card text-card-foreground border-none">
+              <Home className="w-4 h-4 mr-2" />
+              New Report
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownload} className="bg-card text-card-foreground border-none">
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+            <Button size="sm" onClick={handleShare} className="bg-secondary text-secondary-foreground">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Split Screen */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Left Side - Map */}
+        <div className="w-1/2 relative">
+          {isProcessing ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
+                <p className="text-muted-foreground">Loading map...</p>
+              </div>
+            </div>
+          ) : coordinates ? (
+            <iframe
+              className="w-full h-full"
+              style={{ border: 0 }}
+              loading="lazy"
+              src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <p className="text-muted-foreground">No location data available</p>
+            </div>
+          )}
         </div>
 
-        {/* Report Content */}
-        <Card className="shadow-xl">
-          <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-xl">
-            <CardTitle className="text-3xl text-center">Service Report</CardTitle>
-            <div className="flex items-center justify-center gap-2 text-primary-foreground/90 mt-2">
-              <Calendar className="w-4 h-4" />
-              <span>{currentDate}</span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-8 space-y-8">
-            {/* Technician Info */}
-            <div className="bg-muted/50 rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">Technician</h3>
-              <p className="text-2xl font-semibold text-foreground">{technicianName || "Not specified"}</p>
-            </div>
-
-            {/* Customer Information */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Customer Name</h3>
-                <p className="text-xl font-medium text-foreground">
-                  {customerName || "Not provided"}
-                </p>
+        {/* Right Side - Findings & Recommendations */}
+        <div className="w-1/2 overflow-y-auto bg-muted/30 p-6 space-y-4">
+          {isAnalyzing ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
+                <p className="text-lg font-medium">Analyzing screenshots...</p>
+                <p className="text-sm text-muted-foreground">Generating findings and recommendations</p>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Property Address
-                </h3>
-                <p className="text-xl font-medium text-foreground">
-                  {isProcessing ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Extracting...
-                    </span>
+            </div>
+          ) : analysis ? (
+            <>
+              {/* Edit Mode Toggle */}
+              <div className="flex justify-end">
+                <Button
+                  variant={editMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setEditMode(!editMode)}
+                >
+                  {editMode ? <Save className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
+                  {editMode ? "Save Changes" : "Edit Report"}
+                </Button>
+              </div>
+
+              {/* Findings */}
+              <Card className="p-4">
+                <h2 className="text-lg font-bold mb-3 text-destructive">FINDINGS</h2>
+                <div className="space-y-2">
+                  {editMode ? (
+                    <Textarea
+                      value={editableFindings.join('\n')}
+                      onChange={(e) => setEditableFindings(e.target.value.split('\n'))}
+                      rows={5}
+                      className="font-mono text-sm"
+                    />
                   ) : (
-                    displayAddress
+                    <ul className="list-disc pl-5 space-y-1">
+                      {editableFindings.map((finding, i) => (
+                        <li key={i} className="text-sm">{finding}</li>
+                      ))}
+                    </ul>
                   )}
-                </p>
-              </div>
-            </div>
+                </div>
+              </Card>
 
-            {/* Service Notes */}
-            {notes && (
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Service Notes</h3>
-                <div className="bg-muted/50 rounded-xl p-6">
-                  <p className="text-base leading-relaxed text-foreground whitespace-pre-wrap">
-                    {notes}
-                  </p>
+              {/* Recommendations */}
+              <Card className="p-4">
+                <h2 className="text-lg font-bold mb-3 text-secondary">RECOMMENDATIONS</h2>
+                <div className="space-y-2">
+                  {editMode ? (
+                    <Textarea
+                      value={editableRecommendations.join('\n')}
+                      onChange={(e) => setEditableRecommendations(e.target.value.split('\n'))}
+                      rows={5}
+                      className="font-mono text-sm"
+                    />
+                  ) : (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {editableRecommendations.map((rec, i) => (
+                        <li key={i} className="text-sm">{rec}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-              </div>
-            )}
+              </Card>
 
-            {/* Screenshots */}
-            {screenshots && screenshots.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                  Uploaded Screenshots ({screenshots.length})
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {screenshots.map((file: File, index: number) => (
-                    <div 
-                      key={index} 
-                      className="aspect-square bg-muted rounded-xl flex items-center justify-center border-2 border-border p-4"
-                    >
-                      <div className="text-center">
-                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-                          <span className="text-2xl font-bold text-primary">{index + 1}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {file.name}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+              {/* Areas Treated */}
+              <Card className="p-4">
+                <h2 className="text-lg font-bold mb-3 text-primary">AREAS TREATED</h2>
+                <div className="space-y-2">
+                  {editMode ? (
+                    <Textarea
+                      value={editableAreas.join('\n')}
+                      onChange={(e) => setEditableAreas(e.target.value.split('\n'))}
+                      rows={4}
+                      className="font-mono text-sm"
+                    />
+                  ) : (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {editableAreas.map((area, i) => (
+                        <li key={i} className="text-sm">{area}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-              </div>
-            )}
+              </Card>
 
-            {/* Property Map */}
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Property Map - Aerial View</h3>
-              {isProcessing ? (
-                <div className="bg-muted/30 rounded-xl h-96 flex items-center justify-center border-2 border-dashed border-border">
-                  <div className="text-center">
-                    <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                    <p className="text-muted-foreground">Processing address...</p>
-                  </div>
+              {/* Safety Notes */}
+              <Card className="p-4">
+                <h2 className="text-lg font-bold mb-3 text-accent">SAFETY NOTES</h2>
+                <div className="space-y-2">
+                  {editMode ? (
+                    <Textarea
+                      value={editableSafety.join('\n')}
+                      onChange={(e) => setEditableSafety(e.target.value.split('\n'))}
+                      rows={3}
+                      className="font-mono text-sm"
+                    />
+                  ) : (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {editableSafety.map((note, i) => (
+                        <li key={i} className="text-sm">{note}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-              ) : coordinates ? (
-                <div className="rounded-xl overflow-hidden border-2 border-border shadow-lg">
-                  <iframe
-                    width="100%"
-                    height="400"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
-                  />
-                </div>
-              ) : (
-                <div className="bg-muted/30 rounded-xl h-96 flex items-center justify-center border-2 border-dashed border-border">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="text-muted-foreground">
-                      {displayAddress === "Not provided" 
-                        ? "No address available to show map" 
-                        : "Unable to geocode address"}
-                    </p>
-                    {displayAddress !== "Not provided" && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Address: {displayAddress}
-                      </p>
-                    )}
-                  </div>
-                </div>
+              </Card>
+
+              {/* Additional Notes */}
+              {notes && (
+                <Card className="p-4">
+                  <h2 className="text-lg font-bold mb-3">TECHNICIAN NOTES</h2>
+                  <p className="text-sm whitespace-pre-wrap">{notes}</p>
+                </Card>
               )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center py-20">
+              <p className="text-muted-foreground">No analysis data available</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="grid md:grid-cols-3 gap-4 mt-6">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate('/')}
-            className="text-lg py-6"
-          >
-            <Home className="mr-2 w-5 h-5" />
-            New Report
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleDownload}
-            className="text-lg py-6"
-          >
-            <Download className="mr-2 w-5 h-5" />
-            Download
-          </Button>
-          <Button
-            size="lg"
-            onClick={handleShare}
-            className="bg-gradient-primary text-primary-foreground text-lg py-6"
-          >
-            <Share2 className="mr-2 w-5 h-5" />
-            Share Report
-          </Button>
+          )}
         </div>
       </div>
     </div>
