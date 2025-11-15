@@ -18,6 +18,9 @@ const DataEntry = () => {
     address: "",
     notes: "",
   });
+  // Cooldown to allow file upload settling before generating
+  const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

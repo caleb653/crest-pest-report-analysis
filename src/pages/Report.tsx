@@ -335,10 +335,10 @@ const Report = () => {
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 52% 45%; gap: 3%; align-items: start;">
+        <div style="display: grid; grid-template-columns: 40% 58%; gap: 2%; align-items: start;">
           <div>
             <div style="background: #F2F2F2; border: 3px solid #C3D1C5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(195, 209, 197, 0.25);">
-              <div id="map-placeholder" style="width: 100%; height: 780px; position: relative; background: #f5f5f5;">
+              <div id="map-placeholder" style="width: 100%; height: 700px; position: relative; background: #f5f5f5;">
                 <!-- Map will be injected here as image(s) -->
               </div>
             </div>
@@ -395,12 +395,26 @@ const Report = () => {
         wrapper.style.cssText = 'position: relative; width: 100%; height: 100%;';
 
         let baseDataUrl: string | null = null;
-        if (coordinates) {
-          const width = 1200; // high-res, scaled down later
-          const height = 780;
-          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
+        // Determine coordinates: use existing or geocode on the fly
+        let localCoords = coordinates as { lat: number; lng: number } | null;
+        if (!localCoords && displayAddress && displayAddress !== 'Not provided') {
           try {
-            const resp = await fetch(staticUrl, { mode: 'cors' });
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(displayAddress)}`, { headers: { 'User-Agent': 'PestProReports/1.0' } });
+            if (geoRes.ok) {
+              const g = await geoRes.json();
+              if (g && g.length > 0) localCoords = { lat: parseFloat(g[0].lat), lng: parseFloat(g[0].lon) };
+            }
+          } catch (e) {
+            console.error('On-the-fly geocoding failed', e);
+          }
+        }
+
+        if (localCoords) {
+          const width = 1100; // slightly narrower to reduce horizontal stretch
+          const height = 700;
+          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${localCoords.lat},${localCoords.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
+          try {
+            const resp = await fetch(staticUrl);
             const blob = await resp.blob();
             baseDataUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
