@@ -43,9 +43,9 @@ const DataEntry = () => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setScreenshots([...screenshots, ...newFiles]);
-      // Start 5s cooldown after latest upload
-      setCooldownEndsAt(Date.now() + 5000);
-      setSecondsLeft(5);
+      // Start 7s cooldown after latest upload
+      setCooldownEndsAt(Date.now() + 7000);
+      setSecondsLeft(7);
       toast.success(`${newFiles.length} screenshot(s) uploaded`);
     }
   };
@@ -53,8 +53,8 @@ const DataEntry = () => {
   const removeScreenshot = (index: number) => {
     setScreenshots(screenshots.filter((_, i) => i !== index));
     // Restart cooldown when files change
-    setCooldownEndsAt(Date.now() + 5000);
-    setSecondsLeft(5);
+    setCooldownEndsAt(Date.now() + 7000);
+    setSecondsLeft(7);
     toast.info("Screenshot removed");
   };
 
