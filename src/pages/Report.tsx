@@ -458,17 +458,7 @@ const Report = () => {
           )}
           
           {mapUrl ? (
-            <div className="relative h-full w-full">
-              <iframe
-                src={mapUrl}
-                className="absolute inset-0 w-full h-full"
-                frameBorder="0"
-                scrolling="no"
-              />
-              <div className="absolute inset-0">
-                <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
-              </div>
-            </div>
+            <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
           ) : (
             <div className="h-full flex items-center justify-center bg-muted">
               <p className="text-muted-foreground text-center px-4">
