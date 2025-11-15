@@ -300,31 +300,9 @@ const Report = () => {
 
   const exportToPDF = async () => {
     toast.info("Generating PDF...");
-    
+
     try {
-      // First, capture the live map display (iframe + canvas overlay)
-      const mapSection = isMobile 
-        ? document.querySelector('.h-\\[60vh\\]')
-        : document.querySelector('.w-1\\/2');
-      
-      let mapImageData: string | null = null;
-      
-      if (mapSection) {
-        try {
-          const mapCanvas = await html2canvas(mapSection as HTMLElement, {
-            allowTaint: true,
-            useCORS: true,
-            scale: 2,
-            logging: false,
-            backgroundColor: '#f5f5f5',
-          });
-          mapImageData = mapCanvas.toDataURL('image/png', 0.95);
-        } catch (err) {
-          console.error('Error capturing map:', err);
-        }
-      }
-      
-      // Create beautifully styled PDF container with Crest brand design
+      // Create branded PDF container
       const pdfContent = document.createElement('div');
       pdfContent.style.cssText = `
         position: absolute;
@@ -334,11 +312,10 @@ const Report = () => {
         padding: 50px;
         font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
       `;
-      
-      // Build stunning branded PDF layout
+
+      // Base layout (no tool buttons included)
       pdfContent.innerHTML = `
         <div style="margin-bottom: 30px;">
-          <!-- Header with brand styling -->
           <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 4px solid #C3D1C5; margin-bottom: 20px;">
             <div>
               <div style="font-size: 32px; font-weight: 700; color: #2A2A2A; letter-spacing: -0.5px; margin-bottom: 4px;">
@@ -357,90 +334,107 @@ const Report = () => {
             </div>
           </div>
         </div>
-        
-        <!-- Two column layout -->
+
         <div style="display: grid; grid-template-columns: 52% 45%; gap: 3%; align-items: start;">
-          
-          <!-- LEFT: Map Section -->
           <div>
             <div style="background: #F2F2F2; border: 3px solid #C3D1C5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(195, 209, 197, 0.25);">
-              <div id="map-placeholder" style="width: 100%; height: 780px; position: relative; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-                ${mapImageData ? 
-                  `<img src="${mapImageData}" style="width: 100%; height: 100%; object-fit: cover; display: block;" />` 
-                  : '<div style="color: #95A197; font-size: 16px;">Map Preview</div>'}
+              <div id="map-placeholder" style="width: 100%; height: 780px; position: relative; background: #f5f5f5;">
+                <!-- Map will be injected here as image(s) -->
               </div>
             </div>
           </div>
-          
-          <!-- RIGHT: Report Content -->
+
           <div>
-            <!-- Findings Section -->
             <div style="margin-bottom: 32px;">
               <div style="background: linear-gradient(135deg, #C3D1C5 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
-                  FINDINGS / ACTIVITY DETECTED
-                </h2>
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">FINDINGS / ACTIVITY DETECTED</h2>
               </div>
               <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #C3D1C5; border-top: none;">
                 <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableFindings.filter(f => f.trim()).map(f => 
-                    `<li style="margin-bottom: 10px;">${f}</li>`
-                  ).join('') || '<li style="color: #95A197; font-style: italic;">No findings recorded</li>'}
+                  ${editableFindings.filter(f => f.trim()).map(f => `<li style="margin-bottom: 10px;">${f}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No findings recorded</li>'}
                 </ul>
               </div>
             </div>
-            
-            <!-- Recommendations Section -->
+
             <div style="margin-bottom: 32px;">
               <div style="background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
-                  RECOMMENDATIONS
-                </h2>
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">RECOMMENDATIONS</h2>
               </div>
               <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #95A197; border-top: none;">
                 <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableRecommendations.filter(r => r.trim()).map(r => 
-                    `<li style="margin-bottom: 10px;">${r}</li>`
-                  ).join('') || '<li style="color: #95A197; font-style: italic;">No recommendations provided</li>'}
+                  ${editableRecommendations.filter(r => r.trim()).map(r => `<li style="margin-bottom: 10px;">${r}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No recommendations provided</li>'}
                 </ul>
               </div>
             </div>
-            
-            <!-- Next Steps Section -->
+
             <div>
               <div style="background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
-                  NEXT STEPS
-                </h2>
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">NEXT STEPS</h2>
               </div>
               <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #2A2A2A; border-top: none;">
                 <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableNextSteps.filter(n => n.trim()).map(n => 
-                    `<li style="margin-bottom: 10px;">${n}</li>`
-                  ).join('') || '<li style="color: #95A197; font-style: italic;">No next steps specified</li>'}
+                  ${editableNextSteps.filter(n => n.trim()).map(n => `<li style="margin-bottom: 10px;">${n}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No next steps specified</li>'}
                 </ul>
               </div>
             </div>
-            
-            <!-- Footer -->
+
             <div style="margin-top: 32px; padding-top: 20px; border-top: 2px solid #C3D1C5; text-align: center;">
-              <div style="font-size: 13px; color: #95A197; font-weight: 600; letter-spacing: 0.8px;">
-                CREST PEST CONTROL
-              </div>
-              <div style="font-size: 11px; color: #2A2A2A; margin-top: 6px;">
-                Professional Pest Management Services
-              </div>
+              <div style="font-size: 13px; color: #95A197; font-weight: 600; letter-spacing: 0.8px;">CREST PEST CONTROL</div>
+              <div style="font-size: 11px; color: #2A2A2A; margin-top: 6px;">PR #9859</div>
             </div>
           </div>
         </div>
       `;
-      
+
       document.body.appendChild(pdfContent);
-      
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Generate high-quality PDF
+
+      // Compose MAP: static basemap (fetched to data URL) + overlay canvas image
+      const mapPlaceholder = pdfContent.querySelector('#map-placeholder') as HTMLElement | null;
+      if (mapPlaceholder) {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position: relative; width: 100%; height: 100%;';
+
+        let baseDataUrl: string | null = null;
+        if (coordinates) {
+          const width = 1200; // high-res, scaled down later
+          const height = 780;
+          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
+          try {
+            const resp = await fetch(staticUrl, { mode: 'cors' });
+            const blob = await resp.blob();
+            baseDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onerror = () => reject(new Error('Failed to read static map blob'));
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) {
+            console.error('Static map fetch failed, using placeholder', e);
+          }
+        }
+
+        const baseImg = document.createElement('img');
+        baseImg.src = baseDataUrl || `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780"><rect width="100%" height="100%" fill="#f5f5f5"/></svg>')}`;
+        baseImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block;';
+        wrapper.appendChild(baseImg);
+
+        const overlayCanvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement | null;
+        if (overlayCanvas) {
+          const overlayImg = document.createElement('img');
+          overlayImg.src = overlayCanvas.toDataURL('image/png');
+          overlayImg.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none;';
+          wrapper.appendChild(overlayImg);
+        }
+
+        mapPlaceholder.appendChild(wrapper);
+        await new Promise(resolve => {
+          if (baseImg.complete) resolve(null);
+          else baseImg.onload = () => resolve(null);
+        });
+      }
+
+      // Render to canvas and save as PDF
+      await new Promise(r => setTimeout(r, 200));
       const canvas = await html2canvas(pdfContent, {
         scale: 2,
         logging: false,
@@ -448,26 +442,18 @@ const Report = () => {
         useCORS: true,
         allowTaint: true,
       });
-      
+
       document.body.removeChild(pdfContent);
-      
+
       const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width / 2, canvas.height / 2],
-        compress: true
-      });
-      
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2], compress: true });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, '', 'FAST');
-      
       const filename = `Crest-Report-${getStreetAddress(displayAddress).replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(filename);
-      
-      toast.success("PDF exported successfully!");
+      toast.success('PDF exported successfully!');
     } catch (error: any) {
       console.error('PDF export error:', error);
-      toast.error("Failed to generate PDF: " + (error?.message || 'Unknown error'));
+      toast.error('Failed to generate PDF: ' + (error?.message || 'Unknown error'));
     }
   };
 
