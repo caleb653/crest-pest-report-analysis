@@ -163,6 +163,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           top: pointer.y,
           fontSize: 16,
           fill: '#000000',
+          fontFamily: 'Space Grotesk, sans-serif',
           fontWeight: 'bold',
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           selectable: true,
