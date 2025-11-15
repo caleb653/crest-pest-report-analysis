@@ -502,6 +502,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {/* Drawing canvas overlay */}
       <canvas
         ref={canvasRef}
+        id="map-overlay-canvas"
         className="absolute inset-0 w-full h-full"
         style={{ pointerEvents: panMode ? 'none' : 'auto' }}
       />
