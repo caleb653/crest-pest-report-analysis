@@ -53,13 +53,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
-  const [isPanning, setIsPanning] = useState(false);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
   
-  // Map is unlocked (can pan) when select tool is active, locked (can draw) otherwise
-  const isMapLocked = tool !== 'select';
+  // Map iframe is interactive when select tool is active, canvas is interactive for drawing tools
+  const isMapInteractive = tool === 'select';
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -545,72 +541,27 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     };
   }, [isDraggingLegend, dragOffset]);
 
-  const handlePanStart = (clientX: number, clientY: number) => {
-    if (!isMapLocked) {
-      setIsPanning(true);
-      setPanStart({ x: clientX - panOffset.x, y: clientY - panOffset.y });
-    }
-  };
-
-  const handlePanMove = (clientX: number, clientY: number) => {
-    if (isPanning && !isMapLocked) {
-      setPanOffset({
-        x: clientX - panStart.x,
-        y: clientY - panStart.y,
-      });
-    }
-  };
-
-  const handlePanEnd = () => {
-    setIsPanning(false);
-  };
-
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <div
-        ref={containerRef}
-        className="relative w-full h-full"
-        style={{
-          transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
-          cursor: !isMapLocked ? (isPanning ? 'grabbing' : 'grab') : 'default',
-          transition: isPanning ? 'none' : 'transform 0.2s ease-out',
+    <div className="relative w-full h-full">
+      {/* Map iframe */}
+      <iframe
+        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
+        style={{ 
+          border: '2px solid hsl(var(--foreground))',
+          pointerEvents: isMapInteractive ? 'auto' : 'none'
         }}
-        onMouseDown={(e) => {
-          if (!isMapLocked && e.button === 0) {
-            handlePanStart(e.clientX, e.clientY);
-          }
-        }}
-        onMouseMove={(e) => handlePanMove(e.clientX, e.clientY)}
-        onMouseUp={handlePanEnd}
-        onMouseLeave={handlePanEnd}
-        onTouchStart={(e) => {
-          if (!isMapLocked && e.touches.length === 1) {
-            handlePanStart(e.touches[0].clientX, e.touches[0].clientY);
-          }
-        }}
-        onTouchMove={(e) => {
-          if (e.touches.length === 1) {
-            handlePanMove(e.touches[0].clientX, e.touches[0].clientY);
-          }
-        }}
-        onTouchEnd={handlePanEnd}
-      >
-        {/* Map iframe */}
-        <iframe
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground pointer-events-none"
-          style={{ border: '2px solid hsl(var(--foreground))' }}
-          loading="lazy"
-          src={mapUrl}
-        />
+        loading="lazy"
+        allowFullScreen
+        src={mapUrl}
+      />
 
-        {/* Drawing canvas overlay */}
-        <canvas
-          ref={canvasRef}
-          id="map-overlay-canvas"
-          className="absolute inset-0 w-full h-full"
-          style={{ pointerEvents: isMapLocked ? 'auto' : 'none' }}
-        />
-      </div>
+      {/* Drawing canvas overlay */}
+      <canvas
+        ref={canvasRef}
+        id="map-overlay-canvas"
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: isMapInteractive ? 'none' : 'auto' }}
+      />
 
       {/* Drawing tools */}
       <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
