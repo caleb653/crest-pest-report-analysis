@@ -409,7 +409,7 @@ const Report = () => {
 
             {/* Findings Section */}
             <Card className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-bold text-destructive mb-4">Findings</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-destructive mb-4">Findings / Actions Taken</h2>
               {isAnalyzing ? (
                 <div className="text-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />

@@ -37,10 +37,14 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const [colorIndex, setColorIndex] = useState(0);
   const toolRef = useRef<Tool>('select');
   const selectedEmojiRef = useRef<string>('📍');
+  const rectFillColorRef = useRef<string>('#C3D1C5');
+  const rectBorderColorRef = useRef<string>('#000000');
   const [legendPosition, setLegendPosition] = useState({ x: 24, y: 24 });
   const [isDraggingLegend, setIsDraggingLegend] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const legendRef = useRef<HTMLDivElement>(null);
+  const [rectFillColor, setRectFillColor] = useState('#C3D1C5');
+  const [rectBorderColor, setRectBorderColor] = useState('#000000');
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -50,6 +54,14 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   useEffect(() => {
     selectedEmojiRef.current = selectedEmoji;
   }, [selectedEmoji]);
+
+  useEffect(() => {
+    rectFillColorRef.current = rectFillColor;
+  }, [rectFillColor]);
+
+  useEffect(() => {
+    rectBorderColorRef.current = rectBorderColor;
+  }, [rectBorderColor]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -119,8 +131,8 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           top: pointer.y - 40,
           width: 120,
           height: 80,
-          fill: '#C3D1C5',
-          stroke: '#000000',
+          fill: rectFillColorRef.current,
+          stroke: rectBorderColorRef.current,
           strokeWidth: 4,
           selectable: true,
           hasControls: true,
@@ -385,6 +397,30 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         >
           <Square className="w-5 h-5" />
         </Button>
+        {tool === 'rectangle' && (
+          <div className="flex flex-col gap-1 p-2 border-t border-border">
+            <div className="flex items-center gap-1">
+              <label className="text-xs whitespace-nowrap">Fill:</label>
+              <input
+                type="color"
+                value={rectFillColor}
+                onChange={(e) => setRectFillColor(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer"
+                title="Fill Color"
+              />
+            </div>
+            <div className="flex items-center gap-1">
+              <label className="text-xs whitespace-nowrap">Border:</label>
+              <input
+                type="color"
+                value={rectBorderColor}
+                onChange={(e) => setRectBorderColor(e.target.value)}
+                className="w-8 h-8 rounded cursor-pointer"
+                title="Border Color"
+              />
+            </div>
+          </div>
+        )}
         <Button
           size="icon"
           variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
