@@ -445,9 +445,9 @@ const Report = () => {
       )}
 
       {/* Main Content */}
-      <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
+      <div className={isMobile ? "flex flex-col" : "print-layout"}>
         {/* Map Section */}
-        <div className={isMobile ? "h-[60vh] relative" : "print-map-container w-1/2 relative"}>
+        <div className={isMobile ? "h-[60vh] relative" : "print-map-container relative w-full"}>
           {isProcessing && (
             <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
               <div className="text-center">
@@ -458,7 +458,7 @@ const Report = () => {
           )}
           
           {mapUrl ? (
-            <div className="relative h-full">
+            <div className="relative h-full w-full">
               <iframe
                 src={mapUrl}
                 className="absolute inset-0 w-full h-full"
