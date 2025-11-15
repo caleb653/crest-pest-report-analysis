@@ -689,7 +689,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {showLegend && legendItems.length > 0 && (
         <div 
           ref={legendRef}
-          className="no-print absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
+          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
@@ -706,7 +706,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
                 e.stopPropagation();
                 setShowLegend(false);
               }}
-              className="h-5 w-5"
+              className="no-print h-5 w-5"
             >
               <X className="w-3 h-3" />
             </Button>
