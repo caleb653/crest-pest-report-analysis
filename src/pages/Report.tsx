@@ -220,7 +220,7 @@ const Report = () => {
                     height="400"
                     style={{ border: 0 }}
                     loading="lazy"
-                    src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=19&maptype=satellite`}
+                    src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
                   />
                 </div>
               ) : (
