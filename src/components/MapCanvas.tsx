@@ -87,6 +87,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     fabricCanvasRef.current = canvas;
 
+    // Set initial legend position 15% from the right edge
+    const canvasWidth = canvas.getWidth();
+    setLegendPosition({ x: Math.floor(canvasWidth * 0.15), y: 24 });
+
     // Detect touch devices to avoid drag-to-delete on mobile
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     isTouchRef.current = !!isTouch;
