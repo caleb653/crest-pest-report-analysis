@@ -242,10 +242,10 @@ const Report = () => {
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-120px)] gap-8 p-8 max-w-[1800px] mx-auto">
-        {/* Map Section - Left Half */}
-        <div className="w-1/2">
+        {/* Map Section - 2/3 Width */}
+        <div className="w-2/3">
           <div className="h-full bg-primary rounded-2xl shadow-2xl border-4 border-primary p-6">
-            <h3 className="text-lg font-bold text-foreground mb-3">Property Satellite View</h3>
+            <h3 className="text-lg font-bold text-foreground mb-3">Property Analysis</h3>
             <div className="h-[calc(100%-3rem)] rounded-xl overflow-hidden shadow-lg">
               {isProcessing ? (
                 <div className="h-full flex items-center justify-center bg-muted/50">
@@ -256,7 +256,7 @@ const Report = () => {
                 </div>
               ) : coordinates ? (
                 <MapCanvas
-                  mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=23&maptype=satellite`}
+                  mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=25&maptype=satellite`}
                 />
               ) : (
                 <div className="h-full flex items-center justify-center bg-muted">
@@ -267,8 +267,8 @@ const Report = () => {
           </div>
         </div>
 
-        {/* Report Sections - Right Half */}
-        <div className="w-1/2 overflow-y-auto bg-muted/20 rounded-2xl p-4 space-y-3">
+        {/* Report Sections - 1/3 Width */}
+        <div className="w-1/3 overflow-y-auto bg-muted/20 rounded-2xl p-4 space-y-3">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">

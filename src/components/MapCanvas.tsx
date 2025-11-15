@@ -292,8 +292,8 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     <div className="relative w-full h-full">
       {/* Map iframe */}
       <iframe
-        className="absolute inset-0 w-full h-full rounded-lg"
-        style={{ border: 0 }}
+        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
+        style={{ border: '2px solid hsl(var(--foreground))' }}
         loading="lazy"
         allowFullScreen
         src={mapUrl}
