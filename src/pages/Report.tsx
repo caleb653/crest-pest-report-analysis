@@ -302,136 +302,172 @@ const Report = () => {
     toast.info("Generating PDF...");
     
     try {
-      // Create a container for the PDF content matching screen layout
-      const pdfContent = document.createElement('div');
-      pdfContent.style.position = 'absolute';
-      pdfContent.style.left = '-9999px';
-      pdfContent.style.width = '1600px'; // Wider to accommodate side-by-side layout
-      pdfContent.style.backgroundColor = 'white';
-      pdfContent.style.padding = '40px';
-      pdfContent.style.fontFamily = 'Space Grotesk, sans-serif';
+      // First, capture the live map display (iframe + canvas overlay)
+      const mapSection = isMobile 
+        ? document.querySelector('.h-\\[60vh\\]')
+        : document.querySelector('.w-1\\/2');
       
-      // Header with logo and title
+      let mapImageData: string | null = null;
+      
+      if (mapSection) {
+        try {
+          const mapCanvas = await html2canvas(mapSection as HTMLElement, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2,
+            logging: false,
+            backgroundColor: '#f5f5f5',
+          });
+          mapImageData = mapCanvas.toDataURL('image/png', 0.95);
+        } catch (err) {
+          console.error('Error capturing map:', err);
+        }
+      }
+      
+      // Create beautifully styled PDF container with Crest brand design
+      const pdfContent = document.createElement('div');
+      pdfContent.style.cssText = `
+        position: absolute;
+        left: -9999px;
+        width: 1700px;
+        background: #FFFFFF;
+        padding: 50px;
+        font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+      `;
+      
+      // Build stunning branded PDF layout
       pdfContent.innerHTML = `
-        <div style="margin-bottom: 20px; border-bottom: 3px solid #C3D1C5; padding-bottom: 15px;">
-          <h1 style="font-size: 24px; font-weight: bold; color: #2A2A2A; margin: 0 0 8px 0;">
-            ${getStreetAddress(displayAddress)} Pest Control Report
-          </h1>
-          <div style="display: flex; gap: 30px; font-size: 13px; color: #2A2A2A;">
-            <div><strong>Customer:</strong> ${editableCustomer || 'N/A'}</div>
-            <div><strong>Technician:</strong> ${editableTech || 'N/A'}</div>
-            <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
+        <div style="margin-bottom: 30px;">
+          <!-- Header with brand styling -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 4px solid #C3D1C5; margin-bottom: 20px;">
+            <div>
+              <div style="font-size: 32px; font-weight: 700; color: #2A2A2A; letter-spacing: -0.5px; margin-bottom: 4px;">
+                ${getStreetAddress(displayAddress)}
+              </div>
+              <div style="font-size: 18px; color: #95A197; font-weight: 600; letter-spacing: 0.5px;">
+                PEST CONTROL REPORT
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 14px; color: #2A2A2A; line-height: 1.6;">
+                <div style="margin-bottom: 4px;"><strong style="color: #95A197;">Date:</strong> ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                <div style="margin-bottom: 4px;"><strong style="color: #95A197;">Technician:</strong> ${editableTech || 'N/A'}</div>
+                <div><strong style="color: #95A197;">Customer:</strong> ${editableCustomer || 'N/A'}</div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
-          <!-- Left side: MAP -->
+        <!-- Two column layout -->
+        <div style="display: grid; grid-template-columns: 52% 45%; gap: 3%; align-items: start;">
+          
+          <!-- LEFT: Map Section -->
           <div>
-            <div id="map-placeholder" style="width: 100%; height: 700px; border: 2px solid #C3D1C5; border-radius: 8px; overflow: hidden; background: #f5f5f5;">
-              <!-- Map will be inserted here -->
+            <div style="background: #F2F2F2; border: 3px solid #C3D1C5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(195, 209, 197, 0.25);">
+              <div id="map-placeholder" style="width: 100%; height: 780px; position: relative; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                ${mapImageData ? 
+                  `<img src="${mapImageData}" style="width: 100%; height: 100%; object-fit: cover; display: block;" />` 
+                  : '<div style="color: #95A197; font-size: 16px;">Map Preview</div>'}
+              </div>
             </div>
           </div>
           
-          <!-- Right side: CONTENT -->
+          <!-- RIGHT: Report Content -->
           <div>
-            <h2 style="font-size: 18px; font-weight: bold; color: #C3D1C5; margin: 0 0 12px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
-              Findings / Activity Detected
-            </h2>
-            <ul style="margin: 0 0 20px 0; padding-left: 20px; line-height: 1.5; font-size: 12px;">
-              ${editableFindings.filter(f => f.trim()).map(f => `<li style="margin-bottom: 6px;">${f}</li>`).join('') || '<li>No findings recorded</li>'}
-            </ul>
+            <!-- Findings Section -->
+            <div style="margin-bottom: 32px;">
+              <div style="background: linear-gradient(135deg, #C3D1C5 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
+                  FINDINGS / ACTIVITY DETECTED
+                </h2>
+              </div>
+              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #C3D1C5; border-top: none;">
+                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
+                  ${editableFindings.filter(f => f.trim()).map(f => 
+                    `<li style="margin-bottom: 10px;">${f}</li>`
+                  ).join('') || '<li style="color: #95A197; font-style: italic;">No findings recorded</li>'}
+                </ul>
+              </div>
+            </div>
             
-            <h2 style="font-size: 18px; font-weight: bold; color: #C3D1C5; margin: 0 0 12px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
-              Recommendations
-            </h2>
-            <ul style="margin: 0 0 20px 0; padding-left: 20px; line-height: 1.5; font-size: 12px;">
-              ${editableRecommendations.filter(r => r.trim()).map(r => `<li style="margin-bottom: 6px;">${r}</li>`).join('') || '<li>No recommendations provided</li>'}
-            </ul>
+            <!-- Recommendations Section -->
+            <div style="margin-bottom: 32px;">
+              <div style="background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
+                  RECOMMENDATIONS
+                </h2>
+              </div>
+              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #95A197; border-top: none;">
+                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
+                  ${editableRecommendations.filter(r => r.trim()).map(r => 
+                    `<li style="margin-bottom: 10px;">${r}</li>`
+                  ).join('') || '<li style="color: #95A197; font-style: italic;">No recommendations provided</li>'}
+                </ul>
+              </div>
+            </div>
             
-            <h2 style="font-size: 18px; font-weight: bold; color: #C3D1C5; margin: 0 0 12px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
-              Next Steps
-            </h2>
-            <ul style="margin: 0; padding-left: 20px; line-height: 1.5; font-size: 12px;">
-              ${editableNextSteps.filter(n => n.trim()).map(n => `<li style="margin-bottom: 6px;">${n}</li>`).join('') || '<li>No next steps specified</li>'}
-            </ul>
+            <!-- Next Steps Section -->
+            <div>
+              <div style="background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">
+                  NEXT STEPS
+                </h2>
+              </div>
+              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #2A2A2A; border-top: none;">
+                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
+                  ${editableNextSteps.filter(n => n.trim()).map(n => 
+                    `<li style="margin-bottom: 10px;">${n}</li>`
+                  ).join('') || '<li style="color: #95A197; font-style: italic;">No next steps specified</li>'}
+                </ul>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 32px; padding-top: 20px; border-top: 2px solid #C3D1C5; text-align: center;">
+              <div style="font-size: 13px; color: #95A197; font-weight: 600; letter-spacing: 0.8px;">
+                CREST PEST CONTROL
+              </div>
+              <div style="font-size: 11px; color: #2A2A2A; margin-top: 6px;">
+                Professional Pest Management Services
+              </div>
+            </div>
           </div>
         </div>
       `;
       
       document.body.appendChild(pdfContent);
       
-      // Build static map + overlay to avoid iframe capture issues
-      const mapPlaceholder = pdfContent.querySelector('#map-placeholder') as HTMLElement | null;
-      if (mapPlaceholder) {
-        mapPlaceholder.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        wrapper.style.width = '100%';
-        wrapper.style.height = '100%';
-
-        // Base static map image (OpenStreetMap)
-        const mapImg = document.createElement('img');
-        if (coordinates) {
-          const width = 1200; // high-res for PDF, will scale down
-          const height = 700;
-          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
-          mapImg.src = staticUrl;
-        } else {
-          mapImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700"><rect width="100%" height="100%" fill="#f5f5f5"/></svg>`);
-        }
-        mapImg.style.width = '100%';
-        mapImg.style.height = '100%';
-        mapImg.style.objectFit = 'cover';
-        wrapper.appendChild(mapImg);
-
-        // Overlay: Fabric canvas drawing exported as image
-        const overlayCanvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement | null;
-        if (overlayCanvas) {
-          const overlayImg = document.createElement('img');
-          overlayImg.src = overlayCanvas.toDataURL('image/png');
-          overlayImg.style.position = 'absolute';
-          overlayImg.style.left = '0';
-          overlayImg.style.top = '0';
-          overlayImg.style.width = '100%';
-          overlayImg.style.height = '100%';
-          overlayImg.style.objectFit = 'contain';
-          wrapper.appendChild(overlayImg);
-        }
-
-        mapPlaceholder.appendChild(wrapper);
-        // Give images time to load
-        await new Promise((resolve) => {
-          if (mapImg.complete) resolve(null);
-          else mapImg.onload = () => resolve(null);
-        });
-      }
-      
-      // Small delay to ensure images are loaded
+      // Wait for rendering
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Generate PDF
+      // Generate high-quality PDF
       const canvas = await html2canvas(pdfContent, {
         scale: 2,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#FFFFFF',
+        useCORS: true,
+        allowTaint: true,
       });
       
       document.body.removeChild(pdfContent);
       
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
-        format: [canvas.width / 2, canvas.height / 2]
+        format: [canvas.width / 2, canvas.height / 2],
+        compress: true
       });
       
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`pest-report-${getStreetAddress(displayAddress).replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, '', 'FAST');
+      
+      const filename = `Crest-Report-${getStreetAddress(displayAddress).replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(filename);
       
       toast.success("PDF exported successfully!");
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error("Failed to generate PDF");
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast.error("Failed to generate PDF: " + (error?.message || 'Unknown error'));
     }
   };
 
