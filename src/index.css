@@ -94,3 +94,19 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles for PDF export via window.print */
+@media print {
+  /* Landscape-ish content area */
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+  .no-print { display: none !important; }
+  /* Remove backgrounds that can cause heavy ink or hide text */
+  .bg-gradient-primary, .bg-gradient-secondary { background: white !important; }
+  body { background: white !important; }
+  /* Ensure map iframe + canvas overlay render fully */
+  iframe { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  canvas { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

@@ -299,177 +299,13 @@ const Report = () => {
   };
 
   const exportToPDF = async () => {
-    toast.info("Generating PDF...");
-
+    // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
-      // Create branded PDF container
-      const pdfContent = document.createElement('div');
-      pdfContent.style.cssText = `
-        position: absolute;
-        left: -9999px;
-        width: 1700px;
-        background: #FFFFFF;
-        padding: 50px;
-        font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
-      `;
-
-      // Base layout (no tool buttons included)
-      pdfContent.innerHTML = `
-        <div style="margin-bottom: 30px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 4px solid #C3D1C5; margin-bottom: 20px;">
-            <div>
-              <div style="font-size: 32px; font-weight: 700; color: #2A2A2A; letter-spacing: -0.5px; margin-bottom: 4px;">
-                ${getStreetAddress(displayAddress)}
-              </div>
-              <div style="font-size: 18px; color: #95A197; font-weight: 600; letter-spacing: 0.5px;">
-                PEST CONTROL REPORT
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-size: 14px; color: #2A2A2A; line-height: 1.6;">
-                <div style="margin-bottom: 4px;"><strong style="color: #95A197;">Date:</strong> ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
-                <div style="margin-bottom: 4px;"><strong style="color: #95A197;">Technician:</strong> ${editableTech || 'N/A'}</div>
-                <div><strong style="color: #95A197;">Customer:</strong> ${editableCustomer || 'N/A'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 40% 58%; gap: 2%; align-items: start;">
-          <div>
-            <div style="background: #F2F2F2; border: 3px solid #C3D1C5; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(195, 209, 197, 0.25);">
-              <div id="map-placeholder" style="width: 100%; height: 700px; position: relative; background: #f5f5f5;">
-                <!-- Map will be injected here as image(s) -->
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div style="margin-bottom: 32px;">
-              <div style="background: linear-gradient(135deg, #C3D1C5 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">FINDINGS / ACTIVITY DETECTED</h2>
-              </div>
-              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #C3D1C5; border-top: none;">
-                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableFindings.filter(f => f.trim()).map(f => `<li style="margin-bottom: 10px;">${f}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No findings recorded</li>'}
-                </ul>
-              </div>
-            </div>
-
-            <div style="margin-bottom: 32px;">
-              <div style="background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">RECOMMENDATIONS</h2>
-              </div>
-              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #95A197; border-top: none;">
-                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableRecommendations.filter(r => r.trim()).map(r => `<li style="margin-bottom: 10px;">${r}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No recommendations provided</li>'}
-                </ul>
-              </div>
-            </div>
-
-            <div>
-              <div style="background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%); color: white; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0;">
-                <h2 style="font-size: 20px; font-weight: 700; margin: 0; letter-spacing: 0.3px;">NEXT STEPS</h2>
-              </div>
-              <div style="background: #F2F2F2; padding: 20px; border-radius: 0 0 8px 8px; border: 2px solid #2A2A2A; border-top: none;">
-                <ul style="margin: 0; padding-left: 24px; line-height: 1.8; font-size: 14px; color: #2A2A2A;">
-                  ${editableNextSteps.filter(n => n.trim()).map(n => `<li style="margin-bottom: 10px;">${n}</li>`).join('') || '<li style="color: #95A197; font-style: italic;">No next steps specified</li>'}
-                </ul>
-              </div>
-            </div>
-
-            <div style="margin-top: 32px; padding-top: 20px; border-top: 2px solid #C3D1C5; text-align: center;">
-              <div style="font-size: 13px; color: #95A197; font-weight: 600; letter-spacing: 0.8px;">CREST PEST CONTROL</div>
-              <div style="font-size: 11px; color: #2A2A2A; margin-top: 6px;">PR #9859</div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(pdfContent);
-
-      // Compose MAP: static basemap (fetched to data URL) + overlay canvas image
-      const mapPlaceholder = pdfContent.querySelector('#map-placeholder') as HTMLElement | null;
-      if (mapPlaceholder) {
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position: relative; width: 100%; height: 100%;';
-
-        let baseDataUrl: string | null = null;
-        // Determine coordinates: use existing or geocode on the fly
-        let localCoords = coordinates as { lat: number; lng: number } | null;
-        if (!localCoords && displayAddress && displayAddress !== 'Not provided') {
-          try {
-            const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(displayAddress)}`, { headers: { 'User-Agent': 'PestProReports/1.0' } });
-            if (geoRes.ok) {
-              const g = await geoRes.json();
-              if (g && g.length > 0) localCoords = { lat: parseFloat(g[0].lat), lng: parseFloat(g[0].lon) };
-            }
-          } catch (e) {
-            console.error('On-the-fly geocoding failed', e);
-          }
-        }
-
-        if (localCoords) {
-          const width = 1100; // slightly narrower to reduce horizontal stretch
-          const height = 700;
-          try {
-            const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const effectiveZoom = Math.min(zoomLevel, 18);
-            const fnUrl = `${baseUrl}/functions/v1/static-map?lat=${localCoords.lat}&lng=${localCoords.lng}&zoom=${effectiveZoom}&width=${width}&height=${height}&marker=1`;
-            const resp = await fetch(fnUrl);
-            if (resp.ok) {
-              const data = await resp.json();
-              baseDataUrl = data?.dataUrl || null;
-            } else {
-              const text = await resp.text();
-              console.error('Static map function HTTP error', resp.status, text);
-            }
-          } catch (e) {
-            console.error('Static map function failed, using placeholder', e);
-          }
-        }
-
-        const baseImg = document.createElement('img');
-        baseImg.src = baseDataUrl || `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780"><rect width="100%" height="100%" fill="#f5f5f5"/></svg>')}`;
-        baseImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block;';
-        wrapper.appendChild(baseImg);
-
-        const overlayCanvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement | null;
-        if (overlayCanvas) {
-          const overlayImg = document.createElement('img');
-          overlayImg.src = overlayCanvas.toDataURL('image/png');
-          overlayImg.style.cssText = 'position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none;';
-          wrapper.appendChild(overlayImg);
-        }
-
-        mapPlaceholder.appendChild(wrapper);
-        await new Promise(resolve => {
-          if (baseImg.complete) resolve(null);
-          else baseImg.onload = () => resolve(null);
-        });
-      }
-
-      // Render to canvas and save as PDF
-      await new Promise(r => setTimeout(r, 200));
-      const canvas = await html2canvas(pdfContent, {
-        scale: 2,
-        logging: false,
-        backgroundColor: '#FFFFFF',
-        useCORS: true,
-        allowTaint: true,
-      });
-
-      document.body.removeChild(pdfContent);
-
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width / 2, canvas.height / 2], compress: true });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, '', 'FAST');
-      const filename = `Crest-Report-${getStreetAddress(displayAddress).replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(filename);
-      toast.success('PDF exported successfully!');
-    } catch (error: any) {
-      console.error('PDF export error:', error);
-      toast.error('Failed to generate PDF: ' + (error?.message || 'Unknown error'));
+      // Small delay to ensure any in-flight canvas saves are flushed
+      await new Promise((r) => setTimeout(r, 150));
+      window.print();
+    } catch (e) {
+      toast.error('Print failed');
     }
   };
 
@@ -505,35 +341,35 @@ const Report = () => {
       {/* Mobile Header */}
       {isMobile && (
         <div className="bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
-          <div className="flex items-center justify-between">
-            <img src={crestLogo} alt="Crest" className="h-10" />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="default"
-                onClick={exportToPDF}
-                className="h-9"
-              >
-                <FileDown className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={handleShare}
-                className="h-9"
-              >
-                <Share2 className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate('/')}
-                variant="outline"
-                className="h-9"
-              >
-                <Home className="w-4 h-4" />
-              </Button>
+            <div className="flex items-center justify-between">
+              <img src={crestLogo} alt="Crest" className="h-10" />
+              <div className="flex gap-2 no-print">
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={exportToPDF}
+                  className="h-9"
+                >
+                  <FileDown className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleShare}
+                  className="h-9"
+                >
+                  <Share2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/')}
+                  variant="outline"
+                  className="h-9"
+                >
+                  <Home className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
         </div>
       )}
 
@@ -573,7 +409,7 @@ const Report = () => {
                 </div>
               </div>
               
-              <div className="flex gap-3">
+              <div className="flex gap-3 no-print">
                 <Button onClick={exportToPDF} variant="default" size="sm">
                   <FileDown className="w-4 h-4 mr-2" />
                   Export PDF
