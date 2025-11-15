@@ -173,6 +173,7 @@ All colors MUST be HSL.
     font-weight: 700 !important;
     margin: 0 !important;
     line-height: 1 !important;
+    opacity: 1 !important;
   }
 
   .print-header h2 {
@@ -184,6 +185,7 @@ All colors MUST be HSL.
   
   .print-header p {
     color: #2A2A2A !important;
+    opacity: 1 !important;
   }
   
   /* Customer/Tech info styling */
@@ -196,12 +198,14 @@ All colors MUST be HSL.
   .print-header > div span {
     color: #2A2A2A !important;
     font-size: 9px !important;
+    opacity: 1 !important;
   }
   
   /* Make customer and tech names same size as labels */
   .print-header input {
     font-size: 9px !important;
     color: #2A2A2A !important;
+    opacity: 1 !important;
   }
 
   /* Balanced layout - readable text, prominent map */
@@ -287,6 +291,12 @@ All colors MUST be HSL.
     display: block !important;
     box-shadow: none !important;
     z-index: 9999 !important;
+    opacity: 1 !important;
+  }
+  
+  .print-footer * {
+    color: #2A2A2A !important;
+    opacity: 1 !important;
   }
 
   /* Typography improvements */
