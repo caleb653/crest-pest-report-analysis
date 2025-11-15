@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Home, Download, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -243,25 +244,26 @@ const Report = () => {
       <div className="flex h-[calc(100vh-120px)] gap-8 p-8 max-w-[1800px] mx-auto">
         {/* Map Section - Left Half */}
         <div className="w-1/2">
-          <div className="h-full bg-card rounded-2xl shadow-2xl border-4 border-foreground p-4">
-            {isProcessing ? (
-              <div className="h-full flex items-center justify-center bg-muted/50 rounded-xl">
-                <div className="text-center">
-                  <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                  <p className="text-muted-foreground font-medium">Loading map...</p>
+          <div className="h-full bg-primary rounded-2xl shadow-2xl border-4 border-primary p-6">
+            <h3 className="text-lg font-bold text-foreground mb-3">Property Satellite View</h3>
+            <div className="h-[calc(100%-3rem)] rounded-xl overflow-hidden shadow-lg">
+              {isProcessing ? (
+                <div className="h-full flex items-center justify-center bg-muted/50">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 mx-auto mb-3 text-foreground animate-spin" />
+                    <p className="text-muted-foreground font-medium">Loading map...</p>
+                  </div>
                 </div>
-              </div>
-            ) : coordinates ? (
-              <div className="w-full h-full rounded-xl overflow-hidden shadow-lg">
+              ) : coordinates ? (
                 <MapCanvas
                   mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=23&maptype=satellite`}
                 />
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center bg-muted rounded-xl">
-                <p className="text-muted-foreground font-medium">No location available</p>
-              </div>
-            )}
+              ) : (
+                <div className="h-full flex items-center justify-center bg-muted">
+                  <p className="text-muted-foreground font-medium">No location available</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -286,11 +288,16 @@ const Report = () => {
                   {editableFindings.map((finding, i) => (
                     <div key={i} className="flex gap-2 items-start">
                       <span className="text-destructive font-bold mt-0.5">•</span>
-                      <Input
+                      <Textarea
                         value={finding}
                         onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
-                        placeholder="Brief finding (10-15 words)"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        placeholder="Brief finding"
+                        rows={1}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = 'auto';
+                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                        }}
                       />
                     </div>
                   ))}
@@ -315,11 +322,16 @@ const Report = () => {
                   {editableRecommendations.map((rec, i) => (
                     <div key={i} className="flex gap-2 items-start">
                       <span className="text-secondary font-bold mt-0.5">•</span>
-                      <Input
+                      <Textarea
                         value={rec}
                         onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
-                        placeholder="Brief recommendation (10-15 words)"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        placeholder="Brief recommendation"
+                        rows={1}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = 'auto';
+                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                        }}
                       />
                     </div>
                   ))}
@@ -344,11 +356,16 @@ const Report = () => {
                   {editableNextSteps.map((step, i) => (
                     <div key={i} className="flex gap-2 items-start">
                       <span className="text-primary font-bold mt-0.5">•</span>
-                      <Input
+                      <Textarea
                         value={step}
                         onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
-                        placeholder="Brief next step (10-15 words)"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        placeholder="Brief next step"
+                        rows={1}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = 'auto';
+                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+                        }}
                       />
                     </div>
                   ))}
