@@ -99,7 +99,7 @@ All colors MUST be HSL.
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm 10mm;
+    margin: 5mm;
   }
 
   /* Hide all interactive elements */
@@ -114,10 +114,12 @@ All colors MUST be HSL.
     display: none !important; 
   }
 
-  /* Vibrant Crest-branded background */
+  /* Vibrant Crest-branded background (sage) */
   body {
-    background: linear-gradient(135deg, #F2F2F2 0%, #E8ECE9 100%) !important;
+    background: #C3D1C5 !important; /* Sage */
     color: #2A2A2A !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   /* Ensure map and overlays print correctly */
@@ -137,23 +139,23 @@ All colors MUST be HSL.
   /* Professional header styling with brand colors */
   .print-header {
     background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%) !important;
-    padding: 15px 20px !important;
+    padding: 10px 16px !important;
     border-radius: 8px !important;
-    margin-bottom: 12px !important;
-    box-shadow: 0 4px 12px rgba(149, 161, 151, 0.2) !important;
+    margin-bottom: 6px !important;
+    box-shadow: 0 4px 12px rgba(149, 161, 151, 0.18) !important;
   }
 
   .print-header h1 {
     color: #2A2A2A !important;
-    font-size: 22px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
     margin: 0 !important;
   }
 
   .print-header h2 {
     color: #2A2A2A !important;
-    font-size: 11px !important;
-    margin: 4px 0 0 0 !important;
+    font-size: 10px !important;
+    margin: 2px 0 0 0 !important;
     opacity: 0.8;
   }
 
@@ -161,24 +163,24 @@ All colors MUST be HSL.
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
     border-radius: 6px !important;
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
   }
 
-  /* Two-column layout - wider map */
+  /* Two-column layout - maximize width, reduce height */
   .print-layout {
     display: grid !important;
-    grid-template-columns: 52% 46% !important;
-    gap: 2% !important;
+    grid-template-columns: 58% 41% !important;
+    gap: 1% !important;
     page-break-inside: avoid !important;
-    height: 520px !important;
+    height: 420px !important;
   }
 
   /* Map container with brand styling */
   .print-map-container {
-    border: 4px solid #95A197 !important;
+    border: 3px solid #95A197 !important;
     border-radius: 10px !important;
     overflow: hidden !important;
-    height: 520px !important;
+    height: 420px !important;
     background: #E8ECE9 !important;
     box-shadow: 0 6px 16px rgba(149, 161, 151, 0.25) !important;
   }
@@ -186,15 +188,15 @@ All colors MUST be HSL.
   /* Content sections with vibrant colors */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 6px !important;
   }
 
   .print-section-header {
     background: linear-gradient(135deg, #2A2A2A 0%, #3D3D3D 100%) !important;
     color: #F2F2F2 !important;
-    padding: 8px 14px !important;
+    padding: 6px 12px !important;
     border-radius: 6px 6px 0 0 !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
     letter-spacing: 0.8px !important;
     text-transform: uppercase !important;
@@ -202,7 +204,7 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
-    padding: 12px 14px !important;
+    padding: 10px 12px !important;
     border: 3px solid #95A197 !important;
     border-top: none !important;
     border-radius: 0 0 6px 6px !important;
@@ -210,12 +212,12 @@ All colors MUST be HSL.
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 18px !important;
-    line-height: 1.5 !important;
+    padding-left: 16px !important;
+    line-height: 1.4 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 6px !important;
+    margin-bottom: 4px !important;
     font-size: 10px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
@@ -224,14 +226,14 @@ All colors MUST be HSL.
   /* Footer with brand colors */
   .print-footer {
     position: fixed !important;
-    bottom: 8mm !important;
-    left: 10mm !important;
-    right: 10mm !important;
+    bottom: 6mm !important;
+    left: 6mm !important;
+    right: 6mm !important;
     margin-top: 0 !important;
-    padding: 10px 0 !important;
+    padding: 8px 0 !important;
     background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
     text-align: center !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     color: #F2F2F2 !important;
     border-radius: 6px !important;
