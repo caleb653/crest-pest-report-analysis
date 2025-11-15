@@ -51,6 +51,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillColor, setRectFillColor] = useState('#C3D1C5');
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
+  const hasLoadedInitialRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -218,18 +219,25 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     // Track object movement for drag-to-delete
     canvas.on('object:moving', (e) => {
-      if (!deleteButtonRef.current || !e.target) return;
+      if (!deleteButtonRef.current || !e.target || !canvasRef.current) return;
       
       const obj = e.target;
       const objBounds = obj.getBoundingRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const objDom = {
+        left: canvasRect.left + objBounds.left,
+        top: canvasRect.top + objBounds.top,
+        right: canvasRect.left + objBounds.left + objBounds.width,
+        bottom: canvasRect.top + objBounds.top + objBounds.height,
+      };
       const deleteButton = deleteButtonRef.current.getBoundingClientRect();
       
-      // Check if object overlaps with delete button
+      // Check if object overlaps with delete button (DOM space)
       const isOverDelete = (
-        objBounds.left < deleteButton.right &&
-        objBounds.left + objBounds.width > deleteButton.left &&
-        objBounds.top < deleteButton.bottom &&
-        objBounds.top + objBounds.height > deleteButton.top
+        objDom.left < deleteButton.right &&
+        objDom.right > deleteButton.left &&
+        objDom.top < deleteButton.bottom &&
+        objDom.bottom > deleteButton.top
       );
       
       setIsDraggingOverDelete(isOverDelete);
@@ -237,21 +245,28 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     // Delete on drop over delete button
     canvas.on('mouse:up', (e) => {
-      if (!deleteButtonRef.current || !e.target) {
+      if (!deleteButtonRef.current || !e.target || !canvasRef.current) {
         setIsDraggingOverDelete(false);
         return;
       }
       
       const obj = e.target;
       const objBounds = obj.getBoundingRect();
+      const canvasRect = canvasRef.current.getBoundingClientRect();
+      const objDom = {
+        left: canvasRect.left + objBounds.left,
+        top: canvasRect.top + objBounds.top,
+        right: canvasRect.left + objBounds.left + objBounds.width,
+        bottom: canvasRect.top + objBounds.top + objBounds.height,
+      };
       const deleteButton = deleteButtonRef.current.getBoundingClientRect();
       
-      // Check if dropped over delete button
+      // Check if dropped over delete button (DOM space)
       const isOverDelete = (
-        objBounds.left < deleteButton.right &&
-        objBounds.left + objBounds.width > deleteButton.left &&
-        objBounds.top < deleteButton.bottom &&
-        objBounds.top + objBounds.height > deleteButton.top
+        objDom.left < deleteButton.right &&
+        objDom.right > deleteButton.left &&
+        objDom.top < deleteButton.bottom &&
+        objDom.bottom > deleteButton.top
       );
       
       if (isOverDelete) {
@@ -269,9 +284,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     };
   }, []); // Only run once on mount
 
-  // Load saved data
+  // Load saved data once (on first mount with data)
   useEffect(() => {
-    if (!fabricCanvasRef.current || !initialData) return;
+    if (!fabricCanvasRef.current || !initialData || hasLoadedInitialRef.current) return;
     
     try {
       const savedData = JSON.parse(initialData);
@@ -284,6 +299,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setLegendItems(savedData.legendItems);
         setShowLegend(true);
       }
+      hasLoadedInitialRef.current = true;
     } catch (error) {
       console.error('Error loading canvas data:', error);
     }
