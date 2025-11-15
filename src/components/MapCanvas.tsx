@@ -321,18 +321,35 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
   // Load saved data once (on first mount with data)
   useEffect(() => {
+    console.log('MapCanvas load effect triggered', { 
+      hasCanvas: !!fabricCanvasRef.current, 
+      hasInitialData: !!initialData,
+      hasLoaded: hasLoadedInitialRef.current,
+      initialDataPreview: initialData ? initialData.substring(0, 100) : 'null'
+    });
+    
     if (!fabricCanvasRef.current || !initialData || hasLoadedInitialRef.current) return;
     
     try {
       const savedData = JSON.parse(initialData);
+      console.log('Parsed saved data:', { 
+        hasObjects: !!savedData.objects,
+        objectCount: savedData.objects?.objects?.length,
+        hasLegend: !!savedData.legendItems 
+      });
+      
       if (savedData.objects) {
         fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
           const canvas = fabricCanvasRef.current!;
+          console.log('Canvas loaded, object count:', canvas.getObjects().length);
+          
           if (savedData.base?.width && savedData.base?.height) {
             const currW = canvas.getWidth();
             const currH = canvas.getHeight();
             const scaleX = currW / savedData.base.width;
             const scaleY = currH / savedData.base.height;
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW: savedData.base.width, baseH: savedData.base.height });
+            
             canvas.getObjects().forEach((obj: any) => {
               obj.scaleX = (obj.scaleX || 1) * scaleX;
               obj.scaleY = (obj.scaleY || 1) * scaleY;
@@ -349,6 +366,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setShowLegend(true);
       }
       hasLoadedInitialRef.current = true;
+      console.log('Load complete, hasLoadedInitialRef set to true');
     } catch (error) {
       console.error('Error loading canvas data:', error);
     }
@@ -392,10 +410,16 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     
     const saveCanvasData = () => {
       if (!fabricCanvasRef.current) return;
+      const canvasJSON = fabricCanvasRef.current.toJSON();
       const canvasData = JSON.stringify({
-        objects: fabricCanvasRef.current.toJSON(),
+        objects: canvasJSON,
         legendItems: legendItems,
         base: { width: fabricCanvasRef.current.getWidth(), height: fabricCanvasRef.current.getHeight() }
+      });
+      console.log('Saving canvas data:', { 
+        objectCount: canvasJSON.objects?.length,
+        legendCount: legendItems.length,
+        dataLength: canvasData.length 
       });
       onSave(canvasData);
     };
