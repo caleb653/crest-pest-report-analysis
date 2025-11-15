@@ -162,46 +162,61 @@ const Report = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-gradient-primary text-primary-foreground px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-gradient-primary border-b-4 border-foreground px-8 py-6">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
           <div className="flex-1">
             <Input
               value={reportTitle}
               onChange={(e) => setReportTitle(e.target.value)}
-              className="text-2xl font-bold bg-transparent border-none text-primary-foreground placeholder:text-primary-foreground/70 px-0 h-auto mb-2"
+              className="text-3xl font-bold bg-transparent border-none text-foreground placeholder:text-foreground/70 px-0 h-auto mb-3 focus-visible:ring-0"
             />
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-6 text-sm text-foreground/90 font-medium">
               <div className="flex items-center gap-2">
-                <span className="opacity-90">Technician:</span>
+                <span className="opacity-80">Technician:</span>
                 <Input
                   value={editableTech}
                   onChange={(e) => setEditableTech(e.target.value)}
                   placeholder="Tech name"
-                  className="bg-transparent border-b border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/50 px-1 h-6 w-40"
+                  className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-7 w-44 focus-visible:ring-0 focus-visible:border-foreground/60"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="opacity-90">Customer:</span>
+                <span className="opacity-80">Customer:</span>
                 <Input
                   value={editableCustomer}
                   onChange={(e) => setEditableCustomer(e.target.value)}
                   placeholder="Customer name"
-                  className="bg-transparent border-b border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/50 px-1 h-6 w-40"
+                  className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-7 w-44 focus-visible:ring-0 focus-visible:border-foreground/60"
                 />
               </div>
-              <span className="opacity-90">• {displayAddress}</span>
+              <span className="opacity-80">• {displayAddress}</span>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate('/')} className="bg-card text-card-foreground border-none">
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/')} 
+              className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
+            >
               <Home className="w-4 h-4 mr-2" />
-              New
+              New Report
             </Button>
-            <Button variant="outline" size="sm" onClick={() => toast.success("Downloaded!")} className="bg-card text-card-foreground border-none">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => toast.success("Downloaded!")} 
+              className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
+            >
               <Download className="w-4 h-4 mr-2" />
-              PDF
+              Export PDF
             </Button>
-            <Button size="sm" onClick={() => toast.success("Shared!")} className="bg-secondary text-secondary-foreground">
+            <Button 
+              size="sm" 
+              onClick={() => toast.success("Shared!")} 
+              className="bg-foreground text-background hover:bg-foreground/90 font-semibold"
+            >
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
@@ -209,46 +224,57 @@ const Report = () => {
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-92px)]">
-        <div className="w-1/2 relative">
-          {isProcessing ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
-              <div className="text-center">
-                <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                <p className="text-muted-foreground">Loading map...</p>
+      {/* Main Content */}
+      <div className="flex h-[calc(100vh-140px)] gap-8 p-8 max-w-[1800px] mx-auto">
+        {/* Map Section - Left Half */}
+        <div className="w-1/2">
+          <div className="h-full bg-card rounded-2xl shadow-2xl border-4 border-foreground p-4">
+            {isProcessing ? (
+              <div className="h-full flex items-center justify-center bg-muted/50 rounded-xl">
+                <div className="text-center">
+                  <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
+                  <p className="text-muted-foreground font-medium">Loading map...</p>
+                </div>
               </div>
-            </div>
-          ) : coordinates ? (
-            <MapCanvas
-              mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=22&maptype=satellite`}
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <p className="text-muted-foreground">No location available</p>
-            </div>
-          )}
+            ) : coordinates ? (
+              <div className="w-full h-full rounded-xl overflow-hidden shadow-lg">
+                <MapCanvas
+                  mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=23&maptype=satellite`}
+                />
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center bg-muted rounded-xl">
+                <p className="text-muted-foreground font-medium">No location available</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="w-1/2 overflow-y-auto bg-muted/30 p-8 space-y-6">
+        {/* Report Sections - Right Half */}
+        <div className="w-1/2 overflow-y-auto bg-muted/20 rounded-2xl p-8 space-y-6">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                <p className="text-lg font-medium">Analyzing...</p>
+                <p className="text-lg font-semibold">Analyzing findings...</p>
               </div>
             </div>
           ) : (
             <>
-              <Card className="p-6 shadow-md">
-                <h2 className="text-lg font-bold mb-4 text-destructive">FINDINGS</h2>
-                <div className="space-y-2">
+              {/* Findings Card */}
+              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-1 h-8 bg-destructive rounded-full"></div>
+                  <h2 className="text-xl font-bold text-destructive tracking-tight">FINDINGS</h2>
+                </div>
+                <div className="space-y-3">
                   {editableFindings.map((finding, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-destructive font-bold">•</span>
+                    <div key={i} className="flex gap-3 items-start">
+                      <span className="text-destructive font-bold text-lg mt-0.5">•</span>
                       <Input
                         value={finding}
                         onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
                         placeholder="Brief finding (10-15 words)"
                       />
                     </div>
@@ -257,23 +283,27 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableFindings)}
-                    className="text-xs"
+                    className="text-xs mt-3 hover:bg-destructive/10 text-destructive font-medium"
                   >
                     + Add finding
                   </Button>
                 </div>
               </Card>
 
-              <Card className="p-6 shadow-md">
-                <h2 className="text-lg font-bold mb-4 text-secondary">RECOMMENDATIONS</h2>
-                <div className="space-y-2">
+              {/* Recommendations Card */}
+              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-1 h-8 bg-secondary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
+                </div>
+                <div className="space-y-3">
                   {editableRecommendations.map((rec, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-secondary font-bold">•</span>
+                    <div key={i} className="flex gap-3 items-start">
+                      <span className="text-secondary font-bold text-lg mt-0.5">•</span>
                       <Input
                         value={rec}
                         onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
                         placeholder="Brief recommendation (10-15 words)"
                       />
                     </div>
@@ -282,23 +312,27 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableRecommendations)}
-                    className="text-xs"
+                    className="text-xs mt-3 hover:bg-secondary/10 text-secondary font-medium"
                   >
                     + Add recommendation
                   </Button>
                 </div>
               </Card>
 
-              <Card className="p-6 shadow-md">
-                <h2 className="text-lg font-bold mb-4 text-primary">NEXT STEPS</h2>
-                <div className="space-y-2">
+              {/* Next Steps Card */}
+              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-1 h-8 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold text-primary tracking-tight">NEXT STEPS</h2>
+                </div>
+                <div className="space-y-3">
                   {editableNextSteps.map((step, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-primary font-bold">•</span>
+                    <div key={i} className="flex gap-3 items-start">
+                      <span className="text-primary font-bold text-lg mt-0.5">•</span>
                       <Input
                         value={step}
                         onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
                         placeholder="Brief next step (10-15 words)"
                       />
                     </div>
@@ -307,7 +341,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableNextSteps)}
-                    className="text-xs"
+                    className="text-xs mt-3 hover:bg-primary/10 text-primary font-medium"
                   >
                     + Add next step
                   </Button>
