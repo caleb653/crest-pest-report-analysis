@@ -229,9 +229,9 @@ All colors MUST be HSL.
     background: #E8ECE9 !important;
   }
   
-  /* Adjust canvas positioning for print */
+  /* Adjust canvas positioning for print - shift right and up */
   .print-map-container canvas {
-    transform: translate(3%, -3%) !important;
+    transform: translate(15%, -15%) !important;
   }
 
   /* Compact but readable text sections */
