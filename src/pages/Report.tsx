@@ -1,13 +1,101 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Download, Share2, CheckCircle, MapPin, Calendar } from "lucide-react";
+import { Home, Download, Share2, CheckCircle, MapPin, Calendar, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Report = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { technicianName, customerName, address, notes, screenshots } = location.state || {};
+  
+  const [extractedAddress, setExtractedAddress] = useState<string>("");
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    // If we have screenshots, process them for address extraction
+    if (screenshots && screenshots.length > 0) {
+      processScreenshots();
+    } else if (address) {
+      // If manually entered address, geocode it
+      geocodeAddress(address);
+    }
+  }, [screenshots, address]);
+
+  const processScreenshots = async () => {
+    setIsProcessing(true);
+    try {
+      // Convert File objects to base64 data URLs
+      const imagePromises = screenshots.map((file: File) => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const imageDataUrls = await Promise.all(imagePromises);
+
+      console.log('Calling extract-address function with', imageDataUrls.length, 'images');
+
+      // Call edge function to extract address
+      const { data, error } = await supabase.functions.invoke('extract-address', {
+        body: { images: imageDataUrls }
+      });
+
+      if (error) {
+        console.error('Error extracting address:', error);
+        toast.error('Failed to extract address from screenshots');
+        return;
+      }
+
+      console.log('Extract-address response:', data);
+
+      if (data.address && data.address !== 'Address not found') {
+        setExtractedAddress(data.address);
+        toast.success('Address extracted from screenshots!');
+        
+        if (data.coordinates) {
+          setCoordinates(data.coordinates);
+        }
+      } else {
+        toast.warning('Could not find address in screenshots');
+      }
+    } catch (error) {
+      console.error('Error processing screenshots:', error);
+      toast.error('Error processing screenshots');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const geocodeAddress = async (addr: string) => {
+    try {
+      const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`;
+      const response = await fetch(geocodeUrl, {
+        headers: {
+          'User-Agent': 'PestProReports/1.0'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setCoordinates({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon)
+          });
+          setExtractedAddress(addr);
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    }
+  };
 
   const handleShare = () => {
     toast.success("Report shared successfully!");
@@ -22,6 +110,8 @@ const Report = () => {
     month: 'long', 
     day: 'numeric' 
   });
+
+  const displayAddress = extractedAddress || address || "Not provided";
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
@@ -63,7 +153,14 @@ const Report = () => {
                   Property Address
                 </h3>
                 <p className="text-xl font-medium text-foreground">
-                  {address || "Not provided"}
+                  {isProcessing ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Extracting...
+                    </span>
+                  ) : (
+                    displayAddress
+                  )}
                 </p>
               </div>
             </div>
@@ -106,22 +203,43 @@ const Report = () => {
               </div>
             )}
 
-            {/* Property Map Placeholder */}
+            {/* Property Map */}
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Property Map</h3>
-              <div className="bg-muted/30 rounded-xl h-64 flex items-center justify-center border-2 border-dashed border-border">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Map integration coming soon
-                  </p>
-                  {address && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Location: {address}
-                    </p>
-                  )}
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Property Map - Aerial View</h3>
+              {isProcessing ? (
+                <div className="bg-muted/30 rounded-xl h-96 flex items-center justify-center border-2 border-dashed border-border">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
+                    <p className="text-muted-foreground">Processing address...</p>
+                  </div>
                 </div>
-              </div>
+              ) : coordinates ? (
+                <div className="rounded-xl overflow-hidden border-2 border-border shadow-lg">
+                  <iframe
+                    width="100%"
+                    height="400"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=19&maptype=satellite`}
+                  />
+                </div>
+              ) : (
+                <div className="bg-muted/30 rounded-xl h-96 flex items-center justify-center border-2 border-dashed border-border">
+                  <div className="text-center">
+                    <MapPin className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      {displayAddress === "Not provided" 
+                        ? "No address available to show map" 
+                        : "Unable to geocode address"}
+                    </p>
+                    {displayAddress !== "Not provided" && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Address: {displayAddress}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
