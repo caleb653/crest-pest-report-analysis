@@ -182,6 +182,10 @@ All colors MUST be HSL.
     opacity: 1 !important;
   }
   
+  .print-header p {
+    color: #2A2A2A !important;
+  }
+  
   /* Customer/Tech info styling */
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
