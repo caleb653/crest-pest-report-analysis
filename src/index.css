@@ -231,7 +231,7 @@ All colors MUST be HSL.
   
   /* Adjust canvas positioning for print - shift right and up */
   .print-map-container canvas {
-    transform: translate(15%, -15%) !important;
+    transform: translate(10%, -10%) !important;
   }
 
   /* Compact but readable text sections */
