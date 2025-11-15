@@ -24,7 +24,7 @@ const AVAILABLE_EMOJIS = [
   '🐭', '🐜', '🪳', '🦗', '🕷️', '🐝', '🦟', '🐛',
   '🕳️', '🚪', '🪟', '🧱', '✅', '💊', '🧪', '🪤',
   '🔁', '⚠️', '🚫', '📍', '🎯', '❌', '✔️', '⭐',
-  '🌳', '💧'
+  '🌳', '💧', '1️⃣', '2️⃣', '3️⃣', '4️⃣'
 ];
 
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
@@ -342,6 +342,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       '📍': 'Point of interest',
       '🌳': 'Cut trees',
       '💧': 'Reduce water',
+      '1️⃣': 'Point 1',
+      '2️⃣': 'Point 2',
+      '3️⃣': 'Point 3',
+      '4️⃣': 'Point 4',
     };
     return labels[emoji] || 'Custom marker';
   };
