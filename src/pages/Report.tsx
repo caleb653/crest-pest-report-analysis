@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Home, Share2, Loader2, Send, FileDown } from "lucide-react";
+import { Home, Share2, Loader2, Send, FileDown, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
@@ -458,7 +458,17 @@ const Report = () => {
           )}
           
           {mapUrl ? (
-            <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
+            <div className="relative h-full w-full">
+              <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
+              <div className="no-print absolute bottom-4 left-4 flex flex-col gap-2 z-10">
+                <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="secondary" onClick={handleZoomOut} aria-label="Zoom out" title="Zoom out">
+                  <Minus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="h-full flex items-center justify-center bg-muted">
               <p className="text-muted-foreground text-center px-4">
