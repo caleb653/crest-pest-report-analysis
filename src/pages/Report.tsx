@@ -193,6 +193,12 @@ const Report = () => {
 
     setIsSaving(true);
     try {
+      // Ensure map_data is stored as JSON (object) not a raw string
+      let mapPayload: any = null;
+      if (mapData) {
+        try { mapPayload = JSON.parse(mapData); } catch { mapPayload = mapData; }
+      }
+
       const reportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
@@ -202,7 +208,7 @@ const Report = () => {
         recommendations: editableRecommendations,
         next_steps: editableNextSteps,
         map_url: coordinates ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}` : null,
-        map_data: mapData,
+        map_data: mapPayload,
       };
 
       if (reportId) {
