@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Smile, Square, Hand } from 'lucide-react';
+import { Trash2, Type, X, Smile, Square } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
 import { toast } from 'sonner';
 
@@ -51,7 +51,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillColor, setRectFillColor] = useState('#C3D1C5');
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
-  const [panMode, setPanMode] = useState(false);
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
 
@@ -162,6 +161,25 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         canvas.add(rect);
         canvas.setActiveObject(rect);
+        
+        // Immediately add centered text for typing
+        const text = new IText('', {
+          left: pointer.x,
+          top: pointer.y,
+          fontSize: 14,
+          fill: '#000000',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          originX: 'center',
+          originY: 'center',
+          selectable: true,
+          editable: true,
+        });
+        
+        rectTextMap.current.set(rect, true);
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        text.enterEditing();
         canvas.renderAll();
         
         setTool('select');
@@ -504,7 +522,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         ref={canvasRef}
         id="map-overlay-canvas"
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: panMode ? 'none' : 'auto' }}
       />
 
       {/* Drawing tools */}
@@ -519,15 +536,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
-        </Button>
-        <Button
-          size="icon"
-          variant={panMode ? 'default' : 'outline'}
-          onClick={() => setPanMode(!panMode)}
-          title="Pan Map"
-          className="h-10 w-10"
-        >
-          <Hand className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
