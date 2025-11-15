@@ -26,26 +26,12 @@ const AdminDashboard = () => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const sessionToken = localStorage.getItem('admin_session');
     
-    if (!session) {
+    if (!sessionToken) {
       toast.error("Please sign in");
       navigate('/admin-login');
       return;
-    }
-
-    // Check admin role
-    const { data: roleData, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (error || !roleData) {
-      toast.error("You don't have admin access");
-      await supabase.auth.signOut();
-      navigate('/');
     }
   };
 
@@ -66,7 +52,7 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('admin_session');
     toast.success("Signed out successfully");
     navigate('/');
   };
