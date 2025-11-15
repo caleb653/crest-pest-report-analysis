@@ -53,6 +53,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
+  const clickPlacedRef = useRef(false);
   
   // Map iframe is interactive when select tool is active, canvas is interactive for drawing tools
   const isMapInteractive = tool === 'select';
@@ -143,6 +144,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           return prev;
         });
         
+        clickPlacedRef.current = true;
         setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
@@ -193,6 +195,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           canvas.renderAll();
         }, 100);
         
+        clickPlacedRef.current = true;
         setTool('select');
       } else if (currentTool === 'text') {
         const pointer = canvas.getScenePoint(e.e);
@@ -213,6 +216,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         text.selectAll();
         canvas.renderAll();
         
+        clickPlacedRef.current = true;
         setTool('select');
       }
     });
