@@ -169,39 +169,39 @@ All colors MUST be HSL.
     padding: 3px 6px !important;
   }
 
-  /* Ultra-compact layout - map dominant, tiny text boxes */
+  /* Balanced layout - readable text, prominent map */
   .print-layout {
     display: grid !important;
-    grid-template-columns: 70% 29% !important;
+    grid-template-columns: 60% 39% !important;
     gap: 1% !important;
     page-break-inside: avoid !important;
     margin: 0 3mm !important;
-    height: 160mm !important;
+    height: 155mm !important;
     align-items: start !important;
   }
 
-  /* Map container - larger since text is now tiny */
+  /* Map container - balanced size */
   .print-map-container {
     border: 1px solid #95A197 !important;
     border-radius: 3px !important;
     overflow: hidden !important;
-    height: 160mm !important;
+    height: 155mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
   }
 
-  /* Ultra-compact text sections */
+  /* Compact but readable text sections */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1mm !important;
+    margin-bottom: 1.5mm !important;
     width: 100% !important;
   }
 
   .print-section-header {
     background: #2A2A2A !important;
     color: #F2F2F2 !important;
-    padding: 1px 4px !important;
-    font-size: 6px !important;
+    padding: 2px 5px !important;
+    font-size: 7.5px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.3px !important;
@@ -209,11 +209,11 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 2px 4px !important;
+    padding: 3px 5px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 6px !important;
-    max-height: 35mm !important;
+    font-size: 8px !important;
+    max-height: 28mm !important;
     overflow: hidden !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -221,13 +221,13 @@ All colors MUST be HSL.
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 6px !important;
-    line-height: 1.1 !important;
+    padding-left: 8px !important;
+    line-height: 1.2 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 0.5px !important;
-    font-size: 6px !important;
+    margin-bottom: 1px !important;
+    font-size: 8px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -304,13 +304,28 @@ All colors MUST be HSL.
     margin: 0 !important;
   }
 
-  /* Content column - ensure fits on page */
+  /* Content column - ensure all sections visible on page */
   .print-layout > div:last-child {
     overflow: hidden !important;
     height: auto !important;
-    max-height: 120mm !important;
+    max-height: 155mm !important;
     width: 100% !important;
     padding-bottom: 0 !important;
+  }
+  
+  /* Force single page only */
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+  
+  body {
+    page-break-after: avoid !important;
+  }
+  
+  * {
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
   }
 
   /* Ensure proper box-sizing */
