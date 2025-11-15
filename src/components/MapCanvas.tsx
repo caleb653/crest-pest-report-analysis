@@ -656,7 +656,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="absolute top-6 left-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
+        <div className="no-print absolute top-6 left-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
@@ -689,7 +689,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {showLegend && legendItems.length > 0 && (
         <div 
           ref={legendRef}
-          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
+          className="no-print absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
@@ -744,7 +744,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
-          className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
+          className="no-print absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
         >
           Legend ({legendItems.length})
         </Button>

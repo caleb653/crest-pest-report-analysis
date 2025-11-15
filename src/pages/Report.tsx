@@ -340,7 +340,7 @@ const Report = () => {
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       {isMobile && (
-        <div className="bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
+        <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
             <div className="flex items-center justify-between">
               <img src={crestLogo} alt="Crest" className="h-10" />
               <div className="flex gap-2 no-print">
@@ -375,7 +375,7 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="bg-gradient-primary border-b-4 border-foreground px-6 py-4">
+        <div className="print-header bg-gradient-primary border-b-4 border-foreground px-6 py-4">
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between">
               <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
@@ -385,6 +385,9 @@ const Report = () => {
                   <h1 className="text-2xl font-bold text-foreground mb-1">
                     {getStreetAddress(displayAddress)} Pest Control Analysis
                   </h1>
+                  <p className="text-sm text-foreground/70">
+                    {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
                 </div>
                 
                 <div className="flex flex-col gap-2 min-w-[200px]">
@@ -429,11 +432,11 @@ const Report = () => {
       )}
 
       {/* Main Content */}
-      <div className={isMobile ? "flex flex-col" : "flex h-[calc(100vh-88px)]"}>
+      <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
         {/* Map Section */}
-        <div className={isMobile ? "h-[60vh] relative" : "w-1/2 relative"}>
+        <div className={isMobile ? "h-[60vh] relative" : "print-map-container w-1/2 relative"}>
           {isProcessing && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+            <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
                 <p className="text-foreground font-semibold">Processing Map...</p>
@@ -492,8 +495,8 @@ const Report = () => {
             )}
 
             {/* Findings Section */}
-            <Card className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-bold text-destructive mb-4">Findings / Actions Taken</h2>
+            <Card className="print-section p-4 md:p-6">
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-destructive mb-4">Findings / Actions Taken</h2>
               {isAnalyzing ? (
                 <div className="text-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
@@ -514,7 +517,7 @@ const Report = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(setEditableFindings)}
-                    className="w-full"
+                    className="no-print w-full"
                   >
                     + Add Finding
                   </Button>
@@ -523,8 +526,8 @@ const Report = () => {
             </Card>
 
             {/* Recommendations Section */}
-            <Card className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4">Recommendations</h2>
+            <Card className="print-section p-4 md:p-6">
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-primary mb-4">Recommendations</h2>
               <div className="space-y-3">
                 {editableRecommendations.map((rec, index) => (
                   <Textarea
@@ -539,7 +542,7 @@ const Report = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => addItem(setEditableRecommendations)}
-                  className="w-full"
+                  className="no-print w-full"
                 >
                   + Add Recommendation
                 </Button>
@@ -547,8 +550,8 @@ const Report = () => {
             </Card>
 
             {/* Next Steps Section */}
-            <Card className="p-4 md:p-6">
-              <h2 className="text-xl md:text-2xl font-bold text-secondary mb-4">Next Steps</h2>
+            <Card className="print-section p-4 md:p-6">
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-secondary mb-4">Next Steps</h2>
               <div className="space-y-3">
                 {editableNextSteps.map((step, index) => (
                   <Textarea
@@ -563,19 +566,27 @@ const Report = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => addItem(setEditableNextSteps)}
-                  className="w-full"
+                  className="no-print w-full"
                 >
                   + Add Next Step
                 </Button>
               </div>
             </Card>
 
+            {/* Print Footer - Only visible when printing */}
+            <div className="print-footer hidden print:block">
+              <div className="text-center">
+                <div className="text-sm font-bold text-secondary mb-1">CREST PEST CONTROL</div>
+                <div className="text-xs text-foreground/70">PR #9859</div>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <Button
               onClick={handleSubmit}
               disabled={isSaving}
               size="lg"
-              className="w-full text-lg py-6"
+              className="no-print w-full text-lg py-6"
             >
               {isSaving ? (
                 <>
