@@ -89,6 +89,8 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           editable: false, // Not editable, only moveable
           backgroundColor: '#FFFFFF',
           padding: 4,
+          stroke: '#000000',
+          strokeWidth: 1,
         });
         canvas.add(emoji);
         canvas.setActiveObject(emoji);
