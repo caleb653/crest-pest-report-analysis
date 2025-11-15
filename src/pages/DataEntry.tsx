@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,16 +22,39 @@ const DataEntry = () => {
   const [cooldownEndsAt, setCooldownEndsAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
 
+  useEffect(() => {
+    if (!cooldownEndsAt) return;
+    const interval = setInterval(() => {
+      const ms = cooldownEndsAt - Date.now();
+      if (ms <= 0) {
+        setSecondsLeft(0);
+        setCooldownEndsAt(null);
+        clearInterval(interval);
+      } else {
+        setSecondsLeft(Math.ceil(ms / 1000));
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [cooldownEndsAt]);
+
+  const isCoolingDown = cooldownEndsAt !== null;
+
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setScreenshots([...screenshots, ...newFiles]);
+      // Start 5s cooldown after latest upload
+      setCooldownEndsAt(Date.now() + 5000);
+      setSecondsLeft(5);
       toast.success(`${newFiles.length} screenshot(s) uploaded`);
     }
   };
 
   const removeScreenshot = (index: number) => {
     setScreenshots(screenshots.filter((_, i) => i !== index));
+    // Restart cooldown when files change
+    setCooldownEndsAt(Date.now() + 5000);
+    setSecondsLeft(5);
     toast.info("Screenshot removed");
   };
 
@@ -166,10 +189,17 @@ const DataEntry = () => {
             <Button
               size="lg"
               onClick={handleGenerate}
-              className="w-full bg-gradient-primary text-primary-foreground text-xl py-8 mt-8"
+              disabled={isCoolingDown}
+              className="w-full bg-gradient-primary text-primary-foreground text-xl py-8 mt-8 disabled:opacity-70"
             >
-              Generate Report
-              <ArrowRight className="ml-2 w-6 h-6" />
+              {isCoolingDown ? (
+                <>Generate Report (wait {secondsLeft}s)</>
+              ) : (
+                <>
+                  Generate Report
+                  <ArrowRight className="ml-2 w-6 h-6" />
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
