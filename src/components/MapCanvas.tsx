@@ -37,6 +37,10 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const [colorIndex, setColorIndex] = useState(0);
   const toolRef = useRef<Tool>('select');
   const selectedEmojiRef = useRef<string>('📍');
+  const [legendPosition, setLegendPosition] = useState({ x: 24, y: 24 });
+  const [isDraggingLegend, setIsDraggingLegend] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const legendRef = useRef<HTMLDivElement>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -288,6 +292,54 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     setShowEmojiPicker(false);
   };
 
+  const handleLegendMouseDown = (e: React.MouseEvent) => {
+    if (legendRef.current) {
+      const rect = legendRef.current.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDraggingLegend(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingLegend && legendRef.current) {
+        const container = legendRef.current.parentElement;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const newX = e.clientX - containerRect.left - dragOffset.x;
+          const newY = e.clientY - containerRect.top - dragOffset.y;
+          
+          // Keep legend within bounds
+          const legendRect = legendRef.current.getBoundingClientRect();
+          const maxX = containerRect.width - legendRect.width;
+          const maxY = containerRect.height - legendRect.height;
+          
+          setLegendPosition({
+            x: Math.max(0, Math.min(newX, maxX)),
+            y: Math.max(0, Math.min(newY, maxY))
+          });
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingLegend(false);
+    };
+
+    if (isDraggingLegend) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingLegend, dragOffset]);
+
   return (
     <div className="relative w-full h-full">
       {/* Map iframe */}
@@ -400,34 +452,51 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
 
       {/* Legend */}
       {showLegend && legendItems.length > 0 && (
-        <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 max-w-sm max-h-96 overflow-y-auto border border-border">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm">Legend</h3>
+        <div 
+          ref={legendRef}
+          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
+          style={{ 
+            left: `${legendPosition.x}px`, 
+            top: `${legendPosition.y}px`,
+            userSelect: 'none'
+          }}
+          onMouseDown={handleLegendMouseDown}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-xs">Legend</h3>
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => setShowLegend(false)}
-              className="h-6 w-6"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowLegend(false);
+              }}
+              className="h-5 w-5"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </Button>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {legendItems.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <span className="text-xl w-8 text-center">{item.emoji}</span>
+              <div key={index} className="flex items-center gap-1">
+                <span className="text-sm w-6 text-center">{item.emoji}</span>
                 <Input
                   value={item.label}
                   onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
-                  className="flex-1 h-7 text-xs"
+                  className="flex-1 h-6 text-xs"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
                 />
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => removeLegendItem(index)}
-                  className="h-7 w-7"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeLegendItem(index);
+                  }}
+                  className="h-6 w-6"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-2 h-2" />
                 </Button>
               </div>
             ))}
@@ -440,9 +509,9 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
-          className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border"
+          className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
         >
-          Show Legend ({legendItems.length})
+          Legend ({legendItems.length})
         </Button>
       )}
     </div>
