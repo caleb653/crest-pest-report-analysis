@@ -301,9 +301,22 @@ const Report = () => {
   const exportToPDF = async () => {
     // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
-      // Small delay to ensure any in-flight canvas saves are flushed
+      // Hide any toast messages before printing
+      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
+      toasts.forEach(toast => {
+        (toast as HTMLElement).style.display = 'none';
+      });
+      
+      // Small delay to ensure any in-flight canvas saves are flushed and toasts hidden
       await new Promise((r) => setTimeout(r, 150));
       window.print();
+      
+      // Restore toasts after print dialog closes
+      setTimeout(() => {
+        toasts.forEach(toast => {
+          (toast as HTMLElement).style.display = '';
+        });
+      }, 500);
     } catch (e) {
       toast.error('Print failed');
     }
