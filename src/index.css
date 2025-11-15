@@ -193,15 +193,20 @@ All colors MUST be HSL.
   /* Compact but readable text sections */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1.5mm !important;
+    margin-bottom: 2mm !important;
     width: 100% !important;
+  }
+
+  /* Ensure the first box isn't clipped under the header */
+  .print-layout > div:last-child .print-section:first-child {
+    margin-top: 2mm !important;
   }
 
   .print-section-header {
     background: #2A2A2A !important;
     color: #F2F2F2 !important;
     padding: 2px 5px !important;
-    font-size: 7.5px !important;
+    font-size: 7px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.3px !important;
@@ -209,25 +214,24 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 3px 5px !important;
+    padding: 2px 5px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 8px !important;
-    max-height: 28mm !important;
-    overflow: hidden !important;
+    font-size: 9px !important;
+    overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 8px !important;
-    line-height: 1.2 !important;
+    padding-left: 6px !important;
+    line-height: 1.15 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 1px !important;
-    font-size: 8px !important;
+    margin-bottom: 0.4px !important;
+    font-size: 9px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -310,7 +314,7 @@ All colors MUST be HSL.
     height: auto !important;
     max-height: 155mm !important;
     width: 100% !important;
-    padding-bottom: 0 !important;
+    padding: 1mm 0 0 0 !important;
   }
   
   /* Force single page only */
