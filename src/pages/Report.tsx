@@ -261,7 +261,7 @@ const Report = () => {
   };
 
   const mapUrl = coordinates 
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lng - 0.002},${coordinates.lat - 0.002},${coordinates.lng + 0.002},${coordinates.lat + 0.002}&layer=mapnik&marker=${coordinates.lat},${coordinates.lng}`
+    ? `https://maps.google.com/maps?q=${coordinates.lat},${coordinates.lng}&t=k&z=21&output=embed`
     : "";
 
   return (
