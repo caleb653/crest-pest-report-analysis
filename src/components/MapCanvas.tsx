@@ -103,16 +103,15 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
         const pointer = canvas.getScenePoint(e.e);
-        const currentColor = SHAPE_COLORS[colorIndex % SHAPE_COLORS.length];
         
         const rect = new FabricRect({
           left: pointer.x - 60,
           top: pointer.y - 40,
           width: 120,
           height: 80,
-          fill: currentColor,
-          fillOpacity: 0.12,
-          stroke: currentColor,
+          fill: '#C3D1C5',
+          opacity: 0.25,
+          stroke: '#000000',
           strokeWidth: 4,
           selectable: true,
           hasControls: true,
@@ -122,7 +121,6 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         canvas.setActiveObject(rect);
         canvas.renderAll();
         
-        setColorIndex(prev => prev + 1);
         setTool('select');
       } else if (currentTool === 'text') {
         const pointer = canvas.getScenePoint(e.e);
