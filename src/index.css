@@ -176,7 +176,7 @@ All colors MUST be HSL.
     gap: 1% !important;
     page-break-inside: avoid !important;
     margin: 0 4mm !important;
-    height: 145mm !important;
+    height: 140mm !important;
     align-items: start !important;
   }
 
@@ -185,7 +185,7 @@ All colors MUST be HSL.
     border: 2px solid #95A197 !important;
     border-radius: 5px !important;
     overflow: hidden !important;
-    height: 145mm !important;
+    height: 140mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
     box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
@@ -194,7 +194,7 @@ All colors MUST be HSL.
   /* Content sections - super compact */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 2.5mm !important;
+    margin-bottom: 2mm !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -222,13 +222,13 @@ All colors MUST be HSL.
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 11px !important;
-    line-height: 1.2 !important;
+    padding-left: 10px !important;
+    line-height: 1.15 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 1.5px !important;
-    font-size: 7.4px !important;
+    margin-bottom: 1.2px !important;
+    font-size: 7.2px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -288,7 +288,8 @@ All colors MUST be HSL.
   .print-layout .px-6,
   .print-layout .py-4,
   .print-layout .p-6,
-  .print-layout .md\:p-6 {
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
     padding: 0 !important;
   }
 
@@ -296,7 +297,7 @@ All colors MUST be HSL.
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 2.5mm !important;
+    gap: 2mm !important;
   }
 
   .print-layout .space-y-3 > *,
@@ -308,7 +309,7 @@ All colors MUST be HSL.
   .print-layout > div:last-child {
     overflow: visible !important;
     height: auto !important;
-    max-height: 165mm !important;
+    max-height: 140mm !important;
     width: 100% !important;
     padding-bottom: 0 !important;
   }
