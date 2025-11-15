@@ -173,6 +173,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         text.enterEditing();
         text.selectAll();
         canvas.renderAll();
+        
+        setTool('select');
       }
     });
 
