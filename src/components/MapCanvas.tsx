@@ -371,10 +371,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     canvas.on('object:added', handleChange);
     canvas.on('object:modified', handleChange);
     canvas.on('object:removed', handleChange);
-    // Extra reliability on mobile: save on pointer up and when text editing changes/exits
+    // Extra reliability on mobile: save on pointer up and when text editing changes
     canvas.on('mouse:up', handleChange);
     canvas.on('text:changed', handleChange as any);
-    canvas.on('editing:exited', handleChange as any);
     
     return () => {
       clearTimeout(saveTimeout);
@@ -383,7 +382,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       canvas.off('object:removed', handleChange);
       canvas.off('mouse:up', handleChange);
       canvas.off('text:changed', handleChange as any);
-      canvas.off('editing:exited', handleChange as any);
     };
   }, [onSave, legendItems]);
 
