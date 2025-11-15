@@ -126,7 +126,6 @@ All colors MUST be HSL.
   .no-print,
   button,
   .absolute.top-6,
-  [class*="legend"],
   [class*="toolbar"],
   [role="status"],
   .sonner,
