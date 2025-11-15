@@ -112,8 +112,11 @@ serve(async (req) => {
       { status: 502, headers: corsHeaders },
     );
   } catch (e) {
+    const details = (e && typeof e === 'object' && 'toString' in e)
+      ? String(e as any)
+      : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: 'Unexpected error fetching static map', details: e?.message || String(e) }),
+      JSON.stringify({ error: 'Unexpected error fetching static map', details }),
       { status: 500, headers: corsHeaders },
     );
   }

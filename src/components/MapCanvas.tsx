@@ -557,7 +557,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       />
 
       {/* Drawing tools */}
-      <div className="absolute top-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
+      <div className="no-print absolute top-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
