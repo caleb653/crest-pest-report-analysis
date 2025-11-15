@@ -182,7 +182,7 @@ const Report = () => {
             <div className="flex-1 px-8 flex items-start gap-8">
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-foreground mb-1">
-                  {getStreetAddress(displayAddress)} Service Report
+                  {getStreetAddress(displayAddress)} Pest Control Analysis
                 </h1>
               </div>
               
@@ -242,8 +242,8 @@ const Report = () => {
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-120px)] gap-8 p-8 max-w-[1800px] mx-auto">
-        {/* Map Section - 2/3 Width */}
-        <div className="w-2/3">
+        {/* Map Section - 65% Width */}
+        <div className="w-[65%]">
           <div className="h-full bg-primary rounded-2xl shadow-2xl border-4 border-primary p-6">
             <h3 className="text-lg font-bold text-foreground mb-3">Property Analysis</h3>
             <div className="h-[calc(100%-3rem)] rounded-xl overflow-hidden shadow-lg">
@@ -267,8 +267,8 @@ const Report = () => {
           </div>
         </div>
 
-        {/* Report Sections - 1/3 Width */}
-        <div className="w-1/3 overflow-y-auto bg-muted/20 rounded-2xl p-3 space-y-2">
+        {/* Report Sections - 35% Width */}
+        <div className="w-[35%] overflow-y-auto bg-muted/20 rounded-2xl p-3 space-y-2">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -284,16 +284,16 @@ const Report = () => {
                   <div className="w-1 h-5 bg-destructive rounded-full"></div>
                   <h2 className="text-base font-bold text-destructive tracking-tight">FINDINGS</h2>
                 </div>
-                <div className="space-y-2">
-                  {editableFindings.map((finding, i) => (
+                <div className="space-y-3">
+                  {editableFindings.slice(0, 2).map((finding, i) => (
                     <div key={i} className="flex gap-2 items-start">
-                      <span className="text-destructive font-bold mt-0.5">•</span>
+                      <span className="text-destructive font-bold mt-1">•</span>
                       <Textarea
                         value={finding}
                         onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
                         placeholder="Brief finding"
-                        rows={1}
+                        rows={2}
                         onInput={(e) => {
                           e.currentTarget.style.height = 'auto';
                           e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
@@ -301,14 +301,16 @@ const Report = () => {
                       />
                     </div>
                   ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addItem(setEditableFindings)}
-                    className="text-xs mt-1 hover:bg-destructive/10 text-destructive font-medium h-6"
-                  >
-                    + Add finding
-                  </Button>
+                  {editableFindings.length < 2 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addItem(setEditableFindings)}
+                      className="text-xs mt-1 hover:bg-destructive/10 text-destructive font-medium h-6"
+                    >
+                      + Add finding
+                    </Button>
+                  )}
                 </div>
               </Card>
 
@@ -318,16 +320,16 @@ const Report = () => {
                   <div className="w-1 h-5 bg-secondary rounded-full"></div>
                   <h2 className="text-base font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
                 </div>
-                <div className="space-y-2">
-                  {editableRecommendations.map((rec, i) => (
+                <div className="space-y-3">
+                  {editableRecommendations.slice(0, 2).map((rec, i) => (
                     <div key={i} className="flex gap-2 items-start">
-                      <span className="text-secondary font-bold mt-0.5">•</span>
+                      <span className="text-secondary font-bold mt-1">•</span>
                       <Textarea
                         value={rec}
                         onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
                         placeholder="Brief recommendation"
-                        rows={1}
+                        rows={2}
                         onInput={(e) => {
                           e.currentTarget.style.height = 'auto';
                           e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
@@ -335,14 +337,16 @@ const Report = () => {
                       />
                     </div>
                   ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addItem(setEditableRecommendations)}
-                    className="text-xs mt-1 hover:bg-secondary/10 text-secondary font-medium h-6"
-                  >
-                    + Add recommendation
-                  </Button>
+                  {editableRecommendations.length < 2 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addItem(setEditableRecommendations)}
+                      className="text-xs mt-1 hover:bg-secondary/10 text-secondary font-medium h-6"
+                    >
+                      + Add recommendation
+                    </Button>
+                  )}
                 </div>
               </Card>
 
@@ -352,16 +356,16 @@ const Report = () => {
                   <div className="w-1 h-5 bg-primary rounded-full"></div>
                   <h2 className="text-base font-bold text-primary tracking-tight">NEXT STEPS</h2>
                 </div>
-                <div className="space-y-2">
-                  {editableNextSteps.map((step, i) => (
+                <div className="space-y-3">
+                  {editableNextSteps.slice(0, 2).map((step, i) => (
                     <div key={i} className="flex gap-2 items-start">
-                      <span className="text-primary font-bold mt-0.5">•</span>
+                      <span className="text-primary font-bold mt-1">•</span>
                       <Textarea
                         value={step}
                         onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[2rem] h-auto text-sm leading-snug focus-visible:ring-0 resize-none"
+                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
                         placeholder="Brief next step"
-                        rows={1}
+                        rows={2}
                         onInput={(e) => {
                           e.currentTarget.style.height = 'auto';
                           e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
@@ -369,14 +373,16 @@ const Report = () => {
                       />
                     </div>
                   ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addItem(setEditableNextSteps)}
-                    className="text-xs mt-1 hover:bg-primary/10 text-primary font-medium h-6"
-                  >
-                    + Add next step
-                  </Button>
+                  {editableNextSteps.length < 2 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addItem(setEditableNextSteps)}
+                      className="text-xs mt-1 hover:bg-primary/10 text-primary font-medium h-6"
+                    >
+                      + Add next step
+                    </Button>
+                  )}
                 </div>
               </Card>
             </>
