@@ -331,13 +331,20 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     };
 
     const canvas = fabricCanvasRef.current;
-    const handleChange = () => saveCanvasData();
+    
+    // Debounce the save to avoid too many saves during drag
+    let saveTimeout: NodeJS.Timeout;
+    const handleChange = () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveCanvasData, 300);
+    };
     
     canvas.on('object:added', handleChange);
     canvas.on('object:modified', handleChange);
     canvas.on('object:removed', handleChange);
     
     return () => {
+      clearTimeout(saveTimeout);
       canvas.off('object:added', handleChange);
       canvas.off('object:modified', handleChange);
       canvas.off('object:removed', handleChange);
