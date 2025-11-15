@@ -1,48 +1,34 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Square, Circle, Trash2, Type, X } from 'lucide-react';
-import { Canvas as FabricCanvas, Rect as FabricRect, Circle as FabricCircle, IText, FabricObject } from 'fabric';
+import { Trash2, Type, X, Smile } from 'lucide-react';
+import { Canvas as FabricCanvas, IText, FabricObject } from 'fabric';
 
 interface MapCanvasProps {
   mapUrl: string;
 }
 
-type Tool = 'select' | 'pen' | 'square' | 'circle' | 'text';
+type Tool = 'select' | 'text' | 'emoji';
 
-const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51'];
+interface LegendItem {
+  emoji: string;
+  label: string;
+}
 
-const DEFAULT_LEGEND_ITEMS = [
-  { emoji: '🐭', label: 'Rodent activity (mice/rats)' },
-  { emoji: '🐜', label: 'Ants' },
-  { emoji: '🪳', label: 'Cockroaches' },
-  { emoji: '🦗', label: 'Crickets' },
-  { emoji: '🕷️', label: 'Spiders / general arachnids' },
-  { emoji: '🐝', label: 'Bees' },
-  { emoji: '🐝⚡', label: 'Aggressive bees / wasps / hornets' },
-  { emoji: '🦟', label: 'Mosquitoes / flying insects' },
-  { emoji: '🐛', label: 'Other crawling insects / larvae' },
-  { emoji: '🕳️', label: 'Entry point (hole/opening)' },
-  { emoji: '🚪', label: 'Door gap / threshold issue' },
-  { emoji: '🪟', label: 'Window gap issue' },
-  { emoji: '🧱', label: 'Foundation crack / wall issue' },
-  { emoji: '✅', label: 'Treated area' },
-  { emoji: '💊', label: 'Bait station / bait placed' },
-  { emoji: '🧪', label: 'Chemical treatment / spray' },
-  { emoji: '🪤', label: 'Trap placed' },
-  { emoji: '🔁', label: 'Follow-up needed' },
-  { emoji: '⚠️', label: 'Monitor this area' },
-  { emoji: '🚫', label: 'Access restricted / do not enter' },
+const AVAILABLE_EMOJIS = [
+  '🐭', '🐜', '🪳', '🦗', '🕷️', '🐝', '🦟', '🐛',
+  '🕳️', '🚪', '🪟', '🧱', '✅', '💊', '🧪', '🪤',
+  '🔁', '⚠️', '🚫', '📍', '🎯', '❌', '✔️', '⭐'
 ];
 
 export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const [tool, setTool] = useState<Tool>('select');
-  const [colorIndex, setColorIndex] = useState(0);
-  const [usedColors, setUsedColors] = useState<Set<string>>(new Set());
-  const [legendItems, setLegendItems] = useState(DEFAULT_LEGEND_ITEMS);
-  const [showLegend, setShowLegend] = useState(true);
+  const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
+  const [showLegend, setShowLegend] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -66,38 +52,27 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     window.addEventListener('resize', resizeCanvas);
 
     canvas.on('mouse:down', (e) => {
-      if (tool === 'square' || tool === 'circle') {
+      if (tool === 'emoji') {
         const pointer = canvas.getScenePoint(e.e);
-        const currentColor = SHAPE_COLORS[colorIndex % SHAPE_COLORS.length];
-        
-        let shape: FabricObject;
-        if (tool === 'square') {
-          shape = new FabricRect({
-            left: pointer.x - 50,
-            top: pointer.y - 50,
-            width: 100,
-            height: 100,
-            fill: 'transparent',
-            stroke: currentColor,
-            strokeWidth: 3,
-          });
-        } else {
-          shape = new FabricCircle({
-            left: pointer.x - 50,
-            top: pointer.y - 50,
-            radius: 50,
-            fill: 'transparent',
-            stroke: currentColor,
-            strokeWidth: 3,
-          });
-        }
-        
-        canvas.add(shape);
-        canvas.setActiveObject(shape);
+        const emoji = new IText(selectedEmoji, {
+          left: pointer.x,
+          top: pointer.y,
+          fontSize: 32,
+          fontFamily: 'sans-serif',
+        });
+        canvas.add(emoji);
+        canvas.setActiveObject(emoji);
         canvas.renderAll();
         
-        setUsedColors(prev => new Set([...prev, currentColor]));
-        setColorIndex(prev => prev + 1);
+        // Add to legend if not already there
+        if (!legendItems.find(item => item.emoji === selectedEmoji)) {
+          const defaultLabel = getDefaultLabel(selectedEmoji);
+          setLegendItems(prev => [...prev, { emoji: selectedEmoji, label: defaultLabel }]);
+          setShowLegend(true);
+        }
+        
+        setTool('select');
+        setShowEmojiPicker(false);
       } else if (tool === 'text') {
         const pointer = canvas.getScenePoint(e.e);
         const text = new IText('Type here', {
@@ -119,13 +94,39 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
       window.removeEventListener('resize', resizeCanvas);
       canvas.dispose();
     };
-  }, [tool, colorIndex]);
+  }, [tool, selectedEmoji, legendItems]);
+
+  const getDefaultLabel = (emoji: string): string => {
+    const labels: Record<string, string> = {
+      '🐭': 'Rodent activity',
+      '🐜': 'Ants',
+      '🪳': 'Cockroaches',
+      '🦗': 'Crickets',
+      '🕷️': 'Spiders',
+      '🐝': 'Bees',
+      '🦟': 'Mosquitoes',
+      '🐛': 'Insects',
+      '🕳️': 'Entry point',
+      '🚪': 'Door gap',
+      '🪟': 'Window gap',
+      '🧱': 'Foundation crack',
+      '✅': 'Treated area',
+      '💊': 'Bait station',
+      '🧪': 'Chemical treatment',
+      '🪤': 'Trap placed',
+      '🔁': 'Follow-up needed',
+      '⚠️': 'Monitor area',
+      '🚫': 'Access restricted',
+      '📍': 'Point of interest',
+    };
+    return labels[emoji] || 'Custom marker';
+  };
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;
     fabricCanvasRef.current.clear();
-    setUsedColors(new Set());
-    setColorIndex(0);
+    setLegendItems([]);
+    setShowLegend(false);
   };
 
   const deleteSelected = () => {
@@ -144,12 +145,17 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     });
   };
 
-  const addLegendItem = () => {
-    setLegendItems(prev => [...prev, { emoji: '❓', label: 'New item' }]);
-  };
-
   const removeLegendItem = (index: number) => {
     setLegendItems(prev => prev.filter((_, i) => i !== index));
+    if (legendItems.length === 1) {
+      setShowLegend(false);
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setSelectedEmoji(emoji);
+    setTool('emoji');
+    setShowEmojiPicker(false);
   };
 
   return (
@@ -184,27 +190,18 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         </Button>
         <Button
           size="icon"
-          variant={tool === 'square' ? 'default' : 'outline'}
-          onClick={() => setTool('square')}
-          title="Rectangle"
+          variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          title="Add Emoji/Icon"
           className="h-10 w-10"
         >
-          <Square className="w-5 h-5" />
-        </Button>
-        <Button
-          size="icon"
-          variant={tool === 'circle' ? 'default' : 'outline'}
-          onClick={() => setTool('circle')}
-          title="Circle"
-          className="h-10 w-10"
-        >
-          <Circle className="w-5 h-5" />
+          <Smile className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
           variant={tool === 'text' ? 'default' : 'outline'}
           onClick={() => setTool('text')}
-          title="Add Text/Emoji"
+          title="Add Text"
           className="h-10 w-10"
         >
           <Type className="w-5 h-5" />
@@ -230,8 +227,39 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         </Button>
       </div>
 
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div className="absolute top-6 left-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-sm">Select Icon</h3>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowEmojiPicker(false)}
+              className="h-6 w-6"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-6 gap-2 max-w-xs">
+            {AVAILABLE_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handleEmojiSelect(emoji)}
+                className={`text-2xl p-2 rounded hover:bg-muted transition-colors ${
+                  selectedEmoji === emoji ? 'bg-primary/20 ring-2 ring-primary' : ''
+                }`}
+                title={emoji}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
-      {showLegend && (
+      {showLegend && legendItems.length > 0 && (
         <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 max-w-sm max-h-96 overflow-y-auto border border-border">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Legend</h3>
@@ -247,11 +275,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           <div className="space-y-2">
             {legendItems.map((item, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Input
-                  value={item.emoji}
-                  onChange={(e) => updateLegendItem(index, 'emoji', e.target.value)}
-                  className="w-12 h-7 text-center text-sm p-0"
-                />
+                <span className="text-xl w-8 text-center">{item.emoji}</span>
                 <Input
                   value={item.label}
                   onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
@@ -268,42 +292,18 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
               </div>
             ))}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={addLegendItem}
-            className="w-full mt-3 text-xs"
-          >
-            + Add Item
-          </Button>
         </div>
       )}
 
-      {!showLegend && (
+      {!showLegend && legendItems.length > 0 && (
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
           className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border"
         >
-          Show Legend
+          Show Legend ({legendItems.length})
         </Button>
-      )}
-
-      {/* Color indicator */}
-      {usedColors.size > 0 && (
-        <div className="absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border">
-          <div className="text-xs font-medium mb-2">Colors in use:</div>
-          <div className="flex gap-2">
-            {Array.from(usedColors).map((color, i) => (
-              <div
-                key={i}
-                className="w-6 h-6 rounded-full border-2 border-border"
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
