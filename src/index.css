@@ -191,10 +191,10 @@ All colors MUST be HSL.
     box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
   }
 
-  /* Content sections with vibrant colors - wider and more compact */
+  /* Content sections - super compact */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 3mm !important;
+    margin-bottom: 2.5mm !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -202,62 +202,62 @@ All colors MUST be HSL.
   .print-section-header {
     background: linear-gradient(135deg, #2A2A2A 0%, #3D3D3D 100%) !important;
     color: #F2F2F2 !important;
-    padding: 4px 9px !important;
-    border-radius: 4px 4px 0 0 !important;
-    font-size: 9px !important;
+    padding: 3px 8px !important;
+    border-radius: 3px 3px 0 0 !important;
+    font-size: 8.5px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.4px !important;
     text-transform: uppercase !important;
   }
 
   .print-section-content {
     background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
-    padding: 6px 9px !important;
+    padding: 5px 8px !important;
     border: 2px solid #95A197 !important;
     border-top: none !important;
-    border-radius: 0 0 4px 4px !important;
+    border-radius: 0 0 3px 3px !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 12px !important;
-    line-height: 1.25 !important;
+    padding-left: 11px !important;
+    line-height: 1.2 !important;
   }
 
   .print-section-content li {
     margin-bottom: 2px !important;
-    font-size: 8.5px !important;
+    font-size: 8px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
 
-  /* Footer with brand colors - minimal space */
+  /* Footer - ultra compact */
   .print-footer {
     position: fixed !important;
-    bottom: 3mm !important;
-    left: 5mm !important;
-    right: 5mm !important;
-    padding: 4px 0 !important;
+    bottom: 2mm !important;
+    left: 4mm !important;
+    right: 4mm !important;
+    padding: 3px 0 !important;
     background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
     text-align: center !important;
-    font-size: 8px !important;
+    font-size: 7.5px !important;
     font-weight: 700 !important;
     color: #F2F2F2 !important;
     border-radius: 3px !important;
     display: block !important;
-    box-shadow: 0 2px 6px rgba(42, 42, 42, 0.12) !important;
+    box-shadow: 0 1px 4px rgba(42, 42, 42, 0.1) !important;
   }
 
   /* Typography improvements */
   h1 {
-    font-size: 16px !important;
-    line-height: 1.1 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
   }
 
   h2 {
-    font-size: 9px !important;
+    font-size: 8.5px !important;
   }
 
   /* Clean up form fields for print */
@@ -269,8 +269,8 @@ All colors MUST be HSL.
     padding: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 8.5px !important;
-    line-height: 1.25 !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
     color: #2A2A2A !important;
   }
 
@@ -296,7 +296,7 @@ All colors MUST be HSL.
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 3mm !important;
+    gap: 2.5mm !important;
   }
 
   .print-layout .space-y-3 > *,
@@ -304,13 +304,13 @@ All colors MUST be HSL.
     margin: 0 !important;
   }
 
-  /* Content column no scroll, full width */
+  /* Content column - ensure fits on page */
   .print-layout > div:last-child {
     overflow: visible !important;
     height: auto !important;
-    max-height: 180mm !important;
+    max-height: 165mm !important;
     width: 100% !important;
-    padding-bottom: 8mm !important;
+    padding-bottom: 0 !important;
   }
 
   /* Ensure proper box-sizing */
