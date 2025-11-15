@@ -169,23 +169,23 @@ All colors MUST be HSL.
     padding: 3px 6px !important;
   }
 
-  /* Two-column layout - maximize space usage */
+  /* Two-column layout - reduce height to ensure page 1 fit */
   .print-layout {
     display: grid !important;
     grid-template-columns: 55% 44% !important;
     gap: 1% !important;
     page-break-inside: avoid !important;
-    margin: 0 5mm !important;
-    height: 180mm !important;
+    margin: 0 4mm !important;
+    height: 148mm !important;
     align-items: start !important;
   }
 
   /* Map container with brand styling */
   .print-map-container {
     border: 2px solid #95A197 !important;
-    border-radius: 6px !important;
+    border-radius: 5px !important;
     overflow: hidden !important;
-    height: 180mm !important;
+    height: 148mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
     box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
