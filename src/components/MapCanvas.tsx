@@ -29,6 +29,17 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const [showLegend, setShowLegend] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
+  const toolRef = useRef<Tool>('select');
+  const selectedEmojiRef = useRef<string>('📍');
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    toolRef.current = tool;
+  }, [tool]);
+
+  useEffect(() => {
+    selectedEmojiRef.current = selectedEmoji;
+  }, [selectedEmoji]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -52,28 +63,40 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     window.addEventListener('resize', resizeCanvas);
 
     canvas.on('mouse:down', (e) => {
-      if (tool === 'emoji') {
+      const currentTool = toolRef.current;
+      const currentEmoji = selectedEmojiRef.current;
+      
+      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji);
+      
+      if (currentTool === 'emoji') {
         const pointer = canvas.getScenePoint(e.e);
-        const emoji = new IText(selectedEmoji, {
+        const emoji = new IText(currentEmoji, {
           left: pointer.x,
           top: pointer.y,
           fontSize: 32,
           fontFamily: 'sans-serif',
+          selectable: true,
+          editable: true,
         });
         canvas.add(emoji);
         canvas.setActiveObject(emoji);
         canvas.renderAll();
         
+        console.log('Emoji added to canvas:', currentEmoji);
+        
         // Add to legend if not already there
-        if (!legendItems.find(item => item.emoji === selectedEmoji)) {
-          const defaultLabel = getDefaultLabel(selectedEmoji);
-          setLegendItems(prev => [...prev, { emoji: selectedEmoji, label: defaultLabel }]);
-          setShowLegend(true);
-        }
+        setLegendItems(prev => {
+          if (!prev.find(item => item.emoji === currentEmoji)) {
+            const defaultLabel = getDefaultLabel(currentEmoji);
+            setShowLegend(true);
+            return [...prev, { emoji: currentEmoji, label: defaultLabel }];
+          }
+          return prev;
+        });
         
         setTool('select');
         setShowEmojiPicker(false);
-      } else if (tool === 'text') {
+      } else if (currentTool === 'text') {
         const pointer = canvas.getScenePoint(e.e);
         const text = new IText('Type here', {
           left: pointer.x,
@@ -82,6 +105,8 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           fill: '#000000',
           fontWeight: 'bold',
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          selectable: true,
+          editable: true,
         });
         canvas.add(text);
         canvas.setActiveObject(text);
@@ -94,7 +119,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
       window.removeEventListener('resize', resizeCanvas);
       canvas.dispose();
     };
-  }, [tool, selectedEmoji, legendItems]);
+  }, []); // Only run once on mount
 
   const getDefaultLabel = (emoji: string): string => {
     const labels: Record<string, string> = {
