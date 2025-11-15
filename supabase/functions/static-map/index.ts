@@ -1,5 +1,5 @@
 // Deno function to fetch a static map image server-side and return as base64 data URL
-// Avoids browser CORS/tainted canvas issues during PDF export
+// Tries multiple public OSM static map providers to avoid outages and CORS/taint issues.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
@@ -11,9 +11,13 @@ const corsHeaders = {
 };
 
 function clampZoom(z: number) {
-  // OSM static map typically supports up to ~18; higher zooms can fail
   if (!Number.isFinite(z)) return 17;
   return Math.max(0, Math.min(18, Math.round(z)));
+}
+
+function clampSize(v: number, min: number, max: number) {
+  if (!Number.isFinite(v)) return min;
+  return Math.max(min, Math.min(max, Math.round(v)));
 }
 
 serve(async (req) => {
@@ -27,9 +31,13 @@ serve(async (req) => {
     const lng = url.searchParams.get('lng');
     const zoomParam = Number(url.searchParams.get('zoom') ?? 17);
     const z = clampZoom(zoomParam);
-    const width = url.searchParams.get('width') ?? '1100';
-    const height = url.searchParams.get('height') ?? '700';
-    const marker = url.searchParams.get('marker') ?? '1'; // show a marker by default
+
+    const widthParam = Number(url.searchParams.get('width') ?? 1100);
+    const heightParam = Number(url.searchParams.get('height') ?? 700);
+    const width = clampSize(widthParam, 256, 1280); // keep reasonable to avoid provider limits
+    const height = clampSize(heightParam, 256, 1280);
+
+    const marker = url.searchParams.get('marker') ?? '1';
 
     if (!lat || !lng) {
       return new Response(
@@ -38,47 +46,74 @@ serve(async (req) => {
       );
     }
 
-    // Build OSM static map URL (no API key required)
-    // center expects lat,lon; markers expects lon,lat,color
-    const markerParam = marker === '1' ? `&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1` : '';
-    const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&zoom=${encodeURIComponent(String(z))}&size=${encodeURIComponent(`${width}x${height}`)}&maptype=mapnik${markerParam}`;
+    // Build candidate URLs (some providers expect markers as lat,lon, others lon,lat).
+    const candidates: string[] = [];
+    const baseParams = `center=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&zoom=${encodeURIComponent(String(z))}&size=${encodeURIComponent(`${width}x${height}`)}&maptype=mapnik`;
 
-    console.log('static-map fetching:', { staticUrl, lat, lng, z, width, height });
-
-    const imgResp = await fetch(staticUrl, {
-      headers: {
-        'User-Agent': 'CrestReports/1.0 (+https://lovable.dev)',
-        'Accept': 'image/png,image/*;q=0.8,*/*;q=0.5',
-      },
-    });
-
-    if (!imgResp.ok) {
-      const text = await imgResp.text().catch(() => '');
-      console.error('static-map upstream error', imgResp.status, text);
-      return new Response(
-        JSON.stringify({ error: `Upstream static map error: ${imgResp.status}`, details: text.slice(0, 500) }),
-        { status: 502, headers: corsHeaders },
-      );
+    // openstreetmap.de
+    if (marker === '1') {
+      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
+      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
+    } else {
+      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}`);
     }
 
-    const buffer = await imgResp.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    // Convert to base64 safely in chunks
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    // openstreetmap.fr (fallback)
+    if (marker === '1') {
+      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
+      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
+    } else {
+      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}`);
     }
-    const base64 = btoa(binary);
 
-    const dataUrl = `data:image/png;base64,${base64}`;
+    let lastError = '';
+    for (const staticUrl of candidates) {
+      try {
+        const imgResp = await fetch(staticUrl, {
+          headers: {
+            'User-Agent': 'CrestReports/1.0 (+https://lovable.dev)',
+            'Accept': 'image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
+          },
+        });
 
-    return new Response(JSON.stringify({ dataUrl, zoom: z }), { headers: corsHeaders });
-  } catch (e) {
-    console.error('static-map error', e);
+        if (!imgResp.ok) {
+          const text = await imgResp.text().catch(() => '');
+          lastError = `HTTP ${imgResp.status}: ${text.slice(0, 200)}`;
+          continue; // try next candidate
+        }
+
+        const contentType = imgResp.headers.get('content-type') || '';
+        if (!contentType.includes('image')) {
+          const text = await imgResp.text().catch(() => '');
+          lastError = `Non-image response: ${contentType} ${text.slice(0, 200)}`;
+          continue;
+        }
+
+        const buffer = await imgResp.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, i + chunkSize);
+          binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        const base64 = btoa(binary);
+        const dataUrl = `data:${contentType.split(';')[0] || 'image/png'};base64,${base64}`;
+        return new Response(JSON.stringify({ dataUrl, zoom: z }), { headers: corsHeaders });
+      } catch (e) {
+        const msg = (e && typeof e === 'object' && 'message' in e) ? (e as any).message as string : String(e);
+        lastError = `${staticUrl} fetch error: ${msg}`;
+        continue;
+      }
+    }
+
     return new Response(
-      JSON.stringify({ error: 'Unexpected error fetching static map' }),
+      JSON.stringify({ error: 'All static map providers failed', details: lastError }),
+      { status: 502, headers: corsHeaders },
+    );
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: 'Unexpected error fetching static map', details: e?.message || String(e) }),
       { status: 500, headers: corsHeaders },
     );
   }
