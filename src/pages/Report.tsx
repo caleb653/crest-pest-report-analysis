@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ const Report = () => {
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(21);
+  const latestMapDataRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (reportId) {
@@ -59,6 +60,10 @@ const Report = () => {
       setEditableNextSteps(analysis.nextSteps || []);
     }
   }, [analysis]);
+
+  useEffect(() => {
+    latestMapDataRef.current = mapData;
+  }, [mapData]);
 
   const loadReport = async () => {
     if (!reportId) return;
@@ -194,9 +199,10 @@ const Report = () => {
     setIsSaving(true);
     try {
       // Ensure map_data is stored as JSON (object) not a raw string
+      const rawMap = latestMapDataRef.current ?? mapData;
       let mapPayload: any = null;
-      if (mapData) {
-        try { mapPayload = JSON.parse(mapData); } catch { mapPayload = mapData; }
+      if (rawMap) {
+        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
       }
 
       const reportData = {
@@ -313,7 +319,7 @@ const Report = () => {
       document.body.appendChild(pdfContent);
       
       // Capture the map with annotations
-      const mapCanvas = document.querySelector('canvas') as HTMLCanvasElement;
+      const mapCanvas = document.querySelector('#map-overlay-canvas') as HTMLCanvasElement;
       if (mapCanvas) {
         try {
           const mapImage = await html2canvas(mapCanvas.parentElement as HTMLElement, {
