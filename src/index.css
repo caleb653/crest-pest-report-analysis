@@ -8,79 +8,80 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 30% 98%;
-    --foreground: 215 25% 15%;
+    /* Crest Brand Colors */
+    --background: 0 0% 95%; /* #F2F2F2 White */
+    --foreground: 0 0% 16%; /* #2A2A2A Black */
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 0 0% 16%;
 
-    --primary: 195 85% 42%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 135 13% 80%; /* #C3D1C5 Sage */
+    --primary-foreground: 0 0% 16%;
 
-    --secondary: 155 60% 45%;
+    --secondary: 135 11% 60%; /* #95A197 Dark Sage */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 135 10% 90%;
+    --muted-foreground: 135 8% 40%;
 
-    --accent: 195 75% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 135 13% 70%;
+    --accent-foreground: 0 0% 16%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 195 85% 42%;
+    --border: 135 10% 85%;
+    --input: 135 10% 85%;
+    --ring: 135 13% 80%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Professional gradient colors */
-    --gradient-primary: linear-gradient(135deg, hsl(195 85% 42%) 0%, hsl(195 75% 50%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(155 60% 45%) 0%, hsl(175 55% 50%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(195 85% 42%) 0%, hsl(175 65% 48%) 100%);
+    /* Crest Brand Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(135 13% 80%) 0%, hsl(135 11% 60%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(135 11% 60%) 0%, hsl(135 13% 70%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(135 13% 80%) 0%, hsl(135 11% 65%) 100%);
     
-    /* Shadows */
-    --shadow-sm: 0 1px 3px 0 hsl(215 25% 15% / 0.1);
-    --shadow-md: 0 4px 12px -2px hsl(215 25% 15% / 0.12);
-    --shadow-lg: 0 10px 30px -5px hsl(215 25% 15% / 0.15);
-    --shadow-xl: 0 20px 50px -10px hsl(215 25% 15% / 0.2);
+    /* Crest Shadows */
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 16% / 0.08);
+    --shadow-md: 0 4px 12px -2px hsl(0 0% 16% / 0.1);
+    --shadow-lg: 0 10px 30px -5px hsl(0 0% 16% / 0.12);
+    --shadow-xl: 0 20px 50px -10px hsl(0 0% 16% / 0.15);
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 210 20% 95%;
+    --background: 0 0% 12%;
+    --foreground: 0 0% 95%;
 
-    --card: 215 28% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 16%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 215 28% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 0 0% 16%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 195 75% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 135 13% 80%;
+    --primary-foreground: 0 0% 16%;
 
-    --secondary: 155 55% 48%;
+    --secondary: 135 11% 60%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 215 25% 18%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 135 8% 25%;
+    --muted-foreground: 135 10% 70%;
 
-    --accent: 195 70% 55%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 135 13% 70%;
+    --accent-foreground: 0 0% 16%;
 
-    --destructive: 0 75% 55%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 20%;
-    --input: 215 25% 20%;
-    --ring: 195 75% 50%;
+    --border: 135 8% 30%;
+    --input: 135 8% 30%;
+    --ring: 135 13% 80%;
   }
 }
 

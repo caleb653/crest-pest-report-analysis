@@ -223,7 +223,7 @@ const Report = () => {
             </div>
           ) : coordinates ? (
             <MapCanvas
-              mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
+              mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=22&maptype=satellite`}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
@@ -232,7 +232,7 @@ const Report = () => {
           )}
         </div>
 
-        <div className="w-1/2 overflow-y-auto bg-muted/30 p-6 space-y-4">
+        <div className="w-1/2 overflow-y-auto bg-muted/30 p-8 space-y-6">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
@@ -242,8 +242,8 @@ const Report = () => {
             </div>
           ) : (
             <>
-              <Card className="p-4">
-                <h2 className="text-lg font-bold mb-3 text-destructive">FINDINGS</h2>
+              <Card className="p-6 shadow-md">
+                <h2 className="text-lg font-bold mb-4 text-destructive">FINDINGS</h2>
                 <div className="space-y-2">
                   {editableFindings.map((finding, i) => (
                     <div key={i} className="flex gap-2">
@@ -267,8 +267,8 @@ const Report = () => {
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <h2 className="text-lg font-bold mb-3 text-secondary">RECOMMENDATIONS</h2>
+              <Card className="p-6 shadow-md">
+                <h2 className="text-lg font-bold mb-4 text-secondary">RECOMMENDATIONS</h2>
                 <div className="space-y-2">
                   {editableRecommendations.map((rec, i) => (
                     <div key={i} className="flex gap-2">
@@ -292,8 +292,8 @@ const Report = () => {
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <h2 className="text-lg font-bold mb-3 text-primary">AREAS TREATED</h2>
+              <Card className="p-6 shadow-md">
+                <h2 className="text-lg font-bold mb-4 text-primary">AREAS TREATED</h2>
                 <div className="space-y-2">
                   {editableAreas.map((area, i) => (
                     <div key={i} className="flex gap-2">
@@ -317,8 +317,8 @@ const Report = () => {
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <h2 className="text-lg font-bold mb-3 text-accent">SAFETY NOTES</h2>
+              <Card className="p-6 shadow-md">
+                <h2 className="text-lg font-bold mb-4 text-accent">SAFETY NOTES</h2>
                 <div className="space-y-2">
                   {editableSafety.map((note, i) => (
                     <div key={i} className="flex gap-2">

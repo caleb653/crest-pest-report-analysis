@@ -1,125 +1,155 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Pencil, Eraser, Square, Circle, Undo, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Pencil, Square, Circle, Trash2, Type, X } from 'lucide-react';
+import { Canvas as FabricCanvas, Rect as FabricRect, Circle as FabricCircle, IText, FabricObject } from 'fabric';
 
 interface MapCanvasProps {
   mapUrl: string;
 }
 
-type Tool = 'pen' | 'eraser' | 'square' | 'circle';
+type Tool = 'select' | 'pen' | 'square' | 'circle' | 'text';
+
+const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51'];
+
+const DEFAULT_LEGEND_ITEMS = [
+  { emoji: '🐭', label: 'Rodent activity (mice/rats)' },
+  { emoji: '🐜', label: 'Ants' },
+  { emoji: '🪳', label: 'Cockroaches' },
+  { emoji: '🦗', label: 'Crickets' },
+  { emoji: '🕷️', label: 'Spiders / general arachnids' },
+  { emoji: '🐝', label: 'Bees' },
+  { emoji: '🐝⚡', label: 'Aggressive bees / wasps / hornets' },
+  { emoji: '🦟', label: 'Mosquitoes / flying insects' },
+  { emoji: '🐛', label: 'Other crawling insects / larvae' },
+  { emoji: '🕳️', label: 'Entry point (hole/opening)' },
+  { emoji: '🚪', label: 'Door gap / threshold issue' },
+  { emoji: '🪟', label: 'Window gap issue' },
+  { emoji: '🧱', label: 'Foundation crack / wall issue' },
+  { emoji: '✅', label: 'Treated area' },
+  { emoji: '💊', label: 'Bait station / bait placed' },
+  { emoji: '🧪', label: 'Chemical treatment / spray' },
+  { emoji: '🪤', label: 'Trap placed' },
+  { emoji: '🔁', label: 'Follow-up needed' },
+  { emoji: '⚠️', label: 'Monitor this area' },
+  { emoji: '🚫', label: 'Access restricted / do not enter' },
+];
 
 export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [tool, setTool] = useState<Tool>('pen');
-  const [color] = useState('#FF0000');
-  const [lineWidth] = useState(3);
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
+  const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const [tool, setTool] = useState<Tool>('select');
+  const [colorIndex, setColorIndex] = useState(0);
+  const [usedColors, setUsedColors] = useState<Set<string>>(new Set());
+  const [legendItems, setLegendItems] = useState(DEFAULT_LEGEND_ITEMS);
+  const [showLegend, setShowLegend] = useState(true);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvasRef.current) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const canvas = new FabricCanvas(canvasRef.current, {
+      width: window.innerWidth / 2,
+      height: window.innerHeight - 92,
+      backgroundColor: 'transparent',
+    });
 
-    // Set canvas size to match parent
+    fabricCanvasRef.current = canvas;
+
     const resizeCanvas = () => {
-      const parent = canvas.parentElement;
-      if (parent) {
-        canvas.width = parent.offsetWidth;
-        canvas.height = parent.offsetHeight;
-      }
+      canvas.setDimensions({
+        width: window.innerWidth / 2,
+        height: window.innerHeight - 92,
+      });
+      canvas.renderAll();
     };
 
-    resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    return () => window.removeEventListener('resize', resizeCanvas);
-  }, []);
+    canvas.on('mouse:down', (e) => {
+      if (tool === 'square' || tool === 'circle') {
+        const pointer = canvas.getScenePoint(e.e);
+        const currentColor = SHAPE_COLORS[colorIndex % SHAPE_COLORS.length];
+        
+        let shape: FabricObject;
+        if (tool === 'square') {
+          shape = new FabricRect({
+            left: pointer.x - 50,
+            top: pointer.y - 50,
+            width: 100,
+            height: 100,
+            fill: 'transparent',
+            stroke: currentColor,
+            strokeWidth: 3,
+          });
+        } else {
+          shape = new FabricCircle({
+            left: pointer.x - 50,
+            top: pointer.y - 50,
+            radius: 50,
+            fill: 'transparent',
+            stroke: currentColor,
+            strokeWidth: 3,
+          });
+        }
+        
+        canvas.add(shape);
+        canvas.setActiveObject(shape);
+        canvas.renderAll();
+        
+        setUsedColors(prev => new Set([...prev, currentColor]));
+        setColorIndex(prev => prev + 1);
+      } else if (tool === 'text') {
+        const pointer = canvas.getScenePoint(e.e);
+        const text = new IText('Type here', {
+          left: pointer.x,
+          top: pointer.y,
+          fontSize: 16,
+          fill: '#000000',
+          fontWeight: 'bold',
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        });
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        text.enterEditing();
+        canvas.renderAll();
+      }
+    });
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setIsDrawing(true);
-    setStartPos({ x, y });
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.strokeStyle = tool === 'eraser' ? '#FFFFFF' : color;
-    ctx.lineWidth = tool === 'eraser' ? lineWidth * 3 : lineWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    if (tool === 'pen' || tool === 'eraser') {
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-    }
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (tool === 'pen' || tool === 'eraser') {
-      ctx.lineTo(x, y);
-      ctx.stroke();
-    }
-  };
-
-  const stopDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPos) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (tool === 'square') {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.strokeRect(startPos.x, startPos.y, x - startPos.x, y - startPos.y);
-    } else if (tool === 'circle') {
-      const radius = Math.sqrt(Math.pow(x - startPos.x, 2) + Math.pow(y - startPos.y, 2));
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lineWidth;
-      ctx.beginPath();
-      ctx.arc(startPos.x, startPos.y, radius, 0, 2 * Math.PI);
-      ctx.stroke();
-    }
-
-    setIsDrawing(false);
-    setStartPos(null);
-  };
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      canvas.dispose();
+    };
+  }, [tool, colorIndex]);
 
   const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!fabricCanvasRef.current) return;
+    fabricCanvasRef.current.clear();
+    setUsedColors(new Set());
+    setColorIndex(0);
+  };
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const deleteSelected = () => {
+    if (!fabricCanvasRef.current) return;
+    const activeObjects = fabricCanvasRef.current.getActiveObjects();
+    activeObjects.forEach(obj => fabricCanvasRef.current?.remove(obj));
+    fabricCanvasRef.current.discardActiveObject();
+    fabricCanvasRef.current.renderAll();
+  };
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
+    setLegendItems(prev => {
+      const newItems = [...prev];
+      newItems[index] = { ...newItems[index], [field]: value };
+      return newItems;
+    });
+  };
+
+  const addLegendItem = () => {
+    setLegendItems(prev => [...prev, { emoji: '❓', label: 'New item' }]);
+  };
+
+  const removeLegendItem = (index: number) => {
+    setLegendItems(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -135,57 +165,146 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
       {/* Drawing canvas overlay */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full cursor-crosshair"
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: tool === 'select' ? 'auto' : 'auto' }}
       />
 
       {/* Drawing tools */}
-      <div className="absolute top-4 left-4 bg-card rounded-lg shadow-lg p-2 flex flex-col gap-2">
+      <div className="absolute top-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
         <Button
           size="icon"
-          variant={tool === 'pen' ? 'default' : 'outline'}
-          onClick={() => setTool('pen')}
-          title="Pen"
+          variant={tool === 'select' ? 'default' : 'outline'}
+          onClick={() => setTool('select')}
+          title="Select & Move"
+          className="h-10 w-10"
         >
-          <Pencil className="w-4 h-4" />
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
+          </svg>
         </Button>
         <Button
           size="icon"
           variant={tool === 'square' ? 'default' : 'outline'}
           onClick={() => setTool('square')}
           title="Rectangle"
+          className="h-10 w-10"
         >
-          <Square className="w-4 h-4" />
+          <Square className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
           variant={tool === 'circle' ? 'default' : 'outline'}
           onClick={() => setTool('circle')}
           title="Circle"
+          className="h-10 w-10"
         >
-          <Circle className="w-4 h-4" />
+          <Circle className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
-          variant={tool === 'eraser' ? 'default' : 'outline'}
-          onClick={() => setTool('eraser')}
-          title="Eraser"
+          variant={tool === 'text' ? 'default' : 'outline'}
+          onClick={() => setTool('text')}
+          title="Add Text/Emoji"
+          className="h-10 w-10"
         >
-          <Eraser className="w-4 h-4" />
+          <Type className="w-5 h-5" />
         </Button>
         <div className="h-px bg-border my-1" />
         <Button
           size="icon"
           variant="outline"
+          onClick={deleteSelected}
+          title="Delete selected"
+          className="h-10 w-10"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+        <Button
+          size="icon"
+          variant="outline"
           onClick={clearCanvas}
           title="Clear all"
+          className="h-10 w-10"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-5 h-5" />
         </Button>
       </div>
+
+      {/* Legend */}
+      {showLegend && (
+        <div className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 max-w-sm max-h-96 overflow-y-auto border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-sm">Legend</h3>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setShowLegend(false)}
+              className="h-6 w-6"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {legendItems.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  value={item.emoji}
+                  onChange={(e) => updateLegendItem(index, 'emoji', e.target.value)}
+                  className="w-12 h-7 text-center text-sm p-0"
+                />
+                <Input
+                  value={item.label}
+                  onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
+                  className="flex-1 h-7 text-xs"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeLegendItem(index)}
+                  className="h-7 w-7"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addLegendItem}
+            className="w-full mt-3 text-xs"
+          >
+            + Add Item
+          </Button>
+        </div>
+      )}
+
+      {!showLegend && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLegend(true)}
+          className="absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border"
+        >
+          Show Legend
+        </Button>
+      )}
+
+      {/* Color indicator */}
+      {usedColors.size > 0 && (
+        <div className="absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border">
+          <div className="text-xs font-medium mb-2">Colors in use:</div>
+          <div className="flex gap-2">
+            {Array.from(usedColors).map((color, i) => (
+              <div
+                key={i}
+                className="w-6 h-6 rounded-full border-2 border-border"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
