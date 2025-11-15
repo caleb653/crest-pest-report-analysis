@@ -95,11 +95,11 @@ All colors MUST be HSL.
   }
 }
 
-/* Professional Print/PDF Layout - Optimized for stunning exports */
+/* Professional Print/PDF Layout - Vibrant Crest Brand Design */
 @media print {
   @page {
     size: A4 landscape;
-    margin: 15mm;
+    margin: 8mm 10mm;
   }
 
   /* Hide all interactive elements */
@@ -107,13 +107,16 @@ All colors MUST be HSL.
   button,
   .absolute.top-6,
   [class*="legend"],
-  [class*="toolbar"] { 
+  [class*="toolbar"],
+  [role="status"],
+  .sonner,
+  [data-sonner-toaster] { 
     display: none !important; 
   }
 
-  /* Clean backgrounds for print */
+  /* Vibrant Crest-branded background */
   body {
-    background: white !important;
+    background: linear-gradient(135deg, #F2F2F2 0%, #E8ECE9 100%) !important;
     color: #2A2A2A !important;
   }
 
@@ -125,103 +128,139 @@ All colors MUST be HSL.
     page-break-inside: avoid;
   }
 
-  /* Remove shadows and transitions for clean print */
+  /* Remove transitions for clean print */
   * {
-    box-shadow: none !important;
     transition: none !important;
     animation: none !important;
   }
 
-  /* Professional header styling */
+  /* Professional header styling with brand colors */
   .print-header {
-    padding: 20px 0;
-    border-bottom: 3px solid #C3D1C5;
-    margin-bottom: 25px;
+    background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%) !important;
+    padding: 15px 20px !important;
+    border-radius: 8px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 4px 12px rgba(149, 161, 151, 0.2) !important;
   }
 
-  /* Two-column layout for print */
+  .print-header h1 {
+    color: #2A2A2A !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+  }
+
+  .print-header h2 {
+    color: #2A2A2A !important;
+    font-size: 11px !important;
+    margin: 4px 0 0 0 !important;
+    opacity: 0.8;
+  }
+
+  /* Customer/Tech info styling */
+  .print-header > div {
+    background: rgba(242, 242, 242, 0.3) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* Two-column layout - wider map */
   .print-layout {
-    display: grid;
-    grid-template-columns: 45% 53%;
-    gap: 2%;
-    page-break-inside: avoid;
+    display: grid !important;
+    grid-template-columns: 52% 46% !important;
+    gap: 2% !important;
+    page-break-inside: avoid !important;
+    height: 520px !important;
   }
 
-  /* Map container styling */
+  /* Map container with brand styling */
   .print-map-container {
-    border: 3px solid #C3D1C5;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 480px;
-    background: #f5f5f5;
+    border: 4px solid #95A197 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    height: 520px !important;
+    background: #E8ECE9 !important;
+    box-shadow: 0 6px 16px rgba(149, 161, 151, 0.25) !important;
   }
 
-  /* Content sections */
+  /* Content sections with vibrant colors */
   .print-section {
-    page-break-inside: avoid;
-    margin-bottom: 20px;
+    page-break-inside: avoid !important;
+    margin-bottom: 10px !important;
   }
 
   .print-section-header {
-    background: linear-gradient(135deg, #C3D1C5 0%, #95A197 100%);
-    color: white !important;
-    padding: 10px 15px;
-    border-radius: 6px 6px 0 0;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #2A2A2A 0%, #3D3D3D 100%) !important;
+    color: #F2F2F2 !important;
+    padding: 8px 14px !important;
+    border-radius: 6px 6px 0 0 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
   }
 
   .print-section-content {
-    background: #F2F2F2;
-    padding: 15px;
-    border: 2px solid #C3D1C5;
-    border-top: none;
-    border-radius: 0 0 6px 6px;
+    background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
+    padding: 12px 14px !important;
+    border: 3px solid #95A197 !important;
+    border-top: none !important;
+    border-radius: 0 0 6px 6px !important;
   }
 
   .print-section-content ul {
-    margin: 0;
-    padding-left: 20px;
-    line-height: 1.6;
+    margin: 0 !important;
+    padding-left: 18px !important;
+    line-height: 1.5 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 8px;
-    font-size: 11px;
+    margin-bottom: 6px !important;
+    font-size: 10px !important;
+    color: #2A2A2A !important;
+    font-weight: 500 !important;
   }
 
-  /* Footer styling */
+  /* Footer with brand colors */
   .print-footer {
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 2px solid #C3D1C5;
-    text-align: center;
-    font-size: 10px;
+    position: fixed !important;
+    bottom: 8mm !important;
+    left: 10mm !important;
+    right: 10mm !important;
+    margin-top: 0 !important;
+    padding: 10px 0 !important;
+    background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #F2F2F2 !important;
+    border-radius: 6px !important;
     display: block !important;
+    box-shadow: 0 4px 12px rgba(42, 42, 42, 0.2) !important;
   }
 
   /* Typography improvements */
   h1 {
-    font-size: 24px !important;
+    font-size: 22px !important;
     line-height: 1.2 !important;
   }
 
   h2 {
-    font-size: 14px !important;
+    font-size: 12px !important;
   }
 
-  /* Clean up form fields for print - show just the text */
+  /* Clean up form fields for print */
   input,
   textarea {
     border: none !important;
     background: transparent !important;
-    font-weight: 400 !important;
+    font-weight: 500 !important;
     padding: 2px !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 11px !important;
-    line-height: 1.5 !important;
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    color: #2A2A2A !important;
   }
 
   /* Clean up card styling */
@@ -231,12 +270,19 @@ All colors MUST be HSL.
     padding: 0 !important;
   }
 
-  /* Clean up unnecessary padding/margins */
+  /* Optimize spacing for single page */
   .px-4, .py-3, .px-6, .py-4, .p-4, .p-6, .md\:p-6 {
     padding: 0 !important;
   }
 
   .space-y-3 > *, .space-y-6 > * {
     margin: 0 !important;
+  }
+
+  /* Ensure content fits */
+  .print-layout > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
   }
 }
