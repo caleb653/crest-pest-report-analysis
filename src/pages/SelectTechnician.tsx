@@ -10,10 +10,10 @@ const SelectTechnician = () => {
   const [selectedTech, setSelectedTech] = useState("");
 
   const technicians = [
-    "Darrell Tanner",
-    "Marcus Reynolds", 
-    "Jesse Angulo",
     "Alexis Rodriguez",
+    "Darrell Tanner",
+    "Jesse Angulo",
+    "Marcus Reynolds",
     "Caleb Whalen",
     "Jacob Shubin"
   ];
