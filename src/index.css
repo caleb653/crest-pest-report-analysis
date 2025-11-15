@@ -138,18 +138,18 @@ All colors MUST be HSL.
     animation: none !important;
   }
 
-  /* Professional header styling with brand colors - compact */
+  /* Professional header styling with brand colors - minimal margin */
   .print-header {
     background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%) !important;
-    padding: 8px 14px !important;
-    margin: 8mm 8mm 4mm 8mm !important;
-    border-radius: 6px !important;
-    box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
+    padding: 6px 12px !important;
+    margin: 5mm 6mm 3mm 6mm !important;
+    border-radius: 5px !important;
+    box-shadow: 0 2px 8px rgba(149, 161, 151, 0.12) !important;
   }
 
   .print-header h1 {
     color: #2A2A2A !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
     margin: 0 !important;
     line-height: 1.1 !important;
@@ -157,26 +157,27 @@ All colors MUST be HSL.
 
   .print-header h2 {
     color: #2A2A2A !important;
-    font-size: 9px !important;
-    margin: 2px 0 0 0 !important;
+    font-size: 8px !important;
+    margin: 1px 0 0 0 !important;
     opacity: 0.8;
   }
 
   /* Customer/Tech info styling */
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
-    border-radius: 5px !important;
-    padding: 5px 8px !important;
+    border-radius: 4px !important;
+    padding: 4px 7px !important;
   }
 
-  /* Two-column layout - 60/40 split, maximize width */
+  /* Two-column layout - 55/44 split for better balance */
   .print-layout {
     display: grid !important;
-    grid-template-columns: 60% 39% !important;
+    grid-template-columns: 55% 44% !important;
     gap: 1% !important;
     page-break-inside: avoid !important;
-    margin: 0 8mm !important;
-    height: 170mm !important;
+    margin: 0 6mm !important;
+    height: 175mm !important;
+    align-items: start !important;
   }
 
   /* Map container with brand styling */
@@ -184,47 +185,50 @@ All colors MUST be HSL.
     border: 3px solid #95A197 !important;
     border-radius: 8px !important;
     overflow: hidden !important;
-    height: 170mm !important;
+    height: 175mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
-    box-shadow: 0 5px 14px rgba(149, 161, 151, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(149, 161, 151, 0.18) !important;
   }
 
-  /* Content sections with vibrant colors - compact */
+  /* Content sections with vibrant colors - wider and more compact */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 4mm !important;
+    margin-bottom: 3mm !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   .print-section-header {
     background: linear-gradient(135deg, #2A2A2A 0%, #3D3D3D 100%) !important;
     color: #F2F2F2 !important;
-    padding: 5px 10px !important;
-    border-radius: 5px 5px 0 0 !important;
-    font-size: 10px !important;
+    padding: 4px 9px !important;
+    border-radius: 4px 4px 0 0 !important;
+    font-size: 9px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.6px !important;
+    letter-spacing: 0.5px !important;
     text-transform: uppercase !important;
   }
 
   .print-section-content {
     background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
-    padding: 8px 10px !important;
+    padding: 6px 9px !important;
     border: 2px solid #95A197 !important;
     border-top: none !important;
-    border-radius: 0 0 5px 5px !important;
+    border-radius: 0 0 4px 4px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 14px !important;
-    line-height: 1.3 !important;
+    padding-left: 12px !important;
+    line-height: 1.25 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 3px !important;
-    font-size: 9px !important;
+    margin-bottom: 2px !important;
+    font-size: 8.5px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -232,28 +236,28 @@ All colors MUST be HSL.
   /* Footer with brand colors - fixed at bottom */
   .print-footer {
     position: fixed !important;
-    bottom: 5mm !important;
-    left: 8mm !important;
-    right: 8mm !important;
-    padding: 6px 0 !important;
+    bottom: 4mm !important;
+    left: 6mm !important;
+    right: 6mm !important;
+    padding: 5px 0 !important;
     background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
     text-align: center !important;
-    font-size: 9px !important;
+    font-size: 8px !important;
     font-weight: 700 !important;
     color: #F2F2F2 !important;
-    border-radius: 5px !important;
+    border-radius: 4px !important;
     display: block !important;
-    box-shadow: 0 3px 10px rgba(42, 42, 42, 0.18) !important;
+    box-shadow: 0 2px 8px rgba(42, 42, 42, 0.15) !important;
   }
 
   /* Typography improvements */
   h1 {
-    font-size: 18px !important;
+    font-size: 16px !important;
     line-height: 1.1 !important;
   }
 
   h2 {
-    font-size: 10px !important;
+    font-size: 9px !important;
   }
 
   /* Clean up form fields for print */
@@ -262,11 +266,11 @@ All colors MUST be HSL.
     border: none !important;
     background: transparent !important;
     font-weight: 500 !important;
-    padding: 1px !important;
+    padding: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 9px !important;
-    line-height: 1.3 !important;
+    font-size: 8.5px !important;
+    line-height: 1.25 !important;
     color: #2A2A2A !important;
   }
 
@@ -275,6 +279,7 @@ All colors MUST be HSL.
     border: none !important;
     background: transparent !important;
     padding: 0 !important;
+    width: 100% !important;
   }
 
   /* Optimize spacing for single page */
@@ -287,20 +292,28 @@ All colors MUST be HSL.
     padding: 0 !important;
   }
 
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3mm !important;
+  }
+
   .print-layout .space-y-3 > *,
   .print-layout .space-y-6 > * {
-    margin-top: 0 !important;
-    margin-bottom: 4mm !important;
+    margin: 0 !important;
   }
 
-  .print-layout .space-y-3 > *:last-child,
-  .print-layout .space-y-6 > *:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Content column no scroll */
+  /* Content column no scroll, full width */
   .print-layout > div:last-child {
     overflow: visible !important;
-    height: 170mm !important;
+    height: auto !important;
+    max-height: 175mm !important;
+    width: 100% !important;
+  }
+
+  /* Ensure proper box-sizing */
+  * {
+    box-sizing: border-box !important;
   }
 }
