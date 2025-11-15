@@ -583,7 +583,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         <Button
           size="icon"
           variant={tool === 'rectangle' ? 'default' : 'outline'}
-          onClick={() => setTool('rectangle')}
+          onClick={() => { setTool('rectangle'); setShowEmojiPicker(false); }}
           title="Rectangle"
           className="h-10 w-10"
         >
@@ -629,7 +629,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         <Button
           size="icon"
           variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
-          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          onClick={() => { setTool('emoji'); setShowEmojiPicker((prev) => !prev); }}
           title="Add Emoji/Icon"
           className="h-10 w-10"
         >
