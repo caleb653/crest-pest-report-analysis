@@ -112,7 +112,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       const currentTool = toolRef.current;
       const currentEmoji = selectedEmojiRef.current;
       
-      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji);
+      const nativeEvt: any = (e as any)?.e ?? e;
+      const pointer = fabricCanvasRef.current?.getPointer(nativeEvt);
+
+      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji, 'pointer:', pointer);
+      
+      if (!pointer) return;
       
       if (currentTool === 'emoji') {
         const pointer = canvas.getPointer(e.e as any);
@@ -671,7 +676,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-30">
+        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
