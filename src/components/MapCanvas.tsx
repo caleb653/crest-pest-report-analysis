@@ -52,6 +52,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
+  const isTouchRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -84,6 +85,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     });
 
     fabricCanvasRef.current = canvas;
+
+    // Detect touch devices to avoid drag-to-delete on mobile
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    isTouchRef.current = !!isTouch;
 
     const resizeCanvas = () => {
       const isMobile = window.innerWidth <= 768;
@@ -222,6 +227,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     // Track object movement for drag-to-delete
     canvas.on('object:moving', (e) => {
+      if (isTouchRef.current) return;
       if (!deleteButtonRef.current || !e.target || !canvasRef.current) return;
       
       const obj = e.target;
@@ -248,6 +254,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     // Delete on drop over delete button
     canvas.on('mouse:up', (e) => {
+      if (isTouchRef.current) {
+        setIsDraggingOverDelete(false);
+        return;
+      }
       if (!deleteButtonRef.current || !e.target || !canvasRef.current) {
         setIsDraggingOverDelete(false);
         return;
@@ -361,12 +371,19 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     canvas.on('object:added', handleChange);
     canvas.on('object:modified', handleChange);
     canvas.on('object:removed', handleChange);
+    // Extra reliability on mobile: save on pointer up and when text editing changes/exits
+    canvas.on('mouse:up', handleChange);
+    canvas.on('text:changed', handleChange as any);
+    canvas.on('editing:exited', handleChange as any);
     
     return () => {
       clearTimeout(saveTimeout);
       canvas.off('object:added', handleChange);
       canvas.off('object:modified', handleChange);
       canvas.off('object:removed', handleChange);
+      canvas.off('mouse:up', handleChange);
+      canvas.off('text:changed', handleChange as any);
+      canvas.off('editing:exited', handleChange as any);
     };
   }, [onSave, legendItems]);
 
