@@ -160,11 +160,11 @@ All colors MUST be HSL.
 
   /* Professional header styling with brand colors - ultra compact */
   .print-header {
-    background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%) !important;
+    background: #C3D1C5 !important;
     padding: 5px 10px !important;
     margin: 3mm 5mm 2mm 5mm !important;
     border-radius: 4px !important;
-    box-shadow: 0 2px 6px rgba(149, 161, 151, 0.1) !important;
+    box-shadow: 0 2px 6px rgba(195, 209, 197, 0.2) !important;
   }
 
   .print-header h1 {
@@ -191,7 +191,7 @@ All colors MUST be HSL.
   
   /* Make customer and tech names same size as labels */
   .print-header input {
-    font-size: 8px !important;
+    font-size: 9px !important;
   }
 
   /* Balanced layout - readable text, prominent map */
@@ -268,14 +268,14 @@ All colors MUST be HSL.
     left: 4mm !important;
     right: 4mm !important;
     padding: 3px 0 !important;
-    background: #95A197 !important;
+    background: #C3D1C5 !important;
     text-align: center !important;
     font-size: 7.5px !important;
     font-weight: 700 !important;
-    color: #F2F2F2 !important;
+    color: #2A2A2A !important;
     border-radius: 3px !important;
     display: block !important;
-    box-shadow: 0 1px 4px rgba(149, 161, 151, 0.1) !important;
+    box-shadow: 0 1px 4px rgba(195, 209, 197, 0.2) !important;
   }
 
   /* Typography improvements */
@@ -348,13 +348,21 @@ All colors MUST be HSL.
     margin: 0;
   }
   
-  body {
+  html, body {
+    overflow: hidden !important;
     page-break-after: avoid !important;
   }
   
   * {
     page-break-after: avoid !important;
     page-break-before: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Hide anything that would create a second page */
+  .print-layout {
+    max-height: 155mm !important;
+    overflow: hidden !important;
   }
 
   /* Ensure proper box-sizing */
