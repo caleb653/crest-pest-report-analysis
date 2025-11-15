@@ -163,11 +163,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         canvas.setActiveObject(rect);
         
         // Immediately add centered text for typing
-        const text = new IText('', {
+        const text = new IText('Type here...', {
           left: pointer.x,
           top: pointer.y,
           fontSize: 14,
-          fill: '#000000',
+          fill: '#666666',
           fontWeight: 'bold',
           textAlign: 'center',
           originX: 'center',
@@ -179,8 +179,16 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         rectTextMap.current.set(rect, true);
         canvas.add(text);
         canvas.setActiveObject(text);
-        text.enterEditing();
-        canvas.renderAll();
+        
+        // Show toast to inform user
+        toast.info("💬 Tap the text to type", { duration: 2000 });
+        
+        // Small delay to ensure canvas is ready, then enter edit mode
+        setTimeout(() => {
+          text.enterEditing();
+          text.selectAll();
+          canvas.renderAll();
+        }, 100);
         
         setTool('select');
       } else if (currentTool === 'text') {
