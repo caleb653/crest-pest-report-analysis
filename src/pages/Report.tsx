@@ -4,12 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Home, Share2, Loader2, Send } from "lucide-react";
+import { Home, Share2, Loader2, Send, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface AnalysisData {
   findings: string[];
@@ -244,6 +246,118 @@ const Report = () => {
     }
   };
 
+  const exportToPDF = async () => {
+    toast.info("Generating PDF...");
+    
+    try {
+      // Create a container for the PDF content
+      const pdfContent = document.createElement('div');
+      pdfContent.style.position = 'absolute';
+      pdfContent.style.left = '-9999px';
+      pdfContent.style.width = '1122px'; // A4 landscape width in pixels at 96 DPI
+      pdfContent.style.backgroundColor = 'white';
+      pdfContent.style.padding = '40px';
+      pdfContent.style.fontFamily = 'Space Grotesk, sans-serif';
+      
+      // Header with logo and title
+      pdfContent.innerHTML = `
+        <div style="margin-bottom: 30px; border-bottom: 3px solid #C3D1C5; padding-bottom: 20px;">
+          <h1 style="font-size: 28px; font-weight: bold; color: #2A2A2A; margin: 0 0 10px 0;">
+            ${getStreetAddress(displayAddress)} Pest Control Report
+          </h1>
+          <div style="display: flex; gap: 40px; font-size: 14px; color: #2A2A2A;">
+            <div><strong>Customer:</strong> ${editableCustomer || 'N/A'}</div>
+            <div><strong>Technician:</strong> ${editableTech || 'N/A'}</div>
+            <div><strong>Date:</strong> ${new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+          <div>
+            <h2 style="font-size: 20px; font-weight: bold; color: #C3D1C5; margin: 0 0 15px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
+              Findings / Activity Detected
+            </h2>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
+              ${editableFindings.filter(f => f.trim()).map(f => `<li style="margin-bottom: 8px;">${f}</li>`).join('') || '<li>No findings recorded</li>'}
+            </ul>
+            
+            <h2 style="font-size: 20px; font-weight: bold; color: #C3D1C5; margin: 25px 0 15px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
+              Recommendations
+            </h2>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
+              ${editableRecommendations.filter(r => r.trim()).map(r => `<li style="margin-bottom: 8px;">${r}</li>`).join('') || '<li>No recommendations provided</li>'}
+            </ul>
+          </div>
+          
+          <div>
+            <h2 style="font-size: 20px; font-weight: bold; color: #C3D1C5; margin: 0 0 15px 0; border-bottom: 2px solid #C3D1C5; padding-bottom: 5px;">
+              Next Steps
+            </h2>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.6; font-size: 13px;">
+              ${editableNextSteps.filter(n => n.trim()).map(n => `<li style="margin-bottom: 8px;">${n}</li>`).join('') || '<li>No next steps specified</li>'}
+            </ul>
+            
+            <div id="map-placeholder" style="margin-top: 25px; height: 400px; border: 2px solid #C3D1C5; border-radius: 8px; overflow: hidden;">
+              <!-- Map will be inserted here -->
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(pdfContent);
+      
+      // Capture the map with annotations
+      const mapCanvas = document.querySelector('canvas') as HTMLCanvasElement;
+      if (mapCanvas) {
+        try {
+          const mapImage = await html2canvas(mapCanvas.parentElement as HTMLElement, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 1,
+            logging: false,
+          });
+          
+          const mapPlaceholder = pdfContent.querySelector('#map-placeholder');
+          if (mapPlaceholder) {
+            mapPlaceholder.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = mapImage.toDataURL('image/png');
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            mapPlaceholder.appendChild(img);
+          }
+        } catch (error) {
+          console.error('Error capturing map:', error);
+        }
+      }
+      
+      // Generate PDF
+      const canvas = await html2canvas(pdfContent, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+      
+      document.body.removeChild(pdfContent);
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width / 2, canvas.height / 2]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
+      pdf.save(`pest-report-${getStreetAddress(displayAddress).replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      toast.success("PDF exported successfully!");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
   const displayAddress = extractedAddress || address || "Not provided";
   
   const getStreetAddress = (fullAddress: string) => {
@@ -279,6 +393,14 @@ const Report = () => {
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="default"
+                onClick={exportToPDF}
+                className="h-9"
+              >
+                <FileDown className="w-4 h-4" />
+              </Button>
               <Button
                 size="sm"
                 variant="secondary"
@@ -337,6 +459,10 @@ const Report = () => {
               </div>
               
               <div className="flex gap-3">
+                <Button onClick={exportToPDF} variant="default" size="sm">
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
                 <Button onClick={handleShare} variant="outline" size="sm">
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
