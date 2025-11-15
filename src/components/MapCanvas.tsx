@@ -27,6 +27,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const rectTextMap = useRef(new WeakMap<FabricRect, boolean>());
   const [tool, setTool] = useState<Tool>('select');
   const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
   const [showLegend, setShowLegend] = useState(false);
@@ -139,6 +140,47 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
       }
     });
 
+    // Enable typing in rectangles
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const activeObject = canvas.getActiveObject();
+      
+      // Check if active object is a rectangle and key is printable
+      if (activeObject && activeObject.type === 'rect' && 
+          event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+        
+        const rect = activeObject as FabricRect;
+        
+        // Only create text if it doesn't exist yet
+        if (!rectTextMap.current.get(rect)) {
+          const rectCenter = rect.getCenterPoint();
+          
+          const text = new IText(event.key, {
+            left: rectCenter.x,
+            top: rectCenter.y,
+            fontSize: 14,
+            fill: '#000000',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            originX: 'center',
+            originY: 'center',
+            selectable: true,
+            editable: true,
+          });
+          
+          // Mark rectangle as having text
+          rectTextMap.current.set(rect, true);
+          
+          canvas.add(text);
+          canvas.setActiveObject(text);
+          text.enterEditing();
+          text.selectAll();
+          canvas.renderAll();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
     // Track object movement for drag-to-delete
     canvas.on('object:moving', (e) => {
       if (!deleteButtonRef.current || !e.target) return;
@@ -187,6 +229,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
   }, []); // Only run once on mount
