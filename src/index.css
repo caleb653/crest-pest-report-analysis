@@ -169,66 +169,65 @@ All colors MUST be HSL.
     padding: 3px 6px !important;
   }
 
-  /* Two-column layout - reduce height to ensure page 1 fit */
+  /* Ultra-compact layout - map dominant, tiny text boxes */
   .print-layout {
     display: grid !important;
-    grid-template-columns: 55% 44% !important;
+    grid-template-columns: 70% 29% !important;
     gap: 1% !important;
     page-break-inside: avoid !important;
-    margin: 0 4mm !important;
-    height: 140mm !important;
+    margin: 0 3mm !important;
+    height: 160mm !important;
     align-items: start !important;
   }
 
-  /* Map container with brand styling */
+  /* Map container - larger since text is now tiny */
   .print-map-container {
-    border: 2px solid #95A197 !important;
-    border-radius: 5px !important;
+    border: 1px solid #95A197 !important;
+    border-radius: 3px !important;
     overflow: hidden !important;
-    height: 140mm !important;
+    height: 160mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
-    box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
   }
 
-  /* Content sections - super compact */
+  /* Ultra-compact text sections */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 2mm !important;
+    margin-bottom: 1mm !important;
     width: 100% !important;
-    max-width: 100% !important;
   }
 
   .print-section-header {
-    background: linear-gradient(135deg, #2A2A2A 0%, #3D3D3D 100%) !important;
+    background: #2A2A2A !important;
     color: #F2F2F2 !important;
-    padding: 3px 8px !important;
-    border-radius: 3px 3px 0 0 !important;
-    font-size: 8.5px !important;
+    padding: 1px 4px !important;
+    font-size: 6px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.4px !important;
     text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
   }
 
   .print-section-content {
-    background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
-    padding: 4px 7px !important;
-    border: 2px solid #95A197 !important;
+    background: #C3D1C5 !important;
+    padding: 2px 4px !important;
+    border: 1px solid #95A197 !important;
     border-top: none !important;
-    border-radius: 0 0 3px 3px !important;
+    font-size: 6px !important;
+    max-height: 35mm !important;
+    overflow: hidden !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 10px !important;
-    line-height: 1.15 !important;
+    padding-left: 6px !important;
+    line-height: 1.1 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 1.2px !important;
-    font-size: 7.2px !important;
+    margin-bottom: 0.5px !important;
+    font-size: 6px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -307,9 +306,9 @@ All colors MUST be HSL.
 
   /* Content column - ensure fits on page */
   .print-layout > div:last-child {
-    overflow: visible !important;
+    overflow: hidden !important;
     height: auto !important;
-    max-height: 140mm !important;
+    max-height: 120mm !important;
     width: 100% !important;
     padding-bottom: 0 !important;
   }
