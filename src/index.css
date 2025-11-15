@@ -177,11 +177,11 @@ All colors MUST be HSL.
 
   .print-header h2 {
     color: #2A2A2A !important;
-    font-size: 8px !important;
+    font-size: 9px !important;
     margin: 1px 0 0 0 !important;
-    opacity: 0.8;
+    opacity: 1 !important;
   }
-
+  
   /* Customer/Tech info styling */
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
@@ -189,9 +189,15 @@ All colors MUST be HSL.
     padding: 3px 6px !important;
   }
   
+  .print-header > div span {
+    color: #2A2A2A !important;
+    font-size: 9px !important;
+  }
+  
   /* Make customer and tech names same size as labels */
   .print-header input {
     font-size: 9px !important;
+    color: #2A2A2A !important;
   }
 
   /* Balanced layout - readable text, prominent map */
@@ -261,21 +267,22 @@ All colors MUST be HSL.
     font-weight: 500 !important;
   }
 
-  /* Footer - ultra compact */
+  /* Footer - ultra compact with fixed positioning to avoid page breaks */
   .print-footer {
     position: fixed !important;
-    bottom: 2mm !important;
+    bottom: 1mm !important;
     left: 4mm !important;
     right: 4mm !important;
-    padding: 3px 0 !important;
+    padding: 2px 0 !important;
     background: #C3D1C5 !important;
     text-align: center !important;
-    font-size: 7.5px !important;
+    font-size: 7px !important;
     font-weight: 700 !important;
     color: #2A2A2A !important;
     border-radius: 3px !important;
     display: block !important;
-    box-shadow: 0 1px 4px rgba(195, 209, 197, 0.2) !important;
+    box-shadow: none !important;
+    z-index: 9999 !important;
   }
 
   /* Typography improvements */
@@ -333,16 +340,16 @@ All colors MUST be HSL.
     margin: 0 !important;
   }
 
-  /* Content column - ensure all sections visible on page */
+  /* Content column - ensure all sections visible on page with room for footer */
   .print-layout > div:last-child {
     overflow: hidden !important;
     height: auto !important;
-    max-height: 155mm !important;
+    max-height: 150mm !important;
     width: 100% !important;
-    padding: 1mm 0 0 0 !important;
+    padding: 1mm 0 8mm 0 !important;
   }
   
-  /* Force single page only */
+  /* Force single page only - aggressive enforcement */
   @page {
     size: A4 landscape;
     margin: 0;
@@ -350,7 +357,8 @@ All colors MUST be HSL.
   
   html, body {
     overflow: hidden !important;
-    page-break-after: avoid !important;
+    height: 210mm !important;
+    max-height: 210mm !important;
   }
   
   * {
@@ -363,6 +371,12 @@ All colors MUST be HSL.
   .print-layout {
     max-height: 155mm !important;
     overflow: hidden !important;
+    page-break-after: avoid !important;
+  }
+  
+  /* Ensure footer doesn't push content to page 2 */
+  body > *:not(.print-footer) {
+    max-height: 200mm !important;
   }
 
   /* Ensure proper box-sizing */
