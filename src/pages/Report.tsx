@@ -83,6 +83,13 @@ const Report = () => {
       setEditableFindings((data.findings as string[]) || []);
       setEditableRecommendations((data.recommendations as string[]) || []);
       setEditableNextSteps((data.next_steps as string[]) || []);
+      
+      console.log('Loading report map_data:', { 
+        hasMapData: !!data.map_data,
+        mapDataType: typeof data.map_data,
+        mapDataPreview: data.map_data ? JSON.stringify(data.map_data).substring(0, 150) : 'null'
+      });
+      
       setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
       
       if (data.address) {
@@ -200,9 +207,24 @@ const Report = () => {
     try {
       // Ensure map_data is stored as JSON (object) not a raw string
       const rawMap = latestMapDataRef.current ?? mapData;
+      console.log('Submitting report with map data:', { 
+        hasRawMap: !!rawMap,
+        rawMapLength: rawMap?.length,
+        rawMapPreview: rawMap ? rawMap.substring(0, 150) : 'null'
+      });
+      
       let mapPayload: any = null;
       if (rawMap) {
-        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
+        try { 
+          mapPayload = JSON.parse(rawMap);
+          console.log('Parsed map payload:', {
+            hasObjects: !!mapPayload.objects,
+            objectCount: mapPayload.objects?.objects?.length
+          });
+        } catch (e) { 
+          console.error('Failed to parse map data:', e);
+          mapPayload = rawMap; 
+        }
       }
 
       const reportData = {
