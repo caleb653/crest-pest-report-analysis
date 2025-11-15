@@ -176,7 +176,7 @@ All colors MUST be HSL.
     gap: 1% !important;
     page-break-inside: avoid !important;
     margin: 0 4mm !important;
-    height: 148mm !important;
+    height: 145mm !important;
     align-items: start !important;
   }
 
@@ -185,7 +185,7 @@ All colors MUST be HSL.
     border: 2px solid #95A197 !important;
     border-radius: 5px !important;
     overflow: hidden !important;
-    height: 148mm !important;
+    height: 145mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
     box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
@@ -212,7 +212,7 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: linear-gradient(135deg, #C3D1C5 0%, #D1DCD3 100%) !important;
-    padding: 5px 8px !important;
+    padding: 4px 7px !important;
     border: 2px solid #95A197 !important;
     border-top: none !important;
     border-radius: 0 0 3px 3px !important;
@@ -227,8 +227,8 @@ All colors MUST be HSL.
   }
 
   .print-section-content li {
-    margin-bottom: 2px !important;
-    font-size: 8px !important;
+    margin-bottom: 1.5px !important;
+    font-size: 7.4px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
