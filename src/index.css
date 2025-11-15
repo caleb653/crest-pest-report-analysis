@@ -138,21 +138,21 @@ All colors MUST be HSL.
     animation: none !important;
   }
 
-  /* Professional header styling with brand colors - minimal margin */
+  /* Professional header styling with brand colors - ultra compact */
   .print-header {
     background: linear-gradient(135deg, #95A197 0%, #C3D1C5 100%) !important;
-    padding: 6px 12px !important;
-    margin: 5mm 6mm 3mm 6mm !important;
-    border-radius: 5px !important;
-    box-shadow: 0 2px 8px rgba(149, 161, 151, 0.12) !important;
+    padding: 5px 10px !important;
+    margin: 3mm 5mm 2mm 5mm !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 6px rgba(149, 161, 151, 0.1) !important;
   }
 
   .print-header h1 {
     color: #2A2A2A !important;
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 700 !important;
     margin: 0 !important;
-    line-height: 1.1 !important;
+    line-height: 1 !important;
   }
 
   .print-header h2 {
@@ -165,30 +165,30 @@ All colors MUST be HSL.
   /* Customer/Tech info styling */
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
-    border-radius: 4px !important;
-    padding: 4px 7px !important;
+    border-radius: 3px !important;
+    padding: 3px 6px !important;
   }
 
-  /* Two-column layout - 55/44 split for better balance */
+  /* Two-column layout - maximize space usage */
   .print-layout {
     display: grid !important;
     grid-template-columns: 55% 44% !important;
     gap: 1% !important;
     page-break-inside: avoid !important;
-    margin: 0 6mm !important;
-    height: 175mm !important;
+    margin: 0 5mm !important;
+    height: 180mm !important;
     align-items: start !important;
   }
 
   /* Map container with brand styling */
   .print-map-container {
-    border: 3px solid #95A197 !important;
-    border-radius: 8px !important;
+    border: 2px solid #95A197 !important;
+    border-radius: 6px !important;
     overflow: hidden !important;
-    height: 175mm !important;
+    height: 180mm !important;
     width: 100% !important;
     background: #E8ECE9 !important;
-    box-shadow: 0 4px 12px rgba(149, 161, 151, 0.18) !important;
+    box-shadow: 0 3px 10px rgba(149, 161, 151, 0.15) !important;
   }
 
   /* Content sections with vibrant colors - wider and more compact */
@@ -233,21 +233,21 @@ All colors MUST be HSL.
     font-weight: 500 !important;
   }
 
-  /* Footer with brand colors - fixed at bottom */
+  /* Footer with brand colors - minimal space */
   .print-footer {
     position: fixed !important;
-    bottom: 4mm !important;
-    left: 6mm !important;
-    right: 6mm !important;
-    padding: 5px 0 !important;
+    bottom: 3mm !important;
+    left: 5mm !important;
+    right: 5mm !important;
+    padding: 4px 0 !important;
     background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
     text-align: center !important;
     font-size: 8px !important;
     font-weight: 700 !important;
     color: #F2F2F2 !important;
-    border-radius: 4px !important;
+    border-radius: 3px !important;
     display: block !important;
-    box-shadow: 0 2px 8px rgba(42, 42, 42, 0.15) !important;
+    box-shadow: 0 2px 6px rgba(42, 42, 42, 0.12) !important;
   }
 
   /* Typography improvements */
@@ -308,8 +308,9 @@ All colors MUST be HSL.
   .print-layout > div:last-child {
     overflow: visible !important;
     height: auto !important;
-    max-height: 175mm !important;
+    max-height: 180mm !important;
     width: 100% !important;
+    padding-bottom: 8mm !important;
   }
 
   /* Ensure proper box-sizing */
