@@ -7,6 +7,7 @@ import { Home, Download, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
+import crestLogo from "@/assets/crest-logo.png";
 
 interface AnalysisData {
   findings: string[];
@@ -163,34 +164,39 @@ const Report = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-primary border-b-4 border-foreground px-8 py-6">
+      <div className="bg-gradient-primary border-b-4 border-foreground px-8 py-4">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-          <div className="flex-1">
-            <Input
-              value={reportTitle}
-              onChange={(e) => setReportTitle(e.target.value)}
-              className="text-3xl font-bold bg-transparent border-none text-foreground placeholder:text-foreground/70 px-0 h-auto mb-3 focus-visible:ring-0"
-            />
-            <div className="flex gap-6 text-sm text-foreground/90 font-medium">
-              <div className="flex items-center gap-2">
-                <span className="opacity-80">Technician:</span>
-                <Input
-                  value={editableTech}
-                  onChange={(e) => setEditableTech(e.target.value)}
-                  placeholder="Tech name"
-                  className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-7 w-44 focus-visible:ring-0 focus-visible:border-foreground/60"
-                />
+          <div className="flex items-center gap-8">
+            {/* Crest Logo */}
+            <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
+            
+            <div className="flex-1">
+              <Input
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                className="text-2xl font-bold bg-transparent border-none text-foreground placeholder:text-foreground/70 px-0 h-auto mb-2 focus-visible:ring-0"
+              />
+              <div className="flex gap-6 text-sm text-foreground/90 font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="opacity-80">Technician:</span>
+                  <Input
+                    value={editableTech}
+                    onChange={(e) => setEditableTech(e.target.value)}
+                    placeholder="Tech name"
+                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 w-40 focus-visible:ring-0 focus-visible:border-foreground/60"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="opacity-80">Customer:</span>
+                  <Input
+                    value={editableCustomer}
+                    onChange={(e) => setEditableCustomer(e.target.value)}
+                    placeholder="Customer name"
+                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 w-40 focus-visible:ring-0 focus-visible:border-foreground/60"
+                  />
+                </div>
+                <span className="opacity-80">• {displayAddress}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="opacity-80">Customer:</span>
-                <Input
-                  value={editableCustomer}
-                  onChange={(e) => setEditableCustomer(e.target.value)}
-                  placeholder="Customer name"
-                  className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-7 w-44 focus-visible:ring-0 focus-visible:border-foreground/60"
-                />
-              </div>
-              <span className="opacity-80">• {displayAddress}</span>
             </div>
           </div>
           <div className="flex gap-3">
@@ -225,7 +231,7 @@ const Report = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-140px)] gap-8 p-8 max-w-[1800px] mx-auto">
+      <div className="flex h-[calc(100vh-120px)] gap-8 p-8 max-w-[1800px] mx-auto">
         {/* Map Section - Left Half */}
         <div className="w-1/2">
           <div className="h-full bg-card rounded-2xl shadow-2xl border-4 border-foreground p-4">
@@ -251,9 +257,9 @@ const Report = () => {
         </div>
 
         {/* Report Sections - Right Half */}
-        <div className="w-1/2 overflow-y-auto bg-muted/20 rounded-2xl p-8 space-y-6">
+        <div className="w-1/2 overflow-y-auto bg-muted/20 rounded-2xl p-4 space-y-3">
           {isAnalyzing ? (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
                 <p className="text-lg font-semibold">Analyzing findings...</p>
@@ -262,19 +268,19 @@ const Report = () => {
           ) : (
             <>
               {/* Findings Card */}
-              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-1 h-8 bg-destructive rounded-full"></div>
-                  <h2 className="text-xl font-bold text-destructive tracking-tight">FINDINGS</h2>
+              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-6 bg-destructive rounded-full"></div>
+                  <h2 className="text-lg font-bold text-destructive tracking-tight">FINDINGS</h2>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {editableFindings.map((finding, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <span className="text-destructive font-bold text-lg mt-0.5">•</span>
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="text-destructive font-bold mt-0.5">•</span>
                       <Input
                         value={finding}
                         onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
                         placeholder="Brief finding (10-15 words)"
                       />
                     </div>
@@ -283,7 +289,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableFindings)}
-                    className="text-xs mt-3 hover:bg-destructive/10 text-destructive font-medium"
+                    className="text-xs mt-2 hover:bg-destructive/10 text-destructive font-medium h-7"
                   >
                     + Add finding
                   </Button>
@@ -291,19 +297,19 @@ const Report = () => {
               </Card>
 
               {/* Recommendations Card */}
-              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-1 h-8 bg-secondary rounded-full"></div>
-                  <h2 className="text-xl font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
+              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-6 bg-secondary rounded-full"></div>
+                  <h2 className="text-lg font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {editableRecommendations.map((rec, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <span className="text-secondary font-bold text-lg mt-0.5">•</span>
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="text-secondary font-bold mt-0.5">•</span>
                       <Input
                         value={rec}
                         onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
                         placeholder="Brief recommendation (10-15 words)"
                       />
                     </div>
@@ -312,7 +318,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableRecommendations)}
-                    className="text-xs mt-3 hover:bg-secondary/10 text-secondary font-medium"
+                    className="text-xs mt-2 hover:bg-secondary/10 text-secondary font-medium h-7"
                   >
                     + Add recommendation
                   </Button>
@@ -320,19 +326,19 @@ const Report = () => {
               </Card>
 
               {/* Next Steps Card */}
-              <Card className="p-8 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-1 h-8 bg-primary rounded-full"></div>
-                  <h2 className="text-xl font-bold text-primary tracking-tight">NEXT STEPS</h2>
+              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1 h-6 bg-primary rounded-full"></div>
+                  <h2 className="text-lg font-bold text-primary tracking-tight">NEXT STEPS</h2>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {editableNextSteps.map((step, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <span className="text-primary font-bold text-lg mt-0.5">•</span>
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="text-primary font-bold mt-0.5">•</span>
                       <Input
                         value={step}
                         onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-relaxed focus-visible:ring-0"
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm leading-snug focus-visible:ring-0"
                         placeholder="Brief next step (10-15 words)"
                       />
                     </div>
@@ -341,7 +347,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableNextSteps)}
-                    className="text-xs mt-3 hover:bg-primary/10 text-primary font-medium"
+                    className="text-xs mt-2 hover:bg-primary/10 text-primary font-medium h-7"
                   >
                     + Add next step
                   </Button>
