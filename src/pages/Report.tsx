@@ -414,11 +414,15 @@ const Report = () => {
           const height = 700;
           try {
             const baseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const fnUrl = `${baseUrl}/functions/v1/static-map?lat=${localCoords.lat}&lng=${localCoords.lng}&zoom=${zoomLevel}&width=${width}&height=${height}&marker=1`;
+            const effectiveZoom = Math.min(zoomLevel, 18);
+            const fnUrl = `${baseUrl}/functions/v1/static-map?lat=${localCoords.lat}&lng=${localCoords.lng}&zoom=${effectiveZoom}&width=${width}&height=${height}&marker=1`;
             const resp = await fetch(fnUrl);
             if (resp.ok) {
               const data = await resp.json();
               baseDataUrl = data?.dataUrl || null;
+            } else {
+              const text = await resp.text();
+              console.error('Static map function HTTP error', resp.status, text);
             }
           } catch (e) {
             console.error('Static map function failed, using placeholder', e);
