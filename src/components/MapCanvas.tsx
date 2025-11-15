@@ -3,9 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Smile, Square } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
+import { toast } from 'sonner';
 
 interface MapCanvasProps {
   mapUrl: string;
+  onSave?: (canvasData: string) => void;
+  initialData?: string | null;
 }
 
 type Tool = 'select' | 'text' | 'emoji' | 'rectangle';
@@ -20,10 +23,11 @@ const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E
 const AVAILABLE_EMOJIS = [
   '🐭', '🐜', '🪳', '🦗', '🕷️', '🐝', '🦟', '🐛',
   '🕳️', '🚪', '🪟', '🧱', '✅', '💊', '🧪', '🪤',
-  '🔁', '⚠️', '🚫', '📍', '🎯', '❌', '✔️', '⭐'
+  '🔁', '⚠️', '🚫', '📍', '🎯', '❌', '✔️', '⭐',
+  '🌳', '💧'
 ];
 
-export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
+export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -159,10 +163,12 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           fontWeight: 'bold',
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           selectable: true,
-          editable: false, // Not editable after creation, only moveable
+          editable: true,
         });
         canvas.add(text);
         canvas.setActiveObject(text);
+        text.enterEditing();
+        text.selectAll();
         canvas.renderAll();
       }
     });
@@ -261,6 +267,26 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     };
   }, []); // Only run once on mount
 
+  // Load saved data
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !initialData) return;
+    
+    try {
+      const savedData = JSON.parse(initialData);
+      if (savedData.objects) {
+        fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
+          fabricCanvasRef.current?.renderAll();
+        });
+      }
+      if (savedData.legendItems) {
+        setLegendItems(savedData.legendItems);
+        setShowLegend(true);
+      }
+    } catch (error) {
+      console.error('Error loading canvas data:', error);
+    }
+  }, [initialData]);
+
   const getDefaultLabel = (emoji: string): string => {
     const labels: Record<string, string> = {
       '🐭': 'Rodent activity',
@@ -283,8 +309,20 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
       '⚠️': 'Monitor area',
       '🚫': 'Access restricted',
       '📍': 'Point of interest',
+      '🌳': 'Cut trees',
+      '💧': 'Reduce water',
     };
     return labels[emoji] || 'Custom marker';
+  };
+
+  const saveCanvas = () => {
+    if (!fabricCanvasRef.current || !onSave) return;
+    const canvasData = JSON.stringify({
+      objects: fabricCanvasRef.current.toJSON(),
+      legendItems: legendItems
+    });
+    onSave(canvasData);
+    toast.success("Map annotations saved!");
   };
 
   const clearCanvas = () => {
@@ -477,6 +515,21 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         >
           <X className="w-5 h-5" />
         </Button>
+        {onSave && (
+          <Button
+            size="icon"
+            variant="default"
+            onClick={saveCanvas}
+            title="Save annotations"
+            className="h-10 w-10"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+          </Button>
+        )}
       </div>
 
       {/* Emoji Picker */}

@@ -36,6 +36,8 @@ const Report = () => {
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
+  const [mapData, setMapData] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(21);
 
   useEffect(() => {
     if (reportId) {
@@ -74,6 +76,7 @@ const Report = () => {
       setEditableFindings((data.findings as string[]) || []);
       setEditableRecommendations((data.recommendations as string[]) || []);
       setEditableNextSteps((data.next_steps as string[]) || []);
+      setMapData((data.map_data as string) || null);
       
       if (data.address) {
         geocodeAddress(data.address);
@@ -197,6 +200,7 @@ const Report = () => {
         recommendations: editableRecommendations,
         next_steps: editableNextSteps,
         map_url: coordinates ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}` : null,
+        map_data: mapData,
       };
 
       if (reportId) {
@@ -261,8 +265,11 @@ const Report = () => {
   };
 
   const mapUrl = coordinates 
-    ? `https://maps.google.com/maps?ll=${coordinates.lat},${coordinates.lng}&t=k&z=21&output=embed`
+    ? `https://maps.google.com/maps?ll=${coordinates.lat},${coordinates.lng}&t=k&z=${zoomLevel}&output=embed`
     : "";
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 1, 15));
 
   return (
     <div className="min-h-screen bg-background">
@@ -366,7 +373,33 @@ const Report = () => {
                 scrolling="no"
               />
               <div className="absolute inset-0">
-                <MapCanvas mapUrl={mapUrl} />
+                <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
+              </div>
+              <div className="absolute top-6 right-6 flex flex-col gap-2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 border border-border z-30">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={handleZoomIn}
+                  title="Zoom in"
+                  className="h-10 w-10"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+                  </svg>
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={handleZoomOut}
+                  title="Zoom out"
+                  className="h-10 w-10"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35M8 11h6" />
+                  </svg>
+                </Button>
               </div>
             </div>
           ) : (
