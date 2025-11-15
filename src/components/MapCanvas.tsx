@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Smile, Square } from 'lucide-react';
+import { Trash2, Type, X, Smile, Square, Hand } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
 import { toast } from 'sonner';
 
@@ -51,6 +51,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillColor, setRectFillColor] = useState('#C3D1C5');
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
+  const [panMode, setPanMode] = useState(false);
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
 
@@ -78,9 +79,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    const parentRect = canvasRef.current.parentElement?.getBoundingClientRect();
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: window.innerWidth > 768 ? window.innerWidth / 2 : window.innerWidth,
-      height: window.innerWidth > 768 ? window.innerHeight - 92 : window.innerHeight * 0.6,
+      width: parentRect?.width ? Math.floor(parentRect.width) : window.innerWidth,
+      height: parentRect?.height ? Math.floor(parentRect.height) : Math.floor(window.innerHeight * 0.6),
       backgroundColor: 'transparent',
     });
 
@@ -91,12 +93,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     isTouchRef.current = !!isTouch;
 
     const resizeCanvas = () => {
-      const isMobile = window.innerWidth <= 768;
-      canvas.setDimensions({
-        width: isMobile ? window.innerWidth : window.innerWidth / 2,
-        height: isMobile ? window.innerHeight * 0.6 : window.innerHeight - 92,
-      });
-      canvas.renderAll();
+      const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
+      if (parentRect) {
+        canvas.setDimensions({
+          width: Math.floor(parentRect.width),
+          height: Math.floor(parentRect.height),
+        });
+        canvas.renderAll();
+      }
     };
 
     window.addEventListener('resize', resizeCanvas);
@@ -305,7 +309,21 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       const savedData = JSON.parse(initialData);
       if (savedData.objects) {
         fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
-          fabricCanvasRef.current?.renderAll();
+          const canvas = fabricCanvasRef.current!;
+          if (savedData.base?.width && savedData.base?.height) {
+            const currW = canvas.getWidth();
+            const currH = canvas.getHeight();
+            const scaleX = currW / savedData.base.width;
+            const scaleY = currH / savedData.base.height;
+            canvas.getObjects().forEach((obj: any) => {
+              obj.scaleX = (obj.scaleX || 1) * scaleX;
+              obj.scaleY = (obj.scaleY || 1) * scaleY;
+              obj.left = (obj.left || 0) * scaleX;
+              obj.top = (obj.top || 0) * scaleY;
+              obj.setCoords();
+            });
+          }
+          canvas.renderAll();
         });
       }
       if (savedData.legendItems) {
@@ -358,7 +376,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       if (!fabricCanvasRef.current) return;
       const canvasData = JSON.stringify({
         objects: fabricCanvasRef.current.toJSON(),
-        legendItems: legendItems
+        legendItems: legendItems,
+        base: { width: fabricCanvasRef.current.getWidth(), height: fabricCanvasRef.current.getHeight() }
       });
       onSave(canvasData);
     };
@@ -484,7 +503,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: tool === 'select' ? 'auto' : 'auto' }}
+        style={{ pointerEvents: panMode ? 'none' : 'auto' }}
       />
 
       {/* Drawing tools */}
@@ -499,6 +518,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
+        </Button>
+        <Button
+          size="icon"
+          variant={panMode ? 'default' : 'outline'}
+          onClick={() => setPanMode(!panMode)}
+          title="Pan Map"
+          className="h-10 w-10"
+        >
+          <Hand className="w-5 h-5" />
         </Button>
         <Button
           size="icon"

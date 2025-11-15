@@ -78,7 +78,7 @@ const Report = () => {
       setEditableFindings((data.findings as string[]) || []);
       setEditableRecommendations((data.recommendations as string[]) || []);
       setEditableNextSteps((data.next_steps as string[]) || []);
-      setMapData((data.map_data as string) || null);
+      setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
       
       if (data.address) {
         geocodeAddress(data.address);
@@ -322,16 +322,27 @@ const Report = () => {
             scale: 1,
             logging: false,
           });
-          
-          const mapPlaceholder = pdfContent.querySelector('#map-placeholder');
+          const staticMapUrl = coordinates ? `https://staticmap.openstreetmap.de/staticmap.php?center=${coordinates.lat},${coordinates.lng}&zoom=${zoomLevel}&size=800x400` : '';
+          const mapPlaceholder = pdfContent.querySelector('#map-placeholder') as HTMLElement | null;
           if (mapPlaceholder) {
             mapPlaceholder.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = mapImage.toDataURL('image/png');
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            mapPlaceholder.appendChild(img);
+            mapPlaceholder.style.position = 'relative';
+            const bg = document.createElement('img');
+            bg.style.position = 'absolute';
+            bg.style.inset = '0';
+            bg.style.width = '100%';
+            bg.style.height = '100%';
+            bg.style.objectFit = 'cover';
+            if (staticMapUrl) bg.src = staticMapUrl;
+            const overlay = document.createElement('img');
+            overlay.src = mapImage.toDataURL('image/png');
+            overlay.style.position = 'absolute';
+            overlay.style.inset = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.objectFit = 'cover';
+            mapPlaceholder.appendChild(bg);
+            mapPlaceholder.appendChild(overlay);
           }
         } catch (error) {
           console.error('Error capturing map:', error);
