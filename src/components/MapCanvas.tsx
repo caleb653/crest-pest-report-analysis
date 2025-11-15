@@ -1,19 +1,21 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Smile } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, FabricObject } from 'fabric';
+import { Trash2, Type, X, Smile, Square } from 'lucide-react';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
 
 interface MapCanvasProps {
   mapUrl: string;
 }
 
-type Tool = 'select' | 'text' | 'emoji';
+type Tool = 'select' | 'text' | 'emoji' | 'rectangle';
 
 interface LegendItem {
   emoji: string;
   label: string;
 }
+
+const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
 const AVAILABLE_EMOJIS = [
   '🐭', '🐜', '🪳', '🦗', '🕷️', '🐝', '🦟', '🐛',
@@ -31,6 +33,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
   const [isDraggingOverDelete, setIsDraggingOverDelete] = useState(false);
+  const [colorIndex, setColorIndex] = useState(0);
   const toolRef = useRef<Tool>('select');
   const selectedEmojiRef = useRef<string>('📍');
 
@@ -98,6 +101,28 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         
         setTool('select');
         setShowEmojiPicker(false);
+      } else if (currentTool === 'rectangle') {
+        const pointer = canvas.getScenePoint(e.e);
+        const currentColor = SHAPE_COLORS[colorIndex % SHAPE_COLORS.length];
+        
+        const rect = new FabricRect({
+          left: pointer.x - 60,
+          top: pointer.y - 40,
+          width: 120,
+          height: 80,
+          fill: 'transparent',
+          stroke: currentColor,
+          strokeWidth: 4,
+          selectable: true,
+          hasControls: true,
+        });
+        
+        canvas.add(rect);
+        canvas.setActiveObject(rect);
+        canvas.renderAll();
+        
+        setColorIndex(prev => prev + 1);
+        setTool('select');
       } else if (currentTool === 'text') {
         const pointer = canvas.getScenePoint(e.e);
         const text = new IText('Type here', {
@@ -251,6 +276,15 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
+        </Button>
+        <Button
+          size="icon"
+          variant={tool === 'rectangle' ? 'default' : 'outline'}
+          onClick={() => setTool('rectangle')}
+          title="Rectangle"
+          className="h-10 w-10"
+        >
+          <Square className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
