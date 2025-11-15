@@ -153,8 +153,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
-        const pointer = canvas.getPointer(e.e as any);
-        
         const rect = new FabricRect({
           left: pointer.x - 60,
           top: pointer.y - 40,
@@ -203,7 +201,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         clickPlacedRef.current = true;
         setTool('select');
       } else if (currentTool === 'text') {
-        const pointer = canvas.getPointer(e.e as any);
         const text = new IText('Type here', {
           left: pointer.x,
           top: pointer.y,
