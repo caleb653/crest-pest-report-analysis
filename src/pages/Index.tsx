@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import crestLogo from "@/assets/crest-logo-black.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -9,9 +10,9 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-primary flex items-center justify-center p-4">
       <div className="text-center max-w-2xl">
         <div className="mb-8">
-          <FileText className="w-24 h-24 mx-auto text-primary-foreground mb-6" />
+          <img src={crestLogo} alt="Crest Logo" className="w-64 mx-auto mb-6" />
           <h1 className="text-5xl font-bold text-primary-foreground mb-4">
-            PestPro Reports
+            Pest Analysis Reports
           </h1>
           <p className="text-xl text-primary-foreground/90">
             Internal Technician Report System
