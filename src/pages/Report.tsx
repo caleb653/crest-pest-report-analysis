@@ -148,6 +148,13 @@ const Report = () => {
   };
 
   const displayAddress = extractedAddress || address || "Not provided";
+  
+  // Extract just the street address (first part before comma)
+  const getStreetAddress = (fullAddress: string) => {
+    if (!fullAddress || fullAddress === "Not provided") return "Address";
+    const parts = fullAddress.split(',');
+    return parts[0].trim();
+  };
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     setter(prev => {
@@ -165,67 +172,69 @@ const Report = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-gradient-primary border-b-4 border-foreground px-8 py-4">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            {/* Crest Logo */}
+        <div className="max-w-[1800px] mx-auto">
+          <div className="flex items-start justify-between">
+            {/* Left: Crest Logo */}
             <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
             
-            <div className="flex-1">
-              <Input
-                value={reportTitle}
-                onChange={(e) => setReportTitle(e.target.value)}
-                className="text-2xl font-bold bg-transparent border-none text-foreground placeholder:text-foreground/70 px-0 h-auto mb-2 focus-visible:ring-0"
-              />
-              <div className="flex gap-6 text-sm text-foreground/90 font-medium">
+            {/* Center: Report Title and Customer/Tech Info */}
+            <div className="flex-1 px-8 flex items-start gap-8">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-foreground mb-1">
+                  {getStreetAddress(displayAddress)} Service Report
+                </h1>
+              </div>
+              
+              {/* Customer and Technician Names - Stacked */}
+              <div className="flex flex-col gap-2 min-w-[200px]">
                 <div className="flex items-center gap-2">
-                  <span className="opacity-80">Technician:</span>
-                  <Input
-                    value={editableTech}
-                    onChange={(e) => setEditableTech(e.target.value)}
-                    placeholder="Tech name"
-                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 w-40 focus-visible:ring-0 focus-visible:border-foreground/60"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="opacity-80">Customer:</span>
+                  <span className="text-sm text-foreground/80 font-medium">Customer:</span>
                   <Input
                     value={editableCustomer}
                     onChange={(e) => setEditableCustomer(e.target.value)}
                     placeholder="Customer name"
-                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 w-40 focus-visible:ring-0 focus-visible:border-foreground/60"
+                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
                   />
                 </div>
-                <span className="opacity-80">• {displayAddress}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground/80 font-medium">Technician:</span>
+                  <Input
+                    value={editableTech}
+                    onChange={(e) => setEditableTech(e.target.value)}
+                    placeholder="Tech name"
+                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/')} 
-              className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              New Report
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => toast.success("Downloaded!")} 
-              className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => toast.success("Shared!")} 
-              className="bg-foreground text-background hover:bg-foreground/90 font-semibold"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
-            </Button>
+            
+            {/* Right: Company Name and Address */}
+            <div className="flex flex-col items-end gap-3">
+              <div className="text-right">
+                <h2 className="text-xl font-bold text-foreground">Crest Pest Control</h2>
+                <p className="text-xs text-foreground/70 mt-1">{displayAddress}</p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => toast.success("Downloaded!")} 
+                  className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={() => toast.success("Shared!")} 
+                  className="bg-foreground text-background hover:bg-foreground/90 font-semibold"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
