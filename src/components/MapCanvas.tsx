@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Smile, Square } from 'lucide-react';
+import { Trash2, Type, X, Smile, Square, Lock, Unlock } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
 import { toast } from 'sonner';
 
@@ -53,6 +53,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
+  const [isLocked, setIsLocked] = useState(true);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -538,32 +543,97 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     };
   }, [isDraggingLegend, dragOffset]);
 
-  return (
-    <div className="relative w-full h-full">
-      {/* Map iframe */}
-      <iframe
-        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
-        style={{ border: '2px solid hsl(var(--foreground))' }}
-        loading="lazy"
-        allowFullScreen
-        src={mapUrl}
-      />
+  const handlePanStart = (clientX: number, clientY: number) => {
+    if (!isLocked) {
+      setIsPanning(true);
+      setPanStart({ x: clientX - panOffset.x, y: clientY - panOffset.y });
+    }
+  };
 
-      {/* Drawing canvas overlay */}
-      <canvas
-        ref={canvasRef}
-        id="map-overlay-canvas"
-        className="absolute inset-0 w-full h-full"
-      />
+  const handlePanMove = (clientX: number, clientY: number) => {
+    if (isPanning && !isLocked) {
+      setPanOffset({
+        x: clientX - panStart.x,
+        y: clientY - panStart.y,
+      });
+    }
+  };
+
+  const handlePanEnd = () => {
+    setIsPanning(false);
+  };
+
+  const toggleLock = () => {
+    setIsLocked(!isLocked);
+    toast(isLocked ? 'Map unlocked - drag to pan' : 'Map locked - ready to draw');
+  };
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      <div
+        ref={containerRef}
+        className="relative w-full h-full"
+        style={{
+          transform: `translate(${panOffset.x}px, ${panOffset.y}px)`,
+          cursor: !isLocked ? (isPanning ? 'grabbing' : 'grab') : 'default',
+          transition: isPanning ? 'none' : 'transform 0.2s ease-out',
+        }}
+        onMouseDown={(e) => {
+          if (!isLocked && e.button === 0) {
+            handlePanStart(e.clientX, e.clientY);
+          }
+        }}
+        onMouseMove={(e) => handlePanMove(e.clientX, e.clientY)}
+        onMouseUp={handlePanEnd}
+        onMouseLeave={handlePanEnd}
+        onTouchStart={(e) => {
+          if (!isLocked && e.touches.length === 1) {
+            handlePanStart(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 1) {
+            handlePanMove(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }}
+        onTouchEnd={handlePanEnd}
+      >
+        {/* Map iframe */}
+        <iframe
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground pointer-events-none"
+          style={{ border: '2px solid hsl(var(--foreground))' }}
+          loading="lazy"
+          src={mapUrl}
+        />
+
+        {/* Drawing canvas overlay */}
+        <canvas
+          ref={canvasRef}
+          id="map-overlay-canvas"
+          className="absolute inset-0 w-full h-full"
+          style={{ pointerEvents: isLocked ? 'auto' : 'none' }}
+        />
+      </div>
 
       {/* Drawing tools */}
       <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
+        <Button
+          size="icon"
+          variant={isLocked ? 'outline' : 'default'}
+          onClick={toggleLock}
+          title={isLocked ? 'Unlock to pan map' : 'Lock to draw'}
+          className="h-10 w-10"
+        >
+          {isLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+        </Button>
+        <div className="h-px bg-border" />
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
           onClick={() => setTool('select')}
           title="Select & Move"
           className="h-10 w-10"
+          disabled={!isLocked}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
@@ -575,6 +645,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           onClick={() => setTool('rectangle')}
           title="Rectangle"
           className="h-10 w-10"
+          disabled={!isLocked}
         >
           <Square className="w-5 h-5" />
         </Button>
