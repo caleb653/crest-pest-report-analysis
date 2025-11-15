@@ -24,11 +24,13 @@ const AVAILABLE_EMOJIS = [
 export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const [tool, setTool] = useState<Tool>('select');
   const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
   const [showLegend, setShowLegend] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
+  const [isDraggingOverDelete, setIsDraggingOverDelete] = useState(false);
   const toolRef = useRef<Tool>('select');
   const selectedEmojiRef = useRef<string>('📍');
 
@@ -76,7 +78,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           fontSize: 32,
           fontFamily: 'sans-serif',
           selectable: true,
-          editable: true,
+          editable: false, // Not editable, only moveable
         });
         canvas.add(emoji);
         canvas.setActiveObject(emoji);
@@ -106,13 +108,58 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           fontWeight: 'bold',
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           selectable: true,
-          editable: true,
+          editable: false, // Not editable after creation, only moveable
         });
         canvas.add(text);
         canvas.setActiveObject(text);
-        text.enterEditing();
         canvas.renderAll();
       }
+    });
+
+    // Track object movement for drag-to-delete
+    canvas.on('object:moving', (e) => {
+      if (!deleteButtonRef.current || !e.target) return;
+      
+      const obj = e.target;
+      const objBounds = obj.getBoundingRect();
+      const deleteButton = deleteButtonRef.current.getBoundingClientRect();
+      
+      // Check if object overlaps with delete button
+      const isOverDelete = (
+        objBounds.left < deleteButton.right &&
+        objBounds.left + objBounds.width > deleteButton.left &&
+        objBounds.top < deleteButton.bottom &&
+        objBounds.top + objBounds.height > deleteButton.top
+      );
+      
+      setIsDraggingOverDelete(isOverDelete);
+    });
+
+    // Delete on drop over delete button
+    canvas.on('mouse:up', (e) => {
+      if (!deleteButtonRef.current || !e.target) {
+        setIsDraggingOverDelete(false);
+        return;
+      }
+      
+      const obj = e.target;
+      const objBounds = obj.getBoundingRect();
+      const deleteButton = deleteButtonRef.current.getBoundingClientRect();
+      
+      // Check if dropped over delete button
+      const isOverDelete = (
+        objBounds.left < deleteButton.right &&
+        objBounds.left + objBounds.width > deleteButton.left &&
+        objBounds.top < deleteButton.bottom &&
+        objBounds.top + objBounds.height > deleteButton.top
+      );
+      
+      if (isOverDelete) {
+        canvas.remove(obj);
+        canvas.renderAll();
+      }
+      
+      setIsDraggingOverDelete(false);
     });
 
     return () => {
@@ -152,14 +199,6 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     fabricCanvasRef.current.clear();
     setLegendItems([]);
     setShowLegend(false);
-  };
-
-  const deleteSelected = () => {
-    if (!fabricCanvasRef.current) return;
-    const activeObjects = fabricCanvasRef.current.getActiveObjects();
-    activeObjects.forEach(obj => fabricCanvasRef.current?.remove(obj));
-    fabricCanvasRef.current.discardActiveObject();
-    fabricCanvasRef.current.renderAll();
   };
 
   const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
@@ -233,13 +272,13 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
         </Button>
         <div className="h-px bg-border my-1" />
         <Button
+          ref={deleteButtonRef}
           size="icon"
-          variant="outline"
-          onClick={deleteSelected}
-          title="Delete selected"
-          className="h-10 w-10"
+          variant={isDraggingOverDelete ? 'destructive' : 'outline'}
+          title="Drag items here to delete"
+          className={`h-10 w-10 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
-          <X className="w-5 h-5" />
+          <Trash2 className="w-5 h-5" />
         </Button>
         <Button
           size="icon"
@@ -248,7 +287,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           title="Clear all"
           className="h-10 w-10"
         >
-          <Trash2 className="w-5 h-5" />
+          <X className="w-5 h-5" />
         </Button>
       </div>
 
