@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Smile, Square } from 'lucide-react';
@@ -365,27 +365,31 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     const canvas = fabricCanvasRef.current;
     
-    // Debounce the save to avoid too many saves during drag
-    let saveTimeout: NodeJS.Timeout;
-    const handleChange = () => {
-      clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(saveCanvasData, 300);
+    // Save immediately on final actions (mouse up, object modified)
+    const handleImmediateSave = () => {
+      saveCanvasData();
     };
     
-    canvas.on('object:added', handleChange);
-    canvas.on('object:modified', handleChange);
-    canvas.on('object:removed', handleChange);
-    // Extra reliability on mobile: save on pointer up and when text editing changes
-    canvas.on('mouse:up', handleChange);
-    canvas.on('text:changed', handleChange as any);
+    // Debounce only for continuous events like text editing
+    let saveTimeout: NodeJS.Timeout;
+    const handleDebouncedSave = () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveCanvasData, 100);
+    };
+    
+    canvas.on('object:added', handleImmediateSave);
+    canvas.on('object:modified', handleImmediateSave);
+    canvas.on('object:removed', handleImmediateSave);
+    canvas.on('mouse:up', handleImmediateSave);
+    canvas.on('text:changed', handleDebouncedSave as any);
     
     return () => {
       clearTimeout(saveTimeout);
-      canvas.off('object:added', handleChange);
-      canvas.off('object:modified', handleChange);
-      canvas.off('object:removed', handleChange);
-      canvas.off('mouse:up', handleChange);
-      canvas.off('text:changed', handleChange as any);
+      canvas.off('object:added', handleImmediateSave);
+      canvas.off('object:modified', handleImmediateSave);
+      canvas.off('object:removed', handleImmediateSave);
+      canvas.off('mouse:up', handleImmediateSave);
+      canvas.off('text:changed', handleDebouncedSave as any);
     };
   }, [onSave, legendItems]);
 
