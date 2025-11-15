@@ -146,7 +146,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           strokeWidth: 3,
           rx: 8,
           ry: 8,
-          strokeUniform: true,
           selectable: true,
           hasControls: true,
         });
