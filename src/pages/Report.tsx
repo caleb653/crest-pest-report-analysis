@@ -412,18 +412,16 @@ const Report = () => {
         if (localCoords) {
           const width = 1100; // slightly narrower to reduce horizontal stretch
           const height = 700;
-          const staticUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${localCoords.lat},${localCoords.lng}&zoom=${zoomLevel}&size=${width}x${height}&maptype=mapnik`;
           try {
-            const resp = await fetch(staticUrl);
-            const blob = await resp.blob();
-            baseDataUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onerror = () => reject(new Error('Failed to read static map blob'));
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            });
+            const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const fnUrl = `${baseUrl}/functions/v1/static-map?lat=${localCoords.lat}&lng=${localCoords.lng}&zoom=${zoomLevel}&width=${width}&height=${height}&marker=1`;
+            const resp = await fetch(fnUrl);
+            if (resp.ok) {
+              const data = await resp.json();
+              baseDataUrl = data?.dataUrl || null;
+            }
           } catch (e) {
-            console.error('Static map fetch failed, using placeholder', e);
+            console.error('Static map function failed, using placeholder', e);
           }
         }
 
