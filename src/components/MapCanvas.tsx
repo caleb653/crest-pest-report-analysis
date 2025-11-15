@@ -55,17 +55,18 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
     if (!canvasRef.current) return;
 
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: window.innerWidth / 2,
-      height: window.innerHeight - 92,
+      width: window.innerWidth > 768 ? window.innerWidth / 2 : window.innerWidth,
+      height: window.innerWidth > 768 ? window.innerHeight - 92 : window.innerHeight * 0.6,
       backgroundColor: 'transparent',
     });
 
     fabricCanvasRef.current = canvas;
 
     const resizeCanvas = () => {
+      const isMobile = window.innerWidth <= 768;
       canvas.setDimensions({
-        width: window.innerWidth / 2,
-        height: window.innerHeight - 92,
+        width: isMobile ? window.innerWidth : window.innerWidth / 2,
+        height: isMobile ? window.innerHeight * 0.6 : window.innerHeight - 92,
       });
       canvas.renderAll();
     };

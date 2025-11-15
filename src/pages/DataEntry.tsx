@@ -81,7 +81,6 @@ const DataEntry = () => {
                   type="file"
                   multiple
                   accept="image/*"
-                  capture="environment"
                   className="hidden"
                   onChange={handleScreenshotUpload}
                 />
