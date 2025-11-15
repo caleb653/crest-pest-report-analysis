@@ -110,7 +110,6 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           width: 120,
           height: 80,
           fill: '#C3D1C5',
-          opacity: 0.25,
           stroke: '#000000',
           strokeWidth: 4,
           selectable: true,
