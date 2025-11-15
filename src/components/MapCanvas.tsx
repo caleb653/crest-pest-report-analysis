@@ -315,15 +315,32 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     return labels[emoji] || 'Custom marker';
   };
 
-  const saveCanvas = () => {
+  // Auto-save canvas data whenever it changes
+  useEffect(() => {
     if (!fabricCanvasRef.current || !onSave) return;
-    const canvasData = JSON.stringify({
-      objects: fabricCanvasRef.current.toJSON(),
-      legendItems: legendItems
-    });
-    onSave(canvasData);
-    toast.success("Map annotations saved!");
-  };
+    
+    const saveCanvasData = () => {
+      if (!fabricCanvasRef.current) return;
+      const canvasData = JSON.stringify({
+        objects: fabricCanvasRef.current.toJSON(),
+        legendItems: legendItems
+      });
+      onSave(canvasData);
+    };
+
+    const canvas = fabricCanvasRef.current;
+    const handleChange = () => saveCanvasData();
+    
+    canvas.on('object:added', handleChange);
+    canvas.on('object:modified', handleChange);
+    canvas.on('object:removed', handleChange);
+    
+    return () => {
+      canvas.off('object:added', handleChange);
+      canvas.off('object:modified', handleChange);
+      canvas.off('object:removed', handleChange);
+    };
+  }, [onSave, legendItems]);
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;
@@ -515,21 +532,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         >
           <X className="w-5 h-5" />
         </Button>
-        {onSave && (
-          <Button
-            size="icon"
-            variant="default"
-            onClick={saveCanvas}
-            title="Save annotations"
-            className="h-10 w-10"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-          </Button>
-        )}
       </div>
 
       {/* Emoji Picker */}
