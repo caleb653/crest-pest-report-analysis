@@ -112,18 +112,18 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       const currentTool = toolRef.current;
       const currentEmoji = selectedEmojiRef.current;
       
-      const nativeEvt: any = (e as any)?.e ?? e;
-      const pointer = fabricCanvasRef.current?.getPointer(nativeEvt);
+      // Robust pointer extraction for Fabric v6
+      const evtAny: any = e as any;
+      const pt = evtAny?.absolutePointer || evtAny?.pointer || fabricCanvasRef.current?.getPointer(evtAny?.e);
 
-      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji, 'pointer:', pointer);
+      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji, 'pointer:', pt);
       
-      if (!pointer) return;
+      if (!pt) return;
       
       if (currentTool === 'emoji') {
-        const pointer = canvas.getPointer(e.e as any);
         const emoji = new IText(currentEmoji, {
-          left: pointer.x,
-          top: pointer.y,
+          left: pt.x,
+          top: pt.y,
           fontSize: 32,
           fontFamily: 'sans-serif',
           selectable: true,
@@ -154,8 +154,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
         const rect = new FabricRect({
-          left: pointer.x - 60,
-          top: pointer.y - 40,
+          left: pt.x - 60,
+          top: pt.y - 40,
           width: 120,
           height: 80,
           fill: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
@@ -172,8 +172,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         // Immediately add centered text for typing
         const text = new IText('Type here...', {
-          left: pointer.x,
-          top: pointer.y,
+          left: pt.x,
+          top: pt.y,
           fontSize: 14,
           fill: '#666666',
           fontWeight: 'bold',
@@ -202,8 +202,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setTool('select');
       } else if (currentTool === 'text') {
         const text = new IText('Type here', {
-          left: pointer.x,
-          top: pointer.y,
+          left: pt.x,
+          top: pt.y,
           fontSize: 16,
           fill: '#000000',
           fontFamily: 'Space Grotesk, sans-serif',
