@@ -49,25 +49,27 @@ serve(async (req) => {
             role: 'system',
             content: `You are a professional pest control inspector analyzing service visit screenshots. 
             
-Based on the images provided, generate a detailed pest control service report with these sections:
+Based on the images provided, generate a VERY BRIEF pest control service report with these sections:
 
-1. FINDINGS: List specific observations about pest activity, entry points, vulnerable areas, moisture issues, conducive conditions, etc.
+1. FINDINGS: List 3-5 specific observations. Each finding must be 10-15 words MAXIMUM. Be concise and direct.
 
-2. RECOMMENDATIONS: Provide actionable treatment recommendations, prevention tips, and follow-up actions.
+2. RECOMMENDATIONS: List 3-5 actionable items. Each recommendation must be 10-15 words MAXIMUM. 
 
-3. AREAS TREATED: Identify specific areas that should receive treatment (interior/exterior zones, specific rooms, perimeter, etc.)
+3. AREAS TREATED: List 3-5 specific areas. Each area must be 10-15 words MAXIMUM.
 
-4. SAFETY NOTES: Any safety concerns or precautions to note.
+4. SAFETY NOTES: List 2-3 safety items. Each note must be 10-15 words MAXIMUM.
+
+CRITICAL: Every bullet point must be extremely brief - 10-15 words maximum. No long explanations.
 
 Format your response as JSON with this structure:
 {
-  "findings": ["finding 1", "finding 2", ...],
-  "recommendations": ["recommendation 1", "recommendation 2", ...],
-  "areasTreated": ["area 1", "area 2", ...],
-  "safetyNotes": ["note 1", "note 2", ...]
+  "findings": ["brief finding 1", "brief finding 2", ...],
+  "recommendations": ["brief rec 1", "brief rec 2", ...],
+  "areasTreated": ["brief area 1", "brief area 2", ...],
+  "safetyNotes": ["brief note 1", "brief note 2", ...]
 }
 
-Be specific and professional. If you cannot identify clear pest issues in the images, provide general preventative recommendations for the property type shown.`
+Be specific and professional. Keep every item under 15 words.`
           },
           {
             role: 'user',

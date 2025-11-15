@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Download, Share2, Loader2, Edit3, Save } from "lucide-react";
+import { Home, Download, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { MapCanvas } from "@/components/MapCanvas";
 
 interface AnalysisData {
   findings: string[];
@@ -25,12 +26,13 @@ const Report = () => {
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
-  // Editable fields
+  const [reportTitle, setReportTitle] = useState("Pest Control Service Report");
+  const [editableTech, setEditableTech] = useState(technicianName || "");
+  const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [editableAreas, setEditableAreas] = useState<string[]>([]);
   const [editableSafety, setEditableSafety] = useState<string[]>([]);
-  const [editMode, setEditMode] = useState(false);
 
   useEffect(() => {
     if (screenshots && screenshots.length > 0) {
@@ -115,10 +117,9 @@ const Report = () => {
       }
 
       setAnalysis(data);
-      toast.success('Report generated successfully!');
+      toast.success('Report generated!');
     } catch (error) {
       console.error('Error analyzing findings:', error);
-      toast.error('Error generating report');
     } finally {
       setIsAnalyzing(false);
     }
@@ -148,35 +149,62 @@ const Report = () => {
     }
   };
 
-  const handleShare = () => {
-    toast.success("Report shared successfully!");
-  };
-
-  const handleDownload = () => {
-    toast.success("Report downloaded!");
-  };
-
   const displayAddress = extractedAddress || address || "Not provided";
+
+  const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setter(prev => {
+      const newArr = [...prev];
+      newArr[index] = value;
+      return newArr;
+    });
+  };
+
+  const addItem = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setter(prev => [...prev, ""]);
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-gradient-primary text-primary-foreground px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Pest Control Service Report</h1>
-            <p className="text-sm opacity-90">Technician: {technicianName || "Not specified"} • {displayAddress}</p>
+          <div className="flex-1">
+            <Input
+              value={reportTitle}
+              onChange={(e) => setReportTitle(e.target.value)}
+              className="text-2xl font-bold bg-transparent border-none text-primary-foreground placeholder:text-primary-foreground/70 px-0 h-auto mb-2"
+            />
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="opacity-90">Technician:</span>
+                <Input
+                  value={editableTech}
+                  onChange={(e) => setEditableTech(e.target.value)}
+                  placeholder="Tech name"
+                  className="bg-transparent border-b border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/50 px-1 h-6 w-40"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="opacity-90">Customer:</span>
+                <Input
+                  value={editableCustomer}
+                  onChange={(e) => setEditableCustomer(e.target.value)}
+                  placeholder="Customer name"
+                  className="bg-transparent border-b border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/50 px-1 h-6 w-40"
+                />
+              </div>
+              <span className="opacity-90">• {displayAddress}</span>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate('/')} className="bg-card text-card-foreground border-none">
               <Home className="w-4 h-4 mr-2" />
-              New Report
+              New
             </Button>
-            <Button variant="outline" size="sm" onClick={handleDownload} className="bg-card text-card-foreground border-none">
+            <Button variant="outline" size="sm" onClick={() => toast.success("Downloaded!")} className="bg-card text-card-foreground border-none">
               <Download className="w-4 h-4 mr-2" />
-              Download
+              PDF
             </Button>
-            <Button size="sm" onClick={handleShare} className="bg-secondary text-secondary-foreground">
+            <Button size="sm" onClick={() => toast.success("Shared!")} className="bg-secondary text-secondary-foreground">
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
@@ -184,151 +212,136 @@ const Report = () => {
         </div>
       </div>
 
-      {/* Main Content - Split Screen */}
-      <div className="flex h-[calc(100vh-80px)]">
-        {/* Left Side - Map */}
+      <div className="flex h-[calc(100vh-92px)]">
         <div className="w-1/2 relative">
           {isProcessing ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
                 <p className="text-muted-foreground">Loading map...</p>
               </div>
             </div>
           ) : coordinates ? (
-            <iframe
-              className="w-full h-full"
-              style={{ border: 0 }}
-              loading="lazy"
-              src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
+            <MapCanvas
+              mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=21&maptype=satellite`}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-muted">
-              <p className="text-muted-foreground">No location data available</p>
+              <p className="text-muted-foreground">No location available</p>
             </div>
           )}
         </div>
 
-        {/* Right Side - Findings & Recommendations */}
         <div className="w-1/2 overflow-y-auto bg-muted/30 p-6 space-y-4">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-center">
                 <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                <p className="text-lg font-medium">Analyzing screenshots...</p>
-                <p className="text-sm text-muted-foreground">Generating findings and recommendations</p>
+                <p className="text-lg font-medium">Analyzing...</p>
               </div>
             </div>
-          ) : analysis ? (
+          ) : (
             <>
-              {/* Edit Mode Toggle */}
-              <div className="flex justify-end">
-                <Button
-                  variant={editMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setEditMode(!editMode)}
-                >
-                  {editMode ? <Save className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-                  {editMode ? "Save Changes" : "Edit Report"}
-                </Button>
-              </div>
-
-              {/* Findings */}
               <Card className="p-4">
                 <h2 className="text-lg font-bold mb-3 text-destructive">FINDINGS</h2>
                 <div className="space-y-2">
-                  {editMode ? (
-                    <Textarea
-                      value={editableFindings.join('\n')}
-                      onChange={(e) => setEditableFindings(e.target.value.split('\n'))}
-                      rows={5}
-                      className="font-mono text-sm"
-                    />
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {editableFindings.map((finding, i) => (
-                        <li key={i} className="text-sm">{finding}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {editableFindings.map((finding, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-destructive font-bold">•</span>
+                      <Input
+                        value={finding}
+                        onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        placeholder="Brief finding (10-15 words)"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addItem(setEditableFindings)}
+                    className="text-xs"
+                  >
+                    + Add finding
+                  </Button>
                 </div>
               </Card>
 
-              {/* Recommendations */}
               <Card className="p-4">
                 <h2 className="text-lg font-bold mb-3 text-secondary">RECOMMENDATIONS</h2>
                 <div className="space-y-2">
-                  {editMode ? (
-                    <Textarea
-                      value={editableRecommendations.join('\n')}
-                      onChange={(e) => setEditableRecommendations(e.target.value.split('\n'))}
-                      rows={5}
-                      className="font-mono text-sm"
-                    />
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {editableRecommendations.map((rec, i) => (
-                        <li key={i} className="text-sm">{rec}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {editableRecommendations.map((rec, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-secondary font-bold">•</span>
+                      <Input
+                        value={rec}
+                        onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        placeholder="Brief recommendation (10-15 words)"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addItem(setEditableRecommendations)}
+                    className="text-xs"
+                  >
+                    + Add recommendation
+                  </Button>
                 </div>
               </Card>
 
-              {/* Areas Treated */}
               <Card className="p-4">
                 <h2 className="text-lg font-bold mb-3 text-primary">AREAS TREATED</h2>
                 <div className="space-y-2">
-                  {editMode ? (
-                    <Textarea
-                      value={editableAreas.join('\n')}
-                      onChange={(e) => setEditableAreas(e.target.value.split('\n'))}
-                      rows={4}
-                      className="font-mono text-sm"
-                    />
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {editableAreas.map((area, i) => (
-                        <li key={i} className="text-sm">{area}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {editableAreas.map((area, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-primary font-bold">•</span>
+                      <Input
+                        value={area}
+                        onChange={(e) => updateItem(i, e.target.value, setEditableAreas)}
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        placeholder="Brief area (10-15 words)"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addItem(setEditableAreas)}
+                    className="text-xs"
+                  >
+                    + Add area
+                  </Button>
                 </div>
               </Card>
 
-              {/* Safety Notes */}
               <Card className="p-4">
                 <h2 className="text-lg font-bold mb-3 text-accent">SAFETY NOTES</h2>
                 <div className="space-y-2">
-                  {editMode ? (
-                    <Textarea
-                      value={editableSafety.join('\n')}
-                      onChange={(e) => setEditableSafety(e.target.value.split('\n'))}
-                      rows={3}
-                      className="font-mono text-sm"
-                    />
-                  ) : (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {editableSafety.map((note, i) => (
-                        <li key={i} className="text-sm">{note}</li>
-                      ))}
-                    </ul>
-                  )}
+                  {editableSafety.map((note, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-accent font-bold">•</span>
+                      <Input
+                        value={note}
+                        onChange={(e) => updateItem(i, e.target.value, setEditableSafety)}
+                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
+                        placeholder="Brief safety note (10-15 words)"
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addItem(setEditableSafety)}
+                    className="text-xs"
+                  >
+                    + Add note
+                  </Button>
                 </div>
               </Card>
-
-              {/* Additional Notes */}
-              {notes && (
-                <Card className="p-4">
-                  <h2 className="text-lg font-bold mb-3">TECHNICIAN NOTES</h2>
-                  <p className="text-sm whitespace-pre-wrap">{notes}</p>
-                </Card>
-              )}
             </>
-          ) : (
-            <div className="flex items-center justify-center py-20">
-              <p className="text-muted-foreground">No analysis data available</p>
-            </div>
           )}
         </div>
       </div>
