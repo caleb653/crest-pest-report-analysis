@@ -11,8 +11,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
-  areasTreated: string[];
-  safetyNotes: string[];
+  nextSteps: string[];
 }
 
 const Report = () => {
@@ -31,8 +30,7 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
-  const [editableAreas, setEditableAreas] = useState<string[]>([]);
-  const [editableSafety, setEditableSafety] = useState<string[]>([]);
+  const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
 
   useEffect(() => {
     if (screenshots && screenshots.length > 0) {
@@ -47,8 +45,7 @@ const Report = () => {
     if (analysis) {
       setEditableFindings(analysis.findings || []);
       setEditableRecommendations(analysis.recommendations || []);
-      setEditableAreas(analysis.areasTreated || []);
-      setEditableSafety(analysis.safetyNotes || []);
+      setEditableNextSteps(analysis.nextSteps || []);
     }
   }, [analysis]);
 
@@ -293,51 +290,26 @@ const Report = () => {
               </Card>
 
               <Card className="p-6 shadow-md">
-                <h2 className="text-lg font-bold mb-4 text-primary">AREAS TREATED</h2>
+                <h2 className="text-lg font-bold mb-4 text-primary">NEXT STEPS</h2>
                 <div className="space-y-2">
-                  {editableAreas.map((area, i) => (
+                  {editableNextSteps.map((step, i) => (
                     <div key={i} className="flex gap-2">
                       <span className="text-primary font-bold">•</span>
                       <Input
-                        value={area}
-                        onChange={(e) => updateItem(i, e.target.value, setEditableAreas)}
+                        value={step}
+                        onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
                         className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
-                        placeholder="Brief area (10-15 words)"
+                        placeholder="Brief next step (10-15 words)"
                       />
                     </div>
                   ))}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => addItem(setEditableAreas)}
+                    onClick={() => addItem(setEditableNextSteps)}
                     className="text-xs"
                   >
-                    + Add area
-                  </Button>
-                </div>
-              </Card>
-
-              <Card className="p-6 shadow-md">
-                <h2 className="text-lg font-bold mb-4 text-accent">SAFETY NOTES</h2>
-                <div className="space-y-2">
-                  {editableSafety.map((note, i) => (
-                    <div key={i} className="flex gap-2">
-                      <span className="text-accent font-bold">•</span>
-                      <Input
-                        value={note}
-                        onChange={(e) => updateItem(i, e.target.value, setEditableSafety)}
-                        className="flex-1 border-none bg-transparent px-0 h-auto text-sm"
-                        placeholder="Brief safety note (10-15 words)"
-                      />
-                    </div>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => addItem(setEditableSafety)}
-                    className="text-xs"
-                  >
-                    + Add note
+                    + Add next step
                   </Button>
                 </div>
               </Card>
