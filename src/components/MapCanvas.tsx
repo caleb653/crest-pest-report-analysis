@@ -115,7 +115,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji);
       
       if (currentTool === 'emoji') {
-        const pointer = canvas.getScenePoint(e.e);
+        const pointer = canvas.getPointer(e.e as any);
         const emoji = new IText(currentEmoji, {
           left: pointer.x,
           top: pointer.y,
@@ -148,7 +148,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
-        const pointer = canvas.getScenePoint(e.e);
+        const pointer = canvas.getPointer(e.e as any);
         
         const rect = new FabricRect({
           left: pointer.x - 60,
@@ -198,7 +198,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         clickPlacedRef.current = true;
         setTool('select');
       } else if (currentTool === 'text') {
-        const pointer = canvas.getScenePoint(e.e);
+        const pointer = canvas.getPointer(e.e as any);
         const text = new IText('Type here', {
           left: pointer.x,
           top: pointer.y,
@@ -567,7 +567,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         className="absolute inset-0 w-full h-full"
         style={{ 
           pointerEvents: isMapInteractive ? 'none' : 'auto',
-          zIndex: 10
+          zIndex: 50
         }}
       />
 
