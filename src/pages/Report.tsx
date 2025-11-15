@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Download, Share2, Loader2 } from "lucide-react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Home, Share2, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AnalysisData {
   findings: string[];
@@ -19,6 +20,8 @@ interface AnalysisData {
 const Report = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { reportId } = useParams();
+  const isMobile = useIsMobile();
   const { technicianName, customerName, address, notes, screenshots } = location.state || {};
   
   const [extractedAddress, setExtractedAddress] = useState<string>("");
@@ -26,8 +29,8 @@ const Report = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
-  const [reportTitle, setReportTitle] = useState("Pest Control Service Report");
   const [editableTech, setEditableTech] = useState(technicianName || "");
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
@@ -35,13 +38,15 @@ const Report = () => {
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
 
   useEffect(() => {
-    if (screenshots && screenshots.length > 0) {
+    if (reportId) {
+      loadReport();
+    } else if (screenshots && screenshots.length > 0) {
       processScreenshots();
       analyzeFindings();
     } else if (address) {
       geocodeAddress(address);
     }
-  }, []);
+  }, [reportId]);
 
   useEffect(() => {
     if (analysis) {
@@ -50,6 +55,34 @@ const Report = () => {
       setEditableNextSteps(analysis.nextSteps || []);
     }
   }, [analysis]);
+
+  const loadReport = async () => {
+    if (!reportId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
+
+      if (error) throw error;
+
+      setEditableTech(data.technician_name);
+      setEditableCustomer(data.customer_name || "");
+      setExtractedAddress(data.address || "");
+      setEditableFindings((data.findings as string[]) || []);
+      setEditableRecommendations((data.recommendations as string[]) || []);
+      setEditableNextSteps((data.next_steps as string[]) || []);
+      
+      if (data.address) {
+        geocodeAddress(data.address);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load report");
+      console.error(error);
+    }
+  };
 
   const processScreenshots = async () => {
     setIsProcessing(true);
@@ -111,7 +144,6 @@ const Report = () => {
 
       if (error) {
         console.error('Error analyzing findings:', error);
-        toast.error('Failed to analyze findings');
         return;
       }
 
@@ -148,9 +180,68 @@ const Report = () => {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!editableTech) {
+      toast.error("Please enter technician name");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const reportData = {
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        address: extractedAddress || address,
+        notes: notes,
+        findings: editableFindings,
+        recommendations: editableRecommendations,
+        next_steps: editableNextSteps,
+        map_url: coordinates ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}` : null,
+      };
+
+      if (reportId) {
+        const { error } = await supabase
+          .from('reports')
+          .update(reportData)
+          .eq('id', reportId);
+
+        if (error) throw error;
+        toast.success("Report updated successfully!");
+      } else {
+        const { error } = await supabase
+          .from('reports')
+          .insert([reportData]);
+
+        if (error) throw error;
+        toast.success("Report submitted successfully!");
+        
+        setTimeout(() => navigate('/'), 2000);
+      }
+    } catch (error: any) {
+      toast.error("Failed to save report");
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Pest Control Report',
+          text: `Report for ${editableCustomer || 'Customer'} at ${extractedAddress || address || 'location'}`,
+        });
+      } catch (error) {
+        console.log('Share cancelled');
+      }
+    } else {
+      toast.info("Sharing not supported on this device");
+    }
+  };
+
   const displayAddress = extractedAddress || address || "Not provided";
   
-  // Extract just the street address (first part before comma)
   const getStreetAddress = (fullAddress: string) => {
     if (!fullAddress || fullAddress === "Not provided") return "Address";
     const parts = fullAddress.split(',');
@@ -169,224 +260,252 @@ const Report = () => {
     setter(prev => [...prev, ""]);
   };
 
+  const mapUrl = coordinates 
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coordinates.lng - 0.002},${coordinates.lat - 0.002},${coordinates.lng + 0.002},${coordinates.lat + 0.002}&layer=mapnik&marker=${coordinates.lat},${coordinates.lng}`
+    : "";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-primary border-b-4 border-foreground px-8 py-4">
-        <div className="max-w-[1800px] mx-auto">
-          <div className="flex items-start justify-between">
-            {/* Left: Crest Logo */}
-            <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
-            
-            {/* Center: Report Title and Customer/Tech Info */}
-            <div className="flex-1 px-8 flex items-start gap-8">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-foreground mb-1">
-                  {getStreetAddress(displayAddress)} Pest Control Analysis
-                </h1>
-              </div>
-              
-              {/* Customer and Technician Names - Stacked */}
-              <div className="flex flex-col gap-2 min-w-[200px]">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-foreground/80 font-medium">Customer:</span>
-                  <Input
-                    value={editableCustomer}
-                    onChange={(e) => setEditableCustomer(e.target.value)}
-                    placeholder="Customer name"
-                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-foreground/80 font-medium">Technician:</span>
-                  <Input
-                    value={editableTech}
-                    onChange={(e) => setEditableTech(e.target.value)}
-                    placeholder="Tech name"
-                    className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
-                  />
-                </div>
-              </div>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
+          <div className="flex items-center justify-between">
+            <img src={crestLogo} alt="Crest" className="h-10" />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleShare}
+                className="h-9"
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate('/')}
+                variant="outline"
+                className="h-9"
+              >
+                <Home className="w-4 h-4" />
+              </Button>
             </div>
-            
-            {/* Right: Company Name and Address */}
-            <div className="flex flex-col items-end gap-3">
-              <div className="text-right">
-                <h2 className="text-xl font-bold text-foreground">Crest Pest Control</h2>
-                <p className="text-xs text-foreground/70 mt-1">{displayAddress}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Header */}
+      {!isMobile && (
+        <div className="bg-gradient-primary border-b-4 border-foreground px-6 py-4">
+          <div className="max-w-[1800px] mx-auto">
+            <div className="flex items-start justify-between">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
+              
+              <div className="flex-1 px-8 flex items-start gap-8">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-foreground mb-1">
+                    {getStreetAddress(displayAddress)} Pest Control Analysis
+                  </h1>
+                </div>
+                
+                <div className="flex flex-col gap-2 min-w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-foreground/80 font-medium">Customer:</span>
+                    <Input
+                      value={editableCustomer}
+                      onChange={(e) => setEditableCustomer(e.target.value)}
+                      placeholder="Customer name"
+                      className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-foreground/80 font-medium">Technician:</span>
+                    <Input
+                      value={editableTech}
+                      onChange={(e) => setEditableTech(e.target.value)}
+                      placeholder="Tech name"
+                      className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
+                    />
+                  </div>
+                </div>
               </div>
               
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => toast.success("Downloaded!")} 
-                  className="bg-card text-card-foreground border-2 border-foreground/20 hover:border-foreground/40 font-semibold"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => toast.success("Shared!")} 
-                  className="bg-foreground text-background hover:bg-foreground/90 font-semibold"
-                >
+              <div className="flex gap-3">
+                <Button onClick={handleShare} variant="outline" size="sm">
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
+                <Button onClick={() => navigate('/')} variant="outline" size="sm">
+                  <Home className="w-4 h-4 mr-2" />
+                  Home
+                </Button>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-120px)] gap-8 p-8 max-w-[1800px] mx-auto">
-        {/* Map Section - 65% Width */}
-        <div className="w-[65%]">
-          <div className="h-full bg-primary rounded-2xl shadow-2xl border-4 border-primary p-6">
-            <h3 className="text-lg font-bold text-foreground mb-3">Property Analysis</h3>
-            <div className="h-[calc(100%-3rem)] rounded-xl overflow-hidden shadow-lg">
-              {isProcessing ? (
-                <div className="h-full flex items-center justify-center bg-muted/50">
-                  <div className="text-center">
-                    <Loader2 className="w-12 h-12 mx-auto mb-3 text-foreground animate-spin" />
-                    <p className="text-muted-foreground font-medium">Loading map...</p>
-                  </div>
-                </div>
-              ) : coordinates ? (
-                <MapCanvas
-                  mapUrl={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&center=${coordinates.lat},${coordinates.lng}&zoom=25&maptype=satellite`}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center bg-muted">
-                  <p className="text-muted-foreground font-medium">No location available</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Report Sections - 35% Width */}
-        <div className="w-[35%] overflow-y-auto bg-muted/20 rounded-2xl p-3 space-y-2">
-          {isAnalyzing ? (
-            <div className="flex items-center justify-center py-12">
+      <div className={isMobile ? "flex flex-col" : "flex h-[calc(100vh-88px)]"}>
+        {/* Map Section */}
+        <div className={isMobile ? "h-[60vh] relative" : "w-1/2 relative"}>
+          {isProcessing && (
+            <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
               <div className="text-center">
-                <Loader2 className="w-12 h-12 mx-auto mb-3 text-primary animate-spin" />
-                <p className="text-lg font-semibold">Analyzing findings...</p>
+                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-foreground font-semibold">Processing Map...</p>
+              </div>
+            </div>
+          )}
+          
+          {mapUrl ? (
+            <div className="relative h-full">
+              <iframe
+                src={mapUrl}
+                className="absolute inset-0 w-full h-full"
+                frameBorder="0"
+                scrolling="no"
+              />
+              <div className="absolute inset-0">
+                <MapCanvas mapUrl={mapUrl} />
               </div>
             </div>
           ) : (
-            <>
-              {/* Findings Card */}
-              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-5 bg-destructive rounded-full"></div>
-                  <h2 className="text-base font-bold text-destructive tracking-tight">FINDINGS</h2>
-                </div>
-                <div className="space-y-3">
-                  {editableFindings.slice(0, 2).map((finding, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <span className="text-destructive font-bold mt-1">•</span>
-                      <Textarea
-                        value={finding}
-                        onChange={(e) => updateItem(i, e.target.value, setEditableFindings)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
-                        placeholder="Brief finding"
-                        rows={2}
-                        onInput={(e) => {
-                          e.currentTarget.style.height = 'auto';
-                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
-                        }}
-                      />
-                    </div>
-                  ))}
-                  {editableFindings.length < 2 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addItem(setEditableFindings)}
-                      className="text-xs mt-1 hover:bg-destructive/10 text-destructive font-medium h-6"
-                    >
-                      + Add finding
-                    </Button>
-                  )}
-                </div>
-              </Card>
-
-              {/* Recommendations Card */}
-              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-5 bg-secondary rounded-full"></div>
-                  <h2 className="text-base font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
-                </div>
-                <div className="space-y-3">
-                  {editableRecommendations.slice(0, 2).map((rec, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <span className="text-secondary font-bold mt-1">•</span>
-                      <Textarea
-                        value={rec}
-                        onChange={(e) => updateItem(i, e.target.value, setEditableRecommendations)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
-                        placeholder="Brief recommendation"
-                        rows={2}
-                        onInput={(e) => {
-                          e.currentTarget.style.height = 'auto';
-                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
-                        }}
-                      />
-                    </div>
-                  ))}
-                  {editableRecommendations.length < 2 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addItem(setEditableRecommendations)}
-                      className="text-xs mt-1 hover:bg-secondary/10 text-secondary font-medium h-6"
-                    >
-                      + Add recommendation
-                    </Button>
-                  )}
-                </div>
-              </Card>
-
-              {/* Next Steps Card */}
-              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-1 h-5 bg-primary rounded-full"></div>
-                  <h2 className="text-base font-bold text-primary tracking-tight">NEXT STEPS</h2>
-                </div>
-                <div className="space-y-3">
-                  {editableNextSteps.slice(0, 2).map((step, i) => (
-                    <div key={i} className="flex gap-2 items-start">
-                      <span className="text-primary font-bold mt-1">•</span>
-                      <Textarea
-                        value={step}
-                        onChange={(e) => updateItem(i, e.target.value, setEditableNextSteps)}
-                        className="flex-1 border-none bg-transparent px-0 min-h-[3rem] h-auto text-sm leading-relaxed focus-visible:ring-0 resize-none"
-                        placeholder="Brief next step"
-                        rows={2}
-                        onInput={(e) => {
-                          e.currentTarget.style.height = 'auto';
-                          e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
-                        }}
-                      />
-                    </div>
-                  ))}
-                  {editableNextSteps.length < 2 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addItem(setEditableNextSteps)}
-                      className="text-xs mt-1 hover:bg-primary/10 text-primary font-medium h-6"
-                    >
-                      + Add next step
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </>
+            <div className="h-full flex items-center justify-center bg-muted">
+              <p className="text-muted-foreground text-center px-4">
+                {isProcessing ? "Processing location..." : "No location available"}
+              </p>
+            </div>
           )}
+        </div>
+
+        {/* Report Details Section */}
+        <div className={isMobile ? "flex-1 overflow-y-auto" : "w-1/2 overflow-y-auto"}>
+          <div className="p-4 md:p-6 space-y-6 pb-24">
+            {/* Mobile: Customer & Technician */}
+            {isMobile && (
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Customer Name</label>
+                    <Input
+                      value={editableCustomer}
+                      onChange={(e) => setEditableCustomer(e.target.value)}
+                      placeholder="Enter customer name"
+                      className="text-base"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Technician Name</label>
+                    <Input
+                      value={editableTech}
+                      onChange={(e) => setEditableTech(e.target.value)}
+                      placeholder="Enter technician name"
+                      className="text-base"
+                    />
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Findings Section */}
+            <Card className="p-4 md:p-6">
+              <h2 className="text-xl md:text-2xl font-bold text-destructive mb-4">Findings</h2>
+              {isAnalyzing ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Analyzing...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {editableFindings.map((finding, index) => (
+                    <Textarea
+                      key={index}
+                      value={finding}
+                      onChange={(e) => updateItem(index, e.target.value, setEditableFindings)}
+                      placeholder="Enter finding..."
+                      className="min-h-[60px] text-base resize-none"
+                    />
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addItem(setEditableFindings)}
+                    className="w-full"
+                  >
+                    + Add Finding
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* Recommendations Section */}
+            <Card className="p-4 md:p-6">
+              <h2 className="text-xl md:text-2xl font-bold text-primary mb-4">Recommendations</h2>
+              <div className="space-y-3">
+                {editableRecommendations.map((rec, index) => (
+                  <Textarea
+                    key={index}
+                    value={rec}
+                    onChange={(e) => updateItem(index, e.target.value, setEditableRecommendations)}
+                    placeholder="Enter recommendation..."
+                    className="min-h-[60px] text-base resize-none"
+                  />
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addItem(setEditableRecommendations)}
+                  className="w-full"
+                >
+                  + Add Recommendation
+                </Button>
+              </div>
+            </Card>
+
+            {/* Next Steps Section */}
+            <Card className="p-4 md:p-6">
+              <h2 className="text-xl md:text-2xl font-bold text-secondary mb-4">Next Steps</h2>
+              <div className="space-y-3">
+                {editableNextSteps.map((step, index) => (
+                  <Textarea
+                    key={index}
+                    value={step}
+                    onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
+                    placeholder="Enter next step..."
+                    className="min-h-[60px] text-base resize-none"
+                  />
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addItem(setEditableNextSteps)}
+                  className="w-full"
+                >
+                  + Add Next Step
+                </Button>
+              </div>
+            </Card>
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving}
+              size="lg"
+              className="w-full text-lg py-6"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  {reportId ? "Update Report" : "Submit Report"}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
