@@ -143,7 +143,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           height: 80,
           fill: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
           stroke: rectBorderColorRef.current,
-          strokeWidth: 4,
+          strokeWidth: 3,
+          rx: 8,
+          ry: 8,
+          strokeUniform: true,
           selectable: true,
           hasControls: true,
         });
