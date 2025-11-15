@@ -39,12 +39,14 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   const selectedEmojiRef = useRef<string>('📍');
   const rectFillColorRef = useRef<string>('#C3D1C5');
   const rectBorderColorRef = useRef<string>('#000000');
+  const rectFillTransparentRef = useRef<boolean>(false);
   const [legendPosition, setLegendPosition] = useState({ x: 24, y: 24 });
   const [isDraggingLegend, setIsDraggingLegend] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const legendRef = useRef<HTMLDivElement>(null);
   const [rectFillColor, setRectFillColor] = useState('#C3D1C5');
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
+  const [rectFillTransparent, setRectFillTransparent] = useState(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -62,6 +64,10 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
   useEffect(() => {
     rectBorderColorRef.current = rectBorderColor;
   }, [rectBorderColor]);
+
+  useEffect(() => {
+    rectFillTransparentRef.current = rectFillTransparent;
+  }, [rectFillTransparent]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -131,7 +137,7 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
           top: pointer.y - 40,
           width: 120,
           height: 80,
-          fill: rectFillColorRef.current,
+          fill: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
           stroke: rectBorderColorRef.current,
           strokeWidth: 4,
           selectable: true,
@@ -407,7 +413,20 @@ export const MapCanvas = ({ mapUrl }: MapCanvasProps) => {
                 onChange={(e) => setRectFillColor(e.target.value)}
                 className="w-8 h-8 rounded cursor-pointer"
                 title="Fill Color"
+                disabled={rectFillTransparent}
               />
+            </div>
+            <div className="flex items-center gap-1 px-1">
+              <input
+                type="checkbox"
+                id="transparent-fill"
+                checked={rectFillTransparent}
+                onChange={(e) => setRectFillTransparent(e.target.checked)}
+                className="cursor-pointer"
+              />
+              <label htmlFor="transparent-fill" className="text-xs cursor-pointer">
+                Transparent
+              </label>
             </div>
             <div className="flex items-center gap-1">
               <label className="text-xs whitespace-nowrap">Border:</label>
