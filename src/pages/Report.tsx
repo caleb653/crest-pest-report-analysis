@@ -261,7 +261,7 @@ const Report = () => {
   };
 
   const mapUrl = coordinates 
-    ? `https://maps.google.com/maps?q=${coordinates.lat},${coordinates.lng}&t=k&z=21&output=embed`
+    ? `https://maps.google.com/maps?ll=${coordinates.lat},${coordinates.lng}&t=k&z=21&output=embed`
     : "";
 
   return (
