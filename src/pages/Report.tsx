@@ -268,7 +268,7 @@ const Report = () => {
         </div>
 
         {/* Report Sections - 1/3 Width */}
-        <div className="w-1/3 overflow-y-auto bg-muted/20 rounded-2xl p-4 space-y-3">
+        <div className="w-1/3 overflow-y-auto bg-muted/20 rounded-2xl p-3 space-y-2">
           {isAnalyzing ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -279,10 +279,10 @@ const Report = () => {
           ) : (
             <>
               {/* Findings Card */}
-              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-destructive rounded-full"></div>
-                  <h2 className="text-lg font-bold text-destructive tracking-tight">FINDINGS</h2>
+              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1 h-5 bg-destructive rounded-full"></div>
+                  <h2 className="text-base font-bold text-destructive tracking-tight">FINDINGS</h2>
                 </div>
                 <div className="space-y-2">
                   {editableFindings.map((finding, i) => (
@@ -305,7 +305,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableFindings)}
-                    className="text-xs mt-2 hover:bg-destructive/10 text-destructive font-medium h-7"
+                    className="text-xs mt-1 hover:bg-destructive/10 text-destructive font-medium h-6"
                   >
                     + Add finding
                   </Button>
@@ -313,10 +313,10 @@ const Report = () => {
               </Card>
 
               {/* Recommendations Card */}
-              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-secondary rounded-full"></div>
-                  <h2 className="text-lg font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
+              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1 h-5 bg-secondary rounded-full"></div>
+                  <h2 className="text-base font-bold text-secondary tracking-tight">RECOMMENDATIONS</h2>
                 </div>
                 <div className="space-y-2">
                   {editableRecommendations.map((rec, i) => (
@@ -339,7 +339,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableRecommendations)}
-                    className="text-xs mt-2 hover:bg-secondary/10 text-secondary font-medium h-7"
+                    className="text-xs mt-1 hover:bg-secondary/10 text-secondary font-medium h-6"
                   >
                     + Add recommendation
                   </Button>
@@ -347,10 +347,10 @@ const Report = () => {
               </Card>
 
               {/* Next Steps Card */}
-              <Card className="p-5 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-1 h-6 bg-primary rounded-full"></div>
-                  <h2 className="text-lg font-bold text-primary tracking-tight">NEXT STEPS</h2>
+              <Card className="p-3 shadow-xl border-2 border-border bg-card/95 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1 h-5 bg-primary rounded-full"></div>
+                  <h2 className="text-base font-bold text-primary tracking-tight">NEXT STEPS</h2>
                 </div>
                 <div className="space-y-2">
                   {editableNextSteps.map((step, i) => (
@@ -373,7 +373,7 @@ const Report = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => addItem(setEditableNextSteps)}
-                    className="text-xs mt-2 hover:bg-primary/10 text-primary font-medium h-7"
+                    className="text-xs mt-1 hover:bg-primary/10 text-primary font-medium h-6"
                   >
                     + Add next step
                   </Button>
