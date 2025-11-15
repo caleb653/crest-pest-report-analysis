@@ -188,6 +188,11 @@ All colors MUST be HSL.
     border-radius: 3px !important;
     padding: 3px 6px !important;
   }
+  
+  /* Make customer and tech names same size as labels */
+  .print-header input {
+    font-size: 8px !important;
+  }
 
   /* Balanced layout - readable text, prominent map */
   .print-layout {
@@ -223,7 +228,7 @@ All colors MUST be HSL.
   }
 
   .print-section-header {
-    background: #2A2A2A !important;
+    background: #95A197 !important;
     color: #F2F2F2 !important;
     padding: 2px 5px !important;
     font-size: 8px !important;
@@ -263,14 +268,14 @@ All colors MUST be HSL.
     left: 4mm !important;
     right: 4mm !important;
     padding: 3px 0 !important;
-    background: linear-gradient(135deg, #2A2A2A 0%, #95A197 100%) !important;
+    background: #95A197 !important;
     text-align: center !important;
     font-size: 7.5px !important;
     font-weight: 700 !important;
     color: #F2F2F2 !important;
     border-radius: 3px !important;
     display: block !important;
-    box-shadow: 0 1px 4px rgba(42, 42, 42, 0.1) !important;
+    box-shadow: 0 1px 4px rgba(149, 161, 151, 0.1) !important;
   }
 
   /* Typography improvements */
