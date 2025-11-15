@@ -395,8 +395,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       '🪟': 'Window gap',
       '🧱': 'Foundation crack',
       '✅': 'Treated area',
-      '💊': 'Bait station',
-      '🧪': 'Chemical treatment',
+      '🔲': 'Bait station',
+      '🪦': 'Rodent tunnel',
       '🪤': 'Trap placed',
       '🔁': 'Follow-up needed',
       '⚠️': 'Monitor area',
@@ -409,7 +409,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       '3️⃣': 'Point 3',
       '4️⃣': 'Point 4',
     };
-    return labels[emoji] || 'Custom marker';
+    return labels[emoji] || 'Bait station';
   };
 
   // Auto-save canvas data whenever it changes
