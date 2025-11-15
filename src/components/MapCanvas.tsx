@@ -548,7 +548,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
         style={{ 
           border: '2px solid hsl(var(--foreground))',
-          pointerEvents: isMapInteractive ? 'auto' : 'none'
+          pointerEvents: isMapInteractive ? 'auto' : 'none',
+          zIndex: 0
         }}
         loading="lazy"
         allowFullScreen
@@ -560,11 +561,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         ref={canvasRef}
         id="map-overlay-canvas"
         className="absolute inset-0 w-full h-full"
-        style={{ pointerEvents: isMapInteractive ? 'none' : 'auto' }}
+        style={{ 
+          pointerEvents: isMapInteractive ? 'none' : 'auto',
+          zIndex: 10
+        }}
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
+      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border z-20">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
@@ -663,7 +667,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
+        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-30">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
@@ -696,7 +700,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {showLegend && legendItems.length > 0 && (
         <div 
           ref={legendRef}
-          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move"
+          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move z-20"
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
