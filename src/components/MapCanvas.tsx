@@ -87,10 +87,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     fabricCanvasRef.current = canvas;
 
-    // Set initial legend position 15% from the right edge
-    const canvasWidth = canvas.getWidth();
-    setLegendPosition({ x: Math.floor(canvasWidth * 0.15), y: 24 });
-
     // Detect touch devices to avoid drag-to-delete on mobile
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     isTouchRef.current = !!isTouch;
@@ -561,7 +557,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute top-6 left-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
+      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
@@ -660,7 +656,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute top-6 left-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
+        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
