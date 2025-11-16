@@ -641,7 +641,7 @@ const Report = () => {
             </div>
 
             {/* Submit Button */}
-            <div className={isMobile ? "fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-50" : ""}>
+            <div className="">
               <Button
                 onClick={handleSubmit}
                 disabled={isSaving}
