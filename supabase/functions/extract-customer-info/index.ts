@@ -21,13 +21,22 @@ Deno.serve(async (req) => {
     }
 
     // Use Lovable AI to extract customer name from images
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured')
+      return new Response(
+        JSON.stringify({ error: 'AI service not configured', customerName: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
 
-    const { data, error } = await supabase.functions.invoke('lovable-ai', {
-      body: {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
           {
@@ -35,7 +44,7 @@ Deno.serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Extract the customer name from these images. Look for any text that appears to be a customer name, client name, or homeowner name. If you find a name, respond with ONLY the name. If you cannot find a clear customer name, respond with "NOT_FOUND".'
+                text: 'Extract the customer name from these images. Look for any text that appears to be a customer name, client name, or homeowner name. The name might appear multiple times. If you find a name, respond with ONLY the name (first and last name if available). If you cannot find a clear customer name, respond with "NOT_FOUND".'
               },
               ...images.map((imageBase64: string) => ({
                 type: 'image_url',
@@ -46,17 +55,19 @@ Deno.serve(async (req) => {
             ]
           }
         ]
-      }
+      })
     })
 
-    if (error) {
-      console.error('AI extraction error:', error)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('AI gateway error:', response.status, errorText)
       return new Response(
         JSON.stringify({ error: 'Failed to analyze images', customerName: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
+    const data = await response.json()
     const aiResponse = data?.choices?.[0]?.message?.content || 'NOT_FOUND'
     const customerName = aiResponse === 'NOT_FOUND' ? null : aiResponse.trim()
 
