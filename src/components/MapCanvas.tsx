@@ -169,6 +169,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         canvas.add(rect);
         canvas.setActiveObject(rect);
+        canvas.renderAll(); // Render immediately so rectangle is visible
         
         // Immediately add centered text for typing
         const text = new IText('Type here...', {
