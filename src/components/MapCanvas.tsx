@@ -55,8 +55,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
   
-  // Map iframe is interactive when select tool is active, canvas is interactive for drawing tools
-  const isMapInteractive = tool === 'select';
+  // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
+  const isMapInteractive = false;
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -554,7 +554,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
         style={{ 
           border: '2px solid hsl(var(--foreground))',
-          pointerEvents: isMapInteractive ? 'auto' : 'none',
+          pointerEvents: 'none',
           zIndex: 0
         }}
         loading="lazy"
@@ -568,13 +568,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         id="map-overlay-canvas"
         className="absolute inset-0 w-full h-full"
         style={{ 
-          pointerEvents: isMapInteractive ? 'none' : 'auto',
-          zIndex: 50
+          pointerEvents: 'auto',
+          zIndex: 10
         }}
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border z-20">
+      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
@@ -706,7 +706,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {showLegend && legendItems.length > 0 && (
         <div 
           ref={legendRef}
-          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move z-20"
+          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move z-40"
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
