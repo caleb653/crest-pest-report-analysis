@@ -1,11 +1,11 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.81.1'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -69,7 +69,19 @@ Deno.serve(async (req) => {
 
     const data = await response.json()
     const aiResponse = data?.choices?.[0]?.message?.content || 'NOT_FOUND'
-    const customerName = aiResponse === 'NOT_FOUND' ? null : aiResponse.trim()
+
+    // Normalize and clean the response to extract just a likely name
+    const raw = (aiResponse || '').trim();
+    const cleaned = raw
+      .replace(/^["'\s]+|["'\s]+$/g, '') // trim quotes/spaces
+      .replace(/^(customer\s*name\s*[:\-]?)/i, '') // remove leading label
+      .replace(/^(name\s*[:\-]?)/i, '')
+      .split(/\n|\r/)[0] // first line only
+      .trim();
+
+    // Heuristic: pick first 2-3 capitalized words as a name if present
+    const nameMatch = cleaned.match(/([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,2})/);
+    const customerName = cleaned && cleaned !== 'NOT_FOUND' ? (nameMatch ? nameMatch[1] : cleaned) : null;
 
     console.log('Extracted customer name:', customerName)
 

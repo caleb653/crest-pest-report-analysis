@@ -11,3 +11,7 @@ verify_jwt = false
 
 [functions.static-map]
 verify_jwt = false
+
+[functions.extract-customer-info]
+verify_jwt = false
+
