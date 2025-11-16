@@ -324,8 +324,8 @@ const Report = () => {
           // Only adjust text objects (emojis and text boxes)
           if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
             originalPositions.push({ obj, left: obj.left });
-            // Move 8% left relative to canvas width
-            obj.set('left', obj.left - (fabricCanvas.width * 0.08));
+            // Move 15% left relative to canvas width
+            obj.set('left', obj.left - (fabricCanvas.width * 0.15));
           }
         });
         fabricCanvas.renderAll();
