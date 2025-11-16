@@ -564,15 +564,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute bottom-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 flex flex-row gap-1.5 border border-border z-50">
+      <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
           onClick={() => setTool('select')}
           title="Select & Move (Pan Map)"
-          className="h-8 w-8"
+          className="h-7 w-7"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
         </Button>
@@ -581,42 +581,42 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant={tool === 'rectangle' ? 'default' : 'outline'}
           onClick={() => { setTool('rectangle'); setShowEmojiPicker(false); }}
           title="Rectangle"
-          className="h-8 w-8"
+          className="h-7 w-7"
         >
-          <Square className="w-4 h-4" />
+          <Square className="w-3.5 h-3.5" />
         </Button>
         {tool === 'rectangle' && (
-          <div className="flex flex-col gap-1 p-2 border-l border-border">
+          <div className="flex flex-col gap-0.5 px-1.5 py-1 border-l border-border">
             <div className="flex items-center gap-1">
-              <label className="text-xs whitespace-nowrap">Fill:</label>
+              <label className="text-[10px] whitespace-nowrap">Fill:</label>
               <input
                 type="color"
                 value={rectFillColor}
                 onChange={(e) => setRectFillColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer"
+                className="w-6 h-6 rounded cursor-pointer"
                 title="Fill Color"
                 disabled={rectFillTransparent}
               />
             </div>
-            <div className="flex items-center gap-1 px-1">
+            <div className="flex items-center gap-0.5 px-0.5">
               <input
                 type="checkbox"
                 id="transparent-fill"
                 checked={rectFillTransparent}
                 onChange={(e) => setRectFillTransparent(e.target.checked)}
-                className="cursor-pointer"
+                className="cursor-pointer w-3 h-3"
               />
-              <label htmlFor="transparent-fill" className="text-xs cursor-pointer">
-                Transparent
+              <label htmlFor="transparent-fill" className="text-[10px] cursor-pointer">
+                Trans
               </label>
             </div>
             <div className="flex items-center gap-1">
-              <label className="text-xs whitespace-nowrap">Border:</label>
+              <label className="text-[10px] whitespace-nowrap">Border:</label>
               <input
                 type="color"
                 value={rectBorderColor}
                 onChange={(e) => setRectBorderColor(e.target.value)}
-                className="w-8 h-8 rounded cursor-pointer"
+                className="w-6 h-6 rounded cursor-pointer"
                 title="Border Color"
               />
             </div>
@@ -627,18 +627,18 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
           onClick={() => { setTool('emoji'); setShowEmojiPicker((prev) => !prev); }}
           title="Add Emoji/Icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
         >
-          <Smile className="w-4 h-4" />
+          <Smile className="w-3.5 h-3.5" />
         </Button>
         <Button
           size="icon"
           variant={tool === 'text' ? 'default' : 'outline'}
           onClick={() => setTool('text')}
           title="Add Text"
-          className="h-8 w-8"
+          className="h-7 w-7"
         >
-          <Type className="w-4 h-4" />
+          <Type className="w-3.5 h-3.5" />
         </Button>
         <div className="w-px bg-border mx-0.5" />
         <Button
@@ -646,41 +646,41 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           size="icon"
           variant={isDraggingOverDelete ? 'destructive' : 'outline'}
           title="Drag items here to delete"
-          className={`h-8 w-8 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
+          className={`h-7 w-7 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </Button>
         <Button
           size="icon"
           variant="outline"
           onClick={clearCanvas}
           title="Clear all"
-          className="h-8 w-8"
+          className="h-7 w-7"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </Button>
       </div>
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute bottom-16 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm">Select Icon</h3>
+        <div className="no-print fixed bottom-12 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border z-50">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-xs">Select Icon</h3>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setShowEmojiPicker(false)}
-              className="h-6 w-6"
+              className="h-5 w-5"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </Button>
           </div>
-          <div className="grid grid-cols-6 gap-2 max-w-xs">
+          <div className="grid grid-cols-6 gap-1.5 max-w-xs">
             {AVAILABLE_EMOJIS.map((emoji) => (
               <button
                 key={emoji}
                 onClick={() => handleEmojiSelect(emoji)}
-                className={`text-2xl p-2 rounded hover:bg-muted transition-colors ${
+                className={`text-xl p-1.5 rounded hover:bg-muted transition-colors ${
                   selectedEmoji === emoji ? 'bg-primary/20 ring-2 ring-primary' : ''
                 }`}
                 title={emoji}
@@ -751,7 +751,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
-          className="no-print absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
+          className="no-print absolute bottom-12 left-2 bg-card/95 backdrop-blur-sm shadow-xl border-border text-[10px] h-6 px-2"
         >
           Legend ({legendItems.length})
         </Button>
