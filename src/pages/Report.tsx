@@ -321,11 +321,11 @@ const Report = () => {
       if (fabricCanvas) {
         const objects = fabricCanvas.getObjects();
         objects.forEach((obj: any) => {
-          // Only adjust text objects (emojis)
-          if (obj.type === 'i-text' || obj.type === 'text') {
+          // Only adjust text objects (emojis and text boxes)
+          if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
             originalPositions.push({ obj, left: obj.left });
-            // Move 5% left relative to canvas width
-            obj.set('left', obj.left - (fabricCanvas.width * 0.05));
+            // Move 8% left relative to canvas width
+            obj.set('left', obj.left - (fabricCanvas.width * 0.08));
           }
         });
         fabricCanvas.renderAll();
