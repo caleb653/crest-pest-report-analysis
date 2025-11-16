@@ -412,18 +412,30 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
-                origLeft += baseW * 0.4; // 40% right in mobile space
-                origTop += baseH * 0.4;  // 40% down in mobile space
+                origLeft += baseW * 0.3; // 30% right in mobile space
+                origTop += baseH * 0.3;  // 30% down in mobile space
               }
 
-              // Now apply scaling to the adjusted position
-              const newLeft = origLeft * scaleX;
-              const newTop = origTop * scaleY;
+              // Compute new scales first
+              const newScaleX = origScaleX * scaleX;
+              const newScaleY = origScaleY * scaleY;
 
-              obj.left = newLeft;
-              obj.top = newTop;
-              obj.scaleX = origScaleX * scaleX;
-              obj.scaleY = origScaleY * scaleY;
+              // Now apply scaling to the adjusted position
+              let newLeft = origLeft * scaleX;
+              let newTop = origTop * scaleY;
+
+              // Clamp within canvas so items don't disappear off-screen
+              const objWidth = (obj.width || 0) * newScaleX;
+              const objHeight = (obj.height || 0) * newScaleY;
+              const maxLeft = Math.max(0, currW - objWidth);
+              const maxTop = Math.max(0, currH - objHeight);
+              const clampedLeft = Math.min(Math.max(0, newLeft), maxLeft);
+              const clampedTop = Math.min(Math.max(0, newTop), maxTop);
+
+              obj.left = clampedLeft;
+              obj.top = clampedTop;
+              obj.scaleX = newScaleX;
+              obj.scaleY = newScaleY;
               obj.setCoords();
             });
             canvas.renderAll();
@@ -432,9 +444,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           const tryApply = (attempt = 0) => {
             const count = canvas.getObjects().length;
             console.log('Canvas loaded, object count:', count, 'attempt:', attempt, 'expected:', expectedCount);
-            if (count === 0 && attempt < 6) {
+            const notReady = expectedCount ? count < expectedCount : count === 0;
+            if (notReady && attempt < 20) {
               // Wait a bit longer for Fabric to fully instantiate objects
-              setTimeout(() => tryApply(attempt + 1), 60);
+              setTimeout(() => tryApply(attempt + 1), 50);
               return;
             }
             applyScaling();
