@@ -406,8 +406,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
-                origLeft += baseW * 0.15; // 15% right in mobile space
-                origTop += baseH * 0.15;  // 15% down in mobile space
+                origLeft += baseW * 0.18; // 18% right in mobile space
+                origTop += baseH * 0.18;  // 18% down in mobile space
               }
               
               // Now apply scaling to the adjusted position
