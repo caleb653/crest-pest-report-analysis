@@ -153,10 +153,25 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
-        // Create a text box that looks like a rectangle (text is directly editable inside)
-        const text = new IText('Type here...', {
+        // First create a rectangle for the border
+        const rect = new FabricRect({
           left: pt.x - 60,
           top: pt.y - 40,
+          width: 140,
+          height: 60,
+          fill: rectFillTransparentRef.current ? 'rgba(255,255,255,0.9)' : rectFillColorRef.current,
+          stroke: '#000000',
+          strokeWidth: 3,
+          rx: 4,
+          ry: 4,
+          selectable: false,
+          evented: false,
+        });
+        
+        // Create text box on top
+        const text = new IText('Type here...', {
+          left: pt.x - 50,
+          top: pt.y - 30,
           width: 120,
           fontSize: 14,
           fill: '#000000',
@@ -165,17 +180,30 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           textAlign: 'left',
           selectable: true,
           editable: true,
-          backgroundColor: rectFillTransparentRef.current ? 'rgba(255,255,255,0.9)' : rectFillColorRef.current,
-          stroke: '#000000',
-          strokeWidth: 2,
-          padding: 10,
+          backgroundColor: 'transparent',
+          padding: 0,
           lineHeight: 1.4,
           charSpacing: 0,
         });
         
+        // Add both to canvas
+        canvas.add(rect);
         canvas.add(text);
         canvas.setActiveObject(text);
         canvas.renderAll();
+        
+        // Link them together so moving text moves rectangle
+        text.on('moving', () => {
+          rect.set({
+            left: text.left! - 10,
+            top: text.top! - 10,
+          });
+          canvas.renderAll();
+        });
+        
+        text.on('removed', () => {
+          canvas.remove(rect);
+        });
         
         // Small delay then enter edit mode
         setTimeout(() => {
