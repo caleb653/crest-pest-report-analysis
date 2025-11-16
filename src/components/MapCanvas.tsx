@@ -83,9 +83,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     if (!canvasRef.current) return;
 
     const parentRect = canvasRef.current.parentElement?.getBoundingClientRect();
+    // Use exact dimensions without rounding to prevent coordinate drift
+    const canvasWidth = parentRect?.width || window.innerWidth;
+    const canvasHeight = parentRect?.height || (window.innerHeight * 0.6);
+    
     const canvas = new FabricCanvas(canvasRef.current, {
-      width: parentRect?.width ? Math.floor(parentRect.width) : window.innerWidth,
-      height: parentRect?.height ? Math.floor(parentRect.height) : Math.floor(window.innerHeight * 0.6),
+      width: canvasWidth,
+      height: canvasHeight,
       backgroundColor: 'transparent',
     });
 
@@ -98,10 +102,30 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     const resizeCanvas = () => {
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
       if (parentRect) {
-        canvas.setDimensions({
-          width: Math.floor(parentRect.width),
-          height: Math.floor(parentRect.height),
-        });
+        const oldWidth = canvas.getWidth();
+        const oldHeight = canvas.getHeight();
+        const newWidth = Math.floor(parentRect.width);
+        const newHeight = Math.floor(parentRect.height);
+        
+        // Only resize and scale if dimensions actually changed
+        if (Math.abs(oldWidth - newWidth) > 1 || Math.abs(oldHeight - newHeight) > 1) {
+          const scaleX = newWidth / oldWidth;
+          const scaleY = newHeight / oldHeight;
+          
+          // Scale all objects to maintain relative positions
+          canvas.getObjects().forEach((obj: any) => {
+            obj.left = (obj.left || 0) * scaleX;
+            obj.top = (obj.top || 0) * scaleY;
+            obj.scaleX = (obj.scaleX || 1) * scaleX;
+            obj.scaleY = (obj.scaleY || 1) * scaleY;
+            obj.setCoords();
+          });
+          
+          canvas.setDimensions({
+            width: newWidth,
+            height: newHeight,
+          });
+        }
         canvas.renderAll();
       }
     };
@@ -356,15 +380,29 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           if (savedData.base?.width && savedData.base?.height) {
             const currW = canvas.getWidth();
             const currH = canvas.getHeight();
-            const scaleX = currW / savedData.base.width;
-            const scaleY = currH / savedData.base.height;
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW: savedData.base.width, baseH: savedData.base.height });
+            const baseW = savedData.base.width;
+            const baseH = savedData.base.height;
+            
+            // Calculate scale factors
+            const scaleX = currW / baseW;
+            const scaleY = currH / baseH;
+            
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH });
             
             canvas.getObjects().forEach((obj: any) => {
-              obj.scaleX = (obj.scaleX || 1) * scaleX;
-              obj.scaleY = (obj.scaleY || 1) * scaleY;
-              obj.left = (obj.left || 0) * scaleX;
-              obj.top = (obj.top || 0) * scaleY;
+              // Store original values
+              const origLeft = obj.left || 0;
+              const origTop = obj.top || 0;
+              const origScaleX = obj.scaleX || 1;
+              const origScaleY = obj.scaleY || 1;
+              
+              // Apply scaling to position and size
+              obj.left = origLeft * scaleX;
+              obj.top = origTop * scaleY;
+              obj.scaleX = origScaleX * scaleX;
+              obj.scaleY = origScaleY * scaleY;
+              
+              // Update object coordinates
               obj.setCoords();
             });
           }
