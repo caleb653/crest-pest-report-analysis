@@ -158,16 +158,17 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           left: pt.x - 60,
           top: pt.y - 40,
           width: 120,
-          fontSize: 14,
+          fontSize: 12,
           fill: '#000000',
-          fontWeight: 'bold',
+          fontWeight: 'normal',
+          fontFamily: 'Arial, sans-serif',
           textAlign: 'center',
           selectable: true,
           editable: true,
           backgroundColor: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
-          stroke: rectBorderColorRef.current,
-          strokeWidth: 3,
-          padding: 10,
+          stroke: '#000000',
+          strokeWidth: 2,
+          padding: 8,
         });
         
         canvas.add(text);
