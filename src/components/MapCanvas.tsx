@@ -94,6 +94,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     });
 
     fabricCanvasRef.current = canvas;
+    (window as any).fabricCanvasInstance = canvas;
 
     // Detect touch devices to avoid drag-to-delete on mobile
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);

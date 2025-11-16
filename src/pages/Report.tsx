@@ -311,15 +311,43 @@ const Report = () => {
   const exportToPDF = async () => {
     // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
+      // Get the canvas from MapCanvas component
+      const canvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement;
+      const fabricCanvas = canvas ? (window as any).fabricCanvasInstance : null;
+      
+      // Store original positions and adjust emojis 5% left for print
+      const originalPositions: Array<{ obj: any; left: number }> = [];
+      
+      if (fabricCanvas) {
+        const objects = fabricCanvas.getObjects();
+        objects.forEach((obj: any) => {
+          // Only adjust text objects (emojis)
+          if (obj.type === 'i-text' || obj.type === 'text') {
+            originalPositions.push({ obj, left: obj.left });
+            // Move 5% left relative to canvas width
+            obj.set('left', obj.left - (fabricCanvas.width * 0.05));
+          }
+        });
+        fabricCanvas.renderAll();
+      }
+      
       // Hide any toast messages before printing
       const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
       toasts.forEach(toast => {
         (toast as HTMLElement).style.display = 'none';
       });
       
-      // Small delay to ensure any in-flight canvas saves are flushed and toasts hidden
+      // Small delay to ensure canvas render completes
       await new Promise((r) => setTimeout(r, 150));
       window.print();
+      
+      // Restore original emoji positions after print
+      if (fabricCanvas && originalPositions.length > 0) {
+        originalPositions.forEach(({ obj, left }) => {
+          obj.set('left', left);
+        });
+        fabricCanvas.renderAll();
+      }
       
       // Restore toasts after print dialog closes
       setTimeout(() => {
