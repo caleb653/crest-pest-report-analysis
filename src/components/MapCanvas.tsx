@@ -109,8 +109,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         if (obj.type === 'text' && 'text' in obj && (obj as IText).text && (obj as IText).text!.length === 2) { // Emoji detection
           // Store original position
           emojiOriginalPositions.set(obj, { left: obj.left || 0, top: obj.top || 0 });
-          // Shift left by 3% of canvas width
-          const shiftLeft = (canvas.getWidth() || 0) * 0.03;
+          // Shift left by 5% of canvas width
+          const shiftLeft = (canvas.getWidth() || 0) * 0.05;
           obj.set({ left: (obj.left || 0) - shiftLeft });
         }
       });
