@@ -176,7 +176,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           left: pt.x,
           top: pt.y,
           fontSize: 14,
-          fill: '#666666',
+          fill: '#000000',
           fontWeight: 'bold',
           textAlign: 'center',
           originX: 'center',
