@@ -321,8 +321,8 @@ const Report = () => {
       if (fabricCanvas) {
         const objects = fabricCanvas.getObjects();
         objects.forEach((obj: any) => {
-          // Only adjust text objects (emojis and text boxes)
-          if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+          // Adjust text objects (emojis and text boxes) and rectangles (background boxes)
+          if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox' || obj.type === 'rect') {
             originalPositions.push({ obj, left: obj.left });
             // Move 15% left relative to canvas width
             obj.set('left', obj.left - (fabricCanvas.width * 0.15));
