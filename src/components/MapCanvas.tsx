@@ -407,8 +407,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               
               // Apply desktop adjustment offset for mobile-created annotations
               if (needsDesktopAdjustment) {
-                newLeft += currW * 0.05; // 5% right
-                newTop += currH * 0.10;  // 10% down
+                newLeft += currW * 0.12; // 12% right
+                newTop += currH * 0.15;  // 15% down
               }
               
               obj.left = newLeft;
