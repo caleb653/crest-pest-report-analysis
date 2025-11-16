@@ -92,7 +92,17 @@ const Report = () => {
       
       setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
       
-      if (data.address) {
+      // Extract coordinates from map_url if available, otherwise geocode
+      if (data.map_url) {
+        const latMatch = data.map_url.match(/mlat=([-\d.]+)/);
+        const lngMatch = data.map_url.match(/mlon=([-\d.]+)/);
+        if (latMatch && lngMatch) {
+          setCoordinates({
+            lat: parseFloat(latMatch[1]),
+            lng: parseFloat(lngMatch[1])
+          });
+        }
+      } else if (data.address) {
         geocodeAddress(data.address);
       }
     } catch (error: any) {
