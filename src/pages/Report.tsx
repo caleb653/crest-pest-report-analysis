@@ -525,8 +525,8 @@ const Report = () => {
         </div>
 
         {/* Report Details Section */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-24" : "w-1/2 overflow-y-auto"}>
-          <div className="p-4 md:p-6 space-y-6 pb-4">
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "w-1/2 overflow-y-auto"}>
+          <div className="p-4 md:p-6 space-y-6">
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
