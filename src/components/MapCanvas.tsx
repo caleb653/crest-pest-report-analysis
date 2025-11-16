@@ -419,7 +419,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               // Apply small desktop adjustment: slightly left and up, with reduced scale
               if (needsDesktopAdjustment) {
                 origLeft -= baseW * 0.08; // 8% left in mobile space
-                origTop -= baseH * 0.08;  // 8% up in mobile space
+                origTop -= baseH * 0.09;  // 9% up in mobile space
               }
 
               
