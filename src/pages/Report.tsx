@@ -525,8 +525,8 @@ const Report = () => {
         </div>
 
         {/* Report Details Section */}
-        <div className={isMobile ? "flex-1 overflow-y-auto" : "w-1/2 overflow-y-auto"}>
-          <div className="p-4 md:p-6 space-y-6 pb-24">
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-24" : "w-1/2 overflow-y-auto"}>
+          <div className="p-4 md:p-6 space-y-6 pb-4">
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
@@ -641,24 +641,26 @@ const Report = () => {
             </div>
 
             {/* Submit Button */}
-            <Button
-              onClick={handleSubmit}
-              disabled={isSaving}
-              size="lg"
-              className="no-print w-full text-lg py-6"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5 mr-2" />
-                  {reportId ? "Update Report" : "Submit Report"}
-                </>
-              )}
-            </Button>
+            <div className={isMobile ? "fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg z-50" : ""}>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSaving}
+                size="lg"
+                className="no-print w-full text-lg py-6"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5 mr-2" />
+                    {reportId ? "Update Report" : "Submit Report"}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
