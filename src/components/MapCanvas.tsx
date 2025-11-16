@@ -169,7 +169,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         });
         
         // Create text box on top
-        const text = new IText('Type here...', {
+        const text = new IText('', {
           left: pt.x - 50,
           top: pt.y - 30,
           width: 120,
@@ -231,7 +231,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         clickPlacedRef.current = true;
         setTool('select');
       } else if (currentTool === 'text') {
-        const text = new IText('Type here', {
+        const text = new IText('', {
           left: pt.x,
           top: pt.y,
           fontSize: 16,
