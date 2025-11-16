@@ -124,7 +124,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         const emoji = new IText(currentEmoji, {
           left: pt.x,
           top: pt.y,
-          fontSize: 32,
+          fontSize: 27,
           fontFamily: 'sans-serif',
           selectable: true,
           editable: false, // Not editable, only moveable
@@ -575,7 +575,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute top-6 right-6 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-col gap-2 border border-border z-50">
+      <div className="no-print absolute bottom-6 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-row gap-2 border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
@@ -597,7 +597,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           <Square className="w-5 h-5" />
         </Button>
         {tool === 'rectangle' && (
-          <div className="flex flex-col gap-1 p-2 border-t border-border">
+          <div className="flex flex-col gap-1 p-2 border-l border-border">
             <div className="flex items-center gap-1">
               <label className="text-xs whitespace-nowrap">Fill:</label>
               <input
@@ -651,7 +651,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         >
           <Type className="w-5 h-5" />
         </Button>
-        <div className="h-px bg-border my-1" />
+        <div className="w-px bg-border mx-1" />
         <Button
           ref={deleteButtonRef}
           size="icon"
@@ -674,7 +674,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute top-6 right-24 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
+        <div className="no-print absolute bottom-24 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
