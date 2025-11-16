@@ -132,6 +132,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           padding: 4,
           stroke: '#000000',
           strokeWidth: 1,
+          lockScalingFlip: true,
+          lockUniScaling: false,
         });
         canvas.add(emoji);
         canvas.setActiveObject(emoji);
@@ -181,7 +183,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           selectable: true,
           editable: true,
           backgroundColor: 'transparent',
-          padding: 0,
+          padding: 8,
           lineHeight: 1.4,
           charSpacing: 0,
         });
@@ -241,6 +243,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           selectable: true,
           editable: true,
+          padding: 8,
         });
         canvas.add(text);
         canvas.setActiveObject(text);
