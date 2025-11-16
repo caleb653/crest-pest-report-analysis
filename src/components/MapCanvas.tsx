@@ -413,12 +413,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               let origTop = obj.top || 0;
               const origScaleX = obj.scaleX || 1;
               const origScaleY = obj.scaleY || 1;
+              (obj as any).originX = 'left';
+              (obj as any).originY = 'top';
               
-              // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
-              if (needsDesktopAdjustment) {
-                origLeft += baseW * 0.18; // 18% right in mobile space
-                origTop += baseH * 0.12;  // 12% down in mobile space (reduced to avoid pushing off-canvas)
-              }
+              // Temporarily disable desktop adjustment to avoid misplacement
+              // (we'll reintroduce via a calibration UI)
+
               
               // Now apply scaling to the adjusted position
               const newLeft = origLeft * scaleX;
