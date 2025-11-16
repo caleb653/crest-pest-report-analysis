@@ -309,74 +309,26 @@ const Report = () => {
   };
 
   const exportToPDF = async () => {
+    // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
-      toast.info('Generating PDF...');
-      
-      // Hide elements that shouldn't appear in PDF
-      const noPrintElements = document.querySelectorAll('.no-print');
+      // Hide any toast messages before printing
       const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      
-      noPrintElements.forEach(el => {
-        (el as HTMLElement).style.display = 'none';
-      });
       toasts.forEach(toast => {
         (toast as HTMLElement).style.display = 'none';
       });
       
-      // Trigger print event handlers for emoji positioning
-      window.dispatchEvent(new Event('beforeprint'));
+      // Small delay to ensure any in-flight canvas saves are flushed and toasts hidden
+      await new Promise((r) => setTimeout(r, 150));
+      window.print();
       
-      // Small delay to ensure canvas is updated
-      await new Promise((r) => setTimeout(r, 200));
-      
-      const reportElement = document.querySelector('.min-h-screen') as HTMLElement;
-      if (!reportElement) {
-        throw new Error('Report element not found');
-      }
-      
-      // Capture the report as canvas
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          // Ensure iframe content is visible in clone
-          const iframes = clonedDoc.querySelectorAll('iframe');
-          iframes.forEach(iframe => {
-            iframe.style.display = 'block';
-          });
-        }
-      });
-      
-      // Restore hidden elements
-      noPrintElements.forEach(el => {
-        (el as HTMLElement).style.display = '';
-      });
-      toasts.forEach(toast => {
-        (toast as HTMLElement).style.display = '';
-      });
-      
-      // Trigger after print to restore emoji positions
-      window.dispatchEvent(new Event('afterprint'));
-      
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      
-      const customerNamePart = editableCustomer ? editableCustomer.replace(/[^a-zA-Z0-9]/g, '_') : 'Report';
-      pdf.save(`Crest_Report_${customerNamePart}_${new Date().toISOString().split('T')[0]}.pdf`);
-      
-      toast.success('PDF exported successfully!');
+      // Restore toasts after print dialog closes
+      setTimeout(() => {
+        toasts.forEach(toast => {
+          (toast as HTMLElement).style.display = '';
+        });
+      }, 500);
     } catch (e) {
-      console.error('PDF export failed:', e);
-      toast.error('Failed to export PDF');
+      toast.error('Print failed');
     }
   };
 

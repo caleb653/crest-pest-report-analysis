@@ -99,36 +99,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     isTouchRef.current = !!isTouch;
 
-    // Handle print adjustments for emojis
-    const emojiOriginalPositions = new Map<FabricObject, { left: number; top: number }>();
-    
-    const handleBeforePrint = () => {
-      // Adjust emoji positions slightly left for print
-      const objects = canvas.getObjects();
-      objects.forEach(obj => {
-        if (obj.type === 'text' && 'text' in obj && (obj as IText).text && (obj as IText).text!.length === 2) { // Emoji detection
-          // Store original position
-          emojiOriginalPositions.set(obj, { left: obj.left || 0, top: obj.top || 0 });
-          // Shift left by 5% of canvas width
-          const shiftLeft = (canvas.getWidth() || 0) * 0.05;
-          obj.set({ left: (obj.left || 0) - shiftLeft });
-        }
-      });
-      canvas.renderAll();
-    };
-
-    const handleAfterPrint = () => {
-      // Restore original positions
-      emojiOriginalPositions.forEach((pos, obj) => {
-        obj.set({ left: pos.left, top: pos.top });
-      });
-      emojiOriginalPositions.clear();
-      canvas.renderAll();
-    };
-
-    window.addEventListener('beforeprint', handleBeforePrint);
-    window.addEventListener('afterprint', handleAfterPrint);
-
     const resizeCanvas = () => {
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
       if (parentRect) {
@@ -379,8 +349,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('beforeprint', handleBeforePrint);
-      window.removeEventListener('afterprint', handleAfterPrint);
       canvas.dispose();
     };
   }, []); // Only run once on mount
