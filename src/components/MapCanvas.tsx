@@ -659,7 +659,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           title="Drag items here to delete"
           className={`h-10 w-10 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
-          <Trash2 className="w-5 h-5" />
+          <span className="text-2xl">🪤</span>
         </Button>
         <Button
           size="icon"
