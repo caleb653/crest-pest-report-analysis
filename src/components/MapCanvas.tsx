@@ -387,7 +387,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH });
+            // Detect if annotations were created on mobile but viewing on desktop
+            const isMobileBase = baseW < 768;
+            const isDesktopCurrent = currW >= 768;
+            const needsDesktopAdjustment = isMobileBase && isDesktopCurrent;
+            
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment });
             
             canvas.getObjects().forEach((obj: any) => {
               // Store original values
@@ -397,8 +402,17 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               const origScaleY = obj.scaleY || 1;
               
               // Apply scaling to position and size
-              obj.left = origLeft * scaleX;
-              obj.top = origTop * scaleY;
+              let newLeft = origLeft * scaleX;
+              let newTop = origTop * scaleY;
+              
+              // Apply desktop adjustment offset for mobile-created annotations
+              if (needsDesktopAdjustment) {
+                newLeft += currW * 0.05; // 5% right
+                newTop += currH * 0.10;  // 10% down
+              }
+              
+              obj.left = newLeft;
+              obj.top = newTop;
               obj.scaleX = origScaleX * scaleX;
               obj.scaleY = origScaleY * scaleY;
               
