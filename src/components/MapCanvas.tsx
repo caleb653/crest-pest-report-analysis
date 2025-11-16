@@ -416,8 +416,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               (obj as any).originX = 'left';
               (obj as any).originY = 'top';
               
-              // Temporarily disable desktop adjustment to avoid misplacement
-              // (we'll reintroduce via a calibration UI)
+              // Apply small desktop adjustment: slightly left and up, with reduced scale
+              if (needsDesktopAdjustment) {
+                origLeft -= baseW * 0.08; // 8% left in mobile space
+                origTop -= baseH * 0.08;  // 8% up in mobile space
+              }
 
               
               // Now apply scaling to the adjusted position
@@ -426,8 +429,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               
               obj.left = newLeft;
               obj.top = newTop;
-              obj.scaleX = origScaleX * scaleX;
-              obj.scaleY = origScaleY * scaleY;
+              // Slightly reduce scale on desktop for mobile-created annotations
+              const scaleFactor = needsDesktopAdjustment ? 0.85 : 1;
+              obj.scaleX = origScaleX * scaleX * scaleFactor;
+              obj.scaleY = origScaleY * scaleY * scaleFactor;
               (obj as any)._scaledFromBase = true;
               
               // Update object coordinates
