@@ -396,20 +396,20 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             
             canvas.getObjects().forEach((obj: any) => {
               // Store original values
-              const origLeft = obj.left || 0;
-              const origTop = obj.top || 0;
+              let origLeft = obj.left || 0;
+              let origTop = obj.top || 0;
               const origScaleX = obj.scaleX || 1;
               const origScaleY = obj.scaleY || 1;
               
-              // Apply scaling to position and size
-              let newLeft = origLeft * scaleX;
-              let newTop = origTop * scaleY;
-              
-              // Apply desktop adjustment offset for mobile-created annotations
+              // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
-                newLeft += currW * 0.12; // 12% right
-                newTop += currH * 0.15;  // 15% down
+                origLeft += baseW * 0.12; // 12% right in mobile space
+                origTop += baseH * 0.15;  // 15% down in mobile space
               }
+              
+              // Now apply scaling to the adjusted position
+              const newLeft = origLeft * scaleX;
+              const newTop = origTop * scaleY;
               
               obj.left = newLeft;
               obj.top = newTop;
