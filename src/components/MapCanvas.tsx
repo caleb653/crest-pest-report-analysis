@@ -387,10 +387,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            // Detect if annotations were created on mobile but viewing on desktop
-            const isMobileBase = baseW < 768;
-            const isDesktopCurrent = currW >= 768;
-            const needsDesktopAdjustment = isMobileBase && isDesktopCurrent;
+            // Determine if we should apply desktop-only adjustment when viewing mobile-created annotations
+            const isMobileBase = baseW <= 640;
+            const pointerFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+            const hoverCapable = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+            const notTouch = !('ontouchstart' in window) && ((navigator.maxTouchPoints || 0) === 0);
+            const isDesktopEnv = pointerFine || hoverCapable || notTouch || window.innerWidth >= 1024;
+            const needsDesktopAdjustment = isMobileBase && isDesktopEnv;
             
             console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment });
             
@@ -403,7 +406,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
-                origLeft += baseW * 0.12; // 12% right in mobile space
+                origLeft += baseW * 0.15; // 15% right in mobile space
                 origTop += baseH * 0.15;  // 15% down in mobile space
               }
               
