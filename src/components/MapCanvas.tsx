@@ -204,6 +204,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         canvas.add(rect);
         canvas.add(text);
         canvas.setActiveObject(text);
+        
+        // Enter editing mode immediately on mobile
+        text.enterEditing();
+        text.selectAll();
+        
         canvas.renderAll();
         
         // Link them together - sync on all changes
