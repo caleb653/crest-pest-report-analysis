@@ -417,7 +417,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
                 origLeft += baseW * 0.18; // 18% right in mobile space
-                origTop += baseH * 0.35;  // 35% down in mobile space
+                origTop += baseH * 0.12;  // 12% down in mobile space (reduced to avoid pushing off-canvas)
               }
               
               // Now apply scaling to the adjusted position
@@ -429,6 +429,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               obj.scaleX = origScaleX * scaleX;
               obj.scaleY = origScaleY * scaleY;
               (obj as any)._scaledFromBase = true;
+              
+              // Keep objects within canvas bounds after scaling
+              const scaledW = (obj.width || 0) * (obj.scaleX || 1);
+              const scaledH = (obj.height || 0) * (obj.scaleY || 1);
+              obj.left = Math.max(0, Math.min(obj.left || 0, currW - scaledW));
+              obj.top = Math.max(0, Math.min(obj.top || 0, currH - scaledH));
               
               // Update object coordinates
               obj.setCoords();
