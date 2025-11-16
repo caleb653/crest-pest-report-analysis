@@ -11,7 +11,7 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'emoji' | 'rectangle';
+type Tool = 'text' | 'emoji' | 'rectangle';
 
 interface LegendItem {
   emoji: string;
@@ -32,14 +32,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const rectTextMap = useRef(new WeakMap<FabricRect, boolean>());
-  const [tool, setTool] = useState<Tool>('select');
+  const [tool, setTool] = useState<Tool>('rectangle');
   const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
   const [showLegend, setShowLegend] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
   const [isDraggingOverDelete, setIsDraggingOverDelete] = useState(false);
   const [colorIndex, setColorIndex] = useState(0);
-  const toolRef = useRef<Tool>('select');
+  const toolRef = useRef<Tool>('rectangle');
   const selectedEmojiRef = useRef<string>('📍');
   const rectFillColorRef = useRef<string>('#C3D1C5');
   const rectBorderColorRef = useRef<string>('#000000');
@@ -150,7 +150,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         });
         
         clickPlacedRef.current = true;
-        setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
         // First create a rectangle for the border
@@ -229,7 +228,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         }, 100);
         
         clickPlacedRef.current = true;
-        setTool('select');
       } else if (currentTool === 'text') {
         const text = new IText('Type here', {
           left: pt.x,
@@ -249,7 +247,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         canvas.renderAll();
         
         clickPlacedRef.current = true;
-        setTool('select');
       }
     });
 
@@ -567,17 +564,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
         <Button
           size="icon"
-          variant={tool === 'select' ? 'default' : 'outline'}
-          onClick={() => setTool('select')}
-          title="Select & Move (Pan Map)"
-          className="h-7 w-7"
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
-          </svg>
-        </Button>
-        <Button
-          size="icon"
           variant={tool === 'rectangle' ? 'default' : 'outline'}
           onClick={() => { setTool('rectangle'); setShowEmojiPicker(false); }}
           title="Rectangle"
@@ -649,15 +635,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           className={`h-7 w-7 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={clearCanvas}
-          title="Clear all"
-          className="h-7 w-7"
-        >
-          <X className="w-3.5 h-3.5" />
         </Button>
       </div>
 
