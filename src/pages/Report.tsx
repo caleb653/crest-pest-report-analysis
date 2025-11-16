@@ -357,7 +357,7 @@ const Report = () => {
     : "";
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 1, 15));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 15));
 
   // Pan map by pixel amount (approximate Web Mercator math)
   const panBy = (dxPx: number, dyPx: number) => {
