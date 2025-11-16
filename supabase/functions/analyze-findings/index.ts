@@ -51,19 +51,19 @@ serve(async (req) => {
             
 Based on the images provided, generate a VERY BRIEF pest control service report with these sections:
 
-1. FINDINGS: List MAXIMUM 3 most critical observations. Each finding must be 10-15 words MAXIMUM. Be concise and direct.
+1. FINDINGS: List MAXIMUM 2 most critical observations. Each finding must be 10-15 words MAXIMUM. Be concise and direct.
 
-2. RECOMMENDATIONS: List MAXIMUM 3 top priority actions for the customer. Each recommendation must be 10-15 words MAXIMUM. 
+2. RECOMMENDATIONS: List MAXIMUM 2 top priority actions for the customer. Each recommendation must be 10-15 words MAXIMUM. 
 
-3. NEXT STEPS: List MAXIMUM 3 key follow-up actions or scheduling items. Each step must be 10-15 words MAXIMUM.
+3. NEXT STEPS: List MAXIMUM 2 key follow-up actions or scheduling items. Each step must be 10-15 words MAXIMUM.
 
-CRITICAL: Only 3 items per section. Every bullet point must be extremely brief - 10-15 words maximum. No long explanations.
+CRITICAL: Only 2 items per section. Every bullet point must be extremely brief - 10-15 words maximum. No long explanations.
 
 Format your response as JSON with this structure:
 {
-  "findings": ["brief finding 1", "brief finding 2", "brief finding 3"],
-  "recommendations": ["brief rec 1", "brief rec 2", "brief rec 3"],
-  "nextSteps": ["brief step 1", "brief step 2", "brief step 3"]
+  "findings": ["brief finding 1", "brief finding 2"],
+  "recommendations": ["brief rec 1", "brief rec 2"],
+  "nextSteps": ["brief step 1", "brief step 2"]
 }
 
 Be specific and professional. Keep every item under 15 words.`
