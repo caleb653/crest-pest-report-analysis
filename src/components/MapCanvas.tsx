@@ -153,46 +153,28 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setTool('select');
         setShowEmojiPicker(false);
       } else if (currentTool === 'rectangle') {
-        const rect = new FabricRect({
+        // Create a text box that looks like a rectangle (text is directly editable inside)
+        const text = new IText('Type here...', {
           left: pt.x - 60,
           top: pt.y - 40,
           width: 120,
-          height: 80,
-          fill: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
-          stroke: rectBorderColorRef.current,
-          strokeWidth: 3,
-          rx: 8,
-          ry: 8,
-          selectable: true,
-          hasControls: true,
-        });
-        
-        canvas.add(rect);
-        canvas.setActiveObject(rect);
-        canvas.renderAll(); // Render immediately so rectangle is visible
-        
-        // Immediately add centered text for typing
-        const text = new IText('Type here...', {
-          left: pt.x,
-          top: pt.y,
           fontSize: 14,
           fill: '#000000',
           fontWeight: 'bold',
           textAlign: 'center',
-          originX: 'center',
-          originY: 'center',
           selectable: true,
           editable: true,
+          backgroundColor: rectFillTransparentRef.current ? 'transparent' : rectFillColorRef.current,
+          stroke: rectBorderColorRef.current,
+          strokeWidth: 3,
+          padding: 10,
         });
         
-        rectTextMap.current.set(rect, true);
         canvas.add(text);
         canvas.setActiveObject(text);
+        canvas.renderAll();
         
-        // Show toast to inform user
-        toast.info("💬 Tap the text to type", { duration: 2000 });
-        
-        // Small delay to ensure canvas is ready, then enter edit mode
+        // Small delay then enter edit mode
         setTimeout(() => {
           text.enterEditing();
           text.selectAll();
@@ -224,46 +206,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       }
     });
 
-    // Enable typing in rectangles
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const activeObject = canvas.getActiveObject();
-      
-      // Check if active object is a rectangle and key is printable
-      if (activeObject && activeObject.type === 'rect' && 
-          event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
-        
-        const rect = activeObject as FabricRect;
-        
-        // Only create text if it doesn't exist yet
-        if (!rectTextMap.current.get(rect)) {
-          const rectCenter = rect.getCenterPoint();
-          
-          const text = new IText(event.key, {
-            left: rectCenter.x,
-            top: rectCenter.y,
-            fontSize: 14,
-            fill: '#000000',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            originX: 'center',
-            originY: 'center',
-            selectable: true,
-            editable: true,
-          });
-          
-          // Mark rectangle as having text
-          rectTextMap.current.set(rect, true);
-          
-          canvas.add(text);
-          canvas.setActiveObject(text);
-          text.enterEditing();
-          text.selectAll();
-          canvas.renderAll();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
+    // No need for separate keydown handler since rectangles are now text boxes
 
     // Track object movement for drag-to-delete
     canvas.on('object:moving', (e) => {
@@ -332,7 +275,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
-      window.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
   }, []); // Only run once on mount
@@ -575,15 +517,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       />
 
       {/* Drawing tools */}
-      <div className="no-print absolute bottom-6 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 flex flex-row gap-2 border border-border z-50">
+      <div className="no-print absolute bottom-4 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 flex flex-row gap-1.5 border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
           onClick={() => setTool('select')}
           title="Select & Move (Pan Map)"
-          className="h-10 w-10"
+          className="h-8 w-8"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
         </Button>
@@ -592,9 +534,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant={tool === 'rectangle' ? 'default' : 'outline'}
           onClick={() => { setTool('rectangle'); setShowEmojiPicker(false); }}
           title="Rectangle"
-          className="h-10 w-10"
+          className="h-8 w-8"
         >
-          <Square className="w-5 h-5" />
+          <Square className="w-4 h-4" />
         </Button>
         {tool === 'rectangle' && (
           <div className="flex flex-col gap-1 p-2 border-l border-border">
@@ -638,43 +580,43 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
           onClick={() => { setTool('emoji'); setShowEmojiPicker((prev) => !prev); }}
           title="Add Emoji/Icon"
-          className="h-10 w-10"
+          className="h-8 w-8"
         >
-          <Smile className="w-5 h-5" />
+          <Smile className="w-4 h-4" />
         </Button>
         <Button
           size="icon"
           variant={tool === 'text' ? 'default' : 'outline'}
           onClick={() => setTool('text')}
           title="Add Text"
-          className="h-10 w-10"
+          className="h-8 w-8"
         >
-          <Type className="w-5 h-5" />
+          <Type className="w-4 h-4" />
         </Button>
-        <div className="w-px bg-border mx-1" />
+        <div className="w-px bg-border mx-0.5" />
         <Button
           ref={deleteButtonRef}
           size="icon"
           variant={isDraggingOverDelete ? 'destructive' : 'outline'}
           title="Drag items here to delete"
-          className={`h-10 w-10 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
+          className={`h-8 w-8 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
         </Button>
         <Button
           size="icon"
           variant="outline"
           onClick={clearCanvas}
           title="Clear all"
-          className="h-10 w-10"
+          className="h-8 w-8"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="no-print absolute bottom-24 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
+        <div className="no-print absolute bottom-16 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-4 border border-border z-50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-sm">Select Icon</h3>
             <Button
@@ -762,7 +704,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
-          className="no-print absolute bottom-6 left-6 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
+          className="no-print absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm shadow-xl border-border text-xs h-7"
         >
           Legend ({legendItems.length})
         </Button>
