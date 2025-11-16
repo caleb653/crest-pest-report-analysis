@@ -186,20 +186,31 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           charSpacing: 0,
         });
         
+        // Function to sync rectangle with text
+        const syncRect = () => {
+          const bounds = text.getBoundingRect();
+          rect.set({
+            left: bounds.left - 10,
+            top: bounds.top - 10,
+            width: bounds.width + 20,
+            height: bounds.height + 20,
+            scaleX: 1,
+            scaleY: 1,
+          });
+          canvas.renderAll();
+        };
+        
         // Add both to canvas
         canvas.add(rect);
         canvas.add(text);
         canvas.setActiveObject(text);
         canvas.renderAll();
         
-        // Link them together so moving text moves rectangle
-        text.on('moving', () => {
-          rect.set({
-            left: text.left! - 10,
-            top: text.top! - 10,
-          });
-          canvas.renderAll();
-        });
+        // Link them together - sync on all changes
+        text.on('moving', syncRect);
+        text.on('scaling', syncRect);
+        text.on('modified', syncRect);
+        text.on('changed', syncRect);
         
         text.on('removed', () => {
           canvas.remove(rect);
