@@ -44,7 +44,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Extract the customer name from these images. Look for any text that appears to be a customer name, client name, or homeowner name. The name might appear multiple times. If you find a name, respond with ONLY the name (first and last name if available). If you cannot find a clear customer name, respond with "NOT_FOUND".'
+                text: 'Extract the customer name from these pest control service screenshots. IMPORTANT: The customer name is typically located at the TOP of the screenshot. Look for a name that appears to be a customer name, client name, or homeowner name - usually at the very top of the image. If you find a name, respond with ONLY the full name (first and last name). If you cannot find a clear customer name, respond with "NOT_FOUND".'
               },
               ...images.map((imageBase64: string) => ({
                 type: 'image_url',
