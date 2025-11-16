@@ -488,18 +488,18 @@ const Report = () => {
               {/* Pan controls */}
               <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
                 <div className="flex flex-col gap-2">
-                  <Button size="icon" variant="secondary" onClick={() => panBy(0, -200)} title="Pan up">
+                  <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
                     <ArrowUp className="w-4 h-4" />
                   </Button>
                   <div className="flex gap-2">
-                    <Button size="icon" variant="secondary" onClick={() => panBy(-200, 0)} title="Pan left">
+                    <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
                       <ArrowLeft className="w-4 h-4" />
                     </Button>
-                    <Button size="icon" variant="secondary" onClick={() => panBy(200, 0)} title="Pan right">
+                    <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
-                  <Button size="icon" variant="secondary" onClick={() => panBy(0, 200)} title="Pan down">
+                  <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
                     <ArrowDown className="w-4 h-4" />
                   </Button>
                 </div>
