@@ -375,18 +375,24 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       if (savedData.objects) {
         fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
           const canvas = fabricCanvasRef.current!;
-          console.log('Canvas loaded, object count:', canvas.getObjects().length);
-          
-          if (savedData.base?.width && savedData.base?.height) {
+          const expectedCount = Array.isArray((savedData as any)?.objects?.objects)
+            ? (savedData as any).objects.objects.length
+            : undefined;
+
+          const applyScaling = () => {
+            if (!(savedData.base?.width && savedData.base?.height)) {
+              canvas.renderAll();
+              return;
+            }
             const currW = canvas.getWidth();
             const currH = canvas.getHeight();
             const baseW = savedData.base.width;
             const baseH = savedData.base.height;
-            
+
             // Calculate scale factors
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
-            
+
             // Determine if we should apply desktop-only adjustment when viewing mobile-created annotations
             const isMobileBase = baseW <= 640;
             const pointerFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
@@ -394,36 +400,47 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const notTouch = !('ontouchstart' in window) && ((navigator.maxTouchPoints || 0) === 0);
             const isDesktopEnv = pointerFine || hoverCapable || notTouch || window.innerWidth >= 1024;
             const needsDesktopAdjustment = isMobileBase && isDesktopEnv;
-            
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment });
-            
+
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment, count: canvas.getObjects().length, expectedCount });
+
             canvas.getObjects().forEach((obj: any) => {
               // Store original values
               let origLeft = obj.left || 0;
               let origTop = obj.top || 0;
               const origScaleX = obj.scaleX || 1;
               const origScaleY = obj.scaleY || 1;
-              
+
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
-                origLeft += baseW * 0.15; // 15% right in mobile space
-                origTop += baseH * 0.15;  // 15% down in mobile space
+                origLeft += baseW * 0.4; // 40% right in mobile space
+                origTop += baseH * 0.4;  // 40% down in mobile space
               }
-              
+
               // Now apply scaling to the adjusted position
               const newLeft = origLeft * scaleX;
               const newTop = origTop * scaleY;
-              
+
               obj.left = newLeft;
               obj.top = newTop;
               obj.scaleX = origScaleX * scaleX;
               obj.scaleY = origScaleY * scaleY;
-              
-              // Update object coordinates
               obj.setCoords();
             });
-          }
-          canvas.renderAll();
+            canvas.renderAll();
+          };
+
+          const tryApply = (attempt = 0) => {
+            const count = canvas.getObjects().length;
+            console.log('Canvas loaded, object count:', count, 'attempt:', attempt, 'expected:', expectedCount);
+            if (count === 0 && attempt < 6) {
+              // Wait a bit longer for Fabric to fully instantiate objects
+              setTimeout(() => tryApply(attempt + 1), 60);
+              return;
+            }
+            applyScaling();
+          };
+
+          tryApply();
         });
       }
       if (savedData.legendItems) {
