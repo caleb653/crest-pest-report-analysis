@@ -377,12 +377,21 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           const canvas = fabricCanvasRef.current!;
           console.log('Canvas loaded, object count:', canvas.getObjects().length);
           
-          if (savedData.base?.width && savedData.base?.height) {
+          const attemptAdjust = (attempt: number = 0) => {
+            const objs = canvas.getObjects();
+            if (objs.length === 0 && attempt < 5) {
+              setTimeout(() => attemptAdjust(attempt + 1), 50);
+              return;
+            }
+            if (!(savedData.base?.width && savedData.base?.height)) {
+              canvas.renderAll();
+              return;
+            }
             const currW = canvas.getWidth();
             const currH = canvas.getHeight();
             const baseW = savedData.base.width;
             const baseH = savedData.base.height;
-            
+
             // Calculate scale factors
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
@@ -395,9 +404,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const isDesktopEnv = pointerFine || hoverCapable || notTouch || window.innerWidth >= 1024;
             const needsDesktopAdjustment = isMobileBase && isDesktopEnv;
             
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment });
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment, attempt, objectCount: objs.length });
             
-            canvas.getObjects().forEach((obj: any) => {
+            objs.forEach((obj: any) => {
+              if ((obj as any)._scaledFromBase) return;
               // Store original values
               let origLeft = obj.left || 0;
               let origTop = obj.top || 0;
@@ -407,7 +417,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               // Apply desktop adjustment offset in the ORIGINAL (mobile) coordinate space BEFORE scaling
               if (needsDesktopAdjustment) {
                 origLeft += baseW * 0.18; // 18% right in mobile space
-                origTop += baseH * 0.28;  // 28% down in mobile space
+                origTop += baseH * 0.35;  // 35% down in mobile space
               }
               
               // Now apply scaling to the adjusted position
@@ -418,12 +428,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               obj.top = newTop;
               obj.scaleX = origScaleX * scaleX;
               obj.scaleY = origScaleY * scaleY;
+              (obj as any)._scaledFromBase = true;
               
               // Update object coordinates
               obj.setCoords();
             });
-          }
-          canvas.renderAll();
+            canvas.renderAll();
+          };
+
+          attemptAdjust();
         });
       }
       if (savedData.legendItems) {
