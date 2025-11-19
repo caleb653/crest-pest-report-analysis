@@ -39,7 +39,7 @@ const Report = () => {
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
   const [mapData, setMapData] = useState<string | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(22);
+  const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
 
