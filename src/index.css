@@ -356,7 +356,7 @@ All colors MUST be HSL.
     margin: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.1 !important;
     color: #2A2A2A !important;
     min-height: 1.1em !important;
@@ -367,7 +367,7 @@ All colors MUST be HSL.
   
   /* Ensure all text elements are uniform 11px with tight spacing */
   p, span, div, li {
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.1 !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -378,13 +378,13 @@ All colors MUST be HSL.
     height: 1.1em !important;
     min-height: 1.1em !important;
     max-height: 1.1em !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.1 !important;
   }
   
   /* Override any text in print sections */
   .print-section-content * {
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.1 !important;
   }
 
