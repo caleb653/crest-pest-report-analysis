@@ -631,38 +631,17 @@ const Report = () => {
             {/* Target Pest(s) Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Target Pest(s)</h2>
-              <div className="space-y-2">
-                {editableTargetPests.length > 0 ? editableTargetPests.map((pest, index) => (
-                  <Input
-                    key={index}
-                    value={pest}
-                    onChange={(e) => {
-                      const newPests = [...editableTargetPests];
-                      newPests[index] = e.target.value;
-                      setEditableTargetPests(newPests);
-                    }}
-                    placeholder="e.g., Ants, Spiders, Rodents"
-                    className="text-sm h-8"
-                  />
-                )) : (
-                  <Input
-                    value=""
-                    onChange={(e) => setEditableTargetPests([e.target.value])}
-                    placeholder="e.g., Ants, Spiders, Rodents"
-                    className="text-sm h-8"
-                  />
-                )}
-                {editableTargetPests.length < 3 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditableTargetPests([...editableTargetPests, ""])}
-                    className="no-print w-full h-7 text-xs"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Pest
-                  </Button>
-                )}
+              <div className="print-section-content space-y-2">
+                <Input
+                  value={editableTargetPests[0] || ""}
+                  onChange={(e) => {
+                    const newPests = [...editableTargetPests];
+                    newPests[0] = e.target.value;
+                    setEditableTargetPests(newPests);
+                  }}
+                  placeholder="e.g., Ants, Spiders, Rodents"
+                  className="text-sm h-8"
+                />
               </div>
             </Card>
 
@@ -670,37 +649,16 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Product(s) Used</h2>
               <div className="space-y-2">
-                {editableProductsUsed.length > 0 ? editableProductsUsed.map((product, index) => (
-                  <Input
-                    key={index}
-                    value={product}
-                    onChange={(e) => {
-                      const newProducts = [...editableProductsUsed];
-                      newProducts[index] = e.target.value;
-                      setEditableProductsUsed(newProducts);
-                    }}
-                    placeholder="e.g., Termidor, Demand CS"
-                    className="text-sm h-8"
-                  />
-                )) : (
-                  <Input
-                    value=""
-                    onChange={(e) => setEditableProductsUsed([e.target.value])}
-                    placeholder="e.g., Termidor, Demand CS"
-                    className="text-sm h-8"
-                  />
-                )}
-                {editableProductsUsed.length < 3 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditableProductsUsed([...editableProductsUsed, ""])}
-                    className="no-print w-full h-7 text-xs"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Product
-                  </Button>
-                )}
+                <Input
+                  value={editableProductsUsed[0] || ""}
+                  onChange={(e) => {
+                    const newProducts = [...editableProductsUsed];
+                    newProducts[0] = e.target.value;
+                    setEditableProductsUsed(newProducts);
+                  }}
+                  placeholder="e.g., Termidor, Demand CS"
+                  className="text-sm h-8"
+                />
               </div>
             </Card>
 
@@ -714,25 +672,13 @@ const Report = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {editableFindings.map((finding, index) => (
-                    <Textarea
-                      key={index}
-                      value={finding}
-                      onChange={(e) => updateItem(index, e.target.value, setEditableFindings)}
-                      placeholder="Enter finding or action taken..."
-                      className="text-sm resize-y"
-                      rows={1}
-                    />
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addItem(setEditableFindings)}
-                    className="no-print w-full h-7 text-xs"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Finding
-                  </Button>
+                  <Textarea
+                    value={editableFindings[0] || ""}
+                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
+                    placeholder="Enter finding or action taken..."
+                    className="text-sm resize-y"
+                    rows={1}
+                  />
                 </div>
               )}
             </Card>
@@ -741,25 +687,13 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold text-primary mb-2">What to Expect</h2>
               <div className="space-y-2">
-                {editableRecommendations.map((rec, index) => (
-                  <Textarea
-                    key={index}
-                    value={rec}
-                    onChange={(e) => updateItem(index, e.target.value, setEditableRecommendations)}
-                    placeholder="Enter what the customer should expect..."
-                    className="text-sm resize-y"
-                    rows={1}
-                  />
-                ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addItem(setEditableRecommendations)}
-                  className="no-print w-full h-7 text-xs"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Expectation
-                </Button>
+                <Textarea
+                  value={editableRecommendations[0] || ""}
+                  onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
+                  placeholder="Enter what the customer should expect..."
+                  className="text-sm resize-y"
+                  rows={1}
+                />
               </div>
             </Card>
 
@@ -767,29 +701,16 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold text-secondary mb-2">Our Top Recommendations</h2>
               <div className="space-y-2">
-                {editableNextSteps.map((step, index) => (
-                  <div key={index} className="flex gap-2">
-                    <span className="font-bold text-base text-foreground pt-1">{index + 1}.</span>
-                    <Textarea
-                      value={step}
-                      onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
-                      placeholder="Enter recommendation..."
-                      className="text-sm resize-y flex-1"
-                      rows={1}
-                    />
-                  </div>
-                ))}
-                {editableNextSteps.length < 3 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addItem(setEditableNextSteps)}
-                    className="no-print w-full h-7 text-xs"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Recommendation
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  <span className="font-bold text-base text-foreground pt-1">1.</span>
+                  <Textarea
+                    value={editableNextSteps[0] || ""}
+                    onChange={(e) => updateItem(0, e.target.value, setEditableNextSteps)}
+                    placeholder="Enter recommendation..."
+                    className="text-sm resize-y flex-1"
+                    rows={1}
+                  />
+                </div>
               </div>
             </Card>
 
