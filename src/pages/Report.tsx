@@ -720,7 +720,8 @@ const Report = () => {
                       value={finding}
                       onChange={(e) => updateItem(index, e.target.value, setEditableFindings)}
                       placeholder="Enter finding or action taken..."
-                      className="min-h-[50px] text-sm resize-none"
+                      className="text-sm resize-y"
+                      rows={1}
                     />
                   ))}
                   <Button
@@ -746,7 +747,8 @@ const Report = () => {
                     value={rec}
                     onChange={(e) => updateItem(index, e.target.value, setEditableRecommendations)}
                     placeholder="Enter what the customer should expect..."
-                    className="min-h-[60px] text-sm resize-none"
+                    className="text-sm resize-y"
+                    rows={1}
                   />
                 ))}
                 <Button
@@ -772,7 +774,8 @@ const Report = () => {
                       value={step}
                       onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
                       placeholder="Enter recommendation..."
-                      className="min-h-[50px] text-sm resize-none flex-1"
+                      className="text-sm resize-y flex-1"
+                      rows={1}
                     />
                   </div>
                 ))}
