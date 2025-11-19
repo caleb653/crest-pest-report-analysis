@@ -29,7 +29,7 @@ serve(async (req) => {
     const url = new URL(req.url);
     const lat = url.searchParams.get('lat');
     const lng = url.searchParams.get('lng');
-    const zoomParam = Number(url.searchParams.get('zoom') ?? 17);
+    const zoomParam = Number(url.searchParams.get('zoom') ?? 19);
     const z = clampZoom(zoomParam);
 
     const widthParam = Number(url.searchParams.get('width') ?? 1100);
@@ -55,9 +55,9 @@ serve(async (req) => {
     }
 
     // Use Mapbox Static Images API for high-quality satellite imagery
-    // Format: /styles/v1/{username}/{style_id}/static/{lon},{lat},{zoom}/{width}x{height}@2x
-    // bearing=0, pitch=0 for 2D top-down view
-    let mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static`;
+    // Format: /styles/v1/{username}/{style_id}/static/{lon},{lat},{zoom},{bearing},{pitch}/{width}x{height}@2x
+    // bearing=0, pitch=0 for true 2D orthographic top-down view
+    let mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static`;
     
     if (marker === '1') {
       // Add a red pin marker at the location
