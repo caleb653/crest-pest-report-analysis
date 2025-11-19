@@ -65,7 +65,7 @@
     @apply bg-background text-foreground;
   }
 
-  /* On-screen sections */
+  /* On-screen sections on the right */
   .print-section {
     padding: 0.5rem 0.75rem !important;
     border-radius: 0.75rem;
@@ -93,7 +93,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – Full width, safe margins, no horizontal clipping
+   PRINT LAYOUT – full width, tight vertical spacing
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -123,7 +123,16 @@
     overflow: hidden !important;
   }
 
-  /* Main wrappers: no max-width, no side padding */
+  /* NUCLEAR: kill Tailwind max-width & centering that keep things skinny */
+  [class*="max-w-"] {
+    max-width: none !important;
+  }
+
+  [class*="mx-auto"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
   #root,
   #__next,
   body > div,
@@ -134,12 +143,11 @@
     padding: 0 !important;
   }
 
-  .container,
-  .mx-auto,
-  [class*="max-w-"] {
+  .container {
+    width: 100% !important;
     max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   * {
@@ -155,9 +163,9 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* ------------ HEADER (full width, thin) ------------- */
+  /* ------------ HEADER ------------ */
   .print-header {
-    width: calc(100% - 10mm) !important;   /* 5mm safety margin each side */
+    width: calc(100% - 10mm) !important;   /* 5mm margin left/right */
     max-width: none !important;
     background: hsl(135 13% 80%) !important;
     padding: 3mm 4mm !important;
@@ -199,9 +207,9 @@
     padding: 2mm 3mm !important;
   }
 
-  /* ------------ MAIN GRID (also full width) ------------- */
+  /* ------------ MAIN GRID ------------ */
   .print-layout {
-    width: calc(100% - 10mm) !important;   /* same 5mm margin each side */
+    width: calc(100% - 10mm) !important;
     max-width: none !important;
     display: grid !important;
     grid-template-columns: 58% 40% !important;
@@ -226,7 +234,7 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* Right: Boxes fill entire right column */
+  /* Right: column with boxes should use full side width */
   .print-layout > div:last-child {
     height: 135mm !important;
     max-height: 135mm !important;
@@ -234,6 +242,7 @@
     padding-top: 2mm !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
+    width: 100% !important;
   }
 
   .print-section {
@@ -243,7 +252,7 @@
     overflow: hidden !important;
     padding: 0 !important;
     background: none !important;
-    width: 100% !important;         /* stretch to full right column */
+    width: 100% !important;
   }
 
   .print-section-header {
