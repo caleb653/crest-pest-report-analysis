@@ -273,7 +273,7 @@ All colors MUST be HSL.
     padding: 2px 4px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -291,7 +291,7 @@ All colors MUST be HSL.
 
   .print-section-content li {
     margin-bottom: 0 !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
     line-height: 1.1 !important;
