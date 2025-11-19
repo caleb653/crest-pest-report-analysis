@@ -1,148 +1,367 @@
-/* =========================================================================
-   FINAL REPORT STYLING — ALL FIXES REQUESTED
-   ========================================================================= */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* -------------------------------------------------------------
-   ONE BOX PER SECTION — KEEP ONLY THE FIRST TEXTAREA
+   CREST BRAND DESIGN SYSTEM (HSL ONLY)
 ------------------------------------------------------------- */
-.print-section-content textarea:not(:first-of-type) {
-  display: none !important;
-}
+@layer base {
+  :root {
+    /* Brand colors (from your palette) */
+    --background: 0 0% 95%;       /* #F2F2F2 White */
+    --foreground: 0 0% 16%;       /* #2A2A2A Black */
 
-/* -------------------------------------------------------------
-   HIDE ALL "+ Add ___" BUTTONS
-------------------------------------------------------------- */
-.print-section button,
-.print-section [role="button"],
-.print-section .add-button,
-.print-section .add-finding,
-.print-section .add-product,
-.print-section .add-expectation {
-  display: none !important;
-}
+    --primary: 135 13% 80%;       /* #C3D1C5 Sage */
+    --secondary: 135 11% 60%;     /* #95A197 Dark Sage */
 
-/* -------------------------------------------------------------
-   BASE TEXTAREA STYLING — COMPACT, CLEAN, GRAPHIC DESIGNER LOOK
-------------------------------------------------------------- */
-.print-section-content textarea {
-  width: 100% !important;
-  min-height: 1.3em !important;   /* 1 line minimum */
-  height: auto !important;
-  max-height: 3.9em !important;   /* ~3 lines max */
-  line-height: 1.3 !important;
-  overflow: hidden !important;
-  resize: none !important;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 16%;
 
-  padding: 2px 4px !important;
-  margin: 2px 0 !important;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 16%;
 
-  font-size: 11px !important;
-  font-weight: 500 !important;
+    --muted: 135 10% 90%;
+    --muted-foreground: 135 8% 40%;
 
-  border: 1px solid hsl(135 11% 60%) !important; /* dark sage */
-  border-radius: 6px !important;
-  background: #F2F2F2 !important; /* white-neutral */
-  color: #2A2A2A !important;      /* crest black */
-}
+    --accent: 135 13% 70%;
+    --accent-foreground: 0 0% 16%;
 
-/* -------------------------------------------------------------
-   TARGET PEST(S) + PRODUCT(S) ARE ALWAYS ONE LINE ONLY
-------------------------------------------------------------- */
-.print-layout > div:last-child .print-section:nth-of-type(1) textarea,
-.print-layout > div:last-child .print-section:nth-of-type(2) textarea {
-  max-height: 1.4em !important;  /* force single line */
-  min-height: 1.4em !important;
-}
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-/* -------------------------------------------------------------
-   HEADER — FULL WIDTH + BETTER VISUAL HIERARCHY
-------------------------------------------------------------- */
-.print-header {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 12px 18px !important;
-  border-radius: 0 !important;
+    --border: 135 10% 85%;
+    --input: 135 10% 85%;
+    --ring: 135 13% 80%;
 
-  background: #C3D1C5 !important; /* Sage */
-  color: #2A2A2A !important;      /* Black */
-}
+    --radius: 0.5rem;
 
-/* Make header text larger and more premium */
-.print-header h1,
-.print-header h2,
-.print-header span,
-.print-header p {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #2A2A2A !important;
-}
-
-/* Header labels even stronger weight */
-.print-header b,
-.print-header strong {
-  font-weight: 700 !important;
-}
-
-/* -------------------------------------------------------------
-   RIGHT COLUMN — TIGHTER SPACING + BETTER FIT
-------------------------------------------------------------- */
-.print-layout > div:last-child {
-  padding-right: 8px !important;
-}
-
-.print-section {
-  margin-bottom: 6px !important;
-}
-
-.print-section-header {
-  background: #95A197 !important; /* Dark Sage */
-  color: #F2F2F2 !important;      /* White */
-  padding: 4px 8px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  border-radius: 6px 6px 0 0 !important;
-}
-
-/* Cleaner content boxes */
-.print-section-content {
-  background: #C3D1C5 !important; /* Sage */
-  border: 1px solid #95A197 !important;
-  padding: 4px 6px !important;
-  border-radius: 0 0 6px 6px !important;
-}
-
-/* -------------------------------------------------------------
-   MAP AREA — CRISP + FULL FIT
-------------------------------------------------------------- */
-.print-map-container {
-  border: 1px solid #95A197 !important;
-  border-radius: 6px !important;
-  overflow: hidden !important;
-}
-
-/* -------------------------------------------------------------
-   TYPOGRAPHY — CONSISTENT BRAND FEEL
-------------------------------------------------------------- */
-body, p, div, span, li {
-  font-family: 'Inter', sans-serif !important;
-  color: #2A2A2A !important;
-}
-
-/* -------------------------------------------------------------
-   PRINT CLEANUP — NO BREAKS, NO EXTRA PADDING
-------------------------------------------------------------- */
-@media print {
-  * {
-    page-break-inside: avoid !important;
-    page-break-before: avoid !important;
-    page-break-after: avoid !important;
-    box-sizing: border-box !important;
+    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
+    --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
   }
 
-  html, body {
+  .dark {
+    --background: 0 0% 12%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 16%;
+    --card-foreground: 0 0% 95%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+
+  input,
+  textarea {
+    background: hsl(0 0% 100%) !important;
+    border-radius: 0.4rem !important;
+    border: 1px solid hsl(var(--border)) !important;
+    padding: 0.25rem 0.4rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* On-screen sections on the right */
+  .print-section {
+    padding: 0 !important;
+    margin-bottom: 0.7rem !important;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: transparent !important;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    color: hsl(0 0% 100%) !important;
+    padding: 0.25rem 0.7rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+  }
+
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
+    padding: 0.35rem 0.7rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 0.9rem !important;
+  }
+
+  .print-section-content li {
+    margin-bottom: 0.12rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .print-header {
+    background: hsl(var(--primary));
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .print-header h1 {
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.3rem !important;
+    color: hsl(var(--foreground));
+  }
+
+  .print-header h2 {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: hsl(var(--foreground));
+  }
+}
+
+/* -------------------------------------------------------------
+   PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
+------------------------------------------------------------- */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  .no-print,
+  button,
+  [class*="toolbar"],
+  [role="status"],
+  .sonner,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    height: 210mm !important;
+    max-height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
+  }
+
+  /* Kill Tailwind width caps / centering that fight us */
+  [class*="max-w-"] {
+    max-width: none !important;
+  }
+
+  [class*="mx-auto"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #root,
+  #__next,
+  body > div,
+  body > main,
+  .container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    transition: none !important;
+    animation: none !important;
+    page-break-inside: avoid !important;
+    box-sizing: border-box !important;
+  }
+
+  iframe,
+  canvas {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* HEADER – full width strip, larger fonts in print */
+  .print-header {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    margin: 4mm 0 2mm 0 !important;
+    padding: 4mm 6mm !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    background: hsl(var(--primary)) !important;
+  }
+
+  .print-header > * {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .print-header h1 {
+    font-size: 18px !important;   /* bigger title */
+    margin-bottom: 2mm !important;
+  }
+
+  .print-header h2 {
+    font-size: 12px !important;
+  }
+
+  .print-header p,
+  .print-header span,
+  .print-header input {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-header > div {
+    background: hsl(0 0% 100% / 0.7) !important;
+    border-radius: 3px !important;
+    padding: 2mm 3mm !important;
+  }
+
+  /* MAIN GRID */
+  .print-layout {
+    width: calc(100% - 12mm) !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: 58% 40% !important;
+    column-gap: 2% !important;
+    height: 135mm !important;
+    margin: 0 auto 4mm auto !important;
+    padding: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* MAP */
+  .print-map-container {
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--secondary)) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
+    overflow: hidden !important;
+    background: hsl(135 10% 90%) !important;
+    height: 135mm !important;
+    width: 100% !important;
+  }
+
+  .print-map-container canvas {
+    transform: translate(2%, -5%) !important;
+  }
+
+  /* RIGHT COLUMN – compact but full-width within column */
+  .print-layout > div:last-child {
+    height: 135mm !important;
+    max-height: 135mm !important;
+    overflow: hidden !important;
+    padding-top: 2mm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-section {
+    margin: 0 0 3mm 0 !important;
+    border-radius: 4mm !important;          /* slightly smaller curve */
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 1px solid hsl(var(--secondary)) !important;
+    width: 100% !important;
+  }
+
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    padding: 1.3mm 4mm !important;          /* tight header */
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    padding: 1.8mm 3.5mm !important;        /* reduced padding */
+    font-size: 10px !important;
+    line-height: 1.05 !important;           /* tighter lines */
+  }
+
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 3.5mm !important;
+  }
+
+  .print-section-content li {
+    margin: 0 0 0.4mm 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
+
+  .print-section-content,
+  .print-section-content * {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500 !important;
+  }
+
+  /* Textareas: no clipping, can grow as needed */
+  .print-section-content textarea {
+    display: block !important;
+    width: 100% !important;
+    min-height: 2.1em !important;
+    max-height: none !important;            /* <-- let What to Expect show fully */
+    overflow: visible !important;
+    resize: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0.2mm 0 0 0 !important;
+    line-height: 1.05 !important;
+  }
+
+  input,
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+  }
+
+  [class*="Card"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-layout .p-2,
+  .print-layout .p-3,
+  .print-layout .p-4,
+  .print-layout .py-3,
+  .print-layout .py-4,
+  .print-layout .p-6,
+  .print-layout .md\:p-3,
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
+    padding: 0 !important;
+  }
+
+  .print-layout .space-y-1,
+  .print-layout .space-y-2,
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
   }
 }
