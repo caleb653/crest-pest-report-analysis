@@ -190,7 +190,7 @@ All colors MUST be HSL.
   .print-header span {
     color: #2A2A2A !important;
     opacity: 1 !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     line-height: 1.4 !important;
   }
   
@@ -203,14 +203,14 @@ All colors MUST be HSL.
   
   .print-header > div span {
     color: #2A2A2A !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     opacity: 1 !important;
     font-weight: 500 !important;
   }
   
   /* Make customer and tech names same size as labels */
   .print-header input {
-    font-size: 10px !important;
+    font-size: 12px !important;
     color: #2A2A2A !important;
     opacity: 1 !important;
     line-height: 1.4 !important;
@@ -259,7 +259,7 @@ All colors MUST be HSL.
     background: #95A197 !important;
     color: #F2F2F2 !important;
     padding: 3px 5px !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.4px !important;
@@ -271,7 +271,7 @@ All colors MUST be HSL.
     padding: 4px 6px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -286,7 +286,7 @@ All colors MUST be HSL.
 
   .print-section-content li {
     margin-bottom: 2mm !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -313,7 +313,7 @@ All colors MUST be HSL.
     padding: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     line-height: 1.4 !important;
     color: #2A2A2A !important;
   }
