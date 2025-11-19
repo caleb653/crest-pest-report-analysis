@@ -54,7 +54,7 @@
 }
 
 /* -------------------------------------------------------------
-   BASE STYLES (Browser view – nicer spacing)
+   BASE STYLES (Browser view)
 ------------------------------------------------------------- */
 @layer base {
   * {
@@ -65,6 +65,7 @@
     @apply bg-background text-foreground;
   }
 
+  /* Nice looking sections on screen */
   .print-section {
     padding: 0.5rem 0.75rem !important;
     border-radius: 0.75rem;
@@ -92,7 +93,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – SUPER CLEAN, TIGHT, GRAPHIC-DESIGNER QUALITY
+   PRINT LAYOUT – Fill the page, tight boxes
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -100,7 +101,7 @@
     margin: 0;
   }
 
-  /* Remove UI elements */
+  /* Kill UI chrome */
   .no-print,
   button,
   [class*="toolbar"],
@@ -110,7 +111,7 @@
     display: none !important;
   }
 
-  /* Page background */
+  /* Make the whole app stretch edge to edge */
   html,
   body {
     background: hsl(135 13% 80%) !important;
@@ -118,9 +119,32 @@
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
     height: 210mm !important;
-    overflow: hidden !important;
+    max-height: 210mm !important;
+    width: 297mm !important;
+    max-width: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* FORCE any layout wrapper to use full width & no padding */
+  body > div,
+  body > main,
+  #root,
+  #__next {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Also nuke common Tailwind center containers */
+  .container,
+  .mx-auto,
+  [class*="max-w-"] {
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 
   * {
@@ -130,16 +154,23 @@
     box-sizing: border-box !important;
   }
 
+  iframe,
+  canvas {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   /* ------------ HEADER ------------- */
   .print-header {
     background: hsl(135 13% 80%) !important;
-    padding: 6mm 10mm !important;
-    margin: 4mm 6mm 2mm 6mm !important;
+    padding: 5mm 8mm !important;
+    margin: 3mm 5mm 2mm 5mm !important;
     border-radius: 4px !important;
     box-shadow: 0 3px 10px hsl(0 0% 0% / 0.12) !important;
-    display: grid;
+    display: grid !important;
     grid-template-columns: 1.4fr 1fr;
-    gap: 10mm;
+    column-gap: 8mm;
+    align-items: flex-start;
   }
 
   .print-header h1 {
@@ -151,49 +182,61 @@
   .print-header h2 {
     font-size: 12px !important;
     font-weight: 600 !important;
-    margin-bottom: 1mm !important;
+    margin: 0 0 1mm 0 !important;
   }
 
   .print-header p,
-  .print-header input,
-  .print-header span {
+  .print-header span,
+  .print-header input {
     font-size: 11px !important;
     line-height: 1.2 !important;
-    background: none !important;
+    background: transparent !important;
     border: none !important;
+    margin: 0;
+    padding: 0;
   }
 
   .print-header > div {
     background: hsl(0 0% 96% / 0.7) !important;
-    padding: 3mm 4mm;
-    border-radius: 3px;
+    border-radius: 3px !important;
+    padding: 3mm 4mm !important;
   }
 
-  /* ------------ GRID LAYOUT ------------- */
+  /* ------------ MAIN GRID ------------- */
   .print-layout {
     display: grid !important;
-    grid-template-columns: 54% 44% !important;
-    gap: 2%;
+    grid-template-columns: 55% 43% !important;
+    column-gap: 2% !important;
     height: 155mm !important;
-    margin: 0 6mm;
+    margin: 0 5mm 4mm 5mm !important;
+    align-items: flex-start !important;
   }
 
+  /* Map column */
   .print-map-container {
-    height: 155mm !important;
     border-radius: 4px !important;
     border: 1px solid hsl(135 11% 60%) !important;
     overflow: hidden !important;
     background: hsl(135 10% 90%) !important;
+    height: 155mm !important;
+    width: 100% !important;
   }
 
   .print-map-container canvas {
     transform: translate(4%, -8%) !important;
   }
 
-  /* RIGHT COLUMN BOXES – extremely compact, professional */
+  /* Right column (boxes) */
+  .print-layout > div:last-child {
+    height: 155mm !important;
+    max-height: 155mm !important;
+    overflow: hidden !important;
+    padding-top: 2mm !important;
+  }
+
   .print-section {
-    margin-bottom: 3mm !important;
-    border-radius: 4mm !important;
+    margin: 0 0 3mm 0 !important;      /* space BETWEEN boxes */
+    border-radius: 4mm !important;     /* soft rounded pills */
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.10);
     overflow: hidden !important;
     padding: 0 !important;
@@ -202,46 +245,89 @@
 
   .print-section-header {
     background: hsl(135 11% 60%) !important;
-    color: white !important;
+    color: #fff !important;
     padding: 1.5mm 4mm !important;
     font-size: 11px !important;
     font-weight: 700 !important;
+    letter-spacing: 0.03em;
   }
 
   .print-section-content {
     background: hsl(135 13% 80%) !important;
-    padding: 2mm 4mm !important;
+    padding: 2mm 4mm !important;       /* TIGHT interior */
     border: 1px solid hsl(135 11% 60%) !important;
     border-top: none !important;
     font-size: 11px !important;
     line-height: 1.05 !important;
   }
 
-  /* LISTS: fits 3–4 bullets comfortably */
+  /* Lists: 3–4 bullets per box, no wasted space */
   .print-section-content ul {
-    padding-left: 4mm !important;
     margin: 0 !important;
+    padding-left: 4mm !important;
   }
 
   .print-section-content li {
     margin: 0 0 0.8mm 0 !important;
+    padding: 0 !important;
     font-size: 11px !important;
+    line-height: 1.05 !important;
+  }
+
+  /* All text inside boxes uniform */
+  .print-section-content,
+  .print-section-content * {
+    font-size: 11px !important;
+    line-height: 1.05 !important;
+    color: hsl(0 0% 16%) !important;
+    font-weight: 500 !important;
   }
 
   .print-section-content textarea {
-    min-height: 2.4em !important;
+    display: block !important;
+    min-height: 2.4em !important;   /* enough for 3–4 short lines */
     max-height: 3.2em !important;
-    font-size: 11px !important;
-    line-height: 1.05 !important;
-    background: none !important;
-    border: none !important;
+    overflow: hidden !important;
     resize: none !important;
+    background: transparent !important;
+    border: none !important;
   }
 
-  /* Remove Tailwind card chrome */
-  [class*="Card"] {
-    background: none !important;
+  input,
+  textarea {
     border: none !important;
+    background: transparent !important;
     padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+  }
+
+  [class*="Card"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Kill random padding/gaps from Tailwind spacing utilities */
+  .print-layout .p-2,
+  .print-layout .p-3,
+  .print-layout .p-4,
+  .print-layout .py-3,
+  .print-layout .py-4,
+  .print-layout .p-6,
+  .print-layout .md\:p-3,
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
+    padding: 0 !important;
+  }
+
+  .print-layout .space-y-1,
+  .print-layout .space-y-2,
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
   }
 }
