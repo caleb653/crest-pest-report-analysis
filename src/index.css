@@ -278,12 +278,15 @@ All colors MUST be HSL.
     width: 100% !important;
     box-sizing: border-box !important;
     line-height: 1.1 !important;
+    color: #2A2A2A !important;
+    font-weight: 500 !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
     padding-left: 10px !important;
     line-height: 1.1 !important;
+    color: #2A2A2A !important;
   }
 
   .print-section-content li {
@@ -298,6 +301,23 @@ All colors MUST be HSL.
   .print-section-content > * {
     margin-top: 0 !important;
     margin-bottom: 0.3mm !important;
+  }
+  
+  /* FORCE all text elements to be uniform black and 11px */
+  .print-section-content,
+  .print-section-content *,
+  .print-section-content p,
+  .print-section-content span,
+  .print-section-content div,
+  .print-section-content li,
+  .print-section-content input,
+  .print-section-content textarea,
+  .print-section-content label {
+    font-size: 11px !important;
+    color: #2A2A2A !important;
+    line-height: 1.1 !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
   }
   
   /* Force textarea to be single-line in print */
