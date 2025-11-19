@@ -245,10 +245,10 @@ All colors MUST be HSL.
     transform: translate(4%, -10%) !important;
   }
 
-  /* Balanced sections with tighter spacing between boxes */
+  /* Balanced sections with spacing between boxes */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1.5mm !important;
+    margin-bottom: 2mm !important;
     width: 100% !important;
   }
 
@@ -270,14 +270,14 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 2px 4px !important;
+    padding: 1px 4px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 12px !important;
+    font-size: 11px !important;
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    line-height: 1.1 !important;
+    line-height: 0.9 !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
@@ -285,25 +285,28 @@ All colors MUST be HSL.
   .print-section-content ul {
     margin: 0 !important;
     padding-left: 10px !important;
-    line-height: 1.1 !important;
+    line-height: 0.9 !important;
     color: #2A2A2A !important;
   }
 
   .print-section-content li {
     margin-bottom: 0 !important;
-    font-size: 12px !important;
+    padding: 0 !important;
+    font-size: 11px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
-    line-height: 1.1 !important;
+    line-height: 0.9 !important;
   }
 
-  /* Tighten spacing between rows inside each box */
+  /* Zero spacing between rows inside each box */
   .print-section-content > * {
     margin-top: 0 !important;
-    margin-bottom: 0.0mm !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
   
-  /* FORCE all text elements to be uniform black and 11px */
+  /* FORCE all text elements to be uniform black and 11px with minimal line height */
   .print-section-content,
   .print-section-content *,
   .print-section-content p,
@@ -315,22 +318,24 @@ All colors MUST be HSL.
   .print-section-content label {
     font-size: 11px !important;
     color: #2A2A2A !important;
-    line-height: 1.0 !important;
+    line-height: 0.9 !important;
     font-weight: 500 !important;
     opacity: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
   /* Force textarea to be single-line in print */
   .print-section-content textarea {
     display: block !important;
-    min-height: 1.0em !important;
-    height: 1.0em !important;
-    max-height: 1.0em !important;
+    min-height: 0.8em !important;
+    height: 0.8em !important;
+    max-height: 0.8em !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    font-size: 12px !important;
-    line-height: 1.0 !important;
+    font-size: 11px !important;
+    line-height: 0.9 !important;
   }
 
   /* Typography improvements - professional hierarchy */
@@ -365,27 +370,27 @@ All colors MUST be HSL.
     display: block !important;
   }
   
-  /* Ensure all text elements are uniform 11px with tight spacing */
+  /* Ensure all text elements are uniform 11px with minimal spacing */
   p, span, div, li {
-    font-size: 12px !important;
-    line-height: 1.1 !important;
+    font-size: 11px !important;
+    line-height: 0.9 !important;
     margin: 0 !important;
-    padding: 30 !important;
+    padding: 0 !important;
   }
   
   /* Specific styling for input fields to ensure they're single line */
   .print-section-content input {
-    height: 1.1em !important;
-    min-height: 1.1em !important;
-    max-height: 1.1em !important;
-    font-size: 12px !important;
-    line-height: 1.1 !important;
+    height: 0.8em !important;
+    min-height: 0.8em !important;
+    max-height: 0.8em !important;
+    font-size: 11px !important;
+    line-height: 0.9 !important;
   }
   
   /* Override any text in print sections */
   .print-section-content * {
-    font-size: 12px !important;
-    line-height: 1.1 !important;
+    font-size: 11px !important;
+    line-height: 0.9 !important;
   }
 
   /* Clean up card styling */
