@@ -7,7 +7,7 @@
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Brand colors */
+    /* Brand colors (from your palette) */
     --background: 0 0% 95%;       /* #F2F2F2 White */
     --foreground: 0 0% 16%;       /* #2A2A2A Black */
 
@@ -64,7 +64,7 @@
     font-size: 0.85rem !important;
   }
 
-  /* Default screen style for right-hand sections */
+  /* On-screen sections on the right */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.7rem !important;
@@ -78,7 +78,7 @@
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 0.7rem !important; /* tighter header */
+    padding: 0.25rem 0.7rem !important;
     font-size: 0.85rem !important;
     font-weight: 700 !important;
   }
@@ -86,7 +86,7 @@
   .print-section-content {
     background: hsl(var(--primary)) !important;
     color: hsl(var(--foreground)) !important;
-    padding: 0.4rem 0.7rem !important; /* tighter body */
+    padding: 0.35rem 0.7rem !important;
     font-size: 0.8rem !important;
   }
 
@@ -96,7 +96,7 @@
   }
 
   .print-section-content li {
-    margin-bottom: 0.15rem !important;
+    margin-bottom: 0.12rem !important;
     line-height: 1.2 !important;
   }
 
@@ -109,14 +109,14 @@
   }
 
   .print-header h1 {
-    font-size: 1.2rem !important;
+    font-size: 1.3rem !important;
     font-weight: 700 !important;
     margin-bottom: 0.3rem !important;
     color: hsl(var(--foreground));
   }
 
   .print-header h2 {
-    font-size: 0.9rem !important;
+    font-size: 0.95rem !important;
     font-weight: 600 !important;
     color: hsl(var(--foreground));
   }
@@ -187,7 +187,7 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, inner card also full-width */
+  /* HEADER – full width strip, larger fonts in print */
   .print-header {
     width: 100% !important;
     max-width: none !important;
@@ -205,19 +205,19 @@
   }
 
   .print-header h1 {
-    font-size: 16px !important;
+    font-size: 18px !important;   /* bigger title */
     margin-bottom: 2mm !important;
   }
 
   .print-header h2 {
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 
   .print-header p,
   .print-header span,
   .print-header input {
-    font-size: 10px !important;
-    line-height: 1.1 !important;
+    font-size: 11px !important;
+    line-height: 1.15 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
@@ -271,7 +271,7 @@
 
   .print-section {
     margin: 0 0 3mm 0 !important;
-    border-radius: 6mm !important;
+    border-radius: 4mm !important;          /* slightly smaller curve */
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
@@ -281,46 +281,51 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1.5mm 4mm !important;   /* tighter */
+    padding: 1.3mm 4mm !important;          /* tight header */
     font-size: 11px !important;
     font-weight: 700 !important;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 2mm 4mm !important;      /* tighter */
+    padding: 1.8mm 3.5mm !important;        /* reduced padding */
     font-size: 10px !important;
-    line-height: 1.1 !important;
+    line-height: 1.05 !important;           /* tighter lines */
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 4mm !important;
+    padding-left: 3.5mm !important;
   }
 
   .print-section-content li {
-    margin: 0 0 0.6mm 0 !important;
+    margin: 0 0 0.4mm 0 !important;
     padding: 0 !important;
     font-size: 10px !important;
-    line-height: 1.1 !important;
+    line-height: 1.05 !important;
   }
 
   .print-section-content,
   .print-section-content * {
     font-size: 10px !important;
-    line-height: 1.1 !important;
+    line-height: 1.05 !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
 
+  /* Textareas: no clipping, can grow as needed */
   .print-section-content textarea {
     display: block !important;
+    width: 100% !important;
     min-height: 2.1em !important;
-    max-height: 3em !important;
-    overflow: hidden !important;
+    max-height: none !important;            /* <-- let What to Expect show fully */
+    overflow: visible !important;
     resize: none !important;
     background: transparent !important;
     border: none !important;
+    padding: 0 !important;
+    margin: 0.2mm 0 0 0 !important;
+    line-height: 1.05 !important;
   }
 
   input,
