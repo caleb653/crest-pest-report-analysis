@@ -21,12 +21,12 @@ interface LegendItem {
 const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
 const AVAILABLE_ICONS = [
-  { icon: 'bug', label: 'Pest Activity', symbol: '🐛' },
-  { icon: 'rat', label: 'Rodent Activity', symbol: '🐭' },
-  { icon: 'box', label: 'Trap', symbol: '📦' },
-  { icon: 'square', label: 'Bait Box', symbol: '⬛' },
-  { icon: 'tree', label: 'Trim Trees', symbol: '🌳' },
-  { icon: 'circle', label: 'Mosquito Station', symbol: '⭕' },
+  { icon: 'bug', label: 'Pest Activity', symbol: '⬤' },
+  { icon: 'rat', label: 'Rodent Activity', symbol: '▲' },
+  { icon: 'box', label: 'Trap', symbol: '◆' },
+  { icon: 'square', label: 'Bait Box', symbol: '■' },
+  { icon: 'tree', label: 'Trim Trees', symbol: '▼' },
+  { icon: 'circle', label: 'Mosquito Station', symbol: '○' },
 ];
 
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
