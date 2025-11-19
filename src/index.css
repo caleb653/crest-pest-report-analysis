@@ -8,11 +8,11 @@
 @layer base {
   :root {
     /* Brand colors (from your palette) */
-    --background: 0 0% 95%;       /* #F2F2F2 White */
-    --foreground: 0 0% 16%;       /* #2A2A2A Black */
+    --background: 0 0% 95%; /* #F2F2F2 White */
+    --foreground: 0 0% 16%; /* #2A2A2A Black */
 
-    --primary: 135 13% 80%;       /* #C3D1C5 Sage */
-    --secondary: 135 11% 60%;     /* #95A197 Dark Sage */
+    --primary: 135 13% 80%; /* #C3D1C5 Sage */
+    --secondary: 135 11% 60%; /* #95A197 Dark Sage */
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 16%;
@@ -52,7 +52,12 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
   }
 
   input,
@@ -205,7 +210,7 @@
   }
 
   .print-header h1 {
-    font-size: 18px !important;   /* bigger title */
+    font-size: 18px !important; /* bigger title */
     margin-bottom: 2mm !important;
   }
 
@@ -271,7 +276,7 @@
 
   .print-section {
     margin: 0 0 3mm 0 !important;
-    border-radius: 4mm !important;          /* slightly smaller curve */
+    border-radius: 4mm !important; /* slightly smaller curve */
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
@@ -281,16 +286,16 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1.3mm 4mm !important;          /* tight header */
+    padding: 1.3mm 4mm !important; /* tight header */
     font-size: 11px !important;
     font-weight: 700 !important;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1.8mm 3.5mm !important;        /* reduced padding */
+    padding: 1.8mm 3.5mm !important; /* reduced padding */
     font-size: 10px !important;
-    line-height: 1.05 !important;           /* tighter lines */
+    line-height: 1.05 !important; /* tighter lines */
   }
 
   .print-section-content ul {
@@ -313,12 +318,12 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: no clipping, can grow as needed */
+  /* Textareas: no clipping, can grow as needed (will be overridden below) */
   .print-section-content textarea {
     display: block !important;
     width: 100% !important;
     min-height: 2.1em !important;
-    max-height: none !important;            /* <-- let What to Expect show fully */
+    max-height: none !important;
     overflow: visible !important;
     resize: none !important;
     background: transparent !important;
@@ -363,5 +368,47 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 2mm !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   EXTRA OVERRIDES: ONE TEXT BOX PER SECTION, COMPACT HEIGHT (PRINT)
+   ------------------------------------------------------------------ */
+@media print {
+  /* Keep only the FIRST textarea in each section */
+  .print-section-content textarea:not(:first-of-type) {
+    display: none !important;
+  }
+
+  /* Hide "+ Add ___" buttons inside the right column sections */
+  .print-layout > div:last-child .print-section button,
+  .print-layout > div:last-child .print-section [role="button"] {
+    display: none !important;
+  }
+
+  /* Make each remaining textarea compact (up to ~3 lines) */
+  .print-layout > div:last-child .print-section-content textarea {
+    display: block !important;
+    width: 100% !important;
+
+    min-height: 1.3em !important; /* about 1 line */
+    height: auto !important;
+    max-height: 3.9em !important; /* about 3 visible lines */
+
+    line-height: 1.2 !important;
+    overflow: hidden !important;
+    resize: none !important;
+
+    padding: 1mm 2mm !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* For the first two sections (Target Pest(s), Product(s) Used),
+     clamp strictly to a single visible line */
+  .print-layout > div:last-child .print-section:nth-of-type(-n + 2) .print-section-content textarea {
+    max-height: 1.3em !important;
   }
 }
