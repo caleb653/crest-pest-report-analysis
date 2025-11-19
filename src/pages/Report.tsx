@@ -454,7 +454,10 @@ const Report = () => {
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
+                <div className="flex flex-col items-center">
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
+                  <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
+                </div>
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold text-foreground mb-3">Initial Pest Report - Key Findings & Recommendations</h1>
                   
@@ -786,14 +789,6 @@ const Report = () => {
                 )}
               </div>
             </Card>
-
-            {/* Print Footer - Only visible when printing */}
-            <div className="print-footer hidden print:block">
-              <div className="text-center">
-                <div className="text-sm font-bold text-secondary mb-1">CREST PEST CONTROL</div>
-                <div className="text-xs text-foreground/70">PR #9859</div>
-              </div>
-            </div>
 
             {/* Submit Button */}
             <div className="">
