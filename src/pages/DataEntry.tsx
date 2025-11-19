@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Upload, Image as ImageIcon, X } from "lucide-react";
+import { ArrowRight, Upload, Image as ImageIcon, X, Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
 
 const DataEntry = () => {
@@ -16,6 +16,10 @@ const DataEntry = () => {
   const [formData, setFormData] = useState({
     customerName: "",
     address: "",
+    serviceDate: new Date().toISOString().split('T')[0],
+    licenseNumber: "",
+    targetPests: [""],
+    productsUsed: [""],
     notes: "",
   });
   // Cooldown to allow file upload settling before generating
@@ -151,15 +155,28 @@ const DataEntry = () => {
 
             {/* Manual Entry Section */}
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customerName" className="text-base">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                  placeholder="John Doe"
-                  className="text-lg py-6"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerName" className="text-base">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                    placeholder="John Doe"
+                    className="text-lg py-6"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="serviceDate" className="text-base">Initial Service Date</Label>
+                  <Input
+                    id="serviceDate"
+                    type="date"
+                    value={formData.serviceDate}
+                    onChange={(e) => setFormData({...formData, serviceDate: e.target.value})}
+                    className="text-lg py-6"
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -174,13 +191,112 @@ const DataEntry = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-base">Notes</Label>
+                <Label htmlFor="licenseNumber" className="text-base">License Number</Label>
+                <Input
+                  id="licenseNumber"
+                  value={formData.licenseNumber}
+                  onChange={(e) => setFormData({...formData, licenseNumber: e.target.value})}
+                  placeholder="CA-12345"
+                  className="text-lg py-6"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-base">Target Pest(s)</Label>
+                {formData.targetPests.map((pest, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={pest}
+                      onChange={(e) => {
+                        const newPests = [...formData.targetPests];
+                        newPests[index] = e.target.value;
+                        setFormData({...formData, targetPests: newPests});
+                      }}
+                      placeholder="e.g., Ants, Spiders, Rodents"
+                      className="text-lg py-6"
+                    />
+                    {formData.targetPests.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newPests = formData.targetPests.filter((_, i) => i !== index);
+                          setFormData({...formData, targetPests: newPests});
+                        }}
+                        className="shrink-0"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {formData.targetPests.length < 3 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFormData({...formData, targetPests: [...formData.targetPests, ""]})}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Another Pest
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-base">Product(s) Used</Label>
+                {formData.productsUsed.map((product, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={product}
+                      onChange={(e) => {
+                        const newProducts = [...formData.productsUsed];
+                        newProducts[index] = e.target.value;
+                        setFormData({...formData, productsUsed: newProducts});
+                      }}
+                      placeholder="e.g., Termidor, Demand CS"
+                      className="text-lg py-6"
+                    />
+                    {formData.productsUsed.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          const newProducts = formData.productsUsed.filter((_, i) => i !== index);
+                          setFormData({...formData, productsUsed: newProducts});
+                        }}
+                        className="shrink-0"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {formData.productsUsed.length < 3 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFormData({...formData, productsUsed: [...formData.productsUsed, ""]})}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Another Product
+                  </Button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-base">Additional Notes</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  placeholder="Service details, observations, recommendations..."
-                  rows={6}
+                  placeholder="Service details, observations, additional information..."
+                  rows={4}
                   className="text-base"
                 />
               </div>

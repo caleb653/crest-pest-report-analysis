@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Space Grotesk', 'sans-serif'],
+        sans: ['Figtree', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
