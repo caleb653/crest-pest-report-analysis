@@ -47,7 +47,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an OCR expert. Extract the complete property address from the provided screenshots. Look for street address, city, state, and ZIP code. Return ONLY the full address in a single line format, nothing else. If no address is found, return "Address not found".'
+            content: 'You are an expert at extracting addresses from any text or images. Extract the property address from the provided screenshots. Look for any combination of: street number, street name, city, state, and ZIP code. Be flexible - even partial addresses are useful. If you find any address information, return it in the most complete format possible (e.g., "123 Main St, City, ST 12345"). If multiple addresses appear, choose the one that seems to be the service/property address. Return ONLY the address, nothing else. If absolutely no address information is found, return "Address not found".'
           },
           {
             role: 'user',
@@ -93,23 +93,65 @@ serve(async (req) => {
     let coordinates = null;
     if (extractedAddress && extractedAddress !== 'Address not found') {
       try {
-        // Using a free geocoding service
-        const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extractedAddress)}`;
-        const geocodeResponse = await fetch(geocodeUrl, {
-          headers: {
-            'User-Agent': 'PestProReports/1.0'
-          }
+        // Try multiple geocoding strategies for better results
+        let geocodeData = null;
+        
+        // Strategy 1: Try exact address first
+        let geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(extractedAddress)}&limit=1`;
+        let geocodeResponse = await fetch(geocodeUrl, {
+          headers: { 'User-Agent': 'PestProReports/1.0' }
         });
         
         if (geocodeResponse.ok) {
-          const geocodeData = await geocodeResponse.json();
-          if (geocodeData && geocodeData.length > 0) {
-            coordinates = {
-              lat: parseFloat(geocodeData[0].lat),
-              lng: parseFloat(geocodeData[0].lon)
-            };
-            console.log('Geocoded coordinates:', coordinates);
+          geocodeData = await geocodeResponse.json();
+        }
+        
+        // Strategy 2: If no results, try with "USA" appended
+        if (!geocodeData || geocodeData.length === 0) {
+          const addressWithUSA = extractedAddress.toLowerCase().includes('usa') || 
+                                 extractedAddress.toLowerCase().includes('united states')
+                                 ? extractedAddress 
+                                 : `${extractedAddress}, USA`;
+          geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressWithUSA)}&limit=1`;
+          geocodeResponse = await fetch(geocodeUrl, {
+            headers: { 'User-Agent': 'PestProReports/1.0' }
+          });
+          
+          if (geocodeResponse.ok) {
+            geocodeData = await geocodeResponse.json();
           }
+        }
+        
+        // Strategy 3: If still no results, try structured search (if we can parse the address)
+        if (!geocodeData || geocodeData.length === 0) {
+          // Try to extract components and search more broadly
+          const parts = extractedAddress.split(',').map((p: string) => p.trim());
+          if (parts.length >= 2) {
+            // Try searching just city and state
+            const cityState = parts.slice(-2).join(', ');
+            geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityState)}&limit=1`;
+            geocodeResponse = await fetch(geocodeUrl, {
+              headers: { 'User-Agent': 'PestProReports/1.0' }
+            });
+            
+            if (geocodeResponse.ok) {
+              const broadData = await geocodeResponse.json();
+              if (broadData && broadData.length > 0) {
+                console.log('Using broader city/state match for approximate location');
+                geocodeData = broadData;
+              }
+            }
+          }
+        }
+        
+        if (geocodeData && geocodeData.length > 0) {
+          coordinates = {
+            lat: parseFloat(geocodeData[0].lat),
+            lng: parseFloat(geocodeData[0].lon)
+          };
+          console.log('Geocoded coordinates:', coordinates);
+        } else {
+          console.log('No geocoding results found for address:', extractedAddress);
         }
       } catch (geocodeError) {
         console.error('Geocoding error:', geocodeError);

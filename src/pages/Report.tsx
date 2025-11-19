@@ -24,7 +24,7 @@ const Report = () => {
   const navigate = useNavigate();
   const { reportId } = useParams();
   const isMobile = useIsMobile();
-  const { technicianName, customerName, address, notes, screenshots } = location.state || {};
+  const { technicianName, customerName, address, notes, screenshots, serviceDate, licenseNumber, targetPests, productsUsed } = location.state || {};
   
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
@@ -35,6 +35,10 @@ const Report = () => {
   
   const [editableTech, setEditableTech] = useState(technicianName || "");
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
+  const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split('T')[0]);
+  const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
+  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
+  const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(productsUsed?.filter((p: string) => p) || []);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
@@ -474,39 +478,66 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-gradient-primary border-b-4 border-foreground px-6 py-4">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-4">
           <div className="max-w-[1800px] mx-auto">
-            <div className="flex items-start justify-between">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
-              
-              <div className="flex-1 px-8 flex items-start gap-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <img src={crestLogo} alt="Crest Pest Control" className="h-16 w-auto" />
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-foreground mb-1">
-                    {getStreetAddress(displayAddress)} Pest Control Analysis
-                  </h1>
-                  <p className="text-sm text-foreground/70">
-                    {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </p>
-                </div>
-                
-                <div className="flex flex-col gap-2 min-w-[200px]">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground/80 font-medium">Customer:</span>
-                    <Input
-                      value={editableCustomer}
-                      onChange={(e) => setEditableCustomer(e.target.value)}
-                      placeholder="Customer name"
-                      className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground/80 font-medium">Technician:</span>
-                    <Input
-                      value={editableTech}
-                      onChange={(e) => setEditableTech(e.target.value)}
-                      placeholder="Tech name"
-                      className="bg-transparent border-b-2 border-foreground/30 text-foreground placeholder:text-foreground/50 px-2 h-6 text-sm flex-1 focus-visible:ring-0 focus-visible:border-foreground/60"
-                    />
+                  <h1 className="text-2xl font-bold text-foreground mb-3">Initial Pest Report - Key Findings & Recommendations</h1>
+                  
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">Customer Information:</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-24">Name:</span>
+                          <Input
+                            value={editableCustomer}
+                            onChange={(e) => setEditableCustomer(e.target.value)}
+                            placeholder="Customer name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-sm flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-24">Address:</span>
+                          <span className="text-foreground">{displayAddress}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-24">Service Date:</span>
+                          <Input
+                            type="date"
+                            value={editableServiceDate}
+                            onChange={(e) => setEditableServiceDate(e.target.value)}
+                            className="bg-transparent border-b border-border text-foreground px-1 h-6 text-sm w-40 focus-visible:ring-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">Technician Information:</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-28">Name:</span>
+                          <Input
+                            value={editableTech}
+                            onChange={(e) => setEditableTech(e.target.value)}
+                            placeholder="Technician name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-sm flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-28">License Number:</span>
+                          <Input
+                            value={editableLicenseNumber}
+                            onChange={(e) => setEditableLicenseNumber(e.target.value)}
+                            placeholder="License #"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-sm flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -525,6 +556,13 @@ const Report = () => {
                   Home
                 </Button>
               </div>
+            </div>
+            
+            {/* Purpose Text */}
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+              <p className="text-sm text-foreground leading-relaxed">
+                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one size fits all" approach and there are often a number of factors that lead to increased pest activity. We've created this educational report to help you and your family get one step closer to living a pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have any questions.
+              </p>
             </div>
           </div>
         </div>
@@ -615,9 +653,83 @@ const Report = () => {
               </Card>
             )}
 
+            {/* Target Pest(s) Section */}
+            <Card className="print-section p-4 md:p-6">
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-foreground mb-4">Target Pest(s)</h2>
+              <div className="space-y-3">
+                {editableTargetPests.length > 0 ? editableTargetPests.map((pest, index) => (
+                  <Input
+                    key={index}
+                    value={pest}
+                    onChange={(e) => {
+                      const newPests = [...editableTargetPests];
+                      newPests[index] = e.target.value;
+                      setEditableTargetPests(newPests);
+                    }}
+                    placeholder="e.g., Ants, Spiders, Rodents"
+                    className="text-base"
+                  />
+                )) : (
+                  <Input
+                    value=""
+                    onChange={(e) => setEditableTargetPests([e.target.value])}
+                    placeholder="e.g., Ants, Spiders, Rodents"
+                    className="text-base"
+                  />
+                )}
+                {editableTargetPests.length < 3 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditableTargetPests([...editableTargetPests, ""])}
+                    className="no-print w-full"
+                  >
+                    + Add Pest
+                  </Button>
+                )}
+              </div>
+            </Card>
+
+            {/* Products Used Section */}
+            <Card className="print-section p-4 md:p-6">
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-foreground mb-4">Product(s) Used</h2>
+              <div className="space-y-3">
+                {editableProductsUsed.length > 0 ? editableProductsUsed.map((product, index) => (
+                  <Input
+                    key={index}
+                    value={product}
+                    onChange={(e) => {
+                      const newProducts = [...editableProductsUsed];
+                      newProducts[index] = e.target.value;
+                      setEditableProductsUsed(newProducts);
+                    }}
+                    placeholder="e.g., Termidor, Demand CS"
+                    className="text-base"
+                  />
+                )) : (
+                  <Input
+                    value=""
+                    onChange={(e) => setEditableProductsUsed([e.target.value])}
+                    placeholder="e.g., Termidor, Demand CS"
+                    className="text-base"
+                  />
+                )}
+                {editableProductsUsed.length < 3 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditableProductsUsed([...editableProductsUsed, ""])}
+                    className="no-print w-full"
+                  >
+                    + Add Product
+                  </Button>
+                )}
+              </div>
+            </Card>
+
             {/* Findings Section */}
             <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-destructive mb-4">Findings / Actions Taken</h2>
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-destructive mb-4">Findings & Actions Taken</h2>
               {isAnalyzing ? (
                 <div className="text-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
@@ -630,7 +742,7 @@ const Report = () => {
                       key={index}
                       value={finding}
                       onChange={(e) => updateItem(index, e.target.value, setEditableFindings)}
-                      placeholder="Enter finding..."
+                      placeholder="Enter finding or action taken..."
                       className="min-h-[60px] text-base resize-none"
                     />
                   ))}
@@ -646,17 +758,17 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Recommendations Section */}
+            {/* What to Expect Section */}
             <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-primary mb-4">Recommendations</h2>
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-primary mb-4">What to Expect</h2>
               <div className="space-y-3">
                 {editableRecommendations.map((rec, index) => (
                   <Textarea
                     key={index}
                     value={rec}
                     onChange={(e) => updateItem(index, e.target.value, setEditableRecommendations)}
-                    placeholder="Enter recommendation..."
-                    className="min-h-[60px] text-base resize-none"
+                    placeholder="Enter what the customer should expect..."
+                    className="min-h-[80px] text-base resize-none"
                   />
                 ))}
                 <Button
@@ -665,32 +777,36 @@ const Report = () => {
                   onClick={() => addItem(setEditableRecommendations)}
                   className="no-print w-full"
                 >
-                  + Add Recommendation
+                  + Add Expectation
                 </Button>
               </div>
             </Card>
 
-            {/* Next Steps Section */}
+            {/* Our Top Recommendations Section */}
             <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-secondary mb-4">Next Steps</h2>
+              <h2 className="print-section-header text-xl md:text-2xl font-bold text-secondary mb-4">Our Top Recommendations</h2>
               <div className="space-y-3">
                 {editableNextSteps.map((step, index) => (
-                  <Textarea
-                    key={index}
-                    value={step}
-                    onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
-                    placeholder="Enter next step..."
-                    className="min-h-[60px] text-base resize-none"
-                  />
+                  <div key={index} className="flex gap-2">
+                    <span className="font-bold text-lg text-foreground pt-2">{index + 1}.</span>
+                    <Textarea
+                      value={step}
+                      onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
+                      placeholder="Enter recommendation..."
+                      className="min-h-[60px] text-base resize-none flex-1"
+                    />
+                  </div>
                 ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addItem(setEditableNextSteps)}
-                  className="no-print w-full"
-                >
-                  + Add Next Step
-                </Button>
+                {editableNextSteps.length < 3 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addItem(setEditableNextSteps)}
+                    className="no-print w-full"
+                  >
+                    + Add Recommendation
+                  </Button>
+                )}
               </div>
             </Card>
 
