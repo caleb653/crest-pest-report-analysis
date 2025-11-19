@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Smile, Square } from 'lucide-react';
+import { Trash2, Type, X, Bug, Rat, Square, TreeDeciduous, CircleDot, Box } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
 import { toast } from 'sonner';
 
@@ -11,20 +11,22 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'emoji' | 'rectangle';
+type Tool = 'select' | 'text' | 'icon' | 'rectangle';
 
 interface LegendItem {
-  emoji: string;
+  icon: string;
   label: string;
 }
 
 const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
-const AVAILABLE_EMOJIS = [
-  '🐭', '🐜', '🪳', '🦗', '🕷️', '🐝', '🦟', '🐛',
-  '🕳️', '🚪', '🪟', '🧱', '✅', '🔲', '🪦', '🪤',
-  '🔁', '⚠️', '🚫', '📍', '🎯', '❌', '✔️', '⭐',
-  '🌳', '💧', '1️⃣', '2️⃣', '3️⃣', '4️⃣'
+const AVAILABLE_ICONS = [
+  { icon: 'bug', label: 'Pest Activity', symbol: '🐛' },
+  { icon: 'rat', label: 'Rodent Activity', symbol: '🐭' },
+  { icon: 'box', label: 'Trap', symbol: '📦' },
+  { icon: 'square', label: 'Bait Box', symbol: '⬛' },
+  { icon: 'tree', label: 'Trim Trees', symbol: '🌳' },
+  { icon: 'circle', label: 'Mosquito Station', symbol: '⭕' },
 ];
 
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
@@ -35,12 +37,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const [tool, setTool] = useState<Tool>('select');
   const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
   const [showLegend, setShowLegend] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState<string>('📍');
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState<string>('bug');
   const [isDraggingOverDelete, setIsDraggingOverDelete] = useState(false);
   const [colorIndex, setColorIndex] = useState(0);
   const toolRef = useRef<Tool>('select');
-  const selectedEmojiRef = useRef<string>('📍');
+  const selectedIconRef = useRef<string>('bug');
   const rectFillColorRef = useRef<string>('#C3D1C5');
   const rectBorderColorRef = useRef<string>('#000000');
   const rectFillTransparentRef = useRef<boolean>(false);
@@ -64,8 +66,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   }, [tool]);
 
   useEffect(() => {
-    selectedEmojiRef.current = selectedEmoji;
-  }, [selectedEmoji]);
+    selectedIconRef.current = selectedIcon;
+  }, [selectedIcon]);
 
   useEffect(() => {
     rectFillColorRef.current = rectFillColor;
@@ -135,7 +137,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     canvas.on('mouse:down', (e) => {
       const currentTool = toolRef.current;
-      const currentEmoji = selectedEmojiRef.current;
+      const currentIcon = selectedIconRef.current;
       
       // Robust pointer extraction for Fabric v6
       const evtAny: any = e as any;
@@ -168,17 +170,17 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         // Add to legend if not already there
         setLegendItems(prev => {
-          if (!prev.find(item => item.emoji === currentEmoji)) {
-            const defaultLabel = getDefaultLabel(currentEmoji);
+          if (!prev.find(item => item.icon === currentIcon)) {
+            const defaultLabel = iconData?.label || 'Icon';
             setShowLegend(true);
-            return [...prev, { emoji: currentEmoji, label: defaultLabel }];
+            return [...prev, { icon: currentIcon, label: defaultLabel }];
           }
           return prev;
         });
         
         clickPlacedRef.current = true;
         setTool('select');
-        setShowEmojiPicker(false);
+        setShowIconPicker(false);
       } else if (currentTool === 'rectangle') {
         // First create a rectangle for the border
         const rect = new FabricRect({
@@ -560,10 +562,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setSelectedEmoji(emoji);
-    setTool('emoji');
-    setShowEmojiPicker(false);
+  const handleIconSelect = (iconKey: string) => {
+    setSelectedIcon(iconKey);
+    setTool('icon');
+    setShowIconPicker(false);
   };
 
   const handleLegendMouseDown = (e: React.MouseEvent) => {
@@ -714,12 +716,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         )}
         <Button
           size="icon"
-          variant={tool === 'emoji' || showEmojiPicker ? 'default' : 'outline'}
-          onClick={() => { setTool('emoji'); setShowEmojiPicker((prev) => !prev); }}
-          title="Add Emoji/Icon"
+          variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
+          onClick={() => { setTool('icon'); setShowIconPicker((prev) => !prev); }}
+          title="Add Icon"
           className="h-7 w-7"
         >
-          <Smile className="w-3.5 h-3.5" />
+          <Bug className="w-3.5 h-3.5" />
         </Button>
         <Button
           size="icon"
@@ -742,33 +744,41 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         </Button>
       </div>
 
-      {/* Emoji Picker */}
-      {showEmojiPicker && (
+      {/* Icon Picker */}
+      {showIconPicker && (
         <div className="no-print fixed bottom-12 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border z-50">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-xs">Select Icon</h3>
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => setShowEmojiPicker(false)}
+              onClick={() => setShowIconPicker(false)}
               className="h-5 w-5"
             >
               <X className="w-3 h-3" />
             </Button>
           </div>
-          <div className="grid grid-cols-6 gap-1.5 max-w-xs">
-            {AVAILABLE_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => handleEmojiSelect(emoji)}
-                className={`text-xl p-1.5 rounded hover:bg-muted transition-colors ${
-                  selectedEmoji === emoji ? 'bg-primary/20 ring-2 ring-primary' : ''
-                }`}
-                title={emoji}
-              >
-                {emoji}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-2">
+            {AVAILABLE_ICONS.map((iconData) => {
+              const IconComponent = iconData.icon === 'bug' ? Bug :
+                                   iconData.icon === 'rat' ? Rat :
+                                   iconData.icon === 'box' ? Box :
+                                   iconData.icon === 'square' ? Square :
+                                   iconData.icon === 'tree' ? TreeDeciduous :
+                                   CircleDot;
+              return (
+                <button
+                  key={iconData.icon}
+                  onClick={() => handleIconSelect(iconData.icon)}
+                  className={`p-2 rounded hover:bg-muted transition-colors border ${
+                    selectedIcon === iconData.icon ? 'bg-primary/20 border-primary' : 'border-border'
+                  }`}
+                  title={iconData.label}
+                >
+                  <IconComponent className="w-5 h-5" />
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -800,9 +810,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             </Button>
           </div>
           <div className="space-y-1">
-            {legendItems.map((item, index) => (
+            {legendItems.map((item, index) => {
+              const iconData = AVAILABLE_ICONS.find(i => i.icon === item.icon);
+              return (
               <div key={index} className="flex items-center gap-1">
-                <span className="text-sm w-6 text-center">{item.emoji}</span>
+                <span className="text-sm w-6 text-center">{iconData?.symbol || '📍'}</span>
                 <Input
                   value={item.label}
                   onChange={(e) => updateLegendItem(index, 'label', e.target.value)}

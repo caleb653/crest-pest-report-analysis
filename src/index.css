@@ -112,7 +112,7 @@ All colors MUST be HSL.
   
   .print-section .space-y-2,
   .print-section .space-y-3 {
-    gap: 0.3rem !important;
+    gap: 0.2rem !important;
   }
 }
 
@@ -161,25 +161,25 @@ All colors MUST be HSL.
   /* Professional header styling with brand colors - ultra compact */
   .print-header {
     background: #C3D1C5 !important;
-    padding: 5px 10px !important;
-    margin: 3mm 5mm 2mm 5mm !important;
-    border-radius: 4px !important;
-    box-shadow: 0 2px 6px rgba(195, 209, 197, 0.2) !important;
+    padding: 3px 8px !important;
+    margin: 2mm 4mm 1mm 4mm !important;
+    border-radius: 3px !important;
+    box-shadow: 0 1px 4px rgba(195, 209, 197, 0.2) !important;
   }
 
   .print-header h1 {
     color: #2A2A2A !important;
-    font-size: 15px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
-    margin: 0 !important;
+    margin: 0 0 2px 0 !important;
     line-height: 1 !important;
     opacity: 1 !important;
   }
 
   .print-header h2 {
     color: #2A2A2A !important;
-    font-size: 9px !important;
-    margin: 1px 0 0 0 !important;
+    font-size: 8px !important;
+    margin: 0 !important;
     opacity: 1 !important;
   }
   
@@ -187,26 +187,29 @@ All colors MUST be HSL.
   .print-header span {
     color: #2A2A2A !important;
     opacity: 1 !important;
+    font-size: 7.5px !important;
+    line-height: 1.1 !important;
   }
   
   /* Customer/Tech info styling */
   .print-header > div {
     background: rgba(242, 242, 242, 0.3) !important;
-    border-radius: 3px !important;
-    padding: 3px 6px !important;
+    border-radius: 2px !important;
+    padding: 2px 4px !important;
   }
   
   .print-header > div span {
     color: #2A2A2A !important;
-    font-size: 9px !important;
+    font-size: 7.5px !important;
     opacity: 1 !important;
   }
   
   /* Make customer and tech names same size as labels */
   .print-header input {
-    font-size: 9px !important;
+    font-size: 7.5px !important;
     color: #2A2A2A !important;
     opacity: 1 !important;
+    line-height: 1.1 !important;
   }
 
   /* Balanced layout - readable text, prominent map */
@@ -238,7 +241,7 @@ All colors MUST be HSL.
   /* Compact but readable text sections */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1mm !important;
+    margin-bottom: 0.5mm !important;
     width: 100% !important;
   }
 
@@ -250,22 +253,24 @@ All colors MUST be HSL.
   .print-section-header {
     background: #95A197 !important;
     color: #F2F2F2 !important;
-    padding: 1px 4px !important;
-    font-size: 7px !important;
+    padding: 1px 3px !important;
+    font-size: 6.5px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.3px !important;
+    letter-spacing: 0.2px !important;
+    line-height: 1 !important;
   }
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 1px 4px !important;
+    padding: 1px 3px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 9px !important;
+    font-size: 8px !important;
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    line-height: 1.1 !important;
   }
 
   .print-section-content ul {
@@ -300,8 +305,8 @@ All colors MUST be HSL.
     padding: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 8.5px !important;
-    line-height: 1.2 !important;
+    font-size: 7.5px !important;
+    line-height: 1.1 !important;
     color: #2A2A2A !important;
   }
 
@@ -332,7 +337,7 @@ All colors MUST be HSL.
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 1.5mm !important;
+    gap: 0.8mm !important;
   }
 
   .print-layout .space-y-2 > *,
