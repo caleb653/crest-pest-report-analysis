@@ -93,7 +93,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – Fill the page, tight boxes
+   PRINT LAYOUT – Fit on one page, full width
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -101,7 +101,6 @@
     margin: 0;
   }
 
-  /* Kill UI chrome */
   .no-print,
   button,
   [class*="toolbar"],
@@ -111,7 +110,6 @@
     display: none !important;
   }
 
-  /* Make the whole app stretch edge to edge */
   html,
   body {
     background: hsl(135 13% 80%) !important;
@@ -127,18 +125,17 @@
     overflow: hidden !important;
   }
 
-  /* FORCE any layout wrapper to use full width & no padding */
-  body > div,
-  body > main,
+  /* Force main wrappers to full width, no max-width */
   #root,
-  #__next {
+  #__next,
+  body > div,
+  body > main {
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
   }
 
-  /* Also nuke common Tailwind center containers */
   .container,
   .mx-auto,
   [class*="max-w-"] {
@@ -160,27 +157,29 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* ------------ HEADER ------------- */
+  /* ------------ HEADER (shorter + full width) ------------- */
   .print-header {
+    width: 100vw !important;
+    max-width: none !important;
     background: hsl(135 13% 80%) !important;
-    padding: 5mm 8mm !important;
-    margin: 3mm 5mm 2mm 5mm !important;
-    border-radius: 4px !important;
-    box-shadow: 0 3px 10px hsl(0 0% 0% / 0.12) !important;
+    padding: 3mm 10mm !important;
+    margin: 3mm 0 1mm 0 !important;
+    border-radius: 0 !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12) !important;
     display: grid !important;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1.3fr 1fr;
     column-gap: 8mm;
     align-items: flex-start;
   }
 
   .print-header h1 {
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
-    margin: 0 0 2mm 0 !important;
+    margin: 0 0 1.5mm 0 !important;
   }
 
   .print-header h2 {
-    font-size: 12px !important;
+    font-size: 11px !important;
     font-weight: 600 !important;
     margin: 0 0 1mm 0 !important;
   }
@@ -188,8 +187,8 @@
   .print-header p,
   .print-header span,
   .print-header input {
-    font-size: 11px !important;
-    line-height: 1.2 !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
@@ -199,44 +198,47 @@
   .print-header > div {
     background: hsl(0 0% 96% / 0.7) !important;
     border-radius: 3px !important;
-    padding: 3mm 4mm !important;
+    padding: 2mm 3mm !important;
   }
 
-  /* ------------ MAIN GRID ------------- */
+  /* ------------ MAIN GRID (shorter height) ------------- */
   .print-layout {
+    width: 100vw !important;
+    max-width: none !important;
     display: grid !important;
-    grid-template-columns: 55% 43% !important;
+    grid-template-columns: 56% 42% !important;
     column-gap: 2% !important;
-    height: 155mm !important;
-    margin: 0 5mm 4mm 5mm !important;
+    height: 135mm !important;          /* shorter so whole page fits */
+    margin: 0 0 4mm 0 !important;
+    padding: 0 10mm 0 10mm !important;
     align-items: flex-start !important;
   }
 
-  /* Map column */
+  /* Left: Map */
   .print-map-container {
     border-radius: 4px !important;
     border: 1px solid hsl(135 11% 60%) !important;
     overflow: hidden !important;
     background: hsl(135 10% 90%) !important;
-    height: 155mm !important;
+    height: 135mm !important;
     width: 100% !important;
   }
 
   .print-map-container canvas {
-    transform: translate(4%, -8%) !important;
+    transform: translate(3%, -6%) !important;
   }
 
-  /* Right column (boxes) */
+  /* Right: Boxes */
   .print-layout > div:last-child {
-    height: 155mm !important;
-    max-height: 155mm !important;
+    height: 135mm !important;
+    max-height: 135mm !important;
     overflow: hidden !important;
     padding-top: 2mm !important;
   }
 
   .print-section {
-    margin: 0 0 3mm 0 !important;      /* space BETWEEN boxes */
-    border-radius: 4mm !important;     /* soft rounded pills */
+    margin: 0 0 3mm 0 !important;
+    border-radius: 4mm !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.10);
     overflow: hidden !important;
     padding: 0 !important;
@@ -254,14 +256,13 @@
 
   .print-section-content {
     background: hsl(135 13% 80%) !important;
-    padding: 2mm 4mm !important;       /* TIGHT interior */
+    padding: 2mm 4mm !important;
     border: 1px solid hsl(135 11% 60%) !important;
     border-top: none !important;
     font-size: 11px !important;
     line-height: 1.05 !important;
   }
 
-  /* Lists: 3–4 bullets per box, no wasted space */
   .print-section-content ul {
     margin: 0 !important;
     padding-left: 4mm !important;
@@ -274,7 +275,6 @@
     line-height: 1.05 !important;
   }
 
-  /* All text inside boxes uniform */
   .print-section-content,
   .print-section-content * {
     font-size: 11px !important;
@@ -285,7 +285,7 @@
 
   .print-section-content textarea {
     display: block !important;
-    min-height: 2.4em !important;   /* enough for 3–4 short lines */
+    min-height: 2.4em !important;
     max-height: 3.2em !important;
     overflow: hidden !important;
     resize: none !important;
@@ -309,7 +309,6 @@
     width: 100% !important;
   }
 
-  /* Kill random padding/gaps from Tailwind spacing utilities */
   .print-layout .p-2,
   .print-layout .p-3,
   .print-layout .p-4,
