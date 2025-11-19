@@ -65,7 +65,7 @@
     @apply bg-background text-foreground;
   }
 
-  /* Nice looking sections on screen */
+  /* On-screen sections */
   .print-section {
     padding: 0.5rem 0.75rem !important;
     border-radius: 0.75rem;
@@ -93,7 +93,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – Fit on one page, full width
+   PRINT LAYOUT – Full width, safe margins, no horizontal clipping
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -118,14 +118,12 @@
     -webkit-print-color-adjust: exact;
     height: 210mm !important;
     max-height: 210mm !important;
-    width: 297mm !important;
-    max-width: 297mm !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
   }
 
-  /* Force main wrappers to full width, no max-width */
+  /* Main wrappers: no max-width, no side padding */
   #root,
   #__next,
   body > div,
@@ -157,14 +155,14 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* ------------ HEADER (shorter + full width) ------------- */
+  /* ------------ HEADER (full width, thin) ------------- */
   .print-header {
-    width: 100vw !important;
+    width: calc(100% - 10mm) !important;   /* 5mm safety margin each side */
     max-width: none !important;
     background: hsl(135 13% 80%) !important;
-    padding: 3mm 10mm !important;
-    margin: 3mm 0 1mm 0 !important;
-    border-radius: 0 !important;
+    padding: 3mm 4mm !important;
+    margin: 4mm auto 2mm auto !important;
+    border-radius: 4px !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12) !important;
     display: grid !important;
     grid-template-columns: 1.3fr 1fr;
@@ -201,16 +199,16 @@
     padding: 2mm 3mm !important;
   }
 
-  /* ------------ MAIN GRID (shorter height) ------------- */
+  /* ------------ MAIN GRID (also full width) ------------- */
   .print-layout {
-    width: 100vw !important;
+    width: calc(100% - 10mm) !important;   /* same 5mm margin each side */
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 56% 42% !important;
+    grid-template-columns: 58% 40% !important;
     column-gap: 2% !important;
-    height: 135mm !important;          /* shorter so whole page fits */
-    margin: 0 0 4mm 0 !important;
-    padding: 0 10mm 0 10mm !important;
+    height: 135mm !important;
+    margin: 0 auto 4mm auto !important;
+    padding: 0 !important;
     align-items: flex-start !important;
   }
 
@@ -225,15 +223,17 @@
   }
 
   .print-map-container canvas {
-    transform: translate(3%, -6%) !important;
+    transform: translate(2%, -5%) !important;
   }
 
-  /* Right: Boxes */
+  /* Right: Boxes fill entire right column */
   .print-layout > div:last-child {
     height: 135mm !important;
     max-height: 135mm !important;
     overflow: hidden !important;
     padding-top: 2mm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 
   .print-section {
@@ -243,6 +243,7 @@
     overflow: hidden !important;
     padding: 0 !important;
     background: none !important;
+    width: 100% !important;         /* stretch to full right column */
   }
 
   .print-section-header {
@@ -330,3 +331,4 @@
     gap: 2mm !important;
   }
 }
+
