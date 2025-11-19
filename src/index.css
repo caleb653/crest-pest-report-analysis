@@ -246,7 +246,7 @@ All colors MUST be HSL.
   /* Balanced sections with professional spacing */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1mm !important;
+    margin-bottom: 0.8mm !important;
     width: 100% !important;
   }
 
@@ -261,9 +261,9 @@ All colors MUST be HSL.
     padding: 2px 4px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.4px !important;
-    line-height: 1.2 !important;
+    text-transform: none !important;
+    letter-spacing: 0.3px !important;
+    line-height: 1.3 !important;
   }
 
   .print-section-content {
@@ -285,7 +285,7 @@ All colors MUST be HSL.
   }
 
   .print-section-content li {
-    margin-bottom: 0.5mm !important;
+    margin-bottom: 0.3mm !important;
     font-size: 12px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
@@ -300,6 +300,8 @@ All colors MUST be HSL.
     max-height: none !important;
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
   }
 
   /* Typography improvements - professional hierarchy */
