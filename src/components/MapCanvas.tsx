@@ -616,18 +616,31 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
   return (
     <div className="relative w-full h-full">
-      {/* Map iframe */}
-      <iframe
-        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
-        style={{ 
-          border: '2px solid hsl(var(--foreground))',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}
-        loading="lazy"
-        allowFullScreen
-        src={mapUrl}
-      />
+      {/* Map - either static image or iframe */}
+      {mapUrl.startsWith('data:image') ? (
+        <img
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover"
+          style={{ 
+            border: '2px solid hsl(var(--foreground))',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
+          src={mapUrl}
+          alt="Satellite map"
+        />
+      ) : (
+        <iframe
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
+          style={{ 
+            border: '2px solid hsl(var(--foreground))',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
+          loading="lazy"
+          allowFullScreen
+          src={mapUrl}
+        />
+      )}
 
       {/* Drawing canvas overlay */}
       <canvas
