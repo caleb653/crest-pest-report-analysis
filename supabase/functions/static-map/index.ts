@@ -26,18 +26,19 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const lat = url.searchParams.get('lat');
-    const lng = url.searchParams.get('lng');
-    const zoomParam = Number(url.searchParams.get('zoom') ?? 19);
+    // Read parameters from request body
+    const body = await req.json();
+    const lat = body.lat;
+    const lng = body.lng;
+    const zoomParam = Number(body.zoom ?? 19);
     const z = clampZoom(zoomParam);
 
-    const widthParam = Number(url.searchParams.get('width') ?? 1100);
-    const heightParam = Number(url.searchParams.get('height') ?? 700);
+    const widthParam = Number(body.width ?? 1100);
+    const heightParam = Number(body.height ?? 700);
     const width = clampSize(widthParam, 256, 1280);
     const height = clampSize(heightParam, 256, 1280);
 
-    const marker = url.searchParams.get('marker') ?? '1';
+    const marker = body.marker ?? '1';
 
     if (!lat || !lng) {
       return new Response(
