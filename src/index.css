@@ -158,59 +158,63 @@ All colors MUST be HSL.
     animation: none !important;
   }
 
-  /* Professional header styling with brand colors - balanced spacing */
+  /* Professional header styling with brand colors - prominent and readable */
   .print-header {
     background: #C3D1C5 !important;
-    padding: 6px 10px !important;
-    margin: 3mm 4mm 2mm 4mm !important;
+    padding: 8px 12px !important;
+    margin: 3mm 4mm 3mm 4mm !important;
     border-radius: 4px !important;
-    box-shadow: 0 2px 6px rgba(195, 209, 197, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(195, 209, 197, 0.35) !important;
   }
 
   .print-header h1 {
     color: #2A2A2A !important;
-    font-size: 16px !important;
+    font-size: 18px !important;
     font-weight: 700 !important;
-    margin: 0 0 3px 0 !important;
+    margin: 0 0 4px 0 !important;
     line-height: 1.2 !important;
     opacity: 1 !important;
+    letter-spacing: 0.3px !important;
   }
 
   .print-header h2 {
     color: #2A2A2A !important;
-    font-size: 11px !important;
-    margin: 0 0 2px 0 !important;
+    font-size: 12px !important;
+    margin: 0 0 3px 0 !important;
     opacity: 1 !important;
     font-weight: 600 !important;
+    letter-spacing: 0.2px !important;
   }
   
   .print-header p,
   .print-header span {
     color: #2A2A2A !important;
     opacity: 1 !important;
-    font-size: 9px !important;
-    line-height: 1.3 !important;
+    font-size: 10px !important;
+    line-height: 1.4 !important;
   }
   
   /* Customer/Tech info styling */
   .print-header > div {
-    background: rgba(242, 242, 242, 0.3) !important;
+    background: rgba(242, 242, 242, 0.4) !important;
     border-radius: 3px !important;
-    padding: 3px 5px !important;
+    padding: 4px 6px !important;
   }
   
   .print-header > div span {
     color: #2A2A2A !important;
-    font-size: 9px !important;
+    font-size: 10px !important;
     opacity: 1 !important;
+    font-weight: 500 !important;
   }
   
   /* Make customer and tech names same size as labels */
   .print-header input {
-    font-size: 9px !important;
+    font-size: 10px !important;
     color: #2A2A2A !important;
     opacity: 1 !important;
-    line-height: 1.3 !important;
+    line-height: 1.4 !important;
+    font-weight: 500 !important;
   }
 
   /* Balanced layout - readable text, prominent map */
@@ -239,63 +243,65 @@ All colors MUST be HSL.
     transform: translate(4%, -10%) !important;
   }
 
-  /* Compact but readable text sections */
+  /* Balanced sections with professional spacing */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 1.5mm !important;
+    margin-bottom: 2mm !important;
     width: 100% !important;
   }
 
   /* Ensure the first box isn't clipped under the header */
   .print-layout > div:last-child .print-section:first-child {
-    margin-top: 2mm !important;
+    margin-top: 0 !important;
   }
 
   .print-section-header {
     background: #95A197 !important;
     color: #F2F2F2 !important;
-    padding: 2px 4px !important;
-    font-size: 9px !important;
+    padding: 3px 5px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.3px !important;
-    line-height: 1.2 !important;
+    letter-spacing: 0.4px !important;
+    line-height: 1.3 !important;
   }
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 3px 4px !important;
+    padding: 4px 6px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
-    font-size: 9px !important;
+    font-size: 10px !important;
     overflow: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    line-height: 1.3 !important;
+    line-height: 1.4 !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 8px !important;
-    line-height: 1.4 !important;
+    padding-left: 10px !important;
+    line-height: 1.5 !important;
   }
 
   .print-section-content li {
-    margin-bottom: 1.5mm !important;
-    font-size: 9px !important;
+    margin-bottom: 2mm !important;
+    font-size: 10px !important;
     color: #2A2A2A !important;
     font-weight: 500 !important;
   }
 
-  /* Typography improvements */
+  /* Typography improvements - professional hierarchy */
   h1 {
-    font-size: 16px !important;
+    font-size: 18px !important;
     line-height: 1.2 !important;
+    font-weight: 700 !important;
   }
 
   h2 {
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.2 !important;
+    font-weight: 600 !important;
   }
 
   /* Clean up form fields for print */
@@ -307,8 +313,8 @@ All colors MUST be HSL.
     padding: 0 !important;
     resize: none !important;
     overflow: hidden !important;
-    font-size: 9px !important;
-    line-height: 1.3 !important;
+    font-size: 10px !important;
+    line-height: 1.4 !important;
     color: #2A2A2A !important;
   }
 
@@ -339,7 +345,7 @@ All colors MUST be HSL.
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 1.5mm !important;
+    gap: 2mm !important;
   }
 
   .print-layout .space-y-2 > *,
