@@ -40,6 +40,7 @@ const Report = () => {
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(21);
+  const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -64,6 +65,41 @@ const Report = () => {
   useEffect(() => {
     latestMapDataRef.current = mapData;
   }, [mapData]);
+
+  // Fetch static 2D satellite map whenever coordinates or zoom change
+  useEffect(() => {
+    if (coordinates) {
+      fetchStaticMap();
+    }
+  }, [coordinates, zoomLevel]);
+
+  const fetchStaticMap = async () => {
+    if (!coordinates) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('static-map', {
+        body: {
+          lat: coordinates.lat,
+          lng: coordinates.lng,
+          zoom: zoomLevel,
+          width: 1100,
+          height: 700,
+          marker: '1'
+        }
+      });
+
+      if (error) {
+        console.error('Error fetching static map:', error);
+        return;
+      }
+
+      if (data?.dataUrl) {
+        setStaticMapUrl(data.dataUrl);
+      }
+    } catch (error) {
+      console.error('Error fetching static map:', error);
+    }
+  };
 
   const loadReport = async () => {
     if (!reportId) return;
@@ -380,7 +416,7 @@ const Report = () => {
     setter(prev => [...prev, ""]);
   };
 
-  const mapUrl = ""; // Temporarily hide live Google map until 2D overhead source is wired up
+  const mapUrl = staticMapUrl || ""; // Use Mapbox 2D satellite image
  
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 15));
