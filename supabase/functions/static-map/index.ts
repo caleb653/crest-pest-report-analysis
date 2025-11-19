@@ -34,7 +34,7 @@ serve(async (req) => {
 
     const widthParam = Number(url.searchParams.get('width') ?? 1100);
     const heightParam = Number(url.searchParams.get('height') ?? 700);
-    const width = clampSize(widthParam, 256, 1280); // keep reasonable to avoid provider limits
+    const width = clampSize(widthParam, 256, 1280);
     const height = clampSize(heightParam, 256, 1280);
 
     const marker = url.searchParams.get('marker') ?? '1';
@@ -46,74 +46,75 @@ serve(async (req) => {
       );
     }
 
-    // Build candidate URLs for satellite view
-    const candidates: string[] = [];
+    const MAPBOX_TOKEN = Deno.env.get('MAPBOX_ACCESS_TOKEN');
+    if (!MAPBOX_TOKEN) {
+      return new Response(
+        JSON.stringify({ error: 'Mapbox token not configured' }),
+        { status: 500, headers: corsHeaders },
+      );
+    }
+
+    // Use Mapbox Static Images API for high-quality satellite imagery
+    // Format: /styles/v1/{username}/{style_id}/static/{lon},{lat},{zoom}/{width}x{height}@2x
+    // bearing=0, pitch=0 for 2D top-down view
+    let mapboxUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static`;
     
-    // Use satellite/aerial imagery instead of street map
-    // Esri World Imagery provides free satellite tiles
-    const baseParams = `center=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&zoom=${encodeURIComponent(String(z))}&size=${encodeURIComponent(`${width}x${height}`)}&maptype=mapnik&layer=sat`;
-
-    // openstreetmap.de with satellite layer
     if (marker === '1') {
-      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
-      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
-    } else {
-      candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}`);
+      // Add a red pin marker at the location
+      mapboxUrl += `/pin-s+ff0000(${lng},${lat})`;
     }
+    
+    mapboxUrl += `/${lng},${lat},${z},0,0/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
 
-    // openstreetmap.fr with satellite (fallback)
-    if (marker === '1') {
-      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
-      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
-    } else {
-      candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}`);
-    }
+    const candidates: string[] = [mapboxUrl];
+
 
     let lastError = '';
-    for (const staticUrl of candidates) {
-      try {
-        const imgResp = await fetch(staticUrl, {
-          headers: {
-            'User-Agent': 'CrestReports/1.0 (+https://lovable.dev)',
-            'Accept': 'image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
-          },
-        });
+    
+    try {
+      const imgResp = await fetch(candidates[0], {
+        headers: {
+          'User-Agent': 'CrestReports/1.0 (+https://lovable.dev)',
+          'Accept': 'image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
+        },
+      });
 
-        if (!imgResp.ok) {
-          const text = await imgResp.text().catch(() => '');
-          lastError = `HTTP ${imgResp.status}: ${text.slice(0, 200)}`;
-          continue; // try next candidate
-        }
-
-        const contentType = imgResp.headers.get('content-type') || '';
-        if (!contentType.includes('image')) {
-          const text = await imgResp.text().catch(() => '');
-          lastError = `Non-image response: ${contentType} ${text.slice(0, 200)}`;
-          continue;
-        }
-
-        const buffer = await imgResp.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        const chunkSize = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          const chunk = bytes.subarray(i, i + chunkSize);
-          binary += String.fromCharCode.apply(null, Array.from(chunk));
-        }
-        const base64 = btoa(binary);
-        const dataUrl = `data:${contentType.split(';')[0] || 'image/png'};base64,${base64}`;
-        return new Response(JSON.stringify({ dataUrl, zoom: z }), { headers: corsHeaders });
-      } catch (e) {
-        const msg = (e && typeof e === 'object' && 'message' in e) ? (e as any).message as string : String(e);
-        lastError = `${staticUrl} fetch error: ${msg}`;
-        continue;
+      if (!imgResp.ok) {
+        const text = await imgResp.text().catch(() => '');
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch map', details: `HTTP ${imgResp.status}: ${text.slice(0, 200)}` }),
+          { status: 502, headers: corsHeaders },
+        );
       }
+
+      const contentType = imgResp.headers.get('content-type') || '';
+      if (!contentType.includes('image')) {
+        const text = await imgResp.text().catch(() => '');
+        return new Response(
+          JSON.stringify({ error: 'Invalid response', details: `Non-image response: ${contentType}` }),
+          { status: 502, headers: corsHeaders },
+        );
+      }
+
+      const buffer = await imgResp.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      const base64 = btoa(binary);
+      const dataUrl = `data:${contentType.split(';')[0] || 'image/png'};base64,${base64}`;
+      return new Response(JSON.stringify({ dataUrl, zoom: z }), { headers: corsHeaders });
+    } catch (e) {
+      const msg = (e && typeof e === 'object' && 'message' in e) ? (e as any).message as string : String(e);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch satellite map', details: msg }),
+        { status: 502, headers: corsHeaders },
+      );
     }
 
-    return new Response(
-      JSON.stringify({ error: 'All static map providers failed', details: lastError }),
-      { status: 502, headers: corsHeaders },
-    );
   } catch (e) {
     const details = (e && typeof e === 'object' && 'toString' in e)
       ? String(e as any)
