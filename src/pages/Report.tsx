@@ -351,26 +351,6 @@ const Report = () => {
   const exportToPDF = async () => {
     // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
-      // Get the canvas from MapCanvas component
-      const canvas = document.getElementById('map-overlay-canvas') as HTMLCanvasElement;
-      const fabricCanvas = canvas ? (window as any).fabricCanvasInstance : null;
-      
-      // Store original positions and adjust emojis 5% left for print
-      const originalPositions: Array<{ obj: any; left: number }> = [];
-      
-      if (fabricCanvas) {
-        const objects = fabricCanvas.getObjects();
-        objects.forEach((obj: any) => {
-          // Adjust text objects (emojis and text boxes) and rectangles (background boxes)
-          if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox' || obj.type === 'rect') {
-            originalPositions.push({ obj, left: obj.left });
-            // Move 15% left relative to canvas width
-            obj.set('left', obj.left - (fabricCanvas.width * 0.15));
-          }
-        });
-        fabricCanvas.renderAll();
-      }
-      
       // Hide any toast messages before printing
       const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
       toasts.forEach(toast => {
@@ -380,14 +360,6 @@ const Report = () => {
       // Small delay to ensure canvas render completes
       await new Promise((r) => setTimeout(r, 150));
       window.print();
-      
-      // Restore original emoji positions after print
-      if (fabricCanvas && originalPositions.length > 0) {
-        originalPositions.forEach(({ obj, left }) => {
-          obj.set('left', left);
-        });
-        fabricCanvas.renderAll();
-      }
       
       // Restore toasts after print dialog closes
       setTimeout(() => {
@@ -571,7 +543,7 @@ const Report = () => {
       {/* Main Content */}
       <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
         {/* Map Section */}
-        <div className={isMobile ? "h-[60vh] relative pb-20" : "print-map-container w-1/2 relative"}>
+        <div className={isMobile ? "h-[60vh] relative pb-20" : "print-map-container w-[45%] relative"}>
           {isProcessing && (
             <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
               <div className="text-center">
@@ -625,8 +597,8 @@ const Report = () => {
         </div>
 
         {/* Report Details Section */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "w-1/2 overflow-y-auto"}>
-          <div className="p-4 md:p-6 space-y-6">
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
+          <div className="p-3 md:p-4 space-y-3">
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
@@ -654,9 +626,9 @@ const Report = () => {
             )}
 
             {/* Target Pest(s) Section */}
-            <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-foreground mb-4">Target Pest(s)</h2>
-              <div className="space-y-3">
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Target Pest(s)</h2>
+              <div className="space-y-2">
                 {editableTargetPests.length > 0 ? editableTargetPests.map((pest, index) => (
                   <Input
                     key={index}
@@ -667,14 +639,14 @@ const Report = () => {
                       setEditableTargetPests(newPests);
                     }}
                     placeholder="e.g., Ants, Spiders, Rodents"
-                    className="text-base"
+                    className="text-sm h-8"
                   />
                 )) : (
                   <Input
                     value=""
                     onChange={(e) => setEditableTargetPests([e.target.value])}
                     placeholder="e.g., Ants, Spiders, Rodents"
-                    className="text-base"
+                    className="text-sm h-8"
                   />
                 )}
                 {editableTargetPests.length < 3 && (
@@ -682,18 +654,19 @@ const Report = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setEditableTargetPests([...editableTargetPests, ""])}
-                    className="no-print w-full"
+                    className="no-print w-full h-7 text-xs"
                   >
-                    + Add Pest
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Pest
                   </Button>
                 )}
               </div>
             </Card>
 
             {/* Products Used Section */}
-            <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-foreground mb-4">Product(s) Used</h2>
-              <div className="space-y-3">
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Product(s) Used</h2>
+              <div className="space-y-2">
                 {editableProductsUsed.length > 0 ? editableProductsUsed.map((product, index) => (
                   <Input
                     key={index}
@@ -704,14 +677,14 @@ const Report = () => {
                       setEditableProductsUsed(newProducts);
                     }}
                     placeholder="e.g., Termidor, Demand CS"
-                    className="text-base"
+                    className="text-sm h-8"
                   />
                 )) : (
                   <Input
                     value=""
                     onChange={(e) => setEditableProductsUsed([e.target.value])}
                     placeholder="e.g., Termidor, Demand CS"
-                    className="text-base"
+                    className="text-sm h-8"
                   />
                 )}
                 {editableProductsUsed.length < 3 && (
@@ -719,81 +692,84 @@ const Report = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setEditableProductsUsed([...editableProductsUsed, ""])}
-                    className="no-print w-full"
+                    className="no-print w-full h-7 text-xs"
                   >
-                    + Add Product
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Product
                   </Button>
                 )}
               </div>
             </Card>
 
             {/* Findings Section */}
-            <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-destructive mb-4">Findings & Actions Taken</h2>
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold text-destructive mb-2">Findings & Actions Taken</h2>
               {isAnalyzing ? (
-                <div className="text-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Analyzing...</p>
+                <div className="text-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Analyzing...</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {editableFindings.map((finding, index) => (
                     <Textarea
                       key={index}
                       value={finding}
                       onChange={(e) => updateItem(index, e.target.value, setEditableFindings)}
                       placeholder="Enter finding or action taken..."
-                      className="min-h-[60px] text-base resize-none"
+                      className="min-h-[50px] text-sm resize-none"
                     />
                   ))}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(setEditableFindings)}
-                    className="no-print w-full"
+                    className="no-print w-full h-7 text-xs"
                   >
-                    + Add Finding
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Finding
                   </Button>
                 </div>
               )}
             </Card>
 
             {/* What to Expect Section */}
-            <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-primary mb-4">What to Expect</h2>
-              <div className="space-y-3">
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold text-primary mb-2">What to Expect</h2>
+              <div className="space-y-2">
                 {editableRecommendations.map((rec, index) => (
                   <Textarea
                     key={index}
                     value={rec}
                     onChange={(e) => updateItem(index, e.target.value, setEditableRecommendations)}
                     placeholder="Enter what the customer should expect..."
-                    className="min-h-[80px] text-base resize-none"
+                    className="min-h-[60px] text-sm resize-none"
                   />
                 ))}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => addItem(setEditableRecommendations)}
-                  className="no-print w-full"
+                  className="no-print w-full h-7 text-xs"
                 >
-                  + Add Expectation
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Expectation
                 </Button>
               </div>
             </Card>
 
             {/* Our Top Recommendations Section */}
-            <Card className="print-section p-4 md:p-6">
-              <h2 className="print-section-header text-xl md:text-2xl font-bold text-secondary mb-4">Our Top Recommendations</h2>
-              <div className="space-y-3">
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold text-secondary mb-2">Our Top Recommendations</h2>
+              <div className="space-y-2">
                 {editableNextSteps.map((step, index) => (
                   <div key={index} className="flex gap-2">
-                    <span className="font-bold text-lg text-foreground pt-2">{index + 1}.</span>
+                    <span className="font-bold text-base text-foreground pt-1">{index + 1}.</span>
                     <Textarea
                       value={step}
                       onChange={(e) => updateItem(index, e.target.value, setEditableNextSteps)}
                       placeholder="Enter recommendation..."
-                      className="min-h-[60px] text-base resize-none flex-1"
+                      className="min-h-[50px] text-sm resize-none flex-1"
                     />
                   </div>
                 ))}
@@ -802,9 +778,10 @@ const Report = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => addItem(setEditableNextSteps)}
-                    className="no-print w-full"
+                    className="no-print w-full h-7 text-xs"
                   >
-                    + Add Recommendation
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Recommendation
                   </Button>
                 )}
               </div>
