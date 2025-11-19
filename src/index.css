@@ -200,5 +200,7 @@
     font-size: 10px !important;
     line-height: 1.1 !important;
     background: transparent !important;
-    border: non
+    border: none !important;
+  }
+}
 
