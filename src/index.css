@@ -183,7 +183,8 @@ All colors MUST be HSL.
     opacity: 1 !important;
   }
   
-  .print-header p {
+  .print-header p,
+  .print-header span {
     color: #2A2A2A !important;
     opacity: 1 !important;
   }
@@ -280,30 +281,6 @@ All colors MUST be HSL.
     font-weight: 500 !important;
   }
 
-  /* Footer - ultra compact with fixed positioning to avoid page breaks */
-  .print-footer {
-    position: fixed !important;
-    bottom: 1mm !important;
-    left: 4mm !important;
-    right: 4mm !important;
-    padding: 2px 0 !important;
-    background: #C3D1C5 !important;
-    text-align: center !important;
-    font-size: 7px !important;
-    font-weight: 700 !important;
-    color: #2A2A2A !important;
-    border-radius: 3px !important;
-    display: block !important;
-    box-shadow: none !important;
-    z-index: 9999 !important;
-    opacity: 1 !important;
-  }
-  
-  .print-footer * {
-    color: #2A2A2A !important;
-    opacity: 1 !important;
-  }
-
   /* Typography improvements */
   h1 {
     font-size: 14px !important;
@@ -396,11 +373,6 @@ All colors MUST be HSL.
     max-height: 155mm !important;
     overflow: hidden !important;
     page-break-after: avoid !important;
-  }
-  
-  /* Ensure footer doesn't push content to page 2 */
-  body > *:not(.print-footer) {
-    max-height: 200mm !important;
   }
 
   /* Ensure proper box-sizing */
