@@ -143,12 +143,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       const evtAny: any = e as any;
       const pt = evtAny?.absolutePointer || evtAny?.pointer || fabricCanvasRef.current?.getPointer(evtAny?.e);
 
-      console.log('Canvas clicked, tool:', currentTool, 'emoji:', currentEmoji, 'pointer:', pt);
+      const iconData = AVAILABLE_ICONS.find(i => i.icon === currentIcon);
+      console.log('Canvas clicked, tool:', currentTool, 'icon:', currentIcon, 'pointer:', pt);
       
       if (!pt) return;
       
-      if (currentTool === 'emoji') {
-        const emoji = new IText(currentEmoji, {
+      if (currentTool === 'icon') {
+        const iconSymbol = iconData?.symbol || '📍';
+        const icon = new IText(iconSymbol, {
           left: pt.x,
           top: pt.y,
           fontSize: 27,
@@ -162,11 +164,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           lockScalingFlip: true,
           lockUniScaling: false,
         });
-        canvas.add(emoji);
-        canvas.setActiveObject(emoji);
+        canvas.add(icon);
+        canvas.setActiveObject(icon);
         canvas.renderAll();
         
-        console.log('Emoji added to canvas:', currentEmoji);
+        console.log('Icon added to canvas:', iconSymbol);
         
         // Add to legend if not already there
         setLegendItems(prev => {
@@ -671,7 +673,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         <Button
           size="icon"
           variant={tool === 'rectangle' ? 'default' : 'outline'}
-          onClick={() => { setTool('rectangle'); setShowEmojiPicker(false); }}
+          onClick={() => { setTool('rectangle'); setShowIconPicker(false); }}
           title="Rectangle"
           className="h-7 w-7"
         >
@@ -813,28 +815,29 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             {legendItems.map((item, index) => {
               const iconData = AVAILABLE_ICONS.find(i => i.icon === item.icon);
               return (
-              <div key={index} className="flex items-center gap-1">
-                <span className="text-sm w-6 text-center">{iconData?.symbol || '📍'}</span>
-                <Input
-                  value={item.label}
-                  onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
-                  className="flex-1 h-6 text-xs"
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeLegendItem(index);
-                  }}
-                  className="h-6 w-6"
-                >
-                  <X className="w-2 h-2" />
-                </Button>
-              </div>
-            ))}
+                <div key={index} className="flex items-center gap-1">
+                  <span className="text-sm w-6 text-center">{iconData?.symbol || '📍'}</span>
+                  <Input
+                    value={item.label}
+                    onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
+                    className="flex-1 h-6 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeLegendItem(index);
+                    }}
+                    className="h-6 w-6"
+                  >
+                    <X className="w-2 h-2" />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
