@@ -46,11 +46,14 @@ serve(async (req) => {
       );
     }
 
-    // Build candidate URLs (some providers expect markers as lat,lon, others lon,lat).
+    // Build candidate URLs for satellite view
     const candidates: string[] = [];
-    const baseParams = `center=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&zoom=${encodeURIComponent(String(z))}&size=${encodeURIComponent(`${width}x${height}`)}&maptype=mapnik`;
+    
+    // Use satellite/aerial imagery instead of street map
+    // Esri World Imagery provides free satellite tiles
+    const baseParams = `center=${encodeURIComponent(lat)},${encodeURIComponent(lng)}&zoom=${encodeURIComponent(String(z))}&size=${encodeURIComponent(`${width}x${height}`)}&maptype=mapnik&layer=sat`;
 
-    // openstreetmap.de
+    // openstreetmap.de with satellite layer
     if (marker === '1') {
       candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
       candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
@@ -58,7 +61,7 @@ serve(async (req) => {
       candidates.push(`https://staticmap.openstreetmap.de/staticmap.php?${baseParams}`);
     }
 
-    // openstreetmap.fr (fallback)
+    // openstreetmap.fr with satellite (fallback)
     if (marker === '1') {
       candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lat)},${encodeURIComponent(lng)},lightblue1`);
       candidates.push(`https://staticmap.openstreetmap.fr/staticmap.php?${baseParams}&markers=${encodeURIComponent(lng)},${encodeURIComponent(lat)},lightblue1`);
