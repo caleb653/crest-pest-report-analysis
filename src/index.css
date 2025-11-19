@@ -370,7 +370,7 @@ All colors MUST be HSL.
     font-size: 12px !important;
     line-height: 1.1 !important;
     margin: 0 !important;
-    padding: 10 !important;
+    padding: 30 !important;
   }
   
   /* Specific styling for input fields to ensure they're single line */
@@ -407,7 +407,7 @@ All colors MUST be HSL.
   .print-layout .md\:p-3,
   .print-layout .md\:p-6,
   .print-layout .pb-24 {
-    padding: 0 !important;
+    padding: 30 !important;
   }
 
   .print-layout .space-y-1,
@@ -416,7 +416,7 @@ All colors MUST be HSL.
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.3mm !important;
+    gap: 1mm !important;
   }
 
   .print-layout .space-y-1 > *,
@@ -432,7 +432,7 @@ All colors MUST be HSL.
     height: auto !important;
     max-height: 150mm !important;
     width: 100% !important;
-    padding: 1mm 0 8mm 0 !important;
+    padding: 10mm 0 8mm 0 !important;
   }
   
   /* Force single page only - aggressive enforcement */
