@@ -380,10 +380,8 @@ const Report = () => {
     setter(prev => [...prev, ""]);
   };
 
-  const mapUrl = coordinates 
-    ? `https://maps.google.com/maps?ll=${coordinates.lat},${coordinates.lng}&t=k&z=${zoomLevel}&output=embed`
-    : "";
-
+  const mapUrl = ""; // Temporarily hide live Google map until 2D overhead source is wired up
+ 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 15));
 
