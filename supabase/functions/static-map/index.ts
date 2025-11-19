@@ -11,8 +11,8 @@ const corsHeaders = {
 };
 
 function clampZoom(z: number) {
-  if (!Number.isFinite(z)) return 17;
-  return Math.max(0, Math.min(18, Math.round(z)));
+  if (!Number.isFinite(z)) return 22;
+  return Math.max(15, Math.min(22, Math.round(z)));
 }
 
 function clampSize(v: number, min: number, max: number) {
