@@ -3,24 +3,22 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------
-   DESIGN SYSTEM – Crest Branding (HSL Only)
+   CREST BRAND DESIGN SYSTEM (HSL ONLY)
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    --background: 0 0% 95%;
-    --foreground: 0 0% 16%;
+    /* Brand colors */
+    --background: 0 0% 95%;       /* #F2F2F2 White */
+    --foreground: 0 0% 16%;       /* #2A2A2A Black */
+
+    --primary: 135 13% 80%;       /* #C3D1C5 Sage */
+    --secondary: 135 11% 60%;     /* #95A197 Dark Sage */
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 16%;
-
-    --primary: 135 13% 80%;   /* Sage */
-    --primary-foreground: 0 0% 16%;
-
-    --secondary: 135 11% 60%; /* Dark Sage */
-    --secondary-foreground: 0 0% 100%;
 
     --muted: 135 10% 90%;
     --muted-foreground: 135 8% 40%;
@@ -37,12 +35,8 @@
 
     --radius: 0.5rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(135 13% 80%) 0%, hsl(135 11% 60%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(135 11% 60%) 0%, hsl(135 13% 70%) 100%);
-
-    --shadow-sm: 0 1px 3px 0 hsl(0 0% 16% / 0.08);
-    --shadow-md: 0 4px 12px -2px hsl(0 0% 16% / 0.1);
-    --shadow-lg: 0 10px 30px -5px hsl(0 0% 16% / 0.12);
+    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
+    --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
   }
 
   .dark {
@@ -51,49 +45,85 @@
     --card: 0 0% 16%;
     --card-foreground: 0 0% 95%;
   }
-}
 
-/* -------------------------------------------------------------
-   BASE STYLES (Browser view)
-------------------------------------------------------------- */
-@layer base {
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 
-  /* On-screen sections on the right */
-  .print-section {
-    padding: 0.5rem 0.75rem !important;
-    border-radius: 0.75rem;
-    background-color: hsl(135 13% 80%);
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06);
-    margin-bottom: 0.75rem;
-  }
-
-  .print-section h2 {
-    font-size: 0.9rem !important;
-    margin-bottom: 0.25rem !important;
-    font-weight: 600;
-  }
-
-  .print-section textarea {
-    min-height: 2.2rem !important;
+  input,
+  textarea {
+    background: hsl(0 0% 100%) !important;
+    border-radius: 0.4rem !important;
+    border: 1px solid hsl(var(--border)) !important;
+    padding: 0.25rem 0.4rem !important;
     font-size: 0.85rem !important;
+  }
+
+  /* Default screen style for right-hand sections */
+  .print-section {
+    padding: 0 !important;
+    margin-bottom: 0.7rem !important;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: transparent !important;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    color: hsl(0 0% 100%) !important;
+    padding: 0.25rem 0.7rem !important; /* tighter header */
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+  }
+
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
+    padding: 0.4rem 0.7rem !important; /* tighter body */
+    font-size: 0.8rem !important;
+  }
+
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 0.9rem !important;
+  }
+
+  .print-section-content li {
+    margin-bottom: 0.15rem !important;
     line-height: 1.2 !important;
   }
 
-  .print-section .space-y-2,
-  .print-section .space-y-3 {
-    gap: 0.25rem !important;
+  .print-header {
+    background: hsl(var(--primary));
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .print-header h1 {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.3rem !important;
+    color: hsl(var(--foreground));
+  }
+
+  .print-header h2 {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: hsl(var(--foreground));
   }
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – full width, tight vertical spacing
+   PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -112,8 +142,8 @@
 
   html,
   body {
-    background: hsl(135 13% 80%) !important;
-    color: hsl(0 0% 16%) !important;
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
     height: 210mm !important;
@@ -123,7 +153,7 @@
     overflow: hidden !important;
   }
 
-  /* NUCLEAR: kill Tailwind max-width & centering that keep things skinny */
+  /* Kill Tailwind width caps / centering that fight us */
   [class*="max-w-"] {
     max-width: none !important;
   }
@@ -136,13 +166,7 @@
   #root,
   #__next,
   body > div,
-  body > main {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
+  body > main,
   .container {
     width: 100% !important;
     max-width: none !important;
@@ -163,19 +187,17 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* ------------ HEADER ------------ */
+  /* HEADER – full width strip, inner card also full-width */
   .print-header {
     width: 100% !important;
     max-width: none !important;
-    background: hsl(135 13% 80%) !important;
-    padding: 3mm 5mm !important;
-    margin: 4mm 0 2mm 0 !important;
     border-radius: 0 !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12) !important;
-    display: block !important;
+    margin: 4mm 0 2mm 0 !important;
+    padding: 4mm 6mm !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    background: hsl(var(--primary)) !important;
   }
 
-  /* THIS is the key: force the inner header card to go full width */
   .print-header > * {
     width: 100% !important;
     max-width: none !important;
@@ -184,14 +206,11 @@
 
   .print-header h1 {
     font-size: 16px !important;
-    font-weight: 700 !important;
-    margin: 0 0 1.5mm 0 !important;
+    margin-bottom: 2mm !important;
   }
 
   .print-header h2 {
     font-size: 11px !important;
-    font-weight: 600 !important;
-    margin: 0 0 1mm 0 !important;
   }
 
   .print-header p,
@@ -201,6 +220,143 @@
     line-height: 1.1 !important;
     background: transparent !important;
     border: none !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-header > div {
+    background: hsl(0 0% 100% / 0.7) !important;
+    border-radius: 3px !important;
+    padding: 2mm 3mm !important;
+  }
+
+  /* MAIN GRID */
+  .print-layout {
+    width: calc(100% - 12mm) !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: 58% 40% !important;
+    column-gap: 2% !important;
+    height: 135mm !important;
+    margin: 0 auto 4mm auto !important;
+    padding: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* MAP */
+  .print-map-container {
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--secondary)) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
+    overflow: hidden !important;
+    background: hsl(135 10% 90%) !important;
+    height: 135mm !important;
+    width: 100% !important;
+  }
+
+  .print-map-container canvas {
+    transform: translate(2%, -5%) !important;
+  }
+
+  /* RIGHT COLUMN – compact but full-width within column */
+  .print-layout > div:last-child {
+    height: 135mm !important;
+    max-height: 135mm !important;
+    overflow: hidden !important;
+    padding-top: 2mm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-section {
+    margin: 0 0 3mm 0 !important;
+    border-radius: 6mm !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 1px solid hsl(var(--secondary)) !important;
+    width: 100% !important;
+  }
+
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    padding: 1.5mm 4mm !important;   /* tighter */
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    padding: 2mm 4mm !important;      /* tighter */
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 4mm !important;
+  }
+
+  .print-section-content li {
+    margin: 0 0 0.6mm 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+
+  .print-section-content,
+  .print-section-content * {
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500 !important;
+  }
+
+  .print-section-content textarea {
+    display: block !important;
+    min-height: 2.1em !important;
+    max-height: 3em !important;
+    overflow: hidden !important;
+    resize: none !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  input,
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+  }
+
+  [class*="Card"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-layout .p-2,
+  .print-layout .p-3,
+  .print-layout .p-4,
+  .print-layout .py-3,
+  .print-layout .py-4,
+  .print-layout .p-6,
+  .print-layout .md\:p-3,
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
+    padding: 0 !important;
+  }
+
+  .print-layout .space-y-1,
+  .print-layout .space-y-2,
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
   }
 }
-
