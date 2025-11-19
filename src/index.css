@@ -300,7 +300,7 @@ All colors MUST be HSL.
   /* Tighten spacing between rows inside each box */
   .print-section-content > * {
     margin-top: 0 !important;
-    margin-bottom: 0.3mm !important;
+    margin-bottom: 0.0mm !important;
   }
   
   /* FORCE all text elements to be uniform black and 11px */
@@ -315,7 +315,7 @@ All colors MUST be HSL.
   .print-section-content label {
     font-size: 11px !important;
     color: #2A2A2A !important;
-    line-height: 1.1 !important;
+    line-height: 1.0 !important;
     font-weight: 500 !important;
     opacity: 1 !important;
   }
@@ -323,14 +323,14 @@ All colors MUST be HSL.
   /* Force textarea to be single-line in print */
   .print-section-content textarea {
     display: block !important;
-    min-height: 1.1em !important;
-    height: 1.1em !important;
-    max-height: 1.1em !important;
+    min-height: 1.0em !important;
+    height: 1.0em !important;
+    max-height: 1.0em !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    font-size: 11px !important;
-    line-height: 1.1 !important;
+    font-size: 12px !important;
+    line-height: 1.0 !important;
   }
 
   /* Typography improvements - professional hierarchy */
@@ -370,7 +370,7 @@ All colors MUST be HSL.
     font-size: 12px !important;
     line-height: 1.1 !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 10 !important;
   }
   
   /* Specific styling for input fields to ensure they're single line */
