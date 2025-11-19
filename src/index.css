@@ -245,10 +245,10 @@ All colors MUST be HSL.
     transform: translate(4%, -10%) !important;
   }
 
-  /* Balanced sections with better spacing between boxes */
+  /* Balanced sections with tighter spacing between boxes */
   .print-section {
     page-break-inside: avoid !important;
-    margin-bottom: 2.5mm !important;
+    margin-bottom: 1.5mm !important;
     width: 100% !important;
   }
 
@@ -270,7 +270,7 @@ All colors MUST be HSL.
 
   .print-section-content {
     background: #C3D1C5 !important;
-    padding: 3px 5px !important;
+    padding: 2px 4px !important;
     border: 1px solid #95A197 !important;
     border-top: none !important;
     font-size: 11px !important;
@@ -292,6 +292,12 @@ All colors MUST be HSL.
     color: #2A2A2A !important;
     font-weight: 500 !important;
     line-height: 1.1 !important;
+  }
+
+  /* Tighten spacing between rows inside each box */
+  .print-section-content > * {
+    margin-top: 0 !important;
+    margin-bottom: 0.3mm !important;
   }
   
   /* Force textarea to be single-line in print */
@@ -384,14 +390,16 @@ All colors MUST be HSL.
     padding: 0 !important;
   }
 
+  .print-layout .space-y-1,
   .print-layout .space-y-2,
   .print-layout .space-y-3,
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 0.5mm !important;
+    gap: 0.3mm !important;
   }
 
+  .print-layout .space-y-1 > *,
   .print-layout .space-y-2 > *,
   .print-layout .space-y-3 > *,
   .print-layout .space-y-6 > * {
