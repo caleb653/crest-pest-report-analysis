@@ -3,15 +3,15 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------
-   CREST BRAND DESIGN SYSTEM (HSL ONLY) — ENHANCED EXPORT
+   CREST BRAND DESIGN SYSTEM (HSL ONLY) — ONE-PAGE PRINT EXPORT
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Brand Neutrals */
+    /* Neutrals */
     --white: 0 0% 95%; /* #F2F2F2 */
     --ink: 0 0% 16%; /* #2A2A2A */
 
-    /* Sage Scale */
+    /* Sage scale */
     --sage-50: 135 20% 96%;
     --sage-100: 135 18% 92%;
     --sage-200: 135 16% 86%;
@@ -23,7 +23,7 @@
     --sage-800: 135 8% 38%;
     --sage-900: 135 8% 28%;
 
-    /* Semantic mappings */
+    /* Semantics */
     --background: var(--sage-50);
     --foreground: var(--ink);
 
@@ -46,11 +46,10 @@
     --ring: var(--sage-400);
 
     --radius: 0.6rem;
-
     --shadow-soft: 0 4px 12px hsl(0 0% 0% / 0.08);
   }
 
-  /* Global text + layout */
+  /* Global */
   body {
     @apply bg-background text-foreground;
     font-family:
@@ -70,30 +69,28 @@
     font-size: 0.85rem !important;
   }
 
-  /* Section Cards */
+  /* Section cards */
   .print-section {
     border: 1px solid hsl(var(--sage-200));
     border-radius: 0.6rem;
     background: hsl(var(--card));
     box-shadow: var(--shadow-soft);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
   }
-
   .print-section-header {
     background: hsl(var(--sage-700));
     color: hsl(0 0% 100%);
     border-bottom: 2px solid hsl(var(--sage-300));
-    padding: 0.4rem 1rem;
+    padding: 0.32rem 0.9rem;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.06em;
   }
-
   .print-section-content {
     background: hsl(var(--card));
     color: hsl(var(--ink));
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 0.9rem;
     font-size: 0.8rem;
   }
 
@@ -103,35 +100,44 @@
     border: 1px solid hsl(var(--sage-200));
     border-radius: 0.75rem;
     box-shadow: var(--shadow-soft);
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.2rem;
   }
-
   .print-header h1 {
-    font-size: 1.35rem;
+    font-size: 1.28rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
   }
-
   .print-header h2 {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: hsl(var(--sage-900));
     font-weight: 600;
   }
 
-  /* Map Legend & Icons */
+  /* Pills / Legend chips */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.08rem 0.42rem;
+    border-radius: 999px;
+    background: hsl(var(--sage-100));
+    border: 1px solid hsl(var(--sage-300));
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: hsl(var(--sage-800));
+    margin-right: 0.25rem;
+  }
   .map-legend-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.15rem 0.45rem;
+    padding: 0.12rem 0.42rem;
     border-radius: 999px;
     background: hsl(var(--sage-100));
     border: 1px solid hsl(var(--sage-300));
     font-size: 0.7rem;
     font-weight: 600;
   }
-
   .map-pin--bait {
     background: hsl(var(--sage-700));
     color: white;
@@ -143,7 +149,6 @@
     background: hsl(var(--sage-300));
   }
 
-  /* Checklist */
   .checklist {
     list-style: none;
     padding-left: 0;
@@ -153,54 +158,192 @@
     display: flex;
     gap: 0.5rem;
     align-items: flex-start;
-    padding: 0.25rem 0;
+    padding: 0.2rem 0;
   }
   .check-icon {
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 0.85rem;
+    height: 0.85rem;
     flex: none;
     border-radius: 3px;
     border: 1px solid hsl(var(--sage-400));
     background: hsl(var(--sage-100));
   }
 
-  /* Pills */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.1rem 0.45rem;
-    border-radius: 999px;
-    background: hsl(var(--sage-100));
-    border: 1px solid hsl(var(--sage-300));
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: hsl(var(--sage-800));
-    margin-right: 0.25rem;
-  }
-
-  /* Print Adjustments */
+  /* -----------------------------------------------------------
+     PRINT — lock to prior page dimensions (A4 landscape) and fit
+     Everything is sized to a single page (297mm × 210mm).
+  ----------------------------------------------------------- */
   @media print {
+    /* Page size from prior version */
     @page {
       size: A4 landscape;
       margin: 0;
     }
     html,
     body {
+      background: hsl(var(--sage-50)) !important;
+      color: hsl(var(--ink)) !important;
       print-color-adjust: exact;
       -webkit-print-color-adjust: exact;
+      height: 210mm !important;
+      max-height: 210mm !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
+    /* Vars to keep layout on one sheet */
+    :root {
+      /* A4 landscape height = 210mm */
+      --sheet-h: 210mm;
+      --header-h: 32mm; /* compact header */
+      --gutters: 4mm; /* vertical breathing room */
+      --body-h: calc(var(--sheet-h) - var(--header-h) - var(--gutters));
+      --map-h: calc(var(--body-h)); /* left column height */
+    }
+
+    /* Remove UI cruft */
+    .no-print,
+    button,
+    [class*="toolbar"],
+    [role="status"],
+    .sonner,
+    [data-sonner-toaster] {
+      display: none !important;
+    }
+    [class*="max-w-"],
+    [class*="mx-auto"] {
+      max-width: none !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+    * {
+      transition: none !important;
+      animation: none !important;
+      page-break-inside: avoid !important;
+      box-sizing: border-box !important;
+    }
+
+    /* Header strip spans full width and fixed height */
     .print-header {
+      width: 100% !important;
+      height: var(--header-h) !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 3mm 6mm !important;
+      box-shadow: none !important;
       background: hsl(var(--sage-100)) !important;
     }
-    .print-layout {
-      grid-template-columns: 60% 38% !important;
+    .print-header h1 {
+      font-size: 19px !important;
+      margin-bottom: 2mm !important;
     }
+    .print-header h2,
+    .print-header p,
+    .print-header span,
+    .print-header input {
+      font-size: 12px !important;
+      line-height: 1.12 !important;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* Main grid — same columns as before, tighter gap; fixed height */
+    .print-layout {
+      width: calc(100% - 12mm) !important;
+      display: grid !important;
+      grid-template-columns: 60% 38% !important;
+      column-gap: 2% !important;
+      height: var(--body-h) !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      align-items: start !important;
+    }
+
+    /* Left: map container fixed height */
     .print-map-container {
+      height: var(--map-h) !important;
+      width: 100% !important;
+      border-radius: 4mm !important;
       border: 1px solid hsl(var(--sage-700)) !important;
+      background: hsl(135 10% 90%) !important;
+      overflow: hidden !important;
+      box-shadow: none !important;
+    }
+    .print-map-container canvas {
+      transform: translate(1%, -4%) !important;
+    }
+
+    /* Right column: stack all cards, fixed total height with internal scrolling avoided */
+    .print-layout > div:last-child {
+      height: var(--body-h) !important;
+      max-height: var(--body-h) !important;
+      overflow: hidden !important;
+      padding: 2mm 0 0 !important;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 2mm !important;
+    }
+
+    /* Cards tighter for print */
+    .print-section {
+      margin: 0 !important;
+      border-radius: 3mm !important;
+      box-shadow: none !important;
+      border: 1px solid hsl(var(--sage-600)) !important;
+    }
+    .print-section-header {
+      padding: 1.2mm 4mm !important;
+      font-size: 12.5px !important;
+      line-height: 1.05 !important;
+      border-bottom: 2px solid hsl(var(--sage-300)) !important;
     }
     .print-section-content {
       background: white !important;
+      padding: 1.8mm 4mm !important;
+      font-size: 10.5px !important;
+      line-height: 1.08 !important;
+    }
+
+    /* Inputs compact */
+    input,
+    textarea {
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 10.5px !important;
+      line-height: 1.08 !important;
+      font-weight: 500 !important;
+    }
+    /* Limit textareas to 2–3 lines to guarantee fit */
+    .print-layout > div:last-child .print-section-content textarea {
+      display: block !important;
+      width: 100% !important;
+      min-height: 1.2em !important;
+      max-height: 2.6em !important;
+      overflow: hidden !important;
+      resize: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      border: none !important;
+      background: transparent !important;
+    }
+
+    /* Tighten gaps inside right column to ensure one-page fit */
+    .print-layout .p-2,
+    .print-layout .p-3,
+    .print-layout .p-4,
+    .print-layout .py-3,
+    .print-layout .py-4,
+    .print-layout .p-6,
+    .print-layout .md\:p-3,
+    .print-layout .md\:p-6,
+    .print-layout .pb-24 {
+      padding: 0 !important;
     }
   }
 }
