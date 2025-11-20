@@ -69,7 +69,7 @@
     font-size: 0.85rem !important;
   }
 
-  /* On-screen sections on the right */
+  /* On-screen callout sections on the right */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.7rem !important;
@@ -318,53 +318,67 @@
     font-weight: 500 !important;
   }
 
-  /* ==================================================================
-     RIGHT SIDE COMPRESSION: ONE CALLOUT BOX PER SECTION
-     ================================================================== */
-
-  /* 1) Only keep the FIRST content block inside each section.
-        This hides extra Finding / Expectation items entirely. */
-  .print-layout > div:last-child .print-section-content > *:not(:first-child) {
-    display: none !important;
-  }
-
-  /* 2) Hide any Add buttons (Add Product, Add Finding, Add Expectation, etc.) */
-  .print-layout > div:last-child .print-section button,
-  .print-layout > div:last-child .print-section [role="button"] {
-    display: none !important;
-  }
-
-  /* 3) Make the remaining textarea compact (up to ~3 lines) */
+  /* Textareas: keep compact, allow up to ~3 lines */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
 
     min-height: 1.4em !important; /* 1 line minimum */
     height: auto !important;
-    max-height: 3.6em !important; /* ≈3 visible lines */
+    max-height: 3.2em !important; /* ≈ 2–3 visible lines */
 
     line-height: 1.2 !important;
     overflow: hidden !important;
     resize: none !important;
 
-    padding: 1mm 2mm !important;
+    padding: 0.5mm 2mm !important;
     margin: 0 !important;
 
     background: transparent !important;
     border: none !important;
   }
 
-  /* 4) For first two sections (Target Pest(s), Product(s) Used),
-        clamp to a single visible line */
-  .print-layout > div:last-child .print-section:nth-of-type(-n + 2) .print-section-content textarea {
-    max-height: 1.4em !important;
+  input,
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
   }
-}
 
-/* -------------------------------------------------------------
-   FINAL TIGHTENING FOR PRINT – LESS PADDING & LINE SPACING
-------------------------------------------------------------- */
-@media print {
+  [class*="Card"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-layout .p-2,
+  .print-layout .p-3,
+  .print-layout .p-4,
+  .print-layout .py-3,
+  .print-layout .py-4,
+  .print-layout .p-6,
+  .print-layout .md\:p-3,
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
+    padding: 0 !important;
+  }
+
+  .print-layout .space-y-1,
+  .print-layout .space-y-2,
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2mm !important;
+  }
+
+  /* -------------------------------------------------------------
+     FINAL TIGHTENING FOR PRINT – LESS PADDING & LINE SPACING
+  ------------------------------------------------------------- */
+
   /* Slightly smaller gap between sections */
   .print-section {
     margin-bottom: 2mm !important;
@@ -395,15 +409,10 @@
   /* Make the single textareas a bit more compact */
   .print-layout > div:last-child .print-section-content textarea {
     min-height: 1.3em !important;
-    max-height: 3.2em !important; /* was ~3.6em */
+    max-height: 3.2em !important;
     line-height: 1.05 !important;
     padding-top: 0.5mm !important;
     padding-bottom: 0.5mm !important;
-  }
-
-  /* Clamp Target Pest(s) + Product(s) even tighter */
-  .print-layout > div:last-child .print-section:nth-of-type(-n + 2) .print-section-content textarea {
-    max-height: 1.2em !important;
   }
 
   /* Slightly tighter body copy under the main header */
