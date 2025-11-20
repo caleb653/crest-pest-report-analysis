@@ -8,8 +8,8 @@
 @layer base {
   :root {
     /* Brand colors (from your palette) */
-    --background: 0 0% 95%; /* #F2F2F2 White */
-    --foreground: 0 0% 16%; /* #2A2A2A Black */
+    --background: 0 0% 95%; /* #F2F2F2 */
+    --foreground: 0 0% 16%; /* #2A2A2A */
 
     --primary: 135 13% 80%; /* #C3D1C5 Sage */
     --secondary: 135 11% 60%; /* #95A197 Dark Sage */
@@ -52,7 +52,12 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
   }
 
   input,
@@ -64,7 +69,7 @@
     font-size: 0.85rem !important;
   }
 
-  /* On-screen callout sections on the right */
+  /* Right-side boxes on screen */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.7rem !important;
@@ -123,7 +128,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
+   PRINT LAYOUT – ONE PAGE, FULL HEIGHT, NO CUT-OFFS
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -146,14 +151,16 @@
     color: hsl(var(--foreground)) !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    height: 210mm !important;
-    max-height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+
+    /* allow content to grow naturally – avoids cutting bottom */
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
-  /* Kill Tailwind width caps / centering that fight us */
+  /* Kill Tailwind width caps / centering */
   [class*="max-w-"] {
     max-width: none !important;
   }
@@ -187,12 +194,12 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, larger fonts in print */
+  /* HEADER – flush to the very top, no green strip above */
   .print-header {
     width: 100% !important;
     max-width: none !important;
     border-radius: 0 !important;
-    margin: 4mm 0 2mm 0 !important;
+    margin: 0 0 2mm 0 !important; /* ⬅ no top margin */
     padding: 4mm 6mm !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
     background: hsl(var(--primary)) !important;
@@ -205,7 +212,7 @@
   }
 
   .print-header h1 {
-    font-size: 18px !important; /* bigger title */
+    font-size: 18px !important;
     margin-bottom: 2mm !important;
   }
 
@@ -230,47 +237,49 @@
     padding: 2mm 3mm !important;
   }
 
-  /* MAIN GRID */
+  /* MAIN GRID – let height be automatic so bottom never cuts */
   .print-layout {
     width: calc(100% - 12mm) !important;
     max-width: none !important;
     display: grid !important;
     grid-template-columns: 58% 40% !important;
     column-gap: 2% !important;
-    height: 130mm !important; /* was 135mm */
-    margin: 0 auto 4mm auto !important;
+    margin: 0 auto 3mm auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
+    height: auto !important;
   }
 
-  /* MAP */
+  /* MAP – flexible height but visually balanced */
   .print-map-container {
     border-radius: 0.5rem;
     border: 1px solid hsl(var(--secondary)) !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
     overflow: hidden !important;
     background: hsl(135 10% 90%) !important;
-    height: 130mm !important; /* was 135mm */
     width: 100% !important;
+
+    /* give it a nice presence without hard-clipping */
+    min-height: 115mm !important;
   }
 
   .print-map-container canvas {
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN – compact but full-width within column */
+  /* RIGHT COLUMN – no max-height so last box never cuts */
   .print-layout > div:last-child {
-    height: 130mm !important;      /* was 135mm */
-    max-height: 130mm !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     padding-top: 2mm !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important;   /* slightly smaller gap */
+    margin: 0 0 2mm 0 !important;
     border-radius: 4mm !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -281,7 +290,7 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1mm 3.5mm !important;  /* was 1.3mm 4mm */
+    padding: 1mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
@@ -289,18 +298,18 @@
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1mm 3mm !important;   /* was 1.6mm 3.2mm */
+    padding: 1.1mm 3mm !important;
     font-size: 10px !important;
-    line-height: 1.05 !important;
+    line-height: 1 !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 3mm !important;
+    padding-left: 3.5mm !important;
   }
 
   .print-section-content li {
-    margin: 0 0 0.3mm 0 !important;
+    margin: 0 0 0.4mm 0 !important;
     padding: 0 !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
@@ -314,64 +323,43 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: keep compact, allow up to ~2–3 lines */
+  /* -------- ONE CALLOUT BOX PER SECTION -------- */
+
+  /* Keep only the FIRST content block */
+  .print-layout > div:last-child .print-section-content > *:not(:first-child) {
+    display: none !important;
+  }
+
+  /* Hide “Add” buttons */
+  .print-layout > div:last-child .print-section button,
+  .print-layout > div:last-child .print-section [role="button"] {
+    display: none !important;
+  }
+
+  /* Compact textareas: up to ~3 lines */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
-
-    min-height: 1.3em !important;   /* 1 line minimum */
+    min-height: 1.3em !important; /* 1 line */
+    max-height: 3.1em !important; /* ~3 lines */
     height: auto !important;
-    max-height: 2.6em !important;   /* slightly less height than before */
 
-    line-height: 1.1 !important;
+    line-height: 1.05 !important;
     overflow: hidden !important;
     resize: none !important;
 
-    padding: 0.4mm 1.8mm !important;
+    padding: 0.5mm 2mm !important;
     margin: 0 !important;
-
     background: transparent !important;
     border: none !important;
   }
 
-  input,
-  textarea {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    font-weight: 500 !important;
+  /* Target Pest(s) + Product(s) = single line */
+  .print-layout > div:last-child .print-section:nth-of-type(-n + 2) .print-section-content textarea {
+    max-height: 1.3em !important;
   }
 
-  [class*="Card"] {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-    width: 100% !important;
-  }
-
-  .print-layout .p-2,
-  .print-layout .p-3,
-  .print-layout .p-4,
-  .print-layout .py-3,
-  .print-layout .py-4,
-  .print-layout .p-6,
-  .print-layout .md\:p-3,
-  .print-layout .md\:p-6,
-  .print-layout .pb-24 {
-    padding: 0 !important;
-  }
-
-  .print-layout .space-y-1,
-  .print-layout .space-y-2,
-  .print-layout .space-y-3,
-  .print-layout .space-y-6 {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 1.5mm !important;
-  }
-
-  /* Slightly tighter body copy under the main header */
+  /* Slightly tighter body copy under header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
