@@ -52,12 +52,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family:
-      Inter,
-      -apple-system,
-      BlinkMacSystemFont,
-      system-ui,
-      sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 
   input,
@@ -242,7 +237,7 @@
     display: grid !important;
     grid-template-columns: 58% 40% !important;
     column-gap: 2% !important;
-    height: 135mm !important;
+    height: 130mm !important; /* was 135mm */
     margin: 0 auto 4mm auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
@@ -255,7 +250,7 @@
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
     overflow: hidden !important;
     background: hsl(135 10% 90%) !important;
-    height: 135mm !important;
+    height: 130mm !important; /* was 135mm */
     width: 100% !important;
   }
 
@@ -265,8 +260,8 @@
 
   /* RIGHT COLUMN – compact but full-width within column */
   .print-layout > div:last-child {
-    height: 135mm !important;
-    max-height: 135mm !important;
+    height: 130mm !important;      /* was 135mm */
+    max-height: 130mm !important;
     overflow: hidden !important;
     padding-top: 2mm !important;
     padding-left: 0 !important;
@@ -275,7 +270,7 @@
   }
 
   .print-section {
-    margin: 0 0 3mm 0 !important;
+    margin: 0 0 2mm 0 !important;   /* slightly smaller gap */
     border-radius: 4mm !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -286,25 +281,26 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1.3mm 4mm !important;
+    padding: 1mm 3.5mm !important;  /* was 1.3mm 4mm */
     font-size: 11px !important;
     font-weight: 700 !important;
+    line-height: 1.05 !important;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1.6mm 3.2mm !important;
+    padding: 1mm 3mm !important;   /* was 1.6mm 3.2mm */
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 3.5mm !important;
+    padding-left: 3mm !important;
   }
 
   .print-section-content li {
-    margin: 0 0 0.4mm 0 !important;
+    margin: 0 0 0.3mm 0 !important;
     padding: 0 !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
@@ -318,20 +314,20 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: keep compact, allow up to ~3 lines */
+  /* Textareas: keep compact, allow up to ~2–3 lines */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
 
-    min-height: 1.4em !important; /* 1 line minimum */
+    min-height: 1.3em !important;   /* 1 line minimum */
     height: auto !important;
-    max-height: 3.2em !important; /* ≈ 2–3 visible lines */
+    max-height: 2.6em !important;   /* slightly less height than before */
 
-    line-height: 1.2 !important;
+    line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
 
-    padding: 0.5mm 2mm !important;
+    padding: 0.4mm 1.8mm !important;
     margin: 0 !important;
 
     background: transparent !important;
@@ -372,47 +368,7 @@
   .print-layout .space-y-6 {
     display: flex !important;
     flex-direction: column !important;
-    gap: 2mm !important;
-  }
-
-  /* -------------------------------------------------------------
-     FINAL TIGHTENING FOR PRINT – LESS PADDING & LINE SPACING
-  ------------------------------------------------------------- */
-
-  /* Slightly smaller gap between sections */
-  .print-section {
-    margin-bottom: 2mm !important;
-  }
-
-  /* Tighten header padding on right-side boxes */
-  .print-layout > div:last-child .print-section-header {
-    padding-top: 1mm !important;
-    padding-bottom: 1mm !important;
-    padding-left: 3.5mm !important;
-    padding-right: 3.5mm !important;
-    line-height: 1.05 !important;
-  }
-
-  /* Tighten content padding + line-height */
-  .print-layout > div:last-child .print-section-content {
-    padding-top: 1.2mm !important;
-    padding-bottom: 1.2mm !important;
-    padding-left: 3mm !important;
-    padding-right: 3mm !important;
-    line-height: 1 !important;
-  }
-
-  .print-layout > div:last-child .print-section-content * {
-    line-height: 1 !important;
-  }
-
-  /* Make the single textareas a bit more compact */
-  .print-layout > div:last-child .print-section-content textarea {
-    min-height: 1.3em !important;
-    max-height: 3.2em !important;
-    line-height: 1.05 !important;
-    padding-top: 0.5mm !important;
-    padding-bottom: 0.5mm !important;
+    gap: 1.5mm !important;
   }
 
   /* Slightly tighter body copy under the main header */
