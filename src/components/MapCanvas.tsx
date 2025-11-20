@@ -202,6 +202,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           fill: rectFillTransparentRef.current ? 'rgba(255,255,255,0.2)' : rectFillColorRef.current,
           stroke: rectBorderColorRef.current,
           strokeWidth: 3,
+          strokeUniform: true,
           rx: 4,
           ry: 4,
           selectable: true,
@@ -210,73 +211,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           lockUniScaling: false,
         });
         
-        // Create text box on top
-        const text = new IText('Click to add text', {
-          left: pt.x - 50,
-          top: pt.y - 30,
-          fontSize: 14,
-          fill: '#000000',
-          fontWeight: '300',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          textAlign: 'left',
-          selectable: true,
-          editable: true,
-          backgroundColor: 'transparent',
-          padding: 8,
-          lineHeight: 1.4,
-          charSpacing: 0,
-        });
-        
-        // Add both to canvas
+        // Add to canvas
         canvas.add(rect);
-        canvas.add(text);
         canvas.setActiveObject(rect);
-        
-        // Store reference to keep them linked
-        rectTextMap.current.set(rect, true);
-        (text as any).linkedRect = rect;
-        (rect as any).linkedText = text;
-        
         canvas.renderAll();
-        
-        // Link them together for movement
-        text.on('moving', () => {
-          const textBounds = text.getBoundingRect();
-          rect.set({
-            left: textBounds.left - 10,
-            top: textBounds.top - 10,
-          });
-          canvas.renderAll();
-        });
-        
-        rect.on('moving', () => {
-          const rectLeft = rect.left || 0;
-          const rectTop = rect.top || 0;
-          text.set({
-            left: rectLeft + 10,
-            top: rectTop + 10,
-          });
-          canvas.renderAll();
-        });
-        
-        rect.on('scaling', () => {
-          const rectWidth = (rect.width || 140) * (rect.scaleX || 1);
-          const rectHeight = (rect.height || 60) * (rect.scaleY || 1);
-          text.set({
-            left: (rect.left || 0) + 10,
-            top: (rect.top || 0) + 10,
-            width: rectWidth - 20,
-          });
-          canvas.renderAll();
-        });
-        
-        text.on('removed', () => {
-          canvas.remove(rect);
-        });
-        
-        rect.on('removed', () => {
-          canvas.remove(text);
-        });
         
         clickPlacedRef.current = true;
         setTool('select');
