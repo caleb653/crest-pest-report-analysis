@@ -437,12 +437,12 @@ const Report = () => {
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-3">
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-start gap-6 flex-1">
                 <div className="flex flex-col items-center">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-14 w-auto" />
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto" />
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 ml-4">
                   <h1 className="text-xl font-bold text-foreground mb-2">
                     Initial Pest Report - Key Findings & Recommendations
                   </h1>
