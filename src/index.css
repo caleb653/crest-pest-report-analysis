@@ -131,10 +131,12 @@
    PRINT LAYOUT – ONE PAGE, FULL HEIGHT, NO CUT-OFFS
 ------------------------------------------------------------- */
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 0;
+  .print-logo {
+    height: 38px !important;   /* nice, professional size */
+    width: auto !important;
   }
+}
+
 
   .no-print,
   button,
