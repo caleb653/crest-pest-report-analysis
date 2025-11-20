@@ -142,6 +142,16 @@
     margin: 0;
   }
 
+  /* Suppress browser-generated headers/footers */
+  @page { margin: 0; }
+  html { margin: 0; }
+  
+  /* Hide URL and date that browsers add */
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
   .no-print,
   button,
   [class*="toolbar"],
