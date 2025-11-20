@@ -193,26 +193,27 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           setShowIconPicker(false);
         });
       } else if (currentTool === 'rectangle') {
-        // First create a rectangle for the border
+        // Create a callout box that is fully resizable
         const rect = new FabricRect({
           left: pt.x - 60,
           top: pt.y - 40,
           width: 140,
           height: 60,
-          fill: rectFillTransparentRef.current ? 'rgba(255,255,255,0.9)' : rectFillColorRef.current,
-          stroke: '#000000',
+          fill: rectFillTransparentRef.current ? 'rgba(255,255,255,0.2)' : rectFillColorRef.current,
+          stroke: rectBorderColorRef.current,
           strokeWidth: 3,
           rx: 4,
           ry: 4,
-          selectable: false,
-          evented: false,
+          selectable: true,
+          hasControls: true,
+          hasBorders: true,
+          lockUniScaling: false,
         });
         
         // Create text box on top
-        const text = new IText('', {
+        const text = new IText('Click to add text', {
           left: pt.x - 50,
           top: pt.y - 30,
-          width: 120,
           fontSize: 14,
           fill: '#000000',
           fontWeight: '300',
@@ -226,47 +227,56 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           charSpacing: 0,
         });
         
-        // Function to sync rectangle with text
-        const syncRect = () => {
-          const bounds = text.getBoundingRect();
-          rect.set({
-            left: bounds.left - 10,
-            top: bounds.top - 10,
-            width: bounds.width + 20,
-            height: bounds.height + 20,
-            scaleX: 1,
-            scaleY: 1,
-          });
-          canvas.renderAll();
-        };
-        
         // Add both to canvas
         canvas.add(rect);
         canvas.add(text);
-        canvas.setActiveObject(text);
+        canvas.setActiveObject(rect);
         
-        // Enter editing mode immediately on mobile
-        text.enterEditing();
-        text.selectAll();
+        // Store reference to keep them linked
+        rectTextMap.current.set(rect, true);
+        (text as any).linkedRect = rect;
+        (rect as any).linkedText = text;
         
         canvas.renderAll();
         
-        // Link them together - sync on all changes
-        text.on('moving', syncRect);
-        text.on('scaling', syncRect);
-        text.on('modified', syncRect);
-        text.on('changed', syncRect);
+        // Link them together for movement
+        text.on('moving', () => {
+          const textBounds = text.getBoundingRect();
+          rect.set({
+            left: textBounds.left - 10,
+            top: textBounds.top - 10,
+          });
+          canvas.renderAll();
+        });
+        
+        rect.on('moving', () => {
+          const rectLeft = rect.left || 0;
+          const rectTop = rect.top || 0;
+          text.set({
+            left: rectLeft + 10,
+            top: rectTop + 10,
+          });
+          canvas.renderAll();
+        });
+        
+        rect.on('scaling', () => {
+          const rectWidth = (rect.width || 140) * (rect.scaleX || 1);
+          const rectHeight = (rect.height || 60) * (rect.scaleY || 1);
+          text.set({
+            left: (rect.left || 0) + 10,
+            top: (rect.top || 0) + 10,
+            width: rectWidth - 20,
+          });
+          canvas.renderAll();
+        });
         
         text.on('removed', () => {
           canvas.remove(rect);
         });
         
-        // Small delay then enter edit mode
-        setTimeout(() => {
-          text.enterEditing();
-          text.selectAll();
-          canvas.renderAll();
-        }, 100);
+        rect.on('removed', () => {
+          canvas.remove(text);
+        });
         
         clickPlacedRef.current = true;
         setTool('select');
