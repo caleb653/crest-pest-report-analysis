@@ -4,14 +4,24 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Home, Share2, Loader2, Send, FileDown, Plus, Minus, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+import {
+  Home,
+  Share2,
+  Loader2,
+  Send,
+  FileDown,
+  Plus,
+  Minus,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 interface AnalysisData {
   findings: string[];
@@ -24,21 +34,33 @@ const Report = () => {
   const navigate = useNavigate();
   const { reportId } = useParams();
   const isMobile = useIsMobile();
-  const { technicianName, customerName, address, notes, screenshots, serviceDate, licenseNumber, targetPests, productsUsed } = location.state || {};
-  
+  const {
+    technicianName,
+    customerName,
+    address,
+    notes,
+    screenshots,
+    serviceDate,
+    licenseNumber,
+    targetPests,
+    productsUsed,
+  } = location.state || {};
+
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [editableTech, setEditableTech] = useState(technicianName || "");
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
-  const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split('T')[0]);
+  const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
-  const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(productsUsed?.filter((p: string) => p) || []);
+  const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
+    productsUsed?.filter((p: string) => p) || [],
+  );
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
@@ -79,21 +101,21 @@ const Report = () => {
 
   const fetchStaticMap = async () => {
     if (!coordinates) return;
-    
+
     try {
-      const { data, error } = await supabase.functions.invoke('static-map', {
+      const { data, error } = await supabase.functions.invoke("static-map", {
         body: {
           lat: coordinates.lat,
           lng: coordinates.lng,
           zoom: zoomLevel,
           width: 1100,
           height: 700,
-          marker: '1'
-        }
+          marker: "1",
+        },
       });
 
       if (error) {
-        console.error('Error fetching static map:', error);
+        console.error("Error fetching static map:", error);
         return;
       }
 
@@ -101,19 +123,15 @@ const Report = () => {
         setStaticMapUrl(data.dataUrl);
       }
     } catch (error) {
-      console.error('Error fetching static map:', error);
+      console.error("Error fetching static map:", error);
     }
   };
 
   const loadReport = async () => {
     if (!reportId) return;
-    
+
     try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('id', reportId)
-        .single();
+      const { data, error } = await supabase.from("reports").select("*").eq("id", reportId).single();
 
       if (error) throw error;
 
@@ -123,15 +141,15 @@ const Report = () => {
       setEditableFindings((data.findings as string[]) || []);
       setEditableRecommendations((data.recommendations as string[]) || []);
       setEditableNextSteps((data.next_steps as string[]) || []);
-      
-      console.log('Loading report map_data:', { 
+
+      console.log("Loading report map_data:", {
         hasMapData: !!data.map_data,
         mapDataType: typeof data.map_data,
-        mapDataPreview: data.map_data ? JSON.stringify(data.map_data).substring(0, 150) : 'null'
+        mapDataPreview: data.map_data ? JSON.stringify(data.map_data).substring(0, 150) : "null",
       });
-      
+
       setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
-      
+
       // Extract coordinates from map_url if available, otherwise geocode
       if (data.map_url) {
         const latMatch = data.map_url.match(/mlat=([-\d.]+)/);
@@ -139,7 +157,7 @@ const Report = () => {
         if (latMatch && lngMatch) {
           setCoordinates({
             lat: parseFloat(latMatch[1]),
-            lng: parseFloat(lngMatch[1])
+            lng: parseFloat(lngMatch[1]),
           });
         }
       } else if (data.address) {
@@ -168,24 +186,24 @@ const Report = () => {
       // Extract customer name from images
       extractCustomerName(imageDataUrls);
 
-      const { data, error } = await supabase.functions.invoke('extract-address', {
-        body: { images: imageDataUrls }
+      const { data, error } = await supabase.functions.invoke("extract-address", {
+        body: { images: imageDataUrls },
       });
 
       if (error) {
-        console.error('Error extracting address:', error);
+        console.error("Error extracting address:", error);
         return;
       }
 
-      if (data.address && data.address !== 'Address not found') {
+      if (data.address && data.address !== "Address not found") {
         setExtractedAddress(data.address);
-        
+
         if (data.coordinates) {
           setCoordinates(data.coordinates);
         }
       }
     } catch (error) {
-      console.error('Error processing screenshots:', error);
+      console.error("Error processing screenshots:", error);
     } finally {
       setIsProcessing(false);
     }
@@ -193,16 +211,16 @@ const Report = () => {
 
   const extractCustomerName = async (imageDataUrls: string[]) => {
     try {
-      const { data, error } = await supabase.functions.invoke('extract-customer-info', {
-        body: { images: imageDataUrls.slice(0, 3) } // Only use first 3 images
+      const { data, error } = await supabase.functions.invoke("extract-customer-info", {
+        body: { images: imageDataUrls.slice(0, 3) }, // Only use first 3 images
       });
-      
+
       if (!error && data?.customerName) {
         setEditableCustomer(data.customerName);
         toast.success(`Customer name found: ${data.customerName}`);
       }
     } catch (error) {
-      console.error('Error extracting customer name:', error);
+      console.error("Error extracting customer name:", error);
     }
   };
 
@@ -220,22 +238,22 @@ const Report = () => {
 
       const imageDataUrls = await Promise.all(imagePromises);
 
-      const { data, error } = await supabase.functions.invoke('analyze-findings', {
-        body: { 
+      const { data, error } = await supabase.functions.invoke("analyze-findings", {
+        body: {
           images: imageDataUrls,
-          address: extractedAddress || address 
-        }
+          address: extractedAddress || address,
+        },
       });
 
       if (error) {
-        console.error('Error analyzing findings:', error);
+        console.error("Error analyzing findings:", error);
         return;
       }
 
       setAnalysis(data);
-      toast.success('Report generated!');
+      toast.success("Report generated!");
     } catch (error) {
-      console.error('Error analyzing findings:', error);
+      console.error("Error analyzing findings:", error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -246,22 +264,22 @@ const Report = () => {
       const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`;
       const response = await fetch(geocodeUrl, {
         headers: {
-          'User-Agent': 'PestProReports/1.0'
-        }
+          "User-Agent": "PestProReports/1.0",
+        },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data && data.length > 0) {
           setCoordinates({
             lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
+            lng: parseFloat(data[0].lon),
           });
           setExtractedAddress(addr);
         }
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error("Geocoding error:", error);
     }
   };
 
@@ -273,25 +291,24 @@ const Report = () => {
 
     setIsSaving(true);
     try {
-      // Ensure map_data is stored as JSON (object) not a raw string
       const rawMap = latestMapDataRef.current ?? mapData;
-      console.log('Submitting report with map data:', { 
+      console.log("Submitting report with map data:", {
         hasRawMap: !!rawMap,
         rawMapLength: rawMap?.length,
-        rawMapPreview: rawMap ? rawMap.substring(0, 150) : 'null'
+        rawMapPreview: rawMap ? rawMap.substring(0, 150) : "null",
       });
-      
+
       let mapPayload: any = null;
       if (rawMap) {
-        try { 
+        try {
           mapPayload = JSON.parse(rawMap);
-          console.log('Parsed map payload:', {
+          console.log("Parsed map payload:", {
             hasObjects: !!mapPayload.objects,
-            objectCount: mapPayload.objects?.objects?.length
+            objectCount: mapPayload.objects?.objects?.length,
           });
-        } catch (e) { 
-          console.error('Failed to parse map data:', e);
-          mapPayload = rawMap; 
+        } catch (e) {
+          console.error("Failed to parse map data:", e);
+          mapPayload = rawMap;
         }
       }
 
@@ -303,27 +320,24 @@ const Report = () => {
         findings: editableFindings,
         recommendations: editableRecommendations,
         next_steps: editableNextSteps,
-        map_url: coordinates ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}` : null,
+        map_url: coordinates
+          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+          : null,
         map_data: mapPayload,
       };
 
       if (reportId) {
-        const { error } = await supabase
-          .from('reports')
-          .update(reportData)
-          .eq('id', reportId);
+        const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
 
         if (error) throw error;
         toast.success("Report updated successfully!");
       } else {
-        const { error } = await supabase
-          .from('reports')
-          .insert([reportData]);
+        const { error } = await supabase.from("reports").insert([reportData]);
 
         if (error) throw error;
         toast.success("Report submitted successfully!");
-        
-        setTimeout(() => navigate('/'), 2000);
+
+        setTimeout(() => navigate("/"), 2000);
       }
     } catch (error: any) {
       toast.error("Failed to save report");
@@ -337,11 +351,11 @@ const Report = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Pest Control Report',
-          text: `Report for ${editableCustomer || 'Customer'} at ${extractedAddress || address || 'location'}`,
+          title: "Pest Control Report",
+          text: `Report for ${editableCustomer || "Customer"} at ${extractedAddress || address || "location"}`,
         });
-      } catch (error) {
-        console.log('Share cancelled');
+      } catch {
+        console.log("Share cancelled");
       }
     } else {
       toast.info("Sharing not supported on this device");
@@ -349,60 +363,45 @@ const Report = () => {
   };
 
   const exportToPDF = async () => {
-    // Use the browser's print-to-PDF which correctly renders the live map iframe + overlay
     try {
-      // Hide any toast messages before printing
       const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach(toast => {
-        (toast as HTMLElement).style.display = 'none';
+      toasts.forEach((toastEl) => {
+        (toastEl as HTMLElement).style.display = "none";
       });
-      
-      // Small delay to ensure canvas render completes
+
       await new Promise((r) => setTimeout(r, 150));
       window.print();
-      
-      // Restore toasts after print dialog closes
+
       setTimeout(() => {
-        toasts.forEach(toast => {
-          (toast as HTMLElement).style.display = '';
+        toasts.forEach((toastEl) => {
+          (toastEl as HTMLElement).style.display = "";
         });
       }, 500);
     } catch (e) {
-      toast.error('Print failed');
+      toast.error("Print failed");
     }
   };
 
   const displayAddress = extractedAddress || address || "Not provided";
-  
-  const getStreetAddress = (fullAddress: string) => {
-    if (!fullAddress || fullAddress === "Not provided") return "Address";
-    const parts = fullAddress.split(',');
-    return parts[0].trim();
-  };
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    setter(prev => {
+    setter((prev) => {
       const newArr = [...prev];
       newArr[index] = value;
       return newArr;
     });
   };
 
-  const addItem = (setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    setter(prev => [...prev, ""]);
-  };
+  const mapUrl = staticMapUrl || "";
 
-  const mapUrl = staticMapUrl || ""; // Use Mapbox 2D satellite image
- 
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 1, 22));
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.5, 15));
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 1, 22));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.5, 15));
 
-  // Pan map by pixel amount (approximate Web Mercator math)
   const panBy = (dxPx: number, dyPx: number) => {
-    setCoordinates(prev => {
+    setCoordinates((prev) => {
       if (!prev) return prev;
       const latRad = (prev.lat * Math.PI) / 180;
-      const metersPerPixel = 156543.03392 * Math.cos(latRad) / Math.pow(2, zoomLevel);
+      const metersPerPixel = (156543.03392 * Math.cos(latRad)) / Math.pow(2, zoomLevel);
       const metersX = dxPx * metersPerPixel;
       const metersY = dyPx * metersPerPixel;
       const deltaLng = metersX / (111320 * Math.cos(latRad));
@@ -416,35 +415,20 @@ const Report = () => {
       {/* Mobile Header */}
       {isMobile && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
-            <div className="flex items-center justify-between">
-              <img src={crestLogo} alt="Crest" className="h-10" />
-              <div className="flex gap-2 no-print">
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={exportToPDF}
-                  className="h-9"
-                >
-                  <FileDown className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleShare}
-                  className="h-9"
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => navigate('/')}
-                  variant="outline"
-                  className="h-9"
-                >
-                  <Home className="w-4 h-4" />
-                </Button>
-              </div>
+          <div className="flex items-center justify-between">
+            <img src={crestLogo} alt="Crest" className="h-10" />
+            <div className="flex gap-2 no-print">
+              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
+                <FileDown className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
+                <Share2 className="w-4 h-4" />
+              </Button>
+              <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
+                <Home className="w-4 h-4" />
+              </Button>
             </div>
+          </div>
         </div>
       )}
 
@@ -459,8 +443,10 @@ const Report = () => {
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex-1">
-                  <h1 className="text-xl font-bold text-foreground mb-2">Initial Pest Report - Key Findings & Recommendations</h1>
-                  
+                  <h1 className="text-xl font-bold text-foreground mb-2">
+                    Initial Pest Report - Key Findings & Recommendations
+                  </h1>
+
                   <div className="flex gap-12">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
@@ -489,7 +475,7 @@ const Report = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex-1">
                       <p className="font-semibold text-foreground text-xs mb-1">Technician Information:</p>
                       <div className="space-y-0.5 text-xs">
@@ -516,7 +502,7 @@ const Report = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex gap-3 no-print">
                 <Button onClick={exportToPDF} variant="default" size="sm">
                   <FileDown className="w-4 h-4 mr-2" />
@@ -526,17 +512,21 @@ const Report = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
-                <Button onClick={() => navigate('/')} variant="outline" size="sm">
+                <Button onClick={() => navigate("/")} variant="outline" size="sm">
                   <Home className="w-4 h-4 mr-2" />
                   Home
                 </Button>
               </div>
             </div>
-            
+
             {/* Purpose Text */}
             <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border">
               <p className="text-xs text-foreground leading-tight">
-                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one size fits all" approach and there are often a number of factors that lead to increased pest activity. We've created this educational report to help you and your family get one step closer to living a pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have any questions.
+                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
+                size fits all" approach and there are often a number of factors that lead to increased pest activity.
+                We've created this educational report to help you and your family get one step closer to living a
+                pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
+                any questions.
               </p>
             </div>
           </div>
@@ -555,7 +545,7 @@ const Report = () => {
               </div>
             </div>
           )}
-          
+
           {mapUrl ? (
             <div className="relative h-full w-full">
               <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
@@ -584,7 +574,13 @@ const Report = () => {
                   <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
                     <Plus className="w-4 h-4" />
                   </Button>
-                  <Button size="icon" variant="secondary" onClick={handleZoomOut} aria-label="Zoom out" title="Zoom out">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={handleZoomOut}
+                    aria-label="Zoom out"
+                    title="Zoom out"
+                  >
                     <Minus className="w-4 h-4" />
                   </Button>
                 </div>
@@ -630,8 +626,8 @@ const Report = () => {
 
             {/* Target Pest(s) Section */}
             <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Target Pest(s)</h2>
-              <div className="print-section-content space-y-2">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
+              <div className="space-y-2">
                 <Input
                   value={editableTargetPests[0] || ""}
                   onChange={(e) => {
@@ -647,7 +643,7 @@ const Report = () => {
 
             {/* Products Used Section */}
             <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold text-foreground mb-2">Product(s) Used</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
               <div className="space-y-2">
                 <Input
                   value={editableProductsUsed[0] || ""}
@@ -664,7 +660,7 @@ const Report = () => {
 
             {/* Findings Section */}
             <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold text-destructive mb-2">Findings & Actions Taken</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Findings & Actions Taken</h2>
               {isAnalyzing ? (
                 <div className="text-center py-4">
                   <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
@@ -685,7 +681,7 @@ const Report = () => {
 
             {/* What to Expect Section */}
             <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold text-primary mb-2">What to Expect</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
               <div className="space-y-2">
                 <Textarea
                   value={editableRecommendations[0] || ""}
@@ -699,29 +695,21 @@ const Report = () => {
 
             {/* Our Top Recommendations Section */}
             <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold text-secondary mb-2">Our Top Recommendations</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Our Top Recommendations</h2>
               <div className="space-y-2">
-                <div className="flex gap-2">
-                  <span className="font-bold text-base text-foreground pt-1">1.</span>
-                  <Textarea
-                    value={editableNextSteps[0] || ""}
-                    onChange={(e) => updateItem(0, e.target.value, setEditableNextSteps)}
-                    placeholder="Enter recommendation..."
-                    className="text-sm resize-y flex-1"
-                    rows={1}
-                  />
-                </div>
+                <Textarea
+                  value={editableNextSteps[0] || ""}
+                  onChange={(e) => updateItem(0, e.target.value, setEditableNextSteps)}
+                  placeholder="Enter recommendation..."
+                  className="text-sm resize-y w-full"
+                  rows={1}
+                />
               </div>
             </Card>
 
             {/* Submit Button */}
-            <div className="">
-              <Button
-                onClick={handleSubmit}
-                disabled={isSaving}
-                size="lg"
-                className="no-print w-full text-lg py-6"
-              >
+            <div>
+              <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="no-print w-full text-lg py-6">
                 {isSaving ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
