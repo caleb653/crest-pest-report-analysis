@@ -146,8 +146,8 @@
     color: hsl(var(--foreground)) !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    height: 210mm !important;
-    max-height: 210mm !important;
+    height: 100% !important;
+    max-height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
@@ -192,8 +192,8 @@
     width: 100% !important;
     max-width: none !important;
     border-radius: 0 !important;
-    margin: 4mm 0 2mm 0 !important;
-    padding: 4mm 6mm !important;
+    margin: 0 0 2mm 0 !important;
+    padding: 3mm 6mm !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
     background: hsl(var(--primary)) !important;
   }
@@ -230,6 +230,12 @@
     padding: 2mm 3mm !important;
   }
 
+  /* Make logo bigger in print */
+  .print-header img[alt="Crest Pest Control"] {
+    height: 24mm !important;
+    width: auto !important;
+  }
+
   /* MAIN GRID */
   .print-layout {
     width: calc(100% - 12mm) !important;
@@ -237,8 +243,8 @@
     display: grid !important;
     grid-template-columns: 58% 40% !important;
     column-gap: 2% !important;
-    height: 130mm !important; /* was 135mm */
-    margin: 0 auto 4mm auto !important;
+    height: 140mm !important;
+    margin: 0 auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
   }
@@ -250,7 +256,7 @@
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
     overflow: hidden !important;
     background: hsl(135 10% 90%) !important;
-    height: 130mm !important; /* was 135mm */
+    height: 140mm !important;
     width: 100% !important;
   }
 
@@ -260,8 +266,8 @@
 
   /* RIGHT COLUMN – compact but full-width within column */
   .print-layout > div:last-child {
-    height: 130mm !important;      /* was 135mm */
-    max-height: 130mm !important;
+    height: 140mm !important;
+    max-height: 140mm !important;
     overflow: hidden !important;
     padding-top: 2mm !important;
     padding-left: 0 !important;
