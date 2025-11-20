@@ -300,7 +300,7 @@
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     padding: 1mm 3.5mm 1mm 4.5mm !important;
-    font-size: 11px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
     text-transform: uppercase !important;
