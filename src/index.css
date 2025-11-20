@@ -205,18 +205,18 @@
   }
 
   .print-header h1 {
-    font-size: 18px !important; /* bigger title */
+    font-size: 20px !important; /* bigger title */
     margin-bottom: 2mm !important;
   }
 
   .print-header h2 {
-    font-size: 12px !important;
+    font-size: 13px !important;
   }
 
   .print-header p,
   .print-header span,
   .print-header input {
-    font-size: 11px !important;
+    font-size: 12px !important;
     line-height: 1.15 !important;
     background: transparent !important;
     border: none !important;
@@ -287,7 +287,7 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1mm 3.5mm !important;  /* was 1.3mm 4mm */
+    padding: 1mm 3.5mm 1mm 4.5mm !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
@@ -295,14 +295,14 @@
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1mm 3mm !important;   /* was 1.6mm 3.2mm */
+    padding: 1mm 4mm 1mm 4.5mm !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
 
   .print-section-content ul {
     margin: 0 !important;
-    padding-left: 3mm !important;
+    padding-left: 4mm !important;
   }
 
   .print-section-content li {
