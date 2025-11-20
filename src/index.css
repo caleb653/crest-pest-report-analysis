@@ -33,10 +33,10 @@
     --input: 135 10% 85%;
     --ring: 135 13% 80%;
 
-    --radius: 0.5rem;
+    --radius: 0.4rem; /* slightly tighter radius */
 
-    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
-    --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
+    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.05);
+    --shadow-mid: 0 2px 6px hsl(0 0% 0% / 0.1);
   }
 
   .dark {
@@ -69,11 +69,14 @@
     font-size: 0.85rem !important;
   }
 
-  /* On-screen callout sections on the right */
+  /* ============================================================
+     ON-SCREEN CALLOUT SECTIONS (RIGHT COLUMN)
+     ============================================================ */
+
   .print-section {
     padding: 0 !important;
-    margin-bottom: 0.7rem !important;
-    border-radius: 0.75rem;
+    margin-bottom: 0.75rem !important;
+    border-radius: 0.4rem; /* reduced from 0.75rem */
     overflow: hidden;
     background: transparent !important;
     box-shadow: var(--shadow-soft);
@@ -81,24 +84,37 @@
   }
 
   .print-section-header {
-    background: hsl(var(--secondary)) !important;
-    color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 1.25rem !important; /* more horizontal padding */
-    font-size: 0.75rem !important; /* ~12px */
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important; /* tab accent */
     display: flex;
     align-items: center;
     gap: 0.35rem;
+
+    background: linear-gradient(to bottom, hsl(var(--secondary)) 0%, hsl(var(--secondary) / 0.92) 100%) !important;
+
+    color: hsl(0 0% 100%) !important;
+    padding: 0.35rem 0.95rem 0.25rem 1rem !important;
+
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+
+    border-bottom: 2px solid hsl(var(--accent)); /* thin accent line */
+  }
+
+  .print-section-header svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    stroke-width: 2.1;
+    flex-shrink: 0;
   }
 
   .print-section-content {
-    background: hsl(var(--primary)) !important;
+    background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.95) 100%) !important;
+
     color: hsl(var(--foreground)) !important;
-    padding: 0.35rem 1.25rem !important;
+    padding: 0.45rem 0.9rem 0.55rem 1rem !important;
     font-size: 0.8rem !important;
+    line-height: 1.2 !important;
   }
 
   .print-section-content ul {
@@ -111,25 +127,92 @@
     line-height: 1.2 !important;
   }
 
+  .print-section-content textarea,
+  .print-section-content input {
+    padding-left: 0.1rem !important; /* we already padded container */
+    padding-right: 0.1rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* ============================================================
+     HEADER BAR
+     ============================================================ */
+
   .print-header {
     background: hsl(var(--primary));
-    border-radius: 0.75rem;
+    border-radius: 0.4rem;
     padding: 0.75rem 1.5rem;
     box-shadow: var(--shadow-soft);
     border: 1px solid hsl(var(--border));
   }
 
   .print-header h1 {
-    font-size: 1.3rem !important;
+    font-size: 1.5rem !important;
     font-weight: 700 !important;
-    margin-bottom: 0.3rem !important;
+    margin-bottom: 0.25rem !important;
+    letter-spacing: -0.01em;
     color: hsl(var(--foreground));
   }
 
   .print-header h2 {
-    font-size: 0.95rem !important;
+    font-size: 0.9rem !important;
     font-weight: 600 !important;
     color: hsl(var(--foreground));
+  }
+
+  .print-header-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .print-header-value {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+  }
+
+  /* ============================================================
+     MAP + LEGEND
+     ============================================================ */
+
+  .print-map-container {
+    border-radius: 0.5rem;
+    border: 2px solid hsl(var(--secondary)) !important;
+    box-shadow: var(--shadow-mid);
+    overflow: hidden !important;
+
+    background-color: hsl(135 10% 90%) !important;
+    background-image:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+      linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Legend styling – you’ll want your legend wrapper to use this class */
+  .map-legend {
+    border-radius: 0.4rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .map-legend-header {
+    background: linear-gradient(to bottom, hsl(var(--secondary)) 0%, hsl(var(--secondary) / 0.92) 100%);
+    color: white;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 2px solid hsl(var(--accent));
+  }
+
+  .map-legend-body {
+    padding: 0.4rem 0.7rem 0.5rem 0.7rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
   }
 }
 
@@ -164,7 +247,6 @@
     overflow: hidden !important;
   }
 
-  /* Kill Tailwind width caps / centering that fight us */
   [class*="max-w-"] {
     max-width: none !important;
   }
@@ -198,7 +280,7 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, larger fonts in print */
+  /* HEADER – full width strip, bigger fonts in print */
   .print-header {
     width: 100% !important;
     max-width: none !important;
@@ -216,19 +298,14 @@
   }
 
   .print-header h1 {
-    font-size: 20px !important; /* bigger title */
+    font-size: 20px !important;
     margin-bottom: 2mm !important;
-    letter-spacing: -0.01em !important;
-  }
-
-  .print-header h2 {
-    font-size: 13px !important;
   }
 
   .print-header p,
   .print-header span,
   .print-header input {
-    font-size: 12px !important;
+    font-size: 11px !important;
     line-height: 1.15 !important;
     background: transparent !important;
     border: none !important;
@@ -242,9 +319,9 @@
     padding: 2mm 3mm !important;
   }
 
-  /* Make logo bigger in print */
+  /* Logo size in print */
   .print-header img[alt="Crest Pest Control"] {
-    height: 24mm !important;
+    height: 20mm !important;
     width: auto !important;
   }
 
@@ -263,11 +340,6 @@
 
   /* MAP */
   .print-map-container {
-    border-radius: 0.5rem;
-    border: 1px solid hsl(var(--secondary)) !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
-    overflow: hidden !important;
-    background: hsl(135 10% 90%) !important;
     height: 140mm !important;
     width: 100% !important;
   }
@@ -276,7 +348,7 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN – compact but full-width within column */
+  /* RIGHT COLUMN */
   .print-layout > div:last-child {
     height: 140mm !important;
     max-height: 140mm !important;
@@ -288,8 +360,8 @@
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important; /* slightly smaller gap */
-    border-radius: 2.5mm !important;
+    margin: 0 0 2mm 0 !important;
+    border-radius: 0.4rem !important;
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
@@ -298,63 +370,27 @@
   }
 
   .print-section-header {
-    background: hsl(var(--secondary)) !important;
-    padding: 1mm 3.5mm 1mm 4.5mm !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    line-height: 1.05 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
+    padding: 1mm 4mm 0.7mm 4.5mm !important;
+    font-size: 11px !important;
+    border-bottom: 2px solid hsl(var(--accent)) !important;
+    background: linear-gradient(to bottom, hsl(var(--secondary)) 0%, hsl(var(--secondary) / 0.92) 100%) !important;
   }
 
   .print-section-content {
-    background: hsl(var(--primary)) !important;
-    padding: 1mm 4mm 1mm 4.5mm !important;
+    padding: 1.1mm 4mm 1.3mm 4.5mm !important;
+    background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.95) 100%) !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
 
-  .print-section-content ul {
-    margin: 0 !important;
-    padding-left: 4mm !important;
-  }
-
-  .print-section-content li {
-    margin: 0 0 0.3mm 0 !important;
-    padding: 0 !important;
-    font-size: 10px !important;
-    line-height: 1.05 !important;
-  }
-
-  .print-section-content,
-  .print-section-content * {
-    font-size: 10px !important;
-    line-height: 1.05 !important;
-    color: hsl(var(--foreground)) !important;
-    font-weight: 500 !important;
-  }
-
-  /* Textareas: keep compact, allow up to ~2–3 lines, with slight indent
-     so text doesn’t kiss the rounded corners */
-  .print-layout > div:last-child .print-section-content textarea {
-    display: block !important;
-    width: 100% !important;
-
-    min-height: 1.3em !important; /* 1 line minimum */
-    height: auto !important;
-    max-height: 2.6em !important; /* ≈2–3 visible lines */
-
+  .print-section-content textarea {
+    min-height: 1.3em !important;
+    max-height: 2.6em !important;
     line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
-
-    padding: 0.4mm 1.8mm !important;
+    padding: 0.3mm 1.5mm !important;
     margin: 0 !important;
-
     background: transparent !important;
     border: none !important;
   }
@@ -396,7 +432,6 @@
     gap: 1.5mm !important;
   }
 
-  /* Slightly tighter body copy under the main header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
