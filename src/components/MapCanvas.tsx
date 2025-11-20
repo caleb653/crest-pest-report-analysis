@@ -1,9 +1,15 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Bug, Rat, Square, TreeDeciduous, CircleDot, Box } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject } from 'fabric';
+import { Trash2, Type, X, Square, Bug } from 'lucide-react';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage } from 'fabric';
 import { toast } from 'sonner';
+import bugIcon from '@/assets/icons/bug-icon.svg';
+import ratIcon from '@/assets/icons/rat-icon.svg';
+import boxIcon from '@/assets/icons/box-icon.svg';
+import squareIcon from '@/assets/icons/square-icon.svg';
+import treeIcon from '@/assets/icons/tree-icon.svg';
+import circleIcon from '@/assets/icons/circle-icon.svg';
 
 interface MapCanvasProps {
   mapUrl: string;
@@ -21,12 +27,12 @@ interface LegendItem {
 const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
 const AVAILABLE_ICONS = [
-  { icon: 'bug', label: 'Pest Activity', symbol: '◉' },
-  { icon: 'rat', label: 'Rodent Activity', symbol: '▲' },
-  { icon: 'box', label: 'Trap', symbol: '◆' },
-  { icon: 'square', label: 'Bait Box', symbol: '■' },
-  { icon: 'tree', label: 'Trim Trees', symbol: '▼' },
-  { icon: 'circle', label: 'Mosquito Station', symbol: '◯' },
+  { icon: 'bug', label: 'Pest Activity', symbol: '◉', svgPath: bugIcon },
+  { icon: 'rat', label: 'Rodent Activity', symbol: '▲', svgPath: ratIcon },
+  { icon: 'box', label: 'Trap', symbol: '◆', svgPath: boxIcon },
+  { icon: 'square', label: 'Bait Box', symbol: '■', svgPath: squareIcon },
+  { icon: 'tree', label: 'Trim Trees', symbol: '▼', svgPath: treeIcon },
+  { icon: 'circle', label: 'Mosquito Station', symbol: '◯', svgPath: circleIcon },
 ];
 
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
@@ -149,40 +155,43 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       if (!pt) return;
       
       if (currentTool === 'icon') {
-        const iconSymbol = iconData?.symbol || '📍';
-        const icon = new IText(iconSymbol, {
-          left: pt.x,
-          top: pt.y,
-          fontSize: 27,
-          fontFamily: 'sans-serif',
-          selectable: true,
-          editable: false, // Not editable, only moveable
-          backgroundColor: '#FFFFFF',
-          padding: 4,
-          stroke: '#000000',
-          strokeWidth: 1,
-          lockScalingFlip: true,
-          lockUniScaling: false,
+        const svgPath = iconData?.svgPath || bugIcon;
+        
+        // Load and add SVG icon
+        FabricImage.fromURL(svgPath).then((img) => {
+          img.set({
+            left: pt.x - 16,
+            top: pt.y - 16,
+            selectable: true,
+            hasControls: true,
+            hasBorders: true,
+            lockScalingFlip: true,
+            lockUniScaling: true,
+            scaleX: 1,
+            scaleY: 1,
+            // Store icon type for legend purposes
+            data: { iconType: currentIcon }
+          });
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          canvas.renderAll();
+          
+          console.log('Icon added to canvas:', currentIcon);
+          
+          // Add to legend if not already there
+          setLegendItems(prev => {
+            if (!prev.find(item => item.icon === currentIcon)) {
+              const defaultLabel = iconData?.label || 'Icon';
+              setShowLegend(true);
+              return [...prev, { icon: currentIcon, label: defaultLabel }];
+            }
+            return prev;
+          });
+          
+          clickPlacedRef.current = true;
+          setTool('select');
+          setShowIconPicker(false);
         });
-        canvas.add(icon);
-        canvas.setActiveObject(icon);
-        canvas.renderAll();
-        
-        console.log('Icon added to canvas:', iconSymbol);
-        
-        // Add to legend if not already there
-        setLegendItems(prev => {
-          if (!prev.find(item => item.icon === currentIcon)) {
-            const defaultLabel = iconData?.label || 'Icon';
-            setShowLegend(true);
-            return [...prev, { icon: currentIcon, label: defaultLabel }];
-          }
-          return prev;
-        });
-        
-        clickPlacedRef.current = true;
-        setTool('select');
-        setShowIconPicker(false);
       } else if (currentTool === 'rectangle') {
         // First create a rectangle for the border
         const rect = new FabricRect({
@@ -762,12 +771,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {AVAILABLE_ICONS.map((iconData) => {
-              const IconComponent = iconData.icon === 'bug' ? Bug :
-                                   iconData.icon === 'rat' ? Rat :
-                                   iconData.icon === 'box' ? Box :
-                                   iconData.icon === 'square' ? Square :
-                                   iconData.icon === 'tree' ? TreeDeciduous :
-                                   CircleDot;
               return (
                 <button
                   key={iconData.icon}
@@ -777,7 +780,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
                   }`}
                   title={iconData.label}
                 >
-                  <IconComponent className="w-5 h-5" />
+                  <img src={iconData.svgPath} alt={iconData.label} className="w-8 h-8" />
                 </button>
               );
             })}
@@ -816,7 +819,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               const iconData = AVAILABLE_ICONS.find(i => i.icon === item.icon);
               return (
                 <div key={index} className="flex items-center gap-1">
-                  <span className="text-sm w-6 text-center">{iconData?.symbol || '📍'}</span>
+                  <img src={iconData?.svgPath || bugIcon} alt={item.label} className="w-6 h-6" />
                   <Input
                     value={item.label}
                     onChange={(e) => updateLegendItem(index, 'label', e.target.value)}

@@ -289,7 +289,7 @@
 
   .print-section {
     margin: 0 0 2mm 0 !important; /* slightly smaller gap */
-    border-radius: 4mm !important;
+    border-radius: 2.5mm !important;
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
