@@ -412,8 +412,129 @@ const Report = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
+          <div className="flex items-center justify-between">
+            <img src={crestLogo} alt="Crest" className="h-10" />
+            <div className="flex gap-2 no-print">
+              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
+                <FileDown className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
+                <Share2 className="w-4 h-4" />
+              </Button>
+              <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
+                <Home className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Header */}
+      {!isMobile && (
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-3">
+          <div className="max-w-[1800px] mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-6 flex-1">
+                <div className="flex flex-col items-center">
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto" />
+                  <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
+                </div>
+                <div className="flex-1 ml-4">
+                  <h1 className="text-xl font-bold text-foreground mb-2">
+                    Initial Pest Report - Key Findings & Recommendations
+                  </h1>
+
+                  <div className="flex gap-12">
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
+                      <div className="space-y-0.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Name:</span>
+                          <Input
+                            value={editableCustomer}
+                            onChange={(e) => setEditableCustomer(e.target.value)}
+                            placeholder="Customer name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Address:</span>
+                          <span className="text-foreground">{displayAddress}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Service Date:</span>
+                          <Input
+                            type="date"
+                            value={editableServiceDate}
+                            onChange={(e) => setEditableServiceDate(e.target.value)}
+                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground text-xs mb-1">Technician Information:</p>
+                      <div className="space-y-0.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-28">Name:</span>
+                          <Input
+                            value={editableTech}
+                            onChange={(e) => setEditableTech(e.target.value)}
+                            placeholder="Technician name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-28">License Number:</span>
+                          <Input
+                            value={editableLicenseNumber}
+                            onChange={(e) => setEditableLicenseNumber(e.target.value)}
+                            placeholder="License #"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 no-print">
+                <Button onClick={exportToPDF} variant="default" size="sm">
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+                <Button onClick={handleShare} variant="outline" size="sm">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+                <Button onClick={() => navigate("/")} variant="outline" size="sm">
+                  <Home className="w-4 h-4 mr-2" />
+                  Home
+                </Button>
+              </div>
+            </div>
+
+            {/* Purpose Text */}
+            <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border">
+              <p className="text-xs text-foreground leading-tight">
+                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
+                size fits all" approach and there are often a number of factors that lead to increased pest activity.
+                We've created this educational report to help you and your family get one step closer to living a
+                pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
+                any questions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <div className={isMobile ? "flex flex-col" : "print-layout flex h-screen"}>
+      <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
         {/* Map Section */}
         <div className={isMobile ? "h-[60vh] relative pb-20" : "print-map-container w-[45%] relative"}>
           {isProcessing && (

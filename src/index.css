@@ -200,7 +200,13 @@
 
   /* HEADER – full width strip, larger fonts in print */
   .print-header {
-    display: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    margin: 0 0 2mm 0 !important;
+    padding: 3mm 6mm !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    background: hsl(var(--primary)) !important;
   }
 
   .print-header > * {
@@ -244,13 +250,13 @@
 
   /* MAIN GRID */
   .print-layout {
-    width: 100% !important;
+    width: calc(100% - 12mm) !important;
     max-width: none !important;
     display: grid !important;
     grid-template-columns: 58% 40% !important;
     column-gap: 2% !important;
-    height: 100% !important;
-    margin: 0 !important;
+    height: 140mm !important;
+    margin: 0 auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
   }
