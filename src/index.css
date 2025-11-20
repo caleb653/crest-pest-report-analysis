@@ -78,15 +78,15 @@
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 0.7rem !important;
-    font-size: 0.85rem !important;
+    padding: 0.25rem 0.9rem 0.25rem 1.1rem !important;
+    font-size: 0.9rem !important;          /* slightly larger on screen */
     font-weight: 700 !important;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
     color: hsl(var(--foreground)) !important;
-    padding: 0.35rem 0.7rem !important;
+    padding: 0.4rem 0.9rem 0.4rem 1.1rem !important; /* extra inset so text clears curves */
     font-size: 0.8rem !important;
   }
 
@@ -109,14 +109,14 @@
   }
 
   .print-header h1 {
-    font-size: 1.3rem !important;
+    font-size: 1.4rem !important;  /* up a notch on screen */
     font-weight: 700 !important;
     margin-bottom: 0.3rem !important;
     color: hsl(var(--foreground));
   }
 
   .print-header h2 {
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;   /* up slightly on screen */
     font-weight: 600 !important;
     color: hsl(var(--foreground));
   }
@@ -187,7 +187,7 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, larger fonts in print */
+  /* HEADER – full width strip, slightly larger fonts in print */
   .print-header {
     width: 100% !important;
     max-width: none !important;
@@ -205,12 +205,12 @@
   }
 
   .print-header h1 {
-    font-size: 20px !important; /* bigger title */
+    font-size: 21px !important; /* bumped from 20 */
     margin-bottom: 2mm !important;
   }
 
   .print-header h2 {
-    font-size: 13px !important;
+    font-size: 14px !important; /* bumped from 13 */
   }
 
   .print-header p,
@@ -230,7 +230,7 @@
     padding: 2mm 3mm !important;
   }
 
-  /* Make logo bigger in print */
+  /* Make logo a good letterhead size in print */
   .print-header img[alt="Crest Pest Control"] {
     height: 24mm !important;
     width: auto !important;
@@ -264,7 +264,7 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN – compact but full-width within column */
+  /* RIGHT COLUMN */
   .print-layout > div:last-child {
     height: 140mm !important;
     max-height: 140mm !important;
@@ -276,7 +276,7 @@
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important;   /* slightly smaller gap */
+    margin: 0 0 2mm 0 !important;
     border-radius: 4mm !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -287,7 +287,7 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1mm 3.5mm 1mm 4.5mm !important;
+    padding: 1mm 4mm 1mm 5.5mm !important; /* extra left pad */
     font-size: 11px !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
@@ -295,7 +295,7 @@
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1mm 4mm 1mm 4.5mm !important;
+    padding: 1mm 4.5mm 1mm 5.5mm !important; /* extra inset so text clears curved corners */
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
@@ -320,20 +320,20 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: keep compact, allow up to ~2–3 lines */
+  /* Textareas: compact, a bit more padding so text isn’t flush left */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
 
-    min-height: 1.3em !important;   /* 1 line minimum */
+    min-height: 1.3em !important;
     height: auto !important;
-    max-height: 2.6em !important;   /* slightly less height than before */
+    max-height: 2.6em !important;
 
     line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
 
-    padding: 0.4mm 1.8mm !important;
+    padding: 0.4mm 2.2mm !important;   /* more horizontal padding for indentation */
     margin: 0 !important;
 
     background: transparent !important;
@@ -344,7 +344,6 @@
   textarea {
     border: none !important;
     background: transparent !important;
-    padding: 0 !important;
     margin: 0 !important;
     font-weight: 500 !important;
   }
@@ -377,7 +376,6 @@
     gap: 1.5mm !important;
   }
 
-  /* Slightly tighter body copy under the main header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
