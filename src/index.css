@@ -3,53 +3,53 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------
-   CREST BRAND DESIGN SYSTEM (HSL ONLY) — ONE-PAGE PRINT EXPORT
+   CREST BRAND DESIGN SYSTEM (HSL ONLY)
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Neutrals */
-    --white: 0 0% 95%; /* #F2F2F2 */
-    --ink: 0 0% 16%; /* #2A2A2A */
+    /* Brand colors (from your palette) */
+    --background: 0 0% 95%; /* #F2F2F2 White */
+    --foreground: 0 0% 16%; /* #2A2A2A Black */
 
-    /* Sage scale */
-    --sage-50: 135 20% 96%;
-    --sage-100: 135 18% 92%;
-    --sage-200: 135 16% 86%;
-    --sage-300: 135 14% 80%; /* ≈ #C3D1C5 */
-    --sage-400: 135 13% 72%;
-    --sage-500: 135 12% 64%;
-    --sage-600: 135 11% 60%; /* ≈ #95A197 */
-    --sage-700: 135 9% 48%;
-    --sage-800: 135 8% 38%;
-    --sage-900: 135 8% 28%;
-
-    /* Semantics */
-    --background: var(--sage-50);
-    --foreground: var(--ink);
-
-    --primary: var(--sage-300);
-    --primary-foreground: 0 0% 10%;
-
-    --secondary: var(--sage-700);
-    --secondary-foreground: 0 0% 100%;
+    --primary: 135 13% 80%; /* #C3D1C5 Sage */
+    --secondary: 135 11% 60%; /* #95A197 Dark Sage */
 
     --card: 0 0% 100%;
-    --card-foreground: var(--ink);
+    --card-foreground: 0 0% 16%;
 
-    --muted: var(--sage-100);
-    --muted-foreground: 0 0% 35%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 16%;
 
-    --accent: var(--sage-400);
-    --accent-foreground: var(--ink);
+    --muted: 135 10% 90%;
+    --muted-foreground: 135 8% 40%;
 
-    --border: var(--sage-200);
-    --ring: var(--sage-400);
+    --accent: 135 13% 70%;
+    --accent-foreground: 0 0% 16%;
 
-    --radius: 0.6rem;
-    --shadow-soft: 0 4px 12px hsl(0 0% 0% / 0.08);
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 135 10% 85%;
+    --input: 135 10% 85%;
+    --ring: 135 13% 80%;
+
+    --radius: 0.5rem;
+
+    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
+    --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
   }
 
-  /* Global */
+  .dark {
+    --background: 0 0% 12%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 16%;
+    --card-foreground: 0 0% 95%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family:
@@ -63,287 +63,342 @@
   input,
   textarea {
     background: hsl(0 0% 100%) !important;
-    border: 1px solid hsl(var(--border)) !important;
     border-radius: 0.4rem !important;
+    border: 1px solid hsl(var(--border)) !important;
     padding: 0.25rem 0.4rem !important;
     font-size: 0.85rem !important;
   }
 
-  /* Section cards */
+  /* On-screen callout sections on the right */
   .print-section {
-    border: 1px solid hsl(var(--sage-200));
-    border-radius: 0.6rem;
-    background: hsl(var(--card));
-    box-shadow: var(--shadow-soft);
-    margin-bottom: 0.6rem;
-  }
-  .print-section-header {
-    background: hsl(var(--sage-700));
-    color: hsl(0 0% 100%);
-    border-bottom: 2px solid hsl(var(--sage-300));
-    padding: 0.32rem 0.9rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-  }
-  .print-section-content {
-    background: hsl(var(--card));
-    color: hsl(var(--ink));
-    padding: 0.5rem 0.9rem;
-    font-size: 0.8rem;
-  }
-
-  /* Header */
-  .print-header {
-    background: hsl(var(--sage-100));
-    border: 1px solid hsl(var(--sage-200));
+    padding: 0 !important;
+    margin-bottom: 0.7rem !important;
     border-radius: 0.75rem;
+    overflow: hidden;
+    background: transparent !important;
     box-shadow: var(--shadow-soft);
-    padding: 0.6rem 1.2rem;
-  }
-  .print-header h1 {
-    font-size: 1.28rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin-bottom: 0.2rem;
-  }
-  .print-header h2 {
-    font-size: 0.92rem;
-    color: hsl(var(--sage-900));
-    font-weight: 600;
+    border: 1px solid hsl(var(--border));
   }
 
-  /* Pills / Legend chips */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.08rem 0.42rem;
-    border-radius: 999px;
-    background: hsl(var(--sage-100));
-    border: 1px solid hsl(var(--sage-300));
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: hsl(var(--sage-800));
-    margin-right: 0.25rem;
-  }
-  .map-legend-badge {
-    display: inline-flex;
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    color: hsl(0 0% 100%) !important;
+    padding: 0.25rem 1.25rem !important; /* more horizontal padding */
+    font-size: 0.75rem !important; /* ~12px */
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    border-bottom: 2px solid hsl(var(--primary)) !important; /* tab accent */
+    display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.12rem 0.42rem;
-    border-radius: 999px;
-    background: hsl(var(--sage-100));
-    border: 1px solid hsl(var(--sage-300));
-    font-size: 0.7rem;
-    font-weight: 600;
-  }
-  .map-pin--bait {
-    background: hsl(var(--sage-700));
-    color: white;
-  }
-  .map-pin--entry {
-    background: hsl(var(--sage-400));
-  }
-  .map-pin--tree {
-    background: hsl(var(--sage-300));
   }
 
-  .checklist {
-    list-style: none;
-    padding-left: 0;
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
+    padding: 0.35rem 1.25rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 0.9rem !important;
+  }
+
+  .print-section-content li {
+    margin-bottom: 0.12rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .print-header {
+    background: hsl(var(--primary));
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .print-header h1 {
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.3rem !important;
+    color: hsl(var(--foreground));
+  }
+
+  .print-header h2 {
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    color: hsl(var(--foreground));
+  }
+}
+
+/* -------------------------------------------------------------
+   PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
+------------------------------------------------------------- */
+@media print {
+  @page {
+    size: A4 landscape;
     margin: 0;
   }
-  .checklist li {
+
+  .no-print,
+  button,
+  [class*="toolbar"],
+  [role="status"],
+  .sonner,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--foreground)) !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Kill Tailwind width caps / centering that fight us */
+  [class*="max-w-"] {
+    max-width: none !important;
+  }
+
+  [class*="mx-auto"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #root,
+  #__next,
+  body > div,
+  body > main,
+  .container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  * {
+    transition: none !important;
+    animation: none !important;
+    page-break-inside: avoid !important;
+    box-sizing: border-box !important;
+  }
+
+  iframe,
+  canvas {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* HEADER – full width strip, larger fonts in print */
+  .print-header {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    margin: 0 0 2mm 0 !important;
+    padding: 3mm 6mm !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    background: hsl(var(--primary)) !important;
+  }
+
+  .print-header > * {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .print-header h1 {
+    font-size: 20px !important; /* bigger title */
+    margin-bottom: 2mm !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .print-header h2 {
+    font-size: 13px !important;
+  }
+
+  .print-header p,
+  .print-header span,
+  .print-header input {
+    font-size: 12px !important;
+    line-height: 1.15 !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .print-header > div {
+    background: hsl(0 0% 100% / 0.7) !important;
+    border-radius: 3px !important;
+    padding: 2mm 3mm !important;
+  }
+
+  /* Make logo bigger in print */
+  .print-header img[alt="Crest Pest Control"] {
+    height: 24mm !important;
+    width: auto !important;
+  }
+
+  /* MAIN GRID */
+  .print-layout {
+    width: calc(100% - 12mm) !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: 58% 40% !important;
+    column-gap: 2% !important;
+    height: 140mm !important;
+    margin: 0 auto 0 auto !important;
+    padding: 0 !important;
+    align-items: flex-start !important;
+  }
+
+  /* MAP */
+  .print-map-container {
+    border-radius: 0.5rem;
+    border: 1px solid hsl(var(--secondary)) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
+    overflow: hidden !important;
+    background: hsl(135 10% 90%) !important;
+    height: 140mm !important;
+    width: 100% !important;
+  }
+
+  .print-map-container canvas {
+    transform: translate(2%, -5%) !important;
+  }
+
+  /* RIGHT COLUMN – compact but full-width within column */
+  .print-layout > div:last-child {
+    height: 140mm !important;
+    max-height: 140mm !important;
+    overflow: hidden !important;
+    padding-top: 2mm !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-section {
+    margin: 0 0 2mm 0 !important; /* slightly smaller gap */
+    border-radius: 2.5mm !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 1px solid hsl(var(--secondary)) !important;
+    width: 100% !important;
+  }
+
+  .print-section-header {
+    background: hsl(var(--secondary)) !important;
+    padding: 1mm 3.5mm 1mm 4.5mm !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    line-height: 1.05 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    border-bottom: 2px solid hsl(var(--primary)) !important;
     display: flex;
-    gap: 0.5rem;
-    align-items: flex-start;
-    padding: 0.2rem 0;
-  }
-  .check-icon {
-    width: 0.85rem;
-    height: 0.85rem;
-    flex: none;
-    border-radius: 3px;
-    border: 1px solid hsl(var(--sage-400));
-    background: hsl(var(--sage-100));
+    align-items: center;
+    gap: 0.35rem;
   }
 
-  /* -----------------------------------------------------------
-     PRINT — lock to prior page dimensions (A4 landscape) and fit
-     Everything is sized to a single page (297mm × 210mm).
-  ----------------------------------------------------------- */
-  @media print {
-    /* Page size from prior version */
-    @page {
-      size: A4 landscape;
-      margin: 0;
-    }
-    html,
-    body {
-      background: hsl(var(--sage-50)) !important;
-      color: hsl(var(--ink)) !important;
-      print-color-adjust: exact;
-      -webkit-print-color-adjust: exact;
-      height: 210mm !important;
-      max-height: 210mm !important;
-      overflow: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
+  .print-section-content {
+    background: hsl(var(--primary)) !important;
+    padding: 1mm 4mm 1mm 4.5mm !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
 
-    /* Vars to keep layout on one sheet */
-    :root {
-      /* A4 landscape height = 210mm */
-      --sheet-h: 210mm;
-      --header-h: 32mm; /* compact header */
-      --gutters: 4mm; /* vertical breathing room */
-      --body-h: calc(var(--sheet-h) - var(--header-h) - var(--gutters));
-      --map-h: calc(var(--body-h)); /* left column height */
-    }
+  .print-section-content ul {
+    margin: 0 !important;
+    padding-left: 4mm !important;
+  }
 
-    /* Remove UI cruft */
-    .no-print,
-    button,
-    [class*="toolbar"],
-    [role="status"],
-    .sonner,
-    [data-sonner-toaster] {
-      display: none !important;
-    }
-    [class*="max-w-"],
-    [class*="mx-auto"] {
-      max-width: none !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-    }
-    * {
-      transition: none !important;
-      animation: none !important;
-      page-break-inside: avoid !important;
-      box-sizing: border-box !important;
-    }
+  .print-section-content li {
+    margin: 0 0 0.3mm 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
 
-    /* Header strip spans full width and fixed height */
-    .print-header {
-      width: 100% !important;
-      height: var(--header-h) !important;
-      border-radius: 0 !important;
-      margin: 0 !important;
-      padding: 3mm 6mm !important;
-      box-shadow: none !important;
-      background: hsl(var(--sage-100)) !important;
-    }
-    .print-header h1 {
-      font-size: 19px !important;
-      margin-bottom: 2mm !important;
-    }
-    .print-header h2,
-    .print-header p,
-    .print-header span,
-    .print-header input {
-      font-size: 12px !important;
-      line-height: 1.12 !important;
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
+  .print-section-content,
+  .print-section-content * {
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500 !important;
+  }
 
-    /* Main grid — same columns as before, tighter gap; fixed height */
-    .print-layout {
-      width: calc(100% - 12mm) !important;
-      display: grid !important;
-      grid-template-columns: 60% 38% !important;
-      column-gap: 2% !important;
-      height: var(--body-h) !important;
-      margin: 0 auto !important;
-      padding: 0 !important;
-      align-items: start !important;
-    }
+  /* Textareas: keep compact, allow up to ~2–3 lines, with slight indent
+     so text doesn’t kiss the rounded corners */
+  .print-layout > div:last-child .print-section-content textarea {
+    display: block !important;
+    width: 100% !important;
 
-    /* Left: map container fixed height */
-    .print-map-container {
-      height: var(--map-h) !important;
-      width: 100% !important;
-      border-radius: 4mm !important;
-      border: 1px solid hsl(var(--sage-700)) !important;
-      background: hsl(135 10% 90%) !important;
-      overflow: hidden !important;
-      box-shadow: none !important;
-    }
-    .print-map-container canvas {
-      transform: translate(1%, -4%) !important;
-    }
+    min-height: 1.3em !important; /* 1 line minimum */
+    height: auto !important;
+    max-height: 2.6em !important; /* ≈2–3 visible lines */
 
-    /* Right column: stack all cards, fixed total height with internal scrolling avoided */
-    .print-layout > div:last-child {
-      height: var(--body-h) !important;
-      max-height: var(--body-h) !important;
-      overflow: hidden !important;
-      padding: 2mm 0 0 !important;
-      width: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 2mm !important;
-    }
+    line-height: 1.1 !important;
+    overflow: hidden !important;
+    resize: none !important;
 
-    /* Cards tighter for print */
-    .print-section {
-      margin: 0 !important;
-      border-radius: 3mm !important;
-      box-shadow: none !important;
-      border: 1px solid hsl(var(--sage-600)) !important;
-    }
-    .print-section-header {
-      padding: 1.2mm 4mm !important;
-      font-size: 12.5px !important;
-      line-height: 1.05 !important;
-      border-bottom: 2px solid hsl(var(--sage-300)) !important;
-    }
-    .print-section-content {
-      background: white !important;
-      padding: 1.8mm 4mm !important;
-      font-size: 10.5px !important;
-      line-height: 1.08 !important;
-    }
+    padding: 0.4mm 1.8mm !important;
+    margin: 0 !important;
 
-    /* Inputs compact */
-    input,
-    textarea {
-      border: none !important;
-      background: transparent !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      font-size: 10.5px !important;
-      line-height: 1.08 !important;
-      font-weight: 500 !important;
-    }
-    /* Limit textareas to 2–3 lines to guarantee fit */
-    .print-layout > div:last-child .print-section-content textarea {
-      display: block !important;
-      width: 100% !important;
-      min-height: 1.2em !important;
-      max-height: 2.6em !important;
-      overflow: hidden !important;
-      resize: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: none !important;
-      background: transparent !important;
-    }
+    background: transparent !important;
+    border: none !important;
+  }
 
-    /* Tighten gaps inside right column to ensure one-page fit */
-    .print-layout .p-2,
-    .print-layout .p-3,
-    .print-layout .p-4,
-    .print-layout .py-3,
-    .print-layout .py-4,
-    .print-layout .p-6,
-    .print-layout .md\:p-3,
-    .print-layout .md\:p-6,
-    .print-layout .pb-24 {
-      padding: 0 !important;
-    }
+  input,
+  textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+  }
+
+  [class*="Card"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .print-layout .p-2,
+  .print-layout .p-3,
+  .print-layout .p-4,
+  .print-layout .py-3,
+  .print-layout .py-4,
+  .print-layout .p-6,
+  .print-layout .md\:p-3,
+  .print-layout .md\:p-6,
+  .print-layout .pb-24 {
+    padding: 0 !important;
+  }
+
+  .print-layout .space-y-1,
+  .print-layout .space-y-2,
+  .print-layout .space-y-3,
+  .print-layout .space-y-6 {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5mm !important;
+  }
+
+  /* Slightly tighter body copy under the main header */
+  .print-header p,
+  .print-header span {
+    line-height: 1.1 !important;
   }
 }
