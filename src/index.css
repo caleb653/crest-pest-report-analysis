@@ -52,7 +52,12 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
   }
 
   input,
@@ -78,15 +83,21 @@
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 0.9rem 0.25rem 1.1rem !important;
-    font-size: 0.9rem !important;          /* slightly larger on screen */
+    padding: 0.25rem 1.25rem !important; /* more horizontal padding */
+    font-size: 0.75rem !important; /* ~12px */
     font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    border-bottom: 2px solid hsl(var(--primary)) !important; /* tab accent */
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
     color: hsl(var(--foreground)) !important;
-    padding: 0.4rem 0.9rem 0.4rem 1.1rem !important; /* extra inset so text clears curves */
+    padding: 0.35rem 1.25rem !important;
     font-size: 0.8rem !important;
   }
 
@@ -109,14 +120,14 @@
   }
 
   .print-header h1 {
-    font-size: 1.4rem !important;  /* up a notch on screen */
+    font-size: 1.3rem !important;
     font-weight: 700 !important;
     margin-bottom: 0.3rem !important;
     color: hsl(var(--foreground));
   }
 
   .print-header h2 {
-    font-size: 1rem !important;   /* up slightly on screen */
+    font-size: 0.95rem !important;
     font-weight: 600 !important;
     color: hsl(var(--foreground));
   }
@@ -187,7 +198,7 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, slightly larger fonts in print */
+  /* HEADER – full width strip, larger fonts in print */
   .print-header {
     width: 100% !important;
     max-width: none !important;
@@ -205,12 +216,13 @@
   }
 
   .print-header h1 {
-    font-size: 21px !important; /* bumped from 20 */
+    font-size: 20px !important; /* bigger title */
     margin-bottom: 2mm !important;
+    letter-spacing: -0.01em !important;
   }
 
   .print-header h2 {
-    font-size: 14px !important; /* bumped from 13 */
+    font-size: 13px !important;
   }
 
   .print-header p,
@@ -230,7 +242,7 @@
     padding: 2mm 3mm !important;
   }
 
-  /* Make logo a good letterhead size in print */
+  /* Make logo bigger in print */
   .print-header img[alt="Crest Pest Control"] {
     height: 24mm !important;
     width: auto !important;
@@ -264,7 +276,7 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN */
+  /* RIGHT COLUMN – compact but full-width within column */
   .print-layout > div:last-child {
     height: 140mm !important;
     max-height: 140mm !important;
@@ -276,7 +288,7 @@
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important;
+    margin: 0 0 2mm 0 !important; /* slightly smaller gap */
     border-radius: 4mm !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -287,15 +299,21 @@
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
-    padding: 1mm 4mm 1mm 5.5mm !important; /* extra left pad */
+    padding: 1mm 3.5mm 1mm 4.5mm !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     line-height: 1.05 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    border-bottom: 2px solid hsl(var(--primary)) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .print-section-content {
     background: hsl(var(--primary)) !important;
-    padding: 1mm 4.5mm 1mm 5.5mm !important; /* extra inset so text clears curved corners */
+    padding: 1mm 4mm 1mm 4.5mm !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
@@ -320,20 +338,21 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: compact, a bit more padding so text isn’t flush left */
+  /* Textareas: keep compact, allow up to ~2–3 lines, with slight indent
+     so text doesn’t kiss the rounded corners */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
 
-    min-height: 1.3em !important;
+    min-height: 1.3em !important; /* 1 line minimum */
     height: auto !important;
-    max-height: 2.6em !important;
+    max-height: 2.6em !important; /* ≈2–3 visible lines */
 
     line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
 
-    padding: 0.4mm 2.2mm !important;   /* more horizontal padding for indentation */
+    padding: 0.4mm 1.8mm !important;
     margin: 0 !important;
 
     background: transparent !important;
@@ -344,6 +363,7 @@
   textarea {
     border: none !important;
     background: transparent !important;
+    padding: 0 !important;
     margin: 0 !important;
     font-weight: 500 !important;
   }
@@ -376,6 +396,7 @@
     gap: 1.5mm !important;
   }
 
+  /* Slightly tighter body copy under the main header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
