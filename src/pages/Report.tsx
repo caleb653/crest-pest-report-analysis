@@ -67,7 +67,10 @@ const Report = () => {
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
+  const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
+  const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (reportId) {
@@ -410,6 +413,62 @@ const Report = () => {
     });
   };
 
+  const handleCustomMapUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setCustomMapImage(result);
+      toast.success('Custom map image uploaded');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePropertyImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const fileArray = Array.from(files).slice(0, 5);
+    
+    if (fileArray.some(file => !file.type.startsWith('image/'))) {
+      toast.error('Please upload only image files');
+      return;
+    }
+    
+    const newImages: Array<{ image: string; caption?: string }> = [];
+    let loadedCount = 0;
+    
+    fileArray.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        newImages.push({ image: result });
+        loadedCount++;
+        
+        if (loadedCount === fileArray.length) {
+          setPropertyImages(newImages);
+          toast.success(`${fileArray.length} image(s) uploaded`);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const updateImageCaption = (index: number, caption: string) => {
+    setPropertyImages(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], caption };
+      return updated;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -546,9 +605,29 @@ const Report = () => {
             </div>
           )}
 
-          {mapUrl ? (
+          {mapUrl || customMapImage ? (
             <div className="relative h-full w-full">
-              <MapCanvas mapUrl={mapUrl} onSave={setMapData} initialData={mapData} />
+              <MapCanvas mapUrl={customMapImage || mapUrl} onSave={setMapData} initialData={mapData} />
+
+              {/* Upload custom map button */}
+              <div className="no-print absolute top-4 right-4 z-20">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => document.getElementById('custom-map-upload')?.click()}
+                  title="Upload custom map image"
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Upload Map
+                </Button>
+                <input
+                  id="custom-map-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCustomMapUpload}
+                  className="hidden"
+                />
+              </div>
 
               {/* Pan controls */}
               <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
@@ -724,6 +803,69 @@ const Report = () => {
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Second Page - Property Images */}
+      <div className="print-page-break bg-background">
+        <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
+          {/* Page Header */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
+            <div className="flex items-center gap-4">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-16" />
+              <h1 className="text-2xl font-bold text-foreground">Property Images</h1>
+            </div>
+          </div>
+
+          {/* Upload Section */}
+          <div className="no-print mb-6">
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="lg">
+              <FileDown className="w-5 h-5 mr-2" />
+              Upload Images (up to 5)
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePropertyImagesUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* Property Images Grid */}
+          {propertyImages.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {propertyImages.map((item, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                    <img
+                      src={item.image}
+                      alt={`Property ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {item.caption && (
+                    <div className="p-2 bg-card rounded border border-border">
+                      <p className="text-xs text-foreground">{item.caption}</p>
+                    </div>
+                  )}
+                  <Input
+                    value={item.caption || ""}
+                    onChange={(e) => updateImageCaption(index, e.target.value)}
+                    placeholder="Add caption (optional)"
+                    className="no-print text-xs h-8"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {propertyImages.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No images uploaded yet. Click the button above to upload up to 5 images.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

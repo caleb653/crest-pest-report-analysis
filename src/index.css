@@ -407,4 +407,10 @@
   .print-header span {
     line-height: 1.1 !important;
   }
+
+  /* Page break for second page */
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: always !important;
+  }
 }
