@@ -19,6 +19,7 @@ export type Database = {
           address: string | null
           created_at: string | null
           created_by: string | null
+          custom_map_url: string | null
           customer_name: string | null
           customer_phone: string | null
           findings: Json | null
@@ -27,6 +28,7 @@ export type Database = {
           map_url: string | null
           next_steps: Json | null
           notes: string | null
+          property_images: Json | null
           recommendations: Json | null
           screenshots: Json | null
           technician_name: string
@@ -36,6 +38,7 @@ export type Database = {
           address?: string | null
           created_at?: string | null
           created_by?: string | null
+          custom_map_url?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           findings?: Json | null
@@ -44,6 +47,7 @@ export type Database = {
           map_url?: string | null
           next_steps?: Json | null
           notes?: string | null
+          property_images?: Json | null
           recommendations?: Json | null
           screenshots?: Json | null
           technician_name: string
@@ -53,6 +57,7 @@ export type Database = {
           address?: string | null
           created_at?: string | null
           created_by?: string | null
+          custom_map_url?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           findings?: Json | null
@@ -61,6 +66,7 @@ export type Database = {
           map_url?: string | null
           next_steps?: Json | null
           notes?: string | null
+          property_images?: Json | null
           recommendations?: Json | null
           screenshots?: Json | null
           technician_name?: string
