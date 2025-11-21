@@ -578,16 +578,16 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   return (
     <div className="relative w-full h-full">
       {/* Map - either static image or iframe */}
-      {mapUrl.startsWith('data:image') ? (
+      {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
         <img
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover"
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-muted"
           style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',
             zIndex: 0
           }}
           src={mapUrl}
-          alt="Satellite map"
+          alt="Custom map"
         />
       ) : (
         <iframe
