@@ -4,39 +4,41 @@
 
 /* -------------------------------------------------------------
    CREST BRAND DESIGN SYSTEM (HSL ONLY)
+   (Colors, shading, and border weights refined only)
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Brand colors (from your palette) */
-    --background: 0 0% 95%; /* #F2F2F2 White */
-    --foreground: 0 0% 16%; /* #2A2A2A Black */
+    /* Brand colors (refined for contrast and print) */
+    --background: 0 0% 96%; /* slightly brighter than #F2F2F2 for cleaner page tone */
+    --foreground: 0 0% 14%; /* slightly deeper than #2A2A2A for legibility */
 
-    --primary: 135 13% 80%; /* #C3D1C5 Sage */
-    --secondary: 135 11% 60%; /* #95A197 Dark Sage */
+    --primary: 135 14% 78%; /* Sage, a touch deeper for AA contrast on white */
+    --secondary: 135 12% 55%; /* Dark Sage, slightly deeper for strong headers */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 16%;
+    --card-foreground: 0 0% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 16%;
+    --popover-foreground: 0 0% 14%;
 
-    --muted: 135 10% 90%;
-    --muted-foreground: 135 8% 40%;
+    --muted: 135 12% 89%; /* softened tint */
+    --muted-foreground: 135 8% 38%;
 
-    --accent: 135 13% 70%;
-    --accent-foreground: 0 0% 16%;
+    --accent: 135 14% 72%;
+    --accent-foreground: 0 0% 14%;
 
-    --destructive: 0 70% 50%;
+    --destructive: 0 70% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 135 10% 85%;
-    --input: 135 10% 85%;
-    --ring: 135 13% 80%;
+    --border: 135 12% 78%; /* slightly darker than before for definition */
+    --input: 135 12% 78%;
+    --ring: 135 14% 72%;
 
     --radius: 0.5rem;
 
-    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
-    --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
+    /* Softer, more consistent shadow set (kept subtle for print) */
+    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.05);
+    --shadow-mid: 0 4px 10px hsl(0 0% 0% / 0.08);
   }
 
   .dark {
@@ -64,7 +66,7 @@
   textarea {
     background: hsl(0 0% 100%) !important;
     border-radius: 0.4rem !important;
-    border: 1px solid hsl(var(--border)) !important;
+    border: 1.25px solid hsl(var(--border)) !important; /* refined weight */
     padding: 0.25rem 0.4rem !important;
     font-size: 0.85rem !important;
   }
@@ -77,7 +79,7 @@
     overflow: hidden;
     background: transparent !important;
     box-shadow: var(--shadow-soft);
-    border: 1px solid hsl(var(--border));
+    border: 1.25px solid hsl(var(--border)); /* refined weight */
   }
 
   .print-section-header {
@@ -116,7 +118,7 @@
     border-radius: 0.75rem;
     padding: 0.75rem 1.5rem;
     box-shadow: var(--shadow-soft);
-    border: 1px solid hsl(var(--border));
+    border: 1.25px solid hsl(var(--border)); /* refined weight */
   }
 
   .print-header h1 {
@@ -135,6 +137,7 @@
 
 /* -------------------------------------------------------------
    PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
+   (Only color/border/shadow adjustments; layout unchanged)
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -205,8 +208,9 @@
     border-radius: 0 !important;
     margin: 0 0 2mm 0 !important;
     padding: 3mm 6mm !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06) !important; /* slightly softer */
     background: hsl(var(--primary)) !important;
+    border: 1.25px solid hsl(var(--border)) !important; /* refined weight */
   }
 
   .print-header > * {
@@ -237,9 +241,10 @@
   }
 
   .print-header > div {
-    background: hsl(0 0% 100% / 0.7) !important;
+    background: hsl(0 0% 100% / 0.72) !important; /* slightly clearer overlay */
     border-radius: 3px !important;
     padding: 2mm 3mm !important;
+    border: 1px solid hsl(var(--border)) !important; /* subtle delineation */
   }
 
   /* Make logo bigger in print */
@@ -264,10 +269,10 @@
   /* MAP */
   .print-map-container {
     border-radius: 0.5rem;
-    border: 1px solid hsl(var(--secondary)) !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.1);
+    border: 1.25px solid hsl(var(--secondary)) !important; /* refined weight */
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08); /* marginally stronger map edge */
     overflow: hidden !important;
-    background: hsl(135 10% 90%) !important;
+    background: hsl(135 12% 90%) !important; /* slightly clearer map surround */
     height: 140mm !important;
     width: 100% !important;
   }
@@ -293,7 +298,7 @@
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
-    border: 1px solid hsl(var(--secondary)) !important;
+    border: 1.25px solid hsl(var(--secondary)) !important; /* refined weight */
     width: 100% !important;
   }
 
@@ -316,6 +321,7 @@
     padding: 1mm 4mm 1mm 4.5mm !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
+    color: hsl(var(--foreground)) !important;
   }
 
   .print-section-content ul {
