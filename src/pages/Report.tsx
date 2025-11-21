@@ -153,6 +153,15 @@ const Report = () => {
 
       setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
 
+      // Load custom map and property images
+      if (data.custom_map_url) {
+        setCustomMapImage(data.custom_map_url);
+      }
+      
+      if (data.property_images) {
+        setPropertyImages(data.property_images as Array<{ image: string; caption?: string }>);
+      }
+
       // Extract coordinates from map_url if available, otherwise geocode
       if (data.map_url) {
         const latMatch = data.map_url.match(/mlat=([-\d.]+)/);
@@ -327,6 +336,8 @@ const Report = () => {
           ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
           : null,
         map_data: mapPayload,
+        custom_map_url: customMapImage,
+        property_images: propertyImages,
       };
 
       if (reportId) {
@@ -413,7 +424,7 @@ const Report = () => {
     });
   };
 
-  const handleCustomMapUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -422,16 +433,30 @@ const Report = () => {
       return;
     }
     
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      setCustomMapImage(result);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${reportId || 'temp'}/custom-map/${fileName}`;
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('report-images')
+        .upload(filePath, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('report-images')
+        .getPublicUrl(filePath);
+      
+      setCustomMapImage(publicUrl);
       toast.success('Custom map image uploaded');
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading map:', error);
+      toast.error('Failed to upload map image');
+    }
   };
 
-  const handlePropertyImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePropertyImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     
@@ -442,23 +467,32 @@ const Report = () => {
       return;
     }
     
-    const newImages: Array<{ image: string; caption?: string }> = [];
-    let loadedCount = 0;
-    
-    fileArray.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        newImages.push({ image: result });
-        loadedCount++;
+    try {
+      const uploadPromises = fileArray.map(async (file) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${reportId || 'temp'}/property/${fileName}`;
         
-        if (loadedCount === fileArray.length) {
-          setPropertyImages(newImages);
-          toast.success(`${fileArray.length} image(s) uploaded`);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+        const { error: uploadError } = await supabase.storage
+          .from('report-images')
+          .upload(filePath, file, { upsert: true });
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('report-images')
+          .getPublicUrl(filePath);
+        
+        return { image: publicUrl, caption: '' };
+      });
+      
+      const uploadedImages = await Promise.all(uploadPromises);
+      setPropertyImages(uploadedImages);
+      toast.success(`${fileArray.length} image(s) uploaded`);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      toast.error('Failed to upload images');
+    }
   };
 
   const updateImageCaption = (index: number, caption: string) => {
