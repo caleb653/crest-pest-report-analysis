@@ -641,7 +641,12 @@ const Report = () => {
 
           {mapUrl || customMapImage ? (
             <div className="relative h-full w-full">
-              <MapCanvas mapUrl={customMapImage || mapUrl} onSave={setMapData} initialData={mapData} />
+              <MapCanvas 
+                key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                mapUrl={customMapImage || mapUrl} 
+                onSave={setMapData} 
+                initialData={mapData} 
+              />
 
               {/* Upload custom map button */}
               <div className="no-print absolute top-4 right-4 z-20">
