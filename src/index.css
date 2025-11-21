@@ -428,3 +428,14 @@
     page-break-after: auto !important;
   }
 }
+
+@media print {
+  /* Force next section fully onto page 2 */
+  .print-page-break {
+    display: block !important;
+    page-break-before: always !important;
+    break-before: page !important;
+    margin-top: 12mm !important; /* ensures enough gap to push content cleanly */
+  }
+}
+
