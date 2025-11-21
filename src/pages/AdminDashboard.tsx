@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { LogOut, FileText, Calendar, User, Trash2 } from "lucide-react";
+import { LogOut, FileText, Calendar, User } from "lucide-react";
 import crestLogo from "@/assets/crest-logo-black.png";
 
 interface Report {
@@ -61,28 +61,6 @@ const AdminDashboard = () => {
     navigate(`/report/${reportId}`);
   };
 
-  const handleDelete = async (reportId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    
-    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('reports')
-        .delete()
-        .eq('id', reportId);
-
-      if (error) throw error;
-      
-      toast.success("Report deleted successfully");
-      loadReports(); // Reload the reports list
-    } catch (error: any) {
-      toast.error("Failed to delete report");
-      console.error(error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,8 +103,7 @@ const AdminDashboard = () => {
                     onClick={() => viewReport(report.id)}
                   >
                     <CardContent className="p-4 md:p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 flex-1">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                         <div className="flex items-center gap-2">
                           <User className="w-5 h-5 text-primary flex-shrink-0" />
                           <div className="min-w-0">
@@ -152,16 +129,6 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         </div>
-                      </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDelete(report.id, e)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
-                          title="Delete report"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </Button>
                       </div>
                       {report.address && (
                         <div className="mt-3 text-sm text-muted-foreground truncate">
