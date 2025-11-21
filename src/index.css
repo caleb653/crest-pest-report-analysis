@@ -9,11 +9,11 @@
 @layer base {
   :root {
     /* Brand colors (refined for contrast and print) */
-    --background: 0 0% 96%; /* slightly brighter than #F2F2F2 for cleaner page tone */
-    --foreground: 0 0% 14%; /* slightly deeper than #2A2A2A for legibility */
+    --background: 0 0% 96%;
+    --foreground: 0 0% 14%;
 
-    --primary: 135 14% 78%; /* Sage, a touch deeper for AA contrast on white */
-    --secondary: 135 12% 55%; /* Dark Sage, slightly deeper for strong headers */
+    --primary: 135 14% 78%; /* Sage */
+    --secondary: 135 12% 55%; /* Dark Sage */
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 14%;
@@ -21,7 +21,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 14%;
 
-    --muted: 135 12% 89%; /* softened tint */
+    --muted: 135 12% 89%;
     --muted-foreground: 135 8% 38%;
 
     --accent: 135 14% 72%;
@@ -30,13 +30,12 @@
     --destructive: 0 70% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 135 12% 78%; /* slightly darker than before for definition */
+    --border: 135 12% 78%;
     --input: 135 12% 78%;
     --ring: 135 14% 72%;
 
     --radius: 0.5rem;
 
-    /* Softer, more consistent shadow set (kept subtle for print) */
     --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.05);
     --shadow-mid: 0 4px 10px hsl(0 0% 0% / 0.08);
   }
@@ -66,12 +65,11 @@
   textarea {
     background: hsl(0 0% 100%) !important;
     border-radius: 0.4rem !important;
-    border: 1.25px solid hsl(var(--border)) !important; /* refined weight */
+    border: 1.25px solid hsl(var(--border)) !important;
     padding: 0.25rem 0.4rem !important;
     font-size: 0.85rem !important;
   }
 
-  /* On-screen callout sections on the right */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.7rem !important;
@@ -79,18 +77,18 @@
     overflow: hidden;
     background: transparent !important;
     box-shadow: var(--shadow-soft);
-    border: 1.25px solid hsl(var(--border)); /* refined weight */
+    border: 1.25px solid hsl(var(--border));
   }
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 1.25rem !important; /* more horizontal padding */
-    font-size: 0.75rem !important; /* ~12px */
+    padding: 0.25rem 1.25rem !important;
+    font-size: 0.75rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important; /* tab accent */
+    border-bottom: 2px solid hsl(var(--primary)) !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -118,7 +116,7 @@
     border-radius: 0.75rem;
     padding: 0.75rem 1.5rem;
     box-shadow: var(--shadow-soft);
-    border: 1.25px solid hsl(var(--border)); /* refined weight */
+    border: 1.25px solid hsl(var(--border));
   }
 
   .print-header h1 {
@@ -137,7 +135,6 @@
 
 /* -------------------------------------------------------------
    PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
-   (Only color/border/shadow adjustments; layout unchanged)
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -160,14 +157,13 @@
     color: hsl(var(--foreground)) !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    height: 100% !important;
-    max-height: 100% !important;
+    height: auto !important; /* CHANGED: allow multi-page */
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: visible !important; /* CHANGED: show all pages */
   }
 
-  /* Kill Tailwind width caps / centering that fight us */
   [class*="max-w-"] {
     max-width: none !important;
   }
@@ -193,7 +189,7 @@
     animation: none !important;
     box-sizing: border-box !important;
   }
-  
+
   *:not(.print-page-break) {
     page-break-inside: avoid !important;
   }
@@ -204,16 +200,15 @@
     -webkit-print-color-adjust: exact;
   }
 
-  /* HEADER – full width strip, larger fonts in print */
   .print-header {
     width: 100% !important;
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 0 2mm 0 !important;
     padding: 3mm 6mm !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06) !important; /* slightly softer */
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06) !important;
     background: hsl(var(--primary)) !important;
-    border: 1.25px solid hsl(var(--border)) !important; /* refined weight */
+    border: 1.25px solid hsl(var(--border)) !important;
   }
 
   .print-header > * {
@@ -223,7 +218,7 @@
   }
 
   .print-header h1 {
-    font-size: 20px !important; /* bigger title */
+    font-size: 20px !important;
     margin-bottom: 2mm !important;
     letter-spacing: -0.01em !important;
   }
@@ -244,19 +239,17 @@
   }
 
   .print-header > div {
-    background: hsl(0 0% 100% / 0.72) !important; /* slightly clearer overlay */
+    background: hsl(0 0% 100% / 0.72) !important;
     border-radius: 3px !important;
     padding: 2mm 3mm !important;
-    border: 1px solid hsl(var(--border)) !important; /* subtle delineation */
+    border: 1px solid hsl(var(--border)) !important;
   }
 
-  /* Make logo bigger in print */
   .print-header img[alt="Crest Pest Control"] {
     height: 24mm !important;
     width: auto !important;
   }
 
-  /* MAIN GRID */
   .print-layout {
     width: calc(100% - 12mm) !important;
     max-width: none !important;
@@ -269,13 +262,12 @@
     align-items: flex-start !important;
   }
 
-  /* MAP */
   .print-map-container {
     border-radius: 0.5rem;
-    border: 1.25px solid hsl(var(--secondary)) !important; /* refined weight */
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08); /* marginally stronger map edge */
+    border: 1.25px solid hsl(var(--secondary)) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08);
     overflow: hidden !important;
-    background: hsl(135 12% 90%) !important; /* slightly clearer map surround */
+    background: hsl(135 12% 90%) !important;
     height: 140mm !important;
     width: 100% !important;
   }
@@ -284,7 +276,6 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN – compact but full-width within column */
   .print-layout > div:last-child {
     height: 140mm !important;
     max-height: 140mm !important;
@@ -296,12 +287,12 @@
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important; /* slightly smaller gap */
+    margin: 0 0 2mm 0 !important;
     border-radius: 2.5mm !important;
     box-shadow: none !important;
     padding: 0 !important;
     background: transparent !important;
-    border: 1.25px solid hsl(var(--secondary)) !important; /* refined weight */
+    border: 1.25px solid hsl(var(--secondary)) !important;
     width: 100% !important;
   }
 
@@ -347,23 +338,17 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: keep compact, allow up to ~2–3 lines, with slight indent
-     so text doesn’t kiss the rounded corners */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
-
-    min-height: 1.3em !important; /* 1 line minimum */
+    min-height: 1.3em !important;
     height: auto !important;
-    max-height: 2.6em !important; /* ≈2–3 visible lines */
-
+    max-height: 2.6em !important;
     line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
-
     padding: 0.4mm 1.8mm !important;
     margin: 0 !important;
-
     background: transparent !important;
     border: none !important;
   }
@@ -405,37 +390,21 @@
     gap: 1.5mm !important;
   }
 
-  /* Slightly tighter body copy under the main header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
   }
 
-  /* Page break for second page */
+  /* -----------------------------
+     PAGE BREAK FIX (ENSURE PAGE 2)
+  ----------------------------- */
   .print-page-break {
+    display: block !important;
     page-break-before: always !important;
     break-before: page !important;
-    page-break-after: auto !important;
-    break-after: auto !important;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    display: block !important;
+    height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
     clear: both !important;
   }
-  
-  /* Ensure first page content doesn't overflow */
-  .print-layout {
-    page-break-after: auto !important;
-  }
 }
-
-@media print {
-  /* Force next section fully onto page 2 */
-  .print-page-break {
-    display: block !important;
-    page-break-before: always !important;
-    break-before: page !important;
-    margin-top: 12mm !important; /* ensures enough gap to push content cleanly */
-  }
-}
-
