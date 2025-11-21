@@ -414,10 +414,17 @@
   /* Page break for second page */
   .print-page-break {
     page-break-before: always !important;
-    break-before: always !important;
+    break-before: page !important;
     page-break-after: auto !important;
     break-after: auto !important;
     page-break-inside: auto !important;
     break-inside: auto !important;
+    display: block !important;
+    clear: both !important;
+  }
+  
+  /* Ensure first page content doesn't overflow */
+  .print-layout {
+    page-break-after: auto !important;
   }
 }
