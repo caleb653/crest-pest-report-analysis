@@ -480,7 +480,7 @@ const Report = () => {
                       <p className="font-semibold text-foreground text-xs mb-1">Technician Information:</p>
                       <div className="space-y-0.5 text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-28">Name:</span>
+                          <span className="text-muted-foreground w-16">Name:</span>
                           <Input
                             value={editableTech}
                             onChange={(e) => setEditableTech(e.target.value)}
@@ -489,7 +489,7 @@ const Report = () => {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-28">License Number:</span>
+                          <span className="text-muted-foreground w-16">License Number:</span>
                           <Input
                             value={editableLicenseNumber}
                             onChange={(e) => setEditableLicenseNumber(e.target.value)}
