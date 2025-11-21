@@ -191,8 +191,11 @@
   * {
     transition: none !important;
     animation: none !important;
-    page-break-inside: avoid !important;
     box-sizing: border-box !important;
+  }
+  
+  *:not(.print-page-break) {
+    page-break-inside: avoid !important;
   }
 
   iframe,
@@ -412,5 +415,9 @@
   .print-page-break {
     page-break-before: always !important;
     break-before: always !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
   }
 }
