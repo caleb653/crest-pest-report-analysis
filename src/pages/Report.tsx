@@ -447,8 +447,8 @@ const Report = () => {
                     Initial Pest Report - Key Findings & Recommendations
                   </h1>
 
-                  <div className="flex gap-12">
-                    <div className="flex-1">
+                  <div className="flex gap-8">
+                    <div className="flex-[2]">
                       <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
                       <div className="space-y-0.5 text-xs">
                         <div className="flex items-center gap-2">
