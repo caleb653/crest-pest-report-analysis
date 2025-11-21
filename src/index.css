@@ -3,41 +3,31 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------
-   CREST BRAND DESIGN SYSTEM (HSL ONLY) — STRICT-FIT + HEADER REFLOW
-   - Keeps your exact print dimensions
-   - Improves color/contrast subtly (within brand)
-   - Reflows header: wider Customer/Address, compact Technician at right
+   CREST BRAND DESIGN SYSTEM (HSL ONLY) — FINAL STRICT-FIT + HEADER REBALANCE
+   - Keeps exact prior print dimensions
+   - Widened address area; technician block anchored right
+   - Slightly refined contrast and shading per brand palette
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Brand colors */
     --background: 0 0% 95%; /* #F2F2F2 */
     --foreground: 0 0% 16%; /* #2A2A2A */
-
-    --primary: 135 13% 80%; /* Sage */
-    --secondary: 135 11% 60%; /* Dark Sage */
-
+    --primary: 135 13% 80%; /* #C3D1C5 Sage */
+    --secondary: 135 11% 60%; /* #95A197 Dark Sage */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 16%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 16%;
-
     --muted: 135 10% 90%;
     --muted-foreground: 135 8% 40%;
-
     --accent: 135 13% 70%;
     --accent-foreground: 0 0% 16%;
-
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 135 10% 85%;
     --input: 135 10% 85%;
     --ring: 135 13% 80%;
-
     --radius: 0.5rem;
-
     --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.06);
     --shadow-mid: 0 4px 12px hsl(0 0% 0% / 0.12);
   }
@@ -72,7 +62,6 @@
     font-size: 0.85rem !important;
   }
 
-  /* On-screen callout sections on the right */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.7rem !important;
@@ -86,12 +75,12 @@
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 1.25rem !important; /* more horizontal padding */
-    font-size: 0.75rem !important; /* ~12px */
+    padding: 0.25rem 1.25rem !important;
+    font-size: 0.75rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important; /* tab accent */
+    border-bottom: 2px solid hsl(var(--primary)) !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -108,7 +97,6 @@
     margin: 0 !important;
     padding-left: 0.9rem !important;
   }
-
   .print-section-content li {
     margin-bottom: 0.12rem !important;
     line-height: 1.2 !important;
@@ -137,7 +125,7 @@
 }
 
 /* -------------------------------------------------------------
-   PRINT LAYOUT — KEEP EXACT PRIOR DIMENSIONS + HEADER REFLOW
+   PRINT LAYOUT — FIT + HEADER WIDTH REBALANCE
 ------------------------------------------------------------- */
 @media print {
   @page {
@@ -167,7 +155,6 @@
     overflow: hidden !important;
   }
 
-  /* Kill Tailwind width caps / centering that fight us */
   [class*="max-w-"] {
     max-width: none !important;
   }
@@ -193,58 +180,47 @@
     page-break-inside: avoid !important;
     box-sizing: border-box !important;
   }
-
   iframe,
   canvas {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
 
-  /* ========= HEADER (unchanged height) + GRID REFLOW ========= */
+  /* HEADER - wider address, technician fixed right */
   .print-header {
     width: 100% !important;
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 0 2mm 0 !important;
-    padding: 3mm 6mm !important; /* unchanged vertical rhythm */
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
-    background: hsl(var(--primary)) !important;
-
-    /* New: reflow to give address more space */
+    padding: 3mm 6mm !important;
     display: grid !important;
-    grid-template-columns: 64% 34% !important; /* wider left side */
+    grid-template-columns: 66% 32% !important;
     column-gap: 2% !important;
     align-items: start !important;
+    background: hsl(var(--primary)) !important;
+    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08) !important;
+    border: 1px solid hsl(var(--border)) !important;
   }
 
-  /* Left block (Customer / Address) */
-  .print-header > div:nth-child(1) {
+  .print-header > div:first-child {
     grid-column: 1 / 2 !important;
   }
-
-  /* Right block (Technician) — align right and compact */
-  .print-header > div:nth-child(2),
-  .print-header .technician-info {
+  .print-header > div:last-child {
     grid-column: 2 / 3 !important;
     justify-self: end !important;
     text-align: right !important;
+    width: 100% !important;
+    max-width: 240px !important;
   }
 
-  /* Inputs in header: allow near-full width on address, less on tech */
   .print-header input[type="text"],
   .print-header input[type="date"] {
-    max-width: 98% !important;
+    max-width: 100% !important;
   }
-  .print-header > div:nth-child(2) input,
-  .print-header .technician-info input {
-    width: 88% !important; /* keep this block compact */
+  .print-header > div:last-child input {
+    width: 90% !important;
   }
 
-  .print-header > * {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-  }
   .print-header h1 {
     font-size: 20px !important;
     margin-bottom: 2mm !important;
@@ -263,17 +239,19 @@
     margin: 0;
     padding: 0;
   }
+
   .print-header > div {
     background: hsl(0 0% 100% / 0.7) !important;
     border-radius: 3px !important;
     padding: 2mm 3mm !important;
   }
+
   .print-header img[alt="Crest Pest Control"] {
     height: 24mm !important;
     width: auto !important;
   }
 
-  /* =================== MAIN GRID (unchanged) =================== */
+  /* MAIN GRID */
   .print-layout {
     width: calc(100% - 12mm) !important;
     max-width: none !important;
@@ -286,7 +264,6 @@
     align-items: flex-start !important;
   }
 
-  /* MAP (unchanged size) */
   .print-map-container {
     border-radius: 0.5rem;
     border: 1px solid hsl(var(--secondary)) !important;
@@ -300,7 +277,6 @@
     transform: translate(2%, -5%) !important;
   }
 
-  /* RIGHT COLUMN (unchanged height) */
   .print-layout > div:last-child {
     height: 140mm !important;
     max-height: 140mm !important;
@@ -312,7 +288,7 @@
   }
 
   .print-section {
-    margin: 0 0 2mm 0 !important; /* slightly smaller gap */
+    margin: 0 0 2mm 0 !important;
     border-radius: 2.5mm !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -352,7 +328,6 @@
     font-size: 10px !important;
     line-height: 1.05 !important;
   }
-
   .print-section-content,
   .print-section-content * {
     font-size: 10px !important;
@@ -361,13 +336,12 @@
     font-weight: 500 !important;
   }
 
-  /* Textareas: allow up to ~2–3 lines, fit guaranteed */
   .print-layout > div:last-child .print-section-content textarea {
     display: block !important;
     width: 100% !important;
-    min-height: 1.3em !important; /* 1 line minimum */
+    min-height: 1.3em !important;
     height: auto !important;
-    max-height: 2.5em !important; /* ≈2–3 visible lines */
+    max-height: 2.5em !important;
     line-height: 1.1 !important;
     overflow: hidden !important;
     resize: none !important;
@@ -414,7 +388,6 @@
     gap: 1.5mm !important;
   }
 
-  /* Slightly tighter body copy under the main header */
   .print-header p,
   .print-header span {
     line-height: 1.1 !important;
