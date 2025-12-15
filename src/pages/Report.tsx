@@ -835,7 +835,7 @@ const Report = () => {
       {/* Page 1 - Contract/Form Content */}
       <div className={isMobile ? "flex flex-col" : "p-4 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-2 gap-4"}>
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-4"}>
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
@@ -1060,37 +1060,15 @@ const Report = () => {
             {/* Products Used - Left Side */}
             <Card className="print-section p-2">
               <h2 className="text-xs font-bold mb-1">Products Used</h2>
-              <div className="grid grid-cols-3 gap-x-3 gap-y-0 text-[8px] leading-tight">
-                <div><span className="font-medium">Alpine WSG</span> <span className="text-muted-foreground">(Dinotefuran)</span></div>
-                <div><span className="font-medium">Bifen I/T</span> <span className="text-muted-foreground">(Bifenthrin)</span></div>
-                <div><span className="font-medium">Essentria IC Pro</span> <span className="text-muted-foreground">(Geraniol, Clove Oil, Cornmint Oil)</span></div>
-                <div><span className="font-medium">Temprid FX</span> <span className="text-muted-foreground">(Imidacloprid, Cyfluthrin)</span></div>
-                <div><span className="font-medium">Termidor SC</span> <span className="text-muted-foreground">(Fipronil)</span></div>
-                <div><span className="font-medium">Phantom</span> <span className="text-muted-foreground">(Chlorfenapyr)</span></div>
-                <div><span className="font-medium">ExciteR</span> <span className="text-muted-foreground">(Pyrethrins, Piperonyl Butoxide)</span></div>
-                <div><span className="font-medium">Gentrol IGR Concentrate</span> <span className="text-muted-foreground">((S)-Hydroprene)</span></div>
-                <div><span className="font-medium">Nyguard IGR Concentrate</span> <span className="text-muted-foreground">(Pyridine)</span></div>
-                <div><span className="font-medium">PT Wasp Freeze</span> <span className="text-muted-foreground">(Prallethrin)</span></div>
-                <div><span className="font-medium">PT Alpine Flea & Bed Bug</span> <span className="text-muted-foreground">(Dinotefuran, Pyriproxyfen, Prallethrin)</span></div>
-                <div><span className="font-medium">PT Alpine Fly Bait</span></div>
-                <div><span className="font-medium">Gentrol Aerosol</span> <span className="text-muted-foreground">((S)-Hydroprene)</span></div>
-                <div><span className="font-medium">Bedlam</span> <span className="text-muted-foreground">(Cyclopropanecarboxylate, Dicarboximide)</span></div>
-                <div><span className="font-medium">Invade Hot Spot +</span></div>
-                <div><span className="font-medium">Niban</span> <span className="text-muted-foreground">(Orthoboric Acid)</span></div>
-                <div><span className="font-medium">Bifen LP</span> <span className="text-muted-foreground">(Bifenthrin)</span></div>
-                <div><span className="font-medium">Advion Ant Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span></div>
-                <div><span className="font-medium">Maxforce FC Ant Gel</span> <span className="text-muted-foreground">(Fipronil)</span></div>
-                <div><span className="font-medium">Advion Cockroach Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span></div>
-                <div><span className="font-medium">Contrac California</span> <span className="text-muted-foreground">(Bromethalin)</span></div>
-                <div><span className="font-medium">Delta Dust (Bayer)</span> <span className="text-muted-foreground">(Deltamethrin)</span></div>
-                <div><span className="font-medium">In2Care Mix</span> <span className="text-muted-foreground">(Pyriproxyfen, Beauveria bassiana Strain GHA)</span></div>
+              <div className="text-[8px] leading-snug space-y-0">
+                <span className="font-medium">Alpine WSG</span> <span className="text-muted-foreground">(Dinotefuran)</span> · <span className="font-medium">Bifen I/T</span> <span className="text-muted-foreground">(Bifenthrin)</span> · <span className="font-medium">Essentria IC Pro</span> <span className="text-muted-foreground">(Geraniol, Clove Oil, Cornmint Oil)</span> · <span className="font-medium">Temprid FX</span> <span className="text-muted-foreground">(Imidacloprid, Cyfluthrin)</span> · <span className="font-medium">Termidor SC</span> <span className="text-muted-foreground">(Fipronil)</span> · <span className="font-medium">Phantom</span> <span className="text-muted-foreground">(Chlorfenapyr)</span> · <span className="font-medium">ExciteR</span> <span className="text-muted-foreground">(Pyrethrins, Piperonyl Butoxide)</span> · <span className="font-medium">Gentrol IGR Concentrate</span> <span className="text-muted-foreground">((S)-Hydroprene)</span> · <span className="font-medium">Nyguard IGR Concentrate</span> <span className="text-muted-foreground">(Pyridine)</span> · <span className="font-medium">PT Wasp Freeze</span> <span className="text-muted-foreground">(Prallethrin)</span> · <span className="font-medium">PT Alpine Flea & Bed Bug</span> <span className="text-muted-foreground">(Dinotefuran, Pyriproxyfen, Prallethrin)</span> · <span className="font-medium">PT Alpine Fly Bait</span> · <span className="font-medium">Gentrol Aerosol</span> <span className="text-muted-foreground">((S)-Hydroprene)</span> · <span className="font-medium">Bedlam</span> <span className="text-muted-foreground">(Cyclopropanecarboxylate, Dicarboximide)</span> · <span className="font-medium">Invade Hot Spot +</span> · <span className="font-medium">Niban</span> <span className="text-muted-foreground">(Orthoboric Acid)</span> · <span className="font-medium">Bifen LP</span> <span className="text-muted-foreground">(Bifenthrin)</span> · <span className="font-medium">Advion Ant Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span> · <span className="font-medium">Maxforce FC Ant Gel</span> <span className="text-muted-foreground">(Fipronil)</span> · <span className="font-medium">Advion Cockroach Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span> · <span className="font-medium">Contrac California</span> <span className="text-muted-foreground">(Bromethalin)</span> · <span className="font-medium">Delta Dust (Bayer)</span> <span className="text-muted-foreground">(Deltamethrin)</span> · <span className="font-medium">In2Care Mix</span> <span className="text-muted-foreground">(Pyriproxyfen, Beauveria bassiana Strain GHA)</span>
               </div>
             </Card>
 
             {/* Pesticide Notice - Right Side */}
             <Card className="print-section p-2">
               <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[8px] leading-tight text-foreground space-y-0.5">
+              <div className="text-[10px] leading-relaxed text-foreground space-y-1">
                 <p><strong>State law requires:</strong> CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered by the Structural Pest Control Board, and apply pesticides approved by the CA Dept. of Pesticide Regulation and US EPA.</p>
                 <p>If within 24 hours following application you experience flu-like symptoms, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                 <p className="font-medium">Contact: Pest Control Company: 949-424-5000 | County Health Dept: 800-564-8448 | County Ag Commissioner: 714-955-0100 | Structural Pest Control Board: 800-737-8188</p>
