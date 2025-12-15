@@ -842,17 +842,17 @@ const Report = () => {
                   )}
                 </div>
                 {editableTargetPests.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="print-tags flex flex-wrap gap-2 items-start content-start">
                     {editableTargetPests.map((pest) => (
                       <span
                         key={pest}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                        className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
                       >
                         {pest}
                         <button
                           type="button"
                           onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                          className="hover:bg-primary-foreground/20 rounded-full p-0.5"
+                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -912,17 +912,17 @@ const Report = () => {
                   )}
                 </div>
                 {editableProductsUsed.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="print-tags flex flex-wrap gap-2 items-start content-start">
                     {editableProductsUsed.map((product) => (
                       <span
                         key={product}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                        className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
                       >
                         {product}
                         <button
                           type="button"
                           onClick={() => setEditableProductsUsed(prev => prev.filter(p => p !== product))}
-                          className="hover:bg-primary-foreground/20 rounded-full p-0.5"
+                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
                         >
                           <X className="w-3 h-3" />
                         </button>
