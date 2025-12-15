@@ -16,12 +16,18 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
+
+const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught FastCap Spider & Scorpion', 'Gentrol IGR Concentrate', 'Nyguard IGR Concentrate', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'California - Contrac All Weather Blox', 'DeltaDust Insecticide - Bayer', 'Maxforce FC Ant Gel', 'Other'];
 
 interface AnalysisData {
   findings: string[];
@@ -772,54 +778,90 @@ const Report = () => {
             {/* Target Pest(s) Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
-              <div className="flex flex-wrap gap-2">
-                {['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Termites', 'Fleas', 'Ticks', 'Mosquitoes', 'Flies', 'Beetles', 'Moths', 'Silverfish', 'Earwigs', 'Centipedes', 'Crickets', 'Gophers', 'Moles', 'Birds'].map((pest) => (
-                  <button
-                    key={pest}
-                    type="button"
-                    onClick={() => {
-                      setEditableTargetPests(prev => 
-                        prev.includes(pest) 
-                          ? prev.filter(p => p !== pest)
-                          : [...prev, pest]
-                      );
+              <div className="space-y-2">
+                <div className="relative">
+                  <select
+                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && !editableTargetPests.includes(value)) {
+                        setEditableTargetPests(prev => [...prev, value]);
+                      }
+                      e.target.value = '';
                     }}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      editableTargetPests.includes(pest)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                    defaultValue=""
                   >
-                    {pest}
-                  </button>
-                ))}
+                    <option value="" disabled>Select pest(s)...</option>
+                    {PEST_OPTIONS.filter(p => !editableTargetPests.includes(p)).map((pest) => (
+                      <option key={pest} value={pest}>{pest}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+                {editableTargetPests.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editableTargetPests.map((pest) => (
+                      <span
+                        key={pest}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      >
+                        {pest}
+                        <button
+                          type="button"
+                          onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
+                          className="hover:bg-primary-foreground/20 rounded-full p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </Card>
 
             {/* Products Used Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
-              <div className="flex flex-wrap gap-2">
-                {['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught FastCap Spider & Scorpion', 'Gentrol IGR Concentrate', 'Nyguard IGR Concentrate', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Invade Hot Spot +', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'California - Contrac All Weather Blox', 'DeltaDust Insecticide - Bayer', 'In2Care Mix', 'ExciteR', 'Maxforce FC Ant Gel'].map((product) => (
-                  <button
-                    key={product}
-                    type="button"
-                    onClick={() => {
-                      setEditableProductsUsed(prev => 
-                        prev.includes(product) 
-                          ? prev.filter(p => p !== product)
-                          : [...prev, product]
-                      );
+              <div className="space-y-2">
+                <div className="relative">
+                  <select
+                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && !editableProductsUsed.includes(value)) {
+                        setEditableProductsUsed(prev => [...prev, value]);
+                      }
+                      e.target.value = '';
                     }}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      editableProductsUsed.includes(product)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                    defaultValue=""
                   >
-                    {product}
-                  </button>
-                ))}
+                    <option value="" disabled>Select product(s)...</option>
+                    {PRODUCT_OPTIONS.filter(p => !editableProductsUsed.includes(p)).map((product) => (
+                      <option key={product} value={product}>{product}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+                {editableProductsUsed.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editableProductsUsed.map((product) => (
+                      <span
+                        key={product}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      >
+                        {product}
+                        <button
+                          type="button"
+                          onClick={() => setEditableProductsUsed(prev => prev.filter(p => p !== product))}
+                          className="hover:bg-primary-foreground/20 rounded-full p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </Card>
 
