@@ -1088,9 +1088,9 @@ const Report = () => {
             </Card>
 
             {/* Left: Target Pests + Products, Right: Proposed Services */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-3">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
               {/* Left Column - Target Pests and Products stacked */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {/* Target Pests */}
                 <Card className="print-section p-0 overflow-visible rounded-lg">
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1275,7 +1275,7 @@ const Report = () => {
             </div>
 
             {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-3">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
               {/* Signature Section - Left (same width as Target Pests + Products) */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
