@@ -118,25 +118,27 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
       {label && (
         <span className="text-sm font-medium text-foreground">{label}</span>
       )}
-      <div className="border-2 border-border rounded-lg bg-white overflow-hidden">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-24 cursor-crosshair touch-none"
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-        />
+      <div className="relative">
+        <div className="border-2 border-border rounded-lg bg-white overflow-hidden">
+          <canvas
+            ref={canvasRef}
+            className="w-full h-24 cursor-crosshair touch-none"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={startDrawing}
+            onTouchMove={draw}
+            onTouchEnd={stopDrawing}
+          />
+        </div>
         {hasSignature && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={clearSignature}
-            className="no-print h-5 text-xs absolute bottom-0 right-0"
+            className="no-print h-5 text-xs absolute -bottom-5 right-0 px-1"
           >
             <Eraser className="w-3 h-3 mr-1" />
             Clear
