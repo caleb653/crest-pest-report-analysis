@@ -902,17 +902,18 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[180px_70px_70px_70px_1fr] gap-2 items-end pb-0.5 border-b border-border">
-                  <h2 className="text-[10px] font-bold">Service Type</h2>
-                  <h2 className="text-[10px] font-bold text-center">Initial</h2>
-                  <h2 className="text-[10px] font-bold text-center">Recurring</h2>
-                  <h2 className="text-[10px] font-bold text-center">Frequency</h2>
-                  <h2 className="text-[10px] font-bold">Schedule</h2>
+                <div className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center text-[10px] font-bold border-b border-border pb-1">
+                  <span>Service Type</span>
+                  <span className="text-center">Initial</span>
+                  <span className="text-center">Recurring</span>
+                  <span className="text-center">Frequency</span>
+                  <span>Schedule</span>
+                  <span></span>
                 </div>
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[180px_70px_70px_70px_1fr_auto] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1035,7 +1036,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[180px_70px_70px_70px_1fr_auto] gap-2 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-[10px] font-bold text-right pr-2">Total:</div>
                   <div className="text-[10px] font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
@@ -1146,8 +1147,8 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Proposed Services - Right Column, Takes More Space */}
-            <Card className="print-section p-1.5">
+            {/* Proposed Services - Full Width */}
+            <Card className="print-section p-2 col-span-2">
               <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
               {isAnalyzing ? (
                 <div className="text-center py-2">
@@ -1155,7 +1156,7 @@ const Report = () => {
                   <p className="text-xs text-muted-foreground">Analyzing...</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Textarea
                     value={
                       (editableFindings[0] || "")
@@ -1165,7 +1166,6 @@ const Report = () => {
                         .join('\n') || ""
                     }
                     onChange={(e) => {
-                      // Convert bullet lines back to period-separated sentences for storage
                       const lines = e.target.value
                         .split('\n')
                         .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
@@ -1174,8 +1174,8 @@ const Report = () => {
                       updateItem(0, lines ? lines + '.' : '', setEditableFindings);
                     }}
                     placeholder="• Enter proposed services (one per line)..."
-                    className="text-xs resize-y min-h-[100px] leading-relaxed"
-                    rows={4}
+                    className="text-xs resize-y min-h-[60px] leading-relaxed"
+                    rows={3}
                   />
                   <Button
                     type="button"
@@ -1183,7 +1183,7 @@ const Report = () => {
                     size="sm"
                     onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
                     disabled={isExpandingFindings}
-                    className="no-print h-7 text-xs"
+                    className="no-print h-6 text-xs"
                   >
                     {isExpandingFindings ? (
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
@@ -1196,10 +1196,10 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Products - Left Side */}
-            <Card className="print-section p-1.5">
+            {/* Products - Full Width */}
+            <Card className="print-section p-1.5 col-span-2">
               <h2 className="text-[10px] font-bold mb-0.5">Products</h2>
-              <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
+              <div className="text-[7px] leading-tight text-foreground columns-3 gap-3">
                 <p>Alpine WSG (Dinotefuran)</p>
                 <p>Bifen I/T (Bifenthrin)</p>
                 <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
@@ -1226,17 +1226,7 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Pesticide Notice - Right Side */}
-            <Card className="print-section p-1.5">
-              <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
-              <div className="text-[8px] leading-tight text-foreground space-y-0">
-                <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
-                <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
-              </div>
-            </Card>
-
-            {/* Signature Section - Left Half */}
+            {/* Signature Section - Left */}
             <Card className="print-section p-1.5">
               <h2 className="text-xs font-bold mb-1">Customer Signature</h2>
               <SignatureCanvas 
@@ -1246,6 +1236,16 @@ const Report = () => {
               />
               <div className="mt-1 text-[10px] text-muted-foreground">
                 <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+              </div>
+            </Card>
+
+            {/* Pesticide Notice - Right */}
+            <Card className="print-section p-1.5">
+              <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
+              <div className="text-[7px] leading-tight text-foreground space-y-0">
+                <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
+                <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
               </div>
             </Card>
           </div>
