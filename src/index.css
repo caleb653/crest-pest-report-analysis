@@ -464,13 +464,15 @@
   /* Page 2 grid layout for print */
   .print-page-break .grid {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 45% 55% !important;
     gap: 16px !important;
-    height: calc(100vh - 80px) !important;
+    height: auto !important;
+    max-height: calc(100vh - 100px) !important;
   }
 
   .print-page-break .grid > div {
-    height: 100% !important;
+    height: auto !important;
+    max-height: calc(100vh - 120px) !important;
   }
 
   /* Print tags styling */
