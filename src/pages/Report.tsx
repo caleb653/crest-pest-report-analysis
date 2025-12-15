@@ -1027,17 +1027,26 @@ const Report = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <ul className="list-disc list-inside text-xs space-y-1">
-                    {(editableFindings[0] || "").split(/[.]\s*/).filter(line => line.trim()).map((line, idx) => (
-                      <li key={idx}>{line.trim().replace(/\.$/, '')}</li>
-                    ))}
-                  </ul>
                   <Textarea
-                    value={editableFindings[0] || ""}
-                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                    placeholder="Enter proposed services (separate sentences with periods)..."
-                    className="text-xs resize-y min-h-[60px] leading-relaxed no-print"
-                    rows={2}
+                    value={
+                      (editableFindings[0] || "")
+                        .split(/[.]\s*/)
+                        .filter(line => line.trim())
+                        .map(line => `• ${line.trim().replace(/\.$/, '')}`)
+                        .join('\n') || ""
+                    }
+                    onChange={(e) => {
+                      // Convert bullet lines back to period-separated sentences for storage
+                      const lines = e.target.value
+                        .split('\n')
+                        .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
+                        .filter(line => line)
+                        .join('. ');
+                      updateItem(0, lines ? lines + '.' : '', setEditableFindings);
+                    }}
+                    placeholder="• Enter proposed services (one per line)..."
+                    className="text-xs resize-y min-h-[100px] leading-relaxed"
+                    rows={4}
                   />
                   <Button
                     type="button"
