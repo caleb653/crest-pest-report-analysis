@@ -760,123 +760,10 @@ const Report = () => {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
-        {/* Map Section */}
-        <div className={isMobile ? "h-[60vh] relative pb-20" : "print-map-container w-[45%] relative"}>
-          {isProcessing && (
-            <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
-              <div className="text-center">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-foreground font-semibold">Processing Map...</p>
-              </div>
-            </div>
-          )}
-
-          {mapUrl || customMapImage ? (
-            <div className="relative h-full w-full">
-              <MapCanvas 
-                key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
-                mapUrl={customMapImage || mapUrl} 
-                onSave={setMapData} 
-                initialData={mapData} 
-              />
-
-              {/* Upload custom map button */}
-              <div className="no-print absolute top-4 right-4 z-20">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => document.getElementById('custom-map-upload')?.click()}
-                  title="Upload custom map image"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Upload Map
-                </Button>
-                <input
-                  id="custom-map-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCustomMapUpload}
-                  className="hidden"
-                />
-              </div>
-
-              {/* Pan controls - only show when using coordinates-based map */}
-              {coordinates && !customMapImage && (
-                <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
-                  <div className="flex flex-col gap-2">
-                    <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
-                      <ArrowUp className="w-4 h-4" />
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                      <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
-                      <ArrowDown className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Zoom controls */}
-                  <div className="flex flex-col gap-2">
-                    <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      onClick={handleZoomOut}
-                      aria-label="Zoom out"
-                      title="Zoom out"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center bg-muted border-2 border-dashed border-border rounded-lg m-4">
-              {isProcessing ? (
-                <div className="text-center">
-                  <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-foreground font-semibold">Processing location...</p>
-                </div>
-              ) : (
-                <div className="text-center p-8">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <FileDown className="w-8 h-8 text-primary" />
-                  </div>
-                  <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
-                  <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
-                  <Button
-                    variant="default"
-                    onClick={() => document.getElementById('custom-map-upload-empty')?.click()}
-                  >
-                    <FileDown className="w-4 h-4 mr-2" />
-                    Upload Map Image
-                  </Button>
-                  <input
-                    id="custom-map-upload-empty"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCustomMapUpload}
-                    className="hidden"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Report Details Section */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
-          <div className="p-3 md:p-4 space-y-3">
+      {/* Page 1 - Contract/Form Content */}
+      <div className={isMobile ? "flex flex-col" : "p-4 max-w-[1800px] mx-auto"}>
+        {/* Two Column Layout for Desktop */}
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-2 gap-4"}>
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
@@ -1266,68 +1153,187 @@ const Report = () => {
             </Card>
           </div>
         </div>
-      </div>
 
-      {/* Second Page - Property Images */}
+      {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background">
         <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
             <div className="flex items-center gap-4">
               <img src={crestLogo} alt="Crest Pest Control" className="h-16" />
-              <h1 className="text-2xl font-bold text-foreground">Property Images</h1>
+              <h1 className="text-2xl font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
-          {/* Upload Section */}
-          <div className="no-print mb-6">
-            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="lg">
-              <FileDown className="w-5 h-5 mr-2" />
-              Upload Images (up to 5)
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePropertyImagesUpload}
-              className="hidden"
-            />
-          </div>
+          {/* Map Section */}
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-foreground mb-4">Property Map</h2>
+            <div className="h-[500px] relative rounded-lg overflow-hidden border-2 border-border">
+              {isProcessing && (
+                <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-foreground font-semibold">Processing Map...</p>
+                  </div>
+                </div>
+              )}
 
-          {/* Property Images Grid */}
-          {propertyImages.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {propertyImages.map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
-                    <img
-                      src={item.image}
-                      alt={`Property ${index + 1}`}
-                      className="w-full h-full object-cover"
+              {mapUrl || customMapImage ? (
+                <div className="relative h-full w-full">
+                  <MapCanvas 
+                    key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                    mapUrl={customMapImage || mapUrl} 
+                    onSave={setMapData} 
+                    initialData={mapData} 
+                  />
+
+                  {/* Upload custom map button */}
+                  <div className="no-print absolute top-4 right-4 z-20">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => document.getElementById('custom-map-upload')?.click()}
+                      title="Upload custom map image"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Upload Map
+                    </Button>
+                    <input
+                      id="custom-map-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCustomMapUpload}
+                      className="hidden"
                     />
                   </div>
-                  {item.caption && (
-                    <div className="p-2 bg-card rounded border border-border">
-                      <p className="text-xs text-foreground">{item.caption}</p>
+
+                  {/* Pan controls - only show when using coordinates-based map */}
+                  {coordinates && !customMapImage && (
+                    <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
+                      <div className="flex flex-col gap-2">
+                        <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <div className="flex gap-2">
+                          <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Zoom controls */}
+                      <div className="flex flex-col gap-2">
+                        <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          onClick={handleZoomOut}
+                          aria-label="Zoom out"
+                          title="Zoom out"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   )}
-                  <Input
-                    value={item.caption || ""}
-                    onChange={(e) => updateImageCaption(index, e.target.value)}
-                    placeholder="Add caption (optional)"
-                    className="no-print text-xs h-8"
-                  />
                 </div>
-              ))}
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center bg-muted">
+                  {isProcessing ? (
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                      <p className="text-foreground font-semibold">Processing location...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center p-8">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <FileDown className="w-8 h-8 text-primary" />
+                      </div>
+                      <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
+                      <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
+                      <Button
+                        variant="default"
+                        onClick={() => document.getElementById('custom-map-upload-empty')?.click()}
+                      >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Upload Map Image
+                      </Button>
+                      <input
+                        id="custom-map-upload-empty"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomMapUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {propertyImages.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No images uploaded yet. Click the button above to upload up to 5 images.</p>
+          {/* Property Images Section */}
+          <div>
+            <h2 className="text-xl font-bold text-foreground mb-4">Property Images</h2>
+            
+            {/* Upload Section */}
+            <div className="no-print mb-4">
+              <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="lg">
+                <FileDown className="w-5 h-5 mr-2" />
+                Upload Images (up to 5)
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handlePropertyImagesUpload}
+                className="hidden"
+              />
             </div>
-          )}
+
+            {/* Property Images Grid */}
+            {propertyImages.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {propertyImages.map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                      <img
+                        src={item.image}
+                        alt={`Property ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {item.caption && (
+                      <div className="p-2 bg-card rounded border border-border">
+                        <p className="text-xs text-foreground">{item.caption}</p>
+                      </div>
+                    )}
+                    <Input
+                      value={item.caption || ""}
+                      onChange={(e) => updateImageCaption(index, e.target.value)}
+                      placeholder="Add caption (optional)"
+                      className="no-print text-xs h-8"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {propertyImages.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground border-2 border-dashed border-border rounded-lg">
+                <p>No images uploaded yet. Click the button above to upload up to 5 images.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
