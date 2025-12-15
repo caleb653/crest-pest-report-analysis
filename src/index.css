@@ -273,7 +273,7 @@
   }
 
   .print-map-container canvas {
-    transform: translate(-15%, -5%) !important;
+    transform: translate(0, 0) !important;
     transform-origin: top left !important;
   }
 
