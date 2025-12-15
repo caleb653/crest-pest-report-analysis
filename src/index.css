@@ -273,7 +273,7 @@
   }
 
   .print-map-container canvas {
-    transform: translate(-8%, -5%) !important;
+    transform: translate(0, -5%) !important;
   }
 
   .print-layout > div:last-child {
