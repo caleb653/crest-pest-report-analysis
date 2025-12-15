@@ -73,6 +73,10 @@ const Report = () => {
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
+  const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
+  const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
+  const pestsDropdownRef = useRef<HTMLDivElement>(null);
+  const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
@@ -100,6 +104,20 @@ const Report = () => {
   useEffect(() => {
     latestMapDataRef.current = mapData;
   }, [mapData]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pestsDropdownRef.current && !pestsDropdownRef.current.contains(event.target as Node)) {
+        setPestsDropdownOpen(false);
+      }
+      if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
+        setProductsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch static 2D satellite map whenever coordinates or zoom change
   useEffect(() => {
@@ -779,24 +797,43 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
               <div className="space-y-2">
-                <div className="relative">
-                  <select
-                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value && !editableTargetPests.includes(value)) {
-                        setEditableTargetPests(prev => [...prev, value]);
-                      }
-                      e.target.value = '';
-                    }}
-                    defaultValue=""
+                <div className="relative" ref={pestsDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
+                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm text-left cursor-pointer flex items-center"
                   >
-                    <option value="" disabled>Select pest(s)...</option>
-                    {PEST_OPTIONS.filter(p => !editableTargetPests.includes(p)).map((pest) => (
-                      <option key={pest} value={pest}>{pest}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <span className="text-muted-foreground">
+                      {editableTargetPests.length > 0 ? `${editableTargetPests.length} selected` : 'Select pest(s)...'}
+                    </span>
+                  </button>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
+                  
+                  {pestsDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {PEST_OPTIONS.map((pest) => (
+                        <button
+                          key={pest}
+                          type="button"
+                          onClick={() => {
+                            setEditableTargetPests(prev => 
+                              prev.includes(pest) 
+                                ? prev.filter(p => p !== pest)
+                                : [...prev, pest]
+                            );
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                            editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
+                          }`}
+                        >
+                          {pest}
+                          {editableTargetPests.includes(pest) && (
+                            <span className="text-primary">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {editableTargetPests.length > 0 && (
                   <div className="flex flex-wrap gap-2">
@@ -824,24 +861,43 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
               <div className="space-y-2">
-                <div className="relative">
-                  <select
-                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value && !editableProductsUsed.includes(value)) {
-                        setEditableProductsUsed(prev => [...prev, value]);
-                      }
-                      e.target.value = '';
-                    }}
-                    defaultValue=""
+                <div className="relative" ref={productsDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
+                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm text-left cursor-pointer flex items-center"
                   >
-                    <option value="" disabled>Select product(s)...</option>
-                    {PRODUCT_OPTIONS.filter(p => !editableProductsUsed.includes(p)).map((product) => (
-                      <option key={product} value={product}>{product}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <span className="text-muted-foreground">
+                      {editableProductsUsed.length > 0 ? `${editableProductsUsed.length} selected` : 'Select product(s)...'}
+                    </span>
+                  </button>
+                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`} />
+                  
+                  {productsDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {PRODUCT_OPTIONS.map((product) => (
+                        <button
+                          key={product}
+                          type="button"
+                          onClick={() => {
+                            setEditableProductsUsed(prev => 
+                              prev.includes(product) 
+                                ? prev.filter(p => p !== product)
+                                : [...prev, product]
+                            );
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                            editableProductsUsed.includes(product) ? 'bg-primary/10 text-primary font-medium' : ''
+                          }`}
+                        >
+                          {product}
+                          {editableProductsUsed.includes(product) && (
+                            <span className="text-primary">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {editableProductsUsed.length > 0 && (
                   <div className="flex flex-wrap gap-2">
