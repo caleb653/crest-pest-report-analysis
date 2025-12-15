@@ -923,7 +923,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_95px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_110px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -934,7 +934,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_95px_minmax(200px,2fr)_24px] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_110px_minmax(200px,2fr)_24px] gap-2 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1057,7 +1057,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_95px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_110px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
                   <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
