@@ -343,8 +343,8 @@
   .print-layout > div:last-child textarea {
     display: block !important;
     width: 100% !important;
-    min-height: 28mm !important;
-    height: 28mm !important;
+    min-height: 42mm !important;
+    height: 42mm !important;
     max-height: none !important;
     line-height: 1.35 !important;
     overflow: visible !important;
