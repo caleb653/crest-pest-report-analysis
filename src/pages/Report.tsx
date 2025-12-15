@@ -26,8 +26,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
 
@@ -439,58 +437,21 @@ const Report = () => {
 
   const exportToPDF = async () => {
     try {
-      toast.info("Generating PDF...");
-      
-      // Hide buttons and toasts
-      const noprints = document.querySelectorAll('.no-print, [role="status"], .sonner, [data-sonner-toaster]');
-      noprints.forEach((el) => {
-        (el as HTMLElement).style.visibility = "hidden";
+      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
+      toasts.forEach((toastEl) => {
+        (toastEl as HTMLElement).style.display = "none";
       });
-      
-      await new Promise((r) => setTimeout(r, 200));
-      
-      const element = document.getElementById("report-content");
-      if (!element) {
-        toast.error("Could not find report content");
-        return;
-      }
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#f5f5f5",
-      });
-      
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: "a4",
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0;
-      
-      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      
-      const fileName = `pest-report-${editableCustomer || "customer"}-${new Date().toISOString().split("T")[0]}.pdf`;
-      pdf.save(fileName);
-      
-      toast.success("PDF downloaded!");
-      
-      // Restore visibility
-      noprints.forEach((el) => {
-        (el as HTMLElement).style.visibility = "";
-      });
+
+      await new Promise((r) => setTimeout(r, 150));
+      window.print();
+
+      setTimeout(() => {
+        toasts.forEach((toastEl) => {
+          (toastEl as HTMLElement).style.display = "";
+        });
+      }, 500);
     } catch (e) {
-      console.error("PDF export error:", e);
-      toast.error("PDF export failed");
+      toast.error("Print failed");
     }
   };
 
@@ -642,7 +603,7 @@ const Report = () => {
   };
 
   return (
-    <div id="report-content" className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Mobile Header */}
       {isMobile && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">

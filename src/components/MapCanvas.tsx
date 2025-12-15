@@ -196,9 +196,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         // Load and add SVG icon
         FabricImage.fromURL(svgPath).then((img) => {
-          if (!fabricCanvasRef.current) return;
-          const c = fabricCanvasRef.current;
-          
           img.set({
             left: pt.x - 16,
             top: pt.y - 16,
@@ -212,9 +209,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             // Store icon type for legend purposes
             data: { iconType: currentIcon }
           });
-          c.add(img);
-          c.setActiveObject(img);
-          c.requestRenderAll();
+          canvas.add(img);
+          canvas.setActiveObject(img);
+          canvas.renderAll();
           
           console.log('Icon added to canvas:', currentIcon);
           
