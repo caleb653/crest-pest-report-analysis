@@ -9,8 +9,8 @@ const reportTypes = [
     title: "Initial Pest Report",
     description: "Complete pest inspection and treatment documentation",
     icon: ClipboardList,
-    path: "/report",
-    state: { reportType: "initial-pest" },
+    path: "/initial-pest-report",
+    state: null,
   },
   {
     id: "sales",
@@ -18,7 +18,7 @@ const reportTypes = [
     description: "Sales consultation and proposal documentation",
     icon: FileText,
     path: "/report",
-    state: { reportType: "sales" },
+    state: null,
   },
   {
     id: "admin",
