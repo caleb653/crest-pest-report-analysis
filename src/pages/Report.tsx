@@ -818,16 +818,6 @@ const Report = () => {
               </div>
             </div>
 
-            {/* Purpose Text */}
-            <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-foreground leading-tight">
-                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
-                size fits all" approach and there are often a number of factors that lead to increased pest activity.
-                We've created this educational report to help you and your family get one step closer to living a
-                pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
-                any questions.
-              </p>
-            </div>
           </div>
         </div>
       )}
@@ -864,7 +854,7 @@ const Report = () => {
 
             {/* Service Type, Pricing & Frequency - Full Width at Top */}
             <Card className="print-section p-2 col-span-2">
-              <div className="grid grid-cols-4 gap-4 items-start">
+              <div className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr] gap-4 items-start">
                 <div>
                   <h2 className="text-xs font-bold mb-1">Service Type</h2>
                   <Select value={serviceType} onValueChange={handleServiceTypeChange}>
@@ -908,8 +898,8 @@ const Report = () => {
                     value={frequency.toString()} 
                     onValueChange={(val) => setFrequency(parseInt(val))}
                   >
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue placeholder="Select frequency" />
+                    <SelectTrigger className="h-7 text-xs w-20">
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {FREQUENCY_OPTIONS.map((option) => (
@@ -923,7 +913,7 @@ const Report = () => {
                 <div>
                   <h2 className="text-xs font-bold mb-1">Schedule</h2>
                   {frequency > 0 ? (
-                    <div className="flex flex-wrap gap-0.5">
+                    <div className="flex flex-wrap gap-1">
                       {Array.from({ length: 12 }, (_, i) => {
                         const serviceDate = new Date();
                         serviceDate.setDate(serviceDate.getDate() + (i * frequency));
@@ -931,17 +921,17 @@ const Report = () => {
                         return (
                           <span
                             key={i}
-                            className={`px-1.5 py-0.5 rounded text-[10px] ${
-                              isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted/70 text-muted-foreground'
+                            className={`px-2 py-1 rounded text-xs ${
+                              isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
                             }`}
                           >
-                            {serviceDate.toLocaleDateString('en-US', { month: 'short' })}
+                            {serviceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-muted-foreground">One-time only</p>
+                    <p className="text-xs text-muted-foreground">One-time only</p>
                   )}
                 </div>
               </div>
