@@ -456,10 +456,21 @@
     display: block !important;
     page-break-before: always !important;
     break-before: page !important;
-    height: 0 !important;
     margin: 0 !important;
     border: 0 !important;
     clear: both !important;
+  }
+
+  /* Page 2 grid layout for print */
+  .print-page-break .grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+    height: calc(100vh - 80px) !important;
+  }
+
+  .print-page-break .grid > div {
+    height: 100% !important;
   }
 
   /* Print tags styling */
