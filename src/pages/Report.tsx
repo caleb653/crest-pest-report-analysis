@@ -161,6 +161,8 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
+  const [editableAddress, setEditableAddress] = useState(address || "");
+  const [editableTitle, setEditableTitle] = useState("Pest Control Proposal");
 
   // Auto-set license when technician changes
   const handleTechnicianChange = (techName: string) => {
@@ -536,7 +538,7 @@ const Report = () => {
       const reportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
-        address: extractedAddress || address,
+        address: editableAddress || extractedAddress || address,
         notes: notes,
         findings: editableFindings,
         recommendations: [],
@@ -644,7 +646,7 @@ const Report = () => {
     }
   };
 
-  const displayAddress = extractedAddress || address || "Not provided";
+  const displayAddress = editableAddress || extractedAddress || address || "Not provided";
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     setter((prev) => {
@@ -784,9 +786,11 @@ const Report = () => {
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex-1 ml-4">
-                  <h1 className="text-xl font-bold text-foreground mb-2">
-                    Pest Inspection Report
-                  </h1>
+                  <Input
+                    value={editableTitle}
+                    onChange={(e) => setEditableTitle(e.target.value)}
+                    className="text-xl font-bold text-foreground mb-2 bg-transparent border-b border-border px-1 h-8 focus-visible:ring-0"
+                  />
 
                   <div className="flex gap-8">
                     <div className="flex-[2]">
@@ -803,7 +807,12 @@ const Report = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Address:</span>
-                          <span className="text-foreground">{displayAddress}</span>
+                          <Input
+                            value={editableAddress || extractedAddress}
+                            onChange={(e) => setEditableAddress(e.target.value)}
+                            placeholder="Enter address"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                          />
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Service Date:</span>
