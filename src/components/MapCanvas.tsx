@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Square, Bug } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage } from 'fabric';
+import { Trash2, Type, X, Square, Bug, Minus } from 'lucide-react';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
@@ -17,7 +17,7 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'icon' | 'rectangle';
+type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line';
 
 interface LegendItem {
   icon: string;
@@ -62,6 +62,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const hasLoadedInitialRef = useRef(false);
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
+  // Line drawing state
+  const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const lineStartRef = useRef<{ x: number; y: number } | null>(null);
+  const tempLineRef = useRef<Line | null>(null);
   
   // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
   const isMapInteractive = false;
@@ -276,6 +280,56 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         clickPlacedRef.current = true;
         setTool('select');
+      } else if (currentTool === 'line') {
+        // Start drawing a line
+        lineStartRef.current = { x: pt.x, y: pt.y };
+        const tempLine = new Line([pt.x, pt.y, pt.x, pt.y], {
+          stroke: '#DC2626',
+          strokeWidth: 5,
+          selectable: false,
+          evented: false,
+        });
+        tempLineRef.current = tempLine;
+        canvas.add(tempLine);
+        canvas.renderAll();
+      }
+    });
+
+    // Handle mouse move for line drawing
+    canvas.on('mouse:move', (e) => {
+      if (toolRef.current === 'line' && lineStartRef.current && tempLineRef.current) {
+        const evtAny: any = e as any;
+        const pt = evtAny?.absolutePointer || evtAny?.pointer || fabricCanvasRef.current?.getPointer(evtAny?.e);
+        if (pt) {
+          tempLineRef.current.set({ x2: pt.x, y2: pt.y });
+          canvas.renderAll();
+        }
+      }
+    });
+
+    // Handle mouse up to finalize line
+    canvas.on('mouse:up', (e) => {
+      if (toolRef.current === 'line' && lineStartRef.current && tempLineRef.current) {
+        const evtAny: any = e as any;
+        const pt = evtAny?.absolutePointer || evtAny?.pointer || fabricCanvasRef.current?.getPointer(evtAny?.e);
+        if (pt) {
+          // Remove temp line
+          canvas.remove(tempLineRef.current);
+          
+          // Create final line (selectable)
+          const finalLine = new Line([lineStartRef.current.x, lineStartRef.current.y, pt.x, pt.y], {
+            stroke: '#DC2626',
+            strokeWidth: 5,
+            selectable: true,
+            hasControls: true,
+            hasBorders: true,
+          });
+          canvas.add(finalLine);
+          canvas.setActiveObject(finalLine);
+          canvas.renderAll();
+        }
+        lineStartRef.current = null;
+        tempLineRef.current = null;
       }
     });
 
@@ -719,6 +773,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             </div>
           </div>
         )}
+        <Button
+          size="icon"
+          variant={tool === 'line' ? 'default' : 'outline'}
+          onClick={() => { setTool('line'); setShowIconPicker(false); }}
+          title="Draw Line"
+          className="h-7 w-7"
+        >
+          <Minus className="w-3.5 h-3.5" />
+        </Button>
         <Button
           size="icon"
           variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
