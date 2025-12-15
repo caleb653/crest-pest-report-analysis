@@ -110,9 +110,7 @@ const Report = () => {
         // Auto-fill expectations when expanding findings
         if (type === 'findings') {
           setEditableExpectations([
-            '• **Initial Period:** You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.',
-            '• **Treatment Effect:** Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.',
-            '• **Long-term Results:** With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks.'
+            "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.\n\n• Long-term Results: With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks."
           ]);
         }
       }
@@ -1073,21 +1071,21 @@ const Report = () => {
             </Card>
 
             {/* Findings Section */}
-            <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Findings & Actions Taken</h2>
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Findings & Actions Taken</h2>
               {isAnalyzing ? (
                 <div className="text-center py-4">
                   <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Analyzing...</p>
                 </div>
               ) : (
-                <div className="space-y-2 p-2">
+                <div className="space-y-3 p-3">
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
                     placeholder="Enter finding or action taken..."
-                    className="text-sm resize-y"
-                    rows={2}
+                    className="text-sm resize-y min-h-[120px] leading-relaxed"
+                    rows={5}
                   />
                   <Button
                     type="button"
@@ -1109,15 +1107,15 @@ const Report = () => {
             </Card>
 
             {/* What to Expect Section */}
-            <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
-              <div className="space-y-2 p-2">
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">What to Expect</h2>
+              <div className="space-y-3 p-3">
                 <Textarea
                   value={editableExpectations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
                   placeholder="Enter what the customer should expect..."
-                  className="text-sm resize-y"
-                  rows={2}
+                  className="text-sm resize-y min-h-[120px] leading-relaxed"
+                  rows={5}
                 />
                 <Button
                   type="button"
