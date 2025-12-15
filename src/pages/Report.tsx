@@ -1275,7 +1275,7 @@ const Report = () => {
             {/* Map Section */}
             <div className="flex flex-col h-full items-center">
               <h2 className="text-lg font-bold text-foreground mb-2 self-start">Property Map</h2>
-              <div className="flex-1 w-full lg:w-1/2 relative rounded-lg overflow-hidden border-2 border-border min-h-[500px] mx-auto">
+              <div className="flex-1 w-full lg:w-[55%] relative rounded-lg overflow-hidden border-2 border-border min-h-[500px] mx-auto">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
