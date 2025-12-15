@@ -362,8 +362,8 @@
   .print-content-formatted {
     display: block !important;
     width: 100% !important;
-    min-height: 43mm !important;
-    height: 43mm !important;
+    min-height: auto !important;
+    height: auto !important;
     line-height: 1.25 !important;
     padding: 2mm 3mm !important;
     margin: 0 !important;
