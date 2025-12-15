@@ -115,22 +115,8 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
 
   return (
     <div className="space-y-1">
-      {(label || hasSignature) && (
-        <div className="flex items-center justify-between h-7">
-          {label && <span className="text-sm font-medium text-foreground">{label}</span>}
-          {hasSignature && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearSignature}
-              className="no-print h-7 text-xs ml-auto"
-            >
-              <Eraser className="w-3 h-3 mr-1" />
-              Clear
-            </Button>
-          )}
-        </div>
+      {label && (
+        <span className="text-sm font-medium text-foreground">{label}</span>
       )}
       <div className="border-2 border-border rounded-lg bg-white overflow-hidden">
         <canvas
@@ -145,6 +131,18 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
           onTouchEnd={stopDrawing}
         />
       </div>
+      {hasSignature && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={clearSignature}
+          className="no-print h-7 text-xs"
+        >
+          <Eraser className="w-3 h-3 mr-1" />
+          Clear
+        </Button>
+      )}
     </div>
   );
 };
