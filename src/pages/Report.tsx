@@ -436,95 +436,24 @@ const Report = () => {
   };
 
   const exportToPDF = async () => {
-    const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-    toasts.forEach((toastEl) => {
-      (toastEl as HTMLElement).style.display = "none";
-    });
-
-    // Rasterize the map + canvas to a fixed-size image for consistent export
-    const mapContainer = document.querySelector('.print-map-container') as HTMLElement;
-    const fabricCanvas = (window as any).fabricCanvasInstance;
-    let printImage: HTMLImageElement | null = null;
-    let liveElements: NodeListOf<Element> | null = null;
-
     try {
-      if (mapContainer && fabricCanvas) {
-        // Create a composite canvas at fixed print dimensions
-        const printWidth = 800;
-        const printHeight = 500;
-        const compositeCanvas = document.createElement('canvas');
-        compositeCanvas.width = printWidth;
-        compositeCanvas.height = printHeight;
-        const ctx = compositeCanvas.getContext('2d');
+      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
+      toasts.forEach((toastEl) => {
+        (toastEl as HTMLElement).style.display = "none";
+      });
 
-        if (ctx) {
-          // Draw the background map image
-          const mapImg = mapContainer.querySelector('img:not(.print-composite-map)') as HTMLImageElement;
-          if (mapImg && mapImg.complete && mapImg.naturalWidth > 0) {
-            ctx.drawImage(mapImg, 0, 0, printWidth, printHeight);
-          } else {
-            // Fill with a background color if no image
-            ctx.fillStyle = '#e8e8e8';
-            ctx.fillRect(0, 0, printWidth, printHeight);
-          }
-
-          // Draw fabric canvas overlay, but guard against tainted canvas errors
-          let fabricDataUrl: string | null = null;
-          try {
-            fabricDataUrl = fabricCanvas.toDataURL({
-              format: 'png',
-              multiplier: 1,
-            });
-          } catch (err) {
-            console.error('Fabric canvas toDataURL failed, falling back to DOM print:', err);
-          }
-
-          if (fabricDataUrl) {
-            await new Promise<void>((resolve) => {
-              const overlayImg = new Image();
-              overlayImg.onload = () => {
-                ctx.drawImage(overlayImg, 0, 0, printWidth, printHeight);
-                resolve();
-              };
-              overlayImg.onerror = () => resolve();
-              overlayImg.src = fabricDataUrl as string;
-            });
-          }
-
-          // Create the print image element
-          printImage = document.createElement('img');
-          printImage.src = compositeCanvas.toDataURL('image/png');
-          printImage.className = 'print-composite-map';
-          printImage.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:100;';
-          
-          // Hide the live elements and show composite
-          liveElements = mapContainer.querySelectorAll('img:not(.print-composite-map), iframe, canvas');
-          liveElements.forEach((el) => {
-            (el as HTMLElement).style.visibility = 'hidden';
-          });
-          mapContainer.appendChild(printImage);
-        }
-      }
-
+      // Simple, reliable print: let the browser capture the live DOM
       await new Promise((r) => setTimeout(r, 150));
       window.print();
-    } finally {
-      // Cleanup: restore live elements and remove composite
+
       setTimeout(() => {
         toasts.forEach((toastEl) => {
           (toastEl as HTMLElement).style.display = "";
         });
-        
-        if (printImage && printImage.parentNode) {
-          printImage.parentNode.removeChild(printImage);
-        }
-        
-        if (liveElements) {
-          liveElements.forEach((el) => {
-            (el as HTMLElement).style.visibility = '';
-          });
-        }
       }, 500);
+    } catch (e) {
+      console.error('Export PDF failed', e);
+      toast.error("Print failed");
     }
   };
 
