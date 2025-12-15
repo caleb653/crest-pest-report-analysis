@@ -106,6 +106,15 @@ const Report = () => {
       if (data?.expandedText) {
         setter([data.expandedText]);
         toast.success('Text expanded!');
+        
+        // Auto-fill expectations when expanding findings
+        if (type === 'findings') {
+          setEditableExpectations([
+            '• **Initial Period:** You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.',
+            '• **Treatment Effect:** Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.',
+            '• **Long-term Results:** With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks.'
+          ]);
+        }
       }
     } catch (error: any) {
       console.error('Error expanding text:', error);
