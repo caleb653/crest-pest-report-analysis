@@ -899,110 +899,76 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-2 col-span-2">
-              <div className="space-y-1">
+            <Card className="print-section p-3 col-span-2">
+              <div className="space-y-2">
+                {/* Header Row */}
+                <div className="grid grid-cols-[1.5fr_100px_100px_100px_1fr] gap-4 items-end pb-1 border-b border-border">
+                  <h2 className="text-xs font-bold">Service Type</h2>
+                  <h2 className="text-xs font-bold text-center">Initial</h2>
+                  <h2 className="text-xs font-bold text-center">Recurring</h2>
+                  <h2 className="text-xs font-bold text-center">Frequency</h2>
+                  <h2 className="text-xs font-bold">Schedule</h2>
+                </div>
+                
+                {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[200px_auto_auto_100px_1fr_auto] gap-3 items-center">
-                    <div>
-                      {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "h-7 w-full justify-between text-xs font-normal",
-                              !service.serviceType && "text-muted-foreground"
-                            )}
-                          >
-                            <span className="truncate">
-                              {service.serviceType || "Select service..."}
-                            </span>
-                            <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[240px] p-0" align="start">
-                          <Command>
-                            <CommandInput 
-                              placeholder="Type to filter..." 
-                              className="text-xs h-8"
-                              hideIcon
-                              value={service.serviceType}
-                              onValueChange={(value) => handleServiceChange(index, 'serviceType', value)}
-                            />
-                            <CommandList className="max-h-[180px]">
-                              <CommandEmpty>
-                                <span className="text-[10px]">Use "{service.serviceType}"</span>
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {SERVICE_TYPE_OPTIONS.map((option) => (
-                                  <CommandItem
-                                    key={option}
-                                    value={option}
-                                    onSelect={() => handleServiceChange(index, 'serviceType', option)}
-                                    className="text-xs py-1"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-1 h-3 w-3",
-                                        service.serviceType === option ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {option}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                  <div key={index} className="grid grid-cols-[1.5fr_100px_100px_100px_1fr_auto] gap-4 items-center py-1">
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        value={service.serviceType} 
+                        onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
+                      >
+                        <SelectTrigger className="h-8 text-xs w-full no-print bg-white">
+                          <SelectValue placeholder="Select service..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white z-50">
+                          {SERVICE_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option} className="text-xs">
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {/* Print-only text display */}
+                      <span className="hidden print:block text-xs font-medium">{service.serviceType || '-'}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        {index === 0 && <label className="text-xs font-bold mb-1 block">Initial</label>}
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={service.initialPrice}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/[^0-9.]/g, '');
-                              handleServiceChange(index, 'initialPrice', val);
-                            }}
-                            placeholder="0.00"
-                            className="h-7 text-xs pl-6 text-right pr-2"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        {index === 0 && <label className="text-xs font-bold mb-1 block">Recurring</label>}
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={service.recurringPrice}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(/[^0-9.]/g, '');
-                              handleServiceChange(index, 'recurringPrice', val);
-                            }}
-                            placeholder="0.00"
-                            className="h-7 text-xs pl-6 text-right pr-2"
-                          />
-                        </div>
-                      </div>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={service.initialPrice}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          handleServiceChange(index, 'initialPrice', val);
+                        }}
+                        placeholder="0.00"
+                        className="h-8 text-xs pl-6 text-right pr-2"
+                      />
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={service.recurringPrice}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          handleServiceChange(index, 'recurringPrice', val);
+                        }}
+                        placeholder="0.00"
+                        className="h-8 text-xs pl-6 text-right pr-2"
+                      />
                     </div>
                     <div>
-                      {index === 0 && <h2 className="text-xs font-bold mb-1">Frequency</h2>}
                       <Select 
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
                       >
-                        <SelectTrigger className="h-7 text-xs w-24">
+                        <SelectTrigger className="h-8 text-xs w-full no-print bg-white">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white z-50">
                           {FREQUENCY_OPTIONS.map((option) => (
                             <SelectItem key={option.days} value={option.days.toString()} className="text-xs">
                               {option.label}
@@ -1010,11 +976,14 @@ const Report = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {/* Print-only text display */}
+                      <span className="hidden print:block text-xs text-center">
+                        {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || '-'}
+                      </span>
                     </div>
                     <div className="min-w-0">
-                      {index === 0 && <h2 className="text-xs font-bold mb-1">Schedule</h2>}
                       {service.frequency > 0 ? (
-                        <div className="flex flex-nowrap gap-0.5 overflow-x-auto">
+                        <div className="flex flex-wrap gap-1">
                           {(() => {
                             const isWeekly = service.frequency === 7;
                             const today = new Date();
@@ -1033,7 +1002,7 @@ const Report = () => {
                                 <span
                                   key={i}
                                   className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
-                                    isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
+                                    isFirst ? 'bg-secondary text-white font-medium' : 'bg-muted text-muted-foreground'
                                   }`}
                                 >
                                   {isWeekly 
@@ -1046,16 +1015,16 @@ const Report = () => {
                           })()}
                         </div>
                       ) : (
-                        <p className="text-[10px] text-muted-foreground">One-time</p>
+                        <span className="text-xs text-muted-foreground">One-time service</span>
                       )}
                     </div>
-                    <div className={index === 0 ? 'mt-5' : ''}>
+                    <div>
                       {services.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7"
+                          className="h-7 w-7 no-print"
                           onClick={() => removeService(index)}
                         >
                           <X className="w-4 h-4" />
@@ -1064,13 +1033,28 @@ const Report = () => {
                     </div>
                   </div>
                 ))}
+                
+                {/* Totals Row */}
+                <div className="grid grid-cols-[1.5fr_100px_100px_100px_1fr_auto] gap-4 items-center pt-2 border-t-2 border-border">
+                  <div className="text-xs font-bold text-right pr-4">Total:</div>
+                  <div className="text-xs font-bold text-center">
+                    ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
+                  </div>
+                  <div className="text-xs font-bold text-center">
+                    ${services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0).toFixed(2)}
+                  </div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+
                 {services.length < 5 && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={addService}
-                    className="no-print h-7 text-xs"
+                    className="no-print h-7 text-xs mt-2"
                   >
                     <Plus className="w-3 h-3 mr-1" />
                     Add Service
