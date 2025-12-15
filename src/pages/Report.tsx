@@ -19,6 +19,7 @@ import {
   X,
   ChevronDown,
   Sparkles,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +89,8 @@ const Report = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const expandWithAI = async (text: string, type: 'findings' | 'expect', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (type === 'findings') setIsExpandingFindings(true);
@@ -449,6 +452,46 @@ const Report = () => {
       }, 500);
     } catch (e) {
       toast.error("Print failed");
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!customerEmail) {
+      toast.error("Please enter customer email address");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-report-email', {
+        body: {
+          customerEmail,
+          customerName: editableCustomer,
+          technicianName: editableTech,
+          address: extractedAddress || address || "",
+          findings: editableFindings,
+          expectations: editableExpectations,
+          targetPests: editableTargetPests,
+          productsUsed: editableProductsUsed,
+          equipment: editableEquipment,
+          reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Report sent to ${customerEmail}`);
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast.error("Failed to send email. Please try again.");
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -1085,9 +1128,33 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Submit Button */}
-            <div>
-              <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="no-print w-full text-lg py-6">
+            {/* Email & Submit Section */}
+            <Card className="print-section p-3 no-print">
+              <h2 className="text-lg font-bold mb-3">Send Report to Customer</h2>
+              <div className="flex gap-2 mb-3">
+                <Input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Customer email address"
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleSendEmail} 
+                  disabled={isSendingEmail || !customerEmail}
+                  variant="secondary"
+                >
+                  {isSendingEmail ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Send
+                    </>
+                  )}
+                </Button>
+              </div>
+              <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="w-full text-lg py-6">
                 {isSaving ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -1100,7 +1167,7 @@ const Report = () => {
                   </>
                 )}
               </Button>
-            </div>
+            </Card>
           </div>
         </div>
       </div>

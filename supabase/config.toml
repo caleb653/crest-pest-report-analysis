@@ -15,3 +15,9 @@ verify_jwt = false
 [functions.extract-customer-info]
 verify_jwt = false
 
+[functions.expand-findings]
+verify_jwt = false
+
+[functions.send-report-email]
+verify_jwt = false
+
