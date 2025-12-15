@@ -19,8 +19,8 @@ serve(async (req) => {
     }
 
     const systemPrompt = type === 'findings' 
-      ? `You are a professional pest control technician. Take the user's exact notes and expand them into clearer, more professional wording. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points with bold headers. Return 2-4 bullet points. Return ONLY the bullet point text, no pleasantries.`
-      : `You are a professional pest control technician. Take the user's exact notes and expand them into what the customer should expect. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points with bold headers. Return 2-4 bullet points. Return ONLY the bullet point text.`;
+      ? `You are a professional pest control technician. Take the user's exact notes and expand them into clearer, more professional wording. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points starting with "•". Use a clear header followed by a colon, then the details. Do NOT use markdown formatting like ** or __. Return 2-4 bullet points. Return ONLY the bullet point text, no pleasantries.`
+      : `You are a professional pest control technician. Take the user's exact notes and expand them into what the customer should expect. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points starting with "•". Use a clear header followed by a colon, then the details. Do NOT use markdown formatting like ** or __. Return 2-4 bullet points. Return ONLY the bullet point text.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
