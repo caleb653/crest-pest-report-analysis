@@ -50,20 +50,56 @@ const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid
 
 const EQUIPMENT_OPTIONS = ['Rodent Bait Stations', 'Rodent Traps', 'Mosquito Buckets', 'Fly Light', 'Pest Monitors'];
 
-const SERVICE_TYPE_OPTIONS = [
-  'Monthly Services',
-  'Bi-Monthly Services',
-  'Quarterly Services',
-  'Rodent Bait Boxes',
-  'Rodent Trapping',
-  'Rodent Trapping and Exclusion'
-];
+// Service configuration with auto-population data
+const SERVICE_CONFIG: Record<string, {
+  frequency: number;
+  targetPests: string[];
+  proposedServices: string;
+}> = {
+  'Monthly Services': {
+    frequency: 30,
+    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
+    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+  },
+  'Bi-Monthly Services': {
+    frequency: 60,
+    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
+    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+  },
+  'Quarterly Services': {
+    frequency: 90,
+    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
+    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+  },
+  'Commercial General Pest': {
+    frequency: 30,
+    targetPests: ['Ants', 'Roaches', 'Spiders', 'Rodents'],
+    proposedServices: 'Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity. Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed. Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management.',
+  },
+  'Rodent Exclusion': {
+    frequency: 0,
+    targetPests: ['Rodents'],
+    proposedServices: 'Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.',
+  },
+  'Rodent Trapping': {
+    frequency: 30,
+    targetPests: ['Rodents'],
+    proposedServices: 'Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.',
+  },
+  'Rodent Trapping and Exclusion': {
+    frequency: 30,
+    targetPests: ['Rodents'],
+    proposedServices: 'Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home\'s protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.',
+  },
+};
+
+const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
-  { label: 'One-time visit', days: 0 },
-  { label: 'Every 30 days', days: 30 },
-  { label: 'Every 60 days', days: 60 },
-  { label: 'Every 90 days', days: 90 },
+  { label: 'One-time', days: 0 },
+  { label: '30 days', days: 30 },
+  { label: '60 days', days: 60 },
+  { label: '90 days', days: 90 },
 ];
 
 interface AnalysisData {
@@ -109,6 +145,18 @@ const Report = () => {
       setEditableLicenseNumber(tech.license);
     }
   };
+
+  // Auto-populate when service type changes
+  const handleServiceTypeChange = (newServiceType: string) => {
+    setServiceType(newServiceType);
+    const config = SERVICE_CONFIG[newServiceType];
+    if (config) {
+      setFrequency(config.frequency);
+      setEditableTargetPests(config.targetPests);
+      setEditableFindings([config.proposedServices]);
+    }
+  };
+
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
@@ -819,7 +867,7 @@ const Report = () => {
               <div className="grid grid-cols-4 gap-4 items-start">
                 <div>
                   <h2 className="text-xs font-bold mb-1">Service Type</h2>
-                  <Select value={serviceType} onValueChange={setServiceType}>
+                  <Select value={serviceType} onValueChange={handleServiceTypeChange}>
                     <SelectTrigger className="h-7 text-xs">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
@@ -856,22 +904,21 @@ const Report = () => {
                 </div>
                 <div>
                   <h2 className="text-xs font-bold mb-1">Frequency</h2>
-                  <div className="flex flex-wrap gap-1">
-                    {FREQUENCY_OPTIONS.map((option) => (
-                      <button
-                        key={option.days}
-                        type="button"
-                        onClick={() => setFrequency(option.days)}
-                        className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                          frequency === option.days
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground hover:bg-muted/80'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+                  <Select 
+                    value={frequency.toString()} 
+                    onValueChange={(val) => setFrequency(parseInt(val))}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <SelectItem key={option.days} value={option.days.toString()} className="text-xs">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <h2 className="text-xs font-bold mb-1">Schedule</h2>
