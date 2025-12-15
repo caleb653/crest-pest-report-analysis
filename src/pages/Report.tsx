@@ -947,7 +947,7 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Target Pest(s) Section */}
+            {/* Target Pests - Left Column */}
             <Card className="print-section p-0 overflow-visible">
               <div className="relative" ref={pestsDropdownRef}>
                 <button
@@ -1012,10 +1012,8 @@ const Report = () => {
               )}
             </Card>
 
-
-
-            {/* Proposed Services Section - Full Width */}
-            <Card className="print-section p-2 col-span-2">
+            {/* Proposed Services - Right Column, Takes More Space */}
+            <Card className="print-section p-2">
               <h2 className="text-sm font-bold mb-2">Proposed Services</h2>
               {isAnalyzing ? (
                 <div className="text-center py-2">
@@ -1028,8 +1026,8 @@ const Report = () => {
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
                     placeholder="Enter proposed services..."
-                    className="text-xs resize-y min-h-[80px] leading-relaxed no-print"
-                    rows={3}
+                    className="text-xs resize-y min-h-[120px] leading-relaxed no-print"
+                    rows={5}
                   />
                   <div 
                     className="hidden print-content-formatted text-xs"
@@ -1059,10 +1057,10 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Products List Section */}
-            <Card className="print-section p-2 col-span-2">
-              <h2 className="text-xs font-bold mb-2">Products Used</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5 text-[9px]">
+            {/* Products Used - Left Side */}
+            <Card className="print-section p-2">
+              <h2 className="text-xs font-bold mb-1">Products Used</h2>
+              <div className="grid grid-cols-3 gap-x-3 gap-y-0 text-[8px] leading-tight">
                 <div><span className="font-medium">Alpine WSG</span> <span className="text-muted-foreground">(Dinotefuran)</span></div>
                 <div><span className="font-medium">Bifen I/T</span> <span className="text-muted-foreground">(Bifenthrin)</span></div>
                 <div><span className="font-medium">Essentria IC Pro</span> <span className="text-muted-foreground">(Geraniol, Clove Oil, Cornmint Oil)</span></div>
@@ -1089,27 +1087,30 @@ const Report = () => {
               </div>
             </Card>
 
-
-            {/* Pesticide Notice Section */}
+            {/* Pesticide Notice - Right Side */}
             <Card className="print-section p-2">
               <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[9px] leading-tight text-foreground space-y-0.5">
+              <div className="text-[8px] leading-tight text-foreground space-y-0.5">
                 <p><strong>State law requires:</strong> CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered by the Structural Pest Control Board, and apply pesticides approved by the CA Dept. of Pesticide Regulation and US EPA.</p>
                 <p>If within 24 hours following application you experience flu-like symptoms, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                 <p className="font-medium">Contact: Pest Control Company: 949-424-5000 | County Health Dept: 800-564-8448 | County Ag Commissioner: 714-955-0100 | Structural Pest Control Board: 800-737-8188</p>
               </div>
             </Card>
 
-            {/* Signature Section - Bottom Right */}
-            <Card className="print-section p-2">
-              <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
-              <SignatureCanvas 
-                onSave={setCustomerSignature} 
-                initialData={customerSignature}
-                label="Customer Signature"
-              />
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+            {/* Signature Section - Full Width */}
+            <Card className="print-section p-2 col-span-2">
+              <div className="flex gap-8">
+                <div className="flex-1">
+                  <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
+                  <SignatureCanvas 
+                    onSave={setCustomerSignature} 
+                    initialData={customerSignature}
+                    label="Customer Signature"
+                  />
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
