@@ -362,7 +362,16 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       initialDataPreview: initialData ? initialData.substring(0, 100) : 'null'
     });
     
+    // Mark as loaded immediately if no initial data - prevents reload when we save our own changes
+    if (!initialData && fabricCanvasRef.current) {
+      hasLoadedInitialRef.current = true;
+      return;
+    }
+    
     if (!fabricCanvasRef.current || !initialData || hasLoadedInitialRef.current) return;
+    
+    // Set this BEFORE loading to prevent race conditions
+    hasLoadedInitialRef.current = true;
     
     try {
       const savedData = JSON.parse(initialData);
@@ -448,8 +457,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         setLegendItems(savedData.legendItems);
         setShowLegend(true);
       }
-      hasLoadedInitialRef.current = true;
-      console.log('Load complete, hasLoadedInitialRef set to true');
+      console.log('Load complete');
     } catch (error) {
       console.error('Error loading canvas data:', error);
     }
