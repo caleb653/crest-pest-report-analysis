@@ -135,7 +135,7 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
       <div className="border-2 border-border rounded-lg bg-white overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-16 cursor-crosshair touch-none"
+          className="w-full h-24 cursor-crosshair touch-none"
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -145,9 +145,6 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
           onTouchEnd={stopDrawing}
         />
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Sign above using mouse or touch
-      </p>
     </div>
   );
 };
