@@ -958,13 +958,13 @@ const Report = () => {
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
-                        inputMode="decimal"
+                        inputMode="numeric"
                         value={service.initialPrice}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          const val = e.target.value.replace(/[^0-9]/g, '');
                           handleServiceChange(index, 'initialPrice', val);
                         }}
-                        placeholder="0.00"
+                        placeholder="0"
                         className="h-8 text-xs pl-6 text-right pr-2"
                       />
                     </div>
@@ -972,13 +972,13 @@ const Report = () => {
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
-                        inputMode="decimal"
+                        inputMode="numeric"
                         value={service.recurringPrice}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          const val = e.target.value.replace(/[^0-9]/g, '');
                           handleServiceChange(index, 'recurringPrice', val);
                         }}
-                        placeholder="0.00"
+                        placeholder="0"
                         className="h-8 text-xs pl-6 text-right pr-2"
                       />
                     </div>
