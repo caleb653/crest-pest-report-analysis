@@ -20,6 +20,8 @@ import {
   ChevronDown,
   Sparkles,
   Mail,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +36,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -889,18 +905,56 @@ const Report = () => {
                   <div key={index} className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-4 items-start">
                     <div>
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
-                      <Input
-                        value={service.serviceType}
-                        onChange={(e) => handleServiceChange(index, 'serviceType', e.target.value)}
-                        list={`service-types-${index}`}
-                        placeholder="Select or type..."
-                        className="h-7 text-xs"
-                      />
-                      <datalist id={`service-types-${index}`}>
-                        {SERVICE_TYPE_OPTIONS.map((option) => (
-                          <option key={option} value={option} />
-                        ))}
-                      </datalist>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "h-7 w-full justify-between text-xs font-normal",
+                              !service.serviceType && "text-muted-foreground"
+                            )}
+                          >
+                            <span className="truncate">
+                              {service.serviceType || "Select service..."}
+                            </span>
+                            <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search or type custom..." 
+                              className="text-xs"
+                              value={service.serviceType}
+                              onValueChange={(value) => handleServiceChange(index, 'serviceType', value)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                <span className="text-xs">Press enter to use "{service.serviceType}"</span>
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {SERVICE_TYPE_OPTIONS.map((option) => (
+                                  <CommandItem
+                                    key={option}
+                                    value={option}
+                                    onSelect={() => handleServiceChange(index, 'serviceType', option)}
+                                    className="text-xs"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-3 w-3",
+                                        service.serviceType === option ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {option}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
