@@ -96,10 +96,11 @@ const SERVICE_CONFIG: Record<string, {
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
-  { label: 'One-time', days: 0 },
-  { label: '1 month', days: 30 },
-  { label: '2 months', days: 60 },
-  { label: '3 months', days: 90 },
+  { label: 'One-Time', days: 0 },
+  { label: '30 days', days: 30 },
+  { label: '60 days', days: 60 },
+  { label: '90 days', days: 90 },
+  { label: 'Weekly Visits', days: 7 },
 ];
 
 interface AnalysisData {
