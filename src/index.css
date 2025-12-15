@@ -305,7 +305,7 @@
     line-height: 1.05 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important;
+    border-bottom: none !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
