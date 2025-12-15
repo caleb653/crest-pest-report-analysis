@@ -132,16 +132,18 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
         />
       </div>
       {hasSignature && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={clearSignature}
-          className="no-print h-7 text-xs"
-        >
-          <Eraser className="w-3 h-3 mr-1" />
-          Clear
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearSignature}
+            className="no-print h-7 text-xs"
+          >
+            <Eraser className="w-3 h-3 mr-1" />
+            Clear
+          </Button>
+        </div>
       )}
     </div>
   );
