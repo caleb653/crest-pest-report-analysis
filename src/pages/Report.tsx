@@ -146,16 +146,6 @@ const Report = () => {
     }
   };
 
-  // Auto-populate when service type changes
-  const handleServiceTypeChange = (newServiceType: string) => {
-    setServiceType(newServiceType);
-    const config = SERVICE_CONFIG[newServiceType];
-    if (config) {
-      setFrequency(config.frequency);
-      setEditableTargetPests(config.targetPests);
-      setEditableFindings([config.proposedServices]);
-    }
-  };
 
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
@@ -163,10 +153,49 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
-  const [serviceType, setServiceType] = useState<string>("");
-  const [initialPrice, setInitialPrice] = useState<string>("");
-  const [recurringPrice, setRecurringPrice] = useState<string>("");
-  const [frequency, setFrequency] = useState<number>(30);
+  // Multiple services support
+  interface ServiceItem {
+    serviceType: string;
+    initialPrice: string;
+    recurringPrice: string;
+    frequency: number;
+  }
+  const [services, setServices] = useState<ServiceItem[]>([
+    { serviceType: '', initialPrice: '', recurringPrice: '', frequency: 30 }
+  ]);
+
+  const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
+    setServices(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      
+      // Auto-populate if service type changed
+      if (field === 'serviceType' && typeof value === 'string') {
+        const config = SERVICE_CONFIG[value];
+        if (config) {
+          updated[index].frequency = config.frequency;
+          // Only update target pests and findings for the first service
+          if (index === 0) {
+            setEditableTargetPests(config.targetPests);
+            setEditableFindings([config.proposedServices]);
+          }
+        }
+      }
+      return updated;
+    });
+  };
+
+  const addService = () => {
+    if (services.length < 5) {
+      setServices(prev => [...prev, { serviceType: '', initialPrice: '', recurringPrice: '', frequency: 30 }]);
+    }
+  };
+
+  const removeService = (index: number) => {
+    if (services.length > 1) {
+      setServices(prev => prev.filter((_, i) => i !== index));
+    }
+  };
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
   const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
@@ -852,102 +881,131 @@ const Report = () => {
               </Card>
             )}
 
-            {/* Service Type, Pricing & Frequency - Full Width at Top */}
+            {/* Services - Full Width at Top */}
             <Card className="print-section p-2 col-span-2">
-              <div className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr] gap-4 items-start">
-                <div>
-                  <h2 className="text-xs font-bold mb-1">Service Type</h2>
-                  <Input
-                    value={serviceType}
-                    onChange={(e) => handleServiceTypeChange(e.target.value)}
-                    list="service-types"
-                    placeholder="Select or type..."
-                    className="h-7 text-xs"
-                  />
-                  <datalist id="service-types">
-                    {SERVICE_TYPE_OPTIONS.map((option) => (
-                      <option key={option} value={option} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-bold mb-1 block">Initial</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+              <div className="space-y-3">
+                {services.map((service, index) => (
+                  <div key={index} className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-4 items-start">
+                    <div>
+                      {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
                       <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={initialPrice}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
-                          setInitialPrice(val);
-                        }}
-                        placeholder="0.00"
-                        className="h-7 text-xs pl-6 text-right pr-2"
+                        value={service.serviceType}
+                        onChange={(e) => handleServiceChange(index, 'serviceType', e.target.value)}
+                        list={`service-types-${index}`}
+                        placeholder="Select or type..."
+                        className="h-7 text-xs"
                       />
+                      <datalist id={`service-types-${index}`}>
+                        {SERVICE_TYPE_OPTIONS.map((option) => (
+                          <option key={option} value={option} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        {index === 0 && <label className="text-xs font-bold mb-1 block">Initial</label>}
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={service.initialPrice}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              handleServiceChange(index, 'initialPrice', val);
+                            }}
+                            placeholder="0.00"
+                            className="h-7 text-xs pl-6 text-right pr-2"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        {index === 0 && <label className="text-xs font-bold mb-1 block">Recurring</label>}
+                        <div className="relative">
+                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={service.recurringPrice}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, '');
+                              handleServiceChange(index, 'recurringPrice', val);
+                            }}
+                            placeholder="0.00"
+                            className="h-7 text-xs pl-6 text-right pr-2"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      {index === 0 && <h2 className="text-xs font-bold mb-1">Frequency</h2>}
+                      <Select 
+                        value={service.frequency.toString()} 
+                        onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-24">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FREQUENCY_OPTIONS.map((option) => (
+                            <SelectItem key={option.days} value={option.days.toString()} className="text-xs">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      {index === 0 && <h2 className="text-xs font-bold mb-1">Schedule</h2>}
+                      {service.frequency > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const scheduleDate = new Date();
+                            scheduleDate.setDate(scheduleDate.getDate() + (i * service.frequency));
+                            const isFirst = i === 0;
+                            return (
+                              <span
+                                key={i}
+                                className={`px-2 py-1 rounded text-xs ${
+                                  isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {scheduleDate.toLocaleDateString('en-US', { month: 'short' })}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">One-time only</p>
+                      )}
+                    </div>
+                    <div className={index === 0 ? 'mt-5' : ''}>
+                      {services.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => removeService(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold mb-1 block">Recurring</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={recurringPrice}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
-                          setRecurringPrice(val);
-                        }}
-                        placeholder="0.00"
-                        className="h-7 text-xs pl-6 text-right pr-2"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-xs font-bold mb-1">Frequency</h2>
-                  <Select 
-                    value={frequency.toString()} 
-                    onValueChange={(val) => setFrequency(parseInt(val))}
+                ))}
+                {services.length < 5 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addService}
+                    className="no-print h-7 text-xs"
                   >
-                    <SelectTrigger className="h-7 text-xs w-24">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FREQUENCY_OPTIONS.map((option) => (
-                        <SelectItem key={option.days} value={option.days.toString()} className="text-xs">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <h2 className="text-xs font-bold mb-1">Schedule</h2>
-                  {frequency > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const serviceDate = new Date();
-                        serviceDate.setDate(serviceDate.getDate() + (i * frequency));
-                        const isFirst = i === 0;
-                        return (
-                          <span
-                            key={i}
-                            className={`px-2 py-1 rounded text-xs ${
-                              isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {serviceDate.toLocaleDateString('en-US', { month: 'short' })}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">One-time only</p>
-                  )}
-                </div>
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Service
+                  </Button>
+                )}
               </div>
             </Card>
 
