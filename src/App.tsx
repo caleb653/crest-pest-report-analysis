@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import SelectTechnician from "./pages/SelectTechnician";
 import DataEntry from "./pages/DataEntry";
 import Report from "./pages/Report";
+import InitialPestReport from "./pages/InitialPestReport";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -25,6 +26,8 @@ const App = () => (
           <Route path="/data-entry" element={<DataEntry />} />
           <Route path="/report" element={<Report />} />
           <Route path="/report/:reportId" element={<Report />} />
+          <Route path="/initial-pest-report" element={<InitialPestReport />} />
+          <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
