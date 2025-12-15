@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClipboardList, FileText, Home, Shield } from "lucide-react";
+import { ClipboardList, FileText, Shield } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 
 const reportTypes = [
@@ -19,14 +19,6 @@ const reportTypes = [
     icon: FileText,
     path: "/report",
     state: { reportType: "sales" },
-  },
-  {
-    id: "attic-inspection",
-    title: "Attic Inspection Report",
-    description: "Attic and crawlspace inspection documentation",
-    icon: Home,
-    path: "/report",
-    state: { reportType: "attic-inspection" },
   },
   {
     id: "admin",
