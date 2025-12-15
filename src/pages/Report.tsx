@@ -902,7 +902,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_auto_auto_auto_1fr_auto] gap-2 items-start">
+                  <div key={index} className="grid grid-cols-[200px_auto_auto_100px_1fr_auto] gap-3 items-center">
                     <div>
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
                       <Popover>
@@ -1242,7 +1242,7 @@ const Report = () => {
             {/* Pesticide Notice - Right Side */}
             <Card className="print-section p-2">
               <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[8px] leading-tight text-foreground space-y-0.5">
+              <div className="text-[10px] leading-tight text-foreground space-y-0.5">
                 <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
                 <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                 <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
@@ -1251,11 +1251,11 @@ const Report = () => {
 
             {/* Signature Section - Left Half */}
             <Card className="print-section p-2">
-              <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
+              <h2 className="text-sm font-bold mb-2">Customer Signature</h2>
               <SignatureCanvas 
                 onSave={setCustomerSignature} 
                 initialData={customerSignature}
-                label="Customer Signature"
+                label=""
               />
               <div className="mt-1 text-[10px] text-muted-foreground">
                 <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
