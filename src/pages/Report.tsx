@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
+import { SignatureCanvas } from "@/components/SignatureCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -116,6 +117,7 @@ const Report = () => {
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [customerSignature, setCustomerSignature] = useState<string | null>(null);
 
   const expandWithAI = async (text: string, type: 'findings' | 'expect', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (type === 'findings') setIsExpandingFindings(true);
@@ -1176,6 +1178,49 @@ const Report = () => {
                   )}
                   Expand with AI
                 </Button>
+              </div>
+            </Card>
+
+            {/* Signature Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Acknowledgment</h2>
+              <div className="p-3">
+                <SignatureCanvas 
+                  onSave={setCustomerSignature} 
+                  initialData={customerSignature}
+                  label="Customer Signature"
+                />
+                <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Pesticide Notice Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Pesticide Notice</h2>
+              <div className="p-3 space-y-3 text-xs leading-relaxed text-foreground">
+                <p>
+                  <strong>State law requires that you be given the following information:</strong>
+                </p>
+                <p>
+                  CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.
+                </p>
+                <p>
+                  If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
+                </p>
+                <p className="font-medium">
+                  For further information, contact any of the following:
+                </p>
+                <ul className="list-none space-y-1 pl-2">
+                  <li>• Your Pest Control Company: <span className="font-semibold">949-424-5000</span></li>
+                  <li>• Health Questions - County Health Department: <span className="font-semibold">800-564-8448</span></li>
+                  <li>• Application Information - County Agricultural Commissioner: <span className="font-semibold">714-955-0100</span></li>
+                  <li>• Regulatory Information - Structural Pest Control Board: <span className="font-semibold">800-737-8188</span></li>
+                  <li className="text-muted-foreground text-[10px]">2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815</li>
+                </ul>
               </div>
             </Card>
 
