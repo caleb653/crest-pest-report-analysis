@@ -105,16 +105,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       selectionLineWidth: 2,
     });
 
-    // Set default selection styles for all objects
-    FabricObject.prototype.set({
-      borderColor: '#3B82F6',
-      cornerColor: '#3B82F6',
-      cornerStrokeColor: '#FFFFFF',
-      cornerSize: 10,
-      cornerStyle: 'circle',
-      transparentCorners: false,
-      borderScaleFactor: 2,
-    });
+    // Set default selection styles for all objects via prototype defaults
+    FabricObject.prototype.borderColor = '#3B82F6';
+    FabricObject.prototype.cornerColor = '#3B82F6';
+    FabricObject.prototype.cornerStrokeColor = '#FFFFFF';
+    FabricObject.prototype.cornerSize = 10;
+    FabricObject.prototype.cornerStyle = 'circle';
+    FabricObject.prototype.transparentCorners = false;
+    FabricObject.prototype.borderScaleFactor = 2;
 
     fabricCanvasRef.current = canvas;
     (window as any).fabricCanvasInstance = canvas;
