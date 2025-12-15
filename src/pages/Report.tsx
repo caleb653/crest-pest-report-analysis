@@ -777,7 +777,7 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-4">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5">
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
@@ -795,7 +795,7 @@ const Report = () => {
                   <div className="flex gap-8">
                     <div className="flex-[2]">
                       <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
-                      <div className="space-y-1.5 text-xs">
+                      <div className="space-y-1 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Name:</span>
                           <Input
@@ -1088,9 +1088,9 @@ const Report = () => {
             </Card>
 
             {/* Left: Target Pests + Products, Right: Proposed Services */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
               {/* Left Column - Target Pests and Products stacked */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {/* Target Pests */}
                 <Card className="print-section p-0 overflow-visible rounded-lg">
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1275,7 +1275,7 @@ const Report = () => {
             </div>
 
             {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
               {/* Signature Section - Left (same width as Target Pests + Products) */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
