@@ -99,6 +99,21 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       width: canvasWidth,
       height: canvasHeight,
       backgroundColor: 'transparent',
+      // Custom selection styling - blue border for selected objects
+      selectionColor: 'rgba(59, 130, 246, 0.2)',
+      selectionBorderColor: '#3B82F6',
+      selectionLineWidth: 2,
+    });
+
+    // Set default selection styles for all objects
+    FabricObject.prototype.set({
+      borderColor: '#3B82F6',
+      cornerColor: '#3B82F6',
+      cornerStrokeColor: '#FFFFFF',
+      cornerSize: 10,
+      cornerStyle: 'circle',
+      transparentCorners: false,
+      borderScaleFactor: 2,
     });
 
     fabricCanvasRef.current = canvas;
@@ -107,6 +122,30 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     // Detect touch devices to avoid drag-to-delete on mobile
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     isTouchRef.current = !!isTouch;
+
+    // Handle Delete/Backspace key to delete selected objects
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.repeat) {
+        // Don't delete if user is typing in an input/textarea
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || (activeEl as HTMLElement).isContentEditable)) {
+          return;
+        }
+        
+        const activeObj = canvas.getActiveObject();
+        if (activeObj) {
+          // Don't delete if user is editing text
+          if ((activeObj as any).isEditing) {
+            return;
+          }
+          canvas.remove(activeObj);
+          canvas.discardActiveObject();
+          canvas.renderAll();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
 
     const resizeCanvas = () => {
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
@@ -311,6 +350,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      document.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
   }, []); // Only run once on mount
