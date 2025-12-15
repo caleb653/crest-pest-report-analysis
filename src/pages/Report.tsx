@@ -1012,6 +1012,36 @@ const Report = () => {
               )}
             </Card>
 
+            {/* Products List Section */}
+            <Card className="print-section p-2 col-span-2">
+              <h2 className="text-xs font-bold mb-2">Products Used</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5 text-[9px]">
+                <div><span className="font-medium">Alpine WSG</span> <span className="text-muted-foreground">(Dinotefuran)</span></div>
+                <div><span className="font-medium">Bifen I/T</span> <span className="text-muted-foreground">(Bifenthrin)</span></div>
+                <div><span className="font-medium">Essentria IC Pro</span> <span className="text-muted-foreground">(Geraniol, Clove Oil, Cornmint Oil)</span></div>
+                <div><span className="font-medium">Temprid FX</span> <span className="text-muted-foreground">(Imidacloprid, Cyfluthrin)</span></div>
+                <div><span className="font-medium">Termidor SC</span> <span className="text-muted-foreground">(Fipronil)</span></div>
+                <div><span className="font-medium">Phantom</span> <span className="text-muted-foreground">(Chlorfenapyr)</span></div>
+                <div><span className="font-medium">ExciteR</span> <span className="text-muted-foreground">(Pyrethrins, Piperonyl Butoxide)</span></div>
+                <div><span className="font-medium">Gentrol IGR Concentrate</span> <span className="text-muted-foreground">((S)-Hydroprene)</span></div>
+                <div><span className="font-medium">Nyguard IGR Concentrate</span> <span className="text-muted-foreground">(Pyridine)</span></div>
+                <div><span className="font-medium">PT Wasp Freeze</span> <span className="text-muted-foreground">(Prallethrin)</span></div>
+                <div><span className="font-medium">PT Alpine Flea & Bed Bug</span> <span className="text-muted-foreground">(Dinotefuran, Pyriproxyfen, Prallethrin)</span></div>
+                <div><span className="font-medium">PT Alpine Fly Bait</span></div>
+                <div><span className="font-medium">Gentrol Aerosol</span> <span className="text-muted-foreground">((S)-Hydroprene)</span></div>
+                <div><span className="font-medium">Bedlam</span> <span className="text-muted-foreground">(Cyclopropanecarboxylate, Dicarboximide)</span></div>
+                <div><span className="font-medium">Invade Hot Spot +</span></div>
+                <div><span className="font-medium">Niban</span> <span className="text-muted-foreground">(Orthoboric Acid)</span></div>
+                <div><span className="font-medium">Bifen LP</span> <span className="text-muted-foreground">(Bifenthrin)</span></div>
+                <div><span className="font-medium">Advion Ant Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span></div>
+                <div><span className="font-medium">Maxforce FC Ant Gel</span> <span className="text-muted-foreground">(Fipronil)</span></div>
+                <div><span className="font-medium">Advion Cockroach Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span></div>
+                <div><span className="font-medium">Contrac California</span> <span className="text-muted-foreground">(Bromethalin)</span></div>
+                <div><span className="font-medium">Delta Dust (Bayer)</span> <span className="text-muted-foreground">(Deltamethrin)</span></div>
+                <div><span className="font-medium">In2Care Mix</span> <span className="text-muted-foreground">(Pyriproxyfen, Beauveria bassiana Strain GHA)</span></div>
+              </div>
+            </Card>
+
 
             {/* Pesticide Notice Section */}
             <Card className="print-section p-2">
