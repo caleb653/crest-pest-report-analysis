@@ -814,72 +814,7 @@ const Report = () => {
               </Card>
             )}
 
-            {/* Target Pest(s) Section */}
-            <Card className="print-section p-0 overflow-visible">
-              <div className="relative" ref={pestsDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
-                >
-                  <span>Target Pest(s)</span>
-                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {pestsDropdownOpen && (
-                  <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {PEST_OPTIONS.map((pest) => (
-                      <button
-                        key={pest}
-                        type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditableTargetPests(prev => 
-                            prev.includes(pest) 
-                              ? prev.filter(p => p !== pest)
-                              : [...prev, pest]
-                          );
-                        }}
-                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
-                          editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
-                        }`}
-                      >
-                        {pest}
-                        {editableTargetPests.includes(pest) && (
-                          <span className="text-primary">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {editableTargetPests.length > 0 && (
-                <div className="flex flex-wrap gap-1 p-2 bg-background">
-                  {editableTargetPests.map((pest) => (
-                    <span
-                      key={pest}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                    >
-                      {pest}
-                      <button
-                        type="button"
-                        onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* Service Type, Pricing & Frequency - Full Width */}
+            {/* Service Type, Pricing & Frequency - Full Width at Top */}
             <Card className="print-section p-2 col-span-2">
               <div className="grid grid-cols-4 gap-4 items-start">
                 <div>
@@ -965,43 +900,43 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Proposed Equipment Section - Smaller */}
+            {/* Target Pest(s) Section */}
             <Card className="print-section p-0 overflow-visible">
-              <div className="relative" ref={equipmentDropdownRef}>
+              <div className="relative" ref={pestsDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
-                  className="print-section-header text-xs font-bold w-full flex items-center justify-between cursor-pointer py-1.5 px-2"
+                  onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
+                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
                 >
-                  <span>Proposed Equipment</span>
-                  <ChevronDown className={`w-3 h-3 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span>Target Pest(s)</span>
+                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
-                {equipmentDropdownOpen && (
+                {pestsDropdownOpen && (
                   <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-40 overflow-y-auto"
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
-                    {EQUIPMENT_OPTIONS.map((equipment) => (
+                    {PEST_OPTIONS.map((pest) => (
                       <button
-                        key={equipment}
+                        key={pest}
                         type="button"
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setEditableEquipment(prev => 
-                            prev.includes(equipment) 
-                              ? prev.filter(eq => eq !== equipment)
-                              : [...prev, equipment]
+                          setEditableTargetPests(prev => 
+                            prev.includes(pest) 
+                              ? prev.filter(p => p !== pest)
+                              : [...prev, pest]
                           );
                         }}
-                        className={`w-full px-2 py-1 text-left text-[10px] hover:bg-muted flex items-center justify-between ${
-                          editableEquipment.includes(equipment) ? 'bg-primary/10 text-primary font-medium' : ''
+                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
+                          editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
                         }`}
                       >
-                        {equipment}
-                        {editableEquipment.includes(equipment) && (
+                        {pest}
+                        {editableTargetPests.includes(pest) && (
                           <span className="text-primary">✓</span>
                         )}
                       </button>
@@ -1009,20 +944,20 @@ const Report = () => {
                   </div>
                 )}
               </div>
-              {editableEquipment.length > 0 && (
-                <div className="flex flex-wrap gap-1 p-1.5 bg-background">
-                  {editableEquipment.map((equipment) => (
+              {editableTargetPests.length > 0 && (
+                <div className="flex flex-wrap gap-1 p-2 bg-background">
+                  {editableTargetPests.map((pest) => (
                     <span
-                      key={equipment}
-                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary text-primary-foreground"
+                      key={pest}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                     >
-                      {equipment}
+                      {pest}
                       <button
                         type="button"
-                        onClick={() => setEditableEquipment(prev => prev.filter(eq => eq !== equipment))}
+                        onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
                         className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
                       >
-                        <X className="w-2 h-2" />
+                        <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
@@ -1030,8 +965,10 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Proposed Services Section */}
-            <Card className="print-section p-2">
+
+
+            {/* Proposed Services Section - Full Width */}
+            <Card className="print-section p-2 col-span-2">
               <h2 className="text-sm font-bold mb-2">Proposed Services</h2>
               {isAnalyzing ? (
                 <div className="text-center py-2">
