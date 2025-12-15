@@ -468,21 +468,28 @@ const Report = () => {
             ctx.fillRect(0, 0, printWidth, printHeight);
           }
 
-          // Draw fabric canvas overlay
-          const fabricDataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            multiplier: 1,
-          });
+          // Draw fabric canvas overlay, but guard against tainted canvas errors
+          let fabricDataUrl: string | null = null;
+          try {
+            fabricDataUrl = fabricCanvas.toDataURL({
+              format: 'png',
+              multiplier: 1,
+            });
+          } catch (err) {
+            console.error('Fabric canvas toDataURL failed, falling back to DOM print:', err);
+          }
 
-          await new Promise<void>((resolve) => {
-            const overlayImg = new Image();
-            overlayImg.onload = () => {
-              ctx.drawImage(overlayImg, 0, 0, printWidth, printHeight);
-              resolve();
-            };
-            overlayImg.onerror = () => resolve();
-            overlayImg.src = fabricDataUrl;
-          });
+          if (fabricDataUrl) {
+            await new Promise<void>((resolve) => {
+              const overlayImg = new Image();
+              overlayImg.onload = () => {
+                ctx.drawImage(overlayImg, 0, 0, printWidth, printHeight);
+                resolve();
+              };
+              overlayImg.onerror = () => resolve();
+              overlayImg.src = fabricDataUrl as string;
+            });
+          }
 
           // Create the print image element
           printImage = document.createElement('img');
