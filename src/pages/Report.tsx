@@ -898,7 +898,7 @@ const Report = () => {
                     value={frequency.toString()} 
                     onValueChange={(val) => setFrequency(parseInt(val))}
                   >
-                    <SelectTrigger className="h-7 text-xs w-20">
+                    <SelectTrigger className="h-7 text-xs w-24">
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
