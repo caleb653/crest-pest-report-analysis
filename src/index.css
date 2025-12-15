@@ -266,7 +266,7 @@
     border-radius: 0.5rem;
     border: 1.25px solid hsl(var(--secondary)) !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08);
-    overflow: hidden !important;
+    overflow: visible !important;
     background: hsl(135 12% 90%) !important;
     height: 140mm !important;
     width: 100% !important;
