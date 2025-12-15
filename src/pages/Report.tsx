@@ -97,6 +97,7 @@ const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
   { label: 'One-time', days: 0 },
+  { label: '1 month', days: 30 },
   { label: '30 days', days: 30 },
   { label: '60 days', days: 60 },
   { label: '90 days', days: 90 },
@@ -873,23 +874,29 @@ const Report = () => {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs font-bold mb-1 block">Initial $</label>
-                    <Input
-                      type="number"
-                      value={initialPrice}
-                      onChange={(e) => setInitialPrice(e.target.value)}
-                      placeholder="0"
-                      className="h-7 text-xs"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        value={initialPrice}
+                        onChange={(e) => setInitialPrice(e.target.value)}
+                        placeholder="0.00"
+                        className="h-7 text-xs pl-5"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold mb-1 block">Recurring $</label>
-                    <Input
-                      type="number"
-                      value={recurringPrice}
-                      onChange={(e) => setRecurringPrice(e.target.value)}
-                      placeholder="0"
-                      className="h-7 text-xs"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                      <Input
+                        type="number"
+                        value={recurringPrice}
+                        onChange={(e) => setRecurringPrice(e.target.value)}
+                        placeholder="0.00"
+                        className="h-7 text-xs pl-5"
+                      />
+                    </div>
                   </div>
                 </div>
                 <div>
