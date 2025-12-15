@@ -50,6 +50,21 @@ const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid
 
 const EQUIPMENT_OPTIONS = ['Rodent Bait Stations', 'Rodent Traps', 'Mosquito Buckets', 'Fly Light', 'Pest Monitors'];
 
+const SERVICE_TYPE_OPTIONS = [
+  'Monthly Services',
+  'Bi-Monthly Services',
+  'Quarterly Services',
+  'Rodent Bait Boxes',
+  'Rodent Trapping',
+  'Rodent Trapping and Exclusion'
+];
+
+const FREQUENCY_OPTIONS = [
+  { label: 'Every 30 days', days: 30 },
+  { label: 'Every 60 days', days: 60 },
+  { label: 'Every 90 days', days: 90 },
+];
+
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
@@ -99,7 +114,10 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
-  const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
+  const [serviceType, setServiceType] = useState<string>("");
+  const [initialPrice, setInitialPrice] = useState<string>("");
+  const [recurringPrice, setRecurringPrice] = useState<string>("");
+  const [frequency, setFrequency] = useState<number>(30);
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
   const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
@@ -133,13 +151,6 @@ const Report = () => {
       if (data?.expandedText) {
         setter([data.expandedText]);
         toast.success('Text expanded!');
-        
-        // Auto-fill expectations when expanding findings
-        if (type === 'findings') {
-          setEditableExpectations([
-            "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.\n\n• Long-term Results: With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks."
-          ]);
-        }
       }
     } catch (error: any) {
       console.error('Error expanding text:', error);
@@ -164,7 +175,6 @@ const Report = () => {
   useEffect(() => {
     if (analysis) {
       setEditableFindings(analysis.findings || []);
-      setEditableExpectations(analysis.nextSteps || []);
     }
   }, [analysis]);
 
@@ -236,7 +246,6 @@ const Report = () => {
       setEditableCustomer(data.customer_name || "");
       setExtractedAddress(data.address || "");
       setEditableFindings((data.findings as string[]) || []);
-      setEditableExpectations((data.next_steps as string[]) || []);
 
       console.log("Loading report map_data:", {
         hasMapData: !!data.map_data,
@@ -424,7 +433,7 @@ const Report = () => {
         notes: notes,
         findings: editableFindings,
         recommendations: [],
-        next_steps: editableExpectations,
+        next_steps: [],
         map_url: coordinates
           ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
           : null,
@@ -510,7 +519,6 @@ const Report = () => {
           technicianName: editableTech,
           address: extractedAddress || address || "",
           findings: editableFindings,
-          expectations: editableExpectations,
           targetPests: editableTargetPests,
           productsUsed: editableProductsUsed,
           equipment: editableEquipment,
@@ -855,72 +863,123 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Products Used Section */}
-            <Card className="print-section p-0 overflow-visible">
-              <div className="relative" ref={productsDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
-                >
-                  <span>Product(s) Used</span>
-                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${productsDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {productsDropdownOpen && (
-                  <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {PRODUCT_OPTIONS.map((product) => (
-                      <button
-                        key={product}
-                        type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditableProductsUsed(prev => 
-                            prev.includes(product) 
-                              ? prev.filter(p => p !== product)
-                              : [...prev, product]
-                          );
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
-                          editableProductsUsed.includes(product) ? 'bg-primary/10 text-primary font-medium' : ''
-                        }`}
-                      >
-                        {product}
-                        {editableProductsUsed.includes(product) && (
-                          <span className="text-primary">✓</span>
-                        )}
-                      </button>
+            {/* Service Type Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Type</h2>
+              <div className="p-3">
+                <Select value={serviceType} onValueChange={setServiceType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select service type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                {serviceType && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground">
+                      {serviceType}
+                    </span>
                   </div>
                 )}
               </div>
-              {editableProductsUsed.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
-                  {editableProductsUsed.map((product) => (
-                    <span
-                      key={product}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
-                    >
-                      {product}
-                      <button
-                        type="button"
-                        onClick={() => setEditableProductsUsed(prev => prev.filter(p => p !== product))}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </Card>
 
-            {/* Equipment Section */}
+            {/* Pricing Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Pricing</h2>
+              <div className="p-3 space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Initial Service Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      value={initialPrice}
+                      onChange={(e) => setInitialPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="pl-7"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Recurring Service Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      value={recurringPrice}
+                      onChange={(e) => setRecurringPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="pl-7"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Frequency Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Frequency</h2>
+              <div className="p-3 space-y-4">
+                <div className="flex gap-2">
+                  {FREQUENCY_OPTIONS.map((option) => (
+                    <button
+                      key={option.days}
+                      type="button"
+                      onClick={() => setFrequency(option.days)}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        frequency === option.days
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground hover:bg-muted/80'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Service Timeline */}
+                <div className="mt-4">
+                  <h3 className="text-sm font-semibold mb-3">Upcoming Service Schedule</h3>
+                  <div className="space-y-2">
+                    {[0, 1, 2, 3, 4, 5].map((i) => {
+                      const serviceDate = new Date();
+                      serviceDate.setDate(serviceDate.getDate() + (i * frequency));
+                      const isFirst = i === 0;
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${
+                            isFirst ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                            isFirst ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'
+                          }`}>
+                            {i + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${isFirst ? 'text-primary' : 'text-foreground'}`}>
+                              {isFirst ? 'Initial Service' : `Service #${i + 1}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {serviceDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Proposed Equipment Section */}
             <Card className="print-section p-0 overflow-visible">
               <div className="relative" ref={equipmentDropdownRef}>
                 <button
@@ -928,7 +987,7 @@ const Report = () => {
                   onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
                   className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
                 >
-                  <span>Equipment</span>
+                  <span>Proposed Equipment</span>
                   <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
@@ -1030,43 +1089,6 @@ const Report = () => {
               )}
             </Card>
 
-            {/* What to Expect Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">What to Expect</h2>
-              <div className="space-y-3 p-3">
-                <Textarea
-                  value={editableExpectations[0] || ""}
-                  onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
-                  placeholder="Enter what the customer should expect..."
-                  className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
-                  rows={5}
-                />
-                <div 
-                  className="hidden print-content-formatted"
-                  dangerouslySetInnerHTML={{
-                    __html: (editableExpectations[0] || "").replace(
-                      /^(.*?:)/gm,
-                      '<strong>$1</strong>'
-                    ).replace(/\n/g, '<br/>')
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => expandWithAI(editableExpectations[0] || '', 'expect', setEditableExpectations)}
-                  disabled={isExpandingExpect}
-                  className="no-print"
-                >
-                  {isExpandingExpect ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Expand with AI
-                </Button>
-              </div>
-            </Card>
 
             {/* Signature Section */}
             <Card className="print-section p-3 md:p-4">
