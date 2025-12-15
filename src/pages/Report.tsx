@@ -1215,47 +1215,43 @@ const Report = () => {
               <div className="text-[8px] leading-snug space-y-0">
                 <span className="font-medium">Alpine WSG</span> <span className="text-muted-foreground">(Dinotefuran)</span> · <span className="font-medium">Bifen I/T</span> <span className="text-muted-foreground">(Bifenthrin)</span> · <span className="font-medium">Essentria IC Pro</span> <span className="text-muted-foreground">(Geraniol, Clove Oil, Cornmint Oil)</span> · <span className="font-medium">Temprid FX</span> <span className="text-muted-foreground">(Imidacloprid, Cyfluthrin)</span> · <span className="font-medium">Termidor SC</span> <span className="text-muted-foreground">(Fipronil)</span> · <span className="font-medium">Phantom</span> <span className="text-muted-foreground">(Chlorfenapyr)</span> · <span className="font-medium">ExciteR</span> <span className="text-muted-foreground">(Pyrethrins, Piperonyl Butoxide)</span> · <span className="font-medium">Gentrol IGR Concentrate</span> <span className="text-muted-foreground">((S)-Hydroprene)</span> · <span className="font-medium">Nyguard IGR Concentrate</span> <span className="text-muted-foreground">(Pyridine)</span> · <span className="font-medium">PT Wasp Freeze</span> <span className="text-muted-foreground">(Prallethrin)</span> · <span className="font-medium">PT Alpine Flea & Bed Bug</span> <span className="text-muted-foreground">(Dinotefuran, Pyriproxyfen, Prallethrin)</span> · <span className="font-medium">PT Alpine Fly Bait</span> · <span className="font-medium">Gentrol Aerosol</span> <span className="text-muted-foreground">((S)-Hydroprene)</span> · <span className="font-medium">Bedlam</span> <span className="text-muted-foreground">(Cyclopropanecarboxylate, Dicarboximide)</span> · <span className="font-medium">Invade Hot Spot +</span> · <span className="font-medium">Niban</span> <span className="text-muted-foreground">(Orthoboric Acid)</span> · <span className="font-medium">Bifen LP</span> <span className="text-muted-foreground">(Bifenthrin)</span> · <span className="font-medium">Advion Ant Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span> · <span className="font-medium">Maxforce FC Ant Gel</span> <span className="text-muted-foreground">(Fipronil)</span> · <span className="font-medium">Advion Cockroach Gel Bait</span> <span className="text-muted-foreground">(Indoxacarb)</span> · <span className="font-medium">Contrac California</span> <span className="text-muted-foreground">(Bromethalin)</span> · <span className="font-medium">Delta Dust (Bayer)</span> <span className="text-muted-foreground">(Deltamethrin)</span> · <span className="font-medium">In2Care Mix</span> <span className="text-muted-foreground">(Pyriproxyfen, Beauveria bassiana Strain GHA)</span>
               </div>
+              <div className="mt-2 pt-2 border-t border-border">
+                <h2 className="text-xs font-bold mb-1">Chemicals Used</h2>
+                <div className="text-[8px] leading-tight text-foreground columns-2 gap-2">
+                  <p>Alpine WSG (Dinotefuran)</p>
+                  <p>Bifen I/T (Bifenthrin)</p>
+                  <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
+                  <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
+                  <p>Termidor SC (Fipronil)</p>
+                  <p>Phantom (Chlorfenapyr)</p>
+                  <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
+                  <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
+                  <p>Nyguard IGR Concentrate (Pyridine)</p>
+                  <p>PT Wasp Freeze (Prallethrin)</p>
+                  <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
+                  <p>PT Alpine Fly Bait</p>
+                  <p>Gentrol Aerosol ((S)-Hydroprene)</p>
+                  <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
+                  <p>Invade Hot Spot +</p>
+                  <p>Niban (Orthoboric Acid)</p>
+                  <p>Bifen LP (Bifenthrin)</p>
+                  <p>Advion Ant Gel Bait (Indoxacarb)</p>
+                  <p>Maxforce FC Ant Gel (Fipronil)</p>
+                  <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
+                  <p>Contrac California (Bromethalin)</p>
+                  <p>Delta Dust (Bayer) (Deltamethrin)</p>
+                  <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
+                </div>
+              </div>
             </Card>
 
-            {/* Pesticide Notice & Chemicals - Full Width */}
+            {/* Pesticide Notice - Full Width */}
             <Card className="print-section p-2 col-span-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-                  <div className="text-[8px] leading-tight text-foreground space-y-0.5">
-                    <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
-                    <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                    <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
-                  </div>
-                </div>
-                <div>
-                  <h2 className="text-xs font-bold mb-1">Chemicals Used</h2>
-                  <div className="text-[8px] leading-tight text-foreground columns-2 gap-2">
-                    <p>Alpine WSG (Dinotefuran)</p>
-                    <p>Bifen I/T (Bifenthrin)</p>
-                    <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
-                    <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
-                    <p>Termidor SC (Fipronil)</p>
-                    <p>Phantom (Chlorfenapyr)</p>
-                    <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
-                    <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
-                    <p>Nyguard IGR Concentrate (Pyridine)</p>
-                    <p>PT Wasp Freeze (Prallethrin)</p>
-                    <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
-                    <p>PT Alpine Fly Bait</p>
-                    <p>Gentrol Aerosol ((S)-Hydroprene)</p>
-                    <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
-                    <p>Invade Hot Spot +</p>
-                    <p>Niban (Orthoboric Acid)</p>
-                    <p>Bifen LP (Bifenthrin)</p>
-                    <p>Advion Ant Gel Bait (Indoxacarb)</p>
-                    <p>Maxforce FC Ant Gel (Fipronil)</p>
-                    <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
-                    <p>Contrac California (Bromethalin)</p>
-                    <p>Delta Dust (Bayer) (Deltamethrin)</p>
-                    <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
-                  </div>
-                </div>
+              <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
+              <div className="text-[8px] leading-tight text-foreground space-y-0.5">
+                <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
+                <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
               </div>
             </Card>
 
