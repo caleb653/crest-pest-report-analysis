@@ -1081,14 +1081,17 @@ const Report = () => {
 
             {/* Target Pests - Left Column */}
             <Card className="print-section p-0 overflow-visible">
+              <div className="print-section-header text-sm font-bold py-2 px-3">
+                <span>Target Pest(s)</span>
+              </div>
               <div className="relative" ref={pestsDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
+                  className="w-full flex items-center justify-between cursor-pointer py-2 px-3 bg-card hover:bg-muted/50 transition-colors no-print"
                 >
-                  <span>Target Pest(s)</span>
-                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span className="text-xs text-muted-foreground">Click to select pests...</span>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {pestsDropdownOpen && (
@@ -1123,7 +1126,7 @@ const Report = () => {
                   </div>
                 )}
               </div>
-              <div className="p-2 bg-background space-y-2">
+              <div className="p-2 bg-card space-y-2">
                 {editableTargetPests.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {editableTargetPests.map((pest) => (
