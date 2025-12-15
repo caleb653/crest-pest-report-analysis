@@ -777,7 +777,7 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-3">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-4">
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
@@ -795,7 +795,7 @@ const Report = () => {
                   <div className="flex gap-8">
                     <div className="flex-[2]">
                       <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
-                      <div className="space-y-0.5 text-xs">
+                      <div className="space-y-1.5 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Name:</span>
                           <Input
@@ -920,10 +920,10 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-2 col-span-2">
-              <div className="space-y-1">
+            <Card className="print-section p-3 col-span-2">
+              <div className="space-y-2">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center text-xs font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center text-xs font-bold border-b border-border pb-2">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -934,7 +934,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center py-1">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1057,7 +1057,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center pt-2 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
                   <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
@@ -1088,12 +1088,12 @@ const Report = () => {
             </Card>
 
             {/* Left: Target Pests + Products, Right: Proposed Services */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-3">
               {/* Left Column - Target Pests and Products stacked */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {/* Target Pests */}
                 <Card className="print-section p-0 overflow-visible">
-                  <div className="print-section-header py-1 px-2">
+                  <div className="print-section-header py-1.5 px-2.5">
                     <span>Target Pest(s)</span>
                   </div>
                   <div className="relative" ref={pestsDropdownRef}>
@@ -1175,8 +1175,8 @@ const Report = () => {
                 </Card>
 
                 {/* Products */}
-                <Card className="print-section p-1.5">
-                  <h2 className="text-[10px] font-bold mb-0.5">Products</h2>
+                <Card className="print-section p-2.5">
+                  <h2 className="text-[10px] font-bold mb-1">Products</h2>
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
                     <p>Alpine WSG (Dinotefuran)</p>
                     <p>Bifen I/T (Bifenthrin)</p>
@@ -1206,8 +1206,8 @@ const Report = () => {
               </div>
 
               {/* Right Column - Proposed Services */}
-              <Card className="print-section p-2 flex flex-col">
-                <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
+              <Card className="print-section p-3 flex flex-col">
+                <h2 className="text-xs font-bold mb-2">Proposed Services</h2>
                 {isAnalyzing ? (
                   <div className="text-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1267,23 +1267,23 @@ const Report = () => {
             </div>
 
             {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-3">
               {/* Signature Section - Left (same width as Target Pests + Products) */}
-              <Card className="print-section p-1.5">
-                <h2 className="text-xs font-bold mb-1">Customer Signature</h2>
+              <Card className="print-section p-2.5">
+                <h2 className="text-xs font-bold mb-2">Customer Signature</h2>
                 <SignatureCanvas 
                   onSave={setCustomerSignature} 
                   initialData={customerSignature}
                   label=""
                 />
-                <div className="mt-1 text-[10px] text-muted-foreground">
+                <div className="mt-2 text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
                 </div>
               </Card>
 
               {/* Pesticide Notice - Right (same width as Proposed Services) */}
-              <Card className="print-section p-1.5">
-                <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
+              <Card className="print-section p-2.5">
+                <h2 className="text-[10px] font-bold mb-1">Pesticide Notice</h2>
                 <div className="text-[9px] leading-tight text-foreground space-y-0">
                   <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
                   <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
