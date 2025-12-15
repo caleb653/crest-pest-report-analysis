@@ -955,71 +955,6 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Findings Section */}
-            <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Findings & Actions Taken</h2>
-              {isAnalyzing ? (
-                <div className="text-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Analyzing...</p>
-                </div>
-              ) : (
-                <div className="space-y-2 p-2">
-                  <Textarea
-                    value={editableFindings[0] || ""}
-                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                    placeholder="Enter finding or action taken..."
-                    className="text-sm resize-y"
-                    rows={2}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
-                    disabled={isExpandingFindings}
-                    className="no-print"
-                  >
-                    {isExpandingFindings ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    Expand with AI
-                  </Button>
-                </div>
-              )}
-            </Card>
-
-            {/* What to Expect Section */}
-            <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
-              <div className="space-y-2 p-2">
-                <Textarea
-                  value={editableExpectations[0] || ""}
-                  onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
-                  placeholder="Enter what the customer should expect..."
-                  className="text-sm resize-y"
-                  rows={2}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => expandWithAI(editableExpectations[0] || '', 'expect', setEditableExpectations)}
-                  disabled={isExpandingExpect}
-                  className="no-print"
-                >
-                  {isExpandingExpect ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Expand with AI
-                </Button>
-              </div>
-            </Card>
-
             {/* Equipment Section */}
             <Card className="print-section p-0 overflow-visible">
               <div className="relative" ref={equipmentDropdownRef}>
@@ -1083,6 +1018,71 @@ const Report = () => {
                   ))}
                 </div>
               )}
+            </Card>
+
+            {/* Findings Section */}
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Findings & Actions Taken</h2>
+              {isAnalyzing ? (
+                <div className="text-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Analyzing...</p>
+                </div>
+              ) : (
+                <div className="space-y-2 p-2">
+                  <Textarea
+                    value={editableFindings[0] || ""}
+                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
+                    placeholder="Enter finding or action taken..."
+                    className="text-sm resize-y"
+                    rows={2}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
+                    disabled={isExpandingFindings}
+                    className="no-print"
+                  >
+                    {isExpandingFindings ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    Expand with AI
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* What to Expect Section */}
+            <Card className="print-section p-2 md:p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
+              <div className="space-y-2 p-2">
+                <Textarea
+                  value={editableExpectations[0] || ""}
+                  onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
+                  placeholder="Enter what the customer should expect..."
+                  className="text-sm resize-y"
+                  rows={2}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => expandWithAI(editableExpectations[0] || '', 'expect', setEditableExpectations)}
+                  disabled={isExpandingExpect}
+                  className="no-print"
+                >
+                  {isExpandingExpect ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
+                  Expand with AI
+                </Button>
+              </div>
             </Card>
 
             {/* Submit Button */}
