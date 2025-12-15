@@ -130,21 +130,19 @@ export const SignatureCanvas = ({ onSave, initialData, label = "Customer Signatu
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-      </div>
-      {hasSignature && (
-        <div className="flex justify-end">
+        {hasSignature && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={clearSignature}
-            className="no-print h-7 text-xs"
+            className="no-print h-5 text-xs absolute bottom-0 right-0"
           >
             <Eraser className="w-3 h-3 mr-1" />
             Clear
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
