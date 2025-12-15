@@ -343,8 +343,8 @@
   .print-layout > div:last-child textarea {
     display: block !important;
     width: 100% !important;
-    min-height: 47mm !important;
-    height: 47mm !important;
+    min-height: 45mm !important;
+    height: 45mm !important;
     max-height: none !important;
     line-height: 1.35 !important;
     overflow: visible !important;
@@ -355,6 +355,24 @@
     border: none !important;
     font-size: 12px !important;
     white-space: pre-wrap !important;
+    display: none !important;
+  }
+
+  /* Print-only formatted content with bold callouts */
+  .print-content-formatted {
+    display: block !important;
+    width: 100% !important;
+    min-height: 45mm !important;
+    height: 45mm !important;
+    line-height: 1.4 !important;
+    padding: 2mm 3mm !important;
+    background: hsl(var(--primary)) !important;
+    font-size: 12px !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .print-content-formatted strong {
+    font-weight: 700 !important;
   }
 
   /* Match spacing between Findings and What to Expect sections */
