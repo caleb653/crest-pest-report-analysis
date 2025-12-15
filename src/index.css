@@ -95,7 +95,7 @@
   }
 
   .print-section-content {
-    background: hsl(var(--primary)) !important;
+    background: hsl(var(--card)) !important;
     color: hsl(var(--foreground)) !important;
     padding: 0.35rem 1.25rem !important;
     font-size: 0.8rem !important;
