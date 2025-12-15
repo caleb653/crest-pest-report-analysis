@@ -44,7 +44,7 @@ const TECHNICIANS = [
   { name: "Caleb Whalen", license: "RA 71438" },
 ];
 
-const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
+const PEST_OPTIONS = ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps', 'Rodents', 'Fleas & Ticks', 'Bed Bugs', 'Bees', 'Mosquitoes', 'Millipedes', 'Box Elder Bugs', 'Clover Mites', 'American Roaches', 'Other'];
 
 const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught', 'Gentrol IGR', 'Nyguard IGR', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'Contrac All Weather Blox', 'DeltaDust', 'Maxforce FC Ant Gel', 'Other'];
 
@@ -1034,7 +1034,7 @@ const Report = () => {
                     className="text-xs resize-y min-h-[120px] leading-relaxed no-print"
                     rows={5}
                   />
-                  <ul className="list-disc list-inside text-xs space-y-1 hidden print:block">
+                  <ul className="list-disc list-inside text-xs space-y-1">
                     {(editableFindings[0] || "").split(/[.]\s+/).filter(line => line.trim()).map((line, idx) => (
                       <li key={idx}>{line.trim().replace(/\.$/, '')}</li>
                     ))}
