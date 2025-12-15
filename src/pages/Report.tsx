@@ -902,7 +902,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-3 items-start">
+                  <div key={index} className="grid grid-cols-[1fr_auto_auto_auto_1fr_auto] gap-2 items-start">
                     <div>
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
                       <Popover>
@@ -1011,10 +1011,10 @@ const Report = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Schedule</h2>}
                       {service.frequency > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-nowrap gap-0.5 overflow-x-auto">
                           {(() => {
                             const isWeekly = service.frequency === 7;
                             const today = new Date();
@@ -1032,7 +1032,7 @@ const Report = () => {
                               return (
                                 <span
                                   key={i}
-                                  className={`px-2 py-1 rounded text-xs ${
+                                  className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
                                     isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
                                   }`}
                                 >
@@ -1046,7 +1046,7 @@ const Report = () => {
                           })()}
                         </div>
                       ) : (
-                        <p className="text-xs text-muted-foreground">One-time only</p>
+                        <p className="text-[10px] text-muted-foreground">One-time</p>
                       )}
                     </div>
                     <div className={index === 0 ? 'mt-5' : ''}>
@@ -1217,13 +1217,45 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Pesticide Notice - Right Side */}
-            <Card className="print-section p-2">
-              <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[10px] leading-relaxed text-foreground space-y-1">
-                <p><strong>State law requires:</strong> CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered by the Structural Pest Control Board, and apply pesticides approved by the CA Dept. of Pesticide Regulation and US EPA.</p>
-                <p>If within 24 hours following application you experience flu-like symptoms, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                <p className="font-medium">Contact: Pest Control Company: 949-424-5000 | County Health Dept: 800-564-8448 | County Ag Commissioner: 714-955-0100 | Structural Pest Control Board: 800-737-8188</p>
+            {/* Pesticide Notice & Chemicals - Full Width */}
+            <Card className="print-section p-2 col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
+                  <div className="text-[8px] leading-tight text-foreground space-y-0.5">
+                    <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
+                    <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                    <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xs font-bold mb-1">Chemicals Used</h2>
+                  <div className="text-[8px] leading-tight text-foreground columns-2 gap-2">
+                    <p>Alpine WSG (Dinotefuran)</p>
+                    <p>Bifen I/T (Bifenthrin)</p>
+                    <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
+                    <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
+                    <p>Termidor SC (Fipronil)</p>
+                    <p>Phantom (Chlorfenapyr)</p>
+                    <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
+                    <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
+                    <p>Nyguard IGR Concentrate (Pyridine)</p>
+                    <p>PT Wasp Freeze (Prallethrin)</p>
+                    <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
+                    <p>PT Alpine Fly Bait</p>
+                    <p>Gentrol Aerosol ((S)-Hydroprene)</p>
+                    <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
+                    <p>Invade Hot Spot +</p>
+                    <p>Niban (Orthoboric Acid)</p>
+                    <p>Bifen LP (Bifenthrin)</p>
+                    <p>Advion Ant Gel Bait (Indoxacarb)</p>
+                    <p>Maxforce FC Ant Gel (Fipronil)</p>
+                    <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
+                    <p>Contrac California (Bromethalin)</p>
+                    <p>Delta Dust (Bayer) (Deltamethrin)</p>
+                    <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
+                  </div>
+                </div>
               </div>
             </Card>
 
