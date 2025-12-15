@@ -1092,8 +1092,8 @@ const Report = () => {
               {/* Left Column - Target Pests and Products stacked */}
               <div className="space-y-3">
                 {/* Target Pests */}
-                <Card className="print-section p-0 overflow-visible">
-                  <div className="print-section-header py-1.5 px-2.5">
+                <Card className="print-section p-0 overflow-visible rounded-lg">
+                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span>Target Pest(s)</span>
                   </div>
                   <div className="relative" ref={pestsDropdownRef}>
@@ -1175,8 +1175,11 @@ const Report = () => {
                 </Card>
 
                 {/* Products */}
-                <Card className="print-section p-2.5">
-                  <h2 className="text-[10px] font-bold mb-1">Products</h2>
+                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                    <span className="text-[10px] font-bold">Products</span>
+                  </div>
+                  <div className="p-2.5">
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
                     <p>Alpine WSG (Dinotefuran)</p>
                     <p>Bifen I/T (Bifenthrin)</p>
@@ -1202,12 +1205,16 @@ const Report = () => {
                     <p>Delta Dust (Bayer) (Deltamethrin)</p>
                     <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
                   </div>
+                  </div>
                 </Card>
               </div>
 
               {/* Right Column - Proposed Services */}
-              <Card className="print-section p-3 flex flex-col">
-                <h2 className="text-xs font-bold mb-2">Proposed Services</h2>
+              <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs font-bold">Proposed Services</span>
+                </div>
+                <div className="p-3 flex-1 flex flex-col">
                 {isAnalyzing ? (
                   <div className="text-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1263,14 +1270,18 @@ const Report = () => {
                     </Button>
                   </div>
                 )}
+                </div>
               </Card>
             </div>
 
             {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
             <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-3">
               {/* Signature Section - Left (same width as Target Pests + Products) */}
-              <Card className="print-section p-2.5">
-                <h2 className="text-xs font-bold mb-2">Customer Signature</h2>
+              <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs font-bold">Customer Signature</span>
+                </div>
+                <div className="p-2.5">
                 <SignatureCanvas 
                   onSave={setCustomerSignature} 
                   initialData={customerSignature}
@@ -1279,15 +1290,20 @@ const Report = () => {
                 <div className="mt-2 text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
                 </div>
+                </div>
               </Card>
 
               {/* Pesticide Notice - Right (same width as Proposed Services) */}
-              <Card className="print-section p-2.5">
-                <h2 className="text-[10px] font-bold mb-1">Pesticide Notice</h2>
-                <div className="text-[9px] leading-tight text-foreground space-y-0">
-                  <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
-                  <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                  <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
+              <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-[10px] font-bold">Pesticide Notice</span>
+                </div>
+                <div className="p-2.5">
+                  <div className="text-[9px] leading-tight text-foreground space-y-0">
+                    <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
+                    <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                    <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
+                  </div>
                 </div>
               </Card>
             </div>
