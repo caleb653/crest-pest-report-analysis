@@ -37,10 +37,10 @@ import {
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Marcus Reynolds", license: "TBD" },
-  { name: "Jesse Angulo", license: "TBD" },
-  { name: "Jake Shubin", license: "TBD" },
-  { name: "Caleb Whalen", license: "TBD" },
+  { name: "Marcus Reynolds", license: "FR 41031" },
+  { name: "Jesse Angulo", license: "FR 51548" },
+  { name: "Jake Shubin", license: "RA 71439" },
+  { name: "Caleb Whalen", license: "RA 71438" },
 ];
 
 const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
