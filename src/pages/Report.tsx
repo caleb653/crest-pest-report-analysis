@@ -30,6 +30,8 @@ const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bug
 
 const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught', 'Gentrol IGR', 'Nyguard IGR', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'Contrac All Weather Blox', 'DeltaDust', 'Maxforce FC Ant Gel', 'Other'];
 
+const EQUIPMENT_OPTIONS = ['Rodent Bait Stations', 'Rodent Traps', 'Mosquito Buckets', 'Fly Light', 'Pest Monitors'];
+
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
@@ -68,9 +70,11 @@ const Report = () => {
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
   );
+  const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
-  const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
-  const [editableNextSteps, setEditableNextSteps] = useState<string[]>([]);
+  const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
+  const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
+  const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
@@ -84,12 +88,10 @@ const Report = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
-  const [isExpandingRecs, setIsExpandingRecs] = useState(false);
 
-  const expandWithAI = async (text: string, type: 'findings' | 'expect' | 'recommendations', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+  const expandWithAI = async (text: string, type: 'findings' | 'expect', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (type === 'findings') setIsExpandingFindings(true);
-    else if (type === 'expect') setIsExpandingExpect(true);
-    else setIsExpandingRecs(true);
+    else setIsExpandingExpect(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('expand-findings', {
@@ -108,7 +110,6 @@ const Report = () => {
     } finally {
       setIsExpandingFindings(false);
       setIsExpandingExpect(false);
-      setIsExpandingRecs(false);
     }
   };
 
@@ -126,8 +127,7 @@ const Report = () => {
   useEffect(() => {
     if (analysis) {
       setEditableFindings(analysis.findings || []);
-      setEditableRecommendations(analysis.recommendations || []);
-      setEditableNextSteps(analysis.nextSteps || []);
+      setEditableExpectations(analysis.nextSteps || []);
     }
   }, [analysis]);
 
@@ -143,6 +143,9 @@ const Report = () => {
       }
       if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
         setProductsDropdownOpen(false);
+      }
+      if (equipmentDropdownRef.current && !equipmentDropdownRef.current.contains(event.target as Node)) {
+        setEquipmentDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -196,8 +199,7 @@ const Report = () => {
       setEditableCustomer(data.customer_name || "");
       setExtractedAddress(data.address || "");
       setEditableFindings((data.findings as string[]) || []);
-      setEditableRecommendations((data.recommendations as string[]) || []);
-      setEditableNextSteps((data.next_steps as string[]) || []);
+      setEditableExpectations((data.next_steps as string[]) || []);
 
       console.log("Loading report map_data:", {
         hasMapData: !!data.map_data,
@@ -384,8 +386,8 @@ const Report = () => {
         address: extractedAddress || address,
         notes: notes,
         findings: editableFindings,
-        recommendations: editableRecommendations,
-        next_steps: editableNextSteps,
+        recommendations: [],
+        next_steps: editableExpectations,
         map_url: coordinates
           ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
           : null,
@@ -994,8 +996,8 @@ const Report = () => {
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
               <div className="space-y-2 p-2">
                 <Textarea
-                  value={editableRecommendations[0] || ""}
-                  onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
+                  value={editableExpectations[0] || ""}
+                  onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
                   placeholder="Enter what the customer should expect..."
                   className="text-sm resize-y"
                   rows={2}
@@ -1004,7 +1006,7 @@ const Report = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => expandWithAI(editableRecommendations[0] || '', 'expect', setEditableRecommendations)}
+                  onClick={() => expandWithAI(editableExpectations[0] || '', 'expect', setEditableExpectations)}
                   disabled={isExpandingExpect}
                   className="no-print"
                 >
@@ -1018,33 +1020,69 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Our Top Recommendations Section */}
-            <Card className="print-section p-2 md:p-3">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Our Top Recommendations</h2>
-              <div className="space-y-2 p-2">
-                <Textarea
-                  value={editableNextSteps[0] || ""}
-                  onChange={(e) => updateItem(0, e.target.value, setEditableNextSteps)}
-                  placeholder="Enter recommendation..."
-                  className="text-sm resize-y w-full"
-                  rows={2}
-                />
-                <Button
+            {/* Equipment Section */}
+            <Card className="print-section p-0 overflow-visible">
+              <div className="relative" ref={equipmentDropdownRef}>
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => expandWithAI(editableNextSteps[0] || '', 'recommendations', setEditableNextSteps)}
-                  disabled={isExpandingRecs}
-                  className="no-print"
+                  onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
+                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
                 >
-                  {isExpandingRecs ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Expand with AI
-                </Button>
+                  <span>Equipment</span>
+                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {equipmentDropdownOpen && (
+                  <div 
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    {EQUIPMENT_OPTIONS.map((equipment) => (
+                      <button
+                        key={equipment}
+                        type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditableEquipment(prev => 
+                            prev.includes(equipment) 
+                              ? prev.filter(eq => eq !== equipment)
+                              : [...prev, equipment]
+                          );
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                          editableEquipment.includes(equipment) ? 'bg-primary/10 text-primary font-medium' : ''
+                        }`}
+                      >
+                        {equipment}
+                        {editableEquipment.includes(equipment) && (
+                          <span className="text-primary">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+              {editableEquipment.length > 0 && (
+                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                  {editableEquipment.map((equipment) => (
+                    <span
+                      key={equipment}
+                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                    >
+                      {equipment}
+                      <button
+                        type="button"
+                        onClick={() => setEditableEquipment(prev => prev.filter(eq => eq !== equipment))}
+                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </Card>
 
             {/* Submit Button */}
