@@ -902,7 +902,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[1.5fr_80px_80px_80px_1fr] gap-2 items-end pb-0.5 border-b border-border">
+                <div className="grid grid-cols-[180px_70px_70px_70px_1fr] gap-2 items-end pb-0.5 border-b border-border">
                   <h2 className="text-[10px] font-bold">Service Type</h2>
                   <h2 className="text-[10px] font-bold text-center">Initial</h2>
                   <h2 className="text-[10px] font-bold text-center">Recurring</h2>
@@ -912,7 +912,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[1.5fr_80px_80px_80px_1fr_auto] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[180px_70px_70px_70px_1fr_auto] gap-2 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1035,7 +1035,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[1.5fr_80px_80px_80px_1fr_auto] gap-2 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[180px_70px_70px_70px_1fr_auto] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-[10px] font-bold text-right pr-2">Total:</div>
                   <div className="text-[10px] font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
