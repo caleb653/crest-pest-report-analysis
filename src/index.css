@@ -466,11 +466,16 @@
     display: grid !important;
     grid-template-columns: 45% 55% !important;
     gap: 16px !important;
-    height: calc(100vh - 100px) !important;
+    height: calc(90vh - 100px) !important;
   }
 
   .print-page-break .grid > div {
     height: 100% !important;
+  }
+
+  /* Move canvas icons down 10% in print */
+  .print-page-break canvas {
+    transform: translateY(10%) !important;
   }
 
   /* Print tags styling */
