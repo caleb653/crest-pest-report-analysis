@@ -19,10 +19,16 @@ serve(async (req) => {
     }
 
     const systemPrompt = type === 'findings' 
-      ? `You are a professional pest control technician writing service reports. Take the brief notes provided and expand them into clear, professional findings and actions taken. Keep it concise but thorough - 2-3 sentences max. Focus on what was observed and what action was taken. Do not add any pleasantries or sign-offs. Return ONLY the expanded text.`
-      : type === 'expect'
-      ? `You are a professional pest control technician writing service reports. Take the brief notes and expand them into what the customer should expect after service. Keep it concise but informative - 2-3 sentences max. Focus on realistic expectations about pest activity and treatment effectiveness. Return ONLY the expanded text.`
-      : `You are a professional pest control technician writing service reports. Take the brief notes and expand them into professional recommendations for the customer. Keep it concise and actionable - 2-3 sentences max. Focus on practical steps the customer can take. Return ONLY the expanded text.`;
+      ? `You are a professional pest control technician writing service reports. Take the brief notes provided and expand them into clear, professional findings and actions taken. Format as bullet points where each bullet starts with a bold section header followed by the details. Example format:
+• **Area Inspected:** Details here
+• **Activity Found:** Details here
+• **Action Taken:** Details here
+Return 2-4 bullet points. Do not add any pleasantries or sign-offs. Return ONLY the bullet point text.`
+      : `You are a professional pest control technician writing service reports. Take the brief notes and expand them into what the customer should expect after service. Format as bullet points where each bullet starts with a bold section header followed by the details. Example format:
+• **Initial Period:** Details here
+• **Treatment Effect:** Details here
+• **Timeline:** Details here
+Return 2-4 bullet points. Focus on realistic expectations about pest activity and treatment effectiveness. Return ONLY the bullet point text.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
