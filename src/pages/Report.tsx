@@ -71,6 +71,7 @@ const SERVICE_CONFIG: Record<string, {
   frequency: number;
   targetPests: string[];
   proposedServices: string;
+  defaultRecurring?: number;
 }> = {
   'Monthly Services': {
     frequency: 30,
@@ -98,14 +99,21 @@ const SERVICE_CONFIG: Record<string, {
     proposedServices: 'Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.',
   },
   'Rodent Trapping': {
-    frequency: 30,
+    frequency: 7,
     targetPests: ['Rodents'],
     proposedServices: 'Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.',
+    defaultRecurring: 0,
   },
   'Rodent Trapping and Exclusion': {
-    frequency: 30,
+    frequency: 7,
     targetPests: ['Rodents'],
     proposedServices: 'Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home\'s protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.',
+    defaultRecurring: 0,
+  },
+  'Attic': {
+    frequency: 0,
+    targetPests: ['Rodents'],
+    proposedServices: 'Inspect attic space for signs of pest activity, entry points, and damage. Treat attic areas as needed and provide recommendations for exclusion and prevention.',
   },
 };
 
@@ -191,6 +199,10 @@ const Report = () => {
         const config = SERVICE_CONFIG[value];
         if (config) {
           updated[index].frequency = config.frequency;
+          // Set default recurring price if specified (e.g., $0 for rodent trapping)
+          if (config.defaultRecurring !== undefined) {
+            updated[index].recurringPrice = String(config.defaultRecurring);
+          }
           // Only update target pests and findings for the first service
           if (index === 0) {
             setEditableTargetPests(config.targetPests);
