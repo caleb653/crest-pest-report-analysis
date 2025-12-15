@@ -1030,15 +1030,10 @@ const Report = () => {
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                    placeholder="Enter proposed services (one per line for bullets)..."
-                    className="text-xs resize-y min-h-[120px] leading-relaxed no-print"
-                    rows={5}
+                    placeholder="Enter proposed services (separate with periods for bullets)..."
+                    className="text-xs resize-y min-h-[80px] leading-relaxed"
+                    rows={3}
                   />
-                  <ul className="list-disc list-inside text-xs space-y-1">
-                    {(editableFindings[0] || "").split(/[.]\s+/).filter(line => line.trim()).map((line, idx) => (
-                      <li key={idx}>{line.trim().replace(/\.$/, '')}</li>
-                    ))}
-                  </ul>
                   <Button
                     type="button"
                     variant="outline"
