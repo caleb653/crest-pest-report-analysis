@@ -18,6 +18,7 @@ import {
   ArrowRight,
   X,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,6 +82,35 @@ const Report = () => {
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExpandingFindings, setIsExpandingFindings] = useState(false);
+  const [isExpandingExpect, setIsExpandingExpect] = useState(false);
+  const [isExpandingRecs, setIsExpandingRecs] = useState(false);
+
+  const expandWithAI = async (text: string, type: 'findings' | 'expect' | 'recommendations', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    if (type === 'findings') setIsExpandingFindings(true);
+    else if (type === 'expect') setIsExpandingExpect(true);
+    else setIsExpandingRecs(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('expand-findings', {
+        body: { text, type }
+      });
+
+      if (error) throw error;
+
+      if (data?.expandedText) {
+        setter([data.expandedText]);
+        toast.success('Text expanded!');
+      }
+    } catch (error: any) {
+      console.error('Error expanding text:', error);
+      toast.error('Failed to expand text');
+    } finally {
+      setIsExpandingFindings(false);
+      setIsExpandingExpect(false);
+      setIsExpandingRecs(false);
+    }
+  };
 
   useEffect(() => {
     if (reportId) {
@@ -932,14 +962,29 @@ const Report = () => {
                   <p className="text-xs text-muted-foreground">Analyzing...</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 p-2">
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
                     placeholder="Enter finding or action taken..."
                     className="text-sm resize-y"
-                    rows={1}
+                    rows={2}
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
+                    disabled={isExpandingFindings}
+                    className="no-print"
+                  >
+                    {isExpandingFindings ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    Expand with AI
+                  </Button>
                 </div>
               )}
             </Card>
@@ -947,28 +992,58 @@ const Report = () => {
             {/* What to Expect Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">What to Expect</h2>
-              <div className="space-y-2">
+              <div className="space-y-2 p-2">
                 <Textarea
                   value={editableRecommendations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
                   placeholder="Enter what the customer should expect..."
                   className="text-sm resize-y"
-                  rows={1}
+                  rows={2}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => expandWithAI(editableRecommendations[0] || '', 'expect', setEditableRecommendations)}
+                  disabled={isExpandingExpect}
+                  className="no-print"
+                >
+                  {isExpandingExpect ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
+                  Expand with AI
+                </Button>
               </div>
             </Card>
 
             {/* Our Top Recommendations Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Our Top Recommendations</h2>
-              <div className="space-y-2">
+              <div className="space-y-2 p-2">
                 <Textarea
                   value={editableNextSteps[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableNextSteps)}
                   placeholder="Enter recommendation..."
                   className="text-sm resize-y w-full"
-                  rows={1}
+                  rows={2}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => expandWithAI(editableNextSteps[0] || '', 'recommendations', setEditableNextSteps)}
+                  disabled={isExpandingRecs}
+                  className="no-print"
+                >
+                  {isExpandingRecs ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
+                  Expand with AI
+                </Button>
               </div>
             </Card>
 
