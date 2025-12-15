@@ -810,12 +810,18 @@ const Report = () => {
                   <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
                   
                   {pestsDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div 
+                      className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       {PEST_OPTIONS.map((pest) => (
                         <button
                           key={pest}
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setEditableTargetPests(prev => 
                               prev.includes(pest) 
                                 ? prev.filter(p => p !== pest)
@@ -874,12 +880,18 @@ const Report = () => {
                   <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`} />
                   
                   {productsDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div 
+                      className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
                       {PRODUCT_OPTIONS.map((product) => (
                         <button
                           key={product}
                           type="button"
-                          onClick={() => {
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setEditableProductsUsed(prev => 
                               prev.includes(product) 
                                 ? prev.filter(p => p !== product)
