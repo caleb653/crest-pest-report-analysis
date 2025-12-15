@@ -26,6 +26,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const TECHNICIANS = [
+  { name: "Alexis Rodriguez", license: "RA 68916" },
+  { name: "Darrell Tanner", license: "FR 62523" },
+  { name: "Marcus Reynolds", license: "TBD" },
+  { name: "Jesse Angulo", license: "TBD" },
+  { name: "Jake Shubin", license: "TBD" },
+  { name: "Caleb Whalen", license: "TBD" },
+];
 
 const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
 
@@ -67,6 +83,15 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
+
+  // Auto-set license when technician changes
+  const handleTechnicianChange = (techName: string) => {
+    setEditableTech(techName);
+    const tech = TECHNICIANS.find(t => t.name === techName);
+    if (tech) {
+      setEditableLicenseNumber(tech.license);
+    }
+  };
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
@@ -680,21 +705,22 @@ const Report = () => {
                       <div className="space-y-0.5 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24">Name:</span>
-                          <Input
-                            value={editableTech}
-                            onChange={(e) => setEditableTech(e.target.value)}
-                            placeholder="Technician name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
-                          />
+                          <Select value={editableTech} onValueChange={handleTechnicianChange}>
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-6 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                              <SelectValue placeholder="Select technician" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TECHNICIANS.map((tech) => (
+                                <SelectItem key={tech.name} value={tech.name} className="text-xs">
+                                  {tech.name} ({tech.license})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24 whitespace-nowrap">License Number:</span>
-                          <Input
-                            value={editableLicenseNumber}
-                            onChange={(e) => setEditableLicenseNumber(e.target.value)}
-                            placeholder="License #"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
-                          />
+                          <span className="text-foreground">{editableLicenseNumber || "—"}</span>
                         </div>
                       </div>
                     </div>
