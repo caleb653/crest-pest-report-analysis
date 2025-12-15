@@ -19,16 +19,8 @@ serve(async (req) => {
     }
 
     const systemPrompt = type === 'findings' 
-      ? `You are a professional pest control technician writing service reports. Take the brief notes provided and expand them into clear, professional findings and actions taken. Format as bullet points where each bullet starts with a bold section header followed by the details. Example format:
-• **Area Inspected:** Details here
-• **Activity Found:** Details here
-• **Action Taken:** Details here
-Return 2-4 bullet points. Do not add any pleasantries or sign-offs. Return ONLY the bullet point text.`
-      : `You are a professional pest control technician writing service reports. Take the brief notes and expand them into what the customer should expect after service. Format as bullet points where each bullet starts with a bold section header followed by the details. Example format:
-• **Initial Period:** Details here
-• **Treatment Effect:** Details here
-• **Timeline:** Details here
-Return 2-4 bullet points. Focus on realistic expectations about pest activity and treatment effectiveness. Return ONLY the bullet point text.`;
+      ? `You are a professional pest control technician. Take the user's exact notes and expand them into clearer, more professional wording. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points with bold headers. Return 2-4 bullet points. Return ONLY the bullet point text, no pleasantries.`
+      : `You are a professional pest control technician. Take the user's exact notes and expand them into what the customer should expect. Stay strictly on topic - only expand what they wrote, do not add new topics or unrelated information. Format as bullet points with bold headers. Return 2-4 bullet points. Return ONLY the bullet point text.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
