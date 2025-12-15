@@ -310,8 +310,8 @@ const Report = () => {
           lat: coordinates.lat,
           lng: coordinates.lng,
           zoom: zoomLevel,
-          width: 1100,
-          height: 700,
+          width: 550,
+          height: 1005,
           marker: "1",
         },
       });
