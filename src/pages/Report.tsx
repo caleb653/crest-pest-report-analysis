@@ -802,7 +802,7 @@ const Report = () => {
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
                           />
                         </div>
                         <div className="flex items-center gap-2">
@@ -811,7 +811,7 @@ const Report = () => {
                             value={editableAddress || extractedAddress}
                             onChange={(e) => setEditableAddress(e.target.value)}
                             placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
                           />
                         </div>
                         <div className="flex items-center gap-2">
@@ -820,7 +820,7 @@ const Report = () => {
                             type="date"
                             value={editableServiceDate}
                             onChange={(e) => setEditableServiceDate(e.target.value)}
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
                           />
                         </div>
                       </div>
@@ -832,7 +832,7 @@ const Report = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24">Name:</span>
                           <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-6 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
                               <SelectValue placeholder="Select technician" />
                             </SelectTrigger>
                             <SelectContent>
@@ -860,7 +860,7 @@ const Report = () => {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="Customer email"
-                  className="w-48 h-8 text-xs"
+                  className="w-48 h-9 text-xs"
                 />
                 <Button 
                   onClick={handleSendEmail} 
@@ -923,7 +923,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center text-xs font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center text-xs font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -934,13 +934,13 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
                         onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
                       >
-                        <SelectTrigger className="h-8 text-xs w-full no-print bg-white">
+                        <SelectTrigger className="h-9 text-xs w-full no-print bg-white">
                           <SelectValue placeholder="Select service..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -965,7 +965,7 @@ const Report = () => {
                           handleServiceChange(index, 'initialPrice', val);
                         }}
                         placeholder="0"
-                        className="h-8 text-xs pl-6 text-right pr-2"
+                        className="h-9 text-xs pl-6 text-right pr-2"
                       />
                     </div>
                     <div className="relative">
@@ -979,7 +979,7 @@ const Report = () => {
                           handleServiceChange(index, 'recurringPrice', val);
                         }}
                         placeholder="0"
-                        className="h-8 text-xs pl-6 text-right pr-2"
+                        className="h-9 text-xs pl-6 text-right pr-2"
                       />
                     </div>
                     <div>
@@ -987,7 +987,7 @@ const Report = () => {
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
                       >
-                        <SelectTrigger className="h-8 text-xs w-full no-print bg-white">
+                        <SelectTrigger className="h-9 text-xs w-full no-print bg-white">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -1057,7 +1057,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
                   <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
@@ -1160,7 +1160,7 @@ const Report = () => {
                     )}
                     <Input
                       placeholder="Add custom pest..."
-                      className="h-6 text-xs no-print mt-1"
+                      className="h-7 text-xs no-print mt-1"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           const value = (e.target as HTMLInputElement).value.trim();
