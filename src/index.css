@@ -296,7 +296,7 @@
     border-radius: 2.5mm !important;
     box-shadow: none !important;
     padding: 0 !important;
-    background: transparent !important;
+    background: hsl(var(--primary)) !important;
     border: 1.25px solid hsl(var(--secondary)) !important;
     width: 100% !important;
   }
@@ -382,15 +382,15 @@
     margin-top: 1mm !important;
   }
 
-  /* Remove gap between header and content */
-  .print-layout > div:last-child .print-section .space-y-3 {
-    padding: 0 !important;
-    margin: 0 !important;
-    gap: 0 !important;
+  /* Remove any gap between header and body */
+  .print-layout > div:last-child .print-section > h2.print-section-header {
+    margin-bottom: 0 !important;
   }
 
-  .print-layout > div:last-child .print-section > div.space-y-3 {
-    display: block !important;
+  .print-layout > div:last-child .print-section > h2.print-section-header + div {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    background: hsl(var(--primary)) !important;
   }
 
   .print-content-formatted strong {
