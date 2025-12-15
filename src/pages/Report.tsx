@@ -923,7 +923,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_70px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -934,7 +934,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_70px_minmax(200px,2fr)_24px] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1057,7 +1057,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_70px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
                   <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
@@ -1284,7 +1284,7 @@ const Report = () => {
               {/* Pesticide Notice - Right (same width as Proposed Services) */}
               <Card className="print-section p-1.5">
                 <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
-                <div className="text-[8px] leading-tight text-foreground space-y-0">
+                <div className="text-[9px] leading-tight text-foreground space-y-0">
                   <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
                   <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                   <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
