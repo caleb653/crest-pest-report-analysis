@@ -890,9 +890,9 @@ const Report = () => {
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div className={isMobile ? "flex flex-col" : "p-4 max-w-[1800px] mx-auto"}>
+      <div className={isMobile ? "flex flex-col" : "p-3 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-4"}>
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2"}>
             {/* Mobile: Customer & Technician */}
             {isMobile && (
               <Card className="p-4">
