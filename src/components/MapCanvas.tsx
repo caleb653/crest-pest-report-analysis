@@ -91,6 +91,29 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     rectFillTransparentRef.current = rectFillTransparent;
   }, [rectFillTransparent]);
 
+  // Disable selection when tool is 'line' to prevent moving objects while drawing
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+    const canvas = fabricCanvasRef.current;
+    if (tool === 'line') {
+      canvas.selection = false;
+      canvas.getObjects().forEach(obj => {
+        obj.selectable = false;
+        obj.evented = false;
+      });
+    } else {
+      canvas.selection = true;
+      canvas.getObjects().forEach(obj => {
+        // Don't enable selection for temp lines
+        if (obj !== tempLineRef.current) {
+          obj.selectable = true;
+          obj.evented = true;
+        }
+      });
+    }
+    canvas.renderAll();
+  }, [tool]);
+
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -281,6 +304,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         clickPlacedRef.current = true;
         setTool('select');
       } else if (currentTool === 'line') {
+        // Deselect any active objects before starting line draw
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        
         // Start drawing a line
         lineStartRef.current = { x: pt.x, y: pt.y };
         const tempLine = new Line([pt.x, pt.y, pt.x, pt.y], {
