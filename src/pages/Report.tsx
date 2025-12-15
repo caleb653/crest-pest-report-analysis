@@ -1039,10 +1039,10 @@ const Report = () => {
                 <div className="grid grid-cols-[1fr_80px_80px_80px_2fr_24px] gap-3 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right">Total:</div>
                   <div className="text-xs font-bold text-center">
-                    ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
+                    ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}
                   </div>
                   <div className="text-xs font-bold text-center">
-                    ${services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0).toFixed(2)}
+                    ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}
                   </div>
                   <div></div>
                   <div></div>
@@ -1261,21 +1261,21 @@ const Report = () => {
 
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background">
-        <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
+        <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
-            <div className="flex items-center gap-4">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-16" />
-              <h1 className="text-2xl font-bold text-foreground">Property Map & Images</h1>
+          <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-border">
+            <div className="flex items-center gap-3">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
+              <h1 className="text-xl font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Map Section */}
             <div>
-              <h2 className="text-xl font-bold text-foreground mb-4">Property Map</h2>
-              <div className="h-[400px] relative rounded-lg overflow-hidden border-2 border-border">
+              <h2 className="text-lg font-bold text-foreground mb-2">Property Map</h2>
+              <div className="h-[320px] relative rounded-lg overflow-hidden border-2 border-border">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
@@ -1386,7 +1386,7 @@ const Report = () => {
 
             {/* Property Images Section */}
             <div>
-              <h2 className="text-xl font-bold text-foreground mb-4">Property Images</h2>
+              <h2 className="text-lg font-bold text-foreground mb-2">Property Images</h2>
               
               {/* Upload Section */}
               <div className="no-print mb-4">
