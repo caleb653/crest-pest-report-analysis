@@ -925,7 +925,7 @@ const Report = () => {
                               isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
                             }`}
                           >
-                            {serviceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {serviceDate.toLocaleDateString('en-US', { month: 'short' })}
                           </span>
                         );
                       })}
@@ -1015,19 +1015,20 @@ const Report = () => {
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                    placeholder="Enter proposed services..."
+                    placeholder="Enter proposed services (one per line for bullets)..."
                     className="text-xs resize-y min-h-[120px] leading-relaxed no-print"
                     rows={5}
                   />
-                  <div 
-                    className="hidden print-content-formatted text-xs"
-                    dangerouslySetInnerHTML={{
-                      __html: (editableFindings[0] || "").replace(
-                        /^(.*?:)/gm,
-                        '<strong>$1</strong>'
-                      ).replace(/\n/g, '<br/>')
-                    }}
-                  />
+                  <ul className="list-disc list-inside text-xs space-y-1 print-only hidden">
+                    {(editableFindings[0] || "").split('\n').filter(line => line.trim()).map((line, idx) => (
+                      <li key={idx}>{line.trim()}</li>
+                    ))}
+                  </ul>
+                  <ul className="list-disc list-inside text-xs space-y-1">
+                    {(editableFindings[0] || "").split(/[.]\s+/).filter(line => line.trim()).map((line, idx) => (
+                      <li key={idx}>{line.trim().replace(/\.$/, '')}</li>
+                    ))}
+                  </ul>
                   <Button
                     type="button"
                     variant="outline"
