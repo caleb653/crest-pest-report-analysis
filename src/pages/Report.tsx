@@ -960,21 +960,35 @@ const Report = () => {
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Schedule</h2>}
                       {service.frequency > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {Array.from({ length: 12 }, (_, i) => {
-                            const scheduleDate = new Date();
-                            scheduleDate.setDate(scheduleDate.getDate() + (i * service.frequency));
-                            const isFirst = i === 0;
-                            return (
-                              <span
-                                key={i}
-                                className={`px-2 py-1 rounded text-xs ${
-                                  isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                {scheduleDate.toLocaleDateString('en-US', { month: 'short' })}
-                              </span>
-                            );
-                          })}
+                          {(() => {
+                            const isWeekly = service.frequency === 7;
+                            const today = new Date();
+                            const currentMonth = today.getMonth();
+                            const currentYear = today.getFullYear();
+                            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                            const daysRemaining = daysInMonth - today.getDate();
+                            const weeksRemaining = Math.ceil(daysRemaining / 7) + 1;
+                            const count = isWeekly ? weeksRemaining : 12;
+                            
+                            return Array.from({ length: count }, (_, i) => {
+                              const scheduleDate = new Date();
+                              scheduleDate.setDate(scheduleDate.getDate() + (i * service.frequency));
+                              const isFirst = i === 0;
+                              return (
+                                <span
+                                  key={i}
+                                  className={`px-2 py-1 rounded text-xs ${
+                                    isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted text-muted-foreground'
+                                  }`}
+                                >
+                                  {isWeekly 
+                                    ? scheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                    : scheduleDate.toLocaleDateString('en-US', { month: 'short' })
+                                  }
+                                </span>
+                              );
+                            });
+                          })()}
                         </div>
                       ) : (
                         <p className="text-xs text-muted-foreground">One-time only</p>
