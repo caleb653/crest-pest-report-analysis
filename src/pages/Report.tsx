@@ -800,7 +800,7 @@ const Report = () => {
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
               <div className="flex flex-wrap gap-2">
-                {['Termidor', 'Demand CS', 'Suspend SC', 'Temprid FX', 'Advion Gel', 'Alpine WSG', 'Phantom', 'Transport GHP', 'Arilon', 'Seclira', 'Vendetta Plus', 'Maxforce FC', 'Contrac', 'Ditrac', 'Fastrac', 'Terad3', 'EcoVia', 'Essentria IC3', 'Cykick CS', 'Bifen IT'].map((product) => (
+                {['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught FastCap Spider & Scorpion', 'Gentrol IGR Concentrate', 'Nyguard IGR Concentrate', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Invade Hot Spot +', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'California - Contrac All Weather Blox', 'DeltaDust Insecticide - Bayer', 'In2Care Mix', 'ExciteR', 'Maxforce FC Ant Gel'].map((product) => (
                   <button
                     key={product}
                     type="button"
