@@ -1038,11 +1038,13 @@ const Report = () => {
                 {/* Totals Row */}
                 <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_70px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
-                  <div className="text-xs font-bold text-center bg-muted/50 rounded py-0.5">
-                    ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}
+                  <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
+                    <span className="text-muted-foreground mr-auto">$</span>
+                    <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
                   </div>
-                  <div className="text-xs font-bold text-center bg-muted/50 rounded py-0.5">
-                    ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}
+                  <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
+                    <span className="text-muted-foreground mr-auto">$</span>
+                    <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
                   </div>
                   <div></div>
                   <div></div>
@@ -1283,11 +1285,11 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-4 h-[calc(100vh-100px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-4 h-[calc(200vh-100px)]">
             {/* Map Section */}
             <div className="flex flex-col h-full">
               <h2 className="text-lg font-bold text-foreground mb-2">Property Map</h2>
-              <div className="flex-1 w-full relative rounded-lg overflow-hidden border-2 border-border max-h-[780px]">
+              <div className="flex-1 w-full relative rounded-lg overflow-hidden border-2 border-border">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
