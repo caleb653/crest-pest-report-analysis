@@ -60,6 +60,7 @@ const SERVICE_TYPE_OPTIONS = [
 ];
 
 const FREQUENCY_OPTIONS = [
+  { label: 'One-time visit', days: 0 },
   { label: 'Every 30 days', days: 30 },
   { label: 'Every 60 days', days: 60 },
   { label: 'Every 90 days', days: 90 },
@@ -804,15 +805,15 @@ const Report = () => {
                 <button
                   type="button"
                   onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
+                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
                 >
                   <span>Target Pest(s)</span>
-                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {pestsDropdownOpen && (
                   <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {PEST_OPTIONS.map((pest) => (
@@ -829,7 +830,7 @@ const Report = () => {
                               : [...prev, pest]
                           );
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
                           editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
                         }`}
                       >
@@ -843,11 +844,11 @@ const Report = () => {
                 )}
               </div>
               {editableTargetPests.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                <div className="flex flex-wrap gap-1 p-2 bg-background">
                   {editableTargetPests.map((pest) => (
                     <span
                       key={pest}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                     >
                       {pest}
                       <button
@@ -863,120 +864,96 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Service Type Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Type</h2>
-              <div className="p-3">
-                <Select value={serviceType} onValueChange={setServiceType}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select service type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SERVICE_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {serviceType && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground">
-                      {serviceType}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Pricing Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Pricing</h2>
-              <div className="p-3 space-y-4">
+            {/* Service Type & Pricing Row */}
+            <Card className="print-section p-2">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Initial Service Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={initialPrice}
-                      onChange={(e) => setInitialPrice(e.target.value)}
-                      placeholder="0.00"
-                      className="pl-7"
-                    />
-                  </div>
+                  <h2 className="text-sm font-bold mb-1">Service Type</h2>
+                  <Select value={serviceType} onValueChange={setServiceType}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Select service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICE_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option} className="text-sm">
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Recurring Service Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={recurringPrice}
-                      onChange={(e) => setRecurringPrice(e.target.value)}
-                      placeholder="0.00"
-                      className="pl-7"
-                    />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-medium mb-1 block">Initial Price</label>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={initialPrice}
+                        onChange={(e) => setInitialPrice(e.target.value)}
+                        placeholder="0"
+                        className="pl-6 h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium mb-1 block">Recurring Price</label>
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                      <Input
+                        type="number"
+                        value={recurringPrice}
+                        onChange={(e) => setRecurringPrice(e.target.value)}
+                        placeholder="0"
+                        className="pl-6 h-8 text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Frequency Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Frequency</h2>
-              <div className="p-3 space-y-4">
-                <div className="flex gap-2">
-                  {FREQUENCY_OPTIONS.map((option) => (
-                    <button
-                      key={option.days}
-                      type="button"
-                      onClick={() => setFrequency(option.days)}
-                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        frequency === option.days
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground hover:bg-muted/80'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Service Timeline */}
-                <div className="mt-4">
-                  <h3 className="text-sm font-semibold mb-3">Upcoming Service Schedule</h3>
-                  <div className="space-y-2">
-                    {[0, 1, 2, 3, 4, 5].map((i) => {
-                      const serviceDate = new Date();
-                      serviceDate.setDate(serviceDate.getDate() + (i * frequency));
-                      const isFirst = i === 0;
-                      return (
-                        <div
-                          key={i}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            isFirst ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                            isFirst ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/20 text-muted-foreground'
-                          }`}>
-                            {i + 1}
-                          </div>
-                          <div className="flex-1">
-                            <p className={`text-sm font-medium ${isFirst ? 'text-primary' : 'text-foreground'}`}>
-                              {isFirst ? 'Initial Service' : `Service #${i + 1}`}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {serviceDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+            {/* Frequency & Schedule Row */}
+            <Card className="print-section p-2">
+              <h2 className="text-sm font-bold mb-2">Service Frequency & Schedule</h2>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {FREQUENCY_OPTIONS.map((option) => (
+                  <button
+                    key={option.days}
+                    type="button"
+                    onClick={() => setFrequency(option.days)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      frequency === option.days
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
+              {frequency > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const serviceDate = new Date();
+                    serviceDate.setDate(serviceDate.getDate() + (i * frequency));
+                    const isFirst = i === 0;
+                    return (
+                      <div
+                        key={i}
+                        className={`px-2 py-1 rounded text-xs ${
+                          isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted/70 text-muted-foreground'
+                        }`}
+                      >
+                        {serviceDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {frequency === 0 && (
+                <p className="text-xs text-muted-foreground">One-time service only</p>
+              )}
             </Card>
 
             {/* Proposed Equipment Section */}
@@ -985,15 +962,15 @@ const Report = () => {
                 <button
                   type="button"
                   onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
+                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
                 >
                   <span>Proposed Equipment</span>
-                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {equipmentDropdownOpen && (
                   <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {EQUIPMENT_OPTIONS.map((equipment) => (
@@ -1010,7 +987,7 @@ const Report = () => {
                               : [...prev, equipment]
                           );
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
                           editableEquipment.includes(equipment) ? 'bg-primary/10 text-primary font-medium' : ''
                         }`}
                       >
@@ -1024,11 +1001,11 @@ const Report = () => {
                 )}
               </div>
               {editableEquipment.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                <div className="flex flex-wrap gap-1 p-2 bg-background">
                   {editableEquipment.map((equipment) => (
                     <span
                       key={equipment}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                     >
                       {equipment}
                       <button
@@ -1045,24 +1022,24 @@ const Report = () => {
             </Card>
 
             {/* Findings Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Findings & Actions Taken</h2>
+            <Card className="print-section p-2">
+              <h2 className="text-sm font-bold mb-2">Findings & Actions Taken</h2>
               {isAnalyzing ? (
-                <div className="text-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                <div className="text-center py-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
                   <p className="text-xs text-muted-foreground">Analyzing...</p>
                 </div>
               ) : (
-                <div className="space-y-3 p-3">
+                <div className="space-y-2">
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
                     placeholder="Enter finding or action taken..."
-                    className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
-                    rows={5}
+                    className="text-xs resize-y min-h-[80px] leading-relaxed no-print"
+                    rows={3}
                   />
                   <div 
-                    className="hidden print-content-formatted"
+                    className="hidden print-content-formatted text-xs"
                     dangerouslySetInnerHTML={{
                       __html: (editableFindings[0] || "").replace(
                         /^(.*?:)/gm,
@@ -1076,12 +1053,12 @@ const Report = () => {
                     size="sm"
                     onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
                     disabled={isExpandingFindings}
-                    className="no-print"
+                    className="no-print h-7 text-xs"
                   >
                     {isExpandingFindings ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                     ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-3 h-3 mr-1" />
                     )}
                     Expand with AI
                   </Button>
@@ -1091,45 +1068,25 @@ const Report = () => {
 
 
             {/* Signature Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Acknowledgment</h2>
-              <div className="p-3">
-                <SignatureCanvas 
-                  onSave={setCustomerSignature} 
-                  initialData={customerSignature}
-                  label="Customer Signature"
-                />
-                <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  <div className="flex-1">
-                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
-                  </div>
-                </div>
+            <Card className="print-section p-2">
+              <h2 className="text-sm font-bold mb-2">Customer Acknowledgment</h2>
+              <SignatureCanvas 
+                onSave={setCustomerSignature} 
+                initialData={customerSignature}
+                label="Customer Signature"
+              />
+              <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
               </div>
             </Card>
 
             {/* Pesticide Notice Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Pesticide Notice</h2>
-              <div className="p-3 space-y-3 text-xs leading-relaxed text-foreground">
-                <p>
-                  <strong>State law requires that you be given the following information:</strong>
-                </p>
-                <p>
-                  CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.
-                </p>
-                <p>
-                  If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
-                </p>
-                <p className="font-medium">
-                  For further information, contact any of the following:
-                </p>
-                <ul className="list-none space-y-1 pl-2">
-                  <li>• Your Pest Control Company: <span className="font-semibold">949-424-5000</span></li>
-                  <li>• Health Questions - County Health Department: <span className="font-semibold">800-564-8448</span></li>
-                  <li>• Application Information - County Agricultural Commissioner: <span className="font-semibold">714-955-0100</span></li>
-                  <li>• Regulatory Information - Structural Pest Control Board: <span className="font-semibold">800-737-8188</span></li>
-                  <li className="text-muted-foreground text-[10px]">2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815</li>
-                </ul>
+            <Card className="print-section p-2">
+              <h2 className="text-sm font-bold mb-1">Pesticide Notice</h2>
+              <div className="text-[10px] leading-tight text-foreground space-y-1">
+                <p><strong>State law requires:</strong> CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered by the Structural Pest Control Board, and apply pesticides approved by the CA Dept. of Pesticide Regulation and US EPA.</p>
+                <p>If within 24 hours following application you experience flu-like symptoms, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                <p className="font-medium">Contact: Pest Control Company: 949-424-5000 | County Health Dept: 800-564-8448 | County Ag Commissioner: 714-955-0100 | Structural Pest Control Board: 800-737-8188</p>
               </div>
             </Card>
 
