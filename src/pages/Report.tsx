@@ -679,7 +679,7 @@ const Report = () => {
                 </div>
                 <div className="flex-1 ml-4">
                   <h1 className="text-xl font-bold text-foreground mb-2">
-                    Initial Pest Report
+                    Pest Inspection Report
                   </h1>
 
                   <div className="flex gap-8">
@@ -739,18 +739,33 @@ const Report = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3 no-print">
-                <Button onClick={exportToPDF} variant="default" size="sm">
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Export PDF
+              <div className="flex items-center gap-2 no-print">
+                <Input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="Customer email"
+                  className="w-48 h-8 text-xs"
+                />
+                <Button 
+                  onClick={handleSendEmail} 
+                  disabled={isSendingEmail || !customerEmail}
+                  variant="secondary"
+                  size="sm"
+                >
+                  {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
+                  Send
                 </Button>
-                <Button onClick={handleShare} variant="outline" size="sm">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
+                <Button onClick={handleSubmit} disabled={isSaving} size="sm">
+                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                  {reportId ? "Update" : "Submit"}
+                </Button>
+                <Button onClick={exportToPDF} variant="outline" size="sm">
+                  <FileDown className="w-3 h-3 mr-1" />
+                  PDF
                 </Button>
                 <Button onClick={() => navigate("/")} variant="outline" size="sm">
-                  <Home className="w-4 h-4 mr-2" />
-                  Home
+                  <Home className="w-3 h-3" />
                 </Button>
               </div>
             </div>
@@ -864,18 +879,18 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Service Type & Pricing Row */}
-            <Card className="print-section p-2">
-              <div className="grid grid-cols-2 gap-4">
+            {/* Service Type, Pricing & Frequency - Full Width */}
+            <Card className="print-section p-2 col-span-2">
+              <div className="grid grid-cols-4 gap-4 items-start">
                 <div>
-                  <h2 className="text-sm font-bold mb-1">Service Type</h2>
+                  <h2 className="text-xs font-bold mb-1">Service Type</h2>
                   <Select value={serviceType} onValueChange={setServiceType}>
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="Select service" />
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {SERVICE_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option} className="text-sm">
+                        <SelectItem key={option} value={option} className="text-xs">
                           {option}
                         </SelectItem>
                       ))}
@@ -884,93 +899,87 @@ const Report = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs font-medium mb-1 block">Initial Price</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                      <Input
-                        type="number"
-                        value={initialPrice}
-                        onChange={(e) => setInitialPrice(e.target.value)}
-                        placeholder="0"
-                        className="pl-6 h-8 text-sm"
-                      />
-                    </div>
+                    <label className="text-xs font-bold mb-1 block">Initial $</label>
+                    <Input
+                      type="number"
+                      value={initialPrice}
+                      onChange={(e) => setInitialPrice(e.target.value)}
+                      placeholder="0"
+                      className="h-7 text-xs"
+                    />
                   </div>
                   <div>
-                    <label className="text-xs font-medium mb-1 block">Recurring Price</label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                      <Input
-                        type="number"
-                        value={recurringPrice}
-                        onChange={(e) => setRecurringPrice(e.target.value)}
-                        placeholder="0"
-                        className="pl-6 h-8 text-sm"
-                      />
-                    </div>
+                    <label className="text-xs font-bold mb-1 block">Recurring $</label>
+                    <Input
+                      type="number"
+                      value={recurringPrice}
+                      onChange={(e) => setRecurringPrice(e.target.value)}
+                      placeholder="0"
+                      className="h-7 text-xs"
+                    />
                   </div>
                 </div>
-              </div>
-            </Card>
-
-            {/* Frequency & Schedule Row */}
-            <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-2">Service Frequency & Schedule</h2>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {FREQUENCY_OPTIONS.map((option) => (
-                  <button
-                    key={option.days}
-                    type="button"
-                    onClick={() => setFrequency(option.days)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                      frequency === option.days
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground hover:bg-muted/80'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              {frequency > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const serviceDate = new Date();
-                    serviceDate.setDate(serviceDate.getDate() + (i * frequency));
-                    const isFirst = i === 0;
-                    return (
-                      <div
-                        key={i}
-                        className={`px-2 py-1 rounded text-xs ${
-                          isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted/70 text-muted-foreground'
+                <div>
+                  <h2 className="text-xs font-bold mb-1">Frequency</h2>
+                  <div className="flex flex-wrap gap-1">
+                    {FREQUENCY_OPTIONS.map((option) => (
+                      <button
+                        key={option.days}
+                        type="button"
+                        onClick={() => setFrequency(option.days)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                          frequency === option.days
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground hover:bg-muted/80'
                         }`}
                       >
-                        {serviceDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                      </div>
-                    );
-                  })}
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
-              {frequency === 0 && (
-                <p className="text-xs text-muted-foreground">One-time service only</p>
-              )}
+                <div>
+                  <h2 className="text-xs font-bold mb-1">Schedule</h2>
+                  {frequency > 0 ? (
+                    <div className="flex flex-wrap gap-0.5">
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const serviceDate = new Date();
+                        serviceDate.setDate(serviceDate.getDate() + (i * frequency));
+                        const isFirst = i === 0;
+                        return (
+                          <span
+                            key={i}
+                            className={`px-1.5 py-0.5 rounded text-[10px] ${
+                              isFirst ? 'bg-primary text-primary-foreground font-medium' : 'bg-muted/70 text-muted-foreground'
+                            }`}
+                          >
+                            {serviceDate.toLocaleDateString('en-US', { month: 'short' })}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground">One-time only</p>
+                  )}
+                </div>
+              </div>
             </Card>
 
-            {/* Proposed Equipment Section */}
+            {/* Proposed Equipment Section - Smaller */}
             <Card className="print-section p-0 overflow-visible">
               <div className="relative" ref={equipmentDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
-                  className="print-section-header text-sm font-bold w-full flex items-center justify-between cursor-pointer py-2 px-3"
+                  className="print-section-header text-xs font-bold w-full flex items-center justify-between cursor-pointer py-1.5 px-2"
                 >
                   <span>Proposed Equipment</span>
-                  <ChevronDown className={`w-4 h-4 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 h-3 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {equipmentDropdownOpen && (
                   <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-40 overflow-y-auto"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {EQUIPMENT_OPTIONS.map((equipment) => (
@@ -987,7 +996,7 @@ const Report = () => {
                               : [...prev, equipment]
                           );
                         }}
-                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
+                        className={`w-full px-2 py-1 text-left text-[10px] hover:bg-muted flex items-center justify-between ${
                           editableEquipment.includes(equipment) ? 'bg-primary/10 text-primary font-medium' : ''
                         }`}
                       >
@@ -1001,11 +1010,11 @@ const Report = () => {
                 )}
               </div>
               {editableEquipment.length > 0 && (
-                <div className="flex flex-wrap gap-1 p-2 bg-background">
+                <div className="flex flex-wrap gap-1 p-1.5 bg-background">
                   {editableEquipment.map((equipment) => (
                     <span
                       key={equipment}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary text-primary-foreground"
                     >
                       {equipment}
                       <button
@@ -1013,7 +1022,7 @@ const Report = () => {
                         onClick={() => setEditableEquipment(prev => prev.filter(eq => eq !== equipment))}
                         className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-2 h-2" />
                       </button>
                     </span>
                   ))}
@@ -1021,9 +1030,9 @@ const Report = () => {
               )}
             </Card>
 
-            {/* Findings Section */}
+            {/* Proposed Services Section */}
             <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-2">Findings & Actions Taken</h2>
+              <h2 className="text-sm font-bold mb-2">Proposed Services</h2>
               {isAnalyzing ? (
                 <div className="text-center py-2">
                   <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1034,7 +1043,7 @@ const Report = () => {
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                    placeholder="Enter finding or action taken..."
+                    placeholder="Enter proposed services..."
                     className="text-xs resize-y min-h-[80px] leading-relaxed no-print"
                     rows={3}
                   />
@@ -1067,68 +1076,27 @@ const Report = () => {
             </Card>
 
 
-            {/* Signature Section */}
-            <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-2">Customer Acknowledgment</h2>
-              <SignatureCanvas 
-                onSave={setCustomerSignature} 
-                initialData={customerSignature}
-                label="Customer Signature"
-              />
-              <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
-              </div>
-            </Card>
-
             {/* Pesticide Notice Section */}
             <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[10px] leading-tight text-foreground space-y-1">
+              <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
+              <div className="text-[9px] leading-tight text-foreground space-y-0.5">
                 <p><strong>State law requires:</strong> CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered by the Structural Pest Control Board, and apply pesticides approved by the CA Dept. of Pesticide Regulation and US EPA.</p>
                 <p>If within 24 hours following application you experience flu-like symptoms, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                 <p className="font-medium">Contact: Pest Control Company: 949-424-5000 | County Health Dept: 800-564-8448 | County Ag Commissioner: 714-955-0100 | Structural Pest Control Board: 800-737-8188</p>
               </div>
             </Card>
 
-            {/* Email & Submit Section */}
-            <Card className="print-section p-3 no-print">
-              <h2 className="text-lg font-bold mb-3">Send Report to Customer</h2>
-              <div className="flex gap-2 mb-3">
-                <Input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="Customer email address"
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleSendEmail} 
-                  disabled={isSendingEmail || !customerEmail}
-                  variant="secondary"
-                >
-                  {isSendingEmail ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send
-                    </>
-                  )}
-                </Button>
+            {/* Signature Section - Bottom Right */}
+            <Card className="print-section p-2">
+              <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
+              <SignatureCanvas 
+                onSave={setCustomerSignature} 
+                initialData={customerSignature}
+                label="Customer Signature"
+              />
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
               </div>
-              <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="w-full text-lg py-6">
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5 mr-2" />
-                    {reportId ? "Update Report" : "Submit Report"}
-                  </>
-                )}
-              </Button>
             </Card>
           </div>
         </div>
