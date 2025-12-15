@@ -442,7 +442,6 @@ const Report = () => {
         (toastEl as HTMLElement).style.display = "none";
       });
 
-      // Simple, reliable print: let the browser capture the live DOM
       await new Promise((r) => setTimeout(r, 150));
       window.print();
 
@@ -452,7 +451,6 @@ const Report = () => {
         });
       }, 500);
     } catch (e) {
-      console.error('Export PDF failed', e);
       toast.error("Print failed");
     }
   };

@@ -273,7 +273,8 @@
   }
 
   .print-map-container canvas {
-    /* Canvas is now rasterized to composite image for print - no transform needed */
+    transform: translate(-15%, -5%) !important;
+    transform-origin: top left !important;
   }
 
   .print-layout > div:last-child {
