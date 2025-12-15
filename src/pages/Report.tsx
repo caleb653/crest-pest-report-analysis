@@ -1084,8 +1084,17 @@ const Report = () => {
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
                     placeholder="Enter finding or action taken..."
-                    className="text-sm resize-y min-h-[120px] leading-relaxed"
+                    className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
                     rows={5}
+                  />
+                  <div 
+                    className="hidden print-content-formatted"
+                    dangerouslySetInnerHTML={{
+                      __html: (editableFindings[0] || "").replace(
+                        /^(.*?:)/gm,
+                        '<strong>$1</strong>'
+                      ).replace(/\n/g, '<br/>')
+                    }}
                   />
                   <Button
                     type="button"
@@ -1114,8 +1123,17 @@ const Report = () => {
                   value={editableExpectations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
                   placeholder="Enter what the customer should expect..."
-                  className="text-sm resize-y min-h-[120px] leading-relaxed"
+                  className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
                   rows={5}
+                />
+                <div 
+                  className="hidden print-content-formatted"
+                  dangerouslySetInnerHTML={{
+                    __html: (editableExpectations[0] || "").replace(
+                      /^(.*?:)/gm,
+                      '<strong>$1</strong>'
+                    ).replace(/\n/g, '<br/>')
+                  }}
                 />
                 <Button
                   type="button"
