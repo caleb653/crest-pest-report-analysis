@@ -981,25 +981,40 @@ const Report = () => {
                   </div>
                 )}
               </div>
-              {editableTargetPests.length > 0 && (
-                <div className="flex flex-wrap gap-1 p-2 bg-background">
-                  {editableTargetPests.map((pest) => (
-                    <span
-                      key={pest}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                    >
-                      {pest}
-                      <button
-                        type="button"
-                        onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+              <div className="p-2 bg-background space-y-2">
+                {editableTargetPests.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {editableTargetPests.map((pest) => (
+                      <span
+                        key={pest}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+                        {pest}
+                        <button
+                          type="button"
+                          onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
+                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Input
+                  placeholder="Add custom pest..."
+                  className="h-7 text-xs no-print"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const value = (e.target as HTMLInputElement).value.trim();
+                      if (value && !editableTargetPests.includes(value)) {
+                        setEditableTargetPests(prev => [...prev, value]);
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                />
+              </div>
             </Card>
 
             {/* Proposed Services - Right Column, Takes More Space */}
@@ -1019,12 +1034,7 @@ const Report = () => {
                     className="text-xs resize-y min-h-[120px] leading-relaxed no-print"
                     rows={5}
                   />
-                  <ul className="list-disc list-inside text-xs space-y-1 print-only hidden">
-                    {(editableFindings[0] || "").split('\n').filter(line => line.trim()).map((line, idx) => (
-                      <li key={idx}>{line.trim()}</li>
-                    ))}
-                  </ul>
-                  <ul className="list-disc list-inside text-xs space-y-1">
+                  <ul className="list-disc list-inside text-xs space-y-1 hidden print:block">
                     {(editableFindings[0] || "").split(/[.]\s+/).filter(line => line.trim()).map((line, idx) => (
                       <li key={idx}>{line.trim().replace(/\.$/, '')}</li>
                     ))}
