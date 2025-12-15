@@ -593,7 +593,7 @@ const Report = () => {
                 </div>
                 <div className="flex-1 ml-4">
                   <h1 className="text-xl font-bold text-foreground mb-2">
-                    Initial Pest Report - Key Findings & Recommendations
+                    Initial Pest Report
                   </h1>
 
                   <div className="flex gap-8">
