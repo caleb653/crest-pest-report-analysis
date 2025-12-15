@@ -1037,11 +1037,11 @@ const Report = () => {
                 
                 {/* Totals Row */}
                 <div className="grid grid-cols-[minmax(180px,1.5fr)_70px_70px_70px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
-                  <div className="text-xs font-bold text-right">Total:</div>
-                  <div className="text-xs font-bold text-center">
+                  <div className="text-xs font-bold text-right pr-2">Total:</div>
+                  <div className="text-xs font-bold text-center bg-muted/50 rounded py-0.5">
                     ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}
                   </div>
-                  <div className="text-xs font-bold text-center">
+                  <div className="text-xs font-bold text-center bg-muted/50 rounded py-0.5">
                     ${Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}
                   </div>
                   <div></div>
@@ -1192,24 +1192,36 @@ const Report = () => {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col space-y-1">
-                    <Textarea
-                      value={
-                        (editableFindings[0] || "")
+                    <div className="flex gap-1 mb-1 no-print">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => document.execCommand('bold')}
+                        className="h-6 text-xs px-2 font-bold"
+                      >
+                        B
+                      </Button>
+                    </div>
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background"
+                      dangerouslySetInnerHTML={{
+                        __html: (editableFindings[0] || "")
                           .split(/[.]\s*/)
                           .filter(line => line.trim())
                           .map(line => `• ${line.trim().replace(/\.$/, '')}`)
-                          .join('\n') || ""
-                      }
-                      onChange={(e) => {
-                        const lines = e.target.value
+                          .join('<br/>') || ""
+                      }}
+                      onBlur={(e) => {
+                        const text = e.currentTarget.innerText
                           .split('\n')
                           .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
                           .filter(line => line)
                           .join('. ');
-                        updateItem(0, lines ? lines + '.' : '', setEditableFindings);
+                        updateItem(0, text ? text + '.' : '', setEditableFindings);
                       }}
-                      placeholder="• Enter proposed services (one per line)..."
-                      className="text-xs flex-1 min-h-[100px] leading-relaxed resize-none"
                     />
                     <Button
                       type="button"
