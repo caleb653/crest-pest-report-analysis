@@ -1065,7 +1065,7 @@ const Report = () => {
             </Card>
 
             {/* Left: Target Pests + Products, Right: Proposed Services */}
-            <div className="col-span-2 grid grid-cols-[1fr_1.5fr] gap-2">
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
               {/* Left Column - Target Pests and Products stacked */}
               <div className="space-y-2">
                 {/* Target Pests */}
@@ -1183,7 +1183,7 @@ const Report = () => {
               </div>
 
               {/* Right Column - Proposed Services */}
-              <Card className="print-section p-2 h-fit">
+              <Card className="print-section p-2 flex flex-col">
                 <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
                 {isAnalyzing ? (
                   <div className="text-center py-2">
@@ -1191,7 +1191,7 @@ const Report = () => {
                     <p className="text-xs text-muted-foreground">Analyzing...</p>
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="flex-1 flex flex-col space-y-1">
                     <Textarea
                       value={
                         (editableFindings[0] || "")
@@ -1209,8 +1209,7 @@ const Report = () => {
                         updateItem(0, lines ? lines + '.' : '', setEditableFindings);
                       }}
                       placeholder="• Enter proposed services (one per line)..."
-                      className="text-xs resize-y min-h-[120px] leading-relaxed"
-                      rows={6}
+                      className="text-xs flex-1 min-h-[100px] leading-relaxed resize-none"
                     />
                     <Button
                       type="button"
@@ -1232,28 +1231,31 @@ const Report = () => {
               </Card>
             </div>
 
-            {/* Signature Section - Left */}
-            <Card className="print-section p-1.5">
-              <h2 className="text-xs font-bold mb-1">Customer Signature</h2>
-              <SignatureCanvas 
-                onSave={setCustomerSignature} 
-                initialData={customerSignature}
-                label=""
-              />
-              <div className="mt-1 text-[10px] text-muted-foreground">
-                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
-              </div>
-            </Card>
+            {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
+            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-2">
+              {/* Signature Section - Left (same width as Target Pests + Products) */}
+              <Card className="print-section p-1.5">
+                <h2 className="text-xs font-bold mb-1">Customer Signature</h2>
+                <SignatureCanvas 
+                  onSave={setCustomerSignature} 
+                  initialData={customerSignature}
+                  label=""
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                </div>
+              </Card>
 
-            {/* Pesticide Notice - Right */}
-            <Card className="print-section p-1.5">
-              <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
-              <div className="text-[7px] leading-tight text-foreground space-y-0">
-                <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
-                <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
-              </div>
-            </Card>
+              {/* Pesticide Notice - Right (same width as Proposed Services) */}
+              <Card className="print-section p-1.5">
+                <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
+                <div className="text-[7px] leading-tight text-foreground space-y-0">
+                  <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
+                  <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
+                  <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
 
