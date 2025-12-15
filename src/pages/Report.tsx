@@ -1227,20 +1227,16 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Signature Section - Full Width */}
-            <Card className="print-section p-2 col-span-2">
-              <div className="flex gap-8">
-                <div className="flex-1">
-                  <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
-                  <SignatureCanvas 
-                    onSave={setCustomerSignature} 
-                    initialData={customerSignature}
-                    label="Customer Signature"
-                  />
-                  <div className="mt-1 text-[10px] text-muted-foreground">
-                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
-                  </div>
-                </div>
+            {/* Signature Section - Left Half */}
+            <Card className="print-section p-2">
+              <h2 className="text-xs font-bold mb-1">Customer Acknowledgment</h2>
+              <SignatureCanvas 
+                onSave={setCustomerSignature} 
+                initialData={customerSignature}
+                label="Customer Signature"
+              />
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
               </div>
             </Card>
           </div>
