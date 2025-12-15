@@ -794,7 +794,7 @@ const Report = () => {
             )}
 
             {/* Target Pest(s) Section */}
-            <Card className="print-section p-2 md:p-3">
+            <Card className="print-section p-2 md:p-3 overflow-visible">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
               <div className="space-y-2">
                 <div className="relative" ref={pestsDropdownRef}>
@@ -864,7 +864,7 @@ const Report = () => {
             </Card>
 
             {/* Products Used Section */}
-            <Card className="print-section p-2 md:p-3">
+            <Card className="print-section p-2 md:p-3 overflow-visible">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
               <div className="space-y-2">
                 <div className="relative" ref={productsDropdownRef}>
