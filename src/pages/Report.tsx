@@ -794,143 +794,133 @@ const Report = () => {
             )}
 
             {/* Target Pest(s) Section */}
-            <Card className="print-section p-2 md:p-3 overflow-visible">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
-              <div className="space-y-2">
-                <div className="relative" ref={pestsDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm text-left cursor-pointer flex items-center"
+            <Card className="print-section p-0 overflow-visible">
+              <div className="relative" ref={pestsDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
+                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span>Target Pest(s)</span>
+                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {pestsDropdownOpen && (
+                  <div 
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
-                    <span className="text-muted-foreground">
-                      {editableTargetPests.length > 0 ? `${editableTargetPests.length} selected` : 'Select pest(s)...'}
-                    </span>
-                  </button>
-                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
-                  
-                  {pestsDropdownOpen && (
-                    <div 
-                      className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto"
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      {PEST_OPTIONS.map((pest) => (
-                        <button
-                          key={pest}
-                          type="button"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setEditableTargetPests(prev => 
-                              prev.includes(pest) 
-                                ? prev.filter(p => p !== pest)
-                                : [...prev, pest]
-                            );
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
-                            editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
-                          }`}
-                        >
-                          {pest}
-                          {editableTargetPests.includes(pest) && (
-                            <span className="text-primary">✓</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {editableTargetPests.length > 0 && (
-                  <div className="print-tags flex flex-wrap gap-2 items-start content-start">
-                    {editableTargetPests.map((pest) => (
-                      <span
+                    {PEST_OPTIONS.map((pest) => (
+                      <button
                         key={pest}
-                        className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                        type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditableTargetPests(prev => 
+                            prev.includes(pest) 
+                              ? prev.filter(p => p !== pest)
+                              : [...prev, pest]
+                          );
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                          editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
+                        }`}
                       >
                         {pest}
-                        <button
-                          type="button"
-                          onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
+                        {editableTargetPests.includes(pest) && (
+                          <span className="text-primary">✓</span>
+                        )}
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
+              {editableTargetPests.length > 0 && (
+                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                  {editableTargetPests.map((pest) => (
+                    <span
+                      key={pest}
+                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                    >
+                      {pest}
+                      <button
+                        type="button"
+                        onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
+                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </Card>
 
             {/* Products Used Section */}
-            <Card className="print-section p-2 md:p-3 overflow-visible">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
-              <div className="space-y-2">
-                <div className="relative" ref={productsDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
-                    className="w-full h-10 px-3 pr-10 rounded-md border border-input bg-background text-sm text-left cursor-pointer flex items-center"
+            <Card className="print-section p-0 overflow-visible">
+              <div className="relative" ref={productsDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
+                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
+                >
+                  <span>Product(s) Used</span>
+                  <ChevronDown className={`w-5 h-5 text-primary-foreground transition-transform no-print ${productsDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {productsDropdownOpen && (
+                  <div 
+                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
-                    <span className="text-muted-foreground">
-                      {editableProductsUsed.length > 0 ? `${editableProductsUsed.length} selected` : 'Select product(s)...'}
-                    </span>
-                  </button>
-                  <ChevronDown className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none transition-transform ${productsDropdownOpen ? 'rotate-180' : ''}`} />
-                  
-                  {productsDropdownOpen && (
-                    <div 
-                      className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg max-h-60 overflow-y-auto"
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      {PRODUCT_OPTIONS.map((product) => (
-                        <button
-                          key={product}
-                          type="button"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setEditableProductsUsed(prev => 
-                              prev.includes(product) 
-                                ? prev.filter(p => p !== product)
-                                : [...prev, product]
-                            );
-                          }}
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
-                            editableProductsUsed.includes(product) ? 'bg-primary/10 text-primary font-medium' : ''
-                          }`}
-                        >
-                          {product}
-                          {editableProductsUsed.includes(product) && (
-                            <span className="text-primary">✓</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {editableProductsUsed.length > 0 && (
-                  <div className="print-tags flex flex-wrap gap-2 items-start content-start">
-                    {editableProductsUsed.map((product) => (
-                      <span
+                    {PRODUCT_OPTIONS.map((product) => (
+                      <button
                         key={product}
-                        className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                        type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditableProductsUsed(prev => 
+                            prev.includes(product) 
+                              ? prev.filter(p => p !== product)
+                              : [...prev, product]
+                          );
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                          editableProductsUsed.includes(product) ? 'bg-primary/10 text-primary font-medium' : ''
+                        }`}
                       >
                         {product}
-                        <button
-                          type="button"
-                          onClick={() => setEditableProductsUsed(prev => prev.filter(p => p !== product))}
-                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
+                        {editableProductsUsed.includes(product) && (
+                          <span className="text-primary">✓</span>
+                        )}
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
+              {editableProductsUsed.length > 0 && (
+                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                  {editableProductsUsed.map((product) => (
+                    <span
+                      key={product}
+                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                    >
+                      {product}
+                      <button
+                        type="button"
+                        onClick={() => setEditableProductsUsed(prev => prev.filter(p => p !== product))}
+                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </Card>
 
             {/* Findings Section */}
