@@ -98,9 +98,8 @@ const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 const FREQUENCY_OPTIONS = [
   { label: 'One-time', days: 0 },
   { label: '1 month', days: 30 },
-  { label: '30 days', days: 30 },
-  { label: '60 days', days: 60 },
-  { label: '90 days', days: 90 },
+  { label: '2 months', days: 60 },
+  { label: '3 months', days: 90 },
 ];
 
 interface AnalysisData {
@@ -858,43 +857,51 @@ const Report = () => {
               <div className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr] gap-4 items-start">
                 <div>
                   <h2 className="text-xs font-bold mb-1">Service Type</h2>
-                  <Select value={serviceType} onValueChange={handleServiceTypeChange}>
-                    <SelectTrigger className="h-7 text-xs">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SERVICE_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option} className="text-xs">
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    value={serviceType}
+                    onChange={(e) => handleServiceTypeChange(e.target.value)}
+                    list="service-types"
+                    placeholder="Select or type..."
+                    className="h-7 text-xs"
+                  />
+                  <datalist id="service-types">
+                    {SERVICE_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-xs font-bold mb-1 block">Initial $</label>
+                    <label className="text-xs font-bold mb-1 block">Initial</label>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={initialPrice}
-                        onChange={(e) => setInitialPrice(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          setInitialPrice(val);
+                        }}
                         placeholder="0.00"
-                        className="h-7 text-xs pl-5"
+                        className="h-7 text-xs pl-6"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold mb-1 block">Recurring $</label>
+                    <label className="text-xs font-bold mb-1 block">Recurring</label>
                     <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         value={recurringPrice}
-                        onChange={(e) => setRecurringPrice(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          setRecurringPrice(val);
+                        }}
                         placeholder="0.00"
-                        className="h-7 text-xs pl-5"
+                        className="h-7 text-xs pl-6"
                       />
                     </div>
                   </div>
