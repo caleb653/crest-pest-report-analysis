@@ -1064,167 +1064,173 @@ const Report = () => {
               </div>
             </Card>
 
-            {/* Target Pests - Left Column */}
-            <Card className="print-section p-0 overflow-visible">
-              <div className="print-section-header py-1 px-2">
-                <span>Target Pest(s)</span>
-              </div>
-              <div className="relative" ref={pestsDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                  className="w-full flex items-center justify-between cursor-pointer py-2 px-3 bg-card hover:bg-muted/50 transition-colors no-print"
-                >
-                  <span className="text-xs text-muted-foreground">Click to select pests...</span>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {pestsDropdownOpen && (
-                  <div 
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {PEST_OPTIONS.map((pest) => (
-                      <button
-                        key={pest}
-                        type="button"
+            {/* Left: Target Pests + Products, Right: Proposed Services */}
+            <div className="col-span-2 grid grid-cols-[1fr_1.5fr] gap-2">
+              {/* Left Column - Target Pests and Products stacked */}
+              <div className="space-y-2">
+                {/* Target Pests */}
+                <Card className="print-section p-0 overflow-visible">
+                  <div className="print-section-header py-1 px-2">
+                    <span>Target Pest(s)</span>
+                  </div>
+                  <div className="relative" ref={pestsDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
+                      className="w-full flex items-center justify-between cursor-pointer py-1 px-2 bg-card hover:bg-muted/50 transition-colors no-print"
+                    >
+                      <span className="text-xs text-muted-foreground">Click to select pests...</span>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {pestsDropdownOpen && (
+                      <div 
+                        className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
                         onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditableTargetPests(prev => 
-                            prev.includes(pest) 
-                              ? prev.filter(p => p !== pest)
-                              : [...prev, pest]
-                          );
-                        }}
-                        className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
-                          editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
-                        }`}
                       >
-                        {pest}
-                        {editableTargetPests.includes(pest) && (
-                          <span className="text-primary">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="p-1.5 bg-card space-y-1">
-                {editableTargetPests.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {editableTargetPests.map((pest) => (
-                      <span
-                        key={pest}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                      >
-                        {pest}
-                        <button
-                          type="button"
-                          onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                          className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <Input
-                  placeholder="Add custom pest..."
-                  className="h-7 text-xs no-print"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const value = (e.target as HTMLInputElement).value.trim();
-                      if (value && !editableTargetPests.includes(value)) {
-                        setEditableTargetPests(prev => [...prev, value]);
-                        (e.target as HTMLInputElement).value = '';
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </Card>
-
-            {/* Proposed Services - Full Width */}
-            <Card className="print-section p-2 col-span-2">
-              <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
-              {isAnalyzing ? (
-                <div className="text-center py-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Analyzing...</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <Textarea
-                    value={
-                      (editableFindings[0] || "")
-                        .split(/[.]\s*/)
-                        .filter(line => line.trim())
-                        .map(line => `• ${line.trim().replace(/\.$/, '')}`)
-                        .join('\n') || ""
-                    }
-                    onChange={(e) => {
-                      const lines = e.target.value
-                        .split('\n')
-                        .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
-                        .filter(line => line)
-                        .join('. ');
-                      updateItem(0, lines ? lines + '.' : '', setEditableFindings);
-                    }}
-                    placeholder="• Enter proposed services (one per line)..."
-                    className="text-xs resize-y min-h-[60px] leading-relaxed"
-                    rows={3}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
-                    disabled={isExpandingFindings}
-                    className="no-print h-6 text-xs"
-                  >
-                    {isExpandingFindings ? (
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3 h-3 mr-1" />
+                        {PEST_OPTIONS.map((pest) => (
+                          <button
+                            key={pest}
+                            type="button"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEditableTargetPests(prev => 
+                                prev.includes(pest) 
+                                  ? prev.filter(p => p !== pest)
+                                  : [...prev, pest]
+                              );
+                            }}
+                            className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
+                              editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
+                            }`}
+                          >
+                            {pest}
+                            {editableTargetPests.includes(pest) && (
+                              <span className="text-primary">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    Expand with AI
-                  </Button>
-                </div>
-              )}
-            </Card>
+                  </div>
+                  <div className="p-1.5 bg-card">
+                    {editableTargetPests.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {editableTargetPests.map((pest) => (
+                          <span
+                            key={pest}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                          >
+                            {pest}
+                            <button
+                              type="button"
+                              onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
+                              className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <Input
+                      placeholder="Add custom pest..."
+                      className="h-6 text-xs no-print mt-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const value = (e.target as HTMLInputElement).value.trim();
+                          if (value && !editableTargetPests.includes(value)) {
+                            setEditableTargetPests(prev => [...prev, value]);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                </Card>
 
-            {/* Products - Full Width */}
-            <Card className="print-section p-1.5 col-span-2">
-              <h2 className="text-[10px] font-bold mb-0.5">Products</h2>
-              <div className="text-[7px] leading-tight text-foreground columns-3 gap-3">
-                <p>Alpine WSG (Dinotefuran)</p>
-                <p>Bifen I/T (Bifenthrin)</p>
-                <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
-                <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
-                <p>Termidor SC (Fipronil)</p>
-                <p>Phantom (Chlorfenapyr)</p>
-                <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
-                <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
-                <p>Nyguard IGR Concentrate (Pyridine)</p>
-                <p>PT Wasp Freeze (Prallethrin)</p>
-                <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
-                <p>PT Alpine Fly Bait</p>
-                <p>Gentrol Aerosol ((S)-Hydroprene)</p>
-                <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
-                <p>Invade Hot Spot +</p>
-                <p>Niban (Orthoboric Acid)</p>
-                <p>Bifen LP (Bifenthrin)</p>
-                <p>Advion Ant Gel Bait (Indoxacarb)</p>
-                <p>Maxforce FC Ant Gel (Fipronil)</p>
-                <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
-                <p>Contrac California (Bromethalin)</p>
-                <p>Delta Dust (Bayer) (Deltamethrin)</p>
-                <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
+                {/* Products */}
+                <Card className="print-section p-1.5">
+                  <h2 className="text-[10px] font-bold mb-0.5">Products</h2>
+                  <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
+                    <p>Alpine WSG (Dinotefuran)</p>
+                    <p>Bifen I/T (Bifenthrin)</p>
+                    <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
+                    <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
+                    <p>Termidor SC (Fipronil)</p>
+                    <p>Phantom (Chlorfenapyr)</p>
+                    <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
+                    <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
+                    <p>Nyguard IGR Concentrate (Pyridine)</p>
+                    <p>PT Wasp Freeze (Prallethrin)</p>
+                    <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
+                    <p>PT Alpine Fly Bait</p>
+                    <p>Gentrol Aerosol ((S)-Hydroprene)</p>
+                    <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
+                    <p>Invade Hot Spot +</p>
+                    <p>Niban (Orthoboric Acid)</p>
+                    <p>Bifen LP (Bifenthrin)</p>
+                    <p>Advion Ant Gel Bait (Indoxacarb)</p>
+                    <p>Maxforce FC Ant Gel (Fipronil)</p>
+                    <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
+                    <p>Contrac California (Bromethalin)</p>
+                    <p>Delta Dust (Bayer) (Deltamethrin)</p>
+                    <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
+                  </div>
+                </Card>
               </div>
-            </Card>
+
+              {/* Right Column - Proposed Services */}
+              <Card className="print-section p-2 h-fit">
+                <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
+                {isAnalyzing ? (
+                  <div className="text-center py-2">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">Analyzing...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <Textarea
+                      value={
+                        (editableFindings[0] || "")
+                          .split(/[.]\s*/)
+                          .filter(line => line.trim())
+                          .map(line => `• ${line.trim().replace(/\.$/, '')}`)
+                          .join('\n') || ""
+                      }
+                      onChange={(e) => {
+                        const lines = e.target.value
+                          .split('\n')
+                          .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
+                          .filter(line => line)
+                          .join('. ');
+                        updateItem(0, lines ? lines + '.' : '', setEditableFindings);
+                      }}
+                      placeholder="• Enter proposed services (one per line)..."
+                      className="text-xs resize-y min-h-[120px] leading-relaxed"
+                      rows={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
+                      disabled={isExpandingFindings}
+                      className="no-print h-6 text-xs"
+                    >
+                      {isExpandingFindings ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 mr-1" />
+                      )}
+                      Expand with AI
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </div>
 
             {/* Signature Section - Left */}
             <Card className="print-section p-1.5">
