@@ -1271,11 +1271,11 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 h-[calc(100vh-120px)]">
             {/* Map Section */}
-            <div>
+            <div className="flex flex-col h-full">
               <h2 className="text-lg font-bold text-foreground mb-2">Property Map</h2>
-              <div className="h-[320px] relative rounded-lg overflow-hidden border-2 border-border">
+              <div className="flex-1 relative rounded-lg overflow-hidden border-2 border-border min-h-[500px]">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
