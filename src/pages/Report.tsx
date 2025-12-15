@@ -1300,7 +1300,6 @@ const Report = () => {
           <div className="grid grid-cols-1 lg:grid-cols-[45%_55%] gap-4 h-[500px] print:h-[calc(100vh-120px)]">
             {/* Map Section */}
             <div className="flex flex-col h-full">
-              <h2 className="text-lg font-bold text-foreground mb-2">Property Map</h2>
               <div className="flex-1 w-full relative rounded-lg overflow-hidden border-2 border-border max-h-[450px] print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
@@ -1412,7 +1411,6 @@ const Report = () => {
 
             {/* Property Images Section */}
             <div>
-              <h2 className="text-lg font-bold text-foreground mb-2">Property Images</h2>
               
               {/* Upload Section */}
               <div className="no-print mb-4">
