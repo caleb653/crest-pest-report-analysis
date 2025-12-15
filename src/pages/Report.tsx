@@ -27,7 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const PEST_OPTIONS = ['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Fleas', 'Ticks', 'Mosquitoes', 'Silverfish', 'Earwigs', 'Crickets', 'Other'];
 
-const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught FastCap Spider & Scorpion', 'Gentrol IGR Concentrate', 'Nyguard IGR Concentrate', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'California - Contrac All Weather Blox', 'DeltaDust Insecticide - Bayer', 'Maxforce FC Ant Gel', 'Other'];
+const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught', 'Gentrol IGR', 'Nyguard IGR', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'Contrac All Weather Blox', 'DeltaDust', 'Maxforce FC Ant Gel', 'Other'];
 
 interface AnalysisData {
   findings: string[];
