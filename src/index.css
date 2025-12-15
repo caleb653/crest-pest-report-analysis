@@ -466,13 +466,11 @@
     display: grid !important;
     grid-template-columns: 45% 55% !important;
     gap: 16px !important;
-    height: auto !important;
-    min-height: calc(100vh - 60px) !important;
+    height: calc(100vh - 100px) !important;
   }
 
   .print-page-break .grid > div {
-    height: auto !important;
-    min-height: calc(100vh - 80px) !important;
+    height: 100% !important;
   }
 
   /* Print tags styling */
