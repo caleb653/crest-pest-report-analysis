@@ -772,34 +772,54 @@ const Report = () => {
             {/* Target Pest(s) Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Target Pest(s)</h2>
-              <div className="space-y-2">
-                <Input
-                  value={editableTargetPests[0] || ""}
-                  onChange={(e) => {
-                    const newPests = [...editableTargetPests];
-                    newPests[0] = e.target.value;
-                    setEditableTargetPests(newPests);
-                  }}
-                  placeholder="e.g., Ants, Spiders, Rodents"
-                  className="text-sm h-8"
-                />
+              <div className="flex flex-wrap gap-2">
+                {['Ants', 'Spiders', 'Rodents', 'Roaches', 'Wasps', 'Bed Bugs', 'Termites', 'Fleas', 'Ticks', 'Mosquitoes', 'Flies', 'Beetles', 'Moths', 'Silverfish', 'Earwigs', 'Centipedes', 'Crickets', 'Gophers', 'Moles', 'Birds'].map((pest) => (
+                  <button
+                    key={pest}
+                    type="button"
+                    onClick={() => {
+                      setEditableTargetPests(prev => 
+                        prev.includes(pest) 
+                          ? prev.filter(p => p !== pest)
+                          : [...prev, pest]
+                      );
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      editableTargetPests.includes(pest)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {pest}
+                  </button>
+                ))}
               </div>
             </Card>
 
             {/* Products Used Section */}
             <Card className="print-section p-2 md:p-3">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Product(s) Used</h2>
-              <div className="space-y-2">
-                <Input
-                  value={editableProductsUsed[0] || ""}
-                  onChange={(e) => {
-                    const newProducts = [...editableProductsUsed];
-                    newProducts[0] = e.target.value;
-                    setEditableProductsUsed(newProducts);
-                  }}
-                  placeholder="e.g., Termidor, Demand CS"
-                  className="text-sm h-8"
-                />
+              <div className="flex flex-wrap gap-2">
+                {['Termidor', 'Demand CS', 'Suspend SC', 'Temprid FX', 'Advion Gel', 'Alpine WSG', 'Phantom', 'Transport GHP', 'Arilon', 'Seclira', 'Vendetta Plus', 'Maxforce FC', 'Contrac', 'Ditrac', 'Fastrac', 'Terad3', 'EcoVia', 'Essentria IC3', 'Cykick CS', 'Bifen IT'].map((product) => (
+                  <button
+                    key={product}
+                    type="button"
+                    onClick={() => {
+                      setEditableProductsUsed(prev => 
+                        prev.includes(product) 
+                          ? prev.filter(p => p !== product)
+                          : [...prev, product]
+                      );
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      editableProductsUsed.includes(product)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    {product}
+                  </button>
+                ))}
               </div>
             </Card>
 
