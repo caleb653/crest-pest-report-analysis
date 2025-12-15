@@ -902,7 +902,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center text-[10px] font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[1fr_80px_80px_80px_2fr_24px] gap-3 items-center text-xs font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -913,7 +913,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[1fr_80px_80px_80px_2fr_24px] gap-3 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1036,12 +1036,12 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[160px_65px_65px_65px_1fr_24px] gap-2 items-center pt-1 border-t border-border">
-                  <div className="text-[10px] font-bold text-right pr-2">Total:</div>
-                  <div className="text-[10px] font-bold text-center">
+                <div className="grid grid-cols-[1fr_80px_80px_80px_2fr_24px] gap-3 items-center pt-1 border-t border-border">
+                  <div className="text-xs font-bold text-right">Total:</div>
+                  <div className="text-xs font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
                   </div>
-                  <div className="text-[10px] font-bold text-center">
+                  <div className="text-xs font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0).toFixed(2)}
                   </div>
                   <div></div>
