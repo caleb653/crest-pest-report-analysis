@@ -72,23 +72,23 @@
 
   .print-section {
     padding: 0 !important;
-    margin-bottom: 0.7rem !important;
-    border-radius: 0.75rem;
+    margin-bottom: 0.35rem !important;
+    border-radius: 0.5rem;
     overflow: hidden;
     background: transparent !important;
     box-shadow: var(--shadow-soft);
-    border: 1.25px solid hsl(var(--border));
+    border: 1px solid hsl(var(--border));
   }
 
   .print-section-header {
     background: hsl(var(--secondary)) !important;
     color: hsl(0 0% 100%) !important;
-    padding: 0.25rem 1.25rem !important;
-    font-size: 0.75rem !important;
+    padding: 0.15rem 0.75rem !important;
+    font-size: 0.65rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.06em !important;
-    border-bottom: 2px solid hsl(var(--primary)) !important;
+    border-bottom: 1px solid hsl(var(--primary)) !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
