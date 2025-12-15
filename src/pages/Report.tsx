@@ -1271,7 +1271,7 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 h-[calc(100vh-120px)]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-120px)]">
             {/* Map Section */}
             <div className="flex flex-col h-full">
               <h2 className="text-lg font-bold text-foreground mb-2">Property Map</h2>
