@@ -900,9 +900,9 @@ const Report = () => {
 
             {/* Services - Full Width at Top */}
             <Card className="print-section p-2 col-span-2">
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-4 items-start">
+                  <div key={index} className="grid grid-cols-[1.5fr_1.5fr_1fr_2fr_auto] gap-3 items-start">
                     <div>
                       {index === 0 && <h2 className="text-xs font-bold mb-1">Service Type</h2>}
                       <Popover>
@@ -921,17 +921,18 @@ const Report = () => {
                             <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[280px] p-0" align="start">
+                        <PopoverContent className="w-[240px] p-0" align="start">
                           <Command>
                             <CommandInput 
-                              placeholder="Search or type custom..." 
-                              className="text-xs"
+                              placeholder="Type to filter..." 
+                              className="text-xs h-8"
+                              hideIcon
                               value={service.serviceType}
                               onValueChange={(value) => handleServiceChange(index, 'serviceType', value)}
                             />
-                            <CommandList>
+                            <CommandList className="max-h-[180px]">
                               <CommandEmpty>
-                                <span className="text-xs">Press enter to use "{service.serviceType}"</span>
+                                <span className="text-[10px]">Use "{service.serviceType}"</span>
                               </CommandEmpty>
                               <CommandGroup>
                                 {SERVICE_TYPE_OPTIONS.map((option) => (
@@ -939,11 +940,11 @@ const Report = () => {
                                     key={option}
                                     value={option}
                                     onSelect={() => handleServiceChange(index, 'serviceType', option)}
-                                    className="text-xs"
+                                    className="text-xs py-1"
                                   >
                                     <Check
                                       className={cn(
-                                        "mr-2 h-3 w-3",
+                                        "mr-1 h-3 w-3",
                                         service.serviceType === option ? "opacity-100" : "opacity-0"
                                       )}
                                     />
