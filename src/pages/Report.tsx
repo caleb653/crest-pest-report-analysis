@@ -165,8 +165,8 @@ const Report = () => {
   const [editableAddress, setEditableAddress] = useState(address || "");
   
   // Set title based on report type
-  const getDefaultTitle = () => {
-    switch (reportType) {
+  const getDefaultTitle = (type: string | undefined) => {
+    switch (type) {
       case 'initial-pest':
         return 'Initial Pest Report';
       case 'sales':
@@ -175,7 +175,12 @@ const Report = () => {
         return 'Pest Control Proposal';
     }
   };
-  const [editableTitle, setEditableTitle] = useState(getDefaultTitle());
+  const [editableTitle, setEditableTitle] = useState(getDefaultTitle(reportType));
+
+  // Update title when reportType changes (navigation between report types)
+  useEffect(() => {
+    setEditableTitle(getDefaultTitle(reportType));
+  }, [reportType]);
 
   // Auto-set license when technician changes
   const handleTechnicianChange = (techName: string) => {
