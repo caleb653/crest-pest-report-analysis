@@ -148,6 +148,7 @@ const Report = () => {
     licenseNumber,
     targetPests,
     productsUsed,
+    reportType,
   } = location.state || {};
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
@@ -162,7 +163,19 @@ const Report = () => {
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
-  const [editableTitle, setEditableTitle] = useState("Pest Control Proposal");
+  
+  // Set title based on report type
+  const getDefaultTitle = () => {
+    switch (reportType) {
+      case 'initial-pest':
+        return 'Initial Pest Report';
+      case 'sales':
+        return 'Sales Report';
+      default:
+        return 'Pest Control Proposal';
+    }
+  };
+  const [editableTitle, setEditableTitle] = useState(getDefaultTitle());
 
   // Auto-set license when technician changes
   const handleTechnicianChange = (techName: string) => {
