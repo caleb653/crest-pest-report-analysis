@@ -1,15 +1,88 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
+import { ClipboardList, FileText, Home, Shield } from "lucide-react";
+import crestLogo from "@/assets/crest-logo.png";
+
+const reportTypes = [
+  {
+    id: "initial-pest",
+    title: "Initial Pest Report",
+    description: "Complete pest inspection and treatment documentation",
+    icon: ClipboardList,
+    path: "/report",
+    state: { reportType: "initial-pest" },
+  },
+  {
+    id: "sales",
+    title: "Sales Report",
+    description: "Sales consultation and proposal documentation",
+    icon: FileText,
+    path: "/report",
+    state: { reportType: "sales" },
+  },
+  {
+    id: "attic-inspection",
+    title: "Attic Inspection Report",
+    description: "Attic and crawlspace inspection documentation",
+    icon: Home,
+    path: "/report",
+    state: { reportType: "attic-inspection" },
+  },
+  {
+    id: "admin",
+    title: "Admin Portal",
+    description: "View and manage all submitted reports",
+    icon: Shield,
+    path: "/admin-login",
+    state: null,
+  },
+];
 
 const Index = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Redirect directly to the blank report page
-    navigate('/report', { replace: true });
-  }, [navigate]);
+  const handleCardClick = (report: typeof reportTypes[0]) => {
+    if (report.state) {
+      navigate(report.path, { state: report.state });
+    } else {
+      navigate(report.path);
+    }
+  };
 
-  return null;
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+      <div className="text-center mb-10">
+        <img 
+          src={crestLogo} 
+          alt="Crest Pest Control" 
+          className="h-20 mx-auto mb-4"
+        />
+        <h1 className="text-3xl font-bold text-foreground mb-2">Service Reports</h1>
+        <p className="text-muted-foreground">Select a report type to get started</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
+        {reportTypes.map((report) => {
+          const Icon = report.icon;
+          return (
+            <Card
+              key={report.id}
+              className="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-200 group"
+              onClick={() => handleCardClick(report)}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-6 text-center min-h-[160px]">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="w-7 h-7 text-primary" />
+                </div>
+                <h2 className="font-semibold text-foreground mb-1">{report.title}</h2>
+                <p className="text-xs text-muted-foreground leading-tight">{report.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
 };
 
 export default Index;
