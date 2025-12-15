@@ -899,20 +899,20 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-3 col-span-2">
-              <div className="space-y-2">
+            <Card className="print-section p-2 col-span-2">
+              <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[1.5fr_100px_100px_100px_1fr] gap-4 items-end pb-1 border-b border-border">
-                  <h2 className="text-xs font-bold">Service Type</h2>
-                  <h2 className="text-xs font-bold text-center">Initial</h2>
-                  <h2 className="text-xs font-bold text-center">Recurring</h2>
-                  <h2 className="text-xs font-bold text-center">Frequency</h2>
-                  <h2 className="text-xs font-bold">Schedule</h2>
+                <div className="grid grid-cols-[1.5fr_80px_80px_80px_1fr] gap-2 items-end pb-0.5 border-b border-border">
+                  <h2 className="text-[10px] font-bold">Service Type</h2>
+                  <h2 className="text-[10px] font-bold text-center">Initial</h2>
+                  <h2 className="text-[10px] font-bold text-center">Recurring</h2>
+                  <h2 className="text-[10px] font-bold text-center">Frequency</h2>
+                  <h2 className="text-[10px] font-bold">Schedule</h2>
                 </div>
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[1.5fr_100px_100px_100px_1fr_auto] gap-4 items-center py-1">
+                  <div key={index} className="grid grid-cols-[1.5fr_80px_80px_80px_1fr_auto] gap-2 items-center">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1035,12 +1035,12 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[1.5fr_100px_100px_100px_1fr_auto] gap-4 items-center pt-2 border-t-2 border-border">
-                  <div className="text-xs font-bold text-right pr-4">Total:</div>
-                  <div className="text-xs font-bold text-center">
+                <div className="grid grid-cols-[1.5fr_80px_80px_80px_1fr_auto] gap-2 items-center pt-1 border-t border-border">
+                  <div className="text-[10px] font-bold text-right pr-2">Total:</div>
+                  <div className="text-[10px] font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0).toFixed(2)}
                   </div>
-                  <div className="text-xs font-bold text-center">
+                  <div className="text-[10px] font-bold text-center">
                     ${services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0).toFixed(2)}
                   </div>
                   <div></div>
@@ -1065,7 +1065,7 @@ const Report = () => {
 
             {/* Target Pests - Left Column */}
             <Card className="print-section p-0 overflow-visible">
-              <div className="print-section-header text-sm font-bold py-2 px-3">
+              <div className="print-section-header py-1 px-2">
                 <span>Target Pest(s)</span>
               </div>
               <div className="relative" ref={pestsDropdownRef}>
@@ -1110,7 +1110,7 @@ const Report = () => {
                   </div>
                 )}
               </div>
-              <div className="p-2 bg-card space-y-2">
+              <div className="p-1.5 bg-card space-y-1">
                 {editableTargetPests.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {editableTargetPests.map((pest) => (
@@ -1147,8 +1147,8 @@ const Report = () => {
             </Card>
 
             {/* Proposed Services - Right Column, Takes More Space */}
-            <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-2">Proposed Services</h2>
+            <Card className="print-section p-1.5">
+              <h2 className="text-xs font-bold mb-1">Proposed Services</h2>
               {isAnalyzing ? (
                 <div className="text-center py-2">
                   <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1197,9 +1197,9 @@ const Report = () => {
             </Card>
 
             {/* Products - Left Side */}
-            <Card className="print-section p-2">
-              <h2 className="text-xs font-bold mb-1">Products</h2>
-              <div className="text-[8px] leading-tight text-foreground columns-2 gap-2">
+            <Card className="print-section p-1.5">
+              <h2 className="text-[10px] font-bold mb-0.5">Products</h2>
+              <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
                 <p>Alpine WSG (Dinotefuran)</p>
                 <p>Bifen I/T (Bifenthrin)</p>
                 <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
@@ -1227,9 +1227,9 @@ const Report = () => {
             </Card>
 
             {/* Pesticide Notice - Right Side */}
-            <Card className="print-section p-2">
-              <h2 className="text-xs font-bold mb-1">Pesticide Notice</h2>
-              <div className="text-[10px] leading-tight text-foreground space-y-0.5">
+            <Card className="print-section p-1.5">
+              <h2 className="text-[10px] font-bold mb-0.5">Pesticide Notice</h2>
+              <div className="text-[8px] leading-tight text-foreground space-y-0">
                 <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
                 <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
                 <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
@@ -1237,8 +1237,8 @@ const Report = () => {
             </Card>
 
             {/* Signature Section - Left Half */}
-            <Card className="print-section p-2">
-              <h2 className="text-sm font-bold mb-2">Customer Signature</h2>
+            <Card className="print-section p-1.5">
+              <h2 className="text-xs font-bold mb-1">Customer Signature</h2>
               <SignatureCanvas 
                 onSave={setCustomerSignature} 
                 initialData={customerSignature}
