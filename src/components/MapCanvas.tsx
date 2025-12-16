@@ -289,7 +289,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         
         // Add to canvas
         canvas.add(rect);
-        canvas.setActiveObject(rect);
+        canvas.discardActiveObject();
         canvas.renderAll();
         
         clickPlacedRef.current = true;
@@ -364,7 +364,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             hasBorders: true,
           });
           canvas.add(finalLine);
-          canvas.setActiveObject(finalLine);
+          canvas.discardActiveObject();
           canvas.renderAll();
         }
         lineStartRef.current = null;
