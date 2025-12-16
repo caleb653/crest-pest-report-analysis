@@ -235,7 +235,7 @@ const Report = () => {
   };
 
   const addService = () => {
-    if (services.length < 5) {
+    if (services.length < 3) {
       setServices(prev => [...prev, { serviceType: '', initialPrice: '', recurringPrice: '', frequency: 30 }]);
     }
   };
@@ -938,10 +938,10 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-2 col-span-2">
-              <div className="space-y-1">
+            <Card className="print-section p-1.5 col-span-2">
+              <div className="space-y-0.5">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center text-xs font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center text-xs font-bold border-b border-border pb-0.5">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -1090,7 +1090,7 @@ const Report = () => {
                   <div></div>
                 </div>
 
-                {services.length < 5 && (
+                {services.length < 3 && (
                   <Button
                     type="button"
                     variant="outline"
