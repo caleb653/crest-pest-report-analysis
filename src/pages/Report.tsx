@@ -29,26 +29,9 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas } from "@/components/SignatureCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
 const TECHNICIANS = [
@@ -60,71 +43,122 @@ const TECHNICIANS = [
   { name: "Caleb Whalen", license: "RA 71438" },
 ];
 
-const PEST_OPTIONS = ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps', 'Rodents', 'Fleas & Ticks', 'Bed Bugs', 'Bees', 'Mosquitoes', 'Millipedes', 'Box Elder Bugs', 'Clover Mites', 'American Roaches', 'Other'];
+const PEST_OPTIONS = [
+  "Ants",
+  "Roaches",
+  "Crickets",
+  "Earwigs",
+  "Spiders",
+  "Silverfish",
+  "Centipedes",
+  "Wasps",
+  "Rodents",
+  "Fleas & Ticks",
+  "Bed Bugs",
+  "Bees",
+  "Mosquitoes",
+  "Millipedes",
+  "Box Elder Bugs",
+  "Clover Mites",
+  "American Roaches",
+  "Other",
+];
 
-const PRODUCT_OPTIONS = ['Alpine WSG', 'Bifen I/T', 'Essentria IC Pro', 'Temprid FX', 'Termidor SC', 'Phantom', 'Onslaught', 'Gentrol IGR', 'Nyguard IGR', 'PT Wasp Freeze II', 'Gentrol Aerosol', 'Shockwave 1', 'Essentria G', 'Bifen LP', 'Advion Ant Gel Bait', 'Advion Cockroach Gel Bait', 'Contrac All Weather Blox', 'DeltaDust', 'Maxforce FC Ant Gel', 'Other'];
+const PRODUCT_OPTIONS = [
+  "Alpine WSG",
+  "Bifen I/T",
+  "Essentria IC Pro",
+  "Temprid FX",
+  "Termidor SC",
+  "Phantom",
+  "Onslaught",
+  "Gentrol IGR",
+  "Nyguard IGR",
+  "PT Wasp Freeze II",
+  "Gentrol Aerosol",
+  "Shockwave 1",
+  "Essentria G",
+  "Bifen LP",
+  "Advion Ant Gel Bait",
+  "Advion Cockroach Gel Bait",
+  "Contrac All Weather Blox",
+  "DeltaDust",
+  "Maxforce FC Ant Gel",
+  "Other",
+];
 
-const EQUIPMENT_OPTIONS = ['Rodent Bait Stations', 'Rodent Traps', 'Mosquito Buckets', 'Fly Light', 'Pest Monitors'];
+const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
 
 // Service configuration with auto-population data
-const SERVICE_CONFIG: Record<string, {
-  frequency: number;
-  targetPests: string[];
-  proposedServices: string;
-  defaultRecurring?: number;
-}> = {
-  'Monthly Services': {
+const SERVICE_CONFIG: Record<
+  string,
+  {
+    frequency: number;
+    targetPests: string[];
+    proposedServices: string;
+    defaultRecurring?: number;
+  }
+> = {
+  "Monthly Services": {
     frequency: 30,
-    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
-    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    proposedServices:
+      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
   },
-  'Bi-Monthly Services': {
+  "Bi-Monthly Services": {
     frequency: 60,
-    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
-    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    proposedServices:
+      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
   },
-  'Quarterly Services': {
+  "Quarterly Services": {
     frequency: 90,
-    targetPests: ['Ants', 'Roaches', 'Crickets', 'Earwigs', 'Spiders', 'Silverfish', 'Centipedes', 'Wasps'],
-    proposedServices: 'Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.',
+    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    proposedServices:
+      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
   },
-  'Commercial General Pest': {
+  "Commercial General Pest": {
     frequency: 30,
-    targetPests: ['Ants', 'Roaches', 'Spiders', 'Rodents'],
-    proposedServices: 'Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity. Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed. Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management.',
+    targetPests: ["Ants", "Roaches", "Spiders", "Rodents"],
+    proposedServices:
+      "Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity. Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed. Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management.",
   },
-  'Rodent Exclusion': {
+  "Rodent Exclusion": {
     frequency: 0,
-    targetPests: ['Rodents'],
-    proposedServices: 'Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.',
+    targetPests: ["Rodents"],
+    proposedServices:
+      "Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.",
   },
-  'Rodent Trapping': {
+  "Rodent Trapping": {
     frequency: 7,
-    targetPests: ['Rodents'],
-    proposedServices: 'Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.',
+    targetPests: ["Rodents"],
+    proposedServices:
+      "Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.",
     defaultRecurring: 0,
   },
-  'Rodent Trapping and Exclusion': {
+  "Rodent Trapping and Exclusion": {
     frequency: 7,
-    targetPests: ['Rodents'],
-    proposedServices: 'Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home\'s protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.',
+    targetPests: ["Rodents"],
+    proposedServices:
+      "Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home's protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.",
     defaultRecurring: 0,
   },
-  'Attic': {
+  Attic: {
     frequency: 0,
-    targetPests: ['Rodents'],
-    proposedServices: 'Inspect attic space for signs of pest activity, entry points, and damage. Treat attic areas as needed and provide recommendations for exclusion and prevention.',
+    targetPests: ["Rodents"],
+    proposedServices:
+      "Inspect attic space for signs of pest activity, entry points, and damage. Treat attic areas as needed and provide recommendations for exclusion and prevention.",
   },
 };
 
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
-  { label: 'One-Time', days: 0 },
-  { label: '30 days', days: 30 },
-  { label: '60 days', days: 60 },
-  { label: '90 days', days: 90 },
-  { label: 'Weekly Visits', days: 7 },
+  { label: "One-Time", days: 0 },
+  { label: "30 days", days: 30 },
+  { label: "60 days", days: 60 },
+  { label: "90 days", days: 90 },
+  { label: "Weekly Visits", days: 7 },
 ];
 
 interface AnalysisData {
@@ -163,16 +197,16 @@ const Report = () => {
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
-  
+
   // Set title based on report type
   const getDefaultTitle = (type: string | undefined) => {
     switch (type) {
-      case 'initial-pest':
-        return 'Initial Pest Report';
-      case 'sales':
-        return 'Sales Report';
+      case "initial-pest":
+        return "Initial Pest Report";
+      case "sales":
+        return "Sales Report";
       default:
-        return 'Pest Control Proposal';
+        return "Pest Control Proposal";
     }
   };
   const [editableTitle, setEditableTitle] = useState(getDefaultTitle(reportType));
@@ -185,12 +219,11 @@ const Report = () => {
   // Auto-set license when technician changes
   const handleTechnicianChange = (techName: string) => {
     setEditableTech(techName);
-    const tech = TECHNICIANS.find(t => t.name === techName);
+    const tech = TECHNICIANS.find((t) => t.name === techName);
     if (tech) {
       setEditableLicenseNumber(tech.license);
     }
   };
-
 
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || []);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
@@ -206,16 +239,16 @@ const Report = () => {
     frequency: number;
   }
   const [services, setServices] = useState<ServiceItem[]>([
-    { serviceType: '', initialPrice: '', recurringPrice: '', frequency: 30 }
+    { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 },
   ]);
 
   const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
-    setServices(prev => {
+    setServices((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
-      
+
       // Auto-populate if service type changed
-      if (field === 'serviceType' && typeof value === 'string') {
+      if (field === "serviceType" && typeof value === "string") {
         const config = SERVICE_CONFIG[value];
         if (config) {
           updated[index].frequency = config.frequency;
@@ -236,13 +269,13 @@ const Report = () => {
 
   const addService = () => {
     if (services.length < 3) {
-      setServices(prev => [...prev, { serviceType: '', initialPrice: '', recurringPrice: '', frequency: 30 }]);
+      setServices((prev) => [...prev, { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 }]);
     }
   };
 
   const removeService = (index: number) => {
     if (services.length > 1) {
-      setServices(prev => prev.filter((_, i) => i !== index));
+      setServices((prev) => prev.filter((_, i) => i !== index));
     }
   };
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
@@ -264,24 +297,28 @@ const Report = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
 
-  const expandWithAI = async (text: string, type: 'findings' | 'expect', setter: React.Dispatch<React.SetStateAction<string[]>>) => {
-    if (type === 'findings') setIsExpandingFindings(true);
+  const expandWithAI = async (
+    text: string,
+    type: "findings" | "expect",
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
+    if (type === "findings") setIsExpandingFindings(true);
     else setIsExpandingExpect(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('expand-findings', {
-        body: { text, type }
+      const { data, error } = await supabase.functions.invoke("expand-findings", {
+        body: { text, type },
       });
 
       if (error) throw error;
 
       if (data?.expandedText) {
         setter([data.expandedText]);
-        toast.success('Text expanded!');
+        toast.success("Text expanded!");
       }
     } catch (error: any) {
-      console.error('Error expanding text:', error);
-      toast.error('Failed to expand text');
+      console.error("Error expanding text:", error);
+      toast.error("Failed to expand text");
     } finally {
       setIsExpandingFindings(false);
       setIsExpandingExpect(false);
@@ -322,8 +359,8 @@ const Report = () => {
         setEquipmentDropdownOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Fetch static 2D satellite map whenever coordinates or zoom change
@@ -386,7 +423,7 @@ const Report = () => {
       if (data.custom_map_url) {
         setCustomMapImage(data.custom_map_url);
       }
-      
+
       if (data.property_images) {
         setPropertyImages(data.property_images as Array<{ image: string; caption?: string }>);
       }
@@ -639,7 +676,7 @@ const Report = () => {
 
     setIsSendingEmail(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-report-email', {
+      const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
           customerName: editableCustomer,
@@ -650,14 +687,14 @@ const Report = () => {
           productsUsed: editableProductsUsed,
           equipment: editableEquipment,
           reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
-        }
+        },
       });
 
       if (error) throw error;
 
       toast.success(`Report sent to ${customerEmail}`);
     } catch (error: any) {
-      console.error('Error sending email:', error);
+      console.error("Error sending email:", error);
       toast.error("Failed to send email. Please try again.");
     } finally {
       setIsSendingEmail(false);
@@ -695,76 +732,76 @@ const Report = () => {
   const handleCustomMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
       return;
     }
-    
+
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${reportId || 'temp'}/custom-map/${fileName}`;
-      
+      const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
+
       const { error: uploadError, data } = await supabase.storage
-        .from('report-images')
+        .from("report-images")
         .upload(filePath, file, { upsert: true });
-      
+
       if (uploadError) throw uploadError;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('report-images')
-        .getPublicUrl(filePath);
-      
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
       setCustomMapImage(publicUrl);
-      toast.success('Custom map image uploaded');
+      toast.success("Custom map image uploaded");
     } catch (error) {
-      console.error('Error uploading map:', error);
-      toast.error('Failed to upload map image');
+      console.error("Error uploading map:", error);
+      toast.error("Failed to upload map image");
     }
   };
 
   const handlePropertyImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    
+
     const fileArray = Array.from(files).slice(0, 8);
-    
-    if (fileArray.some(file => !file.type.startsWith('image/'))) {
-      toast.error('Please upload only image files');
+
+    if (fileArray.some((file) => !file.type.startsWith("image/"))) {
+      toast.error("Please upload only image files");
       return;
     }
-    
+
     try {
       const uploadPromises = fileArray.map(async (file) => {
-        const fileExt = file.name.split('.').pop();
+        const fileExt = file.name.split(".").pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${reportId || 'temp'}/property/${fileName}`;
-        
+        const filePath = `${reportId || "temp"}/property/${fileName}`;
+
         const { error: uploadError } = await supabase.storage
-          .from('report-images')
+          .from("report-images")
           .upload(filePath, file, { upsert: true });
-        
+
         if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('report-images')
-          .getPublicUrl(filePath);
-        
-        return { image: publicUrl, caption: '' };
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
+        return { image: publicUrl, caption: "" };
       });
-      
+
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages(uploadedImages);
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
-      console.error('Error uploading images:', error);
-      toast.error('Failed to upload images');
+      console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
     }
   };
 
   const updateImageCaption = (index: number, caption: string) => {
-    setPropertyImages(prev => {
+    setPropertyImages((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], caption };
       return updated;
@@ -780,8 +817,8 @@ const Report = () => {
   const handleImageDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedImageIndex === null || draggedImageIndex === index) return;
-    
-    setPropertyImages(prev => {
+
+    setPropertyImages((prev) => {
       const updated = [...prev];
       const [dragged] = updated.splice(draggedImageIndex, 1);
       updated.splice(index, 0, dragged);
@@ -829,8 +866,8 @@ const Report = () => {
                 placeholder="Customer email"
                 className="w-48 h-9 text-xs"
               />
-              <Button 
-                onClick={handleSendEmail} 
+              <Button
+                onClick={handleSendEmail}
                 disabled={isSendingEmail || !customerEmail}
                 variant="secondary"
                 size="sm"
@@ -935,8 +972,8 @@ const Report = () => {
                   placeholder="Customer email"
                   className="w-48 h-9 text-xs"
                 />
-                <Button 
-                  onClick={handleSendEmail} 
+                <Button
+                  onClick={handleSendEmail}
                   disabled={isSendingEmail || !customerEmail}
                   variant="secondary"
                   size="sm"
@@ -957,7 +994,6 @@ const Report = () => {
                 </Button>
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -966,293 +1002,297 @@ const Report = () => {
       <div className={isMobile ? "flex flex-col" : "p-3 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2"}>
-            {/* Mobile: Customer & Technician */}
-            {isMobile && (
-              <Card className="p-4">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Customer Name</label>
-                    <Input
-                      value={editableCustomer}
-                      onChange={(e) => setEditableCustomer(e.target.value)}
-                      placeholder="Enter customer name"
-                      className="text-base"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Technician Name</label>
-                    <Input
-                      value={editableTech}
-                      onChange={(e) => setEditableTech(e.target.value)}
-                      placeholder="Enter technician name"
-                      className="text-base"
-                    />
-                  </div>
+          {/* Mobile: Customer & Technician */}
+          {isMobile && (
+            <Card className="p-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Customer Name</label>
+                  <Input
+                    value={editableCustomer}
+                    onChange={(e) => setEditableCustomer(e.target.value)}
+                    placeholder="Enter customer name"
+                    className="text-base"
+                  />
                 </div>
-              </Card>
-            )}
-
-            {/* Services - Full Width at Top */}
-            <Card className="print-section p-2 col-span-2">
-              <div className="space-y-1">
-                {/* Header Row */}
-                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
-                  <span>Service Type</span>
-                  <span className="text-center">Initial</span>
-                  <span className="text-center">Recurring</span>
-                  <span className="text-center">Frequency</span>
-                  <span className="text-center">Schedule</span>
-                  <span></span>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Technician Name</label>
+                  <Input
+                    value={editableTech}
+                    onChange={(e) => setEditableTech(e.target.value)}
+                    placeholder="Enter technician name"
+                    className="text-base"
+                  />
                 </div>
-                
-                {/* Service Rows */}
-                {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center">
-                    <div className="flex items-center gap-2 bg-white/80 rounded px-1">
-                      <Select 
-                        value={service.serviceType} 
-                        onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
-                      >
-                        <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
-                          <SelectValue placeholder="Select service..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
-                          {SERVICE_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option} value={option} className="text-sm">
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {/* Print-only text display */}
-                      <span className="hidden print:block text-sm font-medium">{service.serviceType || '-'}</span>
-                    </div>
-                    <div className="relative bg-white/80 rounded">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={service.initialPrice}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9]/g, '');
-                          handleServiceChange(index, 'initialPrice', val);
-                        }}
-                        placeholder="0"
-                        className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
-                      />
-                    </div>
-                    <div className="relative bg-white/80 rounded">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        value={service.recurringPrice}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9]/g, '');
-                          handleServiceChange(index, 'recurringPrice', val);
-                        }}
-                        placeholder="0"
-                        className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
-                      />
-                    </div>
-                    <div className="bg-white/80 rounded px-1">
-                      <Select 
-                        value={service.frequency.toString()} 
-                        onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
-                      >
-                        <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white z-50">
-                          {FREQUENCY_OPTIONS.map((option) => (
-                            <SelectItem key={option.days} value={option.days.toString()} className="text-sm">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {/* Print-only text display */}
-                      <span className="hidden print:block text-sm text-center">
-                        {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || '-'}
-                      </span>
-                    </div>
-                    <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5">
-                      {service.frequency > 0 ? (
-                        <div className="flex flex-wrap gap-0.5">
-                          {(() => {
-                            const isWeekly = service.frequency === 7;
-                            const today = new Date();
-                            const currentMonth = today.getMonth();
-                            const currentYear = today.getFullYear();
-                            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                            const daysRemaining = daysInMonth - today.getDate();
-                            const weeksRemaining = Math.ceil(daysRemaining / 7) + 1;
-                            const count = isWeekly ? weeksRemaining : 12;
-                            
-                            return Array.from({ length: count }, (_, i) => {
-                              const scheduleDate = new Date();
-                              scheduleDate.setDate(scheduleDate.getDate() + (i * service.frequency));
-                              const isFirst = i === 0;
-                              return (
-                                <span
-                                  key={i}
-                                  className={`px-1.5 py-0.5 rounded text-xs whitespace-nowrap ${
-                                    isFirst ? 'bg-secondary text-white font-medium' : 'bg-muted text-muted-foreground'
-                                  }`}
-                                >
-                                  {isWeekly 
-                                    ? scheduleDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                                    : scheduleDate.toLocaleDateString('en-US', { month: 'short' })
-                                  }
-                                </span>
-                              );
-                            });
-                          })()}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">One-time service</span>
-                      )}
-                    </div>
-                    <div>
-                      {services.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 no-print"
-                          onClick={() => removeService(index)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
-                  <div className="text-sm font-bold text-right">Total:</div>
-                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
-                    <span className="text-muted-foreground mr-auto">$</span>
-                    <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
-                  </div>
-                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
-                    <span className="text-muted-foreground mr-auto">$</span>
-                    <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
-                  </div>
-                  <div></div>
-                  <div></div>
-                  <div></div>
-                </div>
-
-                {services.length < 3 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addService}
-                    className="no-print h-7 text-xs mt-2"
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Service
-                  </Button>
-                )}
               </div>
             </Card>
+          )}
 
-            {/* Left: Target Pests + Products, Right: Proposed Services */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
-              {/* Left Column - Target Pests and Products stacked */}
-              <div className="space-y-1.5">
-                {/* Target Pests */}
-                <Card className="print-section p-0 overflow-visible rounded-lg">
-                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                    <span>Target Pest(s)</span>
-                  </div>
-                  <div className="relative" ref={pestsDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                      className="w-full flex items-center justify-between cursor-pointer py-1 px-2 bg-card hover:bg-muted/50 transition-colors no-print"
+          {/* Services - Full Width at Top */}
+          <Card className="print-section p-2 col-span-2">
+            <div className="space-y-1">
+              {/* Header Row */}
+              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
+                <span>Service Type</span>
+                <span className="text-center">Initial</span>
+                <span className="text-center">Recurring</span>
+                <span className="text-center">Frequency</span>
+                <span className="text-center">Schedule</span>
+                <span></span>
+              </div>
+
+              {/* Service Rows */}
+              {services.map((service, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center"
+                >
+                  <div className="flex items-center gap-2 bg-white/80 rounded px-1">
+                    <Select
+                      value={service.serviceType}
+                      onValueChange={(val) => handleServiceChange(index, "serviceType", val)}
                     >
-                      <span className="text-xs text-muted-foreground">Click to select pests...</span>
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${pestsDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    
-                    {pestsDropdownOpen && (
-                      <div 
-                        className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        {PEST_OPTIONS.map((pest) => (
-                          <button
-                            key={pest}
-                            type="button"
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setEditableTargetPests(prev => 
-                                prev.includes(pest) 
-                                  ? prev.filter(p => p !== pest)
-                                  : [...prev, pest]
-                              );
-                            }}
-                            className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
-                              editableTargetPests.includes(pest) ? 'bg-primary/10 text-primary font-medium' : ''
-                            }`}
-                          >
-                            {pest}
-                            {editableTargetPests.includes(pest) && (
-                              <span className="text-primary">✓</span>
-                            )}
-                          </button>
+                      <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectValue placeholder="Select service..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white z-50">
+                        {SERVICE_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option} className="text-sm">
+                            {option}
+                          </SelectItem>
                         ))}
-                      </div>
-                    )}
+                      </SelectContent>
+                    </Select>
+                    {/* Print-only text display */}
+                    <span className="hidden print:block text-sm font-medium">{service.serviceType || "-"}</span>
                   </div>
-                  <div className="p-1.5 bg-card">
-                    {editableTargetPests.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {editableTargetPests.map((pest) => (
-                          <span
-                            key={pest}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                          >
-                            {pest}
-                            <button
-                              type="button"
-                              onClick={() => setEditableTargetPests(prev => prev.filter(p => p !== pest))}
-                              className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                  <div className="relative bg-white/80 rounded">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                      $
+                    </span>
                     <Input
-                      placeholder="Add custom pest..."
-                      className="h-7 text-xs no-print mt-1"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const value = (e.target as HTMLInputElement).value.trim();
-                          if (value && !editableTargetPests.includes(value)) {
-                            setEditableTargetPests(prev => [...prev, value]);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }
+                      type="text"
+                      inputMode="numeric"
+                      value={service.initialPrice}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        handleServiceChange(index, "initialPrice", val);
                       }}
+                      placeholder="0"
+                      className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                     />
                   </div>
-                </Card>
-
-                {/* Products */}
-                <Card className="print-section p-0 overflow-hidden rounded-lg">
-                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                    <span className="text-[10px] font-bold">Products</span>
+                  <div className="relative bg-white/80 rounded">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                      $
+                    </span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      value={service.recurringPrice}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        handleServiceChange(index, "recurringPrice", val);
+                      }}
+                      placeholder="0"
+                      className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
+                    />
                   </div>
-                  <div className="p-2.5">
+                  <div className="bg-white/80 rounded px-1">
+                    <Select
+                      value={service.frequency.toString()}
+                      onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
+                    >
+                      <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white z-50">
+                        {FREQUENCY_OPTIONS.map((option) => (
+                          <SelectItem key={option.days} value={option.days.toString()} className="text-sm">
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {/* Print-only text display */}
+                    <span className="hidden print:block text-sm text-center">
+                      {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
+                    </span>
+                  </div>
+                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5">
+                    {service.frequency > 0 ? (
+                      <div className="flex flex-wrap gap-0.5">
+                        {(() => {
+                          const isWeekly = service.frequency === 7;
+                          const today = new Date();
+                          const currentMonth = today.getMonth();
+                          const currentYear = today.getFullYear();
+                          const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                          const daysRemaining = daysInMonth - today.getDate();
+                          const weeksRemaining = Math.ceil(daysRemaining / 7) + 1;
+                          const count = isWeekly ? weeksRemaining : 12;
+
+                          return Array.from({ length: count }, (_, i) => {
+                            const scheduleDate = new Date();
+                            scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
+                            const isFirst = i === 0;
+                            return (
+                              <span
+                                key={i}
+                                className={`px-1.5 py-0.5 rounded text-xs whitespace-nowrap ${
+                                  isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {isWeekly
+                                  ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                                  : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                              </span>
+                            );
+                          });
+                        })()}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">One-time service</span>
+                    )}
+                  </div>
+                  <div>
+                    {services.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 no-print"
+                        onClick={() => removeService(index)}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Totals Row */}
+              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+                <div className="text-sm font-bold text-right">Total:</div>
+                <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                  <span className="text-muted-foreground mr-auto">$</span>
+                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
+                </div>
+                <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                  <span className="text-muted-foreground mr-auto">$</span>
+                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
+                </div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+
+              {services.length < 3 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addService}
+                  className="no-print h-7 text-xs mt-2"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Service
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Left: Target Pests + Products, Right: Proposed Services */}
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
+            {/* Left Column - Target Pests and Products stacked */}
+            <div className="space-y-1.5">
+              {/* Target Pests */}
+              <Card className="print-section p-0 overflow-visible rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span>Target Pest(s)</span>
+                </div>
+                <div className="relative" ref={pestsDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
+                    className="w-full flex items-center justify-between cursor-pointer py-1 px-2 bg-card hover:bg-muted/50 transition-colors no-print"
+                  >
+                    <span className="text-xs text-muted-foreground">Click to select pests...</span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-muted-foreground transition-transform ${pestsDropdownOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {pestsDropdownOpen && (
+                    <div
+                      className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      {PEST_OPTIONS.map((pest) => (
+                        <button
+                          key={pest}
+                          type="button"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setEditableTargetPests((prev) =>
+                              prev.includes(pest) ? prev.filter((p) => p !== pest) : [...prev, pest],
+                            );
+                          }}
+                          className={`w-full px-3 py-1.5 text-left text-xs hover:bg-muted flex items-center justify-between ${
+                            editableTargetPests.includes(pest) ? "bg-primary/10 text-primary font-medium" : ""
+                          }`}
+                        >
+                          {pest}
+                          {editableTargetPests.includes(pest) && <span className="text-primary">✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="p-1.5 bg-card">
+                  {editableTargetPests.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {editableTargetPests.map((pest) => (
+                        <span
+                          key={pest}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                        >
+                          {pest}
+                          <button
+                            type="button"
+                            onClick={() => setEditableTargetPests((prev) => prev.filter((p) => p !== pest))}
+                            className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <Input
+                    placeholder="Add custom pest..."
+                    className="h-7 text-xs no-print mt-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const value = (e.target as HTMLInputElement).value.trim();
+                        if (value && !editableTargetPests.includes(value)) {
+                          setEditableTargetPests((prev) => [...prev, value]);
+                          (e.target as HTMLInputElement).value = "";
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </Card>
+
+              {/* Products */}
+              <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-[10px] font-bold">Products</span>
+                </div>
+                <div className="p-2.5">
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
                     <p>Alpine WSG (Dinotefuran)</p>
                     <p>Bifen I/T (Bifenthrin)</p>
@@ -1278,16 +1318,16 @@ const Report = () => {
                     <p>Delta Dust (Bayer) (Deltamethrin)</p>
                     <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
                   </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Right Column - Proposed Services */}
-              <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs font-bold">Proposed Services</span>
                 </div>
-                <div className="p-3 flex-1 flex flex-col">
+              </Card>
+            </div>
+
+            {/* Right Column - Proposed Services */}
+            <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                <span className="text-xs font-bold">Proposed Services</span>
+              </div>
+              <div className="p-3 flex-1 flex flex-col">
                 {isAnalyzing ? (
                   <div className="text-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1300,7 +1340,7 @@ const Report = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => document.execCommand('bold')}
+                        onClick={() => document.execCommand("bold")}
                         className="h-6 text-xs px-2 font-bold"
                       >
                         B
@@ -1311,31 +1351,32 @@ const Report = () => {
                       suppressContentEditableWarning
                       className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background"
                       dangerouslySetInnerHTML={{
-                        __html: (editableFindings[0] || "")
-                          .split(/[.]\s*/)
-                          .filter(line => line.trim())
-                          .map(line => `• ${line.trim().replace(/\.$/, '')}`)
-                          .join('<br/>') || ""
+                        __html:
+                          (editableFindings[0] || "")
+                            .split(/[.]\s*/)
+                            .filter((line) => line.trim())
+                            .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
+                            .join("<br/>") || "",
                       }}
                       onBlur={(e) => {
                         // Just grab the text as-is without forcing format
                         const html = e.currentTarget.innerHTML;
                         // Convert to plain text, preserving line breaks
                         const text = html
-                          .replace(/<br\s*\/?>/gi, '\n')
-                          .replace(/<[^>]+>/g, '')
-                          .split('\n')
-                          .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
-                          .filter(line => line)
-                          .join('. ');
-                        updateItem(0, text ? text + '.' : '', setEditableFindings);
+                          .replace(/<br\s*\/?>/gi, "\n")
+                          .replace(/<[^>]+>/g, "")
+                          .split("\n")
+                          .map((line) => line.replace(/^[•\-\*]\s*/, "").trim())
+                          .filter((line) => line)
+                          .join(". ");
+                        updateItem(0, text ? text + "." : "", setEditableFindings);
                       }}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => expandWithAI(editableFindings[0] || '', 'findings', setEditableFindings)}
+                      onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
                       disabled={isExpandingFindings}
                       className="no-print h-6 text-xs"
                     >
@@ -1348,45 +1389,58 @@ const Report = () => {
                     </Button>
                   </div>
                 )}
-                </div>
-              </Card>
-            </div>
+              </div>
+            </Card>
+          </div>
 
-            {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-            <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
-              {/* Signature Section - Left (same width as Target Pests + Products) */}
-              <Card className="print-section p-0 overflow-hidden rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs font-bold">Customer Signature</span>
-                </div>
-                <div className="p-2.5">
-                <SignatureCanvas 
-                  onSave={setCustomerSignature} 
-                  initialData={customerSignature}
-                  label=""
-                />
+          {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
+            {/* Signature Section - Left (same width as Target Pests + Products) */}
+            <Card className="print-section p-0 overflow-hidden rounded-lg">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                <span className="text-xs font-bold">Customer Signature</span>
+              </div>
+              <div className="p-2.5">
+                <SignatureCanvas onSave={setCustomerSignature} initialData={customerSignature} label="" />
                 <div className="mt-2 text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
                 </div>
-                </div>
-              </Card>
+              </div>
+            </Card>
 
-              {/* Pesticide Notice - Right (same width as Proposed Services) */}
-              <Card className="print-section p-0 overflow-hidden rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-[10px] font-bold">Pesticide Notice</span>
+            {/* Pesticide Notice - Right (same width as Proposed Services) */}
+            <Card className="print-section p-0 overflow-hidden rounded-lg">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                <span className="text-[10px] font-bold">Pesticide Notice</span>
+              </div>
+              <div className="p-2.5">
+                <div className="text-[9px] leading-tight text-foreground space-y-0">
+                  <p>
+                    State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC
+                    CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest
+                    Control Board, and apply pesticides which are registered and approved for use by the California
+                    Department of Pesticide Regulation and the United States Environmental Protection Agency.
+                    Registration is granted when the state finds that, based on existing scientific evidence, there are
+                    no appreciable risks if proper use conditions are followed or that the risks are outweighed by the
+                    benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.
+                  </p>
+                  <p>
+                    If within 24 hours following application you experience symptoms similar to common seasonal illness
+                    comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest
+                    control company immediately.
+                  </p>
+                  <p className="font-medium">
+                    For further information, contact any of the following: Your Pest Control Company (949-424-5000); for
+                    Health Questions--the County Health Department (800-564-8448); for Application Information--the
+                    County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest
+                    Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
+                  </p>
                 </div>
-                <div className="p-2.5">
-                  <div className="text-[9px] leading-tight text-foreground space-y-0">
-                    <p>State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.</p>
-                    <p>If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.</p>
-                    <p className="font-medium">For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
+              </div>
+            </Card>
           </div>
         </div>
+      </div>
 
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background print:flex print:flex-col print:justify-center print:min-h-[100vh]">
@@ -1415,11 +1469,11 @@ const Report = () => {
 
                 {mapUrl || customMapImage ? (
                   <div className="relative h-full w-full">
-                    <MapCanvas 
+                    <MapCanvas
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
-                      mapUrl={customMapImage || mapUrl} 
-                      onSave={setMapData} 
-                      initialData={mapData} 
+                      mapUrl={customMapImage || mapUrl}
+                      onSave={setMapData}
+                      initialData={mapData}
                     />
 
                     {/* Upload custom map button */}
@@ -1427,7 +1481,7 @@ const Report = () => {
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => document.getElementById('custom-map-upload')?.click()}
+                        onClick={() => document.getElementById("custom-map-upload")?.click()}
                         title="Upload custom map image"
                       >
                         <FileDown className="w-4 h-4 mr-2" />
@@ -1464,7 +1518,13 @@ const Report = () => {
 
                         {/* Zoom controls */}
                         <div className="flex flex-col gap-2">
-                          <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
+                          <Button
+                            size="icon"
+                            variant="default"
+                            onClick={handleZoomIn}
+                            aria-label="Zoom in"
+                            title="Zoom in"
+                          >
                             <Plus className="w-4 h-4" />
                           </Button>
                           <Button
@@ -1493,7 +1553,7 @@ const Report = () => {
                         <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
                         <Button
                           variant="default"
-                          onClick={() => document.getElementById('custom-map-upload-empty')?.click()}
+                          onClick={() => document.getElementById("custom-map-upload-empty")?.click()}
                         >
                           <FileDown className="w-4 h-4 mr-2" />
                           Upload Map Image
@@ -1514,7 +1574,6 @@ const Report = () => {
 
             {/* Property Images Section - appears to right on print */}
             <div>
-              
               {/* Upload Section */}
               <div className="no-print mb-4">
                 <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
@@ -1535,15 +1594,15 @@ const Report = () => {
               {propertyImages.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[4mm] print:grid-cols-2">
                   {propertyImages.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className={`space-y-1 print:space-y-0 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
+                    <div
+                      key={index}
+                      className={`space-y-1 print:space-y-0 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? "opacity-50" : ""}`}
                       draggable
                       onDragStart={() => handleImageDragStart(index)}
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-[4/3] print:w-[42mm] print:h-[32mm] rounded-md overflow-hidden border border-border bg-muted print:rounded-sm print:border">
+                      <div className="aspect-[4/3] print:w-[48mm] print:h-[36.5mm] rounded-md overflow-hidden border border-border bg-muted print:rounded-sm print:border">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
@@ -1567,7 +1626,11 @@ const Report = () => {
                 </div>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
-                  <p className="text-sm text-center px-4">No images uploaded yet.<br/>Click the button above to upload up to 8 images.</p>
+                  <p className="text-sm text-center px-4">
+                    No images uploaded yet.
+                    <br />
+                    Click the button above to upload up to 8 images.
+                  </p>
                 </div>
               )}
             </div>
