@@ -1400,7 +1400,7 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-[65%_35%] lg:grid-cols-[45%_55%] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-[55%_45%] lg:grid-cols-[40%_60%] gap-4">
             {/* Map Section - Fixed aspect ratio for consistent icon placement */}
             <div className="flex flex-col min-h-0">
               <div className="w-full relative rounded-lg overflow-hidden border-2 border-border print:max-h-none aspect-[4/3]">
