@@ -1400,10 +1400,10 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-[55%_45%] lg:grid-cols-[40%_60%] gap-4">
-            {/* Map Section - Fixed size for consistent icon placement across devices */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4">
+            {/* Map Section - Large on all devices for consistent icon placement */}
             <div className="flex flex-col min-h-0">
-              <div className="w-[400px] h-[533px] mx-auto md:mx-0 relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
+              <div className="w-full max-w-[500px] mx-auto lg:max-w-none relative rounded-lg overflow-hidden border-2 border-border print:max-h-none aspect-[3/4]">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
