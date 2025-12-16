@@ -938,10 +938,10 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-1.5 col-span-2">
-              <div className="space-y-0.5">
+            <Card className="print-section p-2 col-span-2">
+              <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-0.5">
+                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -952,28 +952,28 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
                     <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                       <Select 
                         value={service.serviceType} 
                         onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
                       >
-                        <SelectTrigger className="h-7 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectTrigger className="h-8 text-sm w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select service..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
                           {SERVICE_TYPE_OPTIONS.map((option) => (
-                            <SelectItem key={option} value={option} className="text-xs">
+                            <SelectItem key={option} value={option} className="text-sm">
                               {option}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {/* Print-only text display */}
-                      <span className="hidden print:block text-xs font-medium">{service.serviceType || '-'}</span>
+                      <span className="hidden print:block text-sm font-medium">{service.serviceType || '-'}</span>
                     </div>
                     <div className="relative bg-white/80 rounded">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
                         inputMode="numeric"
@@ -983,11 +983,11 @@ const Report = () => {
                           handleServiceChange(index, 'initialPrice', val);
                         }}
                         placeholder="0"
-                        className="h-7 text-xs pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
+                        className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
                     <div className="relative bg-white/80 rounded">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
                         inputMode="numeric"
@@ -997,7 +997,7 @@ const Report = () => {
                           handleServiceChange(index, 'recurringPrice', val);
                         }}
                         placeholder="0"
-                        className="h-7 text-xs pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
+                        className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
                     <div className="bg-white/80 rounded px-1">
@@ -1005,19 +1005,19 @@ const Report = () => {
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
                       >
-                        <SelectTrigger className="h-7 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectTrigger className="h-8 text-sm w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
                           {FREQUENCY_OPTIONS.map((option) => (
-                            <SelectItem key={option.days} value={option.days.toString()} className="text-xs">
+                            <SelectItem key={option.days} value={option.days.toString()} className="text-sm">
                               {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {/* Print-only text display */}
-                      <span className="hidden print:block text-xs text-center">
+                      <span className="hidden print:block text-sm text-center">
                         {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || '-'}
                       </span>
                     </div>
@@ -1041,7 +1041,7 @@ const Report = () => {
                               return (
                                 <span
                                   key={i}
-                                  className={`px-1 py-0 rounded text-[9px] whitespace-nowrap ${
+                                  className={`px-1.5 py-0.5 rounded text-xs whitespace-nowrap ${
                                     isFirst ? 'bg-secondary text-white font-medium' : 'bg-muted text-muted-foreground'
                                   }`}
                                 >
@@ -1055,7 +1055,7 @@ const Report = () => {
                           })()}
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">One-time service</span>
+                        <span className="text-sm text-muted-foreground">One-time service</span>
                       )}
                     </div>
                     <div>
@@ -1075,13 +1075,13 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-0.5 border-t border-border">
-                  <div className="text-xs font-bold text-right pr-2">Total:</div>
-                  <div className="text-xs font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+                  <div className="text-sm font-bold text-right pr-2">Total:</div>
+                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
                   </div>
-                  <div className="text-xs font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
                   </div>
