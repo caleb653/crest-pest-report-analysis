@@ -1075,8 +1075,8 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
-                  <div className="text-sm font-bold text-right pr-2">Total:</div>
+                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+                  <div className="text-sm font-bold text-right">Total:</div>
                   <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
