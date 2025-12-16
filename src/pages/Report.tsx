@@ -1533,7 +1533,7 @@ const Report = () => {
 
               {/* Property Images Grid */}
               {propertyImages.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 print:gap-[2mm] print:grid-cols-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[2mm] print:grid-cols-4">
                   {propertyImages.map((item, index) => (
                     <div 
                       key={index} 
@@ -1543,7 +1543,7 @@ const Report = () => {
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square print:w-[38mm] print:h-[28mm] rounded-lg overflow-hidden border-2 border-border bg-muted print:rounded-sm print:border">
+                      <div className="aspect-[4/3] print:w-[38mm] print:h-[28mm] rounded-md overflow-hidden border border-border bg-muted print:rounded-sm print:border">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
