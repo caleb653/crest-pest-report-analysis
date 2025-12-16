@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line } from 'fabric';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
@@ -713,7 +713,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
         <img
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-muted"
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-card"
           style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',
