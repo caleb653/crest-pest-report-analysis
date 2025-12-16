@@ -140,6 +140,20 @@
   @page {
     size: A4 landscape;
     margin: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  @page :first {
+    margin: 0;
+  }
+
+  @page :left {
+    margin: 0;
+  }
+
+  @page :right {
+    margin: 0;
   }
 
   .no-print,
