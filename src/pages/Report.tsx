@@ -1403,7 +1403,7 @@ const Report = () => {
           <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0">
-              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
+              <div className="w-[400px] h-[533px] print:w-[480px] print:h-[640px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
