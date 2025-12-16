@@ -773,113 +773,117 @@ const Report = () => {
 
       {/* Main Content */}
       <div className={isMobileOrTablet ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
-        {/* Map Section */}
-        <div className={isMobileOrTablet ? "h-[50vh] md:h-[55vh] relative pb-16 md:pb-20" : "print-map-container w-[45%] relative"}>
-          {isProcessing && (
-            <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
-              <div className="text-center">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-foreground font-semibold">Processing Map...</p>
-              </div>
-            </div>
-          )}
-
-          {mapUrl || customMapImage ? (
-            <div className="relative h-full w-full">
-              <MapCanvas
-                key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
-                mapUrl={customMapImage || mapUrl}
-                onSave={setMapData}
-                initialData={mapData}
-              />
-
-              {/* Upload custom map button */}
-              <div className="no-print absolute top-4 right-4 z-20">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => document.getElementById("custom-map-upload")?.click()}
-                  title="Upload custom map image"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Upload Map
-                </Button>
-                <input
-                  id="custom-map-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCustomMapUpload}
-                  className="hidden"
-                />
-              </div>
-
-              {/* Pan controls - only show when using coordinates-based map */}
-              {coordinates && !customMapImage && (
-                <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
-                  <div className="flex flex-col gap-2">
-                    <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
-                      <ArrowUp className="w-4 h-4" />
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                      <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
-                      <ArrowDown className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Zoom controls */}
-                  <div className="flex flex-col gap-2">
-                    <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="secondary"
-                      onClick={handleZoomOut}
-                      aria-label="Zoom out"
-                      title="Zoom out"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
+        {/* Map Section - Fixed 4:3 aspect ratio for consistency across devices */}
+        <div className={isMobileOrTablet ? "w-full px-4 py-2" : "print-map-container w-[45%] p-4"}>
+          <div className="relative w-full" style={{ paddingBottom: '75%' }}> {/* 4:3 aspect ratio */}
+            <div className="absolute inset-0">
+              {isProcessing && (
+                <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
+                  <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-foreground font-semibold">Processing Map...</p>
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center bg-muted border-2 border-dashed border-border rounded-lg m-4">
-              {isProcessing ? (
-                <div className="text-center">
-                  <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-                  <p className="text-foreground font-semibold">Processing location...</p>
+
+              {mapUrl || customMapImage ? (
+                <div className="relative h-full w-full">
+                  <MapCanvas
+                    key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                    mapUrl={customMapImage || mapUrl}
+                    onSave={setMapData}
+                    initialData={mapData}
+                  />
+
+                  {/* Upload custom map button */}
+                  <div className="no-print absolute top-4 right-4 z-20">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => document.getElementById("custom-map-upload")?.click()}
+                      title="Upload custom map image"
+                    >
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Upload Map
+                    </Button>
+                    <input
+                      id="custom-map-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCustomMapUpload}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* Pan controls - only show when using coordinates-based map */}
+                  {coordinates && !customMapImage && (
+                    <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
+                      <div className="flex flex-col gap-2">
+                        <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <div className="flex gap-2">
+                          <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Zoom controls */}
+                      <div className="flex flex-col gap-2">
+                        <Button size="icon" variant="default" onClick={handleZoomIn} aria-label="Zoom in" title="Zoom in">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          onClick={handleZoomOut}
+                          aria-label="Zoom out"
+                          title="Zoom out"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-center p-8">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <FileDown className="w-8 h-8 text-primary" />
-                  </div>
-                  <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
-                  <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
-                  <Button variant="default" onClick={() => document.getElementById("custom-map-upload-empty")?.click()}>
-                    <FileDown className="w-4 h-4 mr-2" />
-                    Upload Map Image
-                  </Button>
-                  <input
-                    id="custom-map-upload-empty"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleCustomMapUpload}
-                    className="hidden"
-                  />
+                <div className="h-full flex flex-col items-center justify-center bg-muted border-2 border-dashed border-border rounded-lg">
+                  {isProcessing ? (
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                      <p className="text-foreground font-semibold">Processing location...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center p-8">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <FileDown className="w-8 h-8 text-primary" />
+                      </div>
+                      <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
+                      <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
+                      <Button variant="default" onClick={() => document.getElementById("custom-map-upload-empty")?.click()}>
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Upload Map Image
+                      </Button>
+                      <input
+                        id="custom-map-upload-empty"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomMapUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
 
         <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
