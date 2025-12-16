@@ -511,9 +511,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               obj.left = origLeft * scaleX;
               obj.top = origTop * scaleY;
               
-              // Scale icons proportionally too for consistent appearance
-              obj.scaleX = (obj.scaleX || 1) * scaleX;
-              obj.scaleY = (obj.scaleY || 1) * scaleY;
+              // DO NOT scale object sizes - keep icons and lines at their original visual size
+              // Only positions should scale, not the objects themselves
               
               (obj as any)._scaledFromBase = true;
               obj.setCoords();
