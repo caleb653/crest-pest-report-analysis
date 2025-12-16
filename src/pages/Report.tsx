@@ -1511,11 +1511,11 @@ const Report = () => {
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                      <div className="aspect-square md:aspect-[16/9] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
-                          className="w-full h-full object-cover pointer-events-none"
+                          className="w-full h-full object-cover md:object-contain lg:object-cover pointer-events-none"
                         />
                       </div>
                       <Input
