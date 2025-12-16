@@ -482,50 +482,29 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const baseW = savedData.base.width;
             const baseH = savedData.base.height;
 
-            // Calculate scale factors
+            // Pure proportional scaling - no platform-specific adjustments
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            // Determine if we should apply desktop-only adjustment when viewing mobile-created annotations
-            const isMobileBase = baseW <= 640;
-            const pointerFine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
-            const hoverCapable = window.matchMedia && window.matchMedia('(hover: hover)').matches;
-            const notTouch = !('ontouchstart' in window) && ((navigator.maxTouchPoints || 0) === 0);
-            const isDesktopEnv = pointerFine || hoverCapable || notTouch || window.innerWidth >= 1024;
-            const needsDesktopAdjustment = isMobileBase && isDesktopEnv;
-            
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, needsDesktopAdjustment, attempt, objectCount: objs.length });
+            console.log('Scaling objects proportionally:', { scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
             
             objs.forEach((obj: any) => {
               if ((obj as any)._scaledFromBase) return;
-              // Store original values
-              let origLeft = obj.left || 0;
-              let origTop = obj.top || 0;
+              
+              const origLeft = obj.left || 0;
+              const origTop = obj.top || 0;
               const origScaleX = obj.scaleX || 1;
               const origScaleY = obj.scaleY || 1;
-              (obj as any).originX = 'left';
-              (obj as any).originY = 'top';
               
-              // Apply small desktop adjustment: slightly left and up, with reduced scale
-              if (needsDesktopAdjustment) {
-                origLeft -= baseW * 0.08; // 8% left in mobile space
-                origTop -= baseH * 0.12;  // 12% up in mobile space
-              }
-
+              // Scale position proportionally
+              obj.left = origLeft * scaleX;
+              obj.top = origTop * scaleY;
               
-              // Now apply scaling to the adjusted position
-              const newLeft = origLeft * scaleX;
-              const newTop = origTop * scaleY;
+              // Scale size proportionally
+              obj.scaleX = origScaleX * scaleX;
+              obj.scaleY = origScaleY * scaleY;
               
-              obj.left = newLeft;
-              obj.top = newTop;
-              // Slightly reduce scale on desktop for mobile-created annotations
-              const scaleFactor = needsDesktopAdjustment ? 0.85 : 1;
-              obj.scaleX = origScaleX * scaleX * scaleFactor;
-              obj.scaleY = origScaleY * scaleY * scaleFactor;
               (obj as any)._scaledFromBase = true;
-              
-              // Update object coordinates
               obj.setCoords();
             });
             canvas.renderAll();
