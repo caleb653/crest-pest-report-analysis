@@ -762,31 +762,18 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
   return (
     <div className="relative w-full h-full">
-      {/* Map - either static image or iframe */}
-      {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
-        <img
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
-          style={{ 
-            border: '2px solid hsl(var(--foreground))',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
-          src={mapUrl}
-          alt="Custom map"
-        />
-      ) : (
-        <iframe
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
-          style={{ 
-            border: '2px solid hsl(var(--foreground))',
-            pointerEvents: 'none',
-            zIndex: 0
-          }}
-          loading="lazy"
-          allowFullScreen
-          src={mapUrl}
-        />
-      )}
+      {/* Map - always render as image for consistent print/display */}
+      <img
+        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
+        style={{ 
+          border: '2px solid hsl(var(--foreground))',
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+        src={mapUrl}
+        alt="Property map"
+        crossOrigin="anonymous"
+      />
 
       {/* Drawing canvas overlay */}
       <canvas
