@@ -35,6 +35,10 @@ const AVAILABLE_ICONS = [
   { icon: 'circle', label: 'Mosquito Station', symbol: '◯', svgPath: circleIcon },
 ];
 
+// Reference size for normalizing coordinates (3:4 aspect ratio)
+const REFERENCE_WIDTH = 1000;
+const REFERENCE_HEIGHT = 1333;
+
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -180,12 +184,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         const newWidth = Math.floor(parentRect.width);
         const newHeight = Math.floor(parentRect.height);
         
-        // Only resize and scale if dimensions actually changed
+        // Only resize and scale if dimensions actually changed significantly
         if (Math.abs(oldWidth - newWidth) > 1 || Math.abs(oldHeight - newHeight) > 1) {
           const scaleX = newWidth / oldWidth;
           const scaleY = newHeight / oldHeight;
           
-          // Scale all objects to maintain relative positions
+          // Scale all objects to maintain relative visual positions
           canvas.getObjects().forEach((obj: any) => {
             obj.left = (obj.left || 0) * scaleX;
             obj.top = (obj.top || 0) * scaleY;
@@ -203,7 +207,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       }
     };
 
-    window.addEventListener('resize', resizeCanvas);
+    // Debounce resize to prevent conflicts with initial load
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 100);
+    };
+
+    window.addEventListener('resize', debouncedResize);
 
     canvas.on('mouse:down', (e) => {
       const currentTool = toolRef.current;
@@ -428,7 +439,8 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     });
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', debouncedResize);
       document.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
@@ -473,20 +485,20 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               setTimeout(() => attemptAdjust(attempt + 1), 50);
               return;
             }
-            if (!(savedData.base?.width && savedData.base?.height)) {
-              canvas.renderAll();
-              return;
-            }
+            
             const currW = canvas.getWidth();
             const currH = canvas.getHeight();
-            const baseW = savedData.base.width;
-            const baseH = savedData.base.height;
+            
+            // Check if using new normalized format (version 2) or legacy format
+            const isNormalized = savedData.version === 2;
+            const baseW = savedData.base?.width || currW;
+            const baseH = savedData.base?.height || currH;
 
-            // Pure proportional scaling - no platform-specific adjustments
+            // Calculate scale factors
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            console.log('Scaling objects proportionally:', { scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
+            console.log('Scaling objects:', { isNormalized, scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
             
             objs.forEach((obj: any) => {
               if ((obj as any)._scaledFromBase) return;
@@ -496,7 +508,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               const origScaleX = obj.scaleX || 1;
               const origScaleY = obj.scaleY || 1;
               
-              // Scale position proportionally
+              // Scale position from saved coordinates to current canvas
               obj.left = origLeft * scaleX;
               obj.top = origTop * scaleY;
               
@@ -561,16 +573,32 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     
     const saveCanvasData = () => {
       if (!fabricCanvasRef.current) return;
-      const canvasJSON = fabricCanvasRef.current.toJSON();
-      const canvasData = JSON.stringify({
-        objects: canvasJSON,
-        legendItems: legendItems,
-        base: { width: fabricCanvasRef.current.getWidth(), height: fabricCanvasRef.current.getHeight() }
+      const canvas = fabricCanvasRef.current;
+      const currW = canvas.getWidth();
+      const currH = canvas.getHeight();
+      
+      // Normalize all object positions to reference coordinates before saving
+      const normalizedObjects = canvas.getObjects().map((obj: any) => {
+        const objJSON = obj.toJSON();
+        // Convert current position to reference coordinates
+        objJSON.left = (obj.left / currW) * REFERENCE_WIDTH;
+        objJSON.top = (obj.top / currH) * REFERENCE_HEIGHT;
+        // Normalize scale relative to canvas size
+        objJSON.scaleX = (obj.scaleX / currW) * REFERENCE_WIDTH;
+        objJSON.scaleY = (obj.scaleY / currH) * REFERENCE_HEIGHT;
+        return objJSON;
       });
-      console.log('Saving canvas data:', { 
-        objectCount: canvasJSON.objects?.length,
+      
+      const canvasData = JSON.stringify({
+        objects: { ...canvas.toJSON(), objects: normalizedObjects },
+        legendItems: legendItems,
+        base: { width: REFERENCE_WIDTH, height: REFERENCE_HEIGHT },
+        version: 2 // Mark as using normalized coordinates
+      });
+      console.log('Saving normalized canvas data:', { 
+        objectCount: normalizedObjects.length,
         legendCount: legendItems.length,
-        dataLength: canvasData.length 
+        currW, currH
       });
       onSave(canvasData);
     };
