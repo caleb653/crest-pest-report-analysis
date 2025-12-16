@@ -1259,23 +1259,16 @@ const Report = () => {
                         __html: (editableFindings[0] || "")
                           .split(/[.]\s*/)
                           .filter(line => line.trim())
-                          .map((line, idx, arr) => {
-                            const trimmed = line.trim().replace(/\.$/, '');
-                            // First sentence is a section header (no bullet, bold)
-                            if (idx === 0) {
-                              return `<strong>${trimmed}</strong>`;
-                            }
-                            // Check if line starts with a verb or looks like an action (section header)
-                            const isHeader = /^(Inspect|Apply|Treat|Identify|Seal|Determine|Strategically|Monitor|Eliminate|Reinforce|Provide|Maintain|Customize)/.test(trimmed);
-                            if (isHeader) {
-                              return `<br/><strong>${trimmed}</strong>`;
-                            }
-                            return `<br/>• ${trimmed}`;
-                          })
-                          .join('') || ""
+                          .map(line => `• ${line.trim().replace(/\.$/, '')}`)
+                          .join('<br/>') || ""
                       }}
                       onBlur={(e) => {
-                        const text = e.currentTarget.innerText
+                        // Just grab the text as-is without forcing format
+                        const html = e.currentTarget.innerHTML;
+                        // Convert to plain text, preserving line breaks
+                        const text = html
+                          .replace(/<br\s*\/?>/gi, '\n')
+                          .replace(/<[^>]+>/g, '')
                           .split('\n')
                           .map(line => line.replace(/^[•\-\*]\s*/, '').trim())
                           .filter(line => line)
