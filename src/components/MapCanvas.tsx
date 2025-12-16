@@ -238,12 +238,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             left: pt.x - 16,
             top: pt.y - 16,
             selectable: true,
-            hasControls: false,
+            hasControls: true,
             hasBorders: true,
             lockScalingFlip: true,
-            lockUniScaling: true,
-            scaleX: 1,
-            scaleY: 1,
+            cornerSize: 8,
+            cornerColor: '#16a34a',
+            cornerStrokeColor: '#166534',
+            transparentCorners: false,
             // Store icon type for legend purposes
             data: { iconType: currentIcon }
           });
