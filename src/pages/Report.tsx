@@ -1390,12 +1390,12 @@ const Report = () => {
 
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background">
-        <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
-          {/* Page Header */}
-          <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-border">
-            <div className="flex items-center gap-3">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
-              <h1 className="text-xl font-bold text-foreground">Property Map & Images</h1>
+        <div className={isMobile ? "p-4" : "p-4 print:p-2 print:pt-1 max-w-[1800px] mx-auto"}>
+          {/* Page Header - minimal for print */}
+          <div className="flex items-center justify-between mb-4 print:mb-1 pb-2 print:pb-1 border-b-2 border-border">
+            <div className="flex items-center gap-3 print:gap-2">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
+              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
