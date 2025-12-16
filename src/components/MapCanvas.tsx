@@ -249,7 +249,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             data: { iconType: currentIcon }
           });
           canvas.add(img);
-          canvas.setActiveObject(img);
+          canvas.discardActiveObject();
           canvas.renderAll();
           
           console.log('Icon added to canvas:', currentIcon);
