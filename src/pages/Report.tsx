@@ -1399,8 +1399,8 @@ const Report = () => {
             </div>
           </div>
 
-          {/* Map and Property Images Side by Side - Map starts on page 2 for exports */}
-          <div className="print:break-before-page flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4">
+          {/* Map and Property Images Side by Side */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0">
               <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
