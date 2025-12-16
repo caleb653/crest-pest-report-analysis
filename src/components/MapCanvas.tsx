@@ -35,9 +35,9 @@ const AVAILABLE_ICONS = [
   { icon: 'circle', label: 'Mosquito Station', symbol: '◯', svgPath: circleIcon },
 ];
 
-// Reference size for normalizing coordinates (3:4 aspect ratio)
+// Reference size for normalizing coordinates (4:3 aspect ratio to match container)
 const REFERENCE_WIDTH = 1000;
-const REFERENCE_HEIGHT = 1333;
+const REFERENCE_HEIGHT = 750;
 
 export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
