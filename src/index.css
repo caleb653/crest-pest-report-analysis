@@ -510,4 +510,11 @@
     background: hsl(var(--muted)) !important;
     color: hsl(var(--foreground)) !important;
   }
+
+  /* Allow selected sections to flow across pages (override global avoid-break) */
+  .allow-print-break,
+  .allow-print-break * {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
 }
