@@ -1388,22 +1388,22 @@ const Report = () => {
           </div>
         </div>
 
-      {/* Page 2 - Map Only (larger on mobile/tablet) */}
+      {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background">
         <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
-              <h1 className="text-xl font-bold text-foreground">Property Map</h1>
+              <h1 className="text-xl font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
-          {/* Map Section - Much larger on mobile/tablet */}
-          <div className="w-full">
+          {/* Map and Property Images Side by Side */}
+          <div className="grid grid-cols-1 md:grid-cols-[55%_45%] lg:grid-cols-[40%_60%] gap-4">
             {/* Map Section - Fixed aspect ratio for consistent icon placement */}
             <div className="flex flex-col min-h-0">
-              <div className="w-full relative rounded-lg overflow-hidden border-2 border-border print:max-h-none aspect-[3/4] md:aspect-[4/3] lg:aspect-[3/4] md:max-w-[800px] lg:max-w-none">
+              <div className="w-full relative rounded-lg overflow-hidden border-2 border-border print:max-h-none aspect-[3/4]">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
@@ -1511,72 +1511,60 @@ const Report = () => {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Page 3 - Property Images */}
-      <div className="print-page-break bg-background">
-        <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
-          {/* Page Header */}
-          <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-border">
-            <div className="flex items-center gap-3">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
-              <h1 className="text-xl font-bold text-foreground">Property Images</h1>
-            </div>
-          </div>
+            {/* Property Images Section */}
+            <div>
+              
+              {/* Upload Section */}
+              <div className="no-print mb-4">
+                <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Upload Images (up to 5)
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePropertyImagesUpload}
+                  className="hidden"
+                />
+              </div>
 
-          {/* Property Images Section */}
-          <div>
-            {/* Upload Section */}
-            <div className="no-print mb-4">
-              <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
-                <FileDown className="w-4 h-4 mr-2" />
-                Upload Images (up to 5)
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePropertyImagesUpload}
-                className="hidden"
-              />
-            </div>
-
-            {/* Property Images Grid */}
-            {propertyImages.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {propertyImages.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`space-y-1 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
-                    draggable
-                    onDragStart={() => handleImageDragStart(index)}
-                    onDragOver={(e) => handleImageDragOver(e, index)}
-                    onDragEnd={handleImageDragEnd}
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
-                      <img
-                        src={item.image}
-                        alt={`Property ${index + 1}`}
-                        className="w-full h-full object-cover pointer-events-none"
+              {/* Property Images Grid */}
+              {propertyImages.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {propertyImages.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className={`space-y-1 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
+                      draggable
+                      onDragStart={() => handleImageDragStart(index)}
+                      onDragOver={(e) => handleImageDragOver(e, index)}
+                      onDragEnd={handleImageDragEnd}
+                    >
+                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                        <img
+                          src={item.image}
+                          alt={`Property ${index + 1}`}
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
+                      </div>
+                      <Input
+                        value={item.caption || ""}
+                        onChange={(e) => updateImageCaption(index, e.target.value)}
+                        placeholder="Caption"
+                        className="no-print text-xs h-7"
                       />
                     </div>
-                    <Input
-                      value={item.caption || ""}
-                      onChange={(e) => updateImageCaption(index, e.target.value)}
-                      placeholder="Caption"
-                      className="no-print text-xs h-7"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
-                <p className="text-sm text-center px-4">No images uploaded yet.<br/>Click the button above to upload up to 5 images.</p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+                  <p className="text-sm text-center px-4">No images uploaded yet.<br/>Click the button above to upload up to 5 images.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
