@@ -189,11 +189,12 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           const scaleX = newWidth / oldWidth;
           const scaleY = newHeight / oldHeight;
           
-          // Scale positions only - keep icon sizes fixed
+          // Scale positions AND sizes proportionally for consistency
           canvas.getObjects().forEach((obj: any) => {
             obj.left = (obj.left || 0) * scaleX;
             obj.top = (obj.top || 0) * scaleY;
-            // Don't scale obj.scaleX/scaleY - keep icon size constant
+            obj.scaleX = (obj.scaleX || 1) * scaleX;
+            obj.scaleY = (obj.scaleY || 1) * scaleY;
             obj.setCoords();
           });
           
@@ -493,18 +494,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const baseW = savedData.base?.width || currW;
             const baseH = savedData.base?.height || currH;
 
-            // Calculate scale factors
+            // Calculate scale factors - pure proportional scaling
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            // Detect if on tablet/mobile (smaller canvas) and apply correction
-            const isSmallScreen = currW < 600;
-            // On smaller screens, condense positions more and shift left
-            const positionCorrectionX = isSmallScreen ? 0.75 : 1;
-            const positionCorrectionY = isSmallScreen ? 0.8 : 1;
-            const leftOffset = isSmallScreen ? -20 : 0;
-            
-            console.log('Scaling objects:', { isNormalized, scaleX, scaleY, currW, currH, baseW, baseH, isSmallScreen, objectCount: objs.length });
+            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
             
             objs.forEach((obj: any) => {
               if ((obj as any)._scaledFromBase) return;
@@ -512,13 +506,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               const origLeft = obj.left || 0;
               const origTop = obj.top || 0;
               
-              // Scale position from saved coordinates to current canvas
-              // Apply correction for smaller screens to condense and shift left
-              obj.left = (origLeft * scaleX * positionCorrectionX) + leftOffset;
-              obj.top = origTop * scaleY * positionCorrectionY;
+              // Pure proportional scaling - same relative position on all devices
+              obj.left = origLeft * scaleX;
+              obj.top = origTop * scaleY;
               
-              // Keep scale FIXED - icons stay same pixel size on all devices
-              // Don't modify obj.scaleX or obj.scaleY
+              // Scale icons proportionally too for consistent appearance
+              obj.scaleX = (obj.scaleX || 1) * scaleX;
+              obj.scaleY = (obj.scaleY || 1) * scaleY;
               
               (obj as any)._scaledFromBase = true;
               obj.setCoords();
