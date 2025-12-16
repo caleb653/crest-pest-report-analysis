@@ -189,12 +189,11 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           const scaleX = newWidth / oldWidth;
           const scaleY = newHeight / oldHeight;
           
-          // Scale all objects to maintain relative visual positions
+          // Scale positions only - keep icon sizes fixed
           canvas.getObjects().forEach((obj: any) => {
             obj.left = (obj.left || 0) * scaleX;
             obj.top = (obj.top || 0) * scaleY;
-            obj.scaleX = (obj.scaleX || 1) * scaleX;
-            obj.scaleY = (obj.scaleY || 1) * scaleY;
+            // Don't scale obj.scaleX/scaleY - keep icon size constant
             obj.setCoords();
           });
           
@@ -505,16 +504,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               
               const origLeft = obj.left || 0;
               const origTop = obj.top || 0;
-              const origScaleX = obj.scaleX || 1;
-              const origScaleY = obj.scaleY || 1;
               
               // Scale position from saved coordinates to current canvas
               obj.left = origLeft * scaleX;
               obj.top = origTop * scaleY;
               
-              // Scale size proportionally
-              obj.scaleX = origScaleX * scaleX;
-              obj.scaleY = origScaleY * scaleY;
+              // Keep scale FIXED - icons stay same pixel size on all devices
+              // Don't modify obj.scaleX or obj.scaleY
               
               (obj as any)._scaledFromBase = true;
               obj.setCoords();
@@ -580,12 +576,13 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       // Normalize all object positions to reference coordinates before saving
       const normalizedObjects = canvas.getObjects().map((obj: any) => {
         const objJSON = obj.toJSON();
-        // Convert current position to reference coordinates
+        // Convert current position to reference coordinates (percentage-based)
         objJSON.left = (obj.left / currW) * REFERENCE_WIDTH;
         objJSON.top = (obj.top / currH) * REFERENCE_HEIGHT;
-        // Normalize scale relative to canvas size
-        objJSON.scaleX = (obj.scaleX / currW) * REFERENCE_WIDTH;
-        objJSON.scaleY = (obj.scaleY / currH) * REFERENCE_HEIGHT;
+        // Keep scale FIXED - don't scale with canvas size
+        // This ensures icons are the same pixel size on all devices
+        objJSON.scaleX = obj.scaleX;
+        objJSON.scaleY = obj.scaleY;
         return objJSON;
       });
       
