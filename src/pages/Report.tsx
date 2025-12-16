@@ -820,6 +820,37 @@ const Report = () => {
       {!isMobile && (
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5">
           <div className="max-w-[1800px] mx-auto">
+            {/* Action buttons row for iPad - shown at top on medium screens */}
+            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+              <Input
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="Customer email"
+                className="w-48 h-9 text-xs"
+              />
+              <Button 
+                onClick={handleSendEmail} 
+                disabled={isSendingEmail || !customerEmail}
+                variant="secondary"
+                size="sm"
+              >
+                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
+                Send
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSaving} size="sm">
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                {reportId ? "Update" : "Submit"}
+              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <FileDown className="w-3 h-3 mr-1" />
+                PDF
+              </Button>
+              <Button onClick={() => navigate("/")} variant="outline" size="sm">
+                <Home className="w-3 h-3" />
+              </Button>
+            </div>
+
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
                 <div className="flex flex-col items-center shrink-0">
@@ -895,7 +926,8 @@ const Report = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 no-print flex-wrap shrink-0">
+              {/* Action buttons - only shown on large screens */}
+              <div className="hidden lg:flex items-center gap-2 no-print shrink-0">
                 <Input
                   type="email"
                   value={customerEmail}
