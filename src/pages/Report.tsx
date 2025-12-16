@@ -1401,9 +1401,9 @@ const Report = () => {
 
           {/* Map and Property Images Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-[55%_45%] lg:grid-cols-[40%_60%] gap-4">
-            {/* Map Section - Fixed aspect ratio for consistent icon placement */}
+            {/* Map Section - Fixed size for consistent icon placement across devices */}
             <div className="flex flex-col min-h-0">
-              <div className="w-full relative rounded-lg overflow-hidden border-2 border-border print:max-h-none aspect-[3/4]">
+              <div className="w-[400px] h-[533px] mx-auto md:mx-0 relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
