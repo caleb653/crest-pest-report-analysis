@@ -208,8 +208,12 @@
     box-sizing: border-box !important;
   }
 
-  *:not(.print-page-break) {
+  /* Avoid splitting key blocks, but allow normal page flow elsewhere */
+  .print-header,
+  .print-section,
+  .print-map-container {
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   iframe,
@@ -476,19 +480,7 @@
     clear: both !important;
   }
 
-  /* Page 2 grid layout for print - compact */
-  .print-page-break .grid {
-    display: grid !important;
-    grid-template-columns: 45% 55% !important;
-    gap: 8px !important;
-    height: calc(95vh - 60px) !important;
-  }
-
-  .print-page-break .grid > div {
-    height: 100% !important;
-  }
-
-  /* Remove canvas transform in print */
+  /* Page 2 layout is controlled via Tailwind print classes in the Report page */
   .print-page-break canvas {
     transform: none !important;
   }
