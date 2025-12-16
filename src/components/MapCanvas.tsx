@@ -497,7 +497,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
             
-            console.log('Scaling objects:', { isNormalized, scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
+            // Detect if on tablet/mobile (smaller canvas) and apply correction
+            const isSmallScreen = currW < 600;
+            // On smaller screens, condense positions more and shift left
+            const positionCorrectionX = isSmallScreen ? 0.75 : 1;
+            const positionCorrectionY = isSmallScreen ? 0.8 : 1;
+            const leftOffset = isSmallScreen ? -20 : 0;
+            
+            console.log('Scaling objects:', { isNormalized, scaleX, scaleY, currW, currH, baseW, baseH, isSmallScreen, objectCount: objs.length });
             
             objs.forEach((obj: any) => {
               if ((obj as any)._scaledFromBase) return;
@@ -506,8 +513,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               const origTop = obj.top || 0;
               
               // Scale position from saved coordinates to current canvas
-              obj.left = origLeft * scaleX;
-              obj.top = origTop * scaleY;
+              // Apply correction for smaller screens to condense and shift left
+              obj.left = (origLeft * scaleX * positionCorrectionX) + leftOffset;
+              obj.top = origTop * scaleY * positionCorrectionY;
               
               // Keep scale FIXED - icons stay same pixel size on all devices
               // Don't modify obj.scaleX or obj.scaleY
