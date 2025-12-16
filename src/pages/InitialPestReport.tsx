@@ -774,7 +774,7 @@ const Report = () => {
       {/* Main Content */}
       <div className={isMobileOrTablet ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
-        <div className={isMobileOrTablet ? `w-full ${isTablet ? "max-w-sm" : "max-w-md"} mx-auto px-4 py-2` : "print-map-container w-[28%] p-4"}>
+        <div className={isMobileOrTablet ? "w-full max-w-md mx-auto px-4 py-2" : "print-map-container w-[28%] p-4"}>
           <div className="relative w-full" style={{ paddingBottom: '133%' }}> {/* 3:4 aspect ratio (taller) */}
             <div className="absolute inset-0">
               {isProcessing && (

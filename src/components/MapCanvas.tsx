@@ -178,40 +178,38 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
     const resizeCanvas = () => {
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
-      if (!parentRect) return;
-
-      const oldWidth = canvas.getWidth();
-      const oldHeight = canvas.getHeight();
-      // Use exact dimensions without flooring to prevent drift (important for print + tablets)
-      const newWidth = parentRect.width;
-      const newHeight = parentRect.height;
-
-      // Only resize and scale if dimensions actually changed significantly
-      if (Math.abs(oldWidth - newWidth) > 1 || Math.abs(oldHeight - newHeight) > 1) {
-        const scaleX = newWidth / oldWidth;
-        const scaleY = newHeight / oldHeight;
-
-        // Calculate old and new target icon scales
-        const oldTargetScale = Math.min(oldWidth, oldHeight) / 800;
-        const newTargetScale = Math.min(newWidth, newHeight) / 800;
-        const iconScaleRatio = newTargetScale / oldTargetScale;
-
-        // Scale positions proportionally, icon sizes based on target scale ratio
-        canvas.getObjects().forEach((obj: any) => {
-          obj.left = (obj.left || 0) * scaleX;
-          obj.top = (obj.top || 0) * scaleY;
-          obj.scaleX = (obj.scaleX || 1) * iconScaleRatio;
-          obj.scaleY = (obj.scaleY || 1) * iconScaleRatio;
-          obj.setCoords();
-        });
-
-        canvas.setDimensions({
-          width: newWidth,
-          height: newHeight,
-        });
+      if (parentRect) {
+        const oldWidth = canvas.getWidth();
+        const oldHeight = canvas.getHeight();
+        const newWidth = Math.floor(parentRect.width);
+        const newHeight = Math.floor(parentRect.height);
+        
+        // Only resize and scale if dimensions actually changed significantly
+        if (Math.abs(oldWidth - newWidth) > 1 || Math.abs(oldHeight - newHeight) > 1) {
+          const scaleX = newWidth / oldWidth;
+          const scaleY = newHeight / oldHeight;
+          
+          // Calculate old and new target icon scales
+          const oldTargetScale = Math.min(oldWidth, oldHeight) / 800;
+          const newTargetScale = Math.min(newWidth, newHeight) / 800;
+          const iconScaleRatio = newTargetScale / oldTargetScale;
+          
+          // Scale positions proportionally, icon sizes based on target scale ratio
+          canvas.getObjects().forEach((obj: any) => {
+            obj.left = (obj.left || 0) * scaleX;
+            obj.top = (obj.top || 0) * scaleY;
+            obj.scaleX = (obj.scaleX || 1) * iconScaleRatio;
+            obj.scaleY = (obj.scaleY || 1) * iconScaleRatio;
+            obj.setCoords();
+          });
+          
+          canvas.setDimensions({
+            width: newWidth,
+            height: newHeight,
+          });
+        }
+        canvas.renderAll();
       }
-
-      canvas.renderAll();
     };
 
     // Debounce resize to prevent conflicts with initial load
@@ -222,29 +220,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     };
 
     window.addEventListener('resize', debouncedResize);
-
-    // Print/export changes layout without firing a normal resize; force remeasure
-    const handleBeforePrint = () => {
-      resizeCanvas();
-      canvas.requestRenderAll();
-    };
-    const handleAfterPrint = () => {
-      setTimeout(() => {
-        resizeCanvas();
-        canvas.requestRenderAll();
-      }, 0);
-    };
-
-    window.addEventListener('beforeprint', handleBeforePrint);
-    window.addEventListener('afterprint', handleAfterPrint);
-
-    // Observe container size changes (tablet layout changes, responsive reflows, etc.)
-    let resizeObserver: ResizeObserver | null = null;
-    const parentEl = canvasRef.current.parentElement;
-    if (typeof ResizeObserver !== 'undefined' && parentEl) {
-      resizeObserver = new ResizeObserver(() => debouncedResize());
-      resizeObserver.observe(parentEl);
-    }
 
     canvas.on('mouse:down', (e) => {
       const currentTool = toolRef.current;
@@ -472,9 +447,6 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     return () => {
       clearTimeout(resizeTimeout);
       window.removeEventListener('resize', debouncedResize);
-      window.removeEventListener('beforeprint', handleBeforePrint);
-      window.removeEventListener('afterprint', handleAfterPrint);
-      resizeObserver?.disconnect();
       document.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
@@ -762,18 +734,31 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
 
   return (
     <div className="relative w-full h-full">
-      {/* Map - always render as image for consistent print/display */}
-      <img
-        className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
-        style={{ 
-          border: '2px solid hsl(var(--foreground))',
-          pointerEvents: 'none',
-          zIndex: 0
-        }}
-        src={mapUrl}
-        alt="Property map"
-        crossOrigin="anonymous"
-      />
+      {/* Map - either static image or iframe */}
+      {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
+        <img
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-card"
+          style={{ 
+            border: '2px solid hsl(var(--foreground))',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
+          src={mapUrl}
+          alt="Custom map"
+        />
+      ) : (
+        <iframe
+          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground"
+          style={{ 
+            border: '2px solid hsl(var(--foreground))',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
+          loading="lazy"
+          allowFullScreen
+          src={mapUrl}
+        />
+      )}
 
       {/* Drawing canvas overlay */}
       <canvas
