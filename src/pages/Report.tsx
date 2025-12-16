@@ -1400,7 +1400,7 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4">
+          <div className="allow-print-break flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:gap-2">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0">
               <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
@@ -1513,7 +1513,7 @@ const Report = () => {
             </div>
 
             {/* Property Images Section */}
-            <div>
+            <div className="print:break-before-page">
               
               {/* Upload Section */}
               <div className="no-print mb-4">
