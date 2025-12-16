@@ -941,7 +941,7 @@ const Report = () => {
             <Card className="print-section p-2 col-span-2">
               <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
+                <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -952,7 +952,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
+                  <div key={index} className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center">
                     <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                       <Select 
                         value={service.serviceType} 
