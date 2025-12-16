@@ -812,8 +812,8 @@ const Report = () => {
 
                   <div className="flex gap-8">
                     <div className="flex-[2]">
-                      <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
-                      <div className="space-y-1 text-xs">
+                      <p className="font-semibold text-foreground text-xs mb-0.5">Customer Information:</p>
+                      <div className="space-y-0.5 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Name:</span>
                           <Input
