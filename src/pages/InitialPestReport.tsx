@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 
 const PEST_OPTIONS = [
   "Ants",
@@ -79,6 +79,8 @@ const Report = () => {
   const navigate = useNavigate();
   const { reportId } = useParams();
   const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isMobileOrTablet = isMobile || isTablet;
   const {
     technicianName,
     customerName,
@@ -770,9 +772,9 @@ const Report = () => {
       )}
 
       {/* Main Content */}
-      <div className={isMobile ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
+      <div className={isMobileOrTablet ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
         {/* Map Section */}
-        <div className={isMobile ? "h-[60vh] relative pb-20" : "print-map-container w-[45%] relative"}>
+        <div className={isMobileOrTablet ? "h-[50vh] md:h-[55vh] relative pb-16 md:pb-20" : "print-map-container w-[45%] relative"}>
           {isProcessing && (
             <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
               <div className="text-center">
@@ -880,11 +882,10 @@ const Report = () => {
           )}
         </div>
 
-        {/* Report Details Section */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
+        <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
           <div className="p-3 md:p-4 space-y-3">
-            {/* Mobile: Customer & Technician */}
-            {isMobile && (
+            {/* Mobile/Tablet: Customer & Technician */}
+            {isMobileOrTablet && (
               <Card className="p-4">
                 <div className="space-y-3">
                   <div>
