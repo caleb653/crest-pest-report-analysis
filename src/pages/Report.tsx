@@ -728,7 +728,7 @@ const Report = () => {
     const files = e.target.files;
     if (!files) return;
     
-    const fileArray = Array.from(files).slice(0, 5);
+    const fileArray = Array.from(files).slice(0, 8);
     
     if (fileArray.some(file => !file.type.startsWith('image/'))) {
       toast.error('Please upload only image files');
@@ -1519,7 +1519,7 @@ const Report = () => {
               <div className="no-print mb-4">
                 <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="sm">
                   <FileDown className="w-4 h-4 mr-2" />
-                  Upload Images (up to 5)
+                  Upload Images (up to 8)
                 </Button>
                 <input
                   ref={fileInputRef}
@@ -1533,7 +1533,7 @@ const Report = () => {
 
               {/* Property Images Grid */}
               {propertyImages.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 print:gap-1 print:grid-cols-2">
+                <div className="grid grid-cols-2 gap-3 print:gap-[2mm] print:grid-cols-4">
                   {propertyImages.map((item, index) => (
                     <div 
                       key={index} 
@@ -1543,7 +1543,7 @@ const Report = () => {
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square print:w-[150px] print:h-[110px] rounded-lg overflow-hidden border-2 border-border bg-muted print:rounded print:border">
+                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square print:w-[38mm] print:h-[28mm] rounded-lg overflow-hidden border-2 border-border bg-muted print:rounded-sm print:border">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
@@ -1558,7 +1558,7 @@ const Report = () => {
                       />
                       {/* Print-only caption */}
                       {item.caption && (
-                        <p className="hidden print:block text-[9px] text-foreground font-medium mt-0.5 leading-tight truncate max-w-[150px]">
+                        <p className="hidden print:block text-[8px] text-foreground font-medium mt-0.5 leading-tight truncate max-w-[38mm]">
                           {item.caption}
                         </p>
                       )}
@@ -1567,7 +1567,7 @@ const Report = () => {
                 </div>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
-                  <p className="text-sm text-center px-4">No images uploaded yet.<br/>Click the button above to upload up to 5 images.</p>
+                  <p className="text-sm text-center px-4">No images uploaded yet.<br/>Click the button above to upload up to 8 images.</p>
                 </div>
               )}
             </div>
