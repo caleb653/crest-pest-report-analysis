@@ -490,12 +490,23 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             
             // Check if using new normalized format (version 2) or legacy format
             const isNormalized = savedData.version === 2;
-            const baseW = savedData.base?.width || currW;
-            const baseH = savedData.base?.height || currH;
+            const baseW = savedData.base?.width || REFERENCE_WIDTH;
+            const baseH = savedData.base?.height || REFERENCE_HEIGHT;
 
-            // Calculate scale factors
-            const scaleX = currW / baseW;
-            const scaleY = currH / baseH;
+            // For normalized data (v2): positions are in reference coordinates (1000x1333)
+            // For legacy data: positions are in the original canvas coordinates
+            let scaleX: number;
+            let scaleY: number;
+            
+            if (isNormalized) {
+              // Normalized data: scale from reference size to current canvas
+              scaleX = currW / REFERENCE_WIDTH;
+              scaleY = currH / REFERENCE_HEIGHT;
+            } else {
+              // Legacy data: scale from original canvas size to current canvas
+              scaleX = currW / baseW;
+              scaleY = currH / baseH;
+            }
             
             console.log('Scaling objects:', { isNormalized, scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
             
