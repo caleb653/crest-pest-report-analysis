@@ -795,52 +795,63 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-4 py-1.5">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5">
           <div className="max-w-[1800px] mx-auto">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 flex-1">
-                <img src={crestLogo} alt="Crest Pest Control" className="h-12 w-auto" />
-                <div className="flex-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-6 flex-1">
+                <div className="flex flex-col items-center">
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto" />
+                  <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
+                </div>
+                <div className="flex-1 ml-4">
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="text-lg font-bold text-foreground bg-transparent border-b border-border px-1 h-7 focus-visible:ring-0 w-48"
+                    className="text-xl font-bold text-foreground mb-2 bg-transparent border-b border-border px-1 h-8 focus-visible:ring-0"
                   />
-                  <div className="flex gap-6 mt-1">
+
+                  <div className="flex gap-8">
                     <div className="flex-[2]">
-                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs">
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Customer:</span>
+                      <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Name:</span>
                           <Input
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
-                            placeholder="Name"
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0"
+                            placeholder="Customer name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
                           />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Address:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Address:</span>
                           <Input
                             value={editableAddress || extractedAddress}
                             onChange={(e) => setEditableAddress(e.target.value)}
-                            placeholder="Address"
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-48 focus-visible:ring-0"
+                            placeholder="Enter address"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
                           />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Date:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-20">Service Date:</span>
                           <Input
                             type="date"
                             value={editableServiceDate}
                             onChange={(e) => setEditableServiceDate(e.target.value)}
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-28 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
                           />
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">Tech:</span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground text-xs mb-1">Technician Information:</p>
+                      <div className="space-y-0.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-24">Name:</span>
                           <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-5 text-xs w-36 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
-                              <SelectValue placeholder="Select" />
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                              <SelectValue placeholder="Select technician" />
                             </SelectTrigger>
                             <SelectContent>
                               {TECHNICIANS.map((tech) => (
@@ -851,9 +862,9 @@ const Report = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground">License:</span>
-                          <span className="text-foreground text-xs">{editableLicenseNumber || "—"}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground w-24 whitespace-nowrap">License Number:</span>
+                          <span className="text-foreground">{editableLicenseNumber || "—"}</span>
                         </div>
                       </div>
                     </div>
@@ -942,7 +953,7 @@ const Report = () => {
                 {/* Service Rows */}
                 {services.map((service, index) => (
                   <div key={index} className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
-                    <div className="flex items-center bg-white/80 rounded px-1 h-8">
+                    <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                       <Select 
                         value={service.serviceType} 
                         onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
@@ -961,7 +972,7 @@ const Report = () => {
                       {/* Print-only text display */}
                       <span className="hidden print:block text-sm font-medium">{service.serviceType || '-'}</span>
                     </div>
-                    <div className="relative bg-white/80 rounded h-8 flex items-center">
+                    <div className="relative bg-white/80 rounded">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
@@ -975,7 +986,7 @@ const Report = () => {
                         className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
-                    <div className="relative bg-white/80 rounded h-8 flex items-center">
+                    <div className="relative bg-white/80 rounded">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
@@ -989,7 +1000,7 @@ const Report = () => {
                         className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
-                    <div className="bg-white/80 rounded px-1 h-8 flex items-center">
+                    <div className="bg-white/80 rounded px-1">
                       <Select 
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
@@ -1010,7 +1021,7 @@ const Report = () => {
                         {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || '-'}
                       </span>
                     </div>
-                    <div className="min-w-0 bg-white/80 rounded px-1.5 h-8 flex items-center">
+                    <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5">
                       {service.frequency > 0 ? (
                         <div className="flex flex-wrap gap-0.5">
                           {(() => {
@@ -1066,11 +1077,11 @@ const Report = () => {
                 {/* Totals Row */}
                 <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_90px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
                   <div className="text-sm font-bold text-right pr-2">Total:</div>
-                  <div className="text-sm font-bold text-right bg-white/80 rounded h-8 px-2 flex items-center">
+                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
                   </div>
-                  <div className="text-sm font-bold text-right bg-white/80 rounded h-8 px-2 flex items-center">
+                  <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
                   </div>
