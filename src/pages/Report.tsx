@@ -958,7 +958,7 @@ const Report = () => {
                         value={service.serviceType} 
                         onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
                       >
-                        <SelectTrigger className="h-8 text-sm w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select service..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -983,7 +983,7 @@ const Report = () => {
                           handleServiceChange(index, 'initialPrice', val);
                         }}
                         placeholder="0"
-                        className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
+                        className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
                     <div className="relative bg-white/80 rounded">
@@ -997,7 +997,7 @@ const Report = () => {
                           handleServiceChange(index, 'recurringPrice', val);
                         }}
                         placeholder="0"
-                        className="h-8 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
+                        className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
                     <div className="bg-white/80 rounded px-1">
@@ -1005,7 +1005,7 @@ const Report = () => {
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
                       >
-                        <SelectTrigger className="h-8 text-sm w-full no-print bg-transparent border-0 shadow-none">
+                        <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
