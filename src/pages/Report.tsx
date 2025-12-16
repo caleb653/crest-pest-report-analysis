@@ -1533,17 +1533,17 @@ const Report = () => {
 
               {/* Property Images Grid */}
               {propertyImages.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 print:gap-2">
+                <div className="grid grid-cols-2 gap-3 print:gap-1 print:grid-cols-2">
                   {propertyImages.map((item, index) => (
                     <div 
                       key={index} 
-                      className={`space-y-1 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
+                      className={`space-y-1 print:space-y-0 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
                       draggable
                       onDragStart={() => handleImageDragStart(index)}
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square print:w-[180px] print:h-[135px] rounded-lg overflow-hidden border-2 border-border bg-muted">
+                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square print:w-[150px] print:h-[110px] rounded-lg overflow-hidden border-2 border-border bg-muted print:rounded print:border">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
@@ -1556,6 +1556,12 @@ const Report = () => {
                         placeholder="Caption"
                         className="no-print text-xs h-7"
                       />
+                      {/* Print-only caption */}
+                      {item.caption && (
+                        <p className="hidden print:block text-[9px] text-foreground font-medium mt-0.5 leading-tight truncate max-w-[150px]">
+                          {item.caption}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
