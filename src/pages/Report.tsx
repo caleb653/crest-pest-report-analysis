@@ -1368,9 +1368,9 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-[65%_35%] lg:grid-cols-[45%_55%] gap-4 h-[calc(100vh-140px)] md:h-[calc(100vh-120px)] print:h-[calc(100vh-120px)]">
+          <div className="grid grid-cols-1 md:grid-cols-[65%_35%] lg:grid-cols-[45%_55%] gap-4 h-auto md:h-auto lg:h-[calc(100vh-120px)] print:h-[calc(100vh-120px)]">
             {/* Map Section */}
-            <div className="flex flex-col h-full min-h-[400px] md:min-h-0">
+            <div className="flex flex-col h-[300px] md:h-[350px] lg:h-full min-h-0">
               <div className="flex-1 w-full relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
