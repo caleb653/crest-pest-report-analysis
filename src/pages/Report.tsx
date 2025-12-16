@@ -941,7 +941,7 @@ const Report = () => {
             <Card className="print-section p-1.5 col-span-2">
               <div className="space-y-0.5">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center text-xs font-bold border-b border-border pb-0.5">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center text-xs font-bold border-b border-border pb-0.5">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -952,13 +952,13 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center py-0.5">
-                    <div className="flex items-center gap-2">
+                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center">
+                    <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                       <Select 
                         value={service.serviceType} 
                         onValueChange={(val) => handleServiceChange(index, 'serviceType', val)}
                       >
-                        <SelectTrigger className="h-9 text-xs w-full no-print bg-white">
+                        <SelectTrigger className="h-7 text-xs w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select service..." />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -972,7 +972,7 @@ const Report = () => {
                       {/* Print-only text display */}
                       <span className="hidden print:block text-xs font-medium">{service.serviceType || '-'}</span>
                     </div>
-                    <div className="relative">
+                    <div className="relative bg-white/80 rounded">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
@@ -983,10 +983,10 @@ const Report = () => {
                           handleServiceChange(index, 'initialPrice', val);
                         }}
                         placeholder="0"
-                        className="h-9 text-xs pl-6 text-right pr-2"
+                        className="h-7 text-xs pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
-                    <div className="relative">
+                    <div className="relative bg-white/80 rounded">
                       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
                       <Input
                         type="text"
@@ -997,15 +997,15 @@ const Report = () => {
                           handleServiceChange(index, 'recurringPrice', val);
                         }}
                         placeholder="0"
-                        className="h-9 text-xs pl-6 text-right pr-2"
+                        className="h-7 text-xs pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                       />
                     </div>
-                    <div>
+                    <div className="bg-white/80 rounded px-1">
                       <Select 
                         value={service.frequency.toString()} 
                         onValueChange={(val) => handleServiceChange(index, 'frequency', parseInt(val))}
                       >
-                        <SelectTrigger className="h-9 text-xs w-full no-print bg-white">
+                        <SelectTrigger className="h-7 text-xs w-full no-print bg-transparent border-0 shadow-none">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
                         <SelectContent className="bg-white z-50">
@@ -1021,9 +1021,9 @@ const Report = () => {
                         {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || '-'}
                       </span>
                     </div>
-                    <div className="min-w-0 md:pl-2">
+                    <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5">
                       {service.frequency > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-0.5">
                           {(() => {
                             const isWeekly = service.frequency === 7;
                             const today = new Date();
@@ -1041,7 +1041,7 @@ const Report = () => {
                               return (
                                 <span
                                   key={i}
-                                  className={`px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap ${
+                                  className={`px-1 py-0 rounded text-[9px] whitespace-nowrap ${
                                     isFirst ? 'bg-secondary text-white font-medium' : 'bg-muted text-muted-foreground'
                                   }`}
                                 >
@@ -1064,10 +1064,10 @@ const Report = () => {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 no-print"
+                          className="h-6 w-6 no-print"
                           onClick={() => removeService(index)}
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-3 h-3" />
                         </Button>
                       )}
                     </div>
@@ -1075,13 +1075,13 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center pt-1 border-t border-border">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_80px_minmax(200px,2fr)_24px] gap-2 items-center pt-0.5 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
-                  <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
+                  <div className="text-xs font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
                   </div>
-                  <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
+                  <div className="text-xs font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
                     <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
                   </div>
