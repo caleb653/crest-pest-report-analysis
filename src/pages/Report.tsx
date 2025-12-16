@@ -1511,7 +1511,7 @@ const Report = () => {
                       onDragOver={(e) => handleImageDragOver(e, index)}
                       onDragEnd={handleImageDragEnd}
                     >
-                      <div className="aspect-square md:aspect-[4/3] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                      <div className="aspect-square md:aspect-[3/2] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
