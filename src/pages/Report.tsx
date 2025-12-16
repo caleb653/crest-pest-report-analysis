@@ -771,6 +771,29 @@ const Report = () => {
     });
   };
 
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+
+  const handleImageDragStart = (index: number) => {
+    setDraggedImageIndex(index);
+  };
+
+  const handleImageDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedImageIndex === null || draggedImageIndex === index) return;
+    
+    setPropertyImages(prev => {
+      const updated = [...prev];
+      const [dragged] = updated.splice(draggedImageIndex, 1);
+      updated.splice(index, 0, dragged);
+      return updated;
+    });
+    setDraggedImageIndex(index);
+  };
+
+  const handleImageDragEnd = () => {
+    setDraggedImageIndex(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -1480,12 +1503,19 @@ const Report = () => {
               {propertyImages.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
                   {propertyImages.map((item, index) => (
-                    <div key={index} className="space-y-1">
+                    <div 
+                      key={index} 
+                      className={`space-y-1 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? 'opacity-50' : ''}`}
+                      draggable
+                      onDragStart={() => handleImageDragStart(index)}
+                      onDragOver={(e) => handleImageDragOver(e, index)}
+                      onDragEnd={handleImageDragEnd}
+                    >
                       <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
                         <img
                           src={item.image}
                           alt={`Property ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover pointer-events-none"
                         />
                       </div>
                       <Input
