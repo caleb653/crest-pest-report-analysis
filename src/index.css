@@ -275,9 +275,8 @@
   .print-layout {
     width: calc(100% - 12mm) !important;
     max-width: none !important;
-    display: grid !important;
-    grid-template-columns: 58% 40% !important;
-    column-gap: 2% !important;
+    display: flex !important;
+    gap: 4mm !important;
     height: 125mm !important;
     margin: 0 auto 0 auto !important;
     padding: 0 !important;
@@ -290,25 +289,64 @@
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08);
     overflow: hidden !important;
     background: hsl(135 12% 90%) !important;
+    /* Maintain 3:4 aspect ratio (same as on-screen) */
     height: 125mm !important;
-    width: 100% !important;
+    width: 94mm !important;
+    min-width: 94mm !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    padding: 0 !important;
   }
 
-  .print-map-container canvas {
-    transform: none !important;
-    transform-origin: initial !important;
+  /* Reset the aspect ratio wrapper for print - flatten all nested divs */
+  .print-map-container > div,
+  .print-map-container > div > div,
+  .print-map-container > div > div > div {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure the MapCanvas wrapper fills container */
+  .print-map-container [class*="relative"] {
+    position: absolute !important;
+    inset: 0 !important;
     width: 100% !important;
     height: 100% !important;
   }
 
+  .print-map-container img {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    z-index: 0 !important;
+  }
+
+  /* Scale canvas to fill container while preserving aspect ratio */
+  .print-map-container canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: fill !important;
+    z-index: 1 !important;
+  }
+
   .print-layout > div:last-child {
+    flex: 1 !important;
     height: 125mm !important;
     max-height: 125mm !important;
     overflow: hidden !important;
     padding-top: 1mm !important;
-    padding-left: 0 !important;
+    padding-left: 4mm !important;
     padding-right: 0 !important;
-    width: 100% !important;
   }
 
   .print-section {
