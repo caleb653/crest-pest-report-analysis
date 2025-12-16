@@ -938,10 +938,10 @@ const Report = () => {
             )}
 
             {/* Services - Full Width at Top */}
-            <Card className="print-section p-3 col-span-2">
-              <div className="space-y-2">
+            <Card className="print-section p-2 col-span-2">
+              <div className="space-y-1">
                 {/* Header Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center text-xs font-bold border-b border-border pb-2">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center text-xs font-bold border-b border-border pb-1">
                   <span>Service Type</span>
                   <span className="text-center">Initial</span>
                   <span className="text-center">Recurring</span>
@@ -952,7 +952,7 @@ const Report = () => {
                 
                 {/* Service Rows */}
                 {services.map((service, index) => (
-                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center py-1">
+                  <div key={index} className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center py-0.5">
                     <div className="flex items-center gap-2">
                       <Select 
                         value={service.serviceType} 
@@ -1075,7 +1075,7 @@ const Report = () => {
                 ))}
                 
                 {/* Totals Row */}
-                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-4 items-center pt-2 border-t border-border">
+                <div className="grid grid-cols-[minmax(140px,1fr)_70px_70px_130px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_100px_minmax(200px,2fr)_24px] gap-3 items-center pt-1 border-t border-border">
                   <div className="text-xs font-bold text-right pr-2">Total:</div>
                   <div className="text-xs font-bold text-right bg-muted/50 rounded py-0.5 px-1 flex items-center">
                     <span className="text-muted-foreground mr-auto">$</span>
@@ -1259,8 +1259,20 @@ const Report = () => {
                         __html: (editableFindings[0] || "")
                           .split(/[.]\s*/)
                           .filter(line => line.trim())
-                          .map(line => `• ${line.trim().replace(/\.$/, '')}`)
-                          .join('<br/>') || ""
+                          .map((line, idx, arr) => {
+                            const trimmed = line.trim().replace(/\.$/, '');
+                            // First sentence is a section header (no bullet, bold)
+                            if (idx === 0) {
+                              return `<strong>${trimmed}</strong>`;
+                            }
+                            // Check if line starts with a verb or looks like an action (section header)
+                            const isHeader = /^(Inspect|Apply|Treat|Identify|Seal|Determine|Strategically|Monitor|Eliminate|Reinforce|Provide|Maintain|Customize)/.test(trimmed);
+                            if (isHeader) {
+                              return `<br/><strong>${trimmed}</strong>`;
+                            }
+                            return `<br/>• ${trimmed}`;
+                          })
+                          .join('') || ""
                       }}
                       onBlur={(e) => {
                         const text = e.currentTarget.innerText
