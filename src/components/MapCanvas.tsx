@@ -188,13 +188,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         if (Math.abs(oldWidth - newWidth) > 1 || Math.abs(oldHeight - newHeight) > 1) {
           const scaleX = newWidth / oldWidth;
           const scaleY = newHeight / oldHeight;
+          // Use uniform scale for object sizes to maintain aspect ratio
+          const uniformScale = Math.min(scaleX, scaleY);
           
-          // Scale positions AND sizes proportionally for consistency
+          // Scale positions proportionally, sizes uniformly for consistency
           canvas.getObjects().forEach((obj: any) => {
             obj.left = (obj.left || 0) * scaleX;
             obj.top = (obj.top || 0) * scaleY;
-            obj.scaleX = (obj.scaleX || 1) * scaleX;
-            obj.scaleY = (obj.scaleY || 1) * scaleY;
+            obj.scaleX = (obj.scaleX || 1) * uniformScale;
+            obj.scaleY = (obj.scaleY || 1) * uniformScale;
             obj.setCoords();
           });
           
@@ -498,8 +500,10 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
             // Calculate scale factors - pure proportional scaling
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
+            // Use uniform scale to maintain aspect ratio of icons
+            const uniformScale = Math.min(scaleX, scaleY);
             
-            console.log('Scaling objects:', { scaleX, scaleY, currW, currH, baseW, baseH, objectCount: objs.length });
+            console.log('Scaling objects:', { scaleX, scaleY, uniformScale, currW, currH, baseW, baseH, objectCount: objs.length });
             
             objs.forEach((obj: any) => {
               if ((obj as any)._scaledFromBase) return;
@@ -511,8 +515,9 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
               obj.left = origLeft * scaleX;
               obj.top = origTop * scaleY;
               
-              // DO NOT scale object sizes - keep icons and lines at their original visual size
-              // Only positions should scale, not the objects themselves
+              // Scale object sizes proportionally so icons appear same relative size on all devices
+              obj.scaleX = (obj.scaleX || 1) * uniformScale;
+              obj.scaleY = (obj.scaleY || 1) * uniformScale;
               
               (obj as any)._scaledFromBase = true;
               obj.setCoords();
@@ -575,16 +580,18 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       const currW = canvas.getWidth();
       const currH = canvas.getHeight();
       
-      // Normalize all object positions to reference coordinates before saving
+      // Calculate the uniform scale that was applied on load
+      const uniformScale = Math.min(currW / REFERENCE_WIDTH, currH / REFERENCE_HEIGHT);
+      
+      // Normalize all object positions and scales to reference coordinates before saving
       const normalizedObjects = canvas.getObjects().map((obj: any) => {
         const objJSON = obj.toJSON();
         // Convert current position to reference coordinates (percentage-based)
         objJSON.left = (obj.left / currW) * REFERENCE_WIDTH;
         objJSON.top = (obj.top / currH) * REFERENCE_HEIGHT;
-        // Keep scale FIXED - don't scale with canvas size
-        // This ensures icons are the same pixel size on all devices
-        objJSON.scaleX = obj.scaleX;
-        objJSON.scaleY = obj.scaleY;
+        // Normalize scale back to reference size
+        objJSON.scaleX = (obj.scaleX || 1) / uniformScale;
+        objJSON.scaleY = (obj.scaleY || 1) / uniformScale;
         return objJSON;
       });
       
