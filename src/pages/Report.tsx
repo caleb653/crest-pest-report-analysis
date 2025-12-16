@@ -1400,10 +1400,10 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[45%_55%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
-            {/* Map Section */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
+            {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
-              <div className="w-full aspect-[3/4] max-h-[70vh] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none print:w-[400px] print:h-[533px] print:aspect-auto">
+              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
