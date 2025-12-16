@@ -1533,7 +1533,7 @@ const Report = () => {
 
               {/* Property Images Grid */}
               {propertyImages.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[2mm] print:grid-cols-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[1mm] print:grid-cols-4">
                   {propertyImages.map((item, index) => (
                     <div 
                       key={index} 
