@@ -895,7 +895,7 @@ const Report = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 no-print">
+              <div className="flex items-center gap-2 no-print flex-wrap shrink-0">
                 <Input
                   type="email"
                   value={customerEmail}
