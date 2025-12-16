@@ -1248,11 +1248,15 @@ const Report = () => {
 
           {/* Property Images Grid */}
           {propertyImages.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-3 lg:gap-4 print:grid-cols-5 print:gap-4">
               {propertyImages.map((item, index) => (
                 <div key={index} className="space-y-2">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
-                    <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                  <div className="aspect-square md:aspect-[16/9] lg:aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                    <img
+                      src={item.image}
+                      alt={`Property ${index + 1}`}
+                      className="w-full h-full object-cover md:object-contain lg:object-cover"
+                    />
                   </div>
                   {item.caption && (
                     <div className="p-2 bg-card rounded border border-border">
