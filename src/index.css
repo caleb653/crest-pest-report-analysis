@@ -171,7 +171,7 @@
 
   html,
   body {
-    background: hsl(var(--primary)) !important;
+    background: hsl(0 0% 98%) !important;
     color: hsl(var(--foreground)) !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
@@ -225,8 +225,8 @@
     margin: 0 0 1mm 0 !important;
     padding: 2mm 6mm !important;
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06) !important;
-    background: hsl(var(--primary)) !important;
-    border: 1.25px solid hsl(var(--border)) !important;
+    background: hsl(0 0% 100%) !important;
+    border: 1.25px solid hsl(0 0% 85%) !important;
   }
 
   .print-header > * {
@@ -310,13 +310,13 @@
     border-radius: 2.5mm !important;
     box-shadow: none !important;
     padding: 0 !important;
-    background: hsl(var(--primary)) !important;
-    border: 1.25px solid hsl(var(--secondary)) !important;
+    background: hsl(0 0% 100%) !important;
+    border: 1.25px solid hsl(0 0% 75%) !important;
     width: 100% !important;
   }
 
   .print-section-header {
-    background: hsl(var(--secondary)) !important;
+    background: hsl(0 0% 20%) !important;
     padding: 1mm 3.5mm 1mm 4.5mm !important;
     font-size: 13px !important;
     font-weight: 700 !important;
@@ -330,7 +330,7 @@
   }
 
   .print-section-content {
-    background: hsl(var(--primary)) !important;
+    background: hsl(0 0% 100%) !important;
     padding: 1mm 4mm 1mm 4.5mm !important;
     font-size: 10px !important;
     line-height: 1.05 !important;
@@ -369,7 +369,7 @@
     resize: none !important;
     padding: 2mm 3mm !important;
     margin: 0 !important;
-    background: hsl(var(--primary)) !important;
+    background: hsl(0 0% 100%) !important;
     border: none !important;
     font-size: 12px !important;
     white-space: pre-wrap !important;
@@ -385,7 +385,7 @@
     line-height: 1.25 !important;
     padding: 2mm 3mm !important;
     margin: 0 !important;
-    background: hsl(var(--primary)) !important;
+    background: hsl(0 0% 100%) !important;
     font-size: 12px !important;
     color: hsl(var(--foreground)) !important;
   }
@@ -404,7 +404,7 @@
   .print-layout > div:last-child .print-section > h2.print-section-header + div {
     margin-top: 0 !important;
     padding-top: 0 !important;
-    background: hsl(var(--primary)) !important;
+    background: hsl(0 0% 100%) !important;
   }
 
   .print-content-formatted strong {
