@@ -277,7 +277,7 @@
     max-width: none !important;
     display: grid !important;
     /* Fixed map column width so the map stays 3:4 (tall) and consistent across devices */
-    grid-template-columns: 100mm 1fr !important;
+    grid-template-columns: 108mm 1fr !important;
     column-gap: 6mm !important;
     height: 125mm !important;
     margin: 0 auto 0 auto !important;
