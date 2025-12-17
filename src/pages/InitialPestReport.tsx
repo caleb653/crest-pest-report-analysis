@@ -772,10 +772,14 @@ const Report = () => {
       )}
 
       {/* Main Content */}
-      <div className={isMobileOrTablet ? "flex flex-col" : "print-layout flex h-[calc(100vh-88px)]"}>
+      <div className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
-        <div className={isMobileOrTablet ? "w-full max-w-md mx-auto px-4 py-2" : "print-map-container w-[28%] p-4"}>
-          <div className="relative w-full" style={{ paddingBottom: '133%' }}> {/* 3:4 aspect ratio (taller) */}
+        <div
+          className={`print-map-container ${
+            isMobileOrTablet ? "w-full max-w-sm mx-auto px-4 py-2" : "flex-none w-full max-w-sm p-4"
+          }`}
+        >
+          <div className="relative w-full" style={{ paddingBottom: "133%" }}> {/* 3:4 aspect ratio (taller) */}
             <div className="absolute inset-0">
               {isProcessing && (
                 <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
@@ -886,7 +890,7 @@ const Report = () => {
           </div>
         </div>
 
-        <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "w-[55%] overflow-y-auto"}>
+        <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "flex-1 min-w-0 overflow-y-auto"}>
           <div className="p-3 md:p-4 space-y-3">
             {/* Mobile/Tablet: Customer & Technician */}
             {isMobileOrTablet && (
