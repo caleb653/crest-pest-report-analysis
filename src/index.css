@@ -134,6 +134,16 @@
 }
 
 /* -------------------------------------------------------------
+   TABLET LAYOUT – Map canvas adjustments for iPad
+------------------------------------------------------------- */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .print-map-container canvas {
+    transform: translate(-3%, -3%) scale(0.96, 0.94) !important;
+    transform-origin: top left !important;
+  }
+}
+
+/* -------------------------------------------------------------
    PRINT LAYOUT – FULL WIDTH + COMPACT RIGHT COLUMN
 ------------------------------------------------------------- */
 @media print {
