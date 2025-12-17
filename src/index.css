@@ -276,8 +276,8 @@
     width: calc(100% - 12mm) !important;
     max-width: none !important;
     display: grid !important;
-    /* Fixed map column width so the map stays 3:4 (tall) and consistent across devices */
-    grid-template-columns: 108mm 1fr !important;
+    /* Fixed map column width - wider for better visibility */
+    grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
     height: 125mm !important;
     margin: 0 auto 0 auto !important;
@@ -298,7 +298,8 @@
   .print-map-container canvas {
     width: 100% !important;
     height: 100% !important;
-    transform: none !important;
+    /* Shift icons up and to the left */
+    transform: translate(-2mm, -2mm) !important;
     transform-origin: top left !important;
     display: block !important;
   }
