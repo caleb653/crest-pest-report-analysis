@@ -776,7 +776,7 @@ const Report = () => {
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
-            isMobileOrTablet ? "w-full max-w-[440px] mx-auto px-4 py-2" : "flex-none w-full max-w-[440px] p-4"
+            isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none w-full max-w-[506px] p-4"
           }`}
         >
           <div className="relative w-full" style={{ paddingBottom: "133%" }}> {/* 3:4 aspect ratio (taller) */}
