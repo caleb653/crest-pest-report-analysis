@@ -299,7 +299,7 @@
     width: 100% !important;
     height: 100% !important;
     /* Shift icons up and to the left */
-    transform: translate(-2mm, -4mm) !important;
+    transform: translate(-4mm, -4mm) !important;
     transform-origin: top left !important;
     display: block !important;
   }
