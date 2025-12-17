@@ -138,7 +138,7 @@
 ------------------------------------------------------------- */
 @media screen and (min-width: 768px) and (max-width: 1023px) {
   .print-map-container canvas {
-    transform: translate(-3%, -3%) scale(0.96, 0.94) !important;
+    transform: translate(1%, -1%) scale(0.96, 0.94) !important;
     transform-origin: top left !important;
   }
 }
@@ -309,7 +309,7 @@
     width: 100% !important;
     height: 100% !important;
     /* Shift icons up and to the left */
-    transform: translate(-4mm, -4mm) !important;
+    transform: translate(-4mm, -6mm) scale(1, 0.96) !important;
     transform-origin: top left !important;
     display: block !important;
   }
