@@ -286,15 +286,12 @@ const Report = () => {
     });
   };
 
-  // Aggregate target pests and proposed services whenever services change
-  // Using JSON.stringify to ensure deep comparison of service types
-  const serviceTypesKey = services.map(s => s.serviceType).join(',');
-  
+  // Aggregate target pests and proposed services whenever selected service types change
+  const serviceTypesKey = services.map((s) => s.serviceType).join(",");
+
   useEffect(() => {
     const allPests = new Set<string>();
     const allProposedServices: string[] = [];
-
-    console.log('Aggregating services:', services.map(s => s.serviceType));
 
     services.forEach((service) => {
       const config = SERVICE_CONFIG[service.serviceType];
@@ -306,13 +303,20 @@ const Report = () => {
       }
     });
 
-    console.log('Aggregated proposed services:', allProposedServices.length, allProposedServices);
-
     if (allPests.size > 0) {
       setEditableTargetPests(Array.from(allPests));
     }
-    if (allProposedServices.length > 0) {
-      setEditableFindings(allProposedServices);
+
+    // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
+    const combinedProposedServices = allProposedServices.join(" ").trim();
+    const normalizedProposedServices = combinedProposedServices
+      ? combinedProposedServices.endsWith(".")
+        ? combinedProposedServices
+        : combinedProposedServices + "."
+      : "";
+
+    if (normalizedProposedServices) {
+      setEditableFindings([normalizedProposedServices]);
     }
   }, [serviceTypesKey]);
 
@@ -1416,6 +1420,7 @@ const Report = () => {
                       </Button>
                     </div>
                     <div
+                      key={serviceTypesKey}
                       contentEditable
                       suppressContentEditableWarning
                       className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background"
