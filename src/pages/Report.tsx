@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
-import { SignatureCanvas } from "@/components/SignatureCanvas";
+import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -349,6 +349,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
+  const signatureRef = useRef<SignatureCanvasRef>(null);
 
   const expandWithAI = async (
     text: string,
@@ -664,6 +665,9 @@ const Report = () => {
 
     setIsSaving(true);
     try {
+      // Force-save signature from canvas (ensures iPad captures it)
+      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+
       const rawMap = latestMapDataRef.current ?? mapData;
       console.log("Submitting report with map data:", {
         hasRawMap: !!rawMap,
@@ -685,6 +689,14 @@ const Report = () => {
         }
       }
 
+      // Ensure services array is properly formatted
+      const finalServices = services.filter(s => s.serviceType).map(s => ({
+        serviceType: s.serviceType,
+        initialPrice: s.initialPrice,
+        recurringPrice: s.recurringPrice,
+        frequency: s.frequency,
+      }));
+
       const reportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
@@ -699,8 +711,8 @@ const Report = () => {
         map_data: mapPayload,
         custom_map_url: customMapImage,
         property_images: propertyImages,
-        customer_signature: customerSignature,
-        services: services as unknown as any[],
+        customer_signature: finalSignature,
+        services: finalServices as unknown as any[],
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
         target_pests: editableTargetPests,
@@ -1572,7 +1584,7 @@ const Report = () => {
                 <span className="text-xs font-bold">Customer Signature</span>
               </div>
               <div className="p-2.5">
-                <SignatureCanvas onSave={setCustomerSignature} initialData={customerSignature} label="" />
+                <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                 <div className="mt-2 text-[10px] text-muted-foreground">
                   <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
                 </div>
