@@ -166,8 +166,13 @@
     margin: 0;
   }
 
+  /* Show print-only text elements */
+  .print-only-text {
+    display: inline !important;
+  }
+
   .no-print,
-  button,
+  button:not(.print-keep),
   [class*="toolbar"],
   [role="status"],
   .sonner,
@@ -441,6 +446,30 @@
 
   .print-layout > div:last-child .print-section .space-y-3 {
     padding: 0 !important;
+  }
+
+  /* Hide input boxes in print header - show text only */
+  .print-header input,
+  .print-header textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Hide dropdowns and show text in print */
+  .print-header .no-print,
+  .print-header button[role="combobox"] {
+    display: none !important;
+  }
+
+  .print-header .print-only-text {
+    display: inline !important;
   }
 
   input,
