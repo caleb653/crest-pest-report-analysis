@@ -365,6 +365,23 @@ const Report = () => {
       setEditableFindings((row.findings as string[]) || []);
       setEditableExpectations((row.next_steps as string[]) || []);
 
+      // Load additional fields
+      if (row.service_date) {
+        setEditableServiceDate(row.service_date);
+      }
+      if (row.license_number) {
+        setEditableLicenseNumber(row.license_number);
+      }
+      if (row.target_pests && Array.isArray(row.target_pests)) {
+        setEditableTargetPests(row.target_pests as string[]);
+      }
+      if (row.products_used && Array.isArray(row.products_used)) {
+        setEditableProductsUsed(row.products_used as string[]);
+      }
+      if (row.equipment && Array.isArray(row.equipment)) {
+        setEditableEquipment(row.equipment as string[]);
+      }
+
       console.log("Loading report map_data:", {
         hasMapData: !!row.map_data,
         mapDataType: typeof row.map_data,
@@ -558,6 +575,11 @@ const Report = () => {
         map_data: mapPayload,
         custom_map_url: customMapImage,
         property_images: propertyImages,
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
       };
 
       if (reportId) {
