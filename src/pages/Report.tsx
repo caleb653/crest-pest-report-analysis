@@ -866,15 +866,36 @@ const Report = () => {
     }
 
     try {
-      const uploadPromises = fileArray.map(async (file) => {
-        const { ext, contentType } = inferImageUploadMeta(file);
-        const fileName = `${Math.random()}.${ext}`;
+      const { compressImage } = await import("@/lib/imageUpload");
+
+      // Compress all images and show local previews instantly
+      const compressionPromises = fileArray.map(async (file) => {
+        const { blob, localUrl } = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.75,
+        });
+        console.log("[upload] property image compressed", {
+          originalSize: file.size,
+          compressedSize: blob.size,
+          reduction: `${Math.round((1 - blob.size / file.size) * 100)}%`,
+        });
+        return { blob, localUrl };
+      });
+
+      const compressedImages = await Promise.all(compressionPromises);
+
+      // Show local previews INSTANTLY
+      setPropertyImages(compressedImages.map(({ localUrl }) => ({ image: localUrl, caption: "" })));
+
+      // Upload compressed images in background
+      const uploadPromises = compressedImages.map(async ({ blob, localUrl }, index) => {
+        const fileName = `${Math.random()}.jpg`;
         const filePath = `${reportId || "temp"}/property/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("report-images")
-          .upload(filePath, file, { upsert: true, contentType });
-
+          .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
 
         if (uploadError) throw uploadError;
 
@@ -882,11 +903,16 @@ const Report = () => {
           data: { publicUrl },
         } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
-        return { image: publicUrl, caption: "" };
+        // Revoke local URL after upload completes
+        URL.revokeObjectURL(localUrl);
+
+        return { image: publicUrl, caption: "", index };
       });
 
       const uploadedImages = await Promise.all(uploadPromises);
-      setPropertyImages(uploadedImages);
+      
+      // Replace local URLs with permanent URLs
+      setPropertyImages(uploadedImages.map(({ image, caption }) => ({ image, caption })));
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
