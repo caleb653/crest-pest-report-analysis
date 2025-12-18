@@ -342,12 +342,23 @@
   .print-map-container canvas {
     width: 100% !important;
     height: calc(100% + 8mm) !important;
-    /* Shift icons up for print export */
-    transform: translate(-2mm, -6mm) scale(1, 1) !important;
+    /* Shift icons up for print export - desktop */
+    transform: translate(-2mm, -4mm) scale(1, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
+}
 
+/* iPad-specific print adjustments */
+@media print and (max-width: 1024px) {
+  .print-map-container canvas {
+    /* Shift icons up more for iPad export */
+    transform: translate(-2mm, -8mm) scale(1, 1) !important;
+  }
+}
+
+/* Continue general print styles */
+@media print {
   .print-layout > div:last-child {
     height: 138mm !important;
     max-height: 138mm !important;
