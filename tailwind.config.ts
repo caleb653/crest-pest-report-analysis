@@ -17,6 +17,12 @@ export default {
         sans: ['Figtree', 'sans-serif'],
       },
       colors: {
+        // Brand colors
+        sage: "hsl(130 14% 79%)",
+        "dark-sage": "hsl(130 7% 61%)",
+        "brand-black": "hsl(0 0% 16%)",
+        "brand-white": "hsl(0 0% 95%)",
+        // Semantic tokens
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

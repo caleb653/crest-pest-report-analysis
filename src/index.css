@@ -3,41 +3,58 @@
 @tailwind utilities;
 
 /* -------------------------------------------------------------
-   CREST BRAND DESIGN SYSTEM (HSL ONLY)
-   (Colors, shading, and border weights refined only)
+   CREST BRAND DESIGN SYSTEM
+   Modern tech company meets neighborhood trust
+   Colors: Sage #C3D1C5, Black #2A2A2A, White #F2F2F2, Dark Sage #95A197
 ------------------------------------------------------------- */
 @layer base {
   :root {
-    /* Brand colors (refined for contrast and print) */
-    --background: 0 0% 96%;
-    --foreground: 0 0% 14%;
+    /* Core Brand Colors (exact hex conversions to HSL) */
+    --sage: 130 14% 79%;           /* #C3D1C5 - Primary sage */
+    --dark-sage: 130 7% 61%;       /* #95A197 - Dark sage accent */
+    --brand-black: 0 0% 16%;       /* #2A2A2A - Rich black */
+    --brand-white: 0 0% 95%;       /* #F2F2F2 - Soft white */
 
-    --primary: 135 14% 78%; /* Sage */
-    --secondary: 135 12% 55%; /* Dark Sage */
+    /* Semantic tokens mapped to brand */
+    --background: 0 0% 95%;        /* Soft white background */
+    --foreground: 0 0% 16%;        /* Brand black text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 14%;
+    --primary: 130 14% 79%;        /* Sage - primary actions */
+    --primary-foreground: 0 0% 16%; /* Black text on sage */
+    
+    --secondary: 130 7% 61%;       /* Dark Sage - secondary elements */
+    --secondary-foreground: 0 0% 100%; /* White text on dark sage */
+
+    --card: 0 0% 100%;             /* Pure white cards */
+    --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 14%;
+    --popover-foreground: 0 0% 16%;
 
-    --muted: 135 12% 89%;
-    --muted-foreground: 135 8% 38%;
+    --muted: 130 10% 92%;          /* Very light sage tint */
+    --muted-foreground: 130 5% 45%;
 
-    --accent: 135 14% 72%;
-    --accent-foreground: 0 0% 14%;
+    --accent: 130 12% 72%;         /* Mid-sage for accents */
+    --accent-foreground: 0 0% 16%;
 
-    --destructive: 0 70% 48%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 135 12% 78%;
-    --input: 135 12% 78%;
-    --ring: 135 14% 72%;
+    --border: 130 10% 82%;         /* Sage-tinted borders */
+    --input: 130 10% 85%;
+    --ring: 130 14% 70%;
 
     --radius: 0.5rem;
 
-    --shadow-soft: 0 2px 6px hsl(0 0% 0% / 0.05);
-    --shadow-mid: 0 4px 10px hsl(0 0% 0% / 0.08);
+    /* Refined shadows with sage undertone */
+    --shadow-soft: 0 1px 3px hsl(130 10% 50% / 0.08);
+    --shadow-mid: 0 4px 12px hsl(130 10% 40% / 0.1);
+    --shadow-lg: 0 8px 24px hsl(130 10% 30% / 0.12);
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(130 14% 79%) 0%, hsl(130 10% 72%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(130 7% 61%) 0%, hsl(130 10% 50%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(130 10% 96%) 100%);
   }
 
   .dark {
@@ -45,6 +62,8 @@
     --foreground: 0 0% 95%;
     --card: 0 0% 16%;
     --card-foreground: 0 0% 95%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%;
   }
 
   * {
@@ -54,6 +73,7 @@
   body {
     @apply bg-background text-foreground;
     font-family:
+      'Figtree',
       Inter,
       -apple-system,
       BlinkMacSystemFont,
@@ -70,6 +90,7 @@
     font-size: 0.85rem !important;
   }
 
+  /* Section styling with brand colors */
   .print-section {
     padding: 0 !important;
     margin-bottom: 0.35rem !important;
@@ -77,18 +98,18 @@
     overflow: hidden;
     background: transparent !important;
     box-shadow: var(--shadow-soft);
-    border: 1px solid hsl(var(--border));
+    border: 1.5px solid hsl(var(--border));
   }
 
   .print-section-header {
-    background: hsl(var(--secondary)) !important;
+    background: hsl(var(--brand-black)) !important;
     color: hsl(0 0% 100%) !important;
     padding: 0.15rem 0.75rem !important;
     font-size: 0.65rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    border-bottom: 1px solid hsl(var(--primary)) !important;
+    letter-spacing: 0.08em !important;
+    border-bottom: 2px solid hsl(var(--sage)) !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -243,9 +264,10 @@
     border-radius: 0 !important;
     margin: 0 0 1mm 0 !important;
     padding: 2mm 6mm !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.06) !important;
+    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.08) !important;
     background: hsl(0 0% 100%) !important;
-    border: 1.25px solid hsl(0 0% 85%) !important;
+    border: 1.5px solid hsl(130 10% 82%) !important;
+    border-bottom: 2px solid hsl(130 14% 79%) !important; /* Sage accent bottom */
   }
 
   .print-header > * {
@@ -302,10 +324,10 @@
 
   .print-map-container {
     border-radius: 0.5rem;
-    border: 1.25px solid hsl(var(--secondary)) !important;
-    box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08);
+    border: 1.5px solid hsl(130 7% 61%) !important; /* Dark sage border */
+    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
     overflow: hidden !important;
-    background: hsl(135 12% 90%) !important;
+    background: hsl(130 14% 79%) !important; /* Sage background */
     height: 140mm !important;
     width: 100% !important;
   }
@@ -332,27 +354,28 @@
   .print-section {
     margin: 0 0 2.5mm 0 !important;
     border-radius: 3mm !important;
-    box-shadow: 0 1px 3px hsl(0 0% 0% / 0.1) !important;
+    box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
     padding: 0 !important;
     background: hsl(0 0% 100%) !important;
-    border: 1.5px solid hsl(0 0% 70%) !important;
+    border: 1.5px solid hsl(130 10% 80%) !important;
     width: 100% !important;
     flex: 1 !important;
   }
 
   .print-section-header {
-    background: linear-gradient(135deg, hsl(0 0% 18%) 0%, hsl(0 0% 28%) 100%) !important;
+    background: hsl(0 0% 16%) !important; /* Brand black #2A2A2A */
     padding: 2.5mm 4mm 2.5mm 5mm !important;
     font-size: 14px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    border-bottom: none !important;
+    border-bottom: 2px solid hsl(130 14% 79%) !important; /* Sage accent */
     display: flex;
     align-items: center;
     gap: 0.4rem;
     border-radius: 2.5mm 2.5mm 0 0 !important;
+    color: hsl(0 0% 100%) !important;
   }
 
   .print-section-content {
@@ -532,7 +555,7 @@
     transform: none !important;
   }
 
-  /* Print tags styling */
+  /* Print tags styling with brand colors */
   .print-tags {
     padding: 1mm 2mm !important;
     gap: 1mm !important;
@@ -546,8 +569,9 @@
     padding: 0.5mm 2mm !important;
     border-radius: 2mm !important;
     line-height: 1.2 !important;
-    background: hsl(var(--muted)) !important;
-    color: hsl(var(--foreground)) !important;
+    background: hsl(130 14% 79%) !important; /* Sage background */
+    color: hsl(0 0% 16%) !important; /* Brand black text */
+    border: 1px solid hsl(130 7% 61%) !important; /* Dark sage border */
   }
 
   /* Allow selected sections to flow across pages (override global avoid-break) */
