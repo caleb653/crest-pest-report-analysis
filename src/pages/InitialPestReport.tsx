@@ -670,6 +670,11 @@ const Report = () => {
 
   const handleCustomMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log("[upload] custom map selected", {
+      name: file?.name,
+      type: file?.type,
+      size: file?.size,
+    });
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
@@ -702,6 +707,10 @@ const Report = () => {
 
   const handlePropertyImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+    console.log("[upload] property images selected", {
+      count: files?.length,
+      types: files ? Array.from(files).slice(0, 5).map((f) => f.type) : [],
+    });
     if (!files) return;
 
     const fileArray = Array.from(files).slice(0, 5);
@@ -928,26 +937,23 @@ const Report = () => {
 
                   {/* Upload custom map button */}
                   <div className="no-print absolute top-4 right-4 z-20">
-                    <label htmlFor="custom-map-upload" className="cursor-pointer">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        type="button"
-                        asChild
-                      >
-                        <span>
-                          <FileDown className="w-4 h-4 mr-2" />
-                          Upload Map
-                        </span>
+                    <div className="relative inline-flex">
+                      <Button size="sm" variant="secondary" type="button">
+                        <FileDown className="w-4 h-4 mr-2" />
+                        Upload Map
                       </Button>
-                    </label>
-                    <input
-                      id="custom-map-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCustomMapUpload}
-                      className="sr-only"
-                    />
+                      <input
+                        id="custom-map-upload"
+                        type="file"
+                        accept="image/*"
+                        onClick={(e) => {
+                          (e.currentTarget as HTMLInputElement).value = "";
+                        }}
+                        onChange={handleCustomMapUpload}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Upload map image"
+                      />
+                    </div>
                   </div>
 
                   {/* Pan controls - only show when using coordinates-based map */}
@@ -1002,21 +1008,23 @@ const Report = () => {
                       </div>
                       <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
                       <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
-                      <label htmlFor="custom-map-upload-empty" className="cursor-pointer">
-                        <Button variant="default" type="button" asChild>
-                          <span>
-                            <FileDown className="w-4 h-4 mr-2" />
-                            Upload Map Image
-                          </span>
+                      <div className="relative inline-flex">
+                        <Button variant="default" type="button">
+                          <FileDown className="w-4 h-4 mr-2" />
+                          Upload Map Image
                         </Button>
-                      </label>
-                      <input
-                        id="custom-map-upload-empty"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCustomMapUpload}
-                        className="sr-only"
-                      />
+                        <input
+                          id="custom-map-upload-empty"
+                          type="file"
+                          accept="image/*"
+                          onClick={(e) => {
+                            (e.currentTarget as HTMLInputElement).value = "";
+                          }}
+                          onChange={handleCustomMapUpload}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          aria-label="Upload map image"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1416,23 +1424,25 @@ const Report = () => {
 
           {/* Upload Section */}
           <div className="no-print mb-6">
-            <label htmlFor="property-images-upload" className="cursor-pointer">
-              <Button variant="outline" size="lg" type="button" asChild>
-                <span>
-                  <FileDown className="w-5 h-5 mr-2" />
-                  Upload Images (up to 5)
-                </span>
+            <div className="relative inline-flex">
+              <Button variant="outline" size="lg" type="button">
+                <FileDown className="w-5 h-5 mr-2" />
+                Upload Images (up to 5)
               </Button>
-            </label>
-            <input
-              id="property-images-upload"
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePropertyImagesUpload}
-              className="sr-only"
-            />
+              <input
+                id="property-images-upload"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onClick={(e) => {
+                  (e.currentTarget as HTMLInputElement).value = "";
+                }}
+                onChange={handlePropertyImagesUpload}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Upload property images"
+              />
+            </div>
           </div>
 
           {/* Property Images Grid */}

@@ -46,12 +46,21 @@ const DataEntry = () => {
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setScreenshots([...screenshots, ...newFiles]);
+      console.log("[upload] screenshots selected", {
+        count: newFiles.length,
+        types: newFiles.map((f) => f.type),
+      });
+
+      setScreenshots((prev) => [...prev, ...newFiles]);
+
       // Start 15s cooldown after latest upload
       setCooldownEndsAt(Date.now() + 15000);
       setSecondsLeft(15);
       toast.success(`${newFiles.length} screenshot(s) uploaded`);
     }
+
+    // Allow selecting the same file(s) again
+    e.currentTarget.value = "";
   };
 
   const removeScreenshot = (index: number) => {
@@ -93,26 +102,27 @@ const DataEntry = () => {
             <div className="space-y-4">
               <Label className="text-lg font-semibold">Screenshots (Optional)</Label>
               
-              <div className="border-4 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 transition-colors bg-muted/30">
+              <div className="relative border-4 border-dashed border-primary/30 rounded-xl p-8 text-center hover:border-primary/50 transition-colors bg-muted/30">
                 <Upload className="w-16 h-16 mx-auto mb-4 text-primary" />
-                <Label 
-                  htmlFor="screenshots" 
-                  className="cursor-pointer block"
-                >
+                <div className="block">
                   <span className="text-xl font-semibold text-primary hover:text-primary/80">
                     Tap to Upload Screenshots
                   </span>
                   <p className="text-muted-foreground mt-2">
                     From other apps with customer info
                   </p>
-                </Label>
+                </div>
+
                 <Input
-                  id="screenshots"
                   type="file"
                   multiple
                   accept="image/*"
-                  className="hidden"
+                  onClick={(e) => {
+                    (e.currentTarget as HTMLInputElement).value = "";
+                  }}
                   onChange={handleScreenshotUpload}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label="Upload screenshots"
                 />
               </div>
 
