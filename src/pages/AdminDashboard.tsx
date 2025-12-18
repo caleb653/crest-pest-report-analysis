@@ -19,19 +19,49 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
-    checkAuth();
-    loadReports();
+    validateAndLoad();
   }, []);
 
-  const checkAuth = async () => {
+  const validateAndLoad = async () => {
+    const isValid = await validateSession();
+    if (isValid) {
+      await loadReports();
+    }
+    setIsValidating(false);
+  };
+
+  const validateSession = async (): Promise<boolean> => {
     const sessionToken = localStorage.getItem('admin_session');
     
     if (!sessionToken) {
       toast.error("Please sign in");
       navigate('/admin-login');
-      return;
+      return false;
+    }
+
+    try {
+      // Validate session server-side
+      const { data, error } = await supabase.functions.invoke('validate-admin-session', {
+        body: { sessionToken }
+      });
+
+      if (error || !data?.valid) {
+        localStorage.removeItem('admin_session');
+        toast.error("Session expired. Please sign in again.");
+        navigate('/admin-login');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Session validation error:', error);
+      localStorage.removeItem('admin_session');
+      toast.error("Authentication failed. Please sign in again.");
+      navigate('/admin-login');
+      return false;
     }
   };
 
@@ -52,6 +82,19 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = async () => {
+    const sessionToken = localStorage.getItem('admin_session');
+    
+    // Invalidate session server-side
+    if (sessionToken) {
+      try {
+        await supabase.functions.invoke('invalidate-admin-session', {
+          body: { sessionToken }
+        });
+      } catch (error) {
+        console.error('Error invalidating session:', error);
+      }
+    }
+    
     localStorage.removeItem('admin_session');
     toast.success("Signed out successfully");
     navigate('/');
@@ -68,6 +111,10 @@ const AdminDashboard = () => {
       return;
     }
 
+    // Validate session before delete
+    const isValid = await validateSession();
+    if (!isValid) return;
+
     try {
       const { error } = await supabase
         .from('reports')
@@ -83,6 +130,17 @@ const AdminDashboard = () => {
       console.error(error);
     }
   };
+
+  if (isValidating) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Validating session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

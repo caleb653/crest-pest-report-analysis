@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          is_valid: boolean | null
+          session_token: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          is_valid?: boolean | null
+          session_token: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_valid?: boolean | null
+          session_token?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           address: string | null
