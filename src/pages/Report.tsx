@@ -455,44 +455,59 @@ const Report = () => {
     if (!reportId) return;
 
     try {
-      const { data, error } = await supabase.from("reports").select("*").eq("id", reportId).single();
+      const adminSessionToken = localStorage.getItem("admin_session");
+      let row: any = null;
 
-      if (error) throw error;
+      if (adminSessionToken) {
+        const { data: adminData, error: adminError } = await supabase.functions.invoke("admin-reports", {
+          body: { sessionToken: adminSessionToken, action: "get", reportId },
+        });
 
-      setEditableTech(data.technician_name);
-      setEditableCustomer(data.customer_name || "");
-      setExtractedAddress(data.address || "");
-      setEditableFindings((data.findings as string[]) || []);
-
-      console.log("Loading report map_data:", {
-        hasMapData: !!data.map_data,
-        mapDataType: typeof data.map_data,
-        mapDataPreview: data.map_data ? JSON.stringify(data.map_data).substring(0, 150) : "null",
-      });
-
-      setMapData(data.map_data ? JSON.stringify(data.map_data) : null);
-
-      // Load custom map and property images
-      if (data.custom_map_url) {
-        setCustomMapImage(data.custom_map_url);
+        if (!adminError && adminData?.ok && adminData.report) {
+          row = adminData.report;
+        }
       }
 
-      if (data.property_images) {
-        setPropertyImages(data.property_images as Array<{ image: string; caption?: string }>);
+      if (!row) {
+        const { data, error } = await supabase.from("reports").select("*").eq("id", reportId).single();
+        if (error) throw error;
+        row = data;
+      }
+
+      setEditableTech(row.technician_name);
+      setEditableCustomer(row.customer_name || "");
+      setExtractedAddress(row.address || "");
+      setEditableFindings((row.findings as string[]) || []);
+
+      console.log("Loading report map_data:", {
+        hasMapData: !!row.map_data,
+        mapDataType: typeof row.map_data,
+        mapDataPreview: row.map_data ? JSON.stringify(row.map_data).substring(0, 150) : "null",
+      });
+
+      setMapData(row.map_data ? JSON.stringify(row.map_data) : null);
+
+      // Load custom map and property images
+      if (row.custom_map_url) {
+        setCustomMapImage(row.custom_map_url);
+      }
+
+      if (row.property_images) {
+        setPropertyImages(row.property_images as Array<{ image: string; caption?: string }>);
       }
 
       // Extract coordinates from map_url if available, otherwise geocode
-      if (data.map_url) {
-        const latMatch = data.map_url.match(/mlat=([-\d.]+)/);
-        const lngMatch = data.map_url.match(/mlon=([-\d.]+)/);
+      if (row.map_url) {
+        const latMatch = row.map_url.match(/mlat=([-\d.]+)/);
+        const lngMatch = row.map_url.match(/mlon=([-\d.]+)/);
         if (latMatch && lngMatch) {
           setCoordinates({
             lat: parseFloat(latMatch[1]),
             lng: parseFloat(lngMatch[1]),
           });
         }
-      } else if (data.address) {
-        geocodeAddress(data.address);
+      } else if (row.address) {
+        geocodeAddress(row.address);
       }
     } catch (error: any) {
       toast.error("Failed to load report");
