@@ -128,6 +128,108 @@ const Report = () => {
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
+
+  // Generate findings and expectations based on selected pests and equipment
+  const generateContentFromSelections = (pests: string[], equipment: string[]) => {
+    const findings: string[] = [];
+    const actions: string[] = [];
+
+    // Base actions for general pest control
+    if (pests.length > 0) {
+      findings.push("Inspected interior and exterior for pest activity and entry points");
+      actions.push("Applied targeted treatments to ensure a protective barrier around the home");
+      actions.push("De-webbed the entire home");
+    }
+
+    // Specific pest findings
+    if (pests.includes("Ants")) {
+      findings.push("Identified ant trails and potential entry points around foundation and windows");
+    }
+    if (pests.includes("Spiders")) {
+      findings.push("Located spider webs and harborage areas in eaves, corners, and around exterior lighting");
+    }
+    if (pests.includes("Roaches")) {
+      findings.push("Inspected for roach activity in kitchen, bathrooms, and utility areas");
+    }
+    if (pests.includes("Rodents")) {
+      findings.push("Inspected for rodent activity including droppings, gnaw marks, and potential entry points");
+      actions.push("Strategically placed traps in areas of highest activity to reduce rodent populations");
+    }
+    if (pests.includes("Wasps")) {
+      findings.push("Located wasp nesting areas around eaves, overhangs, and landscaping");
+    }
+    if (pests.includes("Bed Bugs")) {
+      findings.push("Conducted thorough inspection of sleeping areas, furniture seams, and baseboards");
+    }
+    if (pests.includes("Fleas") || pests.includes("Ticks")) {
+      findings.push("Inspected outdoor areas and pet resting spots for flea and tick activity");
+    }
+
+    // Equipment-based actions
+    if (equipment.includes("Rodent Bait Stations")) {
+      actions.push("Installed rodent bait stations in strategic locations around the property perimeter");
+    }
+    if (equipment.includes("Rodent Traps")) {
+      actions.push("Placed rodent traps in areas showing highest activity for population control");
+    }
+    if (equipment.includes("Mosquito Buckets")) {
+      actions.push("Set up mosquito control buckets to reduce breeding populations");
+    }
+    if (equipment.includes("Fly Light")) {
+      actions.push("Installed fly light traps in designated areas for ongoing monitoring");
+    }
+    if (equipment.includes("Pest Monitors")) {
+      actions.push("Placed pest monitors throughout the property to track activity levels");
+    }
+
+    // Combine findings and actions
+    const allContent = [
+      ...findings.map(f => `• ${f}`),
+      "",
+      "Actions Taken:",
+      ...actions.map(a => `• ${a}`)
+    ].join("\n");
+
+    return allContent;
+  };
+
+  const generateExpectations = () => {
+    return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.\n\n• Long-term Results: With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks.";
+  };
+
+  // Auto-update content when pests or equipment changes
+  useEffect(() => {
+    // Skip if loading a report or if user has manually edited
+    if (reportId || hasManuallyEditedFindings) return;
+    
+    if (editableTargetPests.length > 0 || editableEquipment.length > 0) {
+      const content = generateContentFromSelections(editableTargetPests, editableEquipment);
+      setEditableFindings([content]);
+      setEditableExpectations([generateExpectations()]);
+    }
+  }, [editableTargetPests, editableEquipment, reportId, hasManuallyEditedFindings]);
+
+  // Auto-add rodent equipment when Rodents is selected
+  useEffect(() => {
+    if (editableTargetPests.includes("Rodents")) {
+      setEditableEquipment(prev => {
+        if (!prev.includes("Rodent Bait Stations")) {
+          return [...prev, "Rodent Bait Stations"];
+        }
+        return prev;
+      });
+    }
+  }, [editableTargetPests]);
+
+  // Initialize findings on first load (for new reports with default pests)
+  useEffect(() => {
+    if (!reportId && editableTargetPests.length > 0 && editableFindings.length === 0) {
+      const content = generateContentFromSelections(editableTargetPests, editableEquipment);
+      setEditableFindings([content]);
+      setEditableExpectations([generateExpectations()]);
+    }
+  }, []);
 
   const expandWithAI = async (
     text: string,
@@ -147,12 +249,13 @@ const Report = () => {
       if (data?.expandedText) {
         setter([data.expandedText]);
         toast.success("Text expanded!");
+        if (type === "findings") {
+          setHasManuallyEditedFindings(true);
+        }
 
         // Auto-fill expectations when expanding findings
         if (type === "findings") {
-          setEditableExpectations([
-            "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.\n\n• Long-term Results: With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks.",
-          ]);
+          setEditableExpectations([generateExpectations()]);
         }
       }
     } catch (error: any) {
@@ -1119,7 +1222,10 @@ const Report = () => {
                 <div className="space-y-3 p-3">
                   <Textarea
                     value={editableFindings[0] || ""}
-                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
+                    onChange={(e) => {
+                      updateItem(0, e.target.value, setEditableFindings);
+                      setHasManuallyEditedFindings(true);
+                    }}
                     placeholder="Enter finding or action taken..."
                     className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
                     rows={5}
