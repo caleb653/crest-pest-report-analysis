@@ -477,7 +477,34 @@ const Report = () => {
       setEditableTech(row.technician_name);
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
+      setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
+
+      // Load new fields
+      if (row.customer_signature) {
+        setCustomerSignature(row.customer_signature);
+      }
+      if (row.services && Array.isArray(row.services) && row.services.length > 0) {
+        setServices(row.services as ServiceItem[]);
+      }
+      if (row.service_date) {
+        setEditableServiceDate(row.service_date);
+      }
+      if (row.license_number) {
+        setEditableLicenseNumber(row.license_number);
+      }
+      if (row.target_pests && Array.isArray(row.target_pests)) {
+        setEditableTargetPests(row.target_pests as string[]);
+      }
+      if (row.products_used && Array.isArray(row.products_used)) {
+        setEditableProductsUsed(row.products_used as string[]);
+      }
+      if (row.equipment && Array.isArray(row.equipment)) {
+        setEditableEquipment(row.equipment as string[]);
+      }
+      if (row.report_title) {
+        setEditableTitle(row.report_title);
+      }
 
       console.log("Loading report map_data:", {
         hasMapData: !!row.map_data,
@@ -672,6 +699,14 @@ const Report = () => {
         map_data: mapPayload,
         custom_map_url: customMapImage,
         property_images: propertyImages,
+        customer_signature: customerSignature,
+        services: services as unknown as any[],
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
+        report_title: editableTitle,
       };
 
       if (reportId) {

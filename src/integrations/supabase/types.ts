@@ -46,15 +46,23 @@ export type Database = {
           custom_map_url: string | null
           customer_name: string | null
           customer_phone: string | null
+          customer_signature: string | null
+          equipment: Json | null
           findings: Json | null
           id: string
+          license_number: string | null
           map_data: Json | null
           map_url: string | null
           next_steps: Json | null
           notes: string | null
+          products_used: Json | null
           property_images: Json | null
           recommendations: Json | null
+          report_title: string | null
           screenshots: Json | null
+          service_date: string | null
+          services: Json | null
+          target_pests: Json | null
           technician_name: string
           updated_at: string | null
         }
@@ -65,15 +73,23 @@ export type Database = {
           custom_map_url?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_signature?: string | null
+          equipment?: Json | null
           findings?: Json | null
           id?: string
+          license_number?: string | null
           map_data?: Json | null
           map_url?: string | null
           next_steps?: Json | null
           notes?: string | null
+          products_used?: Json | null
           property_images?: Json | null
           recommendations?: Json | null
+          report_title?: string | null
           screenshots?: Json | null
+          service_date?: string | null
+          services?: Json | null
+          target_pests?: Json | null
           technician_name: string
           updated_at?: string | null
         }
@@ -84,15 +100,23 @@ export type Database = {
           custom_map_url?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_signature?: string | null
+          equipment?: Json | null
           findings?: Json | null
           id?: string
+          license_number?: string | null
           map_data?: Json | null
           map_url?: string | null
           next_steps?: Json | null
           notes?: string | null
+          products_used?: Json | null
           property_images?: Json | null
           recommendations?: Json | null
+          report_title?: string | null
           screenshots?: Json | null
+          service_date?: string | null
+          services?: Json | null
+          target_pests?: Json | null
           technician_name?: string
           updated_at?: string | null
         }
