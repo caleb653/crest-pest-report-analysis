@@ -333,9 +333,9 @@
 
   .print-map-container canvas {
     width: 100% !important;
-    height: calc(100% + 2mm) !important;
+    height: calc(100% + 8mm) !important;
     /* Shift icons slightly */
-    transform: translate(-2mm, 0) scale(1, 1) !important;
+    transform: translate(-2mm, -2mm) scale(1, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
