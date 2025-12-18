@@ -771,7 +771,7 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-3">
+        <div className="print-header bg-gradient-to-r from-sage/30 via-card to-sage/20 shadow-md border-b-2 border-dark-sage px-6 py-3">
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
