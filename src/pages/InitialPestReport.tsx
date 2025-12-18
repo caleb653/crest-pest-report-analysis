@@ -158,7 +158,7 @@ const Report = () => {
   };
 
   const generateExpectations = () => {
-    return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days as the treatment takes full effect.\n\n• Long-term Results: With continued service, pests will become less of an issue over time. Contact us if activity persists beyond 2 weeks.";
+    return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks.";
   };
 
   // Auto-update content when pests or equipment changes
