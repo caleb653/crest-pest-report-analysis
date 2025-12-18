@@ -20,12 +20,26 @@ import {
   ChevronDown,
   Sparkles,
   Mail,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+const TECHNICIANS = [
+  { name: "Alexis Rodriguez", license: "RA 68916" },
+  { name: "Darrell Tanner", license: "FR 62523" },
+  { name: "Marcus Reynolds", license: "FR 41031" },
+  { name: "Jesse Angulo", license: "FR 51548" },
+  { name: "Jake Shubin", license: "RA 71439" },
+  { name: "Caleb Whalen", license: "RA 71438" },
+];
 
 const PEST_OPTIONS = [
   "Ants",
@@ -104,6 +118,17 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
+  const [techDropdownOpen, setTechDropdownOpen] = useState(false);
+
+  // Auto-set license when technician changes
+  const handleTechnicianChange = (techName: string) => {
+    setEditableTech(techName);
+    const tech = TECHNICIANS.find((t) => t.name === techName);
+    if (tech) {
+      setEditableLicenseNumber(tech.license);
+    }
+    setTechDropdownOpen(false);
+  };
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || ["Ants", "Spiders", "Roaches"]);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
@@ -767,8 +792,9 @@ const Report = () => {
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print"
                           />
+                          <span className="print-only-text hidden text-foreground">{editableCustomer || "Customer name"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Address:</span>
@@ -780,8 +806,9 @@ const Report = () => {
                             type="date"
                             value={editableServiceDate}
                             onChange={(e) => setEditableServiceDate(e.target.value)}
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0 no-print"
                           />
+                          <span className="print-only-text hidden text-foreground">{editableServiceDate}</span>
                         </div>
                       </div>
                     </div>
@@ -791,21 +818,50 @@ const Report = () => {
                       <div className="space-y-0.5 text-xs">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24">Name:</span>
-                          <Input
-                            value={editableTech}
-                            onChange={(e) => setEditableTech(e.target.value)}
-                            placeholder="Technician name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
-                          />
+                          <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                role="combobox"
+                                aria-expanded={techDropdownOpen}
+                                className="h-5 px-1 text-xs justify-between bg-transparent border-b border-border rounded-none hover:bg-transparent focus-visible:ring-0 flex-1 no-print"
+                              >
+                                {editableTech || "Select technician"}
+                                <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0 z-50 bg-background border border-border">
+                              <Command>
+                                <CommandInput placeholder="Search technician..." className="h-8 text-xs" />
+                                <CommandList>
+                                  <CommandEmpty>No technician found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {TECHNICIANS.map((tech) => (
+                                      <CommandItem
+                                        key={tech.name}
+                                        value={tech.name}
+                                        onSelect={handleTechnicianChange}
+                                        className="text-xs"
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-3 w-3",
+                                            editableTech === tech.name ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {tech.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <span className="print-only-text hidden">{editableTech}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24 whitespace-nowrap">License Number:</span>
-                          <Input
-                            value={editableLicenseNumber}
-                            onChange={(e) => setEditableLicenseNumber(e.target.value)}
-                            placeholder="License #"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0"
-                          />
+                          <span className="text-foreground text-xs">{editableLicenseNumber || "License #"}</span>
                         </div>
                       </div>
                     </div>
