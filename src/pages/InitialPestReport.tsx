@@ -132,66 +132,29 @@ const Report = () => {
 
   // Generate findings and expectations based on selected pests and equipment
   const generateContentFromSelections = (pests: string[], equipment: string[]) => {
-    const findings: string[] = [];
-    const actions: string[] = [];
+    const lines: string[] = [];
 
-    // Base actions for general pest control
+    // Standard general pest control from knowledge base
     if (pests.length > 0) {
-      findings.push("Inspected interior and exterior for pest activity and entry points");
-      actions.push("Applied targeted treatments to ensure a protective barrier around the home");
-      actions.push("De-webbed the entire home");
+      lines.push("• Inspected interior and exterior for pest activity and entry points");
+      lines.push("• Applied targeted treatments to ensure a protective barrier around the home");
+      lines.push("• De-webbed the entire home");
     }
 
-    // Specific pest findings
-    if (pests.includes("Ants")) {
-      findings.push("Identified ant trails and potential entry points around foundation and windows");
-    }
-    if (pests.includes("Spiders")) {
-      findings.push("Located spider webs and harborage areas in eaves, corners, and around exterior lighting");
-    }
-    if (pests.includes("Roaches")) {
-      findings.push("Inspected for roach activity in kitchen, bathrooms, and utility areas");
-    }
+    // Only add rodent-specific if Rodents selected
     if (pests.includes("Rodents")) {
-      findings.push("Inspected for rodent activity including droppings, gnaw marks, and potential entry points");
-      actions.push("Strategically placed traps in areas of highest activity to reduce rodent populations");
-    }
-    if (pests.includes("Wasps")) {
-      findings.push("Located wasp nesting areas around eaves, overhangs, and landscaping");
-    }
-    if (pests.includes("Bed Bugs")) {
-      findings.push("Conducted thorough inspection of sleeping areas, furniture seams, and baseboards");
-    }
-    if (pests.includes("Fleas") || pests.includes("Ticks")) {
-      findings.push("Inspected outdoor areas and pet resting spots for flea and tick activity");
+      lines.push("• Strategically placed traps in areas of highest activity");
     }
 
-    // Equipment-based actions
+    // Equipment-based additions
     if (equipment.includes("Rodent Bait Stations")) {
-      actions.push("Installed rodent bait stations in strategic locations around the property perimeter");
+      lines.push("• Installed rodent bait stations around the property perimeter");
     }
     if (equipment.includes("Rodent Traps")) {
-      actions.push("Placed rodent traps in areas showing highest activity for population control");
-    }
-    if (equipment.includes("Mosquito Buckets")) {
-      actions.push("Set up mosquito control buckets to reduce breeding populations");
-    }
-    if (equipment.includes("Fly Light")) {
-      actions.push("Installed fly light traps in designated areas for ongoing monitoring");
-    }
-    if (equipment.includes("Pest Monitors")) {
-      actions.push("Placed pest monitors throughout the property to track activity levels");
+      lines.push("• Placed rodent traps for population control");
     }
 
-    // Combine findings and actions
-    const allContent = [
-      ...findings.map(f => `• ${f}`),
-      "",
-      "Actions Taken:",
-      ...actions.map(a => `• ${a}`)
-    ].join("\n");
-
-    return allContent;
+    return lines.join("\n");
   };
 
   const generateExpectations = () => {
