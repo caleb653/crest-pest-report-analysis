@@ -9,6 +9,12 @@ verify_jwt = false
 [functions.verify-admin-password]
 verify_jwt = false
 
+[functions.validate-admin-session]
+verify_jwt = false
+
+[functions.invalidate-admin-session]
+verify_jwt = false
+
 [functions.static-map]
 verify_jwt = false
 
@@ -20,4 +26,3 @@ verify_jwt = false
 
 [functions.send-report-email]
 verify_jwt = false
-
