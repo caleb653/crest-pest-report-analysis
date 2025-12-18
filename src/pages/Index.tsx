@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardList, FileText, Shield } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
+import crestBug from "@/assets/crest-bug.png";
 
 const reportTypes = [
   {
@@ -42,7 +43,12 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <img 
+        src={crestBug} 
+        alt="" 
+        className="absolute bottom-4 right-4 w-24 h-auto opacity-30"
+      />
       <div className="text-center mb-10">
         <img 
           src={crestLogo} 
