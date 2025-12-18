@@ -47,7 +47,7 @@ const Index = () => {
         <img 
           src={crestLogo} 
           alt="Crest Pest Control" 
-          className="h-20 mx-auto mb-4"
+          className="h-28 mx-auto mb-4"
         />
         <h1 className="text-3xl font-bold text-foreground mb-2">Service Reports</h1>
         <p className="text-muted-foreground">Select a report type to get started</p>
@@ -62,9 +62,9 @@ const Index = () => {
               className="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-200 group"
               onClick={() => handleCardClick(report)}
             >
-              <CardContent className="flex flex-col items-center justify-center p-6 text-center min-h-[160px]">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-                  <Icon className="w-7 h-7 text-primary" />
+              <CardContent className="flex flex-col items-center justify-center p-6 text-center min-h-[180px]">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="w-10 h-10 text-primary" />
                 </div>
                 <h2 className="font-semibold text-foreground mb-1">{report.title}</h2>
                 <p className="text-xs text-muted-foreground leading-tight">{report.description}</p>
