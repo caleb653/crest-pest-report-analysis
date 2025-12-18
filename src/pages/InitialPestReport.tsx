@@ -677,13 +677,17 @@ const Report = () => {
     });
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    if (file.type && !file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
 
     try {
-      const fileExt = file.name.split(".").pop();
+      const fileExt = file.name.includes(".")
+        ? file.name.split(".").pop() || "jpg"
+        : file.type
+          ? file.type.split("/")[1]
+          : "jpg";
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
 
@@ -715,14 +719,18 @@ const Report = () => {
 
     const fileArray = Array.from(files).slice(0, 5);
 
-    if (fileArray.some((file) => !file.type.startsWith("image/"))) {
+    if (fileArray.some((file) => file.type && !file.type.startsWith("image/"))) {
       toast.error("Please upload only image files");
       return;
     }
 
     try {
       const uploadPromises = fileArray.map(async (file) => {
-        const fileExt = file.name.split(".").pop();
+        const fileExt = file.name.includes(".")
+          ? file.name.split(".").pop() || "jpg"
+          : file.type
+            ? file.type.split("/")[1]
+            : "jpg";
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${reportId || "temp"}/property/${fileName}`;
 
