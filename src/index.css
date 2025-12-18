@@ -10,37 +10,37 @@
 @layer base {
   :root {
     /* Core Brand Colors (exact hex conversions to HSL) */
-    --sage: 130 14% 79%;           /* #C3D1C5 - Primary sage */
-    --dark-sage: 130 7% 61%;       /* #95A197 - Dark sage accent */
-    --brand-black: 0 0% 16%;       /* #2A2A2A - Rich black */
-    --brand-white: 0 0% 95%;       /* #F2F2F2 - Soft white */
+    --sage: 130 14% 79%; /* #C3D1C5 - Primary sage */
+    --dark-sage: 130 7% 61%; /* #95A197 - Dark sage accent */
+    --brand-black: 0 0% 16%; /* #2A2A2A - Rich black */
+    --brand-white: 0 0% 95%; /* #F2F2F2 - Soft white */
 
     /* Semantic tokens mapped to brand */
-    --background: 0 0% 95%;        /* Soft white background */
-    --foreground: 0 0% 16%;        /* Brand black text */
+    --background: 0 0% 95%; /* Soft white background */
+    --foreground: 0 0% 16%; /* Brand black text */
 
-    --primary: 130 14% 79%;        /* Sage - primary actions */
+    --primary: 130 14% 79%; /* Sage - primary actions */
     --primary-foreground: 0 0% 16%; /* Black text on sage */
-    
-    --secondary: 130 7% 61%;       /* Dark Sage - secondary elements */
+
+    --secondary: 130 7% 61%; /* Dark Sage - secondary elements */
     --secondary-foreground: 0 0% 100%; /* White text on dark sage */
 
-    --card: 0 0% 100%;             /* Pure white cards */
+    --card: 0 0% 100%; /* Pure white cards */
     --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 16%;
 
-    --muted: 130 10% 92%;          /* Very light sage tint */
+    --muted: 130 10% 92%; /* Very light sage tint */
     --muted-foreground: 130 5% 45%;
 
-    --accent: 130 12% 72%;         /* Mid-sage for accents */
+    --accent: 130 12% 72%; /* Mid-sage for accents */
     --accent-foreground: 0 0% 16%;
 
     --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 130 10% 82%;         /* Sage-tinted borders */
+    --border: 130 10% 82%; /* Sage-tinted borders */
     --input: 130 10% 85%;
     --ring: 130 14% 70%;
 
@@ -73,7 +73,7 @@
   body {
     @apply bg-background text-foreground;
     font-family:
-      'Figtree',
+      "Figtree",
       Inter,
       -apple-system,
       BlinkMacSystemFont,
@@ -136,7 +136,6 @@
     background: hsl(var(--primary));
     border-radius: 0.75rem;
     padding: 0.75rem 1.5rem;
-    box-shadow: var(--shadow-soft);
     border: 1.25px solid hsl(var(--border));
   }
 
@@ -265,7 +264,12 @@
     margin: 0 0 1mm 0 !important;
     padding: 2mm 6mm !important;
     box-shadow: 0 2px 8px hsl(130 10% 50% / 0.12) !important;
-    background: linear-gradient(90deg, hsl(130 14% 79% / 0.5) 0%, hsl(130 14% 79% / 0.2) 50%, hsl(130 14% 79% / 0.45) 100%) !important;
+    background: linear-gradient(
+      90deg,
+      hsl(130 14% 79% / 0.5) 0%,
+      hsl(130 14% 79% / 0.2) 50%,
+      hsl(130 14% 79% / 0.45) 100%
+    ) !important;
     border: 1.5px solid hsl(130 7% 61%) !important;
     border-bottom: 3px solid hsl(130 7% 61%) !important; /* Dark sage accent bottom */
   }
