@@ -97,58 +97,81 @@ const SERVICE_CONFIG: Record<
     frequency: number;
     targetPests: string[];
     proposedServices: string;
-    defaultRecurring?: number;
+    defaultInitial: number;
+    defaultRecurring: number;
   }
 > = {
   "Monthly Services": {
     frequency: 30,
-    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+    defaultInitial: 95,
+    defaultRecurring: 75,
   },
   "Bi-Monthly Services": {
     frequency: 60,
-    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+    defaultInitial: 95,
+    defaultRecurring: 105,
   },
   "Quarterly Services": {
     frequency: 90,
-    targetPests: ["Ants", "Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Wasps"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+    defaultInitial: 95,
+    defaultRecurring: 125,
   },
   "Commercial General Pest": {
     frequency: 30,
-    targetPests: ["Ants", "Roaches", "Spiders", "Rodents"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       "Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity. Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed. Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management.",
+    defaultInitial: 150,
+    defaultRecurring: 100,
   },
   "Rodent Exclusion": {
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
       "Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.",
+    defaultInitial: 575,
+    defaultRecurring: 0,
   },
   "Rodent Trapping": {
-    frequency: 7,
+    frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
       "Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.",
+    defaultInitial: 575,
     defaultRecurring: 0,
   },
   "Rodent Trapping and Exclusion": {
-    frequency: 7,
+    frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
       "Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home's protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.",
+    defaultInitial: 575,
     defaultRecurring: 0,
+  },
+  "Rodent Bait Boxes": {
+    frequency: 30,
+    targetPests: ["Rodents"],
+    proposedServices:
+      "Added rodent bait boxes around the property to maintain consistent control of rodent populations. Strategically move bait boxes depending on ongoing rodent activity.",
+    defaultInitial: 200,
+    defaultRecurring: 60,
   },
   Attic: {
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
       "Inspect attic space for signs of pest activity, entry points, and damage. Treat attic areas as needed and provide recommendations for exclusion and prevention.",
+    defaultInitial: 0,
+    defaultRecurring: 0,
   },
 };
 
@@ -253,19 +276,42 @@ const Report = () => {
         const config = SERVICE_CONFIG[value];
         if (config) {
           updated[index].frequency = config.frequency;
-          // Set default recurring price if specified (e.g., $0 for rodent trapping)
-          if (config.defaultRecurring !== undefined) {
-            updated[index].recurringPrice = String(config.defaultRecurring);
-          }
-          // Only update target pests and findings for the first service
-          if (index === 0) {
-            setEditableTargetPests(config.targetPests);
-            setEditableFindings([config.proposedServices]);
-          }
+          // Set default prices
+          updated[index].initialPrice = String(config.defaultInitial);
+          updated[index].recurringPrice = String(config.defaultRecurring);
         }
       }
+      
+      // After updating, aggregate target pests and proposed services from ALL selected services
+      setTimeout(() => {
+        aggregateServicesData(updated);
+      }, 0);
+      
       return updated;
     });
+  };
+
+  // Aggregate target pests and proposed services from all selected services
+  const aggregateServicesData = (currentServices: ServiceItem[]) => {
+    const allPests = new Set<string>();
+    const allProposedServices: string[] = [];
+
+    currentServices.forEach((service) => {
+      const config = SERVICE_CONFIG[service.serviceType];
+      if (config) {
+        config.targetPests.forEach((pest) => allPests.add(pest));
+        if (config.proposedServices && !allProposedServices.includes(config.proposedServices)) {
+          allProposedServices.push(config.proposedServices);
+        }
+      }
+    });
+
+    if (allPests.size > 0) {
+      setEditableTargetPests(Array.from(allPests));
+    }
+    if (allProposedServices.length > 0) {
+      setEditableFindings(allProposedServices);
+    }
   };
 
   const addService = () => {
