@@ -287,9 +287,14 @@ const Report = () => {
   };
 
   // Aggregate target pests and proposed services whenever services change
+  // Using JSON.stringify to ensure deep comparison of service types
+  const serviceTypesKey = services.map(s => s.serviceType).join(',');
+  
   useEffect(() => {
     const allPests = new Set<string>();
     const allProposedServices: string[] = [];
+
+    console.log('Aggregating services:', services.map(s => s.serviceType));
 
     services.forEach((service) => {
       const config = SERVICE_CONFIG[service.serviceType];
@@ -301,13 +306,15 @@ const Report = () => {
       }
     });
 
+    console.log('Aggregated proposed services:', allProposedServices.length, allProposedServices);
+
     if (allPests.size > 0) {
       setEditableTargetPests(Array.from(allPests));
     }
     if (allProposedServices.length > 0) {
       setEditableFindings(allProposedServices);
     }
-  }, [services]);
+  }, [serviceTypesKey]);
 
   const addService = () => {
     if (services.length < 3) {
