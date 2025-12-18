@@ -885,7 +885,7 @@ const Report = () => {
             </div>
 
             {/* Purpose Text */}
-            <div className="print-welcome-box mt-2 p-2 bg-muted/50 rounded-lg border border-border">
+            <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border">
               <p className="text-xs text-foreground leading-tight">
                 We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
                 size fits all" approach and there are often a number of factors that lead to increased pest activity.
@@ -1125,7 +1125,7 @@ const Report = () => {
                 )}
               </div>
               {editableTargetPests.length > 0 && (
-                <div className="print-tags print-pest-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
                   {editableTargetPests.map((pest) => (
                     <span
                       key={pest}
