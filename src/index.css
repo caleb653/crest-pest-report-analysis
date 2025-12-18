@@ -289,7 +289,7 @@
     /* Fixed map column width - wider for better visibility */
     grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
-    height: 130mm !important;
+    height: 140mm !important;
     margin: 0 auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
@@ -301,7 +301,7 @@
     box-shadow: 0 2px 6px hsl(0 0% 0% / 0.08);
     overflow: hidden !important;
     background: hsl(135 12% 90%) !important;
-    height: 130mm !important;
+    height: 140mm !important;
     width: 100% !important;
   }
 
@@ -309,14 +309,14 @@
     width: 100% !important;
     height: 100% !important;
     /* Shift icons up and to the left */
-    transform: translate(-4mm, -6mm) scale(1, 0.96) !important;
+    transform: translate(-4mm, -3mm) scale(1, 0.98) !important;
     transform-origin: top left !important;
     display: block !important;
   }
 
   .print-layout > div:last-child {
-    height: 130mm !important;
-    max-height: 130mm !important;
+    height: 140mm !important;
+    max-height: 140mm !important;
     overflow: hidden !important;
     padding-top: 1mm !important;
     padding-left: 0 !important;
