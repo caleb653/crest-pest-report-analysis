@@ -322,7 +322,14 @@ const Report = () => {
 
   const removeService = (index: number) => {
     if (services.length > 1) {
-      setServices((prev) => prev.filter((_, i) => i !== index));
+      setServices((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+        // Re-aggregate after removing a service
+        setTimeout(() => {
+          aggregateServicesData(updated);
+        }, 0);
+        return updated;
+      });
     }
   };
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
