@@ -282,21 +282,16 @@ const Report = () => {
         }
       }
       
-      // After updating, aggregate target pests and proposed services from ALL selected services
-      setTimeout(() => {
-        aggregateServicesData(updated);
-      }, 0);
-      
       return updated;
     });
   };
 
-  // Aggregate target pests and proposed services from all selected services
-  const aggregateServicesData = (currentServices: ServiceItem[]) => {
+  // Aggregate target pests and proposed services whenever services change
+  useEffect(() => {
     const allPests = new Set<string>();
     const allProposedServices: string[] = [];
 
-    currentServices.forEach((service) => {
+    services.forEach((service) => {
       const config = SERVICE_CONFIG[service.serviceType];
       if (config) {
         config.targetPests.forEach((pest) => allPests.add(pest));
@@ -312,7 +307,7 @@ const Report = () => {
     if (allProposedServices.length > 0) {
       setEditableFindings(allProposedServices);
     }
-  };
+  }, [services]);
 
   const addService = () => {
     if (services.length < 3) {
@@ -322,14 +317,7 @@ const Report = () => {
 
   const removeService = (index: number) => {
     if (services.length > 1) {
-      setServices((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
-        // Re-aggregate after removing a service
-        setTimeout(() => {
-          aggregateServicesData(updated);
-        }, 0);
-        return updated;
-      });
+      setServices((prev) => prev.filter((_, i) => i !== index));
     }
   };
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
