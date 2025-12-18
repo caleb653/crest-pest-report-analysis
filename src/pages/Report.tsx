@@ -1495,9 +1495,8 @@ const Report = () => {
                         id="custom-map-upload"
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         onChange={handleCustomMapUpload}
-                        className="hidden"
+                        className="sr-only"
                       />
                     </div>
 
@@ -1568,9 +1567,8 @@ const Report = () => {
                           id="custom-map-upload-empty"
                           type="file"
                           accept="image/*"
-                          capture="environment"
                           onChange={handleCustomMapUpload}
-                          className="hidden"
+                          className="sr-only"
                         />
                       </div>
                     )}
@@ -1597,9 +1595,8 @@ const Report = () => {
                   type="file"
                   accept="image/*"
                   multiple
-                  capture="environment"
                   onChange={handlePropertyImagesUpload}
-                  className="hidden"
+                  className="sr-only"
                 />
               </div>
 
