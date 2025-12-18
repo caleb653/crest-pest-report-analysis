@@ -928,19 +928,24 @@ const Report = () => {
 
                   {/* Upload custom map button */}
                   <div className="no-print absolute top-4 right-4 z-20">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => document.getElementById("custom-map-upload")?.click()}
-                      title="Upload custom map image"
-                    >
-                      <FileDown className="w-4 h-4 mr-2" />
-                      Upload Map
-                    </Button>
+                    <label htmlFor="custom-map-upload" className="cursor-pointer">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        type="button"
+                        asChild
+                      >
+                        <span>
+                          <FileDown className="w-4 h-4 mr-2" />
+                          Upload Map
+                        </span>
+                      </Button>
+                    </label>
                     <input
                       id="custom-map-upload"
                       type="file"
                       accept="image/*"
+                      capture="environment"
                       onChange={handleCustomMapUpload}
                       className="hidden"
                     />
@@ -998,14 +1003,19 @@ const Report = () => {
                       </div>
                       <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
                       <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
-                      <Button variant="default" onClick={() => document.getElementById("custom-map-upload-empty")?.click()}>
-                        <FileDown className="w-4 h-4 mr-2" />
-                        Upload Map Image
-                      </Button>
+                      <label htmlFor="custom-map-upload-empty" className="cursor-pointer">
+                        <Button variant="default" type="button" asChild>
+                          <span>
+                            <FileDown className="w-4 h-4 mr-2" />
+                            Upload Map Image
+                          </span>
+                        </Button>
+                      </label>
                       <input
                         id="custom-map-upload-empty"
                         type="file"
                         accept="image/*"
+                        capture="environment"
                         onChange={handleCustomMapUpload}
                         className="hidden"
                       />
@@ -1408,15 +1418,21 @@ const Report = () => {
 
           {/* Upload Section */}
           <div className="no-print mb-6">
-            <Button onClick={() => fileInputRef.current?.click()} variant="outline" size="lg">
-              <FileDown className="w-5 h-5 mr-2" />
-              Upload Images (up to 5)
-            </Button>
+            <label htmlFor="property-images-upload" className="cursor-pointer">
+              <Button variant="outline" size="lg" type="button" asChild>
+                <span>
+                  <FileDown className="w-5 h-5 mr-2" />
+                  Upload Images (up to 5)
+                </span>
+              </Button>
+            </label>
             <input
+              id="property-images-upload"
               ref={fileInputRef}
               type="file"
               accept="image/*"
               multiple
+              capture="environment"
               onChange={handlePropertyImagesUpload}
               className="hidden"
             />
