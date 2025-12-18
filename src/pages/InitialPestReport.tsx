@@ -906,7 +906,7 @@ const Report = () => {
             isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none w-full max-w-[506px] p-4"
           }`}
         >
-          <div className="relative w-full" style={{ paddingBottom: "133%" }}> {/* 3:4 aspect ratio (taller) */}
+          <div className="relative w-full bg-sage rounded-lg" style={{ paddingBottom: "133%" }}> {/* 3:4 aspect ratio (taller) */}
             <div className="absolute inset-0">
               {isProcessing && (
                 <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
