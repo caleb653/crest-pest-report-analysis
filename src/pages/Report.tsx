@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { inferImageUploadMeta } from "@/lib/imageUpload";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -743,18 +744,19 @@ const Report = () => {
       return;
     }
 
+    if (file.size === 0) {
+      toast.error("That photo isn't downloaded to this iPad yet (iCloud). Open Photos, download it, then try again.");
+      return;
+    }
+
     try {
-      const fileExt = file.name.includes(".")
-        ? file.name.split(".").pop() || "jpg"
-        : file.type
-          ? file.type.split("/")[1]
-          : "jpg";
-      const fileName = `${Math.random()}.${fileExt}`;
+      const { ext, contentType } = inferImageUploadMeta(file);
+      const fileName = `${Math.random()}.${ext}`;
       const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
 
       const { error: uploadError, data } = await supabase.storage
         .from("report-images")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: true, contentType });
 
       if (uploadError) throw uploadError;
 
@@ -780,6 +782,11 @@ const Report = () => {
 
     const fileArray = Array.from(files).slice(0, 8);
 
+    if (fileArray.some((file) => file.size === 0)) {
+      toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
+      return;
+    }
+
     if (fileArray.some((file) => file.type && !file.type.startsWith("image/"))) {
       toast.error("Please upload only image files");
       return;
@@ -787,17 +794,14 @@ const Report = () => {
 
     try {
       const uploadPromises = fileArray.map(async (file) => {
-        const fileExt = file.name.includes(".")
-          ? file.name.split(".").pop() || "jpg"
-          : file.type
-            ? file.type.split("/")[1]
-            : "jpg";
-        const fileName = `${Math.random()}.${fileExt}`;
+        const { ext, contentType } = inferImageUploadMeta(file);
+        const fileName = `${Math.random()}.${ext}`;
         const filePath = `${reportId || "temp"}/property/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("report-images")
-          .upload(filePath, file, { upsert: true });
+          .upload(filePath, file, { upsert: true, contentType });
+
 
         if (uploadError) throw uploadError;
 
