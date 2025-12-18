@@ -130,14 +130,20 @@ const Report = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
 
-  // Generate findings and expectations based on selected pests and equipment
-  const generateContentFromSelections = (pests: string[], equipment: string[]) => {
+  // Generate findings and expectations based on selected pests, equipment, and products
+  const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
     const lines: string[] = [];
+
+    // Check if using organic products (Essentria)
+    const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
 
     // Standard general pest control from knowledge base
     if (pests.length > 0) {
       lines.push("• Inspected interior and exterior for pest activity and entry points");
-      lines.push("• Applied targeted treatments to ensure a protective barrier around the home");
+      const treatmentLine = usesOrganic 
+        ? "• Applied targeted treatments, including organic solutions, to ensure a protective barrier around the home"
+        : "• Applied targeted treatments to ensure a protective barrier around the home";
+      lines.push(treatmentLine);
       lines.push("• De-webbed the entire home");
     }
 
@@ -161,17 +167,17 @@ const Report = () => {
     return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks.";
   };
 
-  // Auto-update content when pests or equipment changes
+  // Auto-update content when pests, equipment, or products change
   useEffect(() => {
     // Skip if loading a report or if user has manually edited
     if (reportId || hasManuallyEditedFindings) return;
     
     if (editableTargetPests.length > 0 || editableEquipment.length > 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment);
+      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
     }
-  }, [editableTargetPests, editableEquipment, reportId, hasManuallyEditedFindings]);
+  }, [editableTargetPests, editableEquipment, editableProductsUsed, reportId, hasManuallyEditedFindings]);
 
   // Auto-add rodent equipment when Rodents is selected
   useEffect(() => {
@@ -188,7 +194,7 @@ const Report = () => {
   // Initialize findings on first load (for new reports with default pests)
   useEffect(() => {
     if (!reportId && editableTargetPests.length > 0 && editableFindings.length === 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment);
+      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
     }
