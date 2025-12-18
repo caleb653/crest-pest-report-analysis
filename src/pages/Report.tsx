@@ -802,13 +802,32 @@ const Report = () => {
     }
 
     try {
-      const { ext, contentType } = inferImageUploadMeta(file);
-      const fileName = `${Math.random()}.${ext}`;
+      // Import the compress function dynamically to avoid circular deps
+      const { compressImage } = await import("@/lib/imageUpload");
+      
+      // Compress image and get instant local preview
+      const { blob: compressedBlob, localUrl } = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.75,
+      });
+
+      console.log("[upload] compressed", {
+        originalSize: file.size,
+        compressedSize: compressedBlob.size,
+        reduction: `${Math.round((1 - compressedBlob.size / file.size) * 100)}%`,
+      });
+
+      // Show local preview INSTANTLY while upload happens
+      setCustomMapImage(localUrl);
+
+      // Upload compressed image in background
+      const fileName = `${Math.random()}.jpg`;
       const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("report-images")
-        .upload(filePath, file, { upsert: true, contentType });
+        .upload(filePath, compressedBlob, { upsert: true, contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 
@@ -816,8 +835,10 @@ const Report = () => {
         data: { publicUrl },
       } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
+      // Replace local URL with permanent URL (user won't notice the switch)
       setCustomMapImage(publicUrl);
-      toast.success("Custom map image uploaded");
+      URL.revokeObjectURL(localUrl);
+      toast.success("Map uploaded");
     } catch (error) {
       console.error("Error uploading map:", error);
       toast.error("Failed to upload map image");
