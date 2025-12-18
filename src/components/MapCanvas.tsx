@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Square, Bug, Minus } from 'lucide-react';
+import { Trash2, Type, X, Square, Bug, Minus, Eraser } from 'lucide-react';
 import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
@@ -17,7 +17,7 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line';
+type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser';
 
 interface LegendItem {
   icon: string;
@@ -95,15 +95,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     rectFillTransparentRef.current = rectFillTransparent;
   }, [rectFillTransparent]);
 
-  // Disable selection when tool is 'line' to prevent moving objects while drawing
+  // Disable selection when tool is 'line' or 'eraser' to prevent moving objects while drawing/erasing
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
-    if (tool === 'line') {
+    if (tool === 'line' || tool === 'eraser') {
       canvas.selection = false;
       canvas.getObjects().forEach(obj => {
         obj.selectable = false;
-        obj.evented = false;
+        obj.evented = tool === 'eraser'; // Allow evented for eraser to detect clicks
       });
     } else {
       canvas.selection = true;
@@ -234,7 +234,15 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       
       if (!pt) return;
       
-      if (currentTool === 'icon') {
+      if (currentTool === 'eraser') {
+        // Eraser tool - delete the object that was clicked on
+        if (e.target) {
+          canvas.remove(e.target);
+          canvas.discardActiveObject();
+          canvas.renderAll();
+        }
+        return; // Stay in eraser mode
+      } else if (currentTool === 'icon') {
         const svgPath = iconData?.svgPath || bugIcon;
         
         // Load and add SVG icon
@@ -270,8 +278,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           });
           
           clickPlacedRef.current = true;
-          setTool('select');
-          setShowIconPicker(false);
+          // Stay in icon mode so user can place multiple icons
         });
       } else if (currentTool === 'rectangle') {
         // Create a callout box that is fully resizable
@@ -855,7 +862,16 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
           title="Add Text"
           className="h-7 w-7"
         >
-          <Type className="w-3.5 h-3.5" />
+        <Type className="w-3.5 h-3.5" />
+        </Button>
+        <Button
+          size="icon"
+          variant={tool === 'eraser' ? 'destructive' : 'outline'}
+          onClick={() => { setTool('eraser'); setShowIconPicker(false); }}
+          title="Eraser - Click to delete"
+          className="h-7 w-7"
+        >
+          <Eraser className="w-3.5 h-3.5" />
         </Button>
         <div className="w-px bg-border mx-0.5" />
         <Button
