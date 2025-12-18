@@ -261,17 +261,12 @@
     width: 100% !important;
     max-width: none !important;
     border-radius: 0 !important;
-    margin: 0 0 1mm 0 !important;
-    padding: 2mm 6mm !important;
-    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.12) !important;
-    background: linear-gradient(
-      90deg,
-      hsl(130 14% 79% / 0.5) 0%,
-      hsl(130 14% 79% / 0.2) 50%,
-      hsl(130 14% 79% / 0.45) 100%
-    ) !important;
-    border: 1.5px solid hsl(130 7% 61%) !important;
-    border-bottom: 3px solid hsl(130 7% 61%) !important; /* Dark sage accent bottom */
+    margin: 0 !important;
+    padding: 3mm 6mm !important;
+    box-shadow: none !important;
+    background: hsl(130 14% 89%) !important;
+    border: none !important;
+    border-bottom: 2px solid hsl(130 7% 61%) !important;
   }
 
   .print-header > * {
@@ -302,10 +297,10 @@
   }
 
   .print-header > div {
-    background: hsl(0 0% 100% / 0.72) !important;
-    border-radius: 3px !important;
-    padding: 2mm 3mm !important;
-    border: 1px solid hsl(var(--border)) !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    border: none !important;
   }
 
   .print-header img[alt="Crest Pest Control"] {
