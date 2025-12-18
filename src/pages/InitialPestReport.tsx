@@ -869,18 +869,17 @@ const Report = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3 no-print">
-                <Button onClick={exportToPDF} variant="default" size="sm">
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Export PDF
+              <div className="flex gap-2 no-print shrink-0">
+                <Button onClick={exportToPDF} variant="default" size="sm" className="h-8 px-2 text-xs">
+                  <FileDown className="w-3.5 h-3.5 mr-1" />
+                  PDF
                 </Button>
-                <Button onClick={handleShare} variant="outline" size="sm">
-                  <Share2 className="w-4 h-4 mr-2" />
+                <Button onClick={handleShare} variant="outline" size="sm" className="h-8 px-2 text-xs">
+                  <Share2 className="w-3.5 h-3.5 mr-1" />
                   Share
                 </Button>
-                <Button onClick={() => navigate("/")} variant="outline" size="sm">
-                  <Home className="w-4 h-4 mr-2" />
-                  Home
+                <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-8 w-8">
+                  <Home className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
