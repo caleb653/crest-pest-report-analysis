@@ -262,7 +262,7 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 3mm 6mm !important;
+    padding: 5mm 8mm !important;
     box-shadow: none !important;
     background: hsl(130 14% 89%) !important;
     border: none !important;
@@ -276,8 +276,8 @@
   }
 
   .print-header h1 {
-    font-size: 20px !important;
-    margin-bottom: 2mm !important;
+    font-size: 22px !important;
+    margin-bottom: 3mm !important;
     letter-spacing: -0.01em !important;
   }
 
@@ -289,7 +289,7 @@
   .print-header span,
   .print-header input {
     font-size: 12px !important;
-    line-height: 1.15 !important;
+    line-height: 1.3 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
@@ -304,56 +304,73 @@
   }
 
   .print-header img[alt="Crest Pest Control"] {
-    height: 24mm !important;
+    height: 22mm !important;
     width: auto !important;
   }
 
+  /* Welcome message box */
+  .print-welcome-box {
+    margin: 4mm 8mm 5mm 8mm !important;
+    padding: 4mm 5mm !important;
+    background: hsl(130 14% 95%) !important;
+    border: 1.5px solid hsl(130 14% 79%) !important;
+    border-radius: 2mm !important;
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+
   .print-layout {
-    width: calc(100% - 12mm) !important;
+    width: calc(100% - 16mm) !important;
     max-width: none !important;
     display: grid !important;
-    /* Fixed map column width - wider for better visibility */
-    grid-template-columns: 118mm 1fr !important;
-    column-gap: 6mm !important;
-    height: 140mm !important;
-    margin: 0 auto 0 auto !important;
+    grid-template-columns: 105mm 1fr !important;
+    column-gap: 8mm !important;
+    height: 165mm !important;
+    margin: 0 auto !important;
     padding: 0 !important;
-    align-items: flex-start !important;
+    align-items: stretch !important;
   }
 
   .print-map-container {
-    border-radius: 0.5rem;
-    border: 1.5px solid hsl(130 7% 61%) !important; /* Dark sage border */
-    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
+    border-radius: 3mm !important;
+    border: 1.5px solid hsl(130 7% 61%) !important;
+    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.08) !important;
     overflow: hidden !important;
-    background: hsl(130 14% 79%) !important; /* Sage background */
-    height: 140mm !important;
+    background: hsl(130 14% 79%) !important;
+    height: 100% !important;
+    max-height: 165mm !important;
     width: 100% !important;
   }
 
   .print-map-container canvas {
     width: 100% !important;
     height: 100% !important;
-    /* Shift icons slightly */
-    transform: translate(-2mm, -1mm) scale(1, 1) !important;
-    transform-origin: top left !important;
+    transform: none !important;
     display: block !important;
+    object-fit: cover !important;
   }
 
   .print-layout > div:last-child {
-    height: 140mm !important;
-    max-height: 140mm !important;
+    height: 100% !important;
+    max-height: 165mm !important;
     overflow: hidden !important;
-    padding-top: 1mm !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    padding: 0 !important;
     width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5mm !important;
+  }
+
+  /* Pest tags spacing */
+  .print-pest-tags {
+    margin-bottom: 3mm !important;
+    padding-bottom: 3mm !important;
   }
 
   .print-section {
-    margin: 0 0 2.5mm 0 !important;
+    margin: 0 !important;
     border-radius: 3mm !important;
-    box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
+    box-shadow: 0 1px 4px hsl(130 10% 50% / 0.08) !important;
     padding: 0 !important;
     background: hsl(0 0% 100%) !important;
     border: 1.5px solid hsl(130 10% 80%) !important;
@@ -362,14 +379,14 @@
   }
 
   .print-section-header {
-    background: hsl(0 0% 16%) !important; /* Brand black #2A2A2A */
-    padding: 2.5mm 4mm 2.5mm 5mm !important;
-    font-size: 14px !important;
+    background: hsl(0 0% 16%) !important;
+    padding: 3mm 5mm !important;
+    font-size: 13px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    border-bottom: 2px solid hsl(130 14% 79%) !important; /* Sage accent */
+    border-bottom: 2px solid hsl(130 14% 79%) !important;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -379,9 +396,9 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 3mm 5mm 4mm 5mm !important;
+    padding: 4mm 5mm 5mm 5mm !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
     color: hsl(var(--foreground)) !important;
   }
 
@@ -391,10 +408,10 @@
   }
 
   .print-section-content li {
-    margin: 0 0 1.5mm 0 !important;
+    margin: 0 0 2mm 0 !important;
     padding: 0 !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
   }
 
   .print-section-content,
