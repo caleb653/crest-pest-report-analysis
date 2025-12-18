@@ -353,7 +353,7 @@
 @media print and (max-width: 1024px) {
   .print-map-container canvas {
     /* Shift icons up more for iPad export */
-    transform: translate(-2mm, -8mm) scale(1, 1) !important;
+    transform: translate(-4mm, -10mm) scale(1, 1) !important;
   }
 }
 
