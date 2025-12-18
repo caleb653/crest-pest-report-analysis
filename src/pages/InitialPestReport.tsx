@@ -775,8 +775,8 @@ const Report = () => {
           <div className="max-w-[1800px] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
-                <div className="flex flex-col items-center">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto" />
+                <div className="flex flex-col items-center shrink-0">
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px]" />
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex-1 ml-4">
@@ -1020,9 +1020,9 @@ const Report = () => {
 
         <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "flex-1 min-w-0 overflow-y-auto"}>
           <div className="p-3 md:p-4 space-y-3">
-            {/* Mobile/Tablet: Customer & Technician */}
+            {/* Mobile/Tablet: Customer & Technician - hidden in print */}
             {isMobileOrTablet && (
-              <Card className="p-4">
+              <Card className="p-4 no-print">
                 <div className="space-y-3">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Customer Name</label>
@@ -1035,13 +1035,50 @@ const Report = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Technician Name</label>
-                    <Input
-                      value={editableTech}
-                      onChange={(e) => setEditableTech(e.target.value)}
-                      placeholder="Enter technician name"
-                      className="text-base"
-                    />
+                    <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={techDropdownOpen}
+                          className="w-full justify-between text-base"
+                        >
+                          {editableTech || "Select technician"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0 z-50 bg-background border border-border">
+                        <Command>
+                          <CommandInput placeholder="Search technician..." />
+                          <CommandList>
+                            <CommandEmpty>No technician found.</CommandEmpty>
+                            <CommandGroup>
+                              {TECHNICIANS.map((tech) => (
+                                <CommandItem
+                                  key={tech.name}
+                                  value={tech.name}
+                                  onSelect={handleTechnicianChange}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      editableTech === tech.name ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {tech.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
+                  {editableLicenseNumber && (
+                    <div className="text-sm text-muted-foreground">
+                      License: {editableLicenseNumber}
+                    </div>
+                  )}
                 </div>
               </Card>
             )}
