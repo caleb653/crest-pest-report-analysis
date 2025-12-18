@@ -315,8 +315,8 @@
     /* Fixed map column width - wider for better visibility */
     grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
-    height: 140mm !important;
-    margin: 0 auto 0 auto !important;
+    height: 138mm !important;
+    margin: 3mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
   }
@@ -327,24 +327,24 @@
     box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important; /* Sage background */
-    height: 140mm !important;
+    height: 138mm !important;
     width: 100% !important;
   }
 
   .print-map-container canvas {
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% + 2mm) !important;
     /* Shift icons slightly */
-    transform: translate(-2mm, -1mm) scale(1, 1) !important;
+    transform: translate(-2mm, 0) scale(1, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
 
   .print-layout > div:last-child {
-    height: 140mm !important;
-    max-height: 140mm !important;
+    height: 138mm !important;
+    max-height: 138mm !important;
     overflow: hidden !important;
-    padding-top: 1mm !important;
+    padding-top: 3mm !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     width: 100% !important;
