@@ -158,7 +158,15 @@
 ------------------------------------------------------------- */
 @media screen and (min-width: 768px) and (max-width: 1023px) {
   .print-map-container canvas {
-    transform: translate(1%, -1%) scale(0.96, 0.94) !important;
+    transform: translate(1%, 1%) scale(0.96, 0.94) !important;
+    transform-origin: top left !important;
+  }
+}
+
+/* Desktop screen adjustments for map icons */
+@media screen and (min-width: 1024px) {
+  .print-map-container canvas {
+    transform: translate(0, 1%) !important;
     transform-origin: top left !important;
   }
 }
@@ -334,8 +342,8 @@
   .print-map-container canvas {
     width: 100% !important;
     height: calc(100% + 8mm) !important;
-    /* Shift icons slightly */
-    transform: translate(-2mm, -2mm) scale(1, 1) !important;
+    /* Shift icons up for print export */
+    transform: translate(-2mm, -4mm) scale(1, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
