@@ -264,10 +264,10 @@
     border-radius: 0 !important;
     margin: 0 0 1mm 0 !important;
     padding: 2mm 6mm !important;
-    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.08) !important;
-    background: linear-gradient(90deg, hsl(130 14% 79% / 0.35) 0%, hsl(0 0% 100%) 50%, hsl(130 14% 79% / 0.25) 100%) !important;
-    border: 1.5px solid hsl(130 10% 82%) !important;
-    border-bottom: 2.5px solid hsl(130 7% 61%) !important; /* Dark sage accent bottom */
+    box-shadow: 0 2px 8px hsl(130 10% 50% / 0.12) !important;
+    background: linear-gradient(90deg, hsl(130 14% 79% / 0.5) 0%, hsl(130 14% 90% / 0.3) 50%, hsl(130 14% 79% / 0.4) 100%) !important;
+    border: 1.5px solid hsl(130 7% 61%) !important;
+    border-bottom: 3px solid hsl(130 7% 61%) !important; /* Dark sage accent bottom */
   }
 
   .print-header > * {
