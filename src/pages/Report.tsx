@@ -1585,8 +1585,20 @@ const Report = () => {
               </div>
               <div className="p-2.5">
                 <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
-                <div className="mt-2 text-[10px] text-muted-foreground">
-                  <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                <div className="mt-2 flex items-center gap-4 text-[10px]">
+                  <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
+                    <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
+                    <Input
+                      value={editableCustomer}
+                      onChange={(e) => setEditableCustomer(e.target.value)}
+                      placeholder="Customer name"
+                      className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-5 text-[10px] flex-1 focus-visible:ring-0 no-print"
+                    />
+                    <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             </Card>
