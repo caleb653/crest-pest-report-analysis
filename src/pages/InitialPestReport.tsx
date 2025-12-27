@@ -109,6 +109,7 @@ const Report = () => {
   } = location.state || {};
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
+  const [editableAddress, setEditableAddress] = useState<string>(address || "");
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
@@ -362,6 +363,7 @@ const Report = () => {
       setEditableTech(row.technician_name);
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
+      setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
       setEditableExpectations((row.next_steps as string[]) || []);
 
@@ -564,7 +566,7 @@ const Report = () => {
       const reportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
-        address: extractedAddress || address,
+        address: editableAddress || extractedAddress || address,
         notes: notes,
         findings: editableFindings,
         recommendations: [],
@@ -678,7 +680,7 @@ const Report = () => {
     }
   };
 
-  const displayAddress = extractedAddress || address || "Not provided";
+  const displayAddress = editableAddress || extractedAddress || address || "Not provided";
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     setter((prev) => {
@@ -856,7 +858,13 @@ const Report = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Address:</span>
-                          <span className="text-foreground">{displayAddress}</span>
+                          <Input
+                            value={editableAddress || extractedAddress}
+                            onChange={(e) => setEditableAddress(e.target.value)}
+                            placeholder="Enter address"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print"
+                          />
+                          <span className="print-only-text hidden text-foreground">{displayAddress}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-20">Service Date:</span>
@@ -1137,6 +1145,15 @@ const Report = () => {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Address</label>
+                    <Input
+                      value={editableAddress || extractedAddress}
+                      onChange={(e) => setEditableAddress(e.target.value)}
+                      placeholder="Enter address"
+                      className="text-base"
+                    />
                   </div>
                   {editableLicenseNumber && (
                     <div className="text-sm text-muted-foreground">
