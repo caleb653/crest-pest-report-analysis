@@ -10,6 +10,8 @@ import boxIcon from '@/assets/icons/box-icon.svg';
 import squareIcon from '@/assets/icons/square-icon.svg';
 import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
+import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
+import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
 
 interface MapCanvasProps {
   mapUrl: string;
@@ -33,6 +35,8 @@ const AVAILABLE_ICONS = [
   { icon: 'square', label: 'Bait Box', symbol: '■', svgPath: squareIcon },
   { icon: 'tree', label: 'Trim Trees', symbol: '▼', svgPath: treeIcon },
   { icon: 'circle', label: 'Mosquito Station', symbol: '◯', svgPath: circleIcon },
+  { icon: 'entry-point', label: 'Entry Point', symbol: '⊙', svgPath: entryPointIcon },
+  { icon: 'water-source', label: 'Water Source', symbol: '💧', svgPath: waterSourceIcon },
 ];
 
 // Reference size for normalizing coordinates (3:4 aspect ratio to match container)
