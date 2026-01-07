@@ -38,7 +38,6 @@ import { inferImageUploadMeta } from "@/lib/imageUpload";
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Marcus Reynolds", license: "FR 41031" },
   { name: "Jesse Angulo", license: "FR 51548" },
   { name: "Jake Shubin", license: "RA 71439" },
   { name: "Caleb Whalen", license: "RA 71438" },
