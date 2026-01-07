@@ -13,7 +13,6 @@ const SelectTechnician = () => {
     "Alexis Rodriguez",
     "Darrell Tanner",
     "Jesse Angulo",
-    "Marcus Reynolds",
     "Caleb Whalen",
     "Jacob Shubin"
   ];
