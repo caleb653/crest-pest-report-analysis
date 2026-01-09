@@ -1634,19 +1634,21 @@ const Report = () => {
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs font-bold">Customer Signature</span>
+              <div className="print-section-header py-1 px-2 rounded-t-lg">
+                <span className="text-[10px] font-bold">Customer Signature</span>
               </div>
-              <div className="p-2.5">
-                <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
-                <div className="mt-2 flex items-center gap-4 text-[10px]">
+              <div className="p-1.5">
+                <div className="h-[60px]">
+                  <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
+                </div>
+                <div className="mt-1 flex items-center gap-3 text-[9px]">
                   <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
                     <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
                     <Input
                       value={editableCustomer}
                       onChange={(e) => setEditableCustomer(e.target.value)}
                       placeholder="Customer name"
-                      className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-5 text-[10px] flex-1 focus-visible:ring-0 no-print"
+                      className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
                     />
                     <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
                   </div>
@@ -1659,30 +1661,16 @@ const Report = () => {
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-[10px] font-bold">Pesticide Notice</span>
+              <div className="print-section-header py-1 px-2 rounded-t-lg">
+                <span className="text-[9px] font-bold">Pesticide Notice</span>
               </div>
-              <div className="p-2.5">
-                <div className="text-[9px] leading-tight text-foreground space-y-0">
+              <div className="p-1.5">
+                <div className="text-[7px] leading-[1.2] text-foreground">
                   <p>
-                    State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC
-                    CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest
-                    Control Board, and apply pesticides which are registered and approved for use by the California
-                    Department of Pesticide Regulation and the United States Environmental Protection Agency.
-                    Registration is granted when the state finds that, based on existing scientific evidence, there are
-                    no appreciable risks if proper use conditions are followed or that the risks are outweighed by the
-                    benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized.
+                    State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
                   </p>
-                  <p>
-                    If within 24 hours following application you experience symptoms similar to common seasonal illness
-                    comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest
-                    control company immediately.
-                  </p>
-                  <p className="font-medium">
-                    For further information, contact any of the following: Your Pest Control Company (949-424-5000); for
-                    Health Questions--the County Health Department (800-564-8448); for Application Information--the
-                    County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest
-                    Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
+                  <p className="font-medium mt-0.5">
+                    For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
                   </p>
                 </div>
               </div>
