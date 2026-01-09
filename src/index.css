@@ -605,4 +605,28 @@
     page-break-inside: auto !important;
     break-inside: auto !important;
   }
+
+  /* Page 2 Additional Details section - allow full height */
+  .print-page-break .print-section {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Make Additional Details editor content fully visible in print */
+  .print-page-break [contenteditable="true"],
+  .print-page-break .min-h-\\[460px\\],
+  .print-page-break .min-h-\\[580px\\] {
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure page 2 right column doesn't clip content */
+  .print-page-break .flex-col.h-full {
+    height: auto !important;
+    min-height: 160mm !important;
+    overflow: visible !important;
+  }
 }
