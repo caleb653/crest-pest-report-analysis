@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Home,
@@ -27,6 +26,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
+import RichTextEditor from "@/components/RichTextEditor";
 import crestLogo from "@/assets/crest-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1558,37 +1558,14 @@ const Report = () => {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col space-y-1">
-                    <div className="flex gap-1 mb-1 no-print items-center">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">Size:</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setProposedServicesFontSize(prev => Math.max(8, prev - 1))}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </Button>
-                        <span className="text-xs w-6 text-center">{proposedServicesFontSize}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setProposedServicesFontSize(prev => Math.min(24, prev + 1))}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <Textarea
+                    <RichTextEditor
                       key={serviceTypesKey}
                       value={editableFindings[0] || ""}
-                      onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
-                      className="flex-1 leading-relaxed resize-none"
-                      style={{ fontSize: `${proposedServicesFontSize}px` }}
-                      placeholder="Enter proposed services..."
+                      onChange={(newValue) => updateItem(0, newValue, setEditableFindings)}
+                      placeholder="• Enter proposed services..."
+                      fontSize={proposedServicesFontSize}
+                      onFontSizeChange={setProposedServicesFontSize}
+                      className="flex-1"
                     />
                     <Button
                       type="button"
@@ -1808,34 +1785,13 @@ const Report = () => {
                   />
                 </div>
                 <div className="p-3 flex-1 flex flex-col">
-                  <div className="flex items-center gap-1 mb-2 no-print">
-                    <span className="text-xs text-muted-foreground">Font Size:</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAdditionalDetailsFontSize(prev => Math.max(8, prev - 1))}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="text-xs w-6 text-center">{additionalDetailsFontSize}</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setAdditionalDetailsFontSize(prev => Math.min(24, prev + 1))}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
-                  <Textarea
+                  <RichTextEditor
                     value={additionalDetails}
-                    onChange={(e) => setAdditionalDetails(e.target.value)}
-                    placeholder="Enter any additional details, notes, or observations..."
-                    className="flex-1 resize-none min-h-[400px] print:min-h-[450px]"
-                    style={{ fontSize: `${additionalDetailsFontSize}px` }}
+                    onChange={setAdditionalDetails}
+                    placeholder="• Enter any additional details, notes, or observations..."
+                    fontSize={additionalDetailsFontSize}
+                    onFontSizeChange={setAdditionalDetailsFontSize}
+                    className="flex-1 min-h-[400px] print:min-h-[450px]"
                   />
                 </div>
               </Card>
