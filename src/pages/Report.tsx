@@ -292,6 +292,10 @@ const Report = () => {
   // Aggregate target pests and proposed services whenever selected service types change
   const serviceTypesKey = services.map((s) => s.serviceType).join(",");
 
+  // Track if user has manually edited proposed services
+  const [userEditedFindings, setUserEditedFindings] = useState(false);
+  const findingsEditedRef = useRef(false);
+
   useEffect(() => {
     const allPests = new Set<string>();
     const allProposedServices: string[] = [];
@@ -310,10 +314,11 @@ const Report = () => {
       setEditableTargetPests(Array.from(allPests));
     }
 
+    // Only auto-populate proposed services if user hasn't manually edited them
     // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
     // Convert to bullet format for default display
     const combinedProposedServices = allProposedServices.join(" ").trim();
-    if (combinedProposedServices) {
+    if (combinedProposedServices && !findingsEditedRef.current) {
       const bulletFormatted = combinedProposedServices
         .split(/[.]\s*/)
         .filter((line) => line.trim())
@@ -489,6 +494,11 @@ const Report = () => {
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
+      // Mark findings as edited if there was saved data, to prevent auto-override
+      if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
+        findingsEditedRef.current = true;
+        setUserEditedFindings(true);
+      }
 
       // Load new fields
       if (row.customer_signature) {
@@ -1558,10 +1568,13 @@ const Report = () => {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col space-y-1">
-                    <RichTextEditor
-                      key={serviceTypesKey}
+                  <RichTextEditor
                       value={editableFindings[0] || ""}
-                      onChange={(newValue) => updateItem(0, newValue, setEditableFindings)}
+                      onChange={(newValue) => {
+                        findingsEditedRef.current = true;
+                        setUserEditedFindings(true);
+                        updateItem(0, newValue, setEditableFindings);
+                      }}
                       placeholder="• Enter proposed services..."
                       fontSize={proposedServicesFontSize}
                       onFontSizeChange={setProposedServicesFontSize}
@@ -1791,7 +1804,7 @@ const Report = () => {
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="flex-1 min-h-[400px] print:min-h-[450px]"
+                    className="flex-1 min-h-[460px] print:min-h-[520px]"
                   />
                 </div>
               </Card>
