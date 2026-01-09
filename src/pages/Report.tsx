@@ -1785,7 +1785,7 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-[500px]">
+            <div className="flex flex-col h-full print:h-auto print:min-h-[600px]">
               {/* Additional Details Section - takes full height */}
               <Card className="print-section p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1804,7 +1804,7 @@ const Report = () => {
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="flex-1 min-h-[460px] print:min-h-[520px]"
+                    className="flex-1 min-h-[460px] print:min-h-[580px]"
                   />
                 </div>
               </Card>
