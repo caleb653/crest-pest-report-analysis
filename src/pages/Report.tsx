@@ -823,16 +823,8 @@ const Report = () => {
 
   const formatProposedServices = (text: string): string => {
     if (!text) return "";
-    // Check if text already has bullets or line breaks
-    if (text.includes("•") || text.includes("\n") || text.includes("<br")) {
-      return text.replace(/\n/g, "<br/>");
-    }
-    // Default: convert sentences to bullets
-    return text
-      .split(/[.]\s*/)
-      .filter((line) => line.trim())
-      .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
-      .join("<br/>") || "";
+    // Just preserve the text exactly as entered, converting newlines for HTML display
+    return text.replace(/\n/g, "<br/>");
   };
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
