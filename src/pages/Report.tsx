@@ -65,26 +65,29 @@ const PEST_OPTIONS = [
 ];
 
 const PRODUCT_OPTIONS = [
-  "Alpine WSG",
-  "Bifen I/T",
-  "Essentria IC Pro",
-  "Temprid FX",
-  "Termidor SC",
-  "Phantom",
-  "Onslaught",
-  "Gentrol IGR",
-  "Nyguard IGR",
-  "PT Wasp Freeze II",
-  "Gentrol Aerosol",
-  "Shockwave 1",
-  "Essentria G",
-  "Bifen LP",
-  "Advion Ant Gel Bait",
-  "Advion Cockroach Gel Bait",
-  "Contrac All Weather Blox",
-  "DeltaDust",
-  "Maxforce FC Ant Gel",
-  "Other",
+  { name: "Alpine WSG", chemical: "Dinotefuran" },
+  { name: "Bifen I/T", chemical: "Bifenthrin" },
+  { name: "Essentria IC Pro", chemical: "Geraniol, Clove Oil, Cornmint Oil" },
+  { name: "Temprid FX", chemical: "Imidacloprid, Cyfluthrin" },
+  { name: "Termidor SC", chemical: "Fipronil" },
+  { name: "Phantom", chemical: "Chlorfenapyr" },
+  { name: "ExciteR", chemical: "Pyrethrins, Piperonyl Butoxide" },
+  { name: "Gentrol IGR Concentrate", chemical: "(S)-Hydroprene" },
+  { name: "Nyguard IGR Concentrate", chemical: "Pyridine" },
+  { name: "PT Wasp Freeze", chemical: "Prallethrin" },
+  { name: "PT Alpine Flea & Bed Bug", chemical: "Dinotefuran, Pyriproxyfen, Prallethrin" },
+  { name: "PT Alpine Fly Bait", chemical: "" },
+  { name: "Gentrol Aerosol", chemical: "(S)-Hydroprene" },
+  { name: "Bedlam", chemical: "Cyclopropanecarboxylate, Dicarboximide" },
+  { name: "Invade Hot Spot +", chemical: "" },
+  { name: "Niban", chemical: "Orthoboric Acid" },
+  { name: "Bifen LP", chemical: "Bifenthrin" },
+  { name: "Advion Ant Gel Bait", chemical: "Indoxacarb" },
+  { name: "Maxforce FC Ant Gel", chemical: "Fipronil" },
+  { name: "Advion Cockroach Gel Bait", chemical: "Indoxacarb" },
+  { name: "Contrac California", chemical: "Bromethalin" },
+  { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
+  { name: "In2Care Mix", chemical: "Pyriproxyfen, Beauveria bassiana Strain GHA" },
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
@@ -351,6 +354,11 @@ const Report = () => {
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
+  const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
+  const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
+  const [customProductName, setCustomProductName] = useState("");
+  const [customProductChemical, setCustomProductChemical] = useState("");
 
   const expandWithAI = async (
     text: string,
@@ -1486,29 +1494,52 @@ const Report = () => {
                 </div>
                 <div className="p-2.5">
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
-                    <p>Alpine WSG (Dinotefuran)</p>
-                    <p>Bifen I/T (Bifenthrin)</p>
-                    <p>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</p>
-                    <p>Temprid FX (Imidacloprid, Cyfluthrin)</p>
-                    <p>Termidor SC (Fipronil)</p>
-                    <p>Phantom (Chlorfenapyr)</p>
-                    <p>ExciteR (Pyrethrins, Piperonyl Butoxide)</p>
-                    <p>Gentrol IGR Concentrate ((S)-Hydroprene)</p>
-                    <p>Nyguard IGR Concentrate (Pyridine)</p>
-                    <p>PT Wasp Freeze (Prallethrin)</p>
-                    <p>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</p>
-                    <p>PT Alpine Fly Bait</p>
-                    <p>Gentrol Aerosol ((S)-Hydroprene)</p>
-                    <p>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</p>
-                    <p>Invade Hot Spot +</p>
-                    <p>Niban (Orthoboric Acid)</p>
-                    <p>Bifen LP (Bifenthrin)</p>
-                    <p>Advion Ant Gel Bait (Indoxacarb)</p>
-                    <p>Maxforce FC Ant Gel (Fipronil)</p>
-                    <p>Advion Cockroach Gel Bait (Indoxacarb)</p>
-                    <p>Contrac California (Bromethalin)</p>
-                    <p>Delta Dust (Bayer) (Deltamethrin)</p>
-                    <p>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</p>
+                    {displayedProducts.map((product, index) => (
+                      <div key={index} className="flex items-center gap-1 group">
+                        <p className="flex-1">
+                          {product.name}{product.chemical ? ` (${product.chemical})` : ""}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setDisplayedProducts(prev => prev.filter((_, i) => i !== index))}
+                          className="no-print opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Add custom product */}
+                  <div className="no-print mt-2 pt-2 border-t border-border space-y-1">
+                    <div className="flex gap-1">
+                      <Input
+                        value={customProductName}
+                        onChange={(e) => setCustomProductName(e.target.value)}
+                        placeholder="Product name"
+                        className="h-6 text-xs flex-1"
+                      />
+                      <Input
+                        value={customProductChemical}
+                        onChange={(e) => setCustomProductChemical(e.target.value)}
+                        placeholder="Chemical (optional)"
+                        className="h-6 text-xs flex-1"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2"
+                        onClick={() => {
+                          if (customProductName.trim()) {
+                            setDisplayedProducts(prev => [...prev, { name: customProductName.trim(), chemical: customProductChemical.trim() }]);
+                            setCustomProductName("");
+                            setCustomProductChemical("");
+                          }
+                        }}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -1527,7 +1558,7 @@ const Report = () => {
                   </div>
                 ) : (
                   <div className="flex-1 flex flex-col space-y-1">
-                    <div className="flex gap-1 mb-1 no-print">
+                    <div className="flex gap-1 mb-1 no-print items-center">
                       <Button
                         type="button"
                         variant="outline"
@@ -1537,12 +1568,35 @@ const Report = () => {
                       >
                         B
                       </Button>
+                      <div className="flex items-center gap-1 ml-2">
+                        <span className="text-xs text-muted-foreground">Size:</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setProposedServicesFontSize(prev => Math.max(8, prev - 1))}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="text-xs w-6 text-center">{proposedServicesFontSize}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setProposedServicesFontSize(prev => Math.min(24, prev + 1))}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     <div
                       key={serviceTypesKey}
                       contentEditable
                       suppressContentEditableWarning
-                      className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background whitespace-pre-wrap"
+                      className="flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background whitespace-pre-wrap"
+                      style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{
                         __html: formatProposedServices(editableFindings[0] || ""),
                       }}
@@ -1785,11 +1839,34 @@ const Report = () => {
                   />
                 </div>
                 <div className="p-3">
+                  <div className="flex items-center gap-1 mb-2 no-print">
+                    <span className="text-xs text-muted-foreground">Font Size:</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalDetailsFontSize(prev => Math.max(8, prev - 1))}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-xs w-6 text-center">{additionalDetailsFontSize}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalDetailsFontSize(prev => Math.min(24, prev + 1))}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <Textarea
                     value={additionalDetails}
                     onChange={(e) => setAdditionalDetails(e.target.value)}
                     placeholder="Enter any additional details, notes, or observations..."
-                    className="min-h-[100px] print:min-h-[80px] text-sm resize-none"
+                    className="min-h-[100px] print:min-h-[80px] resize-none"
+                    style={{ fontSize: `${additionalDetailsFontSize}px` }}
                   />
                 </div>
               </Card>
