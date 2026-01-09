@@ -1779,7 +1779,7 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details + Property Images */}
-            <div className="flex flex-col gap-4 mt-12 print:mt-8">
+            <div className="flex flex-col gap-4 mt-16 print:mt-10">
               {/* Additional Details Section */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
