@@ -1595,7 +1595,7 @@ const Report = () => {
                       key={serviceTypesKey}
                       contentEditable
                       suppressContentEditableWarning
-                      className="leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-y-auto bg-background whitespace-pre-wrap"
+                      className="leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-hidden bg-background whitespace-pre-wrap"
                       style={{ fontSize: `${proposedServicesFontSize}px`, height: '180px', maxHeight: '180px', minHeight: '180px' }}
                       dangerouslySetInnerHTML={{
                         __html: formatProposedServices(editableFindings[0] || ""),
