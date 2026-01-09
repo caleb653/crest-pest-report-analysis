@@ -1637,11 +1637,11 @@ const Report = () => {
               <div className="print-section-header py-1 px-2 rounded-t-lg">
                 <span className="text-[10px] font-bold">Customer Signature</span>
               </div>
-              <div className="p-1.5">
-                <div className="h-[60px]">
+              <div className="p-1.5 pb-3">
+                <div className="h-[60px] relative mb-6">
                   <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                 </div>
-                <div className="mt-1 flex items-center gap-3 text-[9px]">
+                <div className="flex items-center gap-3 text-[9px]">
                   <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
                     <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
                     <Input
