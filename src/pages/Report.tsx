@@ -254,6 +254,7 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
+  const [additionalDetailsHeader, setAdditionalDetailsHeader] = useState("Additional Details");
   // Multiple services support
   interface ServiceItem {
     serviceType: string;
@@ -1775,7 +1776,12 @@ const Report = () => {
               {/* Additional Details Section */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs font-bold">Additional Details</span>
+                  <input
+                    type="text"
+                    value={additionalDetailsHeader}
+                    onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
+                    className="text-xs font-bold bg-transparent border-none outline-none w-full"
+                  />
                 </div>
                 <div className="p-3">
                   <Textarea
