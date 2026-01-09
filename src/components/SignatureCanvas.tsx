@@ -131,15 +131,15 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
     };
 
     return (
-      <div className="space-y-1">
+      <div className="h-full flex flex-col">
         {label && (
           <span className="text-sm font-medium text-foreground">{label}</span>
         )}
-        <div className="relative">
-          <div className="border-2 border-border rounded-lg bg-white overflow-hidden">
+        <div className="relative flex-1 flex">
+          <div className="border-2 border-border rounded-lg bg-white overflow-hidden flex-1">
             <canvas
               ref={canvasRef}
-              className="w-full h-24 cursor-crosshair touch-none"
+              className="w-full h-full cursor-crosshair touch-none"
               onPointerDown={startDrawing}
               onPointerMove={draw}
               onPointerUp={stopDrawing}
@@ -153,7 +153,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
               variant="ghost"
               size="sm"
               onClick={clearSignature}
-              className="no-print h-5 text-xs absolute -bottom-5 right-0 px-1"
+              className="no-print h-5 text-xs absolute top-0 right-0 px-1 bg-background/80"
             >
               <Eraser className="w-3 h-3 mr-1" />
               Clear
