@@ -1780,7 +1780,7 @@ const Report = () => {
                     type="text"
                     value={additionalDetailsHeader}
                     onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
-                    className="text-xs font-bold bg-transparent border-none outline-none w-full text-white focus:bg-black focus:rounded px-1 -mx-1"
+                    className="text-xs font-bold border-none outline-none w-full text-white bg-black rounded px-1 -mx-1"
                   />
                 </div>
                 <div className="p-3">
