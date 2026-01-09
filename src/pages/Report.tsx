@@ -307,15 +307,15 @@ const Report = () => {
     }
 
     // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
+    // Convert to bullet format for default display
     const combinedProposedServices = allProposedServices.join(" ").trim();
-    const normalizedProposedServices = combinedProposedServices
-      ? combinedProposedServices.endsWith(".")
-        ? combinedProposedServices
-        : combinedProposedServices + "."
-      : "";
-
-    if (normalizedProposedServices) {
-      setEditableFindings([normalizedProposedServices]);
+    if (combinedProposedServices) {
+      const bulletFormatted = combinedProposedServices
+        .split(/[.]\s*/)
+        .filter((line) => line.trim())
+        .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
+        .join("\n");
+      setEditableFindings([bulletFormatted]);
     }
   }, [serviceTypesKey]);
 
