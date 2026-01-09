@@ -115,6 +115,13 @@
     gap: 0.35rem;
   }
 
+  .print-section-header input {
+    background: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    caret-color: #ffffff !important;
+  }
+
   .print-section-content {
     background: hsl(var(--card)) !important;
     color: hsl(var(--foreground)) !important;
