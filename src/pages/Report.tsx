@@ -164,7 +164,7 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 200,
     defaultRecurring: 60,
   },
-  Attic: {
+  "Attic Services (see details below)": {
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
