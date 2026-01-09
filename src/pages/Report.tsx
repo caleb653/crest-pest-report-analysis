@@ -1151,7 +1151,7 @@ const Report = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24">Name:</span>
                           <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
                               <SelectValue placeholder="Select technician" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1162,6 +1162,7 @@ const Report = () => {
                               ))}
                             </SelectContent>
                           </Select>
+                          <span className="print-only-text hidden text-foreground">{editableTech}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground w-24 whitespace-nowrap">License Number:</span>
@@ -1785,7 +1786,7 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-[600px]">
+            <div className="flex flex-col h-full print:h-auto print:min-h-[600px] print:mt-[5%]">
               {/* Additional Details Section - takes full height */}
               <Card className="print-section p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
