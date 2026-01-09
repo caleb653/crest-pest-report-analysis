@@ -626,7 +626,7 @@
   /* Ensure page 2 right column doesn't clip content */
   .print-page-break .flex-col.h-full {
     height: auto !important;
-    min-height: 160mm !important;
+    min-height: 140mm !important;
     overflow: visible !important;
   }
 }
