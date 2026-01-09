@@ -254,8 +254,6 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
-  const [proposedServicesHeader, setProposedServicesHeader] = useState("Proposed Services");
-  const [additionalDetailsHeader, setAdditionalDetailsHeader] = useState("Additional Details");
   // Multiple services support
   interface ServiceItem {
     serviceType: string;
@@ -1518,12 +1516,7 @@ const Report = () => {
             {/* Right Column - Proposed Services */}
             <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <input
-                  type="text"
-                  value={proposedServicesHeader}
-                  onChange={(e) => setProposedServicesHeader(e.target.value)}
-                  className="text-xs font-bold bg-transparent border-none outline-none w-full uppercase"
-                />
+                <span className="text-xs font-bold">Proposed Services</span>
               </div>
               <div className="p-3 flex-1 flex flex-col">
                 {isAnalyzing ? (
@@ -1782,12 +1775,7 @@ const Report = () => {
               {/* Additional Details Section */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <input
-                    type="text"
-                    value={additionalDetailsHeader}
-                    onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
-                    className="text-xs font-bold bg-transparent border-none outline-none w-full uppercase"
-                  />
+                  <span className="text-xs font-bold">Additional Details</span>
                 </div>
                 <div className="p-3">
                   <Textarea
