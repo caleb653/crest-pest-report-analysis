@@ -348,6 +348,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
+  const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
 
   const expandWithAI = async (
@@ -504,6 +505,9 @@ const Report = () => {
       }
       if (row.report_title) {
         setEditableTitle(row.report_title);
+      }
+      if (row.notes) {
+        setAdditionalDetails(row.notes);
       }
 
       console.log("Loading report map_data:", {
@@ -700,7 +704,7 @@ const Report = () => {
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
-        notes: notes,
+        notes: additionalDetails || notes,
         findings: editableFindings,
         recommendations: [],
         next_steps: [],
@@ -816,6 +820,20 @@ const Report = () => {
   };
 
   const displayAddress = editableAddress || extractedAddress || address || "Not provided";
+
+  const formatProposedServices = (text: string): string => {
+    if (!text) return "";
+    // Check if text already has bullets or line breaks
+    if (text.includes("•") || text.includes("\n") || text.includes("<br")) {
+      return text.replace(/\n/g, "<br/>");
+    }
+    // Default: convert sentences to bullets
+    return text
+      .split(/[.]\s*/)
+      .filter((line) => line.trim())
+      .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
+      .join("<br/>") || "";
+  };
 
   const updateItem = (index: number, value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
     setter((prev) => {
@@ -1531,27 +1549,17 @@ const Report = () => {
                       key={serviceTypesKey}
                       contentEditable
                       suppressContentEditableWarning
-                      className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background"
+                      className="text-xs flex-1 min-h-[100px] leading-relaxed border border-input rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{
-                        __html:
-                          (editableFindings[0] || "")
-                            .split(/[.]\s*/)
-                            .filter((line) => line.trim())
-                            .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
-                            .join("<br/>") || "",
+                        __html: formatProposedServices(editableFindings[0] || ""),
                       }}
                       onBlur={(e) => {
-                        // Just grab the text as-is without forcing format
+                        // Preserve the content as-is, just clean up HTML
                         const html = e.currentTarget.innerHTML;
-                        // Convert to plain text, preserving line breaks
                         const text = html
                           .replace(/<br\s*\/?>/gi, "\n")
-                          .replace(/<[^>]+>/g, "")
-                          .split("\n")
-                          .map((line) => line.replace(/^[•\-\*]\s*/, "").trim())
-                          .filter((line) => line)
-                          .join(". ");
-                        updateItem(0, text ? text + "." : "", setEditableFindings);
+                          .replace(/<[^>]+>/g, "");
+                        updateItem(0, text.trim(), setEditableFindings);
                       }}
                     />
                     <Button
@@ -1840,6 +1848,21 @@ const Report = () => {
               )}
             </div>
           </div>
+
+          {/* Additional Details Section */}
+          <Card className="print-section p-0 overflow-hidden rounded-lg mt-4">
+            <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+              <span className="text-xs font-bold">Additional Details</span>
+            </div>
+            <div className="p-3">
+              <Textarea
+                value={additionalDetails}
+                onChange={(e) => setAdditionalDetails(e.target.value)}
+                placeholder="Enter any additional details, notes, or observations..."
+                className="min-h-[120px] text-sm resize-none"
+              />
+            </div>
+          </Card>
         </div>
       </div>
     </div>
