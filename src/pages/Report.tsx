@@ -1778,91 +1778,94 @@ const Report = () => {
               </div>
             </div>
 
-            {/* Property Images Section - appears to right on print */}
-            <div>
-              {/* Upload Section */}
-              <div className="no-print mb-4">
-                <div className="relative inline-flex">
-                  <Button variant="outline" size="sm" type="button">
-                    <FileDown className="w-4 h-4 mr-2" />
-                    Upload Images (up to 8)
-                  </Button>
-                  <input
-                    id="property-images-upload"
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onClick={(e) => {
-                      (e.currentTarget as HTMLInputElement).value = "";
-                    }}
-                    onChange={handlePropertyImagesUpload}
-                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                    aria-label="Upload property images"
+            {/* Right Column - Additional Details + Property Images */}
+            <div className="flex flex-col gap-4">
+              {/* Additional Details Section */}
+              <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs font-bold">Additional Details</span>
+                </div>
+                <div className="p-3">
+                  <Textarea
+                    value={additionalDetails}
+                    onChange={(e) => setAdditionalDetails(e.target.value)}
+                    placeholder="Enter any additional details, notes, or observations..."
+                    className="min-h-[100px] print:min-h-[80px] text-sm resize-none"
                   />
                 </div>
-              </div>
+              </Card>
 
-              {/* Property Images Grid */}
-              {propertyImages.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[4mm] print:grid-cols-2 print:mt-[18mm]">
-                  {propertyImages.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`space-y-1 print:space-y-0 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? "opacity-50" : ""}`}
-                      draggable
-                      onDragStart={() => handleImageDragStart(index)}
-                      onDragOver={(e) => handleImageDragOver(e, index)}
-                      onDragEnd={handleImageDragEnd}
-                    >
-                      <div className="aspect-[4/3] print:w-[48mm] print:h-[36.5mm] rounded-md overflow-hidden border border-border bg-muted print:rounded-sm print:border">
-                        <img
-                          src={item.image}
-                          alt={`Property ${index + 1}`}
-                          className="w-full h-full object-cover pointer-events-none"
+              {/* Property Images Section */}
+              <div>
+                {/* Upload Section */}
+                <div className="no-print mb-2">
+                  <div className="relative inline-flex">
+                    <Button variant="outline" size="sm" type="button">
+                      <FileDown className="w-4 h-4 mr-2" />
+                      Upload Images (up to 8)
+                    </Button>
+                    <input
+                      id="property-images-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onClick={(e) => {
+                        (e.currentTarget as HTMLInputElement).value = "";
+                      }}
+                      onChange={handlePropertyImagesUpload}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Upload property images"
+                    />
+                  </div>
+                </div>
+
+                {/* Property Images Grid */}
+                {propertyImages.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 print:gap-[3mm] print:grid-cols-2">
+                    {propertyImages.map((item, index) => (
+                      <div
+                        key={index}
+                        className={`space-y-1 print:space-y-0 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? "opacity-50" : ""}`}
+                        draggable
+                        onDragStart={() => handleImageDragStart(index)}
+                        onDragOver={(e) => handleImageDragOver(e, index)}
+                        onDragEnd={handleImageDragEnd}
+                      >
+                        <div className="aspect-[4/3] print:w-[42mm] print:h-[32mm] rounded-md overflow-hidden border border-border bg-muted print:rounded-sm print:border">
+                          <img
+                            src={item.image}
+                            alt={`Property ${index + 1}`}
+                            className="w-full h-full object-cover pointer-events-none"
+                          />
+                        </div>
+                        <Input
+                          value={item.caption || ""}
+                          onChange={(e) => updateImageCaption(index, e.target.value)}
+                          placeholder="Caption"
+                          className="no-print text-xs h-7"
                         />
+                        {/* Print-only caption */}
+                        {item.caption && (
+                          <p className="hidden print:block text-[7px] text-foreground font-medium mt-0.5 leading-tight truncate max-w-[38mm]">
+                            {item.caption}
+                          </p>
+                        )}
                       </div>
-                      <Input
-                        value={item.caption || ""}
-                        onChange={(e) => updateImageCaption(index, e.target.value)}
-                        placeholder="Caption"
-                        className="no-print text-xs h-7"
-                      />
-                      {/* Print-only caption */}
-                      {item.caption && (
-                        <p className="hidden print:block text-[8px] text-foreground font-medium mt-0.5 leading-tight truncate max-w-[38mm]">
-                          {item.caption}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
-                  <p className="text-sm text-center px-4">
-                    No images uploaded yet.
-                    <br />
-                    Click the button above to upload up to 8 images.
-                  </p>
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-[200px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+                    <p className="text-sm text-center px-4">
+                      No images uploaded yet.
+                      <br />
+                      Click the button above to upload up to 8 images.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Additional Details Section */}
-          <Card className="print-section p-0 overflow-hidden rounded-lg mt-4">
-            <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-              <span className="text-xs font-bold">Additional Details</span>
-            </div>
-            <div className="p-3">
-              <Textarea
-                value={additionalDetails}
-                onChange={(e) => setAdditionalDetails(e.target.value)}
-                placeholder="Enter any additional details, notes, or observations..."
-                className="min-h-[120px] text-sm resize-none"
-              />
-            </div>
-          </Card>
         </div>
       </div>
     </div>
