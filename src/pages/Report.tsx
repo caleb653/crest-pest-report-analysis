@@ -418,6 +418,7 @@ const Report = () => {
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
+  const [showSignature, setShowSignature] = useState(true);
   const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [customProductName, setCustomProductName] = useState("");
   const [customProductChemical, setCustomProductChemical] = useState("");
@@ -1444,11 +1445,11 @@ const Report = () => {
                 <div className="text-sm font-bold text-right">Total:</div>
                 <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                   <span className="text-muted-foreground mr-auto">$</span>
-                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0))}</span>
+                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
                 <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                   <span className="text-muted-foreground mr-auto">$</span>
-                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0))}</span>
+                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
                 <div></div>
                 <div></div>
@@ -1662,31 +1663,52 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-1 px-2 rounded-t-lg">
-                <span className="text-[10px] font-bold">Customer Signature</span>
-              </div>
-              <div className="p-1.5">
-                <div className="h-[45px] relative">
-                  <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
+            {showSignature ? (
+              <Card className="print-section p-0 overflow-hidden rounded-lg relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-0.5 right-0.5 h-5 w-5 p-0 no-print z-10"
+                  onClick={() => setShowSignature(false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+                <div className="print-section-header py-1 px-2 rounded-t-lg">
+                  <span className="text-[10px] font-bold">Customer Signature</span>
                 </div>
-                <div className="flex items-center gap-3 text-[9px]">
-                  <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
-                    <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
-                    <Input
-                      value={editableCustomer}
-                      onChange={(e) => setEditableCustomer(e.target.value)}
-                      placeholder="Customer name"
-                      className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
-                    />
-                    <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                <div className="p-1.5">
+                  <div className="h-[45px] relative">
+                    <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                   </div>
-                  <div className="text-muted-foreground">
-                    <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                  <div className="flex items-center gap-3 text-[9px]">
+                    <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
+                      <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
+                      <Input
+                        value={editableCustomer}
+                        onChange={(e) => setEditableCustomer(e.target.value)}
+                        placeholder="Customer name"
+                        className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
+                      />
+                      <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                    </div>
+                    <div className="text-muted-foreground">
+                      <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                    </div>
                   </div>
                 </div>
+              </Card>
+            ) : (
+              <div className="flex items-center justify-center no-print">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setShowSignature(true)}
+                >
+                  Show Signature Box
+                </Button>
               </div>
-            </Card>
+            )}
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
