@@ -610,7 +610,8 @@
   .print-page-break .additional-details-card {
     page-break-inside: auto !important;
     break-inside: auto !important;
-    height: 165mm !important;
+    margin-top: 8mm !important;
+    height: 172mm !important;
   }
 
   .print-page-break .additional-details-body {
@@ -619,8 +620,8 @@
 
   .print-page-break .additional-details-editor {
     min-height: 0 !important;
-    height: 150mm !important;
-    max-height: 150mm !important;
+    height: 158mm !important;
+    max-height: 158mm !important;
     overflow: hidden !important;
     padding: 2mm 3mm !important;
   }
