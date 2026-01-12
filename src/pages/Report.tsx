@@ -1299,86 +1299,88 @@ const Report = () => {
               </Button>
             </div>
 
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1">
-                <div className="flex flex-col items-center shrink-0">
+            <div className="flex items-center justify-between gap-6">
+              {/* Left side: Logo + Title */}
+              <div className="flex items-center gap-4 shrink-0">
+                <div className="flex flex-col items-center">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto object-contain" />
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
-                <div className="flex-1">
+                <div className="flex flex-col justify-center">
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="print-title text-[26px] font-bold text-foreground mt-1 mb-2 bg-transparent border-b border-border px-1 h-9 focus-visible:ring-0"
+                    className="print-title text-[26px] font-bold text-foreground bg-transparent border-b border-border px-1 h-9 w-64 focus-visible:ring-0"
                   />
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-3 gap-6">
-                    {/* Column 1: Customer Info */}
-                    <div>
-                      <p className="font-semibold text-foreground text-xs mb-0.5">Customer Information:</p>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-12">Name:</span>
-                          <Input
-                            value={editableCustomer}
-                            onChange={(e) => setEditableCustomer(e.target.value)}
-                            placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                          />
-                        </div>
-                      </div>
+              {/* Right side: 3-column info grid */}
+              <div className="grid grid-cols-3 gap-6 flex-1">
+                {/* Column 1: Customer Info */}
+                <div>
+                  <p className="font-semibold text-foreground text-xs mb-0.5">Customer Information:</p>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-12">Name:</span>
+                      <Input
+                        value={editableCustomer}
+                        onChange={(e) => setEditableCustomer(e.target.value)}
+                        placeholder="Customer name"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                      />
                     </div>
+                  </div>
+                </div>
 
-                    {/* Column 2: Address & Service Date */}
-                    <div>
-                      <p className="font-semibold text-foreground text-xs mb-0.5">Service Details:</p>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-16">Address:</span>
-                          <Input
-                            value={editableAddress || extractedAddress}
-                            onChange={(e) => setEditableAddress(e.target.value)}
-                            placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-16">Date:</span>
-                          <Input
-                            type="date"
-                            value={editableServiceDate}
-                            onChange={(e) => setEditableServiceDate(e.target.value)}
-                            className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
-                          />
-                        </div>
-                      </div>
+                {/* Column 2: Address & Service Date */}
+                <div>
+                  <p className="font-semibold text-foreground text-xs mb-0.5">Service Details:</p>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Address:</span>
+                      <Input
+                        value={editableAddress || extractedAddress}
+                        onChange={(e) => setEditableAddress(e.target.value)}
+                        placeholder="Enter address"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                      />
                     </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Date:</span>
+                      <Input
+                        type="date"
+                        value={editableServiceDate}
+                        onChange={(e) => setEditableServiceDate(e.target.value)}
+                        className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Column 3: Technician Info */}
-                    <div>
-                      <p className="font-semibold text-foreground text-xs mb-0.5">Technician Information:</p>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-16">Name:</span>
-                          <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
-                              <SelectValue placeholder="Select technician" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TECHNICIANS.map((tech) => (
-                                <SelectItem key={tech.name} value={tech.name} className="text-xs">
-                                  {tech.name} ({tech.license})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <span className="print-only-text hidden text-foreground">{editableTech}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-16">License:</span>
-                          <span className="text-foreground">{editableLicenseNumber || "—"}</span>
-                        </div>
-                      </div>
+                {/* Column 3: Technician Info */}
+                <div>
+                  <p className="font-semibold text-foreground text-xs mb-0.5">Technician Information:</p>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Name:</span>
+                      <Select value={editableTech} onValueChange={handleTechnicianChange}>
+                        <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
+                          <SelectValue placeholder="Select technician" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TECHNICIANS.map((tech) => (
+                            <SelectItem key={tech.name} value={tech.name} className="text-xs">
+                              {tech.name} ({tech.license})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="print-only-text hidden text-foreground">{editableTech}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">License:</span>
+                      <span className="text-foreground">{editableLicenseNumber || "—"}</span>
                     </div>
                   </div>
                 </div>
