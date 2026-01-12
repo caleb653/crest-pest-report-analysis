@@ -277,7 +277,7 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 3mm 6mm !important;
+    padding: 2mm 6mm !important;
     box-shadow: none !important;
     background: hsl(130 14% 89%) !important;
     border: none !important;
@@ -377,7 +377,7 @@
   }
 
   .print-section {
-    margin: 0 0 2.5mm 0 !important;
+    margin: 0 0 1.5mm 0 !important;
     border-radius: 3mm !important;
     box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
     padding: 0 !important;
@@ -389,8 +389,8 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important; /* Brand black #2A2A2A */
-    padding: 2.5mm 4mm 2.5mm 5mm !important;
-    font-size: 14px !important;
+    padding: 1.5mm 4mm 1.5mm 5mm !important;
+    font-size: 13px !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
     text-transform: uppercase !important;
@@ -405,9 +405,9 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 3mm 5mm 4mm 5mm !important;
+    padding: 2mm 5mm 3mm 5mm !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
     color: hsl(var(--foreground)) !important;
   }
 
