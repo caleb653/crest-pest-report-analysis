@@ -1315,14 +1315,14 @@ const Report = () => {
                 </div>
               </div>
 
-              {/* Right side: 3-column info grid */}
-              <div className="grid grid-cols-3 gap-6 flex-1">
-                {/* Column 1: Customer Info */}
+              {/* Right side: 2-column info grid */}
+              <div className="grid grid-cols-2 gap-8 flex-1">
+                {/* Column 1: Customer Details (Name, Address, Date) */}
                 <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Customer Information:</p>
+                  <p className="font-semibold text-foreground text-xs mb-0.5">Customer Details:</p>
                   <div className="space-y-0.5 text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-12">Name:</span>
+                      <span className="text-muted-foreground w-16">Name:</span>
                       <Input
                         value={editableCustomer}
                         onChange={(e) => setEditableCustomer(e.target.value)}
@@ -1330,13 +1330,6 @@ const Report = () => {
                         className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
                       />
                     </div>
-                  </div>
-                </div>
-
-                {/* Column 2: Address & Service Date */}
-                <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Service Details:</p>
-                  <div className="space-y-0.5 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Address:</span>
                       <Input
@@ -1358,7 +1351,7 @@ const Report = () => {
                   </div>
                 </div>
 
-                {/* Column 3: Technician Info */}
+                {/* Column 2: Technician Info */}
                 <div>
                   <p className="font-semibold text-foreground text-xs mb-0.5">Technician Information:</p>
                   <div className="space-y-0.5 text-xs">
