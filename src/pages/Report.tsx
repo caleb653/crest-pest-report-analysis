@@ -1663,52 +1663,54 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            {showSignature ? (
-              <Card className="print-section p-0 overflow-hidden rounded-lg relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-0.5 right-0.5 h-5 w-5 p-0 no-print z-10"
-                  onClick={() => setShowSignature(false)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
-                </div>
-                <div className="p-1.5 print:p-1">
-                  <div className="h-[45px] print:h-[35px] relative">
-                    <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
+            <Card className="print-section p-0 overflow-hidden rounded-lg relative">
+              {showSignature ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="absolute top-0.5 right-0.5 h-5 px-1.5 text-[9px] no-print z-10"
+                    onClick={() => setShowSignature(false)}
+                  >
+                    Hide
+                  </Button>
+                  <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                    <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="flex items-center gap-3 text-[9px]">
-                    <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
-                      <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
-                      <Input
-                        value={editableCustomer}
-                        onChange={(e) => setEditableCustomer(e.target.value)}
-                        placeholder="Customer name"
-                        className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
-                      />
-                      <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                  <div className="p-1.5 print:p-1">
+                    <div className="h-[45px] print:h-[35px] relative">
+                      <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                     </div>
-                    <div className="text-muted-foreground">
-                      <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                    <div className="flex items-center gap-3 text-[9px]">
+                      <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
+                        <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
+                        <Input
+                          value={editableCustomer}
+                          onChange={(e) => setEditableCustomer(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
+                        />
+                        <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full print:hidden">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => setShowSignature(true)}
+                  >
+                    Show Signature Box
+                  </Button>
                 </div>
-              </Card>
-            ) : (
-              <div className="flex items-center justify-center no-print">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => setShowSignature(true)}
-                >
-                  Show Signature Box
-                </Button>
-              </div>
-            )}
+              )}
+            </Card>
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
