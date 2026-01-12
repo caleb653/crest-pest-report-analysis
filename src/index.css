@@ -290,15 +290,22 @@
     margin: 0 !important;
   }
 
-  .print-header h1,
-  .print-header input[class*="text-2xl"],
-  .print-header input[class*="text-xl"],
-  .print-header input[class*="text-[26px]"] {
+  .print-header h1 {
     font-size: 24px !important;
     font-weight: 700 !important;
     margin-bottom: 1.5mm !important;
     letter-spacing: -0.01em !important;
     line-height: 1.2 !important;
+    height: auto !important;
+  }
+
+  .print-header .print-title {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    margin-top: 1mm !important;
+    margin-bottom: 1mm !important;
+    letter-spacing: -0.015em !important;
+    line-height: 1.05 !important;
     height: auto !important;
   }
 
@@ -318,7 +325,7 @@
     padding: 0;
   }
 
-  .print-header input:not([class*="text-2xl"]):not([class*="text-xl"]) {
+  .print-header input:not(.print-title) {
     font-size: 10px !important;
     line-height: 1.35 !important;
     background: transparent !important;
