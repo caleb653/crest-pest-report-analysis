@@ -1,7 +1,12 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Bold, Minus, Plus } from "lucide-react";
+import { Bold, Minus, Plus, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface RichTextEditorProps {
   value: string;
@@ -12,6 +17,17 @@ interface RichTextEditorProps {
   className?: string;
   showControls?: boolean;
 }
+
+const FONT_COLORS = [
+  { name: "Black", value: "#000000" },
+  { name: "Dark Gray", value: "#374151" },
+  { name: "Gray", value: "#6b7280" },
+  { name: "Red", value: "#dc2626" },
+  { name: "Orange", value: "#ea580c" },
+  { name: "Green", value: "#16a34a" },
+  { name: "Blue", value: "#2563eb" },
+  { name: "Purple", value: "#7c3aed" },
+];
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
@@ -24,6 +40,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
+  const [currentColor, setCurrentColor] = useState("#000000");
 
   // Convert plain text with • bullets to display format
   const formatForDisplay = (text: string): string => {
@@ -57,27 +74,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     handleInput();
   }, [handleInput]);
 
-  const handleFontSizeChange = useCallback((newSize: number) => {
+  const handleColorChange = useCallback((color: string) => {
+    setCurrentColor(color);
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
-      // Get the selected range
-      const range = selection.getRangeAt(0);
-      const selectedText = range.extractContents();
-      
-      // Create a span with the new font size
-      const span = document.createElement("span");
-      span.style.fontSize = `${newSize}px`;
-      span.appendChild(selectedText);
-      
-      // Insert the styled span
-      range.insertNode(span);
-      
-      // Update the content
+      document.execCommand("foreColor", false, color);
+      editorRef.current?.focus();
       handleInput();
     }
-    // Also update the base font size
-    onFontSizeChange(newSize);
-  }, [onFontSizeChange, handleInput]);
+  }, [handleInput]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // Handle Ctrl+B for bold
@@ -120,7 +125,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => handleFontSizeChange(Math.max(8, fontSize - 1))}
+              onClick={() => onFontSizeChange(Math.max(8, fontSize - 1))}
               className="h-6 w-6 p-0"
             >
               <Minus className="w-3 h-3" />
@@ -130,7 +135,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => handleFontSizeChange(Math.min(24, fontSize + 1))}
+              onClick={() => onFontSizeChange(Math.min(24, fontSize + 1))}
               className="h-6 w-6 p-0"
             >
               <Plus className="w-3 h-3" />
@@ -146,6 +151,41 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           >
             <Bold className="w-3 h-3" />
           </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 px-2"
+                title="Text Color"
+              >
+                <Palette className="w-3 h-3" />
+                <div 
+                  className="w-2 h-2 rounded-full ml-1 border border-border" 
+                  style={{ backgroundColor: currentColor }}
+                />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2 bg-white z-50" align="start">
+              <div className="flex flex-wrap gap-1 max-w-[120px]">
+                {FONT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={cn(
+                      "w-6 h-6 rounded border-2 transition-all",
+                      currentColor === color.value ? "border-primary scale-110" : "border-transparent hover:border-muted-foreground"
+                    )}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => handleColorChange(color.value)}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 text-center">Select text first, then pick color</p>
+            </PopoverContent>
+          </Popover>
         </div>
       )}
       <div
