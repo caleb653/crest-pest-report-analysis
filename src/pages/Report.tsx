@@ -28,6 +28,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
 import crestLogo from "@/assets/crest-logo.png";
+import crestBugBlack from "@/assets/crest-bug-black.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1310,7 +1311,7 @@ const Report = () => {
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="print-title text-[26px] font-bold text-foreground bg-transparent border-b border-border px-1 h-9 w-80 focus-visible:ring-0"
+                    className="print-title text-[32px] print:text-[26px] font-bold text-foreground bg-transparent border-b border-border px-1 h-11 print:h-9 w-80 focus-visible:ring-0"
                   />
                 </div>
               </div>
@@ -1821,7 +1822,8 @@ const Report = () => {
                   >
                     Hide
                   </Button>
-                  <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg flex items-center gap-2">
+                    <img src={crestBugBlack} alt="" className="h-4 w-auto" />
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
                   <div className="p-1.5 print:p-1">
