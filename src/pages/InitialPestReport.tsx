@@ -807,6 +807,96 @@ const Report = () => {
     });
   };
 
+  // Handle pasting images from clipboard for custom map
+  const handleMapPaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        try {
+          const { ext, contentType } = inferImageUploadMeta(file);
+          const fileName = `${Math.random()}.${ext}`;
+          const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("report-images")
+            .upload(filePath, file, { upsert: true, contentType });
+
+          if (uploadError) throw uploadError;
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
+          setCustomMapImage(publicUrl);
+          toast.success("Map pasted successfully");
+        } catch (error) {
+          console.error("Error pasting map:", error);
+          toast.error("Failed to paste map image");
+        }
+        break;
+      }
+    }
+  };
+
+  // Handle pasting images from clipboard for property images
+  const handlePropertyImagesPaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles: File[] = [];
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length === 0) return;
+    e.preventDefault();
+
+    // Limit to 5 images total for this report type
+    const maxNew = Math.min(imageFiles.length, 5 - propertyImages.length);
+    if (maxNew <= 0) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+
+    const filesToProcess = imageFiles.slice(0, maxNew);
+
+    try {
+      const uploadPromises = filesToProcess.map(async (file) => {
+        const { ext, contentType } = inferImageUploadMeta(file);
+        const fileName = `${Math.random()}.${ext}`;
+        const filePath = `${reportId || "temp"}/property/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, file, { upsert: true, contentType });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
+        return { image: publicUrl, caption: "" };
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      setPropertyImages(prev => [...prev, ...uploadedImages]);
+      toast.success(`${filesToProcess.length} image(s) pasted`);
+    } catch (error) {
+      console.error("Error pasting images:", error);
+      toast.error("Failed to paste images");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -972,7 +1062,12 @@ const Report = () => {
             isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none w-full max-w-[506px] p-4"
           }`}
         >
-          <div className="relative w-full bg-sage rounded-lg" style={{ paddingBottom: "133%" }}> {/* 3:4 aspect ratio (taller) */}
+          <div 
+            className="relative w-full bg-sage rounded-lg" 
+            style={{ paddingBottom: "133%" }}
+            onPaste={handleMapPaste}
+            tabIndex={0}
+          > {/* 3:4 aspect ratio (taller) */}
             <div className="absolute inset-0">
               {isProcessing && (
                 <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
@@ -1064,7 +1159,7 @@ const Report = () => {
                         <FileDown className="w-8 h-8 text-primary" />
                       </div>
                       <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
-                      <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
+                      <p className="text-sm text-muted-foreground mb-4">Upload or paste a property map/satellite image</p>
                       <div className="relative inline-flex">
                         <Button variant="default" type="button">
                           <FileDown className="w-4 h-4 mr-2" />
@@ -1478,7 +1573,11 @@ const Report = () => {
       </div>
 
       {/* Second Page - Property Images */}
-      <div className="print-page-break bg-background">
+      <div 
+        className="print-page-break bg-background"
+        onPaste={handlePropertyImagesPaste}
+        tabIndex={0}
+      >
         <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
@@ -1489,7 +1588,7 @@ const Report = () => {
           </div>
 
           {/* Upload Section */}
-          <div className="no-print mb-6">
+          <div className="no-print mb-6 flex items-center gap-3">
             <div className="relative inline-flex">
               <Button variant="outline" size="lg" type="button">
                 <FileDown className="w-5 h-5 mr-2" />
@@ -1509,6 +1608,7 @@ const Report = () => {
                 aria-label="Upload property images"
               />
             </div>
+            <span className="text-sm text-muted-foreground">or paste from clipboard (Ctrl+V / Cmd+V)</span>
           </div>
 
           {/* Property Images Grid */}
@@ -1537,7 +1637,7 @@ const Report = () => {
 
           {propertyImages.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              <p>No images uploaded yet. Click the button above to upload up to 5 images.</p>
+              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 5 images.</p>
             </div>
           )}
         </div>

@@ -1099,6 +1099,149 @@ const Report = () => {
     setDraggedImageIndex(null);
   };
 
+  // Handle pasting images from clipboard for custom map
+  const handleMapPaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        try {
+          const { compressImage } = await import("@/lib/imageUpload");
+          
+          const { blob: compressedBlob, localUrl } = await compressImage(file, {
+            maxWidth: 1200,
+            maxHeight: 1200,
+            quality: 0.75,
+          });
+
+          console.log("[paste] map image compressed", {
+            originalSize: file.size,
+            compressedSize: compressedBlob.size,
+          });
+
+          // Show local preview INSTANTLY
+          setCustomMapImage(localUrl);
+
+          // Upload in background
+          const fileName = `${Math.random()}.jpg`;
+          const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("report-images")
+            .upload(filePath, compressedBlob, { upsert: true, contentType: "image/jpeg" });
+
+          if (uploadError) throw uploadError;
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
+          setCustomMapImage(publicUrl);
+          URL.revokeObjectURL(localUrl);
+          toast.success("Map pasted successfully");
+        } catch (error) {
+          console.error("Error pasting map:", error);
+          toast.error("Failed to paste map image");
+        }
+        break; // Only process first image
+      }
+    }
+  };
+
+  // Handle pasting images from clipboard for property images
+  const handlePropertyImagesPaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles: File[] = [];
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length === 0) return;
+    e.preventDefault();
+
+    // Limit to 8 images total
+    const maxNew = Math.min(imageFiles.length, 8 - propertyImages.length);
+    if (maxNew <= 0) {
+      toast.error("Maximum 8 images allowed");
+      return;
+    }
+
+    const filesToProcess = imageFiles.slice(0, maxNew);
+
+    try {
+      const { compressImage } = await import("@/lib/imageUpload");
+
+      const compressionPromises = filesToProcess.map(async (file) => {
+        const { blob, localUrl } = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.75,
+        });
+        console.log("[paste] property image compressed", {
+          originalSize: file.size,
+          compressedSize: blob.size,
+        });
+        return { blob, localUrl };
+      });
+
+      const compressedImages = await Promise.all(compressionPromises);
+
+      // Show local previews INSTANTLY (append to existing)
+      setPropertyImages(prev => [
+        ...prev,
+        ...compressedImages.map(({ localUrl }) => ({ image: localUrl, caption: "" }))
+      ]);
+
+      // Upload in background
+      const uploadPromises = compressedImages.map(async ({ blob, localUrl }, index) => {
+        const fileName = `${Math.random()}.jpg`;
+        const filePath = `${reportId || "temp"}/property/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+
+        if (uploadError) throw uploadError;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("report-images").getPublicUrl(filePath);
+
+        URL.revokeObjectURL(localUrl);
+        return { image: publicUrl, caption: "", localUrl };
+      });
+
+      const uploadedImages = await Promise.all(uploadPromises);
+      
+      // Replace local URLs with permanent URLs
+      setPropertyImages(prev => {
+        const updated = [...prev];
+        uploadedImages.forEach(({ image, localUrl }) => {
+          const idx = updated.findIndex(img => img.image === localUrl);
+          if (idx !== -1) {
+            updated[idx] = { ...updated[idx], image };
+          }
+        });
+        return updated;
+      });
+
+      toast.success(`${filesToProcess.length} image(s) pasted`);
+    } catch (error) {
+      console.error("Error pasting images:", error);
+      toast.error("Failed to paste images");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
@@ -1762,7 +1905,11 @@ const Report = () => {
           <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
-              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
+              <div 
+                className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
+                onPaste={handleMapPaste}
+                tabIndex={0}
+              >
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
@@ -1856,7 +2003,7 @@ const Report = () => {
                           <FileDown className="w-8 h-8 text-primary" />
                         </div>
                         <p className="text-lg font-semibold text-foreground mb-2">No Map Image</p>
-                        <p className="text-sm text-muted-foreground mb-4">Upload a property map or satellite image</p>
+                        <p className="text-sm text-muted-foreground mb-4">Upload or paste a property map/satellite image</p>
                         <div className="relative inline-flex">
                           <Button variant="default" type="button">
                             <FileDown className="w-4 h-4 mr-2" />
@@ -1911,7 +2058,11 @@ const Report = () => {
       </div>
 
       {/* Page 3 - Property Images */}
-      <div className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]">
+      <div 
+        className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]"
+        onPaste={handlePropertyImagesPaste}
+        tabIndex={0}
+      >
         <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 print:mb-8 pb-2 print:pb-3 border-b-2 border-border">
@@ -1922,7 +2073,7 @@ const Report = () => {
           </div>
 
           {/* Upload Section */}
-          <div className="no-print mb-4">
+          <div className="no-print mb-4 flex items-center gap-3">
             <div className="relative inline-flex">
               <Button variant="outline" size="sm" type="button">
                 <FileDown className="w-4 h-4 mr-2" />
@@ -1942,6 +2093,7 @@ const Report = () => {
                 aria-label="Upload property images"
               />
             </div>
+            <span className="text-xs text-muted-foreground">or paste from clipboard (Ctrl+V / Cmd+V)</span>
           </div>
 
           {/* Property Images Grid - larger images */}
