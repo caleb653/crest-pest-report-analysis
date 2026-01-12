@@ -277,7 +277,7 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 3mm 6mm !important;
+    padding: 2.5mm 6mm !important;
     box-shadow: none !important;
     background: hsl(130 14% 89%) !important;
     border: none !important;
@@ -290,25 +290,56 @@
     margin: 0 !important;
   }
 
-  .print-header h1 {
-    font-size: 20px !important;
-    margin-bottom: 2mm !important;
+  .print-header h1,
+  .print-header input[class*="text-xl"] {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    margin-bottom: 1mm !important;
     letter-spacing: -0.01em !important;
+    line-height: 1.2 !important;
+    height: auto !important;
   }
 
   .print-header h2 {
-    font-size: 13px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5mm !important;
   }
 
   .print-header p,
-  .print-header span,
-  .print-header input {
-    font-size: 12px !important;
-    line-height: 1.15 !important;
+  .print-header span {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
     padding: 0;
+  }
+
+  .print-header input:not([class*="text-xl"]) {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0;
+    padding: 0;
+    height: auto !important;
+  }
+
+  /* Section labels in header */
+  .print-header p[class*="font-semibold"] {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin-bottom: 1mm !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  /* Field labels */
+  .print-header span[class*="text-muted"] {
+    font-size: 9px !important;
+    font-weight: 500 !important;
+    min-width: 50px !important;
+    width: auto !important;
   }
 
   .print-header > div {
@@ -319,8 +350,22 @@
   }
 
   .print-header img[alt="Crest Pest Control"] {
-    height: 24mm !important;
+    height: 18mm !important;
     width: auto !important;
+  }
+
+  /* Improve spacing between customer/tech info sections */
+  .print-header .gap-8 {
+    gap: 12mm !important;
+  }
+
+  /* Field value spacing */
+  .print-header .space-y-0\.5 {
+    gap: 0.8mm !important;
+  }
+
+  .print-header .gap-2 {
+    gap: 2mm !important;
   }
 
   .print-layout {
@@ -557,9 +602,10 @@
     gap: 1.5mm !important;
   }
 
-  .print-header p,
-  .print-header span {
-    line-height: 1.1 !important;
+  /* PR number styling */
+  .print-header span[class*="text-xs"][class*="text-muted"] {
+    font-size: 8px !important;
+    margin-top: 1mm !important;
   }
 
   /* -----------------------------
