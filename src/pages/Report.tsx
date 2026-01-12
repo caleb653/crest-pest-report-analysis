@@ -1268,7 +1268,7 @@ const Report = () => {
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div className={isMobile ? "flex flex-col" : "p-3 print:p-2 print:pt-1 max-w-[1800px] mx-auto"}>
+      <div className={isMobile ? "flex flex-col" : "p-3 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2"}>
           {/* Mobile: Customer & Technician */}
@@ -1298,7 +1298,7 @@ const Report = () => {
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 print:p-1.5 col-span-2">
+          <Card className="print-section p-2 col-span-2">
             <div className="space-y-1">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
@@ -1661,7 +1661,7 @@ const Report = () => {
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-          <div className={`col-span-2 grid gap-1.5 ${showSignature ? 'grid-cols-[2fr_3fr]' : 'grid-cols-1'}`}>
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
             {showSignature ? (
               <Card className="print-section p-0 overflow-hidden rounded-lg relative">
@@ -1698,7 +1698,7 @@ const Report = () => {
                 </div>
               </Card>
             ) : (
-              <div className="flex items-center justify-center no-print print:hidden h-0">
+              <div className="flex items-center justify-center no-print">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1715,8 +1715,8 @@ const Report = () => {
               <div className="print-section-header py-1 px-2 rounded-t-lg">
                 <span className="text-[9px] font-bold">Pesticide Notice</span>
               </div>
-              <div className="p-1.5 print:p-1">
-                <div className="text-[7px] print:text-[6.5px] leading-[1.2] text-foreground">
+              <div className="p-1.5">
+                <div className="text-[7px] leading-[1.2] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
                   </p>
@@ -1731,21 +1731,21 @@ const Report = () => {
       </div>
 
       {/* Page 2 - Map & Property Images */}
-      <div className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]">
-        <div className={isMobile ? "p-4" : "p-4 print:p-3 print:pt-4 max-w-[1800px] mx-auto"}>
+      <div className="print-page-break bg-background print:flex print:flex-col print:justify-center print:min-h-[100vh]">
+        <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
           {/* Page Header - minimal for print */}
-          <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
+          <div className="flex items-center justify-between mb-4 print:mb-6 pb-2 print:pb-3 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-6" />
-              <h1 className="text-xl print:text-base font-bold text-foreground">Property Map & Images</h1>
+              <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
+              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[45%_55%] print:gap-4 print:px-2 print:items-start">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
-            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1]">
-              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:w-[340px] print:h-[450px] print:max-h-none">
+            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
+              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
@@ -1865,7 +1865,7 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-[450px] print:mt-0">
+            <div className="flex flex-col h-full print:h-auto print:min-h-[600px] print:mt-[5%]">
               {/* Additional Details Section - takes full height */}
               <Card className="print-section p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1877,14 +1877,14 @@ const Report = () => {
                     style={{ color: '#ffffff', caretColor: '#ffffff' }}
                   />
                 </div>
-                <div className="p-3 print:p-2 flex-1 flex flex-col">
+                <div className="p-3 flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
                     onChange={setAdditionalDetails}
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="flex-1 min-h-[460px] print:min-h-[420px]"
+                    className="flex-1 min-h-[460px] print:min-h-[580px]"
                   />
                 </div>
               </Card>
