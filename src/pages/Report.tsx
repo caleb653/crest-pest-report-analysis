@@ -1302,7 +1302,7 @@ const Report = () => {
             <div className="space-y-1 print:space-y-0">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
-                <span>Service Type</span>
+                <span className="pl-1">Service Type</span>
                 <span className="text-center">Initial</span>
                 <span className="text-center">Recurring</span>
                 <span className="text-center">Frequency</span>
@@ -1316,7 +1316,7 @@ const Report = () => {
                   key={index}
                   className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center print:py-0"
                 >
-                  <div className="flex items-center gap-2 bg-white/80 rounded px-1">
+                  <div className="flex items-center gap-2 bg-white/80 rounded px-1 print:border print:border-black/10">
                     <Select
                       value={service.serviceType}
                       onValueChange={(val) => handleServiceChange(index, "serviceType", val)}
@@ -1335,7 +1335,7 @@ const Report = () => {
                     {/* Print-only text display */}
                     <span className="hidden print:block text-sm font-medium">{service.serviceType || "-"}</span>
                   </div>
-                  <div className="relative bg-white/80 rounded">
+                  <div className="relative bg-white/80 rounded print:border print:border-black/10">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
                       $
                     </span>
@@ -1351,7 +1351,7 @@ const Report = () => {
                       className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                     />
                   </div>
-                  <div className="relative bg-white/80 rounded">
+                  <div className="relative bg-white/80 rounded print:border print:border-black/10">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
                       $
                     </span>
@@ -1367,7 +1367,7 @@ const Report = () => {
                       className="h-6 text-sm pl-6 text-right pr-2 bg-transparent border-0 shadow-none"
                     />
                   </div>
-                  <div className="bg-white/80 rounded px-1">
+                  <div className="bg-white/80 rounded px-1 print:border print:border-black/10">
                     <Select
                       value={service.frequency.toString()}
                       onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
@@ -1388,7 +1388,7 @@ const Report = () => {
                       {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                     </span>
                   </div>
-                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0">
+                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0 print:border print:border-black/10">
                     {service.frequency > 0 ? (
                       <div className="flex flex-wrap gap-0.5 print:gap-0">
                         {(() => {
