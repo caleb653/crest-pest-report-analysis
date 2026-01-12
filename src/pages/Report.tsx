@@ -171,31 +171,14 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      "• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps\n• Seal multiple entry points, and leave precautionary traps\n• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)",
+      `<b>Attic Services (see details below):</b><br>• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps<br>• Seal multiple entry points, and leave precautionary traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)<br><br><b>Target Pests:</b> Rodents`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
 };
 
-// Attic Services additional details content for page 2
-const ATTIC_SERVICES_ADDITIONAL_DETAILS = `Attic Service (additional details):
-
-Insulation Warranty: The product will, for the lifetime of the structure:
-a.) be free from manufacturing defects;
-b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.
-
-Exclusion Work Warranty:
-• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service
-• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.
-• All warranties excludes new openings made by others or natural deterioration.
-• Crest is not liable for any structural or property damage caused by rodents.
-
-Not Included Services:
-• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic
-
-Attic Specific Equipment: TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (<15%)], Simple Green® d Pro 3 Plus disinfectant
-
-Target Pests: Rodents`;
+// Attic Services additional details content for page 2 (HTML formatted)
+const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Exclusion Work Warranty:</b><br>• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service<br>• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.<br>• All warranties excludes new openings made by others or natural deterioration.<br>• Crest is not liable for any structural or property damage caused by rodents.<br><br><b>Not Included Services:</b><br>• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
@@ -346,22 +329,22 @@ const Report = () => {
 
     // Only auto-populate proposed services if user hasn't manually edited them
     // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
-    // For Attic Services, the proposedServices is already in bullet format
-    const combinedProposedServices = allProposedServices.join("\n\n").trim();
-    if (combinedProposedServices && !findingsEditedRef.current) {
-      // Check if any service has pre-formatted bullets (starts with •)
-      const hasPreformattedBullets = allProposedServices.some(s => s.startsWith("•"));
+    if (allProposedServices.length > 0 && !findingsEditedRef.current) {
+      // Check if any service has HTML content (starts with <b> or contains <br>)
+      const hasHtmlContent = allProposedServices.some(s => s.includes("<b>") || s.includes("<br>"));
       
-      if (hasPreformattedBullets) {
-        // Use as-is for pre-formatted content
-        setEditableFindings([combinedProposedServices]);
+      if (hasHtmlContent) {
+        // Use HTML content as-is, join with double line break
+        const combinedHtml = allProposedServices.join("<br><br>");
+        setEditableFindings([combinedHtml]);
       } else {
-        // Convert to bullet format for standard services
+        // Convert plain text to bullet format for standard services
+        const combinedProposedServices = allProposedServices.join(" ").trim();
         const bulletFormatted = combinedProposedServices
           .split(/[.]\s*/)
           .filter((line) => line.trim())
           .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
-          .join("\n");
+          .join("<br>");
         setEditableFindings([bulletFormatted]);
       }
     }
