@@ -1698,7 +1698,7 @@ const Report = () => {
                 </div>
               </Card>
             ) : (
-              <div className="flex items-center justify-center no-print">
+              <div className="flex items-center justify-center no-print print:hidden">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1731,21 +1731,21 @@ const Report = () => {
       </div>
 
       {/* Page 2 - Map & Property Images */}
-      <div className="print-page-break bg-background print:flex print:flex-col print:justify-center print:min-h-[100vh]">
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
+      <div className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]">
+        <div className={isMobile ? "p-4" : "p-4 print:p-3 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header - minimal for print */}
-          <div className="flex items-center justify-between mb-4 print:mb-6 pb-2 print:pb-3 border-b-2 border-border">
+          <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Images</h1>
+              <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-6" />
+              <h1 className="text-xl print:text-base font-bold text-foreground">Property Map & Images</h1>
             </div>
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[45%_55%] print:gap-4 print:px-2 print:items-start">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
-            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
-              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
+            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1]">
+              <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:w-[340px] print:h-[450px] print:max-h-none">
                 {isProcessing && (
                   <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
                     <div className="text-center">
@@ -1865,7 +1865,7 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-[600px] print:mt-[5%]">
+            <div className="flex flex-col h-full print:h-auto print:min-h-[450px] print:mt-0">
               {/* Additional Details Section - takes full height */}
               <Card className="print-section p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1877,14 +1877,14 @@ const Report = () => {
                     style={{ color: '#ffffff', caretColor: '#ffffff' }}
                   />
                 </div>
-                <div className="p-3 flex-1 flex flex-col">
+                <div className="p-3 print:p-2 flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
                     onChange={setAdditionalDetails}
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="flex-1 min-h-[460px] print:min-h-[580px]"
+                    className="flex-1 min-h-[460px] print:min-h-[420px]"
                   />
                 </div>
               </Card>
