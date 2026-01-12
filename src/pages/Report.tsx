@@ -171,11 +171,31 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      "Inspect attic space for signs of pest activity, entry points, and damage. Treat attic areas as needed and provide recommendations for exclusion and prevention.",
+      "• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps\n• Seal multiple entry points, and leave precautionary traps\n• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)",
     defaultInitial: 0,
     defaultRecurring: 0,
   },
 };
+
+// Attic Services additional details content for page 2
+const ATTIC_SERVICES_ADDITIONAL_DETAILS = `Attic Service (additional details):
+
+Insulation Warranty: The product will, for the lifetime of the structure:
+a.) be free from manufacturing defects;
+b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.
+
+Exclusion Work Warranty:
+• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service
+• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.
+• All warranties excludes new openings made by others or natural deterioration.
+• Crest is not liable for any structural or property damage caused by rodents.
+
+Not Included Services:
+• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic
+
+Attic Specific Equipment: TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (<15%)], Simple Green® d Pro 3 Plus disinfectant
+
+Target Pests: Rodents`;
 
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
@@ -299,6 +319,7 @@ const Report = () => {
   useEffect(() => {
     const allPests = new Set<string>();
     const allProposedServices: string[] = [];
+    let hasAtticService = false;
 
     services.forEach((service) => {
       const config = SERVICE_CONFIG[service.serviceType];
@@ -307,6 +328,10 @@ const Report = () => {
         if (config.proposedServices && !allProposedServices.includes(config.proposedServices)) {
           allProposedServices.push(config.proposedServices);
         }
+        // Check if Attic Services is selected
+        if (service.serviceType === "Attic Services (see details below)") {
+          hasAtticService = true;
+        }
       }
     });
 
@@ -314,17 +339,31 @@ const Report = () => {
       setEditableTargetPests(Array.from(allPests));
     }
 
+    // Auto-populate additional details for Attic Services
+    if (hasAtticService && !additionalDetails) {
+      setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
+    }
+
     // Only auto-populate proposed services if user hasn't manually edited them
     // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
-    // Convert to bullet format for default display
-    const combinedProposedServices = allProposedServices.join(" ").trim();
+    // For Attic Services, the proposedServices is already in bullet format
+    const combinedProposedServices = allProposedServices.join("\n\n").trim();
     if (combinedProposedServices && !findingsEditedRef.current) {
-      const bulletFormatted = combinedProposedServices
-        .split(/[.]\s*/)
-        .filter((line) => line.trim())
-        .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
-        .join("\n");
-      setEditableFindings([bulletFormatted]);
+      // Check if any service has pre-formatted bullets (starts with •)
+      const hasPreformattedBullets = allProposedServices.some(s => s.startsWith("•"));
+      
+      if (hasPreformattedBullets) {
+        // Use as-is for pre-formatted content
+        setEditableFindings([combinedProposedServices]);
+      } else {
+        // Convert to bullet format for standard services
+        const bulletFormatted = combinedProposedServices
+          .split(/[.]\s*/)
+          .filter((line) => line.trim())
+          .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
+          .join("\n");
+        setEditableFindings([bulletFormatted]);
+      }
     }
   }, [serviceTypesKey]);
 
