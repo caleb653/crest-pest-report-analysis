@@ -1477,8 +1477,8 @@ const Report = () => {
             <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
               <Card className="print-section p-0 overflow-visible rounded-lg">
-                <div className="print-section-header py-1 print:py-0 px-2.5 print:px-2 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Target Pest(s)</span>
+                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Target Pest(s)</span>
                 </div>
                 <div className="relative" ref={pestsDropdownRef}>
                   <button
@@ -1558,8 +1558,8 @@ const Report = () => {
 
               {/* Products */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
-                <div className="print-section-header py-1 print:py-0 px-2.5 print:px-2 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Products</span>
+                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Products</span>
                 </div>
                 <div className="p-2.5 print:p-1.5">
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
@@ -1616,8 +1616,8 @@ const Report = () => {
 
             {/* Right Column - Proposed Services */}
             <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
-              <div className="print-section-header py-1 print:py-0 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Proposed Services</span>
+              <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Proposed Services</span>
               </div>
               <div className="p-3 print:p-1.5 flex-1 flex flex-col">
                 {isAnalyzing ? (
@@ -1673,8 +1673,8 @@ const Report = () => {
                 >
                   <X className="w-3 h-3" />
                 </Button>
-                <div className="print-section-header py-1 print:py-0 px-2.5 print:px-2 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Customer Signature</span>
+                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                 </div>
                 <div className="p-1.5 print:p-1">
                   <div className="h-[45px] print:h-[35px] relative">
@@ -1712,8 +1712,8 @@ const Report = () => {
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-1 print:py-0 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Pesticide Notice</span>
+              <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Pesticide Notice</span>
               </div>
               <div className="p-1.5 print:p-1">
                 <div className="text-[7px] leading-[1.2] text-foreground">
