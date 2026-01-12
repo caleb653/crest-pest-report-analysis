@@ -1477,8 +1477,8 @@ const Report = () => {
             <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
               <Card className="print-section p-0 overflow-visible rounded-lg">
-                <div className="print-section-header py-1.5 print:py-1 px-2.5 rounded-t-lg">
-                  <span>Target Pest(s)</span>
+                <div className="print-section-header py-1.5 print:py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Target Pest(s)</span>
                 </div>
                 <div className="relative" ref={pestsDropdownRef}>
                   <button
@@ -1520,9 +1520,9 @@ const Report = () => {
                     </div>
                   )}
                 </div>
-                <div className="p-1.5 bg-card">
+                <div className="p-1.5 print:p-1 bg-card">
                   {editableTargetPests.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 print:gap-0.5">
                       {editableTargetPests.map((pest) => (
                         <span
                           key={pest}
@@ -1558,10 +1558,10 @@ const Report = () => {
 
               {/* Products */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-[10px] font-bold">Products</span>
+                <div className="print-section-header py-1.5 print:py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Products</span>
                 </div>
-                <div className="p-2.5">
+                <div className="p-2.5 print:p-1.5">
                   <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
                     {displayedProducts.map((product, index) => (
                       <div key={index} className="flex items-center gap-1 group">
@@ -1616,10 +1616,10 @@ const Report = () => {
 
             {/* Right Column - Proposed Services */}
             <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs font-bold">Proposed Services</span>
+              <div className="print-section-header py-1.5 print:py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase">Proposed Services</span>
               </div>
-              <div className="p-3 flex-1 flex flex-col">
+              <div className="p-3 print:p-1.5 flex-1 flex flex-col">
                 {isAnalyzing ? (
                   <div className="text-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1673,11 +1673,11 @@ const Report = () => {
                 >
                   <X className="w-3 h-3" />
                 </Button>
-                <div className="print-section-header py-1 px-2 rounded-t-lg">
-                  <span className="text-[10px] font-bold">Customer Signature</span>
+                <div className="print-section-header py-1.5 print:py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Customer Signature</span>
                 </div>
-                <div className="p-1.5">
-                  <div className="h-[45px] relative">
+                <div className="p-1.5 print:p-1">
+                  <div className="h-[45px] print:h-[35px] relative">
                     <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                   </div>
                   <div className="flex items-center gap-3 text-[9px]">
@@ -1712,10 +1712,10 @@ const Report = () => {
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-1 px-2 rounded-t-lg">
-                <span className="text-[9px] font-bold">Pesticide Notice</span>
+              <div className="print-section-header py-1.5 print:py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase">Pesticide Notice</span>
               </div>
-              <div className="p-1.5">
+              <div className="p-1.5 print:p-1">
                 <div className="text-[7px] leading-[1.2] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
