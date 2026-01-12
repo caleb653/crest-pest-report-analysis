@@ -1865,26 +1865,26 @@ const Report = () => {
             </div>
 
             {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-[600px] print:mt-[5%]">
+            <div className="flex flex-col h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - takes full height */}
-              <Card className="print-section p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
+                <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
                     value={additionalDetailsHeader}
                     onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
                     className="text-xs font-bold border-none outline-none w-full bg-transparent"
-                    style={{ color: '#ffffff', caretColor: '#ffffff' }}
+                    style={{ color: "#ffffff", caretColor: "#ffffff" }}
                   />
                 </div>
-                <div className="p-3 flex-1 flex flex-col">
+                <div className="additional-details-body p-3 flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
                     onChange={setAdditionalDetails}
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="flex-1 min-h-[460px] print:min-h-[580px]"
+                    className="additional-details-editor flex-1 min-h-[460px] print:min-h-0"
                   />
                 </div>
               </Card>
