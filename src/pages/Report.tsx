@@ -1342,7 +1342,7 @@ const Report = () => {
                     <Input
                       type="text"
                       inputMode="numeric"
-                      value={service.initialPrice}
+                      value={parseInt(service.initialPrice || "0") >= 1000 ? parseInt(service.initialPrice).toLocaleString() : service.initialPrice}
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
                         handleServiceChange(index, "initialPrice", val);
@@ -1358,7 +1358,7 @@ const Report = () => {
                     <Input
                       type="text"
                       inputMode="numeric"
-                      value={service.recurringPrice}
+                      value={parseInt(service.recurringPrice || "0") >= 1000 ? parseInt(service.recurringPrice).toLocaleString() : service.recurringPrice}
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
                         handleServiceChange(index, "recurringPrice", val);
@@ -1443,13 +1443,13 @@ const Report = () => {
               {/* Totals Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
                 <div className="text-sm font-bold text-right">Total:</div>
-                <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                <div className="text-sm text-right bg-white/80 rounded py-0.5 px-1 flex items-center h-6">
                   <span className="text-muted-foreground mr-auto">$</span>
-                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
+                  <span className="font-bold">{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
-                <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
+                <div className="text-sm text-right bg-white/80 rounded py-0.5 px-1 flex items-center h-6">
                   <span className="text-muted-foreground mr-auto">$</span>
-                  <span>{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
+                  <span className="font-bold">{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
                 <div></div>
                 <div></div>
