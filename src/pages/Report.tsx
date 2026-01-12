@@ -1310,13 +1310,13 @@ const Report = () => {
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="print-title text-[26px] font-bold text-foreground bg-transparent border-b border-border px-1 h-9 w-64 focus-visible:ring-0"
+                    className="print-title text-[26px] font-bold text-foreground bg-transparent border-b border-border px-1 h-9 w-80 focus-visible:ring-0"
                   />
                 </div>
               </div>
 
-              {/* Right side: 2-column info grid */}
-              <div className="grid grid-cols-2 gap-8 flex-1">
+              {/* Right side: 2-column info grid - pushed right */}
+              <div className="grid grid-cols-2 gap-8 ml-auto">
                 {/* Column 1: Customer Details (Name, Address, Date) */}
                 <div>
                   <p className="font-semibold text-foreground text-xs mb-0.5">Customer Details:</p>
