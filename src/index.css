@@ -292,8 +292,9 @@
 
   .print-header h1,
   .print-header input[class*="text-2xl"],
-  .print-header input[class*="text-xl"] {
-    font-size: 18px !important;
+  .print-header input[class*="text-xl"],
+  .print-header input[class*="text-[26px]"] {
+    font-size: 24px !important;
     font-weight: 700 !important;
     margin-bottom: 1.5mm !important;
     letter-spacing: -0.01em !important;
