@@ -1268,7 +1268,7 @@ const Report = () => {
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div className={isMobile ? "flex flex-col" : "p-3 max-w-[1800px] mx-auto"}>
+      <div className={isMobile ? "flex flex-col" : "p-3 print:p-2 print:pt-1 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2"}>
           {/* Mobile: Customer & Technician */}
@@ -1298,7 +1298,7 @@ const Report = () => {
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 col-span-2">
+          <Card className="print-section p-2 print:p-1.5 col-span-2">
             <div className="space-y-1">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
@@ -1661,7 +1661,7 @@ const Report = () => {
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
+          <div className={`col-span-2 grid gap-1.5 ${showSignature ? 'grid-cols-[2fr_3fr]' : 'grid-cols-1'}`}>
             {/* Signature Section - Left (same width as Target Pests + Products) */}
             {showSignature ? (
               <Card className="print-section p-0 overflow-hidden rounded-lg relative">
@@ -1698,7 +1698,7 @@ const Report = () => {
                 </div>
               </Card>
             ) : (
-              <div className="flex items-center justify-center no-print print:hidden">
+              <div className="flex items-center justify-center no-print print:hidden h-0">
                 <Button
                   variant="outline"
                   size="sm"
@@ -1715,8 +1715,8 @@ const Report = () => {
               <div className="print-section-header py-1 px-2 rounded-t-lg">
                 <span className="text-[9px] font-bold">Pesticide Notice</span>
               </div>
-              <div className="p-1.5">
-                <div className="text-[7px] leading-[1.2] text-foreground">
+              <div className="p-1.5 print:p-1">
+                <div className="text-[7px] print:text-[6.5px] leading-[1.2] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
                   </p>
