@@ -1663,7 +1663,7 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <div className={`print-section p-0 overflow-hidden rounded-lg relative ${showSignature ? 'bg-card border shadow-sm' : 'bg-transparent'}`}>
+            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1699,16 +1699,31 @@ const Report = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full print:hidden">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => setShowSignature(true)}
-                  >
-                    Show Signature Box
-                  </Button>
-                </div>
+                <>
+                  {/* Invisible placeholder to maintain spacing */}
+                  <div className="invisible">
+                    <div className="py-0.5 px-2.5 rounded-t-lg">
+                      <span className="text-xs font-bold uppercase leading-none">&nbsp;</span>
+                    </div>
+                    <div className="p-1.5">
+                      <div className="h-[45px]"></div>
+                      <div className="flex items-center gap-3 text-[9px]">
+                        <div className="flex-1 h-4"></div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Centered show button */}
+                  <div className="absolute inset-0 flex items-center justify-center no-print">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setShowSignature(true)}
+                    >
+                      Show Signature Box
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
 
