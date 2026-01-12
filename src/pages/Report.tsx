@@ -298,19 +298,20 @@ const Report = () => {
   // Track if user has manually edited proposed services
   const [userEditedFindings, setUserEditedFindings] = useState(false);
   const findingsEditedRef = useRef(false);
+  
+  // Track which service types have already been added to proposed services
+  const addedServiceTypesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const allPests = new Set<string>();
-    const allProposedServices: string[] = [];
     let hasAtticService = false;
+    const currentServiceTypes = new Set<string>();
 
     services.forEach((service) => {
       const config = SERVICE_CONFIG[service.serviceType];
-      if (config) {
+      if (config && service.serviceType) {
+        currentServiceTypes.add(service.serviceType);
         config.targetPests.forEach((pest) => allPests.add(pest));
-        if (config.proposedServices && !allProposedServices.includes(config.proposedServices)) {
-          allProposedServices.push(config.proposedServices);
-        }
         // Check if Attic Services is selected
         if (service.serviceType === "Attic Services (see details below)") {
           hasAtticService = true;
@@ -327,27 +328,61 @@ const Report = () => {
       setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
     }
 
-    // Only auto-populate proposed services if user hasn't manually edited them
-    // Proposed Services UI currently edits/displays editableFindings[0], so we combine all selected service descriptions into one
-    if (allProposedServices.length > 0 && !findingsEditedRef.current) {
-      // Check if any service has HTML content (starts with <b> or contains <br>)
-      const hasHtmlContent = allProposedServices.some(s => s.includes("<b>") || s.includes("<br>"));
+    // Find new services that haven't been added yet
+    const newServiceTypes: string[] = [];
+    currentServiceTypes.forEach((serviceType) => {
+      if (!addedServiceTypesRef.current.has(serviceType)) {
+        newServiceTypes.push(serviceType);
+        addedServiceTypesRef.current.add(serviceType);
+      }
+    });
+
+    // Append new service descriptions to existing content
+    if (newServiceTypes.length > 0) {
+      const newDescriptions: string[] = [];
       
-      if (hasHtmlContent) {
-        // Use HTML content as-is, join with double line break
-        const combinedHtml = allProposedServices.join("<br><br>");
-        setEditableFindings([combinedHtml]);
-      } else {
-        // Convert plain text to bullet format for standard services
-        const combinedProposedServices = allProposedServices.join(" ").trim();
-        const bulletFormatted = combinedProposedServices
-          .split(/[.]\s*/)
-          .filter((line) => line.trim())
-          .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
-          .join("<br>");
-        setEditableFindings([bulletFormatted]);
+      newServiceTypes.forEach((serviceType) => {
+        const config = SERVICE_CONFIG[serviceType];
+        if (config?.proposedServices) {
+          newDescriptions.push(config.proposedServices);
+        }
+      });
+
+      if (newDescriptions.length > 0) {
+        setEditableFindings((prev) => {
+          const existingContent = prev[0] || "";
+          
+          // Format new descriptions
+          const formattedNew = newDescriptions.map((desc) => {
+            // Check if it's HTML content
+            if (desc.includes("<b>") || desc.includes("<br>")) {
+              return desc;
+            } else {
+              // Convert plain text to bullet format
+              return desc
+                .split(/[.]\s*/)
+                .filter((line) => line.trim())
+                .map((line) => `• ${line.trim().replace(/\.$/, "")}`)
+                .join("<br>");
+            }
+          }).join("<br><br>");
+
+          // If there's existing content, append with double line break
+          if (existingContent.trim()) {
+            return [existingContent + "<br><br>" + formattedNew];
+          } else {
+            return [formattedNew];
+          }
+        });
       }
     }
+
+    // Clean up removed services from tracking
+    addedServiceTypesRef.current.forEach((serviceType) => {
+      if (!currentServiceTypes.has(serviceType)) {
+        addedServiceTypesRef.current.delete(serviceType);
+      }
+    });
   }, [serviceTypesKey]);
 
   const addService = () => {
