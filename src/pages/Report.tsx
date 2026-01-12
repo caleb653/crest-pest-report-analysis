@@ -107,7 +107,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+      `<b>Monthly Services:</b><br>• Inspect interior and exterior for pest activity and entry points<br>• Apply targeted treatments, de-webbing, and interior/exterior barriers<br>• Maintain protection over time; complimentary retreat available`,
     defaultInitial: 95,
     defaultRecurring: 75,
   },
@@ -115,7 +115,7 @@ const SERVICE_CONFIG: Record<
     frequency: 60,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+      `<b>Bi-Monthly Services:</b><br>• Inspect interior and exterior for pest activity and entry points<br>• Apply targeted treatments, de-webbing, and interior/exterior barriers<br>• Maintain protection over time; complimentary retreat available`,
     defaultInitial: 95,
     defaultRecurring: 105,
   },
@@ -123,7 +123,7 @@ const SERVICE_CONFIG: Record<
     frequency: 90,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      "Inspect interior and exterior for pest activity and entry points. Apply targeted treatments, de-webbing, and interior/exterior barriers. Maintain protection over time; complimentary retreat available.",
+      `<b>Quarterly Services:</b><br>• Inspect interior and exterior for pest activity and entry points<br>• Apply targeted treatments, de-webbing, and interior/exterior barriers<br>• Maintain protection over time; complimentary retreat available`,
     defaultInitial: 95,
     defaultRecurring: 125,
   },
@@ -131,7 +131,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      "Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity. Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed. Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management.",
+      `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
     defaultInitial: 150,
     defaultRecurring: 100,
   },
@@ -139,7 +139,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      "Identify and clearly communicate all rodent entry points discovered during the inspection. Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants. Customize every exclusion to the structure of the home to prevent future rodent entry.",
+      `<b>Rodent Exclusion:</b><br>• Identify and clearly communicate all rodent entry points discovered during the inspection<br>• Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials such as steel mesh and weatherproof sealants<br>• Customize every exclusion to the structure of the home to prevent future rodent entry`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -147,7 +147,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      "Determine the most effective trapping method based on the specific rodent activity identified. Strategically place traps in areas of highest activity to quickly reduce rodent populations. Monitor and adjust trap placement as needed to ensure effective control.",
+      `<b>Rodent Trapping:</b><br>• Determine the most effective trapping method based on the specific rodent activity identified<br>• Strategically place traps in areas of highest activity to quickly reduce rodent populations<br>• Monitor and adjust trap placement as needed to ensure effective control`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -155,7 +155,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      "Eliminate active rodent populations through targeted trapping inside the home and on the property. Reinforce the home's protective barriers by sealing entry points and structural weaknesses. Provide long-term protection by preventing re-entry while reducing current rodent activity.",
+      `<b>Rodent Trapping and Exclusion:</b><br>• Eliminate active rodent populations through targeted trapping inside the home and on the property<br>• Reinforce the home's protective barriers by sealing entry points and structural weaknesses<br>• Provide long-term protection by preventing re-entry while reducing current rodent activity`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -163,7 +163,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Rodents"],
     proposedServices:
-      "Added rodent bait boxes around the property to maintain consistent control of rodent populations. Strategically move bait boxes depending on ongoing rodent activity.",
+      `<b>Rodent Bait Boxes:</b><br>• Added rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Strategically move bait boxes depending on ongoing rodent activity`,
     defaultInitial: 200,
     defaultRecurring: 60,
   },
@@ -171,7 +171,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Attic Services (see details below):</b><br>• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps<br>• Seal multiple entry points, and leave precautionary traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)<br><br><b>Target Pests:</b> Rodents`,
+      `<b>Attic Services (see details below):</b><br>• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps<br>• Seal multiple entry points, and leave precautionary traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
