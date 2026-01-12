@@ -1443,12 +1443,12 @@ const Report = () => {
               {/* Totals Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
                 <div className="text-sm font-bold text-right">Total:</div>
-                <div className="text-sm text-right bg-white/80 rounded py-0.5 px-1 flex items-center h-6">
-                  <span className="text-muted-foreground mr-auto">$</span>
+                <div className="text-sm bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+                  <span className="text-muted-foreground">$</span>
                   <span className="font-bold">{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
-                <div className="text-sm text-right bg-white/80 rounded py-0.5 px-1 flex items-center h-6">
-                  <span className="text-muted-foreground mr-auto">$</span>
+                <div className="text-sm bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+                  <span className="text-muted-foreground">$</span>
                   <span className="font-bold">{Math.round(services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
                 </div>
                 <div></div>
