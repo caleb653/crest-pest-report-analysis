@@ -1309,7 +1309,7 @@ const Report = () => {
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    className="text-[26px] font-bold text-foreground mt-1 mb-2 bg-transparent border-b border-border px-1 h-9 focus-visible:ring-0"
+                    className="print-title text-[26px] font-bold text-foreground mt-1 mb-2 bg-transparent border-b border-border px-1 h-9 focus-visible:ring-0"
                   />
 
                   <div className="grid grid-cols-3 gap-6">
