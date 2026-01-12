@@ -1663,7 +1663,7 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <Card className="print-section p-0 overflow-hidden rounded-lg relative">
+            <div className={`print-section p-0 overflow-hidden rounded-lg relative ${showSignature ? 'bg-card border shadow-sm' : 'bg-transparent'}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1710,7 +1710,7 @@ const Report = () => {
                   </Button>
                 </div>
               )}
-            </Card>
+            </div>
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
