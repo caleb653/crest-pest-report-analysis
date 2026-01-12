@@ -1731,10 +1731,10 @@ const Report = () => {
       </div>
 
       {/* Page 2 - Map & Property Images */}
-      <div className="print-page-break bg-background print:flex print:flex-col print:justify-center print:min-h-[100vh]">
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
+      <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
+        <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header - minimal for print */}
-          <div className="flex items-center justify-between mb-4 print:mb-6 pb-2 print:pb-3 border-b-2 border-border">
+          <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Images</h1>
@@ -1742,7 +1742,7 @@ const Report = () => {
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-8 print:px-6 print:items-center print:justify-center">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
               <div className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none">
