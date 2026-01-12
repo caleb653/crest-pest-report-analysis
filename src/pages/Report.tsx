@@ -1123,7 +1123,7 @@ const Report = () => {
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
@@ -1268,9 +1268,9 @@ const Report = () => {
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div className={isMobile ? "flex flex-col" : "p-3 max-w-[1800px] mx-auto"}>
+      <div className={isMobile ? "flex flex-col" : "p-3 print:p-2 print:pt-1 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2"}>
+        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
           {isMobile && (
             <Card className="p-4">
@@ -1298,7 +1298,7 @@ const Report = () => {
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 col-span-2">
+          <Card className="print-section p-2 print:p-1.5 col-span-2">
             <div className="space-y-1">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
@@ -1472,9 +1472,9 @@ const Report = () => {
           </Card>
 
           {/* Left: Target Pests + Products, Right: Proposed Services */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-1">
             {/* Left Column - Target Pests and Products stacked */}
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 print:space-y-1">
               {/* Target Pests */}
               <Card className="print-section p-0 overflow-visible rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -1661,7 +1661,7 @@ const Report = () => {
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5">
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-1">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
             {showSignature ? (
               <Card className="print-section p-0 overflow-hidden rounded-lg relative">
