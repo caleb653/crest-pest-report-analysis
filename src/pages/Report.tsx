@@ -1298,10 +1298,10 @@ const Report = () => {
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 print:p-1 col-span-2">
-            <div className="space-y-1">
+          <Card className="print-section p-2 print:p-0.5 print:py-1 col-span-2">
+            <div className="space-y-1 print:space-y-0">
               {/* Header Row */}
-              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
+              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-sm print:text-xs font-bold border-b border-border pb-1 print:pb-0.5">
                 <span>Service Type</span>
                 <span className="text-center">Initial</span>
                 <span className="text-center">Recurring</span>
@@ -1314,7 +1314,7 @@ const Report = () => {
               {services.map((service, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center"
+                  className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center print:py-0"
                 >
                   <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                     <Select
@@ -1388,9 +1388,9 @@ const Report = () => {
                       {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                     </span>
                   </div>
-                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5">
+                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0">
                     {service.frequency > 0 ? (
-                      <div className="flex flex-wrap gap-0.5">
+                      <div className="flex flex-wrap gap-0.5 print:gap-0">
                         {(() => {
                           const isWeekly = service.frequency === 7;
                           const today = new Date();
@@ -1441,7 +1441,7 @@ const Report = () => {
               ))}
 
               {/* Totals Row */}
-              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center pt-1 border-t border-border">
+              <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
                 <div className="text-sm font-bold text-right">Total:</div>
                 <div className="text-sm font-bold text-right bg-white/80 rounded py-0.5 px-1 flex items-center">
                   <span className="text-muted-foreground mr-auto">$</span>
