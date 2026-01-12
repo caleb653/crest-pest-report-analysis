@@ -1298,7 +1298,7 @@ const Report = () => {
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 print:p-1.5 col-span-2">
+          <Card className="print-section p-2 print:p-1 col-span-2">
             <div className="space-y-1">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 items-center text-sm font-bold border-b border-border pb-1">
@@ -1472,12 +1472,12 @@ const Report = () => {
           </Card>
 
           {/* Left: Target Pests + Products, Right: Proposed Services */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-1">
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5">
             {/* Left Column - Target Pests and Products stacked */}
-            <div className="space-y-1.5 print:space-y-1">
+            <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
               <Card className="print-section p-0 overflow-visible rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                <div className="print-section-header py-1.5 print:py-1 px-2.5 rounded-t-lg">
                   <span>Target Pest(s)</span>
                 </div>
                 <div className="relative" ref={pestsDropdownRef}>
@@ -1661,7 +1661,7 @@ const Report = () => {
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-1">
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
             {showSignature ? (
               <Card className="print-section p-0 overflow-hidden rounded-lg relative">
