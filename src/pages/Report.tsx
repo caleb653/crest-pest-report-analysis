@@ -1678,7 +1678,7 @@ const Report = () => {
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
                   <div className="p-1.5 print:p-1">
-                    <div className="h-[45px] print:h-[35px] relative">
+                    <div className="h-[38px] print:h-[30px] relative">
                       <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                     </div>
                     <div className="flex items-center gap-3 text-[9px]">
