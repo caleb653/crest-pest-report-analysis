@@ -15,6 +15,7 @@ interface SendReportRequest {
   reportUrl: string;
   emailSubject?: string;
   emailMessage?: string;
+  baseUrl?: string; // For logo URL
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,7 +32,21 @@ const handler = async (req: Request): Promise<Response> => {
       reportUrl,
       emailSubject,
       emailMessage,
+      baseUrl,
     }: SendReportRequest = await req.json();
+
+    // Extract base URL from reportUrl for logo
+    let logoUrl = '';
+    if (baseUrl) {
+      logoUrl = `${baseUrl}/images/crest-logo-email.svg`;
+    } else if (reportUrl) {
+      try {
+        const url = new URL(reportUrl);
+        logoUrl = `${url.origin}/images/crest-logo-email.svg`;
+      } catch {
+        logoUrl = '';
+      }
+    }
 
     if (!customerEmail) {
       return new Response(
@@ -69,6 +84,10 @@ const handler = async (req: Request): Promise<Response> => {
               background: #2A2A2A; 
               padding: 32px 40px;
               text-align: center;
+            }
+            .logo-img {
+              max-width: 180px;
+              height: auto;
             }
             .logo-text {
               font-family: Georgia, 'Times New Roman', serif;
@@ -152,8 +171,12 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="wrapper">
             <div class="header">
+              ${logoUrl ? `
+              <img src="${logoUrl}" alt="Crest Pest Control" class="logo-img" />
+              ` : `
               <p class="logo-text">Crest</p>
               <p class="logo-subtext">Pest Control</p>
+              `}
             </div>
             <div class="content">
               <div class="message-box">
