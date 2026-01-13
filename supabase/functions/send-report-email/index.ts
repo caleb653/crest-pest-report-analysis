@@ -1,6 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+const INLINE_LOGO_CONTENT_ID = "crest-logo";
+const INLINE_LOGO_FILENAME = "crest-logo.png";
+let INLINE_LOGO_BASE64: string | null = null;
+
+try {
+  const bytes = await Deno.readFile(
+    new URL(`./${INLINE_LOGO_FILENAME}`, import.meta.url),
+  );
+  const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  INLINE_LOGO_BASE64 = encode(buffer);
+  console.log("Loaded inline logo:", INLINE_LOGO_FILENAME);
+} catch (e) {
+  console.log(
+    "Inline logo not found; email will fall back to text header.",
+    e instanceof Error ? e.message : e,
+  );
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,18 +54,9 @@ const handler = async (req: Request): Promise<Response> => {
       baseUrl,
     }: SendReportRequest = await req.json();
 
-    // Extract base URL from reportUrl for logo
-    let logoUrl = '';
-    if (baseUrl) {
-      logoUrl = `${baseUrl}/images/crest-logo-email.svg`;
-    } else if (reportUrl) {
-      try {
-        const url = new URL(reportUrl);
-        logoUrl = `${url.origin}/images/crest-logo-email.svg`;
-      } catch {
-        logoUrl = '';
-      }
-    }
+    // We embed the logo as an inline attachment (CID) to avoid email-client issues
+    // with remote images and SVG rendering.
+    const hasInlineLogo = Boolean(INLINE_LOGO_BASE64);
 
     if (!customerEmail) {
       return new Response(
@@ -169,14 +179,15 @@ const handler = async (req: Request): Promise<Response> => {
           </style>
         </head>
         <body>
-          <div class="wrapper">
-            <div class="header">
-              ${logoUrl ? `
-              <img src="${logoUrl}" alt="Crest Pest Control" class="logo-img" />
-              ` : `
-              <p class="logo-text">Crest</p>
-              <p class="logo-subtext">Pest Control</p>
-              `}
+            <div class="wrapper">
+              <div class="header">
+                ${hasInlineLogo ? `
+                <img src="cid:${INLINE_LOGO_CONTENT_ID}" alt="Crest Pest Control" class="logo-img" />
+                ` : `
+                <p class="logo-text">Crest</p>
+                <p class="logo-subtext">Pest Control</p>
+                `}
+              </div>
             </div>
             <div class="content">
               <div class="message-box">
@@ -211,18 +222,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     const finalSubject = emailSubject || `Your Pest Control Proposal from Crest`;
 
+    const requestBody: Record<string, unknown> = {
+      from: "Crest Pest Control <reports@crestpestco.com>",
+      to: [customerEmail],
+      subject: finalSubject,
+      html: emailHtml,
+    };
+
+    if (INLINE_LOGO_BASE64) {
+      requestBody.attachments = [
+        {
+          content: INLINE_LOGO_BASE64,
+          filename: INLINE_LOGO_FILENAME,
+          contentType: "image/png",
+          contentId: INLINE_LOGO_CONTENT_ID,
+        },
+      ];
+    }
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
-      body: JSON.stringify({
-        from: "Crest Pest Control <reports@crestpestco.com>",
-        to: [customerEmail],
-        subject: finalSubject,
-        html: emailHtml,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
