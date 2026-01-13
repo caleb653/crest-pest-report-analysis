@@ -335,10 +335,22 @@ const Report = () => {
     }
 
     // Find new services that haven't been added yet
+    // Only add if we don't already have content that contains this service description
     const newServiceTypes: string[] = [];
     currentServiceTypes.forEach((serviceType) => {
       if (!addedServiceTypesRef.current.has(serviceType)) {
-        newServiceTypes.push(serviceType);
+        // Double-check: see if the content already contains this service's header
+        const config = SERVICE_CONFIG[serviceType];
+        const existingContent = editableFindings[0] || "";
+        
+        // Check if this service description is already in the content
+        const serviceHeaderMatch = config?.proposedServices?.match(/<b>([^<]+)<\/b>/);
+        const serviceHeader = serviceHeaderMatch ? serviceHeaderMatch[1] : serviceType;
+        
+        if (!existingContent.includes(serviceHeader)) {
+          newServiceTypes.push(serviceType);
+        }
+        // Mark as added regardless to prevent future re-adds
         addedServiceTypesRef.current.add(serviceType);
       }
     });
@@ -389,7 +401,7 @@ const Report = () => {
         addedServiceTypesRef.current.delete(serviceType);
       }
     });
-  }, [serviceTypesKey]);
+  }, [serviceTypesKey, editableFindings]);
 
   const addService = () => {
     if (services.length < 3) {
@@ -1027,6 +1039,8 @@ Crest Pest Control
       };
 
       // Save all report data including sent status
+      let finalReportId = reportId;
+      
       if (reportId) {
         const { error: updateError } = await supabase
           .from("reports")
@@ -1042,17 +1056,18 @@ Crest Pest Control
           .insert([{ id: newId, ...fullReportData }]);
 
         if (insertError) throw insertError;
-        navigate({ pathname: location.pathname, search: `?id=${newId}` }, { replace: true });
+        finalReportId = newId;
+        navigate({ pathname: `/report/${newId}` }, { replace: true });
       }
 
-      // Now send the email
+      // Now send the email with the correct report ID
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
           customerName: editableCustomer,
           technicianName: editableTech,
           address: extractedAddress || address || "",
-          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : `${window.location.origin}/view-report/${crypto.randomUUID()}`,
+          reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
@@ -1520,12 +1535,20 @@ Crest Pest Control
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
                       ) : (
-                        <Input
-                          value={editableCustomer}
-                          onChange={(e) => setEditableCustomer(e.target.value)}
-                          placeholder="Customer name"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                        />
+                        <>
+                          <Input
+                            value={editableCustomer}
+                            onChange={(e) => setEditableCustomer(e.target.value)}
+                            placeholder="Customer name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                          />
+                          {/* Live preview for iPad visibility */}
+                          {editableCustomer && (
+                            <span className="text-foreground font-medium text-xs truncate max-w-[100px] print:hidden" title={editableCustomer}>
+                              {editableCustomer.length > 12 ? editableCustomer.substring(0, 12) + "…" : editableCustomer}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1533,12 +1556,20 @@ Crest Pest Control
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
                       ) : (
-                        <Input
-                          value={editableAddress || extractedAddress}
-                          onChange={(e) => setEditableAddress(e.target.value)}
-                          placeholder="Enter address"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                        />
+                        <>
+                          <Input
+                            value={editableAddress || extractedAddress}
+                            onChange={(e) => setEditableAddress(e.target.value)}
+                            placeholder="Enter address"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                          />
+                          {/* Live preview for iPad visibility */}
+                          {(editableAddress || extractedAddress) && (
+                            <span className="text-foreground font-medium text-xs truncate max-w-[100px] print:hidden" title={editableAddress || extractedAddress}>
+                              {(editableAddress || extractedAddress).length > 12 ? (editableAddress || extractedAddress).substring(0, 12) + "…" : (editableAddress || extractedAddress)}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
