@@ -44,6 +44,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           custom_map_url: string | null
+          customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
           customer_signature: string | null
@@ -60,6 +61,7 @@ export type Database = {
           recommendations: Json | null
           report_title: string | null
           screenshots: Json | null
+          sent_to_customer_at: string | null
           service_date: string | null
           services: Json | null
           target_pests: Json | null
@@ -71,6 +73,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           custom_map_url?: string | null
+          customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           customer_signature?: string | null
@@ -87,6 +90,7 @@ export type Database = {
           recommendations?: Json | null
           report_title?: string | null
           screenshots?: Json | null
+          sent_to_customer_at?: string | null
           service_date?: string | null
           services?: Json | null
           target_pests?: Json | null
@@ -98,6 +102,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           custom_map_url?: string | null
+          customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           customer_signature?: string | null
@@ -114,6 +119,7 @@ export type Database = {
           recommendations?: Json | null
           report_title?: string | null
           screenshots?: Json | null
+          sent_to_customer_at?: string | null
           service_date?: string | null
           services?: Json | null
           target_pests?: Json | null
