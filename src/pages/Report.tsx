@@ -428,9 +428,39 @@ const Report = () => {
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
   const [showSignature, setShowSignature] = useState(true);
-  const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
+const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [customProductName, setCustomProductName] = useState("");
   const [customProductChemical, setCustomProductChemical] = useState("");
+  
+  // Read-only mode for customer viewing (after email sent)
+  const [sentToCustomerAt, setSentToCustomerAt] = useState<string | null>(null);
+  const [savedCustomerEmail, setSavedCustomerEmail] = useState<string | null>(null);
+  const [isSavingSignature, setIsSavingSignature] = useState(false);
+  const isReadOnly = !!sentToCustomerAt;
+  
+  // Auto-save signature when customer signs (in read-only mode)
+  const handleSignatureSave = async (signatureData: string | null) => {
+    setCustomerSignature(signatureData);
+    
+    // If in read-only mode and we have a signature, auto-save to database
+    if (isReadOnly && signatureData && reportId) {
+      setIsSavingSignature(true);
+      try {
+        const { error } = await supabase
+          .from("reports")
+          .update({ customer_signature: signatureData })
+          .eq("id", reportId);
+        
+        if (error) throw error;
+        toast.success("Signature saved successfully!");
+      } catch (error: any) {
+        console.error("Error saving signature:", error);
+        toast.error("Failed to save signature");
+      } finally {
+        setIsSavingSignature(false);
+      }
+    }
+  };
 
   const expandWithAI = async (
     text: string,
@@ -594,6 +624,15 @@ const Report = () => {
       }
       if (row.notes) {
         setAdditionalDetails(row.notes);
+      }
+      
+      // Load sent status for read-only mode
+      if (row.sent_to_customer_at) {
+        setSentToCustomerAt(row.sent_to_customer_at);
+      }
+      if (row.customer_email) {
+        setSavedCustomerEmail(row.customer_email);
+        setCustomerEmail(row.customer_email);
       }
 
       console.log("Loading report map_data:", {
@@ -906,10 +945,6 @@ Crest Pest Control
           customerName: editableCustomer,
           technicianName: editableTech,
           address: extractedAddress || address || "",
-          findings: editableFindings,
-          targetPests: editableTargetPests,
-          productsUsed: editableProductsUsed,
-          equipment: editableEquipment,
           reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
           emailSubject,
           emailMessage,
@@ -917,6 +952,24 @@ Crest Pest Control
       });
 
       if (error) throw error;
+
+      // Mark report as sent to customer (makes it read-only except for signature)
+      if (reportId) {
+        const { error: updateError } = await supabase
+          .from("reports")
+          .update({ 
+            sent_to_customer_at: new Date().toISOString(),
+            customer_email: customerEmail 
+          })
+          .eq("id", reportId);
+        
+        if (updateError) {
+          console.error("Error updating sent status:", updateError);
+        } else {
+          setSentToCustomerAt(new Date().toISOString());
+          setSavedCustomerEmail(customerEmail);
+        }
+      }
 
       toast.success(`Report sent to ${customerEmail}`);
       setShowComposeDialog(false);
@@ -1276,11 +1329,26 @@ Crest Pest Control
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Read-only banner for customer viewing */}
+      {isReadOnly && (
+        <div className="bg-primary text-primary-foreground py-3 px-4 text-center no-print sticky top-0 z-30">
+          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
+            <span className="font-semibold">
+              {customerSignature ? "✓ Signed Proposal" : "Please review and sign below to accept this proposal"}
+            </span>
+            {customerSignature && (
+              <span className="text-sm opacity-90">— Thank you for choosing Crest Pest Control!</span>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Mobile Header */}
       {isMobile && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
+            {!isReadOnly && (
             <div className="flex gap-2 no-print">
               <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
                 <FileDown className="w-4 h-4" />
@@ -1292,6 +1360,7 @@ Crest Pest Control
                 <Home className="w-4 h-4" />
               </Button>
             </div>
+            )}
           </div>
         </div>
       )}
@@ -1301,6 +1370,7 @@ Crest Pest Control
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
+            {!isReadOnly && (
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
               <Button
                 onClick={handleOpenCompose}
@@ -1322,6 +1392,7 @@ Crest Pest Control
                 <Home className="w-3 h-3" />
               </Button>
             </div>
+            )}
 
             <div className="flex items-center justify-between gap-6">
               {/* Left side: Logo + Title */}
@@ -1331,11 +1402,17 @@ Crest Pest Control
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex flex-col justify-center">
-                  <Input
-                    value={editableTitle}
-                    onChange={(e) => setEditableTitle(e.target.value)}
-                    className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-96 print:w-80 focus-visible:ring-0"
-                  />
+                  {isReadOnly ? (
+                    <h1 className="print-title font-bold text-foreground text-3xl print:text-2xl">
+                      {editableTitle}
+                    </h1>
+                  ) : (
+                    <Input
+                      value={editableTitle}
+                      onChange={(e) => setEditableTitle(e.target.value)}
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-96 print:w-80 focus-visible:ring-0"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -1347,30 +1424,42 @@ Crest Pest Control
                   <div className="space-y-0.5 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
-                      <Input
-                        value={editableCustomer}
-                        onChange={(e) => setEditableCustomer(e.target.value)}
-                        placeholder="Customer name"
-                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                      />
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
+                      ) : (
+                        <Input
+                          value={editableCustomer}
+                          onChange={(e) => setEditableCustomer(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                        />
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Address:</span>
-                      <Input
-                        value={editableAddress || extractedAddress}
-                        onChange={(e) => setEditableAddress(e.target.value)}
-                        placeholder="Enter address"
-                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
-                      />
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
+                      ) : (
+                        <Input
+                          value={editableAddress || extractedAddress}
+                          onChange={(e) => setEditableAddress(e.target.value)}
+                          placeholder="Enter address"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                        />
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Date:</span>
-                      <Input
-                        type="date"
-                        value={editableServiceDate}
-                        onChange={(e) => setEditableServiceDate(e.target.value)}
-                        className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
-                      />
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                      ) : (
+                        <Input
+                          type="date"
+                          value={editableServiceDate}
+                          onChange={(e) => setEditableServiceDate(e.target.value)}
+                          className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1403,6 +1492,7 @@ Crest Pest Control
                 </div>
               </div>
 
+              {!isReadOnly && (
               <div className="hidden lg:flex items-center gap-2 no-print shrink-0">
                 <Button
                   onClick={handleOpenCompose}
@@ -1424,6 +1514,7 @@ Crest Pest Control
                   <Home className="w-3 h-3" />
                 </Button>
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -1846,7 +1937,12 @@ Crest Pest Control
                     {/* Signature content on the right */}
                     <div className="flex-1 flex flex-col">
                       <div className="h-[38px] print:h-[42px] relative">
-                        <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
+                        <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
+                        {isSavingSignature && (
+                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
                         <div className="flex-1 flex items-center gap-1">
