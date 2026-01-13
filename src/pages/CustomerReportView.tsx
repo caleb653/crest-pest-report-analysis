@@ -58,35 +58,35 @@ export default function CustomerReportView() {
 
   const loadReport = async () => {
     try {
-      const { data, error: fetchError } = await supabase
-        .from("reports")
-        .select("*")
-        .eq("id", reportId)
-        .maybeSingle();
+      const { data, error: invokeError } = await supabase.functions.invoke("public-report", {
+        body: { reportId },
+      });
 
-      if (fetchError) throw fetchError;
-      if (!data) throw new Error("Report not found");
+      if (invokeError) throw invokeError;
+
+      const reportRow = (data as any)?.report;
+      if (!reportRow) throw new Error("Report not found");
 
       // Parse data properly - handle potential JSON types
       const parsedReport: ReportData = {
-        id: data.id,
-        technician_name: data.technician_name,
-        customer_name: data.customer_name,
-        address: data.address,
-        service_date: data.service_date,
-        findings: typeof data.findings === 'string' ? data.findings : (data.findings ? String(data.findings) : null),
-        notes: data.notes,
-        custom_map_url: data.custom_map_url,
-        map_data: data.map_data,
-        customer_signature: data.customer_signature,
-        sent_to_customer_at: data.sent_to_customer_at,
-        report_title: data.report_title,
-        license_number: data.license_number,
-        services: data.services ? (Array.isArray(data.services) ? (data.services as unknown as ServiceItem[]) : []) : null,
-        target_pests: data.target_pests ? (Array.isArray(data.target_pests) ? (data.target_pests as unknown as string[]) : []) : null,
-        products_used: data.products_used ? (Array.isArray(data.products_used) ? (data.products_used as unknown as string[]) : []) : null,
-        equipment: data.equipment ? (Array.isArray(data.equipment) ? (data.equipment as unknown as string[]) : []) : null,
-        property_images: data.property_images ? (Array.isArray(data.property_images) ? (data.property_images as unknown as PropertyImage[]) : []) : null,
+        id: reportRow.id,
+        technician_name: reportRow.technician_name,
+        customer_name: reportRow.customer_name,
+        address: reportRow.address,
+        service_date: reportRow.service_date,
+        findings: typeof reportRow.findings === 'string' ? reportRow.findings : (reportRow.findings ? String(reportRow.findings) : null),
+        notes: reportRow.notes,
+        custom_map_url: reportRow.custom_map_url,
+        map_data: reportRow.map_data,
+        customer_signature: reportRow.customer_signature,
+        sent_to_customer_at: reportRow.sent_to_customer_at,
+        report_title: reportRow.report_title,
+        license_number: reportRow.license_number,
+        services: reportRow.services ? (Array.isArray(reportRow.services) ? (reportRow.services as unknown as ServiceItem[]) : []) : null,
+        target_pests: reportRow.target_pests ? (Array.isArray(reportRow.target_pests) ? (reportRow.target_pests as unknown as string[]) : []) : null,
+        products_used: reportRow.products_used ? (Array.isArray(reportRow.products_used) ? (reportRow.products_used as unknown as string[]) : []) : null,
+        equipment: reportRow.equipment ? (Array.isArray(reportRow.equipment) ? (reportRow.equipment as unknown as string[]) : []) : null,
+        property_images: reportRow.property_images ? (Array.isArray(reportRow.property_images) ? (reportRow.property_images as unknown as PropertyImage[]) : []) : null,
       };
 
       setReport(parsedReport);
