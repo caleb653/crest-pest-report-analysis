@@ -491,6 +491,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   };
 
   useEffect(() => {
+    // Reset per-report tracking to prevent duplicated auto-appends when switching/loading reports
+    addedServiceTypesRef.current = new Set();
+
     if (reportId) {
       loadReport();
     } else if (screenshots && screenshots.length > 0) {
@@ -603,6 +606,15 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
         setServices(row.services as ServiceItem[]);
+        // Prevent the service auto-population effect from re-appending descriptions already saved
+        addedServiceTypesRef.current = new Set(
+          (row.services as ServiceItem[])
+            .map((s) => s.serviceType)
+            .filter((t): t is string => !!t),
+        );
+      } else {
+        // Ensure stale service tracking doesn't leak between reports
+        addedServiceTypesRef.current = new Set();
       }
       if (row.service_date) {
         setEditableServiceDate(row.service_date);
