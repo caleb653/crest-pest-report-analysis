@@ -687,3 +687,34 @@
     padding: 2mm 3mm !important;
   }
 }
+
+/* Customer Report View - Prose styling for HTML content */
+.prose {
+  color: hsl(var(--foreground));
+}
+
+.prose b, .prose strong {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.prose br {
+  display: block;
+  content: "";
+  margin-top: 0.5em;
+}
+
+.prose p {
+  margin-bottom: 0.75em;
+}
+
+/* Style bullet points in HTML content */
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+
+.prose li {
+  margin-bottom: 0.25em;
+}

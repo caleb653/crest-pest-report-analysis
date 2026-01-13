@@ -6,18 +6,20 @@ import { Loader2, Check, FileCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
+import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 
 interface ServiceItem {
   serviceType: string;
   initialPrice: string;
   recurringPrice: string;
-  frequency: string;
+  frequency: string | number;
 }
 
 interface PropertyImage {
-  url: string;
-  caption: string;
+  url?: string;
+  image?: string;
+  caption?: string;
 }
 
 interface ReportData {
@@ -40,6 +42,17 @@ interface ReportData {
   report_title: string | null;
   license_number: string | null;
 }
+
+// Helper to format frequency to readable string
+const formatFrequency = (freq: string | number): string => {
+  if (typeof freq === 'string') return freq;
+  if (freq === 0) return 'One-Time';
+  if (freq === 7) return 'Weekly';
+  if (freq === 30) return 'Monthly';
+  if (freq === 60) return 'Bi-Monthly';
+  if (freq === 90) return 'Quarterly';
+  return `Every ${freq} days`;
+};
 
 export default function CustomerReportView() {
   const { reportId } = useParams<{ reportId: string }>();
@@ -67,7 +80,7 @@ export default function CustomerReportView() {
       const reportRow = (data as any)?.report;
       if (!reportRow) throw new Error("Report not found");
 
-      // Parse data properly - handle potential JSON types
+      // Parse data properly
       const parsedReport: ReportData = {
         id: reportRow.id,
         technician_name: reportRow.technician_name,
@@ -90,7 +103,7 @@ export default function CustomerReportView() {
       };
 
       setReport(parsedReport);
-      setHasSigned(!!data.customer_signature);
+      setHasSigned(!!reportRow.customer_signature);
     } catch (err: any) {
       console.error("Error loading report:", err);
       setError(err.message || "Failed to load report");
@@ -157,15 +170,10 @@ export default function CustomerReportView() {
     );
   }
 
-  const formatFindings = (text: string | null) => {
-    if (!text) return null;
-    return text.split('\n').map((line, i) => (
-      <span key={i}>
-        {line}
-        {i < text.split('\n').length - 1 && <br />}
-      </span>
-    ));
-  };
+  // Get map data as string for ReadOnlyMapCanvas
+  const mapDataString = report.map_data 
+    ? (typeof report.map_data === 'string' ? report.map_data : JSON.stringify(report.map_data))
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -238,11 +246,27 @@ export default function CustomerReportView() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Frequency:</span>{" "}
-                      <span className="font-medium">{service.frequency}</span>
+                      <span className="font-medium">{formatFrequency(service.frequency)}</span>
                     </div>
                   </div>
                 </div>
               ))}
+              
+              {/* Totals */}
+              <div className="flex flex-wrap gap-6 pt-3 border-t text-sm">
+                <div>
+                  <span className="text-muted-foreground">Total Initial:</span>{" "}
+                  <span className="font-bold">
+                    ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total Recurring:</span>{" "}
+                  <span className="font-bold">
+                    ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
           </Card>
         )}
@@ -253,7 +277,7 @@ export default function CustomerReportView() {
             <h2 className="text-lg font-semibold mb-3">Target Pests</h2>
             <div className="flex flex-wrap gap-2">
               {report.target_pests.map((pest, idx) => (
-                <span key={idx} className="bg-sage text-foreground px-3 py-1 rounded-full text-sm font-medium">
+                <span key={idx} className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
                   {pest}
                 </span>
               ))}
@@ -261,13 +285,14 @@ export default function CustomerReportView() {
           </Card>
         )}
 
-        {/* Findings */}
+        {/* Proposed Services / Findings */}
         {report.findings && (
           <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Inspection Findings</h2>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {formatFindings(report.findings)}
-            </p>
+            <h2 className="text-lg font-semibold mb-3">Proposed Services</h2>
+            <div 
+              className="text-sm leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: report.findings }}
+            />
           </Card>
         )}
 
@@ -295,15 +320,16 @@ export default function CustomerReportView() {
           </Card>
         )}
 
-        {/* Property Map */}
+        {/* Property Map with Annotations */}
         {report.custom_map_url && (
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-3">Property Map</h2>
-            <img 
-              src={report.custom_map_url} 
-              alt="Property map" 
-              className="w-full rounded-lg max-h-96 object-contain bg-muted"
-            />
+            <div className="w-full aspect-[3/4] max-h-[600px] rounded-lg overflow-hidden border border-border bg-muted">
+              <ReadOnlyMapCanvas 
+                mapUrl={report.custom_map_url}
+                mapData={mapDataString}
+              />
+            </div>
           </Card>
         )}
 
@@ -312,19 +338,34 @@ export default function CustomerReportView() {
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Property Photos</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {report.property_images.map((img, idx) => (
-                <div key={idx} className="space-y-2">
-                  <img 
-                    src={img.url} 
-                    alt={img.caption || `Property photo ${idx + 1}`}
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
-                  {img.caption && (
-                    <p className="text-sm text-muted-foreground">{img.caption}</p>
-                  )}
-                </div>
-              ))}
+              {report.property_images.map((img, idx) => {
+                const imageUrl = img.url || img.image;
+                if (!imageUrl) return null;
+                return (
+                  <div key={idx} className="space-y-2">
+                    <img 
+                      src={imageUrl} 
+                      alt={img.caption || `Property photo ${idx + 1}`}
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    {img.caption && (
+                      <p className="text-sm text-muted-foreground">{img.caption}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          </Card>
+        )}
+
+        {/* Additional Notes */}
+        {report.notes && (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-3">Additional Details</h2>
+            <div 
+              className="text-sm leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: report.notes }}
+            />
           </Card>
         )}
 
@@ -381,14 +422,6 @@ export default function CustomerReportView() {
             </div>
           )}
         </Card>
-
-        {/* Additional Notes */}
-        {report.notes && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Additional Notes</h2>
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{report.notes}</p>
-          </Card>
-        )}
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground pt-8 pb-4">
