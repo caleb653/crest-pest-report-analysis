@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.public-report]
 verify_jwt = false
+
+[functions.save-customer-signature]
+verify_jwt = false
