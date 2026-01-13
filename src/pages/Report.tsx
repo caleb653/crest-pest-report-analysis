@@ -960,6 +960,7 @@ Crest Pest Control
           reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : "",
           emailSubject,
           emailMessage,
+          baseUrl: window.location.origin,
         },
       });
 

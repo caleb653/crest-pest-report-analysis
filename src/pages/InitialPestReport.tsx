@@ -666,6 +666,7 @@ const Report = () => {
           productsUsed: editableProductsUsed,
           equipment: editableEquipment,
           reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
+          baseUrl: window.location.origin,
         },
       });
 
