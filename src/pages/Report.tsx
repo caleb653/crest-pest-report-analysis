@@ -1835,16 +1835,16 @@ Crest Pest Control
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1.5 print:p-1 flex items-center gap-2">
+                  <div className="p-1 print:p-0.5 flex items-center gap-1.5">
                     {/* Bug mascot on the left */}
-                    <img src={crestBugBlack} alt="" className="h-12 w-auto shrink-0" />
+                    <img src={crestBugBlack} alt="" className="h-11 w-auto shrink-0" />
                     
                     {/* Signature content on the right */}
                     <div className="flex-1 flex flex-col">
-                      <div className="h-[34px] print:h-[28px] relative">
+                      <div className="h-[38px] print:h-[32px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-2 text-[8px] mt-0.5 pt-0.5 border-t border-border">
+                      <div className="flex items-center gap-2 text-[8px] pt-0.5 border-t border-border">
                         <div className="flex-1 flex items-center gap-1">
                           <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
                           <Input
@@ -1853,7 +1853,7 @@ Crest Pest Control
                             placeholder="Customer name"
                             className="bg-transparent border-none text-muted-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
                           />
-                          <span className="print-only-text hidden text-muted-foreground text-[8px]">{editableCustomer}</span>
+                          <span className="hidden print:inline text-muted-foreground text-[8px]">{editableCustomer}</span>
                         </div>
                         <div className="text-muted-foreground whitespace-nowrap">
                           <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
