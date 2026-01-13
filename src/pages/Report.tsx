@@ -1820,8 +1820,8 @@ Crest Pest Control
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
-            {/* Signature Section - Left (same width as Target Pests + Products) - matches Pesticide Notice height */}
-            <div className={`p-0 overflow-hidden rounded-lg relative flex flex-col ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
+            {/* Signature Section - Left (same width as Target Pests + Products) - compact to match Pesticide Notice */}
+            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1835,25 +1835,23 @@ Crest Pest Control
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-2 print:p-1.5 flex items-stretch gap-3 flex-1">
-                    {/* Bug mascot on the left - centered vertically */}
-                    <div className="flex items-center">
-                      <img src={crestBugBlack} alt="" className="h-14 w-auto shrink-0" />
-                    </div>
+                  <div className="p-1.5 print:p-1 flex items-center gap-2">
+                    {/* Bug mascot on the left */}
+                    <img src={crestBugBlack} alt="" className="h-12 w-auto shrink-0" />
                     
-                    {/* Signature content on the right - takes remaining height */}
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div className="flex-1 min-h-[40px] relative">
+                    {/* Signature content on the right */}
+                    <div className="flex-1 flex flex-col">
+                      <div className="h-[28px] print:h-[24px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-3 text-[9px] mt-1 pt-1 border-t border-border">
+                      <div className="flex items-center gap-2 text-[8px] mt-0.5 pt-0.5 border-t border-border">
                         <div className="flex-1 flex items-center gap-1">
-                          <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
+                          <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
                           <Input
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
                         </div>
@@ -1867,12 +1865,12 @@ Crest Pest Control
               ) : (
                 <>
                   {/* Invisible placeholder to maintain spacing */}
-                  <div className="invisible flex-1">
+                  <div className="invisible">
                     <div className="py-0.5 px-2.5 rounded-t-lg">
                       <span className="text-xs font-bold uppercase leading-none">&nbsp;</span>
                     </div>
-                    <div className="p-2">
-                      <div className="h-[60px]"></div>
+                    <div className="p-1.5">
+                      <div className="h-[40px]"></div>
                     </div>
                   </div>
                   {/* Centered show button */}
