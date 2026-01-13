@@ -204,7 +204,8 @@ interface AnalysisData {
 const Report = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { reportId } = useParams();
+  const { reportId: routeReportId } = useParams();
+  const reportId = routeReportId ?? new URLSearchParams(location.search).get("id") ?? undefined;
   const isMobile = useIsMobile();
   const {
     technicianName,
@@ -815,14 +816,15 @@ const Report = () => {
         if (updateError) throw updateError;
         toast.success("Report saved successfully!");
       } else {
-        const { data, error: insertError } = await supabase.from("reports").insert([reportData]).select('id').single();
+        // Generate an id client-side so we don't need RETURNING/SELECT (which is blocked by RLS for public users)
+        const newId = crypto.randomUUID();
+
+        const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportData }]);
 
         if (insertError) throw insertError;
-        
-        // Update the URL with the new report ID so subsequent saves update rather than create new
-        if (data?.id) {
-          window.history.replaceState({}, '', `/report?id=${data.id}`);
-        }
+
+        // Update the URL so subsequent saves update this same report
+        navigate({ pathname: location.pathname, search: `?id=${newId}` }, { replace: true });
         toast.success("Report saved successfully!");
       }
     } catch (error: any) {
