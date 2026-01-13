@@ -838,7 +838,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         frequency: s.frequency,
       }));
 
-      const reportData = {
+      const reportDataPayload = {
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
@@ -863,16 +863,41 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         report_title: editableTitle,
       };
 
-      if (reportId) {
-        const { error: updateError } = await supabase.from("reports").update(reportData).eq("id", reportId);
+      // Check if admin session exists - if so, use admin-reports API for guaranteed save
+      const adminSessionToken = localStorage.getItem("admin_session");
 
-        if (updateError) throw updateError;
+      if (reportId) {
+        if (adminSessionToken) {
+          // Use admin backend API for reliable save
+          console.log("Saving via admin-reports API...");
+          const { data, error: invokeError } = await supabase.functions.invoke("admin-reports", {
+            body: { 
+              sessionToken: adminSessionToken, 
+              action: "update", 
+              reportId, 
+              reportData: reportDataPayload 
+            },
+          });
+
+          if (invokeError) throw invokeError;
+          if (!data?.ok) throw new Error(data?.error || "Update failed");
+
+          // Update local state with returned data to confirm save
+          if (data.report?.services) {
+            setServices(data.report.services);
+          }
+          console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
+        } else {
+          // Fallback to direct client update for non-admin users
+          const { error: updateError } = await supabase.from("reports").update(reportDataPayload).eq("id", reportId);
+          if (updateError) throw updateError;
+        }
         toast.success("Report saved successfully!");
       } else {
         // Generate an id client-side so we don't need RETURNING/SELECT (which is blocked by RLS for public users)
         const newId = crypto.randomUUID();
 
-        const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportData }]);
+        const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportDataPayload }]);
 
         if (insertError) throw insertError;
 

@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type Action = "list" | "get" | "delete";
+type Action = "list" | "get" | "delete" | "update";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,6 +18,7 @@ serve(async (req) => {
     const sessionToken = String(body?.sessionToken ?? "").trim();
     const action = (body?.action as Action) ?? "list";
     const reportId = body?.reportId ? String(body.reportId) : undefined;
+    const reportData = body?.reportData ?? null;
 
     console.log("admin-reports request", { action, hasSessionToken: !!sessionToken, hasReportId: !!reportId });
 
@@ -102,6 +103,45 @@ serve(async (req) => {
         );
       }
 
+      return new Response(
+        JSON.stringify({ ok: true, report: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+      );
+    }
+
+    if (action === "update") {
+      if (!reportId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "missing_report_id" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+
+      if (!reportData || typeof reportData !== "object") {
+        return new Response(
+          JSON.stringify({ ok: false, error: "missing_report_data" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+
+      console.log("admin-reports update", { reportId, reportDataKeys: Object.keys(reportData) });
+
+      const { data, error } = await supabase
+        .from("reports")
+        .update(reportData)
+        .eq("id", reportId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("admin-reports update error", error);
+        return new Response(
+          JSON.stringify({ ok: false, error: "update_failed", message: error.message }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+        );
+      }
+
+      console.log("admin-reports update success", { reportId });
       return new Response(
         JSON.stringify({ ok: true, report: data }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
