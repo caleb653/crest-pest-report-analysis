@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.send-report-email]
 verify_jwt = false
+
+[functions.admin-reports]
+verify_jwt = false
+
+[functions.public-report]
+verify_jwt = false
