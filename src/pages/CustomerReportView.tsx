@@ -43,6 +43,33 @@ interface ReportData {
   license_number: string | null;
 }
 
+// Full product list with chemicals (legally required)
+const PRODUCT_LIST = [
+  { name: "Alpine WSG", chemical: "Dinotefuran" },
+  { name: "Bifen I/T", chemical: "Bifenthrin" },
+  { name: "Essentria IC Pro", chemical: "Geraniol, Clove Oil, Cornmint Oil" },
+  { name: "Temprid FX", chemical: "Imidacloprid, Cyfluthrin" },
+  { name: "Termidor SC", chemical: "Fipronil" },
+  { name: "Phantom", chemical: "Chlorfenapyr" },
+  { name: "ExciteR", chemical: "Pyrethrins, Piperonyl Butoxide" },
+  { name: "Gentrol IGR Concentrate", chemical: "(S)-Hydroprene" },
+  { name: "Nyguard IGR Concentrate", chemical: "Pyridine" },
+  { name: "PT Wasp Freeze", chemical: "Prallethrin" },
+  { name: "PT Alpine Flea & Bed Bug", chemical: "Dinotefuran, Pyriproxyfen, Prallethrin" },
+  { name: "PT Alpine Fly Bait", chemical: "" },
+  { name: "Gentrol Aerosol", chemical: "(S)-Hydroprene" },
+  { name: "Bedlam", chemical: "Cyclopropanecarboxylate, Dicarboximide" },
+  { name: "Invade Hot Spot +", chemical: "" },
+  { name: "Niban", chemical: "Orthoboric Acid" },
+  { name: "Bifen LP", chemical: "Bifenthrin" },
+  { name: "Advion Ant Gel Bait", chemical: "Indoxacarb" },
+  { name: "Maxforce FC Ant Gel", chemical: "Fipronil" },
+  { name: "Advion Cockroach Gel Bait", chemical: "Indoxacarb" },
+  { name: "Contrac California", chemical: "Bromethalin" },
+  { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
+  { name: "In2Care Mix", chemical: "Pyriproxyfen, Beauveria bassiana Strain GHA" },
+];
+
 // Helper to format frequency to readable string
 const formatFrequency = (freq: string | number): string => {
   if (typeof freq === 'string') return freq;
@@ -80,7 +107,6 @@ export default function CustomerReportView() {
       const reportRow = (data as any)?.report;
       if (!reportRow) throw new Error("Report not found");
 
-      // Parse data properly
       const parsedReport: ReportData = {
         id: reportRow.id,
         technician_name: reportRow.technician_name,
@@ -175,19 +201,17 @@ export default function CustomerReportView() {
     ? (typeof report.map_data === 'string' ? report.map_data : JSON.stringify(report.map_data))
     : null;
 
+  // Build products display string with chemicals
+  const productsDisplay = PRODUCT_LIST.map(p => 
+    p.chemical ? `${p.name} (${p.chemical})` : p.name
+  ).join(', ');
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-brand-black py-6 px-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-center">
-          <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
-        </div>
-      </header>
-
       {/* Already Signed Banner */}
       {hasSigned && (
-        <div className="bg-sage/50 border-b border-sage py-4 px-4">
-          <div className="max-w-4xl mx-auto flex items-center gap-3 justify-center">
+        <div className="bg-sage/50 border-b border-sage py-3 px-4">
+          <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
             <FileCheck className="w-5 h-5 text-dark-sage" />
             <span className="text-foreground font-medium">
               This proposal has been signed and approved. Thank you!
@@ -196,148 +220,271 @@ export default function CustomerReportView() {
         </div>
       )}
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto p-4 py-8 space-y-6">
-        {/* Title & Basic Info */}
-        <Card className="p-6">
-          <h1 className="text-2xl font-bold mb-4">
-            {report.report_title || "Pest Control Proposal"}
-          </h1>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Customer:</span>
-              <p className="font-medium">{report.customer_name || "—"}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Service Address:</span>
-              <p className="font-medium">{report.address || "—"}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Service Date:</span>
-              <p className="font-medium">{report.service_date || "—"}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Technician:</span>
-              <p className="font-medium">
-                {report.technician_name}
-                {report.license_number && <span className="text-muted-foreground ml-1">({report.license_number})</span>}
-              </p>
-            </div>
+      {/* Page 1: Main Proposal */}
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <header className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+            <h1 className="text-lg font-bold">{report.report_title || "Pest Control Proposal"}</h1>
           </div>
-        </Card>
+          <div className="text-right text-xs text-muted-foreground">
+            <span className="font-bold text-foreground">PEST CONTROL</span>
+          </div>
+        </header>
 
-        {/* Services */}
-        {report.services && report.services.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Proposed Services</h2>
+        <main className="p-4 space-y-4">
+          {/* Customer & Technician Details - Side by Side */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-4">
+              <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Customer Details</h2>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{report.customer_name || "—"}</span></p>
+                <p><span className="text-muted-foreground">Address:</span> <span className="font-medium">{report.address || "—"}</span></p>
+                <p><span className="text-muted-foreground">Date:</span> <span className="font-medium">{report.service_date || "—"}</span></p>
+              </div>
+            </Card>
+            <Card className="p-4">
+              <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Technician Information</h2>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{report.technician_name}</span></p>
+                <p><span className="text-muted-foreground">License:</span> <span className="font-medium">{report.license_number || "—"}</span></p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Services Table */}
+          {report.services && report.services.length > 0 && (
+            <Card className="overflow-hidden">
+              <div className="bg-brand-black text-white px-4 py-2">
+                <span className="text-xs font-bold uppercase">Services</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-medium">Service Type</th>
+                      <th className="text-center px-4 py-2 font-medium">Initial</th>
+                      <th className="text-center px-4 py-2 font-medium">Recurring</th>
+                      <th className="text-center px-4 py-2 font-medium">Frequency</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.services.map((service, idx) => (
+                      <tr key={idx} className="border-t border-border">
+                        <td className="px-4 py-2 font-medium">{service.serviceType}</td>
+                        <td className="px-4 py-2 text-center">${service.initialPrice}</td>
+                        <td className="px-4 py-2 text-center">${service.recurringPrice}</td>
+                        <td className="px-4 py-2 text-center">{formatFrequency(service.frequency)}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-border bg-muted/30">
+                      <td className="px-4 py-2 font-bold text-right">Total:</td>
+                      <td className="px-4 py-2 text-center font-bold">
+                        ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-2 text-center font-bold">
+                        ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Target Pests + Proposed Services Row */}
+          <div className="grid grid-cols-[2fr_3fr] gap-4">
+            {/* Left Column */}
             <div className="space-y-4">
-              {report.services.map((service, idx) => (
-                <div key={idx} className="border rounded-lg p-4 bg-muted/30">
-                  <h3 className="font-medium text-base mb-2">{service.serviceType}</h3>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Initial:</span>{" "}
-                      <span className="font-medium">${service.initialPrice}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Recurring:</span>{" "}
-                      <span className="font-medium">${service.recurringPrice}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Frequency:</span>{" "}
-                      <span className="font-medium">{formatFrequency(service.frequency)}</span>
+              {/* Target Pests */}
+              {report.target_pests && report.target_pests.length > 0 && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Target Pest(s)</span>
+                  </div>
+                  <div className="p-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.target_pests.map((pest, idx) => (
+                        <span key={idx} className="bg-primary text-primary-foreground px-2.5 py-1 rounded-full text-xs font-medium">
+                          {pest}
+                        </span>
+                      ))}
                     </div>
                   </div>
+                </Card>
+              )}
+
+              {/* Products - Legally Required */}
+              <Card className="overflow-hidden">
+                <div className="bg-brand-black text-white px-4 py-2">
+                  <span className="text-xs font-bold uppercase">Products</span>
                 </div>
-              ))}
-              
-              {/* Totals */}
-              <div className="flex flex-wrap gap-6 pt-3 border-t text-sm">
-                <div>
-                  <span className="text-muted-foreground">Total Initial:</span>{" "}
-                  <span className="font-bold">
-                    ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
-                  </span>
+                <div className="p-3">
+                  <p className="text-[10px] leading-relaxed text-foreground">
+                    {productsDisplay}
+                  </p>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Total Recurring:</span>{" "}
-                  <span className="font-bold">
-                    ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
-                  </span>
+              </Card>
+            </div>
+
+            {/* Right Column - Proposed Services */}
+            {report.findings && (
+              <Card className="overflow-hidden">
+                <div className="bg-brand-black text-white px-4 py-2">
+                  <span className="text-xs font-bold uppercase">Proposed Services</span>
                 </div>
+                <div className="p-4">
+                  <div 
+                    className="text-sm leading-relaxed prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: report.findings }}
+                  />
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* Signature + Pesticide Notice Row */}
+          <div className="grid grid-cols-[2fr_3fr] gap-4">
+            {/* Signature Section */}
+            <Card className="overflow-hidden">
+              <div className="bg-brand-black text-white px-4 py-2">
+                <span className="text-xs font-bold uppercase">Customer Signature</span>
               </div>
+              <div className="p-4">
+                {hasSigned && report.customer_signature ? (
+                  <div className="space-y-3">
+                    <div className="border rounded p-3 bg-muted/30">
+                      <img 
+                        src={report.customer_signature} 
+                        alt="Customer signature" 
+                        className="max-h-16 mx-auto"
+                      />
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
+                      <Check className="w-4 h-4" />
+                      <span className="font-medium">Proposal Approved</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+                      <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
+                      <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Please sign below to approve this proposal.
+                    </p>
+                    <div className="border rounded overflow-hidden">
+                      <SignatureCanvas
+                        ref={signatureRef}
+                        onSave={() => {}}
+                        label="Sign here"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleSubmitSignature}
+                      disabled={isSaving}
+                      className="w-full"
+                      size="sm"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          Submit Signature
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Pesticide Notice - Legally Required */}
+            <Card className="overflow-hidden">
+              <div className="bg-brand-black text-white px-4 py-2">
+                <span className="text-xs font-bold uppercase">Pesticide Notice</span>
+              </div>
+              <div className="p-3">
+                <p className="text-[9px] leading-[1.3] text-foreground">
+                  State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
+                </p>
+                <p className="text-[9px] leading-[1.3] text-foreground font-medium mt-1">
+                  For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
+                </p>
+              </div>
+            </Card>
+          </div>
+        </main>
+      </div>
+
+      {/* Page 2: Map & Additional Details */}
+      {(report.custom_map_url || report.notes) && (
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+          {/* Header */}
+          <header className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+              <h1 className="text-lg font-bold">Property Map & Images</h1>
             </div>
-          </Card>
-        )}
-
-        {/* Target Pests */}
-        {report.target_pests && report.target_pests.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Target Pests</h2>
-            <div className="flex flex-wrap gap-2">
-              {report.target_pests.map((pest, idx) => (
-                <span key={idx} className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                  {pest}
-                </span>
-              ))}
+            <div className="text-right text-xs text-muted-foreground">
+              <span className="font-bold text-foreground">PEST CONTROL</span>
             </div>
-          </Card>
-        )}
+          </header>
 
-        {/* Proposed Services / Findings */}
-        {report.findings && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Proposed Services</h2>
-            <div 
-              className="text-sm leading-relaxed prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: report.findings }}
-            />
-          </Card>
-        )}
+          <main className="p-4">
+            <div className="grid grid-cols-[2fr_3fr] gap-4">
+              {/* Map Section */}
+              {report.custom_map_url && (
+                <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
+                  <ReadOnlyMapCanvas 
+                    mapUrl={report.custom_map_url}
+                    mapData={mapDataString}
+                  />
+                </div>
+              )}
 
-        {/* Products */}
-        {report.products_used && report.products_used.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Products Used</h2>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {report.products_used.map((product, idx) => (
-                <li key={idx}>{product}</li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {/* Equipment */}
-        {report.equipment && report.equipment.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Equipment</h2>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              {report.equipment.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {/* Property Map with Annotations */}
-        {report.custom_map_url && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Property Map</h2>
-            <div className="w-full aspect-[3/4] max-h-[600px] rounded-lg overflow-hidden border border-border bg-muted">
-              <ReadOnlyMapCanvas 
-                mapUrl={report.custom_map_url}
-                mapData={mapDataString}
-              />
+              {/* Additional Details */}
+              {report.notes && (
+                <Card className="overflow-hidden h-fit">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Additional Details</span>
+                  </div>
+                  <div className="p-4">
+                    <div 
+                      className="text-sm leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: report.notes }}
+                    />
+                  </div>
+                </Card>
+              )}
             </div>
-          </Card>
-        )}
+          </main>
+        </div>
+      )}
 
-        {/* Property Images */}
-        {report.property_images && report.property_images.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Property Photos</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Page 3: Property Images */}
+      {report.property_images && report.property_images.length > 0 && (
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+          {/* Header */}
+          <header className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+              <h1 className="text-lg font-bold">Property Images</h1>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              <span className="font-bold text-foreground">PEST CONTROL</span>
+            </div>
+          </header>
+
+          <main className="p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {report.property_images.map((img, idx) => {
                 const imageUrl = img.url || img.image;
                 if (!imageUrl) return null;
@@ -346,89 +493,24 @@ export default function CustomerReportView() {
                     <img 
                       src={imageUrl} 
                       alt={img.caption || `Property photo ${idx + 1}`}
-                      className="w-full h-48 object-cover rounded-lg"
+                      className="w-full h-48 object-cover rounded-lg border border-border"
                     />
                     {img.caption && (
-                      <p className="text-sm text-muted-foreground">{img.caption}</p>
+                      <p className="text-xs text-muted-foreground">{img.caption}</p>
                     )}
                   </div>
                 );
               })}
             </div>
-          </Card>
-        )}
-
-        {/* Additional Notes */}
-        {report.notes && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-3">Additional Details</h2>
-            <div 
-              className="text-sm leading-relaxed prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: report.notes }}
-            />
-          </Card>
-        )}
-
-        {/* Signature Section */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">
-            {hasSigned ? "Your Signature" : "Sign to Approve"}
-          </h2>
-          
-          {hasSigned && report.customer_signature ? (
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <img 
-                  src={report.customer_signature} 
-                  alt="Customer signature" 
-                  className="max-h-24 mx-auto"
-                />
-              </div>
-              <div className="flex items-center justify-center gap-2 text-dark-sage">
-                <Check className="w-5 h-5" />
-                <span className="font-medium">Proposal Approved</span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Please sign below to approve this pest control proposal.
-              </p>
-              <div className="border rounded-lg overflow-hidden">
-                <SignatureCanvas
-                  ref={signatureRef}
-                  onSave={() => {}}
-                  label="Sign here"
-                />
-              </div>
-              <Button 
-                onClick={handleSubmitSignature}
-                disabled={isSaving}
-                className="w-full"
-                size="lg"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Submit Signature
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-muted-foreground pt-8 pb-4">
-          <p>Questions? Contact Crest Pest Control</p>
-          <p className="font-medium">(949) 424-5000</p>
+          </main>
         </div>
-      </main>
+      )}
+
+      {/* Footer */}
+      <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground py-8 border-t border-border mt-8">
+        <p>Questions? Contact Crest Pest Control</p>
+        <p className="font-medium">(949) 424-5000</p>
+      </div>
     </div>
   );
 }

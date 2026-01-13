@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, FabricImage } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText } from 'fabric';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
 import boxIcon from '@/assets/icons/box-icon.svg';
@@ -13,6 +13,11 @@ interface ReadOnlyMapCanvasProps {
   mapUrl: string;
   mapData?: string | null;
   className?: string;
+}
+
+interface LegendItem {
+  icon: string;
+  label: string;
 }
 
 const AVAILABLE_ICONS = [
@@ -34,9 +39,11 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
-  const [legendItems, setLegendItems] = useState<{ icon: string; label: string }[]>([]);
+  const [legendItems, setLegendItems] = useState<LegendItem[]>([]);
   const hasLoadedRef = useRef(false);
+  const [canvasReady, setCanvasReady] = useState(false);
 
+  // Initialize canvas
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
@@ -49,7 +56,6 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       height: canvasHeight,
       backgroundColor: 'transparent',
       selection: false,
-      interactive: false,
     });
 
     fabricCanvasRef.current = canvas;
@@ -58,20 +64,47 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
     canvas.selection = false;
     canvas.hoverCursor = 'default';
     canvas.moveCursor = 'default';
+    
+    setCanvasReady(true);
 
     return () => {
       canvas.dispose();
+      fabricCanvasRef.current = null;
+      setCanvasReady(false);
     };
   }, []);
 
   // Load saved annotations data
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !mapData || hasLoadedRef.current) return;
+    if (!canvas || !mapData || hasLoadedRef.current || !canvasReady) return;
 
     try {
       const parsed = typeof mapData === 'string' ? JSON.parse(mapData) : mapData;
-      if (!parsed || !parsed.objects) return;
+      console.log('ReadOnlyMapCanvas: Parsed map data:', parsed);
+      
+      // Handle the nested structure: { objects: { objects: [...] }, legendItems: [...] }
+      let objectsArray: any[] = [];
+      let savedLegendItems: LegendItem[] = [];
+      
+      if (parsed.objects?.objects && Array.isArray(parsed.objects.objects)) {
+        // New format: { objects: { objects: [...] } }
+        objectsArray = parsed.objects.objects;
+      } else if (parsed.objects && Array.isArray(parsed.objects)) {
+        // Old format: { objects: [...] }
+        objectsArray = parsed.objects;
+      }
+      
+      if (parsed.legendItems && Array.isArray(parsed.legendItems)) {
+        savedLegendItems = parsed.legendItems;
+      }
+      
+      console.log('ReadOnlyMapCanvas: Found objects:', objectsArray.length, 'legend items:', savedLegendItems.length);
+      
+      if (objectsArray.length === 0) {
+        hasLoadedRef.current = true;
+        return;
+      }
 
       const canvasWidth = canvas.getWidth();
       const canvasHeight = canvas.getHeight();
@@ -82,105 +115,101 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       const loadPromises: Promise<void>[] = [];
       const foundIcons = new Set<string>();
 
-      parsed.objects.forEach((obj: any) => {
+      objectsArray.forEach((obj: any) => {
+        console.log('Processing object:', obj.type, obj);
+        
         if (obj.type === 'image' && obj.data?.iconType) {
           const iconType = obj.data.iconType;
           const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
+          console.log('Loading icon:', iconType, 'found info:', !!iconInfo);
+          
           if (iconInfo) {
             foundIcons.add(iconType);
             const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
               img.set({
                 left: (obj.left || 0) * scaleX,
                 top: (obj.top || 0) * scaleY,
-                scaleX: iconTargetScale * (obj.normalizedScaleX || 1),
-                scaleY: iconTargetScale * (obj.normalizedScaleY || 1),
+                scaleX: iconTargetScale * (obj.scaleX || 1),
+                scaleY: iconTargetScale * (obj.scaleY || 1),
                 angle: obj.angle || 0,
                 selectable: false,
                 evented: false,
-                data: { iconType },
               });
               canvas.add(img);
+              console.log('Added icon to canvas:', iconType);
+            }).catch((err) => {
+              console.error('Error loading icon:', iconType, err);
             });
             loadPromises.push(promise);
           }
         } else if (obj.type === 'rect') {
-          // Load rectangles using fabric's built-in deserialization
-          import('fabric').then(({ Rect }) => {
-            const rect = new Rect({
-              left: (obj.left || 0) * scaleX,
-              top: (obj.top || 0) * scaleY,
-              width: (obj.width || 100) * scaleX,
-              height: (obj.height || 50) * scaleY,
-              fill: obj.fill,
-              stroke: obj.stroke,
-              strokeWidth: obj.strokeWidth || 3,
-              rx: obj.rx || 4,
-              ry: obj.ry || 4,
-              selectable: false,
-              evented: false,
-            });
-            canvas.add(rect);
-            canvas.renderAll();
+          const rect = new Rect({
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            width: (obj.width || 100) * scaleX * (obj.scaleX || 1),
+            height: (obj.height || 50) * scaleY * (obj.scaleY || 1),
+            fill: obj.fill,
+            stroke: obj.stroke,
+            strokeWidth: obj.strokeWidth || 3,
+            rx: obj.rx || 4,
+            ry: obj.ry || 4,
+            selectable: false,
+            evented: false,
           });
+          canvas.add(rect);
         } else if (obj.type === 'line') {
-          import('fabric').then(({ Line }) => {
-            const line = new Line([
-              (obj.x1 || 0) * scaleX,
-              (obj.y1 || 0) * scaleY,
-              (obj.x2 || 0) * scaleX,
-              (obj.y2 || 0) * scaleY,
-            ], {
-              stroke: obj.stroke || '#DC2626',
-              strokeWidth: obj.strokeWidth || 5,
-              selectable: false,
-              evented: false,
-            });
-            canvas.add(line);
-            canvas.renderAll();
+          const line = new Line([
+            (obj.x1 || 0) * scaleX,
+            (obj.y1 || 0) * scaleY,
+            (obj.x2 || 0) * scaleX,
+            (obj.y2 || 0) * scaleY,
+          ], {
+            stroke: obj.stroke || '#DC2626',
+            strokeWidth: obj.strokeWidth || 5,
+            selectable: false,
+            evented: false,
           });
+          canvas.add(line);
         } else if (obj.type === 'i-text' || obj.type === 'text') {
-          import('fabric').then(({ IText }) => {
-            const text = new IText(obj.text || '', {
-              left: (obj.left || 0) * scaleX,
-              top: (obj.top || 0) * scaleY,
-              fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY),
-              fill: obj.fill || '#000000',
-              fontFamily: obj.fontFamily || 'Space Grotesk, sans-serif',
-              fontWeight: obj.fontWeight || 'bold',
-              backgroundColor: obj.backgroundColor,
-              selectable: false,
-              editable: false,
-              evented: false,
-            });
-            canvas.add(text);
-            canvas.renderAll();
+          const text = new IText(obj.text || '', {
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY),
+            fill: obj.fill || '#000000',
+            fontFamily: obj.fontFamily || 'Space Grotesk, sans-serif',
+            fontWeight: obj.fontWeight || 'bold',
+            backgroundColor: obj.backgroundColor,
+            selectable: false,
+            editable: false,
+            evented: false,
           });
+          canvas.add(text);
         }
       });
 
       Promise.all(loadPromises).then(() => {
         canvas.renderAll();
         hasLoadedRef.current = true;
+        console.log('ReadOnlyMapCanvas: Render complete, objects on canvas:', canvas.getObjects().length);
 
-        // Build legend from found icons
-        const legendData = Array.from(foundIcons).map(iconType => {
-          const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
-          return {
-            icon: iconType,
-            label: iconInfo?.label || 'Icon',
-          };
-        });
-        
-        if (parsed.legend && Array.isArray(parsed.legend)) {
-          setLegendItems(parsed.legend);
-        } else if (legendData.length > 0) {
+        // Use saved legend items if available, otherwise build from found icons
+        if (savedLegendItems.length > 0) {
+          setLegendItems(savedLegendItems);
+        } else if (foundIcons.size > 0) {
+          const legendData = Array.from(foundIcons).map(iconType => {
+            const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
+            return {
+              icon: iconType,
+              label: iconInfo?.label || 'Icon',
+            };
+          });
           setLegendItems(legendData);
         }
       });
     } catch (e) {
       console.error('Error loading map annotations:', e);
     }
-  }, [mapData]);
+  }, [mapData, canvasReady]);
 
   return (
     <div ref={containerRef} className={`relative w-full h-full ${className || ''}`}>
@@ -202,15 +231,15 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
 
       {/* Legend */}
       {legendItems.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white/95 border border-border rounded-lg p-2 shadow-sm">
-          <div className="text-xs font-bold mb-1 text-foreground">Legend</div>
-          <div className="space-y-1">
+        <div className="absolute bottom-3 left-3 bg-white/95 border border-border rounded-lg p-2 shadow-sm">
+          <div className="text-[10px] font-bold mb-1 text-foreground uppercase tracking-wide">Legend</div>
+          <div className="space-y-0.5">
             {legendItems.map((item, idx) => {
               const iconInfo = AVAILABLE_ICONS.find(i => i.icon === item.icon);
               return (
-                <div key={idx} className="flex items-center gap-2 text-xs">
+                <div key={idx} className="flex items-center gap-1.5 text-[10px]">
                   {iconInfo?.svgPath && (
-                    <img src={iconInfo.svgPath} alt="" className="w-4 h-4" />
+                    <img src={iconInfo.svgPath} alt="" className="w-3.5 h-3.5" />
                   )}
                   <span className="text-foreground">{item.label}</span>
                 </div>
