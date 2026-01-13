@@ -218,7 +218,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Crest Pest Control <onboarding@resend.dev>",
+        from: "Crest Pest Control <reports@crestpestco.com>",
         to: [customerEmail],
         subject: finalSubject,
         html: emailHtml,
