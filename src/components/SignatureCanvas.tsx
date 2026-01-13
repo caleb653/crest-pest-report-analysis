@@ -135,7 +135,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
         {label && (
           <span className="text-sm font-medium text-foreground">{label}</span>
         )}
-        <div className="relative flex-1 flex">
+        <div className="relative flex-1 flex min-h-0">
           <div className="border border-muted-foreground/30 rounded bg-white overflow-hidden flex-1">
             <canvas
               ref={canvasRef}

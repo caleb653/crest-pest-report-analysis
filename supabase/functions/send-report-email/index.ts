@@ -18,6 +18,8 @@ interface SendReportRequest {
   productsUsed: string[];
   equipment: string[];
   reportUrl: string;
+  emailSubject?: string;
+  emailMessage?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -37,6 +39,8 @@ const handler = async (req: Request): Promise<Response> => {
       productsUsed,
       equipment,
       reportUrl,
+      emailSubject,
+      emailMessage,
     }: SendReportRequest = await req.json();
 
     if (!customerEmail) {
@@ -56,6 +60,9 @@ const handler = async (req: Request): Promise<Response> => {
       return items.map(item => `<p>${item}</p>`).join("");
     };
 
+    // Convert custom message newlines to HTML breaks
+    const formattedMessage = emailMessage ? emailMessage.replace(/\n/g, '<br>') : '';
+
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -65,6 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
             .header { background: linear-gradient(135deg, #1a5f2a, #2d8a3e); padding: 20px; text-align: center; }
             .header h1 { color: white; margin: 0; font-size: 24px; }
             .content { padding: 20px; }
+            .message { margin-bottom: 24px; padding: 16px; background: #f9f9f9; border-radius: 8px; }
             .section { margin-bottom: 20px; }
             .section h2 { color: #1a5f2a; font-size: 18px; border-bottom: 2px solid #1a5f2a; padding-bottom: 5px; }
             .info-row { display: flex; margin-bottom: 8px; }
@@ -77,17 +85,29 @@ const handler = async (req: Request): Promise<Response> => {
         </head>
         <body>
           <div class="header">
-            <h1>Initial Pest Report</h1>
+            <h1>Pest Control Report</h1>
           </div>
           <div class="content">
+            ${emailMessage ? `
+            <div class="message">
+              ${formattedMessage}
+            </div>
+            ` : `
             <p>Dear ${customerName || "Valued Customer"},</p>
             <p>Thank you for choosing Crest Pest Control. Below is a summary of your recent pest control service.</p>
+            `}
             
             <div class="section">
               <h2>Service Details</h2>
               <div class="info-row"><span class="info-label">Address:</span> ${address || "Not specified"}</div>
               <div class="info-row"><span class="info-label">Technician:</span> ${technicianName}</div>
             </div>
+
+            ${reportUrl ? `
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${reportUrl}" class="button">View Full Report</a>
+            </div>
+            ` : ""}
 
             ${targetPests && targetPests.length > 0 ? `
             <div class="section">
@@ -116,23 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             ` : ""}
 
-            ${findings && findings.length > 0 && findings[0] ? `
-            <div class="section">
-              <h2>Findings & Actions Taken</h2>
-              ${formatFindings(findings)}
-            </div>
-            ` : ""}
-
-            ${expectations && expectations.length > 0 && expectations[0] ? `
-            <div class="section">
-              <h2>What to Expect</h2>
-              ${formatFindings(expectations)}
-            </div>
-            ` : ""}
-
             <p>If you have any questions about your service, please don't hesitate to contact us at <strong>949-424-5000</strong>.</p>
-
-            ${reportUrl ? `<a href="${reportUrl}" class="button">View Full Report</a>` : ""}
           </div>
           <div class="footer">
             <p>Crest Pest Control | Professional Pest Management Services</p>
@@ -144,6 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending email to:", customerEmail);
 
+    const finalSubject = emailSubject || `Your Pest Control Report - ${address || "Service Summary"}`;
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -153,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Crest Pest Control <onboarding@resend.dev>",
         to: [customerEmail],
-        subject: `Your Pest Control Report - ${address || "Service Summary"}`,
+        subject: finalSubject,
         html: emailHtml,
       }),
     });
