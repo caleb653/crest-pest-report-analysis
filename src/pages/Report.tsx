@@ -953,13 +953,81 @@ Crest Pest Control
 
     setIsSendingEmail(true);
     try {
+      // CRITICAL: Save ALL report data first before sending email
+      // This ensures dollar values, services, and all other changes are persisted
+      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const rawMap = latestMapDataRef.current ?? mapData;
+      
+      let mapPayload: any = null;
+      if (rawMap) {
+        try {
+          mapPayload = JSON.parse(rawMap);
+        } catch (e) {
+          mapPayload = rawMap;
+        }
+      }
+
+      const finalServices = services.filter(s => s.serviceType).map(s => ({
+        serviceType: s.serviceType,
+        initialPrice: s.initialPrice,
+        recurringPrice: s.recurringPrice,
+        frequency: s.frequency,
+      }));
+
+      const fullReportData = {
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        address: editableAddress || extractedAddress || address,
+        notes: additionalDetails || notes,
+        findings: editableFindings,
+        recommendations: [],
+        next_steps: [],
+        map_url: coordinates
+          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+          : null,
+        map_data: mapPayload,
+        custom_map_url: customMapImage,
+        rendered_map_url: renderedMapImage,
+        property_images: propertyImages,
+        customer_signature: finalSignature,
+        services: finalServices as unknown as any[],
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
+        report_title: editableTitle,
+        customer_email: customerEmail,
+        sent_to_customer_at: new Date().toISOString(),
+      };
+
+      // Save all report data including sent status
+      if (reportId) {
+        const { error: updateError } = await supabase
+          .from("reports")
+          .update(fullReportData)
+          .eq("id", reportId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new report if none exists
+        const newId = crypto.randomUUID();
+        const { error: insertError } = await supabase
+          .from("reports")
+          .insert([{ id: newId, ...fullReportData }]);
+
+        if (insertError) throw insertError;
+        navigate({ pathname: location.pathname, search: `?id=${newId}` }, { replace: true });
+      }
+
+      // Now send the email
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
           customerName: editableCustomer,
           technicianName: editableTech,
           address: extractedAddress || address || "",
-          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : "",
+          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : `${window.location.origin}/view-report/${crypto.randomUUID()}`,
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
@@ -968,29 +1036,14 @@ Crest Pest Control
 
       if (error) throw error;
 
-      // Mark report as sent to customer (makes it read-only except for signature)
-      if (reportId) {
-        const { error: updateError } = await supabase
-          .from("reports")
-          .update({ 
-            sent_to_customer_at: new Date().toISOString(),
-            customer_email: customerEmail 
-          })
-          .eq("id", reportId);
-        
-        if (updateError) {
-          console.error("Error updating sent status:", updateError);
-        } else {
-          setSentToCustomerAt(new Date().toISOString());
-          setSavedCustomerEmail(customerEmail);
-        }
-      }
+      setSentToCustomerAt(new Date().toISOString());
+      setSavedCustomerEmail(customerEmail);
 
-      toast.success(`Report sent to ${customerEmail}`);
+      toast.success(`Report saved and sent to ${customerEmail}`);
       setShowComposeDialog(false);
     } catch (error: any) {
       console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again.");
+      toast.error("Failed to save or send email. Please try again.");
     } finally {
       setIsSendingEmail(false);
     }
