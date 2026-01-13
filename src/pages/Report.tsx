@@ -1329,8 +1329,7 @@ Crest Pest Control
                   <Input
                     value={editableTitle}
                     onChange={(e) => setEditableTitle(e.target.value)}
-                    style={{ fontSize: '32px' }}
-                    className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 h-11 print:h-9 w-80 focus-visible:ring-0"
+                    className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-96 print:w-80 focus-visible:ring-0"
                   />
                 </div>
               </div>
