@@ -1812,7 +1812,7 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
+            <div className={`p-0 overflow-hidden rounded-lg relative h-fit ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1826,13 +1826,13 @@ const Report = () => {
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1.5 print:p-1 flex items-end gap-3">
-                    {/* Bug mascot on the left - bottom aligned */}
-                    <img src={crestBugBlack} alt="" className="h-8 w-auto shrink-0 mb-0.5" />
+                  <div className="p-1 print:p-0.5 flex items-center gap-3">
+                    {/* Bug mascot on the left */}
+                    <img src={crestBugBlack} alt="" className="h-7 w-auto shrink-0" />
                     
-                    {/* Signature content on the right - compact */}
-                    <div className="flex-1 max-w-[200px]">
-                      <div className="h-[16px] print:h-[14px] relative">
+                    {/* Signature content - full width, short height */}
+                    <div className="flex-1">
+                      <div className="h-[14px] print:h-[12px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
                       <div className="flex items-center gap-2 text-[7px] mt-0.5">
