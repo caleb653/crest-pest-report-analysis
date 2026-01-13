@@ -957,7 +957,7 @@ Crest Pest Control
           customerName: editableCustomer,
           technicianName: editableTech,
           address: extractedAddress || address || "",
-          reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
+          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : "",
           emailSubject,
           emailMessage,
         },

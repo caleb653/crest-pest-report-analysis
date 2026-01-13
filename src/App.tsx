@@ -10,6 +10,7 @@ import Report from "./pages/Report";
 import InitialPestReport from "./pages/InitialPestReport";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import CustomerReportView from "./pages/CustomerReportView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/data-entry" element={<DataEntry />} />
           <Route path="/report" element={<Report />} />
           <Route path="/report/:reportId" element={<Report />} />
+          <Route path="/view-report/:reportId" element={<CustomerReportView />} />
           <Route path="/initial-pest-report" element={<InitialPestReport />} />
           <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
           <Route path="/admin-login" element={<AdminLogin />} />
