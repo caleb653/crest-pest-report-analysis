@@ -307,8 +307,15 @@ const Report = () => {
   
   // Track which service types have already been added to proposed services
   const addedServiceTypesRef = useRef<Set<string>>(new Set());
+  
+  // Track if report has been loaded (to prevent service effect from running before load completes)
+  const reportLoadedRef = useRef(false);
 
   useEffect(() => {
+    // Skip adding service descriptions if we're loading an existing report (wait for load to complete)
+    // But still update pests for new reports
+    const isNewReport = !reportId;
+    
     const allPests = new Set<string>();
     let hasAtticService = false;
     const currentServiceTypes = new Set<string>();
@@ -332,6 +339,11 @@ const Report = () => {
     // Auto-populate additional details for Attic Services
     if (hasAtticService && !additionalDetails) {
       setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
+    }
+
+    // Skip service description auto-population for existing reports until loaded
+    if (!isNewReport && !reportLoadedRef.current) {
+      return;
     }
 
     // Find new services that haven't been added yet
@@ -632,6 +644,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         // Ensure stale service tracking doesn't leak between reports
         addedServiceTypesRef.current = new Set();
       }
+      
+      // Mark report as loaded so service effect can now run for new service additions
+      reportLoadedRef.current = true;
       if (row.service_date) {
         setEditableServiceDate(row.service_date);
       }
