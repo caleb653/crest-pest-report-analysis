@@ -152,6 +152,8 @@ export default function CustomerReportView() {
 
       if (updateError) throw updateError;
 
+      // Update local report state so the signed banner and signature display immediately
+      setReport(prev => prev ? { ...prev, customer_signature: signatureData } : prev);
       setHasSigned(true);
       toast.success("Signature saved! Thank you for approving the proposal.");
     } catch (err: any) {
