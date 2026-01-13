@@ -1302,8 +1302,8 @@ Crest Pest Control
                 variant="secondary"
                 size="sm"
               >
-                <Edit className="w-3 h-3 mr-1" />
-                Compose
+                <Mail className="w-3 h-3 mr-1" />
+                Email
               </Button>
               <Button onClick={handleSubmit} disabled={isSaving} size="sm">
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
@@ -1404,8 +1404,8 @@ Crest Pest Control
                   variant="secondary"
                   size="sm"
                 >
-                  <Edit className="w-3 h-3 mr-1" />
-                  Compose
+                  <Mail className="w-3 h-3 mr-1" />
+                  Email
                 </Button>
                 <Button onClick={handleSubmit} disabled={isSaving} size="sm">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
