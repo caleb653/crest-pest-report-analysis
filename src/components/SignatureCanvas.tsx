@@ -135,8 +135,8 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
         {label && (
           <span className="text-sm font-medium text-foreground">{label}</span>
         )}
-        <div className="relative flex-1 flex p-[2px]">
-          <div className="border-2 border-border rounded-lg bg-white overflow-hidden flex-1">
+        <div className="relative flex-1 flex">
+          <div className="border border-muted-foreground/30 rounded bg-white overflow-hidden flex-1">
             <canvas
               ref={canvasRef}
               className="w-full h-full cursor-crosshair touch-none"
