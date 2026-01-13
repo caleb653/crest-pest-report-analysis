@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Sparkles,
   Mail,
+  Edit,
   Check,
   ChevronsUpDown,
 } from "lucide-react";
@@ -35,6 +36,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { inferImageUploadMeta } from "@/lib/imageUpload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -414,6 +418,9 @@ const Report = () => {
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("Your Pest Control Report from Crest");
+  const [emailMessage, setEmailMessage] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
@@ -858,6 +865,22 @@ const Report = () => {
     }
   };
 
+  const handleOpenCompose = () => {
+    // Set a default email message when opening compose
+    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+
+Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
+
+If you have any questions about the service or findings, please don't hesitate to reach out to us.
+
+Best regards,
+${editableTech || "Your Technician"}
+Crest Pest Control
+(949) 424-5000`;
+    setEmailMessage(defaultMessage);
+    setShowComposeDialog(true);
+  };
+
   const handleSendEmail = async () => {
     if (!customerEmail) {
       toast.error("Please enter customer email address");
@@ -883,12 +906,15 @@ const Report = () => {
           productsUsed: editableProductsUsed,
           equipment: editableEquipment,
           reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
+          emailSubject,
+          emailMessage,
         },
       });
 
       if (error) throw error;
 
       toast.success(`Report sent to ${customerEmail}`);
+      setShowComposeDialog(false);
     } catch (error: any) {
       console.error("Error sending email:", error);
       toast.error("Failed to send email. Please try again.");
@@ -1271,21 +1297,13 @@ const Report = () => {
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
-              <Input
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="Customer email"
-                className="w-48 h-9 text-xs"
-              />
               <Button
-                onClick={handleSendEmail}
-                disabled={isSendingEmail || !customerEmail}
+                onClick={handleOpenCompose}
                 variant="secondary"
                 size="sm"
               >
-                {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
-                Send
+                <Edit className="w-3 h-3 mr-1" />
+                Compose
               </Button>
               <Button onClick={handleSubmit} disabled={isSaving} size="sm">
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
@@ -1381,23 +1399,14 @@ const Report = () => {
                 </div>
               </div>
 
-              {/* Action buttons - only shown on large screens */}
               <div className="hidden lg:flex items-center gap-2 no-print shrink-0">
-                <Input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="Customer email"
-                  className="w-48 h-9 text-xs"
-                />
                 <Button
-                  onClick={handleSendEmail}
-                  disabled={isSendingEmail || !customerEmail}
+                  onClick={handleOpenCompose}
                   variant="secondary"
                   size="sm"
                 >
-                  {isSendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3 mr-1" />}
-                  Send
+                  <Edit className="w-3 h-3 mr-1" />
+                  Compose
                 </Button>
                 <Button onClick={handleSubmit} disabled={isSaving} size="sm">
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
@@ -1811,8 +1820,8 @@ const Report = () => {
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
-            {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
+            {/* Signature Section - Left (same width as Target Pests + Products) - matches Pesticide Notice height */}
+            <div className={`p-0 overflow-hidden rounded-lg relative flex flex-col ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1826,23 +1835,25 @@ const Report = () => {
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1 print:p-0.5 flex items-center gap-2">
-                    {/* Bug mascot on the left */}
-                    <img src={crestBugBlack} alt="" className="h-10 w-auto shrink-0" />
+                  <div className="p-2 print:p-1.5 flex items-stretch gap-3 flex-1">
+                    {/* Bug mascot on the left - centered vertically */}
+                    <div className="flex items-center">
+                      <img src={crestBugBlack} alt="" className="h-14 w-auto shrink-0" />
+                    </div>
                     
-                    {/* Signature content on the right */}
-                    <div className="flex-1">
-                      <div className="h-[22px] print:h-[18px] relative">
+                    {/* Signature content on the right - takes remaining height */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div className="flex-1 min-h-[40px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-3 text-[8px]">
-                        <div className="flex-1 flex items-center gap-1 border-b border-border">
+                      <div className="flex items-center gap-3 text-[9px] mt-1 pt-1 border-t border-border">
+                        <div className="flex-1 flex items-center gap-1">
                           <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
                           <Input
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
                         </div>
@@ -1856,15 +1867,12 @@ const Report = () => {
               ) : (
                 <>
                   {/* Invisible placeholder to maintain spacing */}
-                  <div className="invisible">
+                  <div className="invisible flex-1">
                     <div className="py-0.5 px-2.5 rounded-t-lg">
                       <span className="text-xs font-bold uppercase leading-none">&nbsp;</span>
                     </div>
-                    <div className="p-1.5">
-                      <div className="h-[45px]"></div>
-                      <div className="flex items-center gap-3 text-[9px]">
-                        <div className="flex-1 h-4"></div>
-                      </div>
+                    <div className="p-2">
+                      <div className="h-[60px]"></div>
                     </div>
                   </div>
                   {/* Centered show button */}
@@ -2153,6 +2161,89 @@ const Report = () => {
           )}
         </div>
       </div>
+
+      {/* Compose Email Dialog */}
+      <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Compose Email
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-to">To</Label>
+              <Input
+                id="email-to"
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="customer@email.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email-subject">Subject</Label>
+              <Input
+                id="email-subject"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Email subject"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email-message">Message</Label>
+              <Textarea
+                id="email-message"
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                placeholder="Write your message..."
+                className="min-h-[150px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Report Link (included in email)</Label>
+              <div className="p-3 bg-muted rounded-md text-sm">
+                {reportId ? (
+                  <a 
+                    href={`${window.location.origin}/report/${reportId}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary underline break-all"
+                  >
+                    {`${window.location.origin}/report/${reportId}`}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground italic">
+                    Save the report first to generate a shareable link
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowComposeDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendEmail} 
+              disabled={isSendingEmail || !customerEmail || !reportId}
+            >
+              {isSendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
