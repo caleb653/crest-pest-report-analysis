@@ -665,7 +665,7 @@ const Report = () => {
           targetPests: editableTargetPests,
           productsUsed: editableProductsUsed,
           equipment: editableEquipment,
-          reportUrl: reportId ? `${window.location.origin}/report/${reportId}` : "",
+          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : "",
           baseUrl: window.location.origin,
         },
       });
