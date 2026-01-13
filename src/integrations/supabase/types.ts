@@ -59,6 +59,7 @@ export type Database = {
           products_used: Json | null
           property_images: Json | null
           recommendations: Json | null
+          rendered_map_url: string | null
           report_title: string | null
           screenshots: Json | null
           sent_to_customer_at: string | null
@@ -88,6 +89,7 @@ export type Database = {
           products_used?: Json | null
           property_images?: Json | null
           recommendations?: Json | null
+          rendered_map_url?: string | null
           report_title?: string | null
           screenshots?: Json | null
           sent_to_customer_at?: string | null
@@ -117,6 +119,7 @@ export type Database = {
           products_used?: Json | null
           property_images?: Json | null
           recommendations?: Json | null
+          rendered_map_url?: string | null
           report_title?: string | null
           screenshots?: Json | null
           sent_to_customer_at?: string | null

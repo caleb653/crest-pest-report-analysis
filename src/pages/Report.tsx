@@ -412,6 +412,7 @@ const Report = () => {
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
+  const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null); // Static map with annotations
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -850,6 +851,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
           : null,
         map_data: mapPayload,
         custom_map_url: customMapImage,
+        rendered_map_url: renderedMapImage, // Static map with annotations baked in
         property_images: propertyImages,
         customer_signature: finalSignature,
         services: finalServices as unknown as any[],
@@ -2056,6 +2058,7 @@ Crest Pest Control
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
                       mapUrl={customMapImage || mapUrl}
                       onSave={setMapData}
+                      onExportImage={setRenderedMapImage}
                       initialData={mapData}
                     />
 
