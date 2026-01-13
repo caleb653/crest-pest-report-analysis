@@ -1835,16 +1835,16 @@ Crest Pest Control
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1 print:p-0.5 flex items-center gap-1.5">
+                  <div className="p-1 print:p-1 flex items-center gap-1.5 print:gap-2">
                     {/* Bug mascot on the left */}
-                    <img src={crestBugBlack} alt="" className="h-11 w-auto shrink-0" />
+                    <img src={crestBugBlack} alt="" className="h-11 print:h-14 w-auto shrink-0" />
                     
                     {/* Signature content on the right */}
                     <div className="flex-1 flex flex-col">
-                      <div className="h-[38px] print:h-[32px] relative">
+                      <div className="h-[38px] print:h-[42px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-2 text-[8px] pt-0.5 border-t border-border">
+                      <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
                         <div className="flex-1 flex items-center gap-1">
                           <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
                           <Input
