@@ -232,7 +232,7 @@ export default function CustomerReportView() {
   return (
     <div className="min-h-screen bg-background">
       {/* Already Signed Banner */}
-      {hasSigned && (
+      {report.customer_signature && (
         <div className="bg-sage/50 border-b border-sage py-3 px-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
             <FileCheck className="w-5 h-5 text-dark-sage" />
@@ -376,7 +376,7 @@ export default function CustomerReportView() {
                 <span className="text-xs font-bold uppercase">Customer Signature</span>
               </div>
               <div className="p-4">
-                {hasSigned && report.customer_signature ? (
+                {report.customer_signature ? (
                   <div className="space-y-3">
                     <div className="border rounded p-3 bg-muted/30">
                       <img 
@@ -393,6 +393,9 @@ export default function CustomerReportView() {
                       <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
                       <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
                     </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      This proposal has already been signed.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
