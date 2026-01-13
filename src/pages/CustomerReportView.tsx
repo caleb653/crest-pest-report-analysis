@@ -35,6 +35,7 @@ interface ReportData {
   products_used: string[] | null;
   equipment: string[] | null;
   custom_map_url: string | null;
+  rendered_map_url: string | null; // Static map with annotations baked in
   map_data: any;
   property_images: PropertyImage[] | null;
   customer_signature: string | null;
@@ -116,6 +117,7 @@ export default function CustomerReportView() {
         findings: typeof reportRow.findings === 'string' ? reportRow.findings : (reportRow.findings ? String(reportRow.findings) : null),
         notes: reportRow.notes,
         custom_map_url: reportRow.custom_map_url,
+        rendered_map_url: reportRow.rendered_map_url,
         map_data: reportRow.map_data,
         customer_signature: reportRow.customer_signature,
         sent_to_customer_at: reportRow.sent_to_customer_at,
@@ -440,13 +442,23 @@ export default function CustomerReportView() {
 
           <main className="p-4">
             <div className="grid grid-cols-[2fr_3fr] gap-4">
-              {/* Map Section */}
-              {report.custom_map_url && (
+              {/* Map Section - Use rendered map (with annotations) if available, fallback to dynamic canvas */}
+              {(report.rendered_map_url || report.custom_map_url) && (
                 <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
-                  <ReadOnlyMapCanvas 
-                    mapUrl={report.custom_map_url}
-                    mapData={mapDataString}
-                  />
+                  {report.rendered_map_url ? (
+                    // Use the pre-rendered static map with annotations baked in
+                    <img 
+                      src={report.rendered_map_url} 
+                      alt="Property map with annotations" 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    // Fallback to dynamic canvas rendering
+                    <ReadOnlyMapCanvas 
+                      mapUrl={report.custom_map_url!}
+                      mapData={mapDataString}
+                    />
+                  )}
                 </div>
               )}
 

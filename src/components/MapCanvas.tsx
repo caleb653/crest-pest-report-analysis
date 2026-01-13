@@ -16,6 +16,7 @@ import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
 interface MapCanvasProps {
   mapUrl: string;
   onSave?: (canvasData: string) => void;
+  onExportImage?: (imageDataUrl: string) => void;
   initialData?: string | null;
 }
 
@@ -43,7 +44,7 @@ const AVAILABLE_ICONS = [
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
 
-export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
+export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -598,11 +599,109 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
     return labels[emoji] || 'Bait station';
   };
 
+  // Export canvas with background as a single image
+  const exportAsImage = async (): Promise<string | null> => {
+    if (!fabricCanvasRef.current || !canvasRef.current) return null;
+    
+    const canvas = fabricCanvasRef.current;
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    
+    // Create a temporary canvas to composite the background image and annotations
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvasWidth;
+    tempCanvas.height = canvasHeight;
+    const ctx = tempCanvas.getContext('2d');
+    if (!ctx) return null;
+    
+    // Draw the background map image first
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+    
+    return new Promise((resolve) => {
+      bgImg.onload = () => {
+        // Draw background image to fill canvas while maintaining aspect ratio
+        const imgAspect = bgImg.width / bgImg.height;
+        const canvasAspect = canvasWidth / canvasHeight;
+        
+        let drawWidth = canvasWidth;
+        let drawHeight = canvasHeight;
+        let drawX = 0;
+        let drawY = 0;
+        
+        if (imgAspect > canvasAspect) {
+          drawHeight = canvasWidth / imgAspect;
+          drawY = (canvasHeight - drawHeight) / 2;
+        } else {
+          drawWidth = canvasHeight * imgAspect;
+          drawX = (canvasWidth - drawWidth) / 2;
+        }
+        
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
+        
+        // Draw the fabric canvas annotations on top
+        const annotationsDataUrl = canvas.toDataURL({ multiplier: 1, format: 'png' });
+        const annotationsImg = new Image();
+        annotationsImg.onload = () => {
+          ctx.drawImage(annotationsImg, 0, 0);
+          
+          // Draw legend if present
+          if (legendItems.length > 0) {
+            const legendPadding = 8;
+            const legendLineHeight = 18;
+            const legendWidth = 120;
+            const legendHeight = 24 + legendItems.length * legendLineHeight;
+            const legendX = 12;
+            const legendY = canvasHeight - legendHeight - 12;
+            
+            // Legend background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 6);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Legend title
+            ctx.fillStyle = '#1f2937';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 14);
+            
+            // Legend items
+            ctx.font = '10px sans-serif';
+            legendItems.forEach((item, i) => {
+              const y = legendY + 28 + i * legendLineHeight;
+              ctx.fillStyle = '#374151';
+              ctx.fillText(`• ${item.label}`, legendX + legendPadding, y);
+            });
+          }
+          
+          resolve(tempCanvas.toDataURL('image/png'));
+        };
+        annotationsImg.onerror = () => resolve(null);
+        annotationsImg.src = annotationsDataUrl;
+      };
+      bgImg.onerror = () => resolve(null);
+      bgImg.src = mapUrl;
+    });
+  };
+  
+  // Expose export function via window for external access
+  useEffect(() => {
+    (window as any).exportMapAsImage = exportAsImage;
+    return () => {
+      delete (window as any).exportMapAsImage;
+    };
+  }, [mapUrl, legendItems]);
+
   // Auto-save canvas data whenever it changes
   useEffect(() => {
     if (!fabricCanvasRef.current || !onSave) return;
     
-    const saveCanvasData = () => {
+    const saveCanvasData = async () => {
       if (!fabricCanvasRef.current) return;
       const canvas = fabricCanvasRef.current;
       const currW = canvas.getWidth();
@@ -635,6 +734,14 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
         currW, currH
       });
       onSave(canvasData);
+      
+      // Also export as static image if callback provided
+      if (onExportImage && normalizedObjects.length > 0) {
+        const imageDataUrl = await exportAsImage();
+        if (imageDataUrl) {
+          onExportImage(imageDataUrl);
+        }
+      }
     };
 
     const canvas = fabricCanvasRef.current;
@@ -665,7 +772,7 @@ export const MapCanvas = ({ mapUrl, onSave, initialData }: MapCanvasProps) => {
       canvas.off('mouse:up', handleImmediateSave);
       canvas.off('text:changed', handleDebouncedSave as any);
     };
-  }, [onSave, legendItems]);
+  }, [onSave, onExportImage, legendItems, mapUrl]);
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;

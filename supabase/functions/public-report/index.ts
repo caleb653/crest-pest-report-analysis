@@ -49,6 +49,7 @@ serve(async (req) => {
           "products_used",
           "equipment",
           "custom_map_url",
+          "rendered_map_url",
           "map_data",
           "property_images",
           "customer_signature",
