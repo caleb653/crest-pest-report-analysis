@@ -168,9 +168,9 @@ export default function CustomerReportView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-[#1a5f2a] py-6 px-4">
+      <header className="bg-brand-black py-6 px-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center">
           <img src={crestLogo} alt="Crest Pest Control" className="h-12" />
         </div>
@@ -178,10 +178,10 @@ export default function CustomerReportView() {
 
       {/* Already Signed Banner */}
       {hasSigned && (
-        <div className="bg-green-100 border-b border-green-200 py-4 px-4">
+        <div className="bg-sage/50 border-b border-sage py-4 px-4">
           <div className="max-w-4xl mx-auto flex items-center gap-3 justify-center">
-            <FileCheck className="w-5 h-5 text-green-700" />
-            <span className="text-green-800 font-medium">
+            <FileCheck className="w-5 h-5 text-dark-sage" />
+            <span className="text-foreground font-medium">
               This proposal has been signed and approved. Thank you!
             </span>
           </div>
@@ -253,7 +253,7 @@ export default function CustomerReportView() {
             <h2 className="text-lg font-semibold mb-3">Target Pests</h2>
             <div className="flex flex-wrap gap-2">
               {report.target_pests.map((pest, idx) => (
-                <span key={idx} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+                <span key={idx} className="bg-sage text-foreground px-3 py-1 rounded-full text-sm font-medium">
                   {pest}
                 </span>
               ))}
@@ -343,7 +343,7 @@ export default function CustomerReportView() {
                   className="max-h-24 mx-auto"
                 />
               </div>
-              <div className="flex items-center justify-center gap-2 text-green-700">
+              <div className="flex items-center justify-center gap-2 text-dark-sage">
                 <Check className="w-5 h-5" />
                 <span className="font-medium">Proposal Approved</span>
               </div>
