@@ -1841,7 +1841,7 @@ Crest Pest Control
                     
                     {/* Signature content on the right */}
                     <div className="flex-1 flex flex-col">
-                      <div className="h-[28px] print:h-[24px] relative">
+                      <div className="h-[34px] print:h-[28px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
                       <div className="flex items-center gap-2 text-[8px] mt-0.5 pt-0.5 border-t border-border">
@@ -1851,9 +1851,9 @@ Crest Pest Control
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-none text-muted-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
                           />
-                          <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
+                          <span className="print-only-text hidden text-muted-foreground text-[8px]">{editableCustomer}</span>
                         </div>
                         <div className="text-muted-foreground whitespace-nowrap">
                           <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
