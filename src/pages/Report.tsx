@@ -1812,7 +1812,7 @@ const Report = () => {
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) */}
-            <div className={`p-0 overflow-hidden rounded-lg relative h-fit ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
+            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -1826,23 +1826,23 @@ const Report = () => {
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1 print:p-0.5 flex items-center gap-3">
+                  <div className="p-1 print:p-0.5 flex items-center gap-2">
                     {/* Bug mascot on the left */}
-                    <img src={crestBugBlack} alt="" className="h-7 w-auto shrink-0" />
+                    <img src={crestBugBlack} alt="" className="h-10 w-auto shrink-0" />
                     
-                    {/* Signature content - full width, short height */}
+                    {/* Signature content on the right */}
                     <div className="flex-1">
-                      <div className="h-[14px] print:h-[12px] relative">
+                      <div className="h-[22px] print:h-[18px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-2 text-[7px] mt-0.5">
-                        <div className="flex items-center gap-1 border-b border-border flex-1">
-                          <span className="font-medium text-foreground whitespace-nowrap">Name:</span>
+                      <div className="flex items-center gap-3 text-[8px]">
+                        <div className="flex-1 flex items-center gap-1 border-b border-border">
+                          <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
                           <Input
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[7px] flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
                         </div>
