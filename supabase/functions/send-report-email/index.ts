@@ -43,7 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Convert custom message newlines to HTML breaks
     const formattedMessage = emailMessage ? emailMessage.replace(/\n/g, '<br>') : '';
 
-    // Clean, minimal branded email with just message and link
+    // Clean, minimal branded email with better typography
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -58,6 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
               margin: 0; 
               padding: 0;
               background-color: #f5f5f5;
+              -webkit-font-smoothing: antialiased;
             }
             .wrapper {
               max-width: 600px; 
@@ -65,26 +66,28 @@ const handler = async (req: Request): Promise<Response> => {
               background: #ffffff;
             }
             .header { 
-              background: #1a5f2a; 
+              background: #2A2A2A; 
               padding: 32px 40px;
               text-align: center;
             }
             .logo-text {
-              font-family: 'Georgia', serif;
-              font-size: 42px;
+              font-family: Georgia, 'Times New Roman', serif;
+              font-size: 36px;
               font-weight: bold;
               color: #ffffff;
               font-style: italic;
               letter-spacing: 1px;
               margin: 0;
+              line-height: 1.2;
             }
             .logo-subtext {
-              font-size: 12px;
+              font-size: 11px;
               font-weight: 600;
-              color: #ffffff;
+              color: #C3D1C5;
               letter-spacing: 3px;
               text-transform: uppercase;
-              margin-top: 4px;
+              margin-top: 6px;
+              line-height: 1.4;
             }
             .content { 
               padding: 40px; 
@@ -95,12 +98,13 @@ const handler = async (req: Request): Promise<Response> => {
               border-radius: 8px; 
               padding: 24px;
               margin-bottom: 32px;
-              border-left: 4px solid #1a5f2a;
+              border-left: 4px solid #2A2A2A;
             }
             .message-text {
               font-size: 15px;
               color: #374151;
               margin: 0;
+              line-height: 1.7;
             }
             .button-container {
               text-align: center;
@@ -108,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
             }
             .button { 
               display: inline-block; 
-              background: #1a5f2a; 
+              background: #2A2A2A; 
               color: #ffffff !important; 
               padding: 14px 32px; 
               text-decoration: none; 
@@ -116,9 +120,6 @@ const handler = async (req: Request): Promise<Response> => {
               font-weight: 600;
               font-size: 16px;
               letter-spacing: 0.3px;
-            }
-            .button:hover {
-              background: #166027;
             }
             .divider {
               height: 1px;
@@ -134,12 +135,17 @@ const handler = async (req: Request): Promise<Response> => {
               font-size: 13px; 
               color: #6b7280;
               margin: 0;
+              line-height: 1.5;
             }
             .footer-phone {
               font-size: 14px;
               color: #374151;
               font-weight: 600;
               margin-top: 8px;
+              line-height: 1.5;
+            }
+            p {
+              margin: 0 0 16px 0;
             }
           </style>
         </head>
@@ -158,14 +164,14 @@ const handler = async (req: Request): Promise<Response> => {
               <div class="button-container">
                 <a href="${reportUrl}" class="button">View Your Proposal</a>
               </div>
-              <p style="text-align: center; font-size: 13px; color: #6b7280; margin-top: 16px;">
+              <p style="text-align: center; font-size: 13px; color: #6b7280; margin-top: 16px; line-height: 1.5;">
                 Click the button above to view and sign your proposal.
               </p>
               ` : ""}
               
               <div class="divider"></div>
               
-              <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 0;">
+              <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 0; line-height: 1.5;">
                 Questions? We're here to help.
               </p>
             </div>
