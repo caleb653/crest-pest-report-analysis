@@ -451,19 +451,22 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const isReadOnly = !!sentToCustomerAt;
   
-  // Auto-save signature when customer signs (in read-only mode)
+  // Persist signature when a customer signs (read-only view), and also as a safety-net
+  // if a customer ever lands on this page without an admin session.
   const handleSignatureSave = async (signatureData: string | null) => {
     setCustomerSignature(signatureData);
-    
-    // If in read-only mode and we have a signature, auto-save to database
-    if (isReadOnly && signatureData && reportId) {
+
+    const hasAdminSession = !!localStorage.getItem("admin_session");
+    const shouldPersist = !!reportId && !!signatureData && (isReadOnly || !hasAdminSession);
+
+    if (shouldPersist) {
       setIsSavingSignature(true);
       try {
         const { error } = await supabase
           .from("reports")
           .update({ customer_signature: signatureData })
           .eq("id", reportId);
-        
+
         if (error) throw error;
         toast.success("Signature saved successfully!");
       } catch (error: any) {
