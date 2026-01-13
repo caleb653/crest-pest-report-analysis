@@ -810,17 +810,20 @@ const Report = () => {
       };
 
       if (reportId) {
-        const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
+        const { error: updateError } = await supabase.from("reports").update(reportData).eq("id", reportId);
 
-        if (error) throw error;
-        toast.success("Report updated successfully!");
+        if (updateError) throw updateError;
+        toast.success("Report saved successfully!");
       } else {
-        const { error } = await supabase.from("reports").insert([reportData]);
+        const { data, error: insertError } = await supabase.from("reports").insert([reportData]).select('id').single();
 
-        if (error) throw error;
-        toast.success("Report submitted successfully!");
-
-        setTimeout(() => navigate("/"), 2000);
+        if (insertError) throw insertError;
+        
+        // Update the URL with the new report ID so subsequent saves update rather than create new
+        if (data?.id) {
+          window.history.replaceState({}, '', `/report?id=${data.id}`);
+        }
+        toast.success("Report saved successfully!");
       }
     } catch (error: any) {
       toast.error("Failed to save report");
