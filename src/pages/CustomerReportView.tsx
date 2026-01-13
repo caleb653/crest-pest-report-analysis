@@ -62,7 +62,7 @@ export default function CustomerReportView() {
         .from("reports")
         .select("*")
         .eq("id", reportId)
-        .single();
+        .maybeSingle();
 
       if (fetchError) throw fetchError;
       if (!data) throw new Error("Report not found");
