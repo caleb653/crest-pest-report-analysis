@@ -2030,11 +2030,23 @@ Crest Pest Control
                     {/* Signature content on the right */}
                     <div className="flex-1 flex flex-col">
                       <div className="h-[38px] print:h-[42px] relative">
-                        <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
-                        {isSavingSignature && (
-                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        {customerSignature ? (
+                          <div className="h-full flex items-center justify-center border rounded bg-muted/30">
+                            <img 
+                              src={customerSignature} 
+                              alt="Customer signature" 
+                              className="max-h-[34px] print:max-h-[38px] w-auto object-contain"
+                            />
                           </div>
+                        ) : (
+                          <>
+                            <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
+                            {isSavingSignature && (
+                              <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
+                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
