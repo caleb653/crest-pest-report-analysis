@@ -52,7 +52,7 @@ serve(async (req) => {
     if (action === "list") {
       const { data, error } = await supabase
         .from("reports")
-        .select("id, technician_name, customer_name, address, created_at, next_steps")
+        .select("id, technician_name, customer_name, address, created_at, next_steps, customer_signature")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -72,6 +72,7 @@ serve(async (req) => {
           address: r.address,
           created_at: r.created_at,
           report_type: isInitial ? "initial" : "sales",
+          is_signed: !!r.customer_signature,
         };
       });
 

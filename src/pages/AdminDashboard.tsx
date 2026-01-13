@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Calendar, FileText, LogOut, Trash2, User } from "lucide-react";
+import { Calendar, CheckCircle, FileText, LogOut, Trash2, User } from "lucide-react";
 import crestLogo from "@/assets/crest-logo-black.png";
 
 type ReportType = "sales" | "initial";
@@ -20,6 +20,7 @@ interface ReportListItem {
   address: string | null;
   created_at: string;
   report_type: ReportType;
+  is_signed: boolean;
 }
 
 const AdminDashboard = () => {
@@ -248,6 +249,12 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
+                          {report.is_signed && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Signed
+                            </Badge>
+                          )}
                           <Badge variant={report.report_type === "initial" ? "secondary" : "default"}>
                             {report.report_type === "initial" ? "Initial" : "Sales"}
                           </Badge>
