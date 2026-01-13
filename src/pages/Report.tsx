@@ -1826,27 +1826,27 @@ const Report = () => {
                   <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
-                  <div className="p-1.5 print:p-1 flex items-start gap-3">
+                  <div className="p-1 print:p-0.5 flex items-center gap-2">
                     {/* Bug mascot on the left */}
-                    <img src={crestBugBlack} alt="" className="h-12 w-auto shrink-0" />
+                    <img src={crestBugBlack} alt="" className="h-10 w-auto shrink-0" />
                     
                     {/* Signature content on the right */}
                     <div className="flex-1">
-                      <div className="h-[28px] print:h-[22px] relative">
+                      <div className="h-[22px] print:h-[18px] relative">
                         <SignatureCanvas ref={signatureRef} onSave={setCustomerSignature} initialData={customerSignature} label="" />
                       </div>
-                      <div className="flex items-center gap-3 text-[9px]">
-                        <div className="flex-1 flex items-center gap-1 border-b border-border pb-0.5">
+                      <div className="flex items-center gap-3 text-[8px]">
+                        <div className="flex-1 flex items-center gap-1 border-b border-border">
                           <span className="font-medium text-foreground whitespace-nowrap">Print Name:</span>
                           <Input
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-4 text-[9px] flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-none text-foreground placeholder:text-muted-foreground px-1 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{editableCustomer}</span>
                         </div>
-                        <div className="text-muted-foreground">
+                        <div className="text-muted-foreground whitespace-nowrap">
                           <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
                         </div>
                       </div>
