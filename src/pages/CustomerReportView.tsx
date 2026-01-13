@@ -141,16 +141,35 @@ export default function CustomerReportView() {
   };
 
   const handleSignatureSave = async (signatureData: string) => {
-    if (!reportId || !signatureData) return;
+    if (!reportId || !signatureData) {
+      console.error("Missing reportId or signatureData", { reportId, hasSignature: !!signatureData });
+      return;
+    }
+
+    console.log("Saving signature for report:", reportId, "signature length:", signatureData.length);
 
     setIsSaving(true);
     try {
-      const { error: updateError } = await supabase
-        .from("reports")
-        .update({ customer_signature: signatureData })
-        .eq("id", reportId);
+      // Use edge function to save signature and notify office
+      const { data, error: invokeError } = await supabase.functions.invoke("save-customer-signature", {
+        body: { 
+          reportId, 
+          signatureData,
+          notifyOffice: true 
+        },
+      });
 
-      if (updateError) throw updateError;
+      if (invokeError) {
+        console.error("Edge function error:", invokeError);
+        throw invokeError;
+      }
+
+      if (!data?.ok) {
+        console.error("Save failed:", data?.error);
+        throw new Error(data?.error || "Failed to save signature");
+      }
+
+      console.log("Signature saved successfully via edge function");
 
       // Update local report state so the signed banner and signature display immediately
       setReport(prev => prev ? { ...prev, customer_signature: signatureData } : prev);
@@ -158,7 +177,7 @@ export default function CustomerReportView() {
       toast.success("Signature saved! Thank you for approving the proposal.");
     } catch (err: any) {
       console.error("Error saving signature:", err);
-      toast.error("Failed to save signature");
+      toast.error("Failed to save signature. Please try again.");
     } finally {
       setIsSaving(false);
     }
