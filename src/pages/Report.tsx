@@ -463,6 +463,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const isReadOnly = !!sentToCustomerAt;
   
+  // Track if signature was loaded from database (already saved - cannot be changed)
+  const [signatureWasSaved, setSignatureWasSaved] = useState(false);
+  
   // Persist signature when a customer signs (read-only view), and also as a safety-net
   // if a customer ever lands on this page without an admin session.
   const handleSignatureSave = async (signatureData: string | null) => {
@@ -631,6 +634,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       // Load new fields
       if (row.customer_signature) {
         setCustomerSignature(row.customer_signature);
+        setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
         setServices(row.services as ServiceItem[]);
@@ -2080,12 +2084,25 @@ Crest Pest Control
                     <div className="flex-1 flex flex-col">
                       <div className="h-[38px] print:h-[42px] relative">
                         {customerSignature ? (
-                          <div className="h-full flex items-center justify-center border rounded bg-muted/30">
-                            <img 
-                              src={customerSignature} 
-                              alt="Customer signature" 
-                              className="max-h-[34px] print:max-h-[38px] w-auto object-contain"
-                            />
+                          <div className="h-full flex items-center gap-2">
+                            <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
+                              <img 
+                                src={customerSignature} 
+                                alt="Customer signature" 
+                                className="max-h-[34px] print:max-h-[38px] w-auto object-contain"
+                              />
+                            </div>
+                            {/* Re-sign button - only show if signature was NOT loaded from DB */}
+                            {!signatureWasSaved && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCustomerSignature(null)}
+                                className="h-7 text-xs no-print shrink-0"
+                              >
+                                Re-sign
+                              </Button>
+                            )}
                           </div>
                         ) : (
                           <>
