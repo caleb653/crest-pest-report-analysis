@@ -65,6 +65,7 @@ const PRODUCT_LIST = [
   { name: "Bifen LP", chemical: "Bifenthrin" },
   { name: "Advion Ant Gel Bait", chemical: "Indoxacarb" },
   { name: "Maxforce FC Ant Gel", chemical: "Fipronil" },
+  { name: "MasterLine B MaxxPro", chemical: "" },
   { name: "Advion Cockroach Gel Bait", chemical: "Indoxacarb" },
   { name: "Contrac California", chemical: "Bromethalin" },
   { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
