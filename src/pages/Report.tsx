@@ -64,7 +64,6 @@ const PEST_OPTIONS = [
   "Mosquitoes",
   "Millipedes",
   "Box Elder Bugs",
-  "Clover Mites",
   "American Roaches",
   "Other",
 ];
@@ -89,6 +88,7 @@ const PRODUCT_OPTIONS = [
   { name: "Bifen LP", chemical: "Bifenthrin" },
   { name: "Advion Ant Gel Bait", chemical: "Indoxacarb" },
   { name: "Maxforce FC Ant Gel", chemical: "Fipronil" },
+  { name: "MasterLine B MaxxPro", chemical: "" },
   { name: "Advion Cockroach Gel Bait", chemical: "Indoxacarb" },
   { name: "Contrac California", chemical: "Bromethalin" },
   { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
@@ -110,7 +110,7 @@ const SERVICE_CONFIG: Record<
 > = {
   "Monthly Services": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
     defaultInitial: 95,
@@ -118,7 +118,7 @@ const SERVICE_CONFIG: Record<
   },
   "Bi-Monthly Services": {
     frequency: 60,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
     defaultInitial: 95,
@@ -126,7 +126,7 @@ const SERVICE_CONFIG: Record<
   },
   "Quarterly Services": {
     frequency: 90,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
     defaultInitial: 95,
@@ -134,7 +134,7 @@ const SERVICE_CONFIG: Record<
   },
   "Commercial General Pest": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Clover Mites", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
     defaultInitial: 150,
