@@ -143,6 +143,7 @@ const Report = () => {
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
+  const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
   const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
@@ -199,6 +200,37 @@ const Report = () => {
     return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks.";
   };
 
+  const generateRecommendations = (pests: string[], equipment: string[]) => {
+    const lines: string[] = [];
+    
+    // General recommendations from knowledge base
+    lines.push("• Maintain regular pest control service to ensure ongoing protection");
+    lines.push("• Keep food stored in airtight containers and clean up spills promptly");
+    lines.push("• Seal cracks and gaps around doors, windows, and utility penetrations");
+    
+    // Pest-specific recommendations
+    if (pests.includes("Rodents")) {
+      lines.push("• Remove outdoor debris and trim vegetation away from the foundation");
+      lines.push("• Store firewood at least 20 feet from the home");
+    }
+    if (pests.includes("Ants") || pests.includes("Roaches")) {
+      lines.push("• Eliminate moisture sources and fix any leaky pipes or faucets");
+    }
+    if (pests.includes("Mosquitoes")) {
+      lines.push("• Eliminate standing water around the property");
+    }
+    if (pests.includes("Wasps")) {
+      lines.push("• Inspect eaves and overhangs regularly for new nest activity");
+    }
+    
+    // Equipment-based recommendations
+    if (equipment.includes("Rodent Bait Stations")) {
+      lines.push("• Do not disturb or relocate bait stations - they are strategically placed");
+    }
+    
+    return lines.join("\n");
+  };
+
   // Auto-update content when pests, equipment, or products change
   useEffect(() => {
     // Skip if loading a report or if user has manually edited
@@ -208,6 +240,7 @@ const Report = () => {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
+      setEditableRecommendations([generateRecommendations(editableTargetPests, editableEquipment)]);
     }
   }, [editableTargetPests, editableEquipment, editableProductsUsed, reportId, hasManuallyEditedFindings]);
 
@@ -229,6 +262,7 @@ const Report = () => {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
+      setEditableRecommendations([generateRecommendations(editableTargetPests, editableEquipment)]);
     }
   }, []);
 
@@ -1538,6 +1572,28 @@ const Report = () => {
               </div>
             </Card>
 
+            {/* Recommendations Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Recommendations</h2>
+              <div className="space-y-3 p-3">
+                <Textarea
+                  value={editableRecommendations[0] || ""}
+                  onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
+                  placeholder="Enter recommendations for the customer..."
+                  className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
+                  rows={4}
+                />
+                <div
+                  className="hidden print-content-formatted"
+                  dangerouslySetInnerHTML={{
+                    __html: (editableRecommendations[0] || "")
+                      .replace(/^(.*?:)/gm, "<strong>$1</strong>")
+                      .replace(/\n/g, "<br/>"),
+                  }}
+                />
+              </div>
+            </Card>
+
             {/* Email & Submit Section */}
             <Card className="print-section p-3 no-print">
               <h2 className="text-lg font-bold mb-3">Send Report to Customer</h2>
@@ -1617,24 +1673,24 @@ const Report = () => {
             <span className="text-sm text-muted-foreground">or paste from clipboard (Ctrl+V / Cmd+V)</span>
           </div>
 
-          {/* Property Images Grid */}
+          {/* Property Images Grid - All 5 images in a row */}
           {propertyImages.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
               {propertyImages.map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-border bg-muted">
+                <div key={index} className="space-y-1">
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
                     <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
                   </div>
                   {item.caption && (
-                    <div className="p-2 bg-card rounded border border-border">
-                      <p className="text-xs text-foreground">{item.caption}</p>
+                    <div className="p-1.5 bg-card rounded border border-border">
+                      <p className="text-[10px] leading-tight text-foreground">{item.caption}</p>
                     </div>
                   )}
                   <Input
                     value={item.caption || ""}
                     onChange={(e) => updateImageCaption(index, e.target.value)}
-                    placeholder="Add caption (optional)"
-                    className="no-print text-xs h-8"
+                    placeholder="Add caption"
+                    className="no-print text-xs h-7"
                   />
                 </div>
               ))}
