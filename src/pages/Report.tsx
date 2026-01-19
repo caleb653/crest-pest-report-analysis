@@ -1540,14 +1540,14 @@ Crest Pest Control
                     <Input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-96 print:w-80 focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-48 lg:w-96 print:w-80 focus-visible:ring-0"
                     />
                   )}
                 </div>
               </div>
 
               {/* Right side: 2-column info grid - pushed right */}
-              <div className="grid grid-cols-2 gap-8 ml-auto">
+              <div className="grid grid-cols-2 gap-4 lg:gap-8 ml-auto">
                 {/* Column 1: Customer Details (Name, Address, Date) */}
                 <div>
                   <p className="font-semibold text-foreground text-xs mb-0.5">Customer Details:</p>
@@ -1562,14 +1562,8 @@ Crest Pest Control
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 md:h-6 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
                           />
-                          {/* Live preview for iPad visibility */}
-                          {editableCustomer && (
-                            <span className="text-foreground font-medium text-xs truncate max-w-[100px] print:hidden hidden md:inline" title={editableCustomer}>
-                              {editableCustomer.length > 12 ? editableCustomer.substring(0, 12) + "…" : editableCustomer}
-                            </span>
-                          )}
                         </>
                       )}
                     </div>
@@ -1583,14 +1577,8 @@ Crest Pest Control
                             value={editableAddress || extractedAddress}
                             onChange={(e) => setEditableAddress(e.target.value)}
                             placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 md:h-6 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
                           />
-                          {/* Live preview for iPad visibility */}
-                          {(editableAddress || extractedAddress) && (
-                            <span className="text-foreground font-medium text-xs truncate max-w-[100px] print:hidden hidden md:inline" title={editableAddress || extractedAddress}>
-                              {(editableAddress || extractedAddress).length > 12 ? (editableAddress || extractedAddress).substring(0, 12) + "…" : (editableAddress || extractedAddress)}
-                            </span>
-                          )}
                         </>
                       )}
                     </div>
