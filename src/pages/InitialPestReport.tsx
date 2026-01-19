@@ -948,7 +948,7 @@ const Report = () => {
                             value={editableCustomer}
                             onChange={(e) => setEditableCustomer(e.target.value)}
                             placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 md:h-5 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{editableCustomer || "Customer name"}</span>
                         </div>
@@ -958,7 +958,7 @@ const Report = () => {
                             value={editableAddress || extractedAddress}
                             onChange={(e) => setEditableAddress(e.target.value)}
                             placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 md:h-5 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0 no-print"
                           />
                           <span className="print-only-text hidden text-foreground">{displayAddress}</span>
                         </div>
