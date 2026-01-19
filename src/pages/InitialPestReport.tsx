@@ -203,29 +203,81 @@ const Report = () => {
   const generateRecommendations = (pests: string[], equipment: string[]) => {
     const lines: string[] = [];
     
-    // General recommendations from knowledge base
-    lines.push("• Maintain regular pest control service to ensure ongoing protection");
-    lines.push("• Keep food stored in airtight containers and clean up spills promptly");
-    lines.push("• Seal cracks and gaps around doors, windows, and utility penetrations");
-    
-    // Pest-specific recommendations
-    if (pests.includes("Rodents")) {
-      lines.push("• Remove outdoor debris and trim vegetation away from the foundation");
-      lines.push("• Store firewood at least 20 feet from the home");
+    // Knowledge base pest-specific recommendations
+    if (pests.includes("Ants")) {
+      lines.push("• Ants: Wipe up food spills and sugary residues promptly, especially in kitchens and patios.");
+      lines.push("• Ants: Reduce excess moisture by fixing dripping faucets and avoiding overwatering plants near the home.");
     }
-    if (pests.includes("Ants") || pests.includes("Roaches")) {
-      lines.push("• Eliminate moisture sources and fix any leaky pipes or faucets");
+    if (pests.includes("Spiders")) {
+      lines.push("• Spiders: Knock down spider webs regularly around eaves, corners, and outdoor furniture.");
+      lines.push("• Spiders: Reduce insects around the home by turning off unnecessary outdoor lights at night.");
     }
-    if (pests.includes("Mosquitoes")) {
-      lines.push("• Eliminate standing water around the property");
+    if (pests.includes("American Roaches") || pests.includes("Oriental Roaches") || pests.includes("Roaches")) {
+      lines.push("• Cockroaches: Keep garage, laundry, and storage areas clean and free of clutter.");
+      lines.push("• Cockroaches: Avoid leaving pet food or water bowls out overnight.");
+    }
+    if (pests.includes("German Roaches")) {
+      lines.push("• German Cockroaches: Clean kitchen surfaces nightly and avoid leaving food out overnight.");
+      lines.push("• German Cockroaches: Take trash out regularly and keep trash cans clean.");
+    }
+    if (pests.includes("Crickets")) {
+      lines.push("• Crickets: Reduce moisture by fixing leaks and using fans or dehumidifiers in damp areas.");
+      lines.push("• Crickets: Turn off exterior lights at night to reduce attraction.");
+    }
+    if (pests.includes("Earwigs")) {
+      lines.push("• Earwigs: Remove leaf litter, mulch, and organic debris near the home.");
+      lines.push("• Earwigs: Avoid overwatering landscaping, especially near foundations.");
+    }
+    if (pests.includes("Fleas") || pests.includes("Fleas & Ticks")) {
+      lines.push("• Fleas: Wash pet bedding frequently using hot water.");
+      lines.push("• Fleas: Vacuum carpets and rugs often, especially where pets rest.");
+    }
+    if (pests.includes("Silverfish")) {
+      lines.push("• Silverfish: Reduce indoor humidity using fans or dehumidifiers.");
+      lines.push("• Silverfish: Declutter storage areas and vacuum cracks and crevices regularly.");
     }
     if (pests.includes("Wasps")) {
-      lines.push("• Inspect eaves and overhangs regularly for new nest activity");
+      lines.push("• Wasps: Avoid leaving sugary drinks or food uncovered outdoors.");
+      lines.push("• Wasps: Keep trash cans closed and rinse containers before disposal.");
+    }
+    if (pests.includes("Bed Bugs")) {
+      lines.push("• Bed Bugs: Inspect luggage and clothing after traveling before bringing items inside.");
+      lines.push("• Bed Bugs: Use mattress and box spring encasements.");
+    }
+    if (pests.includes("Pantry Pests")) {
+      lines.push("• Pantry Pests: Store dry foods in airtight containers.");
+      lines.push("• Pantry Pests: Discard any infested food immediately.");
+    }
+    if (pests.includes("Carpet Beetles")) {
+      lines.push("• Carpet Beetles: Vacuum carpets, rugs, and upholstery frequently.");
+      lines.push("• Carpet Beetles: Wash stored clothing and linens before long-term storage.");
+    }
+    if (pests.includes("Mosquitoes")) {
+      lines.push("• Mosquitoes: Remove standing water from pots, trays, and outdoor containers.");
+      lines.push("• Mosquitoes: Trim vegetation to reduce shaded resting areas.");
+    }
+    if (pests.includes("Drain Flies")) {
+      lines.push("• Drain Flies: Clean drains regularly to remove buildup.");
+      lines.push("• Drain Flies: Avoid pouring grease or food waste down sinks.");
+    }
+    if (pests.includes("Fruit Flies")) {
+      lines.push("• Fruit Flies: Dispose of overripe fruit promptly.");
+      lines.push("• Fruit Flies: Clean trash cans and recycling bins frequently.");
+    }
+    if (pests.includes("Rats") || pests.includes("Rodents")) {
+      lines.push("• Rats: Keep food tightly sealed and clean up fallen fruit or bird seed outdoors.");
+      lines.push("• Rats: Maintain clean yards and avoid clutter near the home.");
+    }
+    if (pests.includes("Mice") || pests.includes("Rodents")) {
+      lines.push("• Mice: Store food in sealed containers.");
+      lines.push("• Mice: Clean up crumbs and spills promptly, especially in kitchens and pantries.");
     }
     
-    // Equipment-based recommendations
-    if (equipment.includes("Rodent Bait Stations")) {
-      lines.push("• Do not disturb or relocate bait stations - they are strategically placed");
+    // If no specific pests selected, provide general recommendations
+    if (lines.length === 0) {
+      lines.push("• Keep food stored in airtight containers and clean up spills promptly.");
+      lines.push("• Seal cracks and gaps around doors, windows, and utility penetrations.");
+      lines.push("• Reduce moisture by fixing leaks and improving ventilation.");
     }
     
     return lines.join("\n");
