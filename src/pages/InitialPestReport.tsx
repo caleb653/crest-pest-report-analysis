@@ -208,81 +208,63 @@ const Report = () => {
   const generateRecommendations = (pests: string[], equipment: string[]) => {
     const lines: string[] = [];
     
-    // Knowledge base pest-specific recommendations
+    // Knowledge base pest-specific recommendations - exact format from knowledge base
     if (pests.includes("Ants")) {
-      lines.push("• Ants: Wipe up food spills and sugary residues promptly, especially in kitchens and patios.");
-      lines.push("• Ants: Reduce excess moisture by fixing dripping faucets and avoiding overwatering plants near the home.");
+      lines.push("<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering");
     }
     if (pests.includes("Spiders")) {
-      lines.push("• Spiders: Knock down spider webs regularly around eaves, corners, and outdoor furniture.");
-      lines.push("• Spiders: Reduce insects around the home by turning off unnecessary outdoor lights at night.");
+      lines.push("<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting");
     }
     if (pests.includes("American Roaches") || pests.includes("Oriental Roaches") || pests.includes("Roaches")) {
-      lines.push("• Cockroaches: Keep garage, laundry, and storage areas clean and free of clutter.");
-      lines.push("• Cockroaches: Avoid leaving pet food or water bowls out overnight.");
+      lines.push("<strong>American & Oriental Cockroaches:</strong> (1) Keep garages/laundry clutter-free (2) Don't leave pet food/water out");
     }
     if (pests.includes("German Roaches")) {
-      lines.push("• German Cockroaches: Clean kitchen surfaces nightly and avoid leaving food out overnight.");
-      lines.push("• German Cockroaches: Take trash out regularly and keep trash cans clean.");
+      lines.push("<strong>German Cockroaches:</strong> (1) Clean kitchens nightly (2) Take trash out often");
     }
     if (pests.includes("Crickets")) {
-      lines.push("• Crickets: Reduce moisture by fixing leaks and using fans or dehumidifiers in damp areas.");
-      lines.push("• Crickets: Turn off exterior lights at night to reduce attraction.");
+      lines.push("<strong>Crickets:</strong> (1) Reduce moisture & fix leaks (2) Turn off exterior lights");
     }
     if (pests.includes("Earwigs")) {
-      lines.push("• Earwigs: Remove leaf litter, mulch, and organic debris near the home.");
-      lines.push("• Earwigs: Avoid overwatering landscaping, especially near foundations.");
+      lines.push("<strong>Earwigs:</strong> (1) Clear mulch/debris near home (2) Avoid overwatering foundations");
     }
-    if (pests.includes("Fleas") || pests.includes("Fleas & Ticks")) {
-      lines.push("• Fleas: Wash pet bedding frequently using hot water.");
-      lines.push("• Fleas: Vacuum carpets and rugs often, especially where pets rest.");
+    if (pests.includes("Fleas") || pests.includes("Fleas & Ticks") || pests.includes("Ticks")) {
+      lines.push("<strong>Fleas:</strong> (1) Wash pet bedding hot (2) Vacuum pet areas often");
     }
     if (pests.includes("Silverfish")) {
-      lines.push("• Silverfish: Reduce indoor humidity using fans or dehumidifiers.");
-      lines.push("• Silverfish: Declutter storage areas and vacuum cracks and crevices regularly.");
+      lines.push("<strong>Silverfish:</strong> (1) Lower humidity (2) Declutter & vacuum cracks");
     }
     if (pests.includes("Wasps")) {
-      lines.push("• Wasps: Avoid leaving sugary drinks or food uncovered outdoors.");
-      lines.push("• Wasps: Keep trash cans closed and rinse containers before disposal.");
+      lines.push("<strong>Wasps:</strong> (1) Cover food/drinks outdoors (2) Seal & rinse trash cans");
     }
     if (pests.includes("Bed Bugs")) {
-      lines.push("• Bed Bugs: Inspect luggage and clothing after traveling before bringing items inside.");
-      lines.push("• Bed Bugs: Use mattress and box spring encasements.");
+      lines.push("<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements");
     }
     if (pests.includes("Pantry Pests")) {
-      lines.push("• Pantry Pests: Store dry foods in airtight containers.");
-      lines.push("• Pantry Pests: Discard any infested food immediately.");
+      lines.push("<strong>Pantry Pests:</strong> (1) Store food airtight (2) Discard infested items");
     }
     if (pests.includes("Carpet Beetles")) {
-      lines.push("• Carpet Beetles: Vacuum carpets, rugs, and upholstery frequently.");
-      lines.push("• Carpet Beetles: Wash stored clothing and linens before long-term storage.");
+      lines.push("<strong>Carpet Beetles:</strong> (1) Vacuum carpets/upholstery (2) Wash stored fabrics");
     }
     if (pests.includes("Mosquitoes")) {
-      lines.push("• Mosquitoes: Remove standing water from pots, trays, and outdoor containers.");
-      lines.push("• Mosquitoes: Trim vegetation to reduce shaded resting areas.");
+      lines.push("<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation");
     }
     if (pests.includes("Drain Flies")) {
-      lines.push("• Drain Flies: Clean drains regularly to remove buildup.");
-      lines.push("• Drain Flies: Avoid pouring grease or food waste down sinks.");
+      lines.push("<strong>Drain Flies:</strong> (1) Clean drains regularly (2) Avoid grease/food waste");
     }
     if (pests.includes("Fruit Flies")) {
-      lines.push("• Fruit Flies: Dispose of overripe fruit promptly.");
-      lines.push("• Fruit Flies: Clean trash cans and recycling bins frequently.");
+      lines.push("<strong>Fruit Flies:</strong> (1) Toss overripe fruit (2) Clean trash/recycling bins");
     }
     if (pests.includes("Rats") || pests.includes("Rodents")) {
-      lines.push("• Rats: Keep food tightly sealed and clean up fallen fruit or bird seed outdoors.");
-      lines.push("• Rats: Maintain clean yards and avoid clutter near the home.");
+      lines.push("<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free");
     }
-    if (pests.includes("Mice") || pests.includes("Rodents")) {
-      lines.push("• Mice: Store food in sealed containers.");
-      lines.push("• Mice: Clean up crumbs and spills promptly, especially in kitchens and pantries.");
+    if (pests.includes("Mice")) {
+      lines.push("<strong>Mice:</strong> (1) Store food sealed (2) Clean crumbs & spills promptly");
     }
     
     // If no specific pests selected, provide general recommendations
     if (lines.length === 0) {
-      lines.push("• Keep food stored in airtight containers and clean up spills promptly.");
-      lines.push("• Seal cracks and gaps around doors, windows, and utility penetrations.");
-      lines.push("• Reduce moisture by fixing leaks and improving ventilation.");
+      lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
+      lines.push("<strong>Moisture:</strong> (1) Fix leaks promptly (2) Improve ventilation in damp areas");
     }
     
     return lines.join("\n");
@@ -1744,18 +1726,27 @@ Crest Pest Control
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
               <div className="space-y-3 p-3">
                 <Textarea
-                  value={editableRecommendations[0] || ""}
-                  onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
+                  value={(editableRecommendations[0] || "").replace(/<\/?strong>/g, "")}
+                  onChange={(e) => {
+                    // When user edits, we strip and let them write plain text
+                    updateItem(0, e.target.value, setEditableRecommendations);
+                  }}
                   placeholder="Enter recommendations for the customer..."
                   className="text-sm resize-y min-h-[100px] leading-relaxed no-print text-dark-sage"
                   rows={4}
                 />
+                {/* Live preview with HTML formatting */}
+                <div
+                  className="text-sm leading-relaxed text-dark-sage no-print"
+                  dangerouslySetInnerHTML={{
+                    __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
+                  }}
+                />
+                {/* Print version */}
                 <div
                   className="hidden print-content-formatted text-dark-sage"
                   dangerouslySetInnerHTML={{
-                    __html: (editableRecommendations[0] || "")
-                      .replace(/^(.*?:)/gm, "<strong>$1</strong>")
-                      .replace(/\n/g, "<br/>"),
+                    __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
                   }}
                 />
               </div>
