@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { inferImageUploadMeta } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -167,6 +168,7 @@ const Report = () => {
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
   const [emailMessage, setEmailMessage] = useState("");
+  const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
 
   // Generate findings and expectations based on selected pests, equipment, and products
   const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
@@ -1724,32 +1726,25 @@ Crest Pest Control
             {/* Recommendations Section */}
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
-              <div className="space-y-3 p-3">
-                <Textarea
-                  value={(editableRecommendations[0] || "").replace(/<\/?strong>/g, "")}
-                  onChange={(e) => {
-                    // When user edits, we strip and let them write plain text
-                    updateItem(0, e.target.value, setEditableRecommendations);
-                  }}
+              <div className="p-3 no-print">
+                <RichTextEditor
+                  value={editableRecommendations[0] || ""}
+                  onChange={(val) => updateItem(0, val, setEditableRecommendations)}
                   placeholder="Enter recommendations for the customer..."
-                  className="text-sm resize-y min-h-[100px] leading-relaxed no-print text-dark-sage"
-                  rows={4}
-                />
-                {/* Live preview with HTML formatting */}
-                <div
-                  className="text-sm leading-relaxed text-dark-sage no-print"
-                  dangerouslySetInnerHTML={{
-                    __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
-                  }}
-                />
-                {/* Print version */}
-                <div
-                  className="hidden print-content-formatted text-dark-sage"
-                  dangerouslySetInnerHTML={{
-                    __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
-                  }}
+                  fontSize={recommendationsFontSize}
+                  onFontSizeChange={setRecommendationsFontSize}
+                  className="min-h-[120px] text-dark-sage"
+                  showControls={true}
                 />
               </div>
+              {/* Print version */}
+              <div
+                className="hidden print-content-formatted text-dark-sage p-3"
+                style={{ fontSize: `${recommendationsFontSize}px` }}
+                dangerouslySetInnerHTML={{
+                  __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
+                }}
+              />
             </Card>
           </div>
         </div>
