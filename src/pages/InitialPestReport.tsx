@@ -32,6 +32,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { inferImageUploadMeta } from "@/lib/imageUpload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -162,6 +164,9 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
+  const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
+  const [emailMessage, setEmailMessage] = useState("");
 
   // Generate findings and expectations based on selected pests, equipment, and products
   const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
@@ -660,7 +665,7 @@ const Report = () => {
         address: editableAddress || extractedAddress || address,
         notes: notes,
         findings: editableFindings,
-        recommendations: [],
+        recommendations: editableRecommendations,
         next_steps: editableExpectations,
         map_url: coordinates
           ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
@@ -673,20 +678,24 @@ const Report = () => {
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
+        report_title: "Initial Pest Report",
       };
 
       if (reportId) {
         const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
 
         if (error) throw error;
-        toast.success("Report updated successfully!");
+        toast.success("Report saved successfully!");
       } else {
-        const { error } = await supabase.from("reports").insert([reportData]);
+        // Generate an id client-side so we can navigate to it
+        const newId = crypto.randomUUID();
+        const { error } = await supabase.from("reports").insert([{ id: newId, ...reportData }]);
 
         if (error) throw error;
-        toast.success("Report submitted successfully!");
-
-        setTimeout(() => navigate("/"), 2000);
+        
+        // Navigate to the new report URL
+        navigate(`/initial-pest-report/${newId}`, { replace: true });
+        toast.success("Report saved successfully!");
       }
     } catch (error: any) {
       toast.error("Failed to save report");
@@ -731,6 +740,22 @@ const Report = () => {
     }
   };
 
+  const handleOpenCompose = () => {
+    // Set a default email message when opening compose
+    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+
+Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
+
+If you have any questions about the service or findings, please don't hesitate to reach out to us.
+
+Best regards,
+${editableTech || "Your Technician"}
+Crest Pest Control
+(949) 424-5000`;
+    setEmailMessage(defaultMessage);
+    setShowComposeDialog(true);
+  };
+
   const handleSendEmail = async () => {
     if (!customerEmail) {
       toast.error("Please enter customer email address");
@@ -745,28 +770,83 @@ const Report = () => {
 
     setIsSendingEmail(true);
     try {
+      // Save report first if not saved
+      const rawMap = latestMapDataRef.current ?? mapData;
+      let mapPayload: any = null;
+      if (rawMap) {
+        try {
+          mapPayload = JSON.parse(rawMap);
+        } catch (e) {
+          mapPayload = rawMap;
+        }
+      }
+
+      const fullReportData = {
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        address: editableAddress || extractedAddress || address,
+        notes: notes,
+        findings: editableFindings,
+        recommendations: editableRecommendations,
+        next_steps: editableExpectations,
+        map_url: coordinates
+          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+          : null,
+        map_data: mapPayload,
+        custom_map_url: customMapImage,
+        property_images: propertyImages,
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
+        report_title: "Initial Pest Report",
+        customer_email: customerEmail,
+        sent_to_customer_at: new Date().toISOString(),
+      };
+
+      let finalReportId = reportId;
+
+      if (reportId) {
+        const { error: updateError } = await supabase
+          .from("reports")
+          .update(fullReportData)
+          .eq("id", reportId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new report if none exists
+        const newId = crypto.randomUUID();
+        const { error: insertError } = await supabase
+          .from("reports")
+          .insert([{ id: newId, ...fullReportData }]);
+
+        if (insertError) throw insertError;
+        finalReportId = newId;
+        navigate(`/initial-pest-report/${newId}`, { replace: true });
+      }
+
+      // Now send the email with the correct report ID
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
           customerName: editableCustomer,
           technicianName: editableTech,
-          address: extractedAddress || address || "",
-          findings: editableFindings,
-          expectations: editableExpectations,
-          targetPests: editableTargetPests,
-          productsUsed: editableProductsUsed,
-          equipment: editableEquipment,
-          reportUrl: reportId ? `${window.location.origin}/view-report/${reportId}` : "",
+          address: editableAddress || extractedAddress || address || "",
+          reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
+          emailSubject,
+          emailMessage,
           baseUrl: window.location.origin,
         },
       });
 
       if (error) throw error;
 
-      toast.success(`Report sent to ${customerEmail}`);
+      toast.success(`Report saved and sent to ${customerEmail}`);
+      setShowComposeDialog(false);
     } catch (error: any) {
       console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again.");
+      toast.error("Failed to save or send email. Please try again.");
     } finally {
       setIsSendingEmail(false);
     }
@@ -997,11 +1077,14 @@ const Report = () => {
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2 no-print">
-              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
-                <FileDown className="w-4 h-4" />
+              <Button size="sm" variant="secondary" onClick={handleOpenCompose} className="h-9">
+                <Mail className="w-4 h-4" />
               </Button>
-              <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
-                <Share2 className="w-4 h-4" />
+              <Button size="sm" variant="default" onClick={handleSubmit} disabled={isSaving} className="h-9">
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+              <Button size="sm" variant="outline" onClick={exportToPDF} className="h-9">
+                <FileDown className="w-4 h-4" />
               </Button>
               <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
                 <Home className="w-4 h-4" />
@@ -1015,6 +1098,29 @@ const Report = () => {
       {!isMobile && (
         <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-3">
           <div className="max-w-[1800px] mx-auto">
+            {/* Action buttons row for iPad - shown at top on medium screens */}
+            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+              <Button
+                onClick={handleOpenCompose}
+                variant="secondary"
+                size="sm"
+              >
+                <Mail className="w-3 h-3 mr-1" />
+                Email
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSaving} size="sm">
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                Save
+              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <FileDown className="w-3 h-3 mr-1" />
+                PDF
+              </Button>
+              <Button onClick={() => navigate("/")} variant="outline" size="sm">
+                <Home className="w-3 h-3" />
+              </Button>
+            </div>
+
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
                 <div className="flex flex-col items-center shrink-0">
@@ -1118,13 +1224,22 @@ const Report = () => {
               </div>
 
               <div className="flex gap-2 no-print shrink-0">
-                <Button onClick={exportToPDF} variant="default" size="sm" className="h-8 px-2 text-xs">
+                <Button
+                  onClick={handleOpenCompose}
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                >
+                  <Mail className="w-3.5 h-3.5 mr-1" />
+                  Email
+                </Button>
+                <Button onClick={handleSubmit} disabled={isSaving} variant="default" size="sm" className="h-8 px-2 text-xs">
+                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />}
+                  Save
+                </Button>
+                <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 px-2 text-xs">
                   <FileDown className="w-3.5 h-3.5 mr-1" />
                   PDF
-                </Button>
-                <Button onClick={handleShare} variant="outline" size="sm" className="h-8 px-2 text-xs">
-                  <Share2 className="w-3.5 h-3.5 mr-1" />
-                  Share
                 </Button>
                 <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-8 w-8">
                   <Home className="w-3.5 h-3.5" />
@@ -1626,17 +1741,17 @@ const Report = () => {
 
             {/* Recommendations Section */}
             <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Recommendations</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
               <div className="space-y-3 p-3">
                 <Textarea
                   value={editableRecommendations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableRecommendations)}
                   placeholder="Enter recommendations for the customer..."
-                  className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
+                  className="text-sm resize-y min-h-[100px] leading-relaxed no-print text-dark-sage"
                   rows={4}
                 />
                 <div
-                  className="hidden print-content-formatted"
+                  className="hidden print-content-formatted text-dark-sage"
                   dangerouslySetInnerHTML={{
                     __html: (editableRecommendations[0] || "")
                       .replace(/^(.*?:)/gm, "<strong>$1</strong>")
@@ -1644,43 +1759,6 @@ const Report = () => {
                   }}
                 />
               </div>
-            </Card>
-
-            {/* Email & Submit Section */}
-            <Card className="print-section p-3 no-print">
-              <h2 className="text-lg font-bold mb-3">Send Report to Customer</h2>
-              <div className="flex gap-2 mb-3">
-                <Input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="Customer email address"
-                  className="flex-1"
-                />
-                <Button onClick={handleSendEmail} disabled={isSendingEmail || !customerEmail} variant="secondary">
-                  {isSendingEmail ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Send
-                    </>
-                  )}
-                </Button>
-              </div>
-              <Button onClick={handleSubmit} disabled={isSaving} size="lg" className="w-full text-lg py-6">
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5 mr-2" />
-                    {reportId ? "Update Report" : "Submit Report"}
-                  </>
-                )}
-              </Button>
             </Card>
           </div>
         </div>
@@ -1756,6 +1834,89 @@ const Report = () => {
           )}
         </div>
       </div>
+
+      {/* Compose Email Dialog */}
+      <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Compose Email
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-to">To</Label>
+              <Input
+                id="email-to"
+                type="email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                placeholder="customer@email.com"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email-subject">Subject</Label>
+              <Input
+                id="email-subject"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Email subject"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email-message">Message</Label>
+              <Textarea
+                id="email-message"
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                placeholder="Write your message..."
+                className="min-h-[150px]"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Report Link (included in email)</Label>
+              <div className="p-3 bg-muted rounded-md text-sm">
+                {reportId ? (
+                  <a 
+                    href={`${window.location.origin}/view-report/${reportId}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary underline break-all"
+                  >
+                    {`${window.location.origin}/view-report/${reportId}`}
+                  </a>
+                ) : (
+                  <span className="text-muted-foreground italic">
+                    Save the report first to generate a shareable link
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowComposeDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendEmail} 
+              disabled={isSendingEmail || !customerEmail}
+            >
+              {isSendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
