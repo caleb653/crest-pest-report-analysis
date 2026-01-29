@@ -269,7 +269,7 @@ const Report = () => {
       lines.push("<strong>Moisture:</strong> (1) Fix leaks promptly (2) Improve ventilation in damp areas");
     }
     
-    return lines.join("\n");
+    return lines.join("<br>");
   };
 
   // Auto-update content when pests, equipment, or products change
