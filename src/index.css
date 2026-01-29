@@ -427,17 +427,17 @@
 /* Continue general print styles */
 @media print {
   .print-layout > div:last-child {
-    height: 138mm !important;
-    max-height: 138mm !important;
+    height: 145mm !important;
+    max-height: 145mm !important;
     overflow: hidden !important;
-    padding-top: 3mm !important;
+    padding-top: 1mm !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     width: 100% !important;
   }
 
   .print-section {
-    margin: 0 0 1.5mm 0 !important;
+    margin: 0 0 1mm 0 !important;
     border-radius: 3mm !important;
     box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
     padding: 0 !important;
@@ -449,8 +449,8 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important; /* Brand black #2A2A2A */
-    padding: 1.5mm 3mm 1.5mm 3.5mm !important;
-    font-size: 11px !important;
+    padding: 1mm 3mm 1mm 3.5mm !important;
+    font-size: 10px !important;
     font-weight: 800 !important;
     line-height: 1.05 !important;
     text-transform: uppercase !important;
@@ -515,11 +515,11 @@
     width: 100% !important;
     min-height: auto !important;
     height: auto !important;
-    line-height: 1.5 !important;
-    padding: 3mm 4mm 4mm 4mm !important;
+    line-height: 1.4 !important;
+    padding: 2mm 4mm 3mm 4mm !important;
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
@@ -527,7 +527,7 @@
   .print-content-formatted br {
     display: block !important;
     content: "" !important;
-    margin-top: 2mm !important;
+    margin-top: 1mm !important;
   }
 
   /* Remove any gap between header and body */
