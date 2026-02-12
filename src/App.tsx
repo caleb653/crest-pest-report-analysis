@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import CustomerReportView from "./pages/CustomerReportView";
 import NotFound from "./pages/NotFound";
+import PinGate from "./components/PinGate";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PinGate>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -36,6 +38,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </PinGate>
     </TooltipProvider>
   </QueryClientProvider>
 );
