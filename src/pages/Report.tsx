@@ -905,28 +905,37 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       const adminSessionToken = localStorage.getItem("admin_session");
 
       if (reportId) {
+        let savedViaAdmin = false;
+
         if (adminSessionToken) {
-          // Use admin backend API for reliable save
+          // Try admin backend API first for reliable save
           console.log("Saving via admin-reports API...");
-          const { data, error: invokeError } = await supabase.functions.invoke("admin-reports", {
-            body: { 
-              sessionToken: adminSessionToken, 
-              action: "update", 
-              reportId, 
-              reportData: reportDataPayload 
-            },
-          });
+          try {
+            const { data, error: invokeError } = await supabase.functions.invoke("admin-reports", {
+              body: { 
+                sessionToken: adminSessionToken, 
+                action: "update", 
+                reportId, 
+                reportData: reportDataPayload 
+              },
+            });
 
-          if (invokeError) throw invokeError;
-          if (!data?.ok) throw new Error(data?.error || "Update failed");
-
-          // Update local state with returned data to confirm save
-          if (data.report?.services) {
-            setServices(data.report.services);
+            if (!invokeError && data?.ok) {
+              savedViaAdmin = true;
+              if (data.report?.services) {
+                setServices(data.report.services);
+              }
+              console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
+            } else {
+              console.warn("Admin save failed, falling back to direct update", data?.error);
+            }
+          } catch (e) {
+            console.warn("Admin API error, falling back to direct update", e);
           }
-          console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
-        } else {
-          // Fallback to direct client update for non-admin users
+        }
+
+        if (!savedViaAdmin) {
+          // Fallback to direct client update
           const { error: updateError } = await supabase.from("reports").update(reportDataPayload).eq("id", reportId);
           if (updateError) throw updateError;
         }
