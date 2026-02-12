@@ -618,8 +618,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       }
 
       if (!row) {
-        const { data, error } = await supabase.from("reports").select("*").eq("id", reportId).single();
+        const { data, error } = await supabase.from("reports").select("*").eq("id", reportId).maybeSingle();
         if (error) throw error;
+        if (!data) throw new Error("Report not found");
         row = data;
       }
 
