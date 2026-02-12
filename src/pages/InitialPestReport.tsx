@@ -1254,7 +1254,7 @@ Crest Pest Control
           }`}
         >
           <div 
-            className="relative w-full bg-sage rounded-lg" 
+            className="relative w-full bg-sage rounded-lg print-map-aspect" 
             style={{ paddingBottom: "133%" }}
             onPaste={handleMapPaste}
             tabIndex={0}
@@ -1814,7 +1814,7 @@ Crest Pest Control
           )}
 
           {propertyImages.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="no-images-placeholder text-center py-12 text-muted-foreground">
               <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 5 images.</p>
             </div>
           )}
