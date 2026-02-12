@@ -406,6 +406,13 @@
     width: 100% !important;
   }
 
+  /* Kill percentage-based padding that creates blank space in print */
+  .print-map-container > div[style] {
+    padding-bottom: 0 !important;
+    height: 100% !important;
+    position: relative !important;
+  }
+
   .print-map-container canvas {
     width: 100% !important;
     height: calc(100% + 8mm) !important;
