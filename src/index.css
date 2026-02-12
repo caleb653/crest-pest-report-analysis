@@ -277,7 +277,7 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 2.5mm 6mm !important;
+    padding: 1.5mm 6mm !important;
     box-shadow: none !important;
     background: hsl(130 14% 89%) !important;
     border: none !important;
@@ -390,8 +390,8 @@
     /* Fixed map column width - wider for better visibility */
     grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
-    height: 138mm !important;
-    margin: 3mm auto 0 auto !important;
+    height: 140mm !important;
+    margin: 1mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
   }
@@ -427,10 +427,10 @@
 /* Continue general print styles */
 @media print {
   .print-layout > div:last-child {
-    height: 145mm !important;
-    max-height: 145mm !important;
+    height: 140mm !important;
+    max-height: 140mm !important;
     overflow: hidden !important;
-    padding-top: 1mm !important;
+    padding-top: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     width: 100% !important;
@@ -620,7 +620,16 @@
   /* PR number styling */
   .print-header span[class*="text-xs"][class*="text-muted"] {
     font-size: 8px !important;
-    margin-top: 1mm !important;
+    margin-top: 0.5mm !important;
+  }
+
+  /* Compress purpose text block in print */
+  .print-header + div .bg-muted\/50,
+  .print-header ~ .mt-2 {
+    margin-top: 0.5mm !important;
+    padding: 1mm 3mm !important;
+    font-size: 8px !important;
+    line-height: 1.25 !important;
   }
 
   /* -----------------------------
