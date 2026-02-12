@@ -407,10 +407,14 @@
   }
 
   /* Kill percentage-based padding that creates blank space in print */
-  .print-map-container > div[style] {
+  .print-map-aspect {
     padding-bottom: 0 !important;
     height: 100% !important;
-    position: relative !important;
+  }
+
+  /* Hide property images page when empty in print */
+  .print-page-break:has(.no-images-placeholder) {
+    display: none !important;
   }
 
   .print-map-container canvas {
