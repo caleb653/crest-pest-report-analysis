@@ -93,6 +93,9 @@ const PRODUCT_OPTIONS = [
   { name: "Contrac California", chemical: "Bromethalin" },
   { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
   { name: "In2Care Mix", chemical: "Pyriproxyfen, Beauveria bassiana Strain GHA" },
+  { name: "OneGuard", chemical: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl butoxide" },
+  { name: "Advion Microflow", chemical: "Indoxacarb" },
+  { name: "Optigard", chemical: "Thiamethoxam" },
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
