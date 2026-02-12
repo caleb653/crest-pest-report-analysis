@@ -1752,7 +1752,7 @@ Crest Pest Control
 
       {/* Second Page - Property Images */}
       <div 
-        className="print-page-break bg-background"
+        className={`print-page-break bg-background ${propertyImages.length === 0 ? 'print:hidden' : ''}`}
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
