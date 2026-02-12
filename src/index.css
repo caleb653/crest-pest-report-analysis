@@ -387,29 +387,39 @@
     width: calc(100% - 12mm) !important;
     max-width: none !important;
     display: grid !important;
-    /* Fixed map column width - wider for better visibility */
     grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
     height: 140mm !important;
     margin: 1mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
+    /* Kill flex/min-height from screen styles */
+    min-height: 0 !important;
+    flex-direction: unset !important;
   }
 
   .print-map-container {
     border-radius: 0.5rem;
-    border: 1.5px solid hsl(130 7% 61%) !important; /* Dark sage border */
+    border: 1.5px solid hsl(130 7% 61%) !important;
     box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
     overflow: hidden !important;
-    background: hsl(130 14% 79%) !important; /* Sage background */
+    background: hsl(130 14% 79%) !important;
     height: 138mm !important;
     width: 100% !important;
+    max-width: none !important;
+    flex: none !important;
+    padding: 0 !important;
   }
 
   /* Kill percentage-based padding that creates blank space in print */
   .print-map-aspect {
     padding-bottom: 0 !important;
     height: 100% !important;
+  }
+
+  /* Hide property images page when empty in print */
+  .print-page-break:has(.no-images-placeholder) {
+    display: none !important;
   }
 
   /* Hide property images page when empty in print */
