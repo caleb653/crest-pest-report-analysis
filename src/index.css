@@ -441,7 +441,7 @@
 @media print and (max-width: 1024px) {
   .print-map-container canvas {
     /* Compress horizontally + shift for iPad export */
-    transform: translate(2mm, -10mm) scale(0.88, 1) !important;
+    transform: translate(2mm, -16mm) scale(0.88, 0.65) !important;
   }
 }
 
