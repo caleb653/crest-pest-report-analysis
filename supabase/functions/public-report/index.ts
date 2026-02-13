@@ -56,6 +56,8 @@ serve(async (req) => {
           "sent_to_customer_at",
           "report_title",
           "license_number",
+          "recommendations",
+          "next_steps",
         ].join(",")
       )
       .eq("id", reportId)
