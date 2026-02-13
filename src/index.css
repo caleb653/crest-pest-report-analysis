@@ -431,7 +431,7 @@
     width: 100% !important;
     height: calc(100% + 8mm) !important;
     /* Compress horizontally to fix icons spreading too far left/right */
-    transform: translate(4mm, -8mm) scale(0.88, 1) !important;
+    transform: translate(4mm, -14mm) scale(0.88, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
