@@ -431,7 +431,7 @@
     width: 100% !important;
     height: calc(100% + 8mm) !important;
     /* Compress horizontally to fix icons spreading too far left/right */
-    transform: translate(4mm, -20mm) scale(0.88, 0.65) !important;
+    transform: translate(4mm, -8mm) scale(0.88, 0.65) !important;
     transform-origin: top left !important;
     display: block !important;
   }
@@ -441,7 +441,7 @@
 @media print and (max-width: 1024px) {
   .print-map-container canvas {
     /* Compress horizontally + shift for iPad export */
-    transform: translate(2mm, -16mm) scale(0.88, 0.65) !important;
+    transform: translate(2mm, -4mm) scale(0.88, 0.65) !important;
   }
 }
 
