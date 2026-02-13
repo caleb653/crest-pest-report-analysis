@@ -427,12 +427,11 @@
     display: none !important;
   }
 
-  .print-map-container canvas,
-  .print-map-container .canvas-container {
+  .print-map-container canvas {
     width: 100% !important;
     height: calc(100% + 8mm) !important;
-    /* Compress horizontally and shift up to fix icon positions in print */
-    transform: translate(-2mm, 20mm) scale(0.95, 1) !important;
+    /* Compress horizontally to fix icons spreading too far left/right */
+    transform: translate(4mm, -24mm) scale(0.88, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
@@ -440,10 +439,9 @@
 
 /* iPad-specific print adjustments */
 @media print and (max-width: 1024px) {
-  .print-map-container canvas,
-  .print-map-container .canvas-container {
+  .print-map-container canvas {
     /* Compress horizontally + shift for iPad export */
-    transform: translate(2mm, -24mm) scale(0.88, 1) !important;
+    transform: translate(2mm, -10mm) scale(0.88, 1) !important;
   }
 }
 
