@@ -432,7 +432,7 @@
     width: 100% !important;
     height: calc(100% + 8mm) !important;
     /* Compress horizontally and shift up to fix icon positions in print */
-    transform: translate(4mm, -24mm) scale(0.88, 1) !important;
+    transform: translate(1mm, -14mm) scale(0.88, 1) !important;
     transform-origin: top left !important;
     display: block !important;
   }
