@@ -452,7 +452,7 @@ export default function CustomerReportView() {
       </div>
 
       {/* Page 2: Map & Additional Details */}
-      {(report.custom_map_url || report.notes) && (
+      {(report.custom_map_url || report.rendered_map_url || report.notes) && (
         <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
           {/* Header */}
           <header className="flex items-center justify-between p-4 border-b border-border">

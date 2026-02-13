@@ -614,6 +614,37 @@ const Report = () => {
     }
   };
 
+  // Render map canvas to a static image and upload to storage
+  const renderMapImage = async (): Promise<string | null> => {
+    try {
+      const exportFn = (window as any).exportMapAsImage;
+      if (!exportFn) return null;
+      
+      const dataUrl = await exportFn();
+      if (!dataUrl) return null;
+      
+      // Convert data URL to blob and upload to storage
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const fileName = `${reportId || crypto.randomUUID()}/rendered-map/${Date.now()}.png`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("report-images")
+        .upload(fileName, blob, { upsert: true, contentType: "image/png" });
+      
+      if (uploadError) {
+        console.error("Error uploading rendered map:", uploadError);
+        return null;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(fileName);
+      return publicUrl;
+    } catch (error) {
+      console.error("Error rendering map image:", error);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!editableTech) {
       toast.error("Please enter technician name");
@@ -643,6 +674,9 @@ const Report = () => {
         }
       }
 
+      // Render the map with annotations to a static image
+      const renderedMapUrl = await renderMapImage();
+
       const reportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
@@ -656,6 +690,7 @@ const Report = () => {
           : null,
         map_data: mapPayload,
         custom_map_url: customMapImage,
+        rendered_map_url: renderedMapUrl,
         property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
@@ -765,6 +800,9 @@ Crest Pest Control
         }
       }
 
+      // Render the map with annotations to a static image
+      const renderedMapUrl = await renderMapImage();
+
       const fullReportData = {
         technician_name: editableTech,
         customer_name: editableCustomer,
@@ -778,6 +816,7 @@ Crest Pest Control
           : null,
         map_data: mapPayload,
         custom_map_url: customMapImage,
+        rendered_map_url: renderedMapUrl,
         property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
@@ -1460,7 +1499,7 @@ Crest Pest Control
                 >
                   <span>Target Pest(s)</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-primary-foreground transition-transform no-print ${pestsDropdownOpen ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 text-white transition-transform no-print ${pestsDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
@@ -1523,7 +1562,7 @@ Crest Pest Control
                 >
                   <span>Product(s) Used</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-primary-foreground transition-transform no-print ${productsDropdownOpen ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 text-white transition-transform no-print ${productsDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
@@ -1586,7 +1625,7 @@ Crest Pest Control
                 >
                   <span>Equipment</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-primary-foreground transition-transform no-print ${equipmentDropdownOpen ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 text-white transition-transform no-print ${equipmentDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
