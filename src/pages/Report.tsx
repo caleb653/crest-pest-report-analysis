@@ -450,6 +450,8 @@ const Report = () => {
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState("Your Pest Control Report from Crest");
   const [emailMessage, setEmailMessage] = useState("");
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+  const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
@@ -1099,6 +1101,7 @@ Crest Pest Control
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
+          ccEmails: ccEmails.length > 0 ? ccEmails : undefined,
           customerName: editableCustomer,
           technicianName: editableTech,
           address: extractedAddress || address || "",
@@ -1491,19 +1494,21 @@ Crest Pest Control
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
-            {!isReadOnly && (
             <div className="flex gap-2 no-print">
               <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
                 <FileDown className="w-4 h-4" />
               </Button>
+              {!isReadOnly && (
+              <>
               <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
                 <Share2 className="w-4 h-4" />
               </Button>
               <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
                 <Home className="w-4 h-4" />
               </Button>
+              </>
+              )}
             </div>
-            )}
           </div>
         </div>
       )}
@@ -2453,6 +2458,45 @@ Crest Pest Control
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="customer@email.com"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional — press Enter or comma to add)</span></Label>
+              <div className="flex flex-wrap gap-1.5 p-2 border border-input rounded-md bg-background min-h-[40px]">
+                {ccEmails.map((email, i) => (
+                  <span key={i} className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-sm">
+                    {email}
+                    <button type="button" onClick={() => setCcEmails(prev => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground ml-0.5">×</button>
+                  </span>
+                ))}
+                <input
+                  id="email-cc"
+                  type="email"
+                  value={ccInput}
+                  onChange={(e) => setCcInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const val = ccInput.trim().replace(/,$/, "");
+                      if (val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) && !ccEmails.includes(val)) {
+                        setCcEmails(prev => [...prev, val]);
+                      }
+                      setCcInput("");
+                    } else if (e.key === "Backspace" && !ccInput && ccEmails.length > 0) {
+                      setCcEmails(prev => prev.slice(0, -1));
+                    }
+                  }}
+                  onBlur={() => {
+                    const val = ccInput.trim().replace(/,$/, "");
+                    if (val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) && !ccEmails.includes(val)) {
+                      setCcEmails(prev => [...prev, val]);
+                      setCcInput("");
+                    }
+                  }}
+                  placeholder={ccEmails.length === 0 ? "cc@example.com" : ""}
+                  className="flex-1 min-w-[120px] outline-none bg-transparent text-sm placeholder:text-muted-foreground"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
