@@ -111,6 +111,9 @@ const handler = async (req: Request): Promise<Response> => {
                       <p style="margin: 0; font-size: 14px; color: #6b7280;">
                         Questions? We're here to help.
                       </p>
+                      <p style="margin: 12px 0 0 0; font-size: 14px; color: #374151; font-weight: 700;">
+                        (Please reply all, otherwise replies may be missed)
+                      </p>
                     </td>
                   </tr>
                 </table>
