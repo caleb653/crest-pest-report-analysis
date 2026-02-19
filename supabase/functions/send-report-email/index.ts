@@ -143,6 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
+      reply_to: "office@crestpestcontrol.com",
       to: [customerEmail],
       ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: finalSubject,
