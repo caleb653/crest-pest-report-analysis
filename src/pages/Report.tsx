@@ -1518,8 +1518,9 @@ Crest Pest Control
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
-            {!isReadOnly && (
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+              {!isReadOnly && (
+              <>
               <Button
                 onClick={handleOpenCompose}
                 variant="secondary"
@@ -1532,6 +1533,8 @@ Crest Pest Control
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
                 Save
               </Button>
+              </>
+              )}
               <Button onClick={exportToPDF} variant="outline" size="sm">
                 <FileDown className="w-3 h-3 mr-1" />
                 PDF
@@ -1540,7 +1543,6 @@ Crest Pest Control
                 <Home className="w-3 h-3" />
               </Button>
             </div>
-            )}
 
             <div className="flex items-center justify-between gap-6">
               {/* Left side: Logo + Title */}
@@ -1644,8 +1646,9 @@ Crest Pest Control
                 </div>
               </div>
 
-              {!isReadOnly && (
               <div className="hidden lg:flex items-center gap-2 no-print shrink-0">
+                {!isReadOnly && (
+                <>
                 <Button
                   onClick={handleOpenCompose}
                   variant="secondary"
@@ -1658,6 +1661,8 @@ Crest Pest Control
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
                   Save
                 </Button>
+                </>
+                )}
                 <Button onClick={exportToPDF} variant="outline" size="sm">
                   <FileDown className="w-3 h-3 mr-1" />
                   PDF
@@ -1666,7 +1671,6 @@ Crest Pest Control
                   <Home className="w-3 h-3" />
                 </Button>
               </div>
-              )}
             </div>
           </div>
         </div>
