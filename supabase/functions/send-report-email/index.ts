@@ -12,6 +12,7 @@ const corsHeaders = {
 
 interface SendReportRequest {
   customerEmail: string;
+  ccEmails?: string[];
   customerName: string;
   technicianName: string;
   address: string;
@@ -29,6 +30,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const {
       customerEmail,
+      ccEmails,
       customerName,
       technicianName,
       address,
@@ -139,6 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
       to: [customerEmail],
+      ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: finalSubject,
       html: emailHtml,
     };

@@ -168,6 +168,8 @@ const Report = () => {
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
   const [emailMessage, setEmailMessage] = useState("");
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+  const [ccInput, setCcInput] = useState("");
   const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
 
   // Generate findings and expectations based on selected pests, equipment, and products
@@ -853,6 +855,7 @@ Crest Pest Control
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
+          ccEmails: ccEmails.length > 0 ? ccEmails : undefined,
           customerName: editableCustomer,
           technicianName: editableTech,
           address: editableAddress || extractedAddress || address || "",
@@ -1880,6 +1883,45 @@ Crest Pest Control
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="customer@email.com"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional — press Enter or comma to add)</span></Label>
+              <div className="flex flex-wrap gap-1.5 p-2 border border-input rounded-md bg-background min-h-[40px]">
+                {ccEmails.map((email, i) => (
+                  <span key={i} className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-sm">
+                    {email}
+                    <button type="button" onClick={() => setCcEmails(prev => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground ml-0.5">×</button>
+                  </span>
+                ))}
+                <input
+                  id="email-cc"
+                  type="email"
+                  value={ccInput}
+                  onChange={(e) => setCcInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === ",") {
+                      e.preventDefault();
+                      const val = ccInput.trim().replace(/,$/, "");
+                      if (val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) && !ccEmails.includes(val)) {
+                        setCcEmails(prev => [...prev, val]);
+                      }
+                      setCcInput("");
+                    } else if (e.key === "Backspace" && !ccInput && ccEmails.length > 0) {
+                      setCcEmails(prev => prev.slice(0, -1));
+                    }
+                  }}
+                  onBlur={() => {
+                    const val = ccInput.trim().replace(/,$/, "");
+                    if (val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) && !ccEmails.includes(val)) {
+                      setCcEmails(prev => [...prev, val]);
+                      setCcInput("");
+                    }
+                  }}
+                  placeholder={ccEmails.length === 0 ? "cc@example.com" : ""}
+                  className="flex-1 min-w-[120px] outline-none bg-transparent text-sm placeholder:text-muted-foreground"
+                />
+              </div>
             </div>
             
             <div className="space-y-2">
