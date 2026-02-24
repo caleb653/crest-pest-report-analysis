@@ -21,24 +21,29 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <PinGate>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/select-technician" element={<SelectTechnician />} />
-          <Route path="/data-entry" element={<DataEntry />} />
-          <Route path="/report" element={<Report />} />
-          <Route path="/report/:reportId" element={<Report />} />
+          {/* Public customer portal - no PIN required */}
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
-          <Route path="/initial-pest-report" element={<InitialPestReport />} />
-          <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          {/* All other routes require PIN */}
+          <Route path="*" element={
+            <PinGate>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/select-technician" element={<SelectTechnician />} />
+                <Route path="/data-entry" element={<DataEntry />} />
+                <Route path="/report" element={<Report />} />
+                <Route path="/report/:reportId" element={<Report />} />
+                <Route path="/initial-pest-report" element={<InitialPestReport />} />
+                <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </PinGate>
+          } />
         </Routes>
       </BrowserRouter>
-      </PinGate>
     </TooltipProvider>
   </QueryClientProvider>
 );
