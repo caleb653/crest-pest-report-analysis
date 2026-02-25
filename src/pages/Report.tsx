@@ -462,14 +462,14 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [customProductName, setCustomProductName] = useState("");
   const [customProductChemical, setCustomProductChemical] = useState("");
   
-  // Read-only mode for customer viewing (after email sent)
+  // Track if signature was loaded from database (already saved - cannot be changed)
+  const [signatureWasSaved, setSignatureWasSaved] = useState(false);
+
+  // Read-only mode — locked once customer has signed (signature saved in DB)
   const [sentToCustomerAt, setSentToCustomerAt] = useState<string | null>(null);
   const [savedCustomerEmail, setSavedCustomerEmail] = useState<string | null>(null);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
-  const isReadOnly = !!sentToCustomerAt;
-  
-  // Track if signature was loaded from database (already saved - cannot be changed)
-  const [signatureWasSaved, setSignatureWasSaved] = useState(false);
+  const isReadOnly = !!signatureWasSaved;
   
   // Persist signature when a customer signs (read-only view), and also as a safety-net
   // if a customer ever lands on this page without an admin session.
