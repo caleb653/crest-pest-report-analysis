@@ -1862,7 +1862,7 @@ Crest Pest Control
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
             <div className="flex items-center gap-4">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-16" />
+              <img src={crestLogo} alt="Crest Pest Control" className="h-16 no-print-compress" />
               <h1 className="text-2xl font-bold text-foreground">Property Images</h1>
             </div>
           </div>
