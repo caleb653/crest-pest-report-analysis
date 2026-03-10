@@ -1161,7 +1161,7 @@ Crest Pest Control
       {isMobile && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
           <div className="flex items-center justify-between">
-            <img src={crestLogo} alt="Crest" className="h-10" />
+            <img src={crestLogo} alt="Crest" className="h-10 no-print-compress" />
             <div className="flex gap-2 no-print">
               <Button size="sm" variant="secondary" onClick={handleOpenCompose} className="h-9">
                 <Mail className="w-4 h-4" />
@@ -1210,7 +1210,7 @@ Crest Pest Control
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
                 <div className="flex flex-col items-center shrink-0">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px]" />
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px] no-print-compress" />
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex-1 ml-4">
@@ -1862,7 +1862,7 @@ Crest Pest Control
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
             <div className="flex items-center gap-4">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-16" />
+              <img src={crestLogo} alt="Crest Pest Control" className="h-16 no-print-compress" />
               <h1 className="text-2xl font-bold text-foreground">Property Images</h1>
             </div>
           </div>
