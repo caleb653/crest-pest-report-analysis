@@ -218,7 +218,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     };
 
     // Debounce resize to prevent conflicts with initial load
-    let resizeTimeout: NodeJS.Timeout;
+    let resizeTimeout: ReturnType<typeof setTimeout>;
     const debouncedResize = () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(resizeCanvas, 100);
