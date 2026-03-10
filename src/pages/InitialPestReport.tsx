@@ -741,6 +741,30 @@ const Report = () => {
     }
   };
 
+  /** Downscale an <img> to a JPEG data-URL (max 800px, q=0.5) */
+  const downscaleImg = (img: HTMLImageElement, maxDim = 800, quality = 0.5): Promise<string | null> => {
+    return new Promise((resolve) => {
+      // If already a data URL that's small, skip
+      if (img.naturalWidth <= maxDim && img.naturalHeight <= maxDim) {
+        // Still re-encode as JPEG for size savings
+      }
+      const cv = document.createElement("canvas");
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+      if (w > maxDim || h > maxDim) {
+        const ratio = Math.min(maxDim / w, maxDim / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      cv.width = w;
+      cv.height = h;
+      const c = cv.getContext("2d");
+      if (!c) { resolve(null); return; }
+      c.drawImage(img, 0, 0, w, h);
+      resolve(cv.toDataURL("image/jpeg", quality));
+    });
+  };
+
   const exportToPDF = async () => {
     try {
       const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
@@ -748,10 +772,35 @@ const Report = () => {
         (toastEl as HTMLElement).style.display = "none";
       });
 
-      await new Promise((r) => setTimeout(r, 150));
+      // Downscale all visible images to reduce PDF size
+      const images = document.querySelectorAll<HTMLImageElement>("img:not(.no-print-compress)");
+      const originals: { el: HTMLImageElement; src: string }[] = [];
+
+      await Promise.all(
+        Array.from(images).map(async (img) => {
+          if (!img.complete || img.naturalWidth === 0) return;
+          // Skip tiny images (icons, logos under 50px)
+          if (img.naturalWidth <= 100 && img.naturalHeight <= 100) return;
+          try {
+            const compressed = await downscaleImg(img, 800, 0.5);
+            if (compressed) {
+              originals.push({ el: img, src: img.src });
+              img.src = compressed;
+            }
+          } catch { /* skip */ }
+        })
+      );
+
+      // Also downscale any canvases to JPEG
+      const canvases = document.querySelectorAll<HTMLCanvasElement>("canvas");
+      const origCanvases: { el: HTMLCanvasElement; parent: HTMLElement; clone: HTMLCanvasElement }[] = [];
+
+      await new Promise((r) => setTimeout(r, 200));
       window.print();
 
+      // Restore original sources
       setTimeout(() => {
+        originals.forEach(({ el, src }) => { el.src = src; });
         toasts.forEach((toastEl) => {
           (toastEl as HTMLElement).style.display = "";
         });

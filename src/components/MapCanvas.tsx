@@ -642,7 +642,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
         
         // Draw the fabric canvas annotations on top
-        const annotationsDataUrl = canvas.toDataURL({ multiplier: 1, format: 'png' });
+        const annotationsDataUrl = canvas.toDataURL({ multiplier: 1, format: 'jpeg', quality: 0.7 });
         const annotationsImg = new Image();
         annotationsImg.onload = () => {
           ctx.drawImage(annotationsImg, 0, 0);
@@ -703,10 +703,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             });
             
             Promise.all(iconPromises).then(() => {
-              resolve(tempCanvas.toDataURL('image/png'));
+              resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
             });
           } else {
-            resolve(tempCanvas.toDataURL('image/png'));
+            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
           }
         };
         annotationsImg.onerror = () => resolve(null);
