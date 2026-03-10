@@ -473,6 +473,12 @@
     display: none !important;
   }
 
+  .print-legend .print-legend-label {
+    display: inline !important;
+    font-size: 7px !important;
+    color: #374151 !important;
+  }
+
   .print-legend .space-y-1 > div {
     display: flex !important;
     align-items: center !important;
