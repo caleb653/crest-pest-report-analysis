@@ -1061,7 +1061,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       {showLegend && legendItems.length > 0 && (
         <div 
           ref={legendRef}
-          className="absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move z-40"
+          className="print-legend absolute bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-2 max-w-[200px] max-h-64 overflow-y-auto border border-border cursor-move z-40"
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
@@ -1092,10 +1092,11 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
                   <Input
                     value={item.label}
                     onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
-                    className="flex-1 h-6 text-xs"
+                    className="no-print flex-1 h-6 text-xs"
                     onClick={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                   />
+                  <span className="hidden print-legend-label text-[7px] leading-tight">{item.label}</span>
                   <Button
                     size="icon"
                     variant="ghost"
