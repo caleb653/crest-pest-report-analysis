@@ -703,10 +703,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             });
             
             Promise.all(iconPromises).then(() => {
-              resolve(tempCanvas.toDataURL('image/png'));
+              resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
             });
           } else {
-            resolve(tempCanvas.toDataURL('image/png'));
+            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
           }
         };
         annotationsImg.onerror = () => resolve(null);
