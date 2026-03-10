@@ -1210,7 +1210,7 @@ Crest Pest Control
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-6 flex-1">
                 <div className="flex flex-col items-center shrink-0">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px]" />
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px] no-print-compress" />
                   <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex-1 ml-4">
