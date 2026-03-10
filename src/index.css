@@ -441,8 +441,8 @@
     display: block !important;
     position: absolute !important;
     left: 3mm !important;
-    bottom: 3mm !important;
-    top: auto !important;
+    top: 3mm !important;
+    bottom: auto !important;
     background: rgba(255, 255, 255, 0.95) !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 4px !important;
@@ -457,7 +457,7 @@
   }
 
   .print-legend h3 {
-    font-size: 7px !important;
+    font-size: 8px !important;
     font-weight: 700 !important;
     margin-bottom: 1mm !important;
     text-transform: uppercase !important;
@@ -475,7 +475,7 @@
 
   .print-legend .print-legend-label {
     display: inline !important;
-    font-size: 7px !important;
+    font-size: 8px !important;
     color: #374151 !important;
   }
 
