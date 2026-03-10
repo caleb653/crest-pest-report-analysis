@@ -218,7 +218,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     };
 
     // Debounce resize to prevent conflicts with initial load
-    let resizeTimeout: NodeJS.Timeout;
+    let resizeTimeout: ReturnType<typeof setTimeout>;
     const debouncedResize = () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(resizeCanvas, 100);
@@ -780,7 +780,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     };
     
     // Debounce only for continuous events like text editing
-    let saveTimeout: NodeJS.Timeout;
+    let saveTimeout: ReturnType<typeof setTimeout>;
     const handleDebouncedSave = () => {
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveCanvasData, 100);
