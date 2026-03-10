@@ -31,7 +31,7 @@ import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { inferImageUploadMeta } from "@/lib/imageUpload";
+import { inferImageUploadMeta, compressImage } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -971,12 +971,23 @@ Crest Pest Control
     try {
       const uploadPromises = fileArray.map(async (file) => {
         const { ext, contentType } = inferImageUploadMeta(file);
+        
+        // Compress image to reduce file size
+        let uploadBlob: Blob = file;
+        try {
+          const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+          uploadBlob = compressed.blob;
+          URL.revokeObjectURL(compressed.localUrl);
+        } catch (compressErr) {
+          console.warn("Image compression failed, uploading original:", compressErr);
+        }
+        
         const fileName = `${Math.random()}.${ext}`;
         const filePath = `${reportId || "temp"}/property/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("report-images")
-          .upload(filePath, file, { upsert: true, contentType });
+          .upload(filePath, uploadBlob, { upsert: true, contentType });
 
 
         if (uploadError) throw uploadError;

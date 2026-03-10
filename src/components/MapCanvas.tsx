@@ -650,8 +650,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           // Draw legend if present
           if (legendItems.length > 0) {
             const legendPadding = 8;
-            const legendLineHeight = 18;
-            const legendWidth = 120;
+            const iconSize = 14;
+            const legendLineHeight = 20;
+            const legendWidth = 140;
             const legendHeight = 24 + legendItems.length * legendLineHeight;
             const legendX = 12;
             const legendY = canvasHeight - legendHeight - 12;
@@ -670,16 +671,43 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             ctx.font = 'bold 10px sans-serif';
             ctx.fillText('LEGEND', legendX + legendPadding, legendY + 14);
             
-            // Legend items
-            ctx.font = '10px sans-serif';
-            legendItems.forEach((item, i) => {
-              const y = legendY + 28 + i * legendLineHeight;
-              ctx.fillStyle = '#374151';
-              ctx.fillText(`• ${item.label}`, legendX + legendPadding, y);
+            // Load icon images and draw legend items
+            const iconPromises = legendItems.map((item, i) => {
+              return new Promise<void>((resolveIcon) => {
+                const iconInfo = AVAILABLE_ICONS.find(ic => ic.icon === item.icon);
+                const y = legendY + 24 + i * legendLineHeight;
+                
+                if (iconInfo?.svgPath) {
+                  const iconImg = new Image();
+                  iconImg.onload = () => {
+                    ctx.drawImage(iconImg, legendX + legendPadding, y, iconSize, iconSize);
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(item.label, legendX + legendPadding + iconSize + 4, y + 11);
+                    resolveIcon();
+                  };
+                  iconImg.onerror = () => {
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 11);
+                    resolveIcon();
+                  };
+                  iconImg.src = iconInfo.svgPath;
+                } else {
+                  ctx.fillStyle = '#374151';
+                  ctx.font = '10px sans-serif';
+                  ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 11);
+                  resolveIcon();
+                }
+              });
             });
+            
+            Promise.all(iconPromises).then(() => {
+              resolve(tempCanvas.toDataURL('image/png'));
+            });
+          } else {
+            resolve(tempCanvas.toDataURL('image/png'));
           }
-          
-          resolve(tempCanvas.toDataURL('image/png'));
         };
         annotationsImg.onerror = () => resolve(null);
         annotationsImg.src = annotationsDataUrl;
