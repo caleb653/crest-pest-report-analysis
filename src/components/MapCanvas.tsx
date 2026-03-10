@@ -780,7 +780,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     };
     
     // Debounce only for continuous events like text editing
-    let saveTimeout: NodeJS.Timeout;
+    let saveTimeout: ReturnType<typeof setTimeout>;
     const handleDebouncedSave = () => {
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveCanvasData, 100);
