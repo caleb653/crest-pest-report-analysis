@@ -1161,7 +1161,7 @@ Crest Pest Control
       {isMobile && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
           <div className="flex items-center justify-between">
-            <img src={crestLogo} alt="Crest" className="h-10" />
+            <img src={crestLogo} alt="Crest" className="h-10 no-print-compress" />
             <div className="flex gap-2 no-print">
               <Button size="sm" variant="secondary" onClick={handleOpenCompose} className="h-9">
                 <Mail className="w-4 h-4" />
