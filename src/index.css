@@ -435,6 +435,61 @@
     transform-origin: top left !important;
     display: block !important;
   }
+
+  /* Show legend in print */
+  .print-legend {
+    display: block !important;
+    position: absolute !important;
+    left: 3mm !important;
+    bottom: 3mm !important;
+    top: auto !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 4px !important;
+    padding: 2mm !important;
+    z-index: 50 !important;
+    max-width: 35mm !important;
+    overflow: visible !important;
+    max-height: none !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    cursor: default !important;
+  }
+
+  .print-legend h3 {
+    font-size: 7px !important;
+    font-weight: 700 !important;
+    margin-bottom: 1mm !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    display: block !important;
+  }
+
+  .print-legend .no-print {
+    display: none !important;
+  }
+
+  .print-legend input {
+    display: none !important;
+  }
+
+  .print-legend .space-y-1 > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1mm !important;
+    margin-bottom: 0.5mm !important;
+  }
+
+  .print-legend .space-y-1 > div img {
+    width: 3.5mm !important;
+    height: 3.5mm !important;
+    display: block !important;
+  }
+
+  /* Show legend label text in print (after the hidden input) */
+  .print-legend .space-y-1 > div::after {
+    display: none;
+  }
 }
 
 /* iPad-specific print adjustments */
