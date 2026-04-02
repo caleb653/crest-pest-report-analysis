@@ -2483,12 +2483,36 @@ Crest Pest Control
                   onDragOver={(e) => handleImageDragOver(e, index)}
                   onDragEnd={handleImageDragEnd}
                 >
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-border bg-muted print:w-full print:h-auto">
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-border bg-muted print:w-full print:h-auto relative group">
                     <img
                       src={item.image}
                       alt={`Property ${index + 1}`}
                       className="w-full h-full object-cover pointer-events-none"
                     />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                        toast.info("Image removed");
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAnnotatingImageIndex(index);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Draw
+                    </Button>
                   </div>
                   <Input
                     value={item.caption || ""}
