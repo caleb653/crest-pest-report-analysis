@@ -1383,6 +1383,7 @@ Crest Pest Control
   };
 
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
   const handleImageDragStart = (index: number) => {
     setDraggedImageIndex(index);
