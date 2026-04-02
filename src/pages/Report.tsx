@@ -39,6 +39,7 @@ import { inferImageUploadMeta } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import ImageAnnotator from "@/components/ImageAnnotator";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -190,6 +191,38 @@ const SERVICE_CONFIG: Record<
       `<b>Attic Services (see details below):</b><br>• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps<br>• Seal multiple entry points, and leave precautionary traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)`,
     defaultInitial: 0,
     defaultRecurring: 0,
+  },
+  "De-webbing": {
+    frequency: 0,
+    targetPests: ["Spiders"],
+    proposedServices:
+      `<b>De-webbing:</b><br>• De-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Remove spider webs and egg sacs to reduce spider populations`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Rodent Sanitation": {
+    frequency: 0,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Rodent Sanitation:</b><br>• Clean and sanitize areas affected by rodent activity<br>• Remove droppings, nesting materials, and contaminated insulation<br>• Disinfect affected areas to eliminate health hazards`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Commercial Rodent": {
+    frequency: 30,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+    defaultInitial: 200,
+    defaultRecurring: 60,
+  },
+  "Commercial Rodent and Pest": {
+    frequency: 30,
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
+    proposedServices:
+      `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management<br><br><b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+    defaultInitial: 250,
+    defaultRecurring: 150,
   },
 };
 
@@ -434,6 +467,41 @@ const Report = () => {
 
   const removeService = (index: number) => {
     if (services.length > 1) {
+      const removedServiceType = services[index].serviceType;
+      
+      // Remove the service's proposed text from findings
+      if (removedServiceType && SERVICE_CONFIG[removedServiceType]) {
+        const config = SERVICE_CONFIG[removedServiceType];
+        const serviceHeaderMatch = config.proposedServices?.match(/<b>([^<]+)<\/b>/);
+        const serviceHeader = serviceHeaderMatch ? serviceHeaderMatch[1] : "";
+        
+        if (serviceHeader) {
+          setEditableFindings((prev) => {
+            const content = prev[0] || "";
+            if (!content.includes(serviceHeader)) return prev;
+            
+            // Build a regex to match from the <b>Header</b> to the next <b> or end
+            // We need to remove the service block and any surrounding <br><br>
+            const escapedHeader = serviceHeader.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Match: optional leading <br><br>, then <b>Header</b>..., up to (but not including) the next <b> or end
+            const pattern = new RegExp(
+              `(?:<br>\\s*<br>\\s*)?<b>${escapedHeader}<\\/b>(?:(?!<b>).)*`,
+              'gs'
+            );
+            let cleaned = content.replace(pattern, '');
+            // Clean up leading/trailing <br> tags
+            cleaned = cleaned.replace(/^(<br>\s*)+/, '').replace(/(<br>\s*)+$/, '');
+            // Clean up double <br><br><br><br> to <br><br>
+            cleaned = cleaned.replace(/(<br>\s*){3,}/g, '<br><br>');
+            
+            return [cleaned];
+          });
+        }
+        
+        // Remove from tracking so it can be re-added if user selects it again
+        addedServiceTypesRef.current.delete(removedServiceType);
+      }
+      
       setServices((prev) => prev.filter((_, i) => i !== index));
     }
   };
@@ -1316,6 +1384,7 @@ Crest Pest Control
   };
 
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
   const handleImageDragStart = (index: number) => {
     setDraggedImageIndex(index);
@@ -2416,12 +2485,36 @@ Crest Pest Control
                   onDragOver={(e) => handleImageDragOver(e, index)}
                   onDragEnd={handleImageDragEnd}
                 >
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-border bg-muted print:w-full print:h-auto">
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-border bg-muted print:w-full print:h-auto relative group">
                     <img
                       src={item.image}
                       alt={`Property ${index + 1}`}
                       className="w-full h-full object-cover pointer-events-none"
                     />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                        toast.info("Image removed");
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAnnotatingImageIndex(index);
+                      }}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Draw
+                    </Button>
                   </div>
                   <Input
                     value={item.caption || ""}
@@ -2449,6 +2542,24 @@ Crest Pest Control
           )}
         </div>
       </div>
+
+      {/* Image Annotator Dialog */}
+      {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
+        <ImageAnnotator
+          imageUrl={propertyImages[annotatingImageIndex].image}
+          open={true}
+          onClose={() => setAnnotatingImageIndex(null)}
+          onSave={(annotatedDataUrl) => {
+            setPropertyImages((prev) => {
+              const updated = [...prev];
+              updated[annotatingImageIndex] = { ...updated[annotatingImageIndex], image: annotatedDataUrl };
+              return updated;
+            });
+            setAnnotatingImageIndex(null);
+            toast.success("Annotations saved");
+          }}
+        />
+      )}
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>

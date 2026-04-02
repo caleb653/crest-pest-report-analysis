@@ -22,6 +22,7 @@ import {
   Mail,
   Check,
   ChevronsUpDown,
+  Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ import { inferImageUploadMeta, compressImage } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
+import ImageAnnotator from "@/components/ImageAnnotator";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
@@ -171,6 +173,7 @@ const Report = () => {
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com"]);
   const [ccInput, setCcInput] = useState("");
   const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
+  const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
   // Generate findings and expectations based on selected pests, equipment, and products
   const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
@@ -1896,8 +1899,28 @@ Crest Pest Control
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
               {propertyImages.map((item, index) => (
                 <div key={index} className="space-y-1">
-                  <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                  <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted relative group">
                     <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={() => {
+                        setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                        toast.info("Image removed");
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      onClick={() => setAnnotatingImageIndex(index)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Draw
+                    </Button>
                   </div>
                   {item.caption && (
                     <div className="p-1.5 bg-card rounded border border-border">
@@ -1922,6 +1945,24 @@ Crest Pest Control
           )}
         </div>
       </div>
+
+      {/* Image Annotator Dialog */}
+      {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
+        <ImageAnnotator
+          imageUrl={propertyImages[annotatingImageIndex].image}
+          open={true}
+          onClose={() => setAnnotatingImageIndex(null)}
+          onSave={(annotatedDataUrl) => {
+            setPropertyImages((prev) => {
+              const updated = [...prev];
+              updated[annotatingImageIndex] = { ...updated[annotatingImageIndex], image: annotatedDataUrl };
+              return updated;
+            });
+            setAnnotatingImageIndex(null);
+            toast.success("Annotations saved");
+          }}
+        />
+      )}
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
