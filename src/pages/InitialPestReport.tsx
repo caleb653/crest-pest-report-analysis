@@ -172,6 +172,7 @@ const Report = () => {
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com"]);
   const [ccInput, setCcInput] = useState("");
   const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
+  const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
   // Generate findings and expectations based on selected pests, equipment, and products
   const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
