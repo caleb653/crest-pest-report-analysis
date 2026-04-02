@@ -1946,6 +1946,24 @@ Crest Pest Control
         </div>
       </div>
 
+      {/* Image Annotator Dialog */}
+      {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
+        <ImageAnnotator
+          imageUrl={propertyImages[annotatingImageIndex].image}
+          open={true}
+          onClose={() => setAnnotatingImageIndex(null)}
+          onSave={(annotatedDataUrl) => {
+            setPropertyImages((prev) => {
+              const updated = [...prev];
+              updated[annotatingImageIndex] = { ...updated[annotatingImageIndex], image: annotatedDataUrl };
+              return updated;
+            });
+            setAnnotatingImageIndex(null);
+            toast.success("Annotations saved");
+          }}
+        />
+      )}
+
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
