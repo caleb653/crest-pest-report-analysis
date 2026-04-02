@@ -35,6 +35,7 @@ import { inferImageUploadMeta, compressImage } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
+import ImageAnnotator from "@/components/ImageAnnotator";
 
 const TECHNICIANS = [
   { name: "Alexis Rodriguez", license: "RA 68916" },
