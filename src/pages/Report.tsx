@@ -192,6 +192,14 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 0,
     defaultRecurring: 0,
   },
+  "General Pest Control": {
+    frequency: 30,
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    proposedServices:
+      `<b>General Pest Control:</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
+    defaultInitial: 95,
+    defaultRecurring: 75,
+  },
   "De-webbing": {
     frequency: 0,
     targetPests: ["Spiders"],
