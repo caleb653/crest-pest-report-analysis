@@ -466,6 +466,41 @@ const Report = () => {
 
   const removeService = (index: number) => {
     if (services.length > 1) {
+      const removedServiceType = services[index].serviceType;
+      
+      // Remove the service's proposed text from findings
+      if (removedServiceType && SERVICE_CONFIG[removedServiceType]) {
+        const config = SERVICE_CONFIG[removedServiceType];
+        const serviceHeaderMatch = config.proposedServices?.match(/<b>([^<]+)<\/b>/);
+        const serviceHeader = serviceHeaderMatch ? serviceHeaderMatch[1] : "";
+        
+        if (serviceHeader) {
+          setEditableFindings((prev) => {
+            const content = prev[0] || "";
+            if (!content.includes(serviceHeader)) return prev;
+            
+            // Build a regex to match from the <b>Header</b> to the next <b> or end
+            // We need to remove the service block and any surrounding <br><br>
+            const escapedHeader = serviceHeader.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Match: optional leading <br><br>, then <b>Header</b>..., up to (but not including) the next <b> or end
+            const pattern = new RegExp(
+              `(?:<br>\\s*<br>\\s*)?<b>${escapedHeader}<\\/b>(?:(?!<b>).)*`,
+              'gs'
+            );
+            let cleaned = content.replace(pattern, '');
+            // Clean up leading/trailing <br> tags
+            cleaned = cleaned.replace(/^(<br>\s*)+/, '').replace(/(<br>\s*)+$/, '');
+            // Clean up double <br><br><br><br> to <br><br>
+            cleaned = cleaned.replace(/(<br>\s*){3,}/g, '<br><br>');
+            
+            return [cleaned];
+          });
+        }
+        
+        // Remove from tracking so it can be re-added if user selects it again
+        addedServiceTypesRef.current.delete(removedServiceType);
+      }
+      
       setServices((prev) => prev.filter((_, i) => i !== index));
     }
   };
