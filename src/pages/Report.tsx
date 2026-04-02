@@ -191,6 +191,38 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 0,
     defaultRecurring: 0,
   },
+  "De-webbing": {
+    frequency: 0,
+    targetPests: ["Spiders"],
+    proposedServices:
+      `<b>De-webbing:</b><br>• De-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Remove spider webs and egg sacs to reduce spider populations`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Rodent Sanitation": {
+    frequency: 0,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Rodent Sanitation:</b><br>• Clean and sanitize areas affected by rodent activity<br>• Remove droppings, nesting materials, and contaminated insulation<br>• Disinfect affected areas to eliminate health hazards`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Commercial Rodent": {
+    frequency: 30,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+    defaultInitial: 200,
+    defaultRecurring: 60,
+  },
+  "Commercial Rodent and Pest": {
+    frequency: 30,
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
+    proposedServices:
+      `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management<br><br><b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+    defaultInitial: 250,
+    defaultRecurring: 150,
+  },
 };
 
 // Attic Services additional details content for page 2 (HTML formatted)
