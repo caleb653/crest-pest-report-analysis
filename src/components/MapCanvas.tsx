@@ -580,6 +580,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       console.log('Load complete');
     } catch (error) {
       console.error('Error loading canvas data:', error);
+      isLoadingDataRef.current = false;
     }
   }, [initialData]);
 
