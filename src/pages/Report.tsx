@@ -545,7 +545,23 @@ const Report = () => {
   const [showSignature, setShowSignature] = useState(true);
   
   // Property type
-  const PROPERTY_TYPES = ["Residential", "Commercial", "Apartment", "HOA", "Restaurant"] as const;
+  const PROPERTY_TYPES = [
+    "Residential",
+    "Commercial",
+    "Apartment",
+    "HOA",
+    "Restaurant",
+    "Automotive",
+    "Education",
+    "Entertainment / Events",
+    "Healthcare",
+    "Hotel / Motel / Resort",
+    "Industrial / Warehouse",
+    "Mobile Home Park",
+    "Multi-Unit Property",
+    "Office",
+    "Retail",
+  ] as const;
   const [propertyType, setPropertyType] = useState<string>("Residential");
   
   // Scheduling & Customer Communication
@@ -1545,10 +1561,10 @@ Crest Pest Control
     if (imageFiles.length === 0) return;
     e.preventDefault();
 
-    // Limit to 8 images total
-    const maxNew = Math.min(imageFiles.length, 8 - propertyImages.length);
+    // Limit to 12 images total
+    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 8 images allowed");
+      toast.error("Maximum 12 images allowed");
       return;
     }
 
@@ -1758,6 +1774,28 @@ Crest Pest Control
                           onChange={(e) => setEditableServiceDate(e.target.value)}
                           className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
                         />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Type:</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                      ) : (
+                        <>
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="print-only-text hidden text-foreground">{propertyType}</span>
+                        </>
                       )}
                     </div>
                   </div>
@@ -2337,28 +2375,15 @@ Crest Pest Control
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
-          {/* Page Header - with property type toggle */}
+          {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Details</h1>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground mr-1">Property Type:</span>
-              {PROPERTY_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setPropertyType(type)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    propertyType === type
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+              <span className="text-xs font-semibold text-muted-foreground">Property Type:</span>
+              <span className="text-xs font-medium text-foreground">{propertyType}</span>
             </div>
           </div>
 
@@ -2524,7 +2549,7 @@ Crest Pest Control
                   </div>
                   <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Day:</span>
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
                       {isReadOnly ? (
                         <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
                       ) : (
@@ -2537,7 +2562,7 @@ Crest Pest Control
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Time:</span>
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
                       {isReadOnly ? (
                         <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
                       ) : (
