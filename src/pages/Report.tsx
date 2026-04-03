@@ -1160,17 +1160,26 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   };
 
   const handleOpenCompose = () => {
-    // Set a default email message when opening compose
-    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+    // Build a dynamic default email message based on selected services
+    const activeServices = services.filter(s => s.serviceType);
+    const primaryService = activeServices[0]?.serviceType || "pest control services";
+    const freq = activeServices[0]?.frequency;
+    const freqLabel = freq === 0 ? "" : freq === 30 ? "monthly" : freq === 60 ? "bi-monthly" : freq === 90 ? "quarterly" : freq === 7 ? "weekly" : `every ${freq} days`;
+    const additionalServices = activeServices.slice(1).map(s => s.serviceType).join(", ");
+    const additionalLine = additionalServices ? `, as well as ${additionalServices}` : "";
+    const freqLine = freqLabel ? ` every ${freqLabel}` : "";
 
-Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
+    const defaultMessage = `Hi ${editableCustomer || "there"},
 
-If you have any questions about the service or findings, please don't hesitate to reach out to us.
+Nice meeting with you today, I appreciate you taking the time to show the property.
 
-Best regards,
+We've put together a proposal that we believe will effectively address your pest control needs. This will include ${primaryService}${freqLine}${additionalLine}.
+
+We look forward to keeping your property protected, and please let us know if you have any questions.
+
+Best,
 ${editableTech || "Your Technician"}
-Crest Pest Control
-(949) 424-5000`;
+Crest Pest Control`;
     setEmailMessage(defaultMessage);
     setShowComposeDialog(true);
   };
