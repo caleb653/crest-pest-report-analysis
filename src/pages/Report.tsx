@@ -1561,10 +1561,10 @@ Crest Pest Control
     if (imageFiles.length === 0) return;
     e.preventDefault();
 
-    // Limit to 8 images total
-    const maxNew = Math.min(imageFiles.length, 8 - propertyImages.length);
+    // Limit to 12 images total
+    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 8 images allowed");
+      toast.error("Maximum 12 images allowed");
       return;
     }
 
