@@ -604,13 +604,19 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     if (!fabricCanvasRef.current || !canvasRef.current) return null;
     
     const canvas = fabricCanvasRef.current;
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
+    const displayWidth = canvas.getWidth();
+    const displayHeight = canvas.getHeight();
     
-    // Create a temporary canvas to composite the background image and annotations
+    // Export at reference resolution for consistent quality
+    const exportWidth = REFERENCE_WIDTH;
+    const exportHeight = REFERENCE_HEIGHT;
+    const scaleX = exportWidth / displayWidth;
+    const scaleY = exportHeight / displayHeight;
+    
+    // Create a temporary canvas at reference resolution
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvasWidth;
-    tempCanvas.height = canvasHeight;
+    tempCanvas.width = exportWidth;
+    tempCanvas.height = exportHeight;
     const ctx = tempCanvas.getContext('2d');
     if (!ctx) return null;
     
@@ -622,30 +628,33 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       bgImg.onload = () => {
         // Draw background image to fill canvas while maintaining aspect ratio
         const imgAspect = bgImg.width / bgImg.height;
-        const canvasAspect = canvasWidth / canvasHeight;
+        const canvasAspect = exportWidth / exportHeight;
         
-        let drawWidth = canvasWidth;
-        let drawHeight = canvasHeight;
+        let drawWidth = exportWidth;
+        let drawHeight = exportHeight;
         let drawX = 0;
         let drawY = 0;
         
         if (imgAspect > canvasAspect) {
-          drawHeight = canvasWidth / imgAspect;
-          drawY = (canvasHeight - drawHeight) / 2;
+          drawHeight = exportWidth / imgAspect;
+          drawY = (exportHeight - drawHeight) / 2;
         } else {
-          drawWidth = canvasHeight * imgAspect;
-          drawX = (canvasWidth - drawWidth) / 2;
+          drawWidth = exportHeight * imgAspect;
+          drawX = (exportWidth - drawWidth) / 2;
         }
         
         ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillRect(0, 0, exportWidth, exportHeight);
         ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
         
-        // Draw the fabric canvas annotations on top
-        const annotationsDataUrl = canvas.toDataURL({ multiplier: 1, format: 'png' });
+        // Export annotations at higher resolution using multiplier
+        const annotationsDataUrl = canvas.toDataURL({ 
+          multiplier: scaleX, 
+          format: 'png',
+        });
         const annotationsImg = new Image();
         annotationsImg.onload = () => {
-          ctx.drawImage(annotationsImg, 0, 0);
+          ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
           
           // Draw legend if present
           if (legendItems.length > 0) {
@@ -655,7 +664,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             const legendWidth = 140;
             const legendHeight = 24 + legendItems.length * legendLineHeight;
             const legendX = 12;
-            const legendY = canvasHeight - legendHeight - 12;
+            const legendY = exportHeight - legendHeight - 12;
             
             // Legend background
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
