@@ -2540,7 +2540,7 @@ Crest Pest Control
                   </div>
                   <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Day:</span>
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
                       {isReadOnly ? (
                         <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
                       ) : (
