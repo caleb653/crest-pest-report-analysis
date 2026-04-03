@@ -69,6 +69,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
+  const isLoadingDataRef = useRef(false);
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
   // Line drawing state
