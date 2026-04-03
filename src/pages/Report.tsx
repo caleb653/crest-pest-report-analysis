@@ -388,9 +388,10 @@ const Report = () => {
       setEditableTargetPests(Array.from(allPests));
     }
 
-    // Auto-populate additional details for Attic Services
+    // Auto-populate additional details for Attic Services + reduce font size
     if (hasAtticService && !additionalDetails) {
       setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
+      setAdditionalDetailsFontSize(10); // Smaller font to fit attic details
     }
 
     // Skip service description auto-population for existing reports until loaded
@@ -540,8 +541,38 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
-  const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
+  const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels - will be reduced for attic auto-gen
   const [showSignature, setShowSignature] = useState(true);
+  
+  // Property type
+  const PROPERTY_TYPES = ["Residential", "Commercial", "Apartment", "HOA", "Restaurant"] as const;
+  const [propertyType, setPropertyType] = useState<string>("Residential");
+  
+  // Scheduling & Customer Communication
+  const [preferredServiceDay, setPreferredServiceDay] = useState("");
+  const [preferredServiceTime, setPreferredServiceTime] = useState("");
+  const [mainPointOfContact, setMainPointOfContact] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  
+  // Setup Materials
+  interface SetupMaterial {
+    name: string;
+    quantity: string;
+  }
+  const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
+  const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
+  const [newMaterialName, setNewMaterialName] = useState("");
+  const [newMaterialQty, setNewMaterialQty] = useState("");
+  
+  const addSetupMaterial = (name: string, quantity: string) => {
+    if (name.trim() && quantity.trim()) {
+      setSetupMaterials(prev => [...prev, { name: name.trim(), quantity: quantity.trim() }]);
+    }
+  };
+  const removeSetupMaterial = (index: number) => {
+    setSetupMaterials(prev => prev.filter((_, i) => i !== index));
+  };
+  
 const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [customProductName, setCustomProductName] = useState("");
   const [customProductChemical, setCustomProductChemical] = useState("");
@@ -760,7 +791,27 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setEditableTitle(row.report_title);
       }
       if (row.notes) {
-        setAdditionalDetails(row.notes);
+        // notes is stored as JSON string with structured data or plain string
+        if (typeof row.notes === 'string') {
+          try {
+            const parsed = JSON.parse(row.notes);
+            if (parsed && typeof parsed === 'object' && parsed._structuredNotes) {
+              setAdditionalDetails(parsed.additionalDetails || "");
+              setPropertyType(parsed.propertyType || "Residential");
+              setPreferredServiceDay(parsed.preferredServiceDay || "");
+              setPreferredServiceTime(parsed.preferredServiceTime || "");
+              setMainPointOfContact(parsed.mainPointOfContact || "");
+              setContactPhone(parsed.contactPhone || "");
+              setSetupMaterials(parsed.setupMaterials || []);
+            } else {
+              setAdditionalDetails(row.notes);
+            }
+          } catch {
+            setAdditionalDetails(row.notes);
+          }
+        } else {
+          setAdditionalDetails(row.notes as string);
+        }
       }
       
       // Load sent status for read-only mode
@@ -966,7 +1017,16 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
-        notes: additionalDetails || notes,
+        notes: JSON.stringify({
+          _structuredNotes: true,
+          additionalDetails: additionalDetails || notes || "",
+          propertyType,
+          preferredServiceDay,
+          preferredServiceTime,
+          mainPointOfContact,
+          contactPhone,
+          setupMaterials,
+        }),
         findings: editableFindings,
         recommendations: [],
         next_steps: [],
@@ -2277,11 +2337,28 @@ Crest Pest Control
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
-          {/* Page Header - minimal for print */}
+          {/* Page Header - with property type toggle */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Images</h1>
+              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Details</h1>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground mr-1">Property Type:</span>
+              {PROPERTY_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setPropertyType(type)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    propertyType === type
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -2413,9 +2490,9 @@ Crest Pest Control
               </div>
             </div>
 
-            {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-0 print:mt-0">
-              {/* Additional Details Section - takes full height */}
+            {/* Right Column - Additional Details + Scheduling + Setup Materials */}
+            <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
+              {/* Additional Details Section - now shorter */}
               <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
                   <input
@@ -2426,17 +2503,166 @@ Crest Pest Control
                     style={{ color: "#ffffff", caretColor: "#ffffff" }}
                   />
                 </div>
-                <div className="additional-details-body p-3 flex-1 flex flex-col">
+                <div className="additional-details-body p-2 flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
                     onChange={setAdditionalDetails}
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[460px] print:min-h-0"
+                    className="additional-details-editor flex-1 min-h-[200px] print:min-h-0"
                   />
                 </div>
               </Card>
+
+              {/* Bottom row: Scheduling + Setup Materials side by side */}
+              <div className="grid grid-cols-2 gap-3 print:gap-2">
+                {/* Scheduling & Customer Communication */}
+                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                    <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Scheduling & Communication</span>
+                  </div>
+                  <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Day:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                      ) : (
+                        <Input
+                          value={preferredServiceDay}
+                          onChange={(e) => setPreferredServiceDay(e.target.value)}
+                          placeholder="e.g. Monday"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Time:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                      ) : (
+                        <Input
+                          value={preferredServiceTime}
+                          onChange={(e) => setPreferredServiceTime(e.target.value)}
+                          placeholder="e.g. Morning"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                      ) : (
+                        <Input
+                          value={mainPointOfContact}
+                          onChange={(e) => setMainPointOfContact(e.target.value)}
+                          placeholder="Name"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                      ) : (
+                        <Input
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          placeholder="(xxx) xxx-xxxx"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Setup Materials */}
+                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                    <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Setup Materials</span>
+                  </div>
+                  <div className="p-2.5 print:p-1.5">
+                    {/* Listed materials */}
+                    {setupMaterials.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        {setupMaterials.map((mat, index) => (
+                          <div key={index} className="flex items-center justify-between text-xs group">
+                            <span className="text-foreground">
+                              {mat.name} <span className="font-semibold">×{mat.quantity}</span>
+                            </span>
+                            {!isReadOnly && (
+                              <button
+                                type="button"
+                                onClick={() => removeSetupMaterial(index)}
+                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add material - preset buttons */}
+                    {!isReadOnly && (
+                      <div className="no-print space-y-1.5">
+                        <div className="flex flex-wrap gap-1">
+                          {SETUP_MATERIAL_PRESETS.filter(
+                            (preset) => !setupMaterials.some((m) => m.name === preset)
+                          ).map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => {
+                                const qty = prompt(`How many ${preset}?`, "1");
+                                if (qty) addSetupMaterial(preset, qty);
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                            >
+                              + {preset}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Custom material input */}
+                        <div className="flex gap-1">
+                          <Input
+                            value={newMaterialName}
+                            onChange={(e) => setNewMaterialName(e.target.value)}
+                            placeholder="Custom item"
+                            className="h-5 text-[10px] flex-1"
+                          />
+                          <Input
+                            value={newMaterialQty}
+                            onChange={(e) => setNewMaterialQty(e.target.value)}
+                            placeholder="Qty"
+                            className="h-5 text-[10px] w-12"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-5 px-1.5 text-[10px]"
+                            onClick={() => {
+                              addSetupMaterial(newMaterialName, newMaterialQty);
+                              setNewMaterialName("");
+                              setNewMaterialQty("");
+                            }}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {setupMaterials.length === 0 && isReadOnly && (
+                      <p className="text-xs text-muted-foreground italic">No setup materials listed</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
