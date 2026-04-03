@@ -2553,7 +2553,7 @@ Crest Pest Control
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Time:</span>
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
                       {isReadOnly ? (
                         <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
                       ) : (
