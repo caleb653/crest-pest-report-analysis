@@ -540,7 +540,7 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
-  const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
+  const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels - will be reduced for attic auto-gen
   const [showSignature, setShowSignature] = useState(true);
   
   // Property type
