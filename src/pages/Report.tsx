@@ -2490,9 +2490,9 @@ Crest Pest Control
               </div>
             </div>
 
-            {/* Right Column - Additional Details (full height) */}
-            <div className="flex flex-col h-full print:h-auto print:min-h-0 print:mt-0">
-              {/* Additional Details Section - takes full height */}
+            {/* Right Column - Additional Details + Scheduling + Setup Materials */}
+            <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
+              {/* Additional Details Section - now shorter */}
               <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
                 <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
                   <input
@@ -2503,17 +2503,166 @@ Crest Pest Control
                     style={{ color: "#ffffff", caretColor: "#ffffff" }}
                   />
                 </div>
-                <div className="additional-details-body p-3 flex-1 flex flex-col">
+                <div className="additional-details-body p-2 flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
                     onChange={setAdditionalDetails}
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[460px] print:min-h-0"
+                    className="additional-details-editor flex-1 min-h-[200px] print:min-h-0"
                   />
                 </div>
               </Card>
+
+              {/* Bottom row: Scheduling + Setup Materials side by side */}
+              <div className="grid grid-cols-2 gap-3 print:gap-2">
+                {/* Scheduling & Customer Communication */}
+                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                    <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Scheduling & Communication</span>
+                  </div>
+                  <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Day:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                      ) : (
+                        <Input
+                          value={preferredServiceDay}
+                          onChange={(e) => setPreferredServiceDay(e.target.value)}
+                          placeholder="e.g. Monday"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Service Time:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                      ) : (
+                        <Input
+                          value={preferredServiceTime}
+                          onChange={(e) => setPreferredServiceTime(e.target.value)}
+                          placeholder="e.g. Morning"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                      ) : (
+                        <Input
+                          value={mainPointOfContact}
+                          onChange={(e) => setMainPointOfContact(e.target.value)}
+                          placeholder="Name"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                      {isReadOnly ? (
+                        <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                      ) : (
+                        <Input
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          placeholder="(xxx) xxx-xxxx"
+                          className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Setup Materials */}
+                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                    <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Setup Materials</span>
+                  </div>
+                  <div className="p-2.5 print:p-1.5">
+                    {/* Listed materials */}
+                    {setupMaterials.length > 0 && (
+                      <div className="space-y-1 mb-2">
+                        {setupMaterials.map((mat, index) => (
+                          <div key={index} className="flex items-center justify-between text-xs group">
+                            <span className="text-foreground">
+                              {mat.name} <span className="font-semibold">×{mat.quantity}</span>
+                            </span>
+                            {!isReadOnly && (
+                              <button
+                                type="button"
+                                onClick={() => removeSetupMaterial(index)}
+                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add material - preset buttons */}
+                    {!isReadOnly && (
+                      <div className="no-print space-y-1.5">
+                        <div className="flex flex-wrap gap-1">
+                          {SETUP_MATERIAL_PRESETS.filter(
+                            (preset) => !setupMaterials.some((m) => m.name === preset)
+                          ).map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => {
+                                const qty = prompt(`How many ${preset}?`, "1");
+                                if (qty) addSetupMaterial(preset, qty);
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                            >
+                              + {preset}
+                            </button>
+                          ))}
+                        </div>
+                        {/* Custom material input */}
+                        <div className="flex gap-1">
+                          <Input
+                            value={newMaterialName}
+                            onChange={(e) => setNewMaterialName(e.target.value)}
+                            placeholder="Custom item"
+                            className="h-5 text-[10px] flex-1"
+                          />
+                          <Input
+                            value={newMaterialQty}
+                            onChange={(e) => setNewMaterialQty(e.target.value)}
+                            placeholder="Qty"
+                            className="h-5 text-[10px] w-12"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-5 px-1.5 text-[10px]"
+                            onClick={() => {
+                              addSetupMaterial(newMaterialName, newMaterialQty);
+                              setNewMaterialName("");
+                              setNewMaterialQty("");
+                            }}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {setupMaterials.length === 0 && isReadOnly && (
+                      <p className="text-xs text-muted-foreground italic">No setup materials listed</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
