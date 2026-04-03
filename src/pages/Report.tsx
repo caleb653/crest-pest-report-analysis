@@ -1781,6 +1781,7 @@ Crest Pest Control
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{propertyType || "—"}</span>
                       ) : (
+                        <>
                         <Select value={propertyType} onValueChange={setPropertyType}>
                           <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
                             <SelectValue placeholder="Select type" />
@@ -1794,6 +1795,7 @@ Crest Pest Control
                           </SelectContent>
                         </Select>
                         <span className="print-only-text hidden text-foreground">{propertyType}</span>
+                        </>
                       )}
                     </div>
                   </div>
