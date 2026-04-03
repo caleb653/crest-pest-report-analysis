@@ -39,12 +39,13 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 
 const TECHNICIANS = [
-  { name: "Alexis Rodriguez", license: "RA 68916" },
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Marcus Reynolds", license: "FR 41031" },
   { name: "Jesse Angulo", license: "FR 51548" },
-  { name: "Jake Shubin", license: "RA 71439" },
-  { name: "Caleb Whalen", license: "RA 71438" },
+  { name: "Jake Shubin", license: "FR 71068" },
+  { name: "Caleb Whalen", license: "FR 71183" },
+  { name: "Jackson Latham", license: "FR 68261" },
+  { name: "Dylan Gallegos", license: "RA 71068" },
+  { name: "Michael Muniz", license: "FR 54193" },
 ];
 
 const PEST_OPTIONS = [

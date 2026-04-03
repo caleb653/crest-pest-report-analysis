@@ -42,11 +42,13 @@ import { Label } from "@/components/ui/label";
 import ImageAnnotator from "@/components/ImageAnnotator";
 
 const TECHNICIANS = [
-  { name: "Alexis Rodriguez", license: "RA 68916" },
   { name: "Darrell Tanner", license: "FR 62523" },
   { name: "Jesse Angulo", license: "FR 51548" },
-  { name: "Jake Shubin", license: "RA 71439" },
-  { name: "Caleb Whalen", license: "RA 71438" },
+  { name: "Jake Shubin", license: "FR 71068" },
+  { name: "Caleb Whalen", license: "FR 71183" },
+  { name: "Jackson Latham", license: "FR 68261" },
+  { name: "Dylan Gallegos", license: "RA 71068" },
+  { name: "Michael Muniz", license: "FR 54193" },
 ];
 
 const PEST_OPTIONS = [
@@ -1158,17 +1160,26 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   };
 
   const handleOpenCompose = () => {
-    // Set a default email message when opening compose
-    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+    // Build a dynamic default email message based on selected services
+    const activeServices = services.filter(s => s.serviceType);
+    const primaryService = activeServices[0]?.serviceType || "pest control services";
+    const freq = activeServices[0]?.frequency;
+    const freqLabel = freq === 0 ? "" : freq === 30 ? "monthly" : freq === 60 ? "bi-monthly" : freq === 90 ? "quarterly" : freq === 7 ? "weekly" : `every ${freq} days`;
+    const additionalServices = activeServices.slice(1).map(s => s.serviceType).join(", ");
+    const additionalLine = additionalServices ? `, as well as ${additionalServices}` : "";
+    const freqLine = freqLabel ? ` every ${freqLabel}` : "";
 
-Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
+    const defaultMessage = `Hi ${editableCustomer || "there"},
 
-If you have any questions about the service or findings, please don't hesitate to reach out to us.
+Nice meeting with you today, I appreciate you taking the time to show the property.
 
-Best regards,
+We've put together a proposal that we believe will effectively address your pest control needs. This will include ${primaryService}${freqLine}${additionalLine}.
+
+We look forward to keeping your property protected, and please let us know if you have any questions.
+
+Best,
 ${editableTech || "Your Technician"}
-Crest Pest Control
-(949) 424-5000`;
+Crest Pest Control`;
     setEmailMessage(defaultMessage);
     setShowComposeDialog(true);
   };
@@ -2713,7 +2724,7 @@ Crest Pest Control
             <div className="relative inline-flex">
               <Button variant="outline" size="sm" type="button">
                 <FileDown className="w-4 h-4 mr-2" />
-                Upload Images (up to 8)
+                Upload Images (up to 12)
               </Button>
               <input
                 id="property-images-upload"
@@ -2795,7 +2806,7 @@ Crest Pest Control
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
-                Click the button above to upload up to 8 images.
+                Click the button above to upload up to 12 images.
               </p>
             </div>
           )}
@@ -2843,7 +2854,29 @@ Crest Pest Control
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional — press Enter or comma to add)</span></Label>
+              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(click to add from directory, or type and press Enter)</span></Label>
+              {/* Office Directory Quick-Add Buttons */}
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  "caleb@crestpestco.com",
+                  "jakee@crestpestco.com",
+                  "dlongoria@crestpestco.com",
+                  "jlatham@crestpestco.com",
+                  "dtanner@crestpestco.com",
+                  "jangulo@crestpestco.com",
+                  "dgallegoss@crestpestco.com",
+                  "mmuniz@crestpestco.com",
+                ].filter(email => !ccEmails.includes(email)).map((email) => (
+                  <button
+                    key={email}
+                    type="button"
+                    onClick={() => setCcEmails(prev => [...prev, email])}
+                    className="text-xs px-2 py-1 rounded-full border border-input bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    + {email}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap gap-1.5 p-2 border border-input rounded-md bg-background min-h-[40px]">
                 {ccEmails.map((email, i) => (
                   <span key={i} className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-sm">

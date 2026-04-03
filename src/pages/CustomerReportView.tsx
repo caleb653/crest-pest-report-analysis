@@ -556,33 +556,64 @@ export default function CustomerReportView() {
       </div>
 
       {/* Page 2: Map & Additional Details */}
-      {(report.custom_map_url || report.rendered_map_url || report.notes) && (
+      {(report.custom_map_url || report.rendered_map_url || report.notes) && (() => {
+        // Parse structured notes
+        let additionalDetailsHtml = report.notes || "";
+        let propertyTypeDisplay = "";
+        let preferredDay = "";
+        let preferredTime = "";
+        let pointOfContact = "";
+        let contactPhoneNum = "";
+        let materials: Array<{ name: string; quantity: string }> = [];
+
+        if (report.notes) {
+          try {
+            const parsed = JSON.parse(report.notes);
+            if (parsed?._structuredNotes) {
+              additionalDetailsHtml = parsed.additionalDetails || "";
+              propertyTypeDisplay = parsed.propertyType || "";
+              preferredDay = parsed.preferredServiceDay || "";
+              preferredTime = parsed.preferredServiceTime || "";
+              pointOfContact = parsed.mainPointOfContact || "";
+              contactPhoneNum = parsed.contactPhone || "";
+              materials = parsed.setupMaterials || [];
+            }
+          } catch {
+            // Not JSON, use as plain HTML
+          }
+        }
+
+        const hasSchedulingData = preferredDay || preferredTime || pointOfContact || contactPhoneNum;
+        const hasMaterials = materials.length > 0;
+
+        return (
         <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
           {/* Header */}
           <header className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center gap-3">
               <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
-              <h1 className="text-lg font-bold">Property Map & Images</h1>
+              <h1 className="text-lg font-bold">Property Map & Details</h1>
             </div>
             <div className="text-right text-xs text-muted-foreground">
+              {propertyTypeDisplay && (
+                <span className="font-semibold text-foreground mr-3">{propertyTypeDisplay}</span>
+              )}
               <span className="font-bold text-foreground">PEST CONTROL</span>
             </div>
           </header>
 
-          <main className="p-4">
+          <main className="p-4 space-y-4">
             <div className="grid grid-cols-[2fr_3fr] gap-4">
               {/* Map Section - Use rendered map (with annotations) if available, fallback to dynamic canvas */}
               {(report.rendered_map_url || report.custom_map_url) && (
                 <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
                   {report.rendered_map_url ? (
-                    // Use the pre-rendered static map with annotations baked in
                     <img 
                       src={report.rendered_map_url} 
                       alt="Property map with annotations" 
                       className="w-full h-full object-contain"
                     />
                   ) : (
-                    // Fallback to dynamic canvas rendering
                     <ReadOnlyMapCanvas 
                       mapUrl={report.custom_map_url!}
                       mapData={mapDataString}
@@ -591,24 +622,84 @@ export default function CustomerReportView() {
                 </div>
               )}
 
-              {/* Additional Details */}
-              {report.notes && (
-                <Card className="overflow-hidden h-fit">
-                  <div className="bg-brand-black text-white px-4 py-2">
-                    <span className="text-xs font-bold uppercase">Additional Details</span>
-                  </div>
-                  <div className="p-4">
-                    <div 
-                      className="text-sm leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: report.notes }}
-                    />
-                  </div>
-                </Card>
-              )}
+              {/* Right column: Additional Details + Scheduling + Materials */}
+              <div className="space-y-4">
+                {/* Additional Details */}
+                {additionalDetailsHtml && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Additional Details</span>
+                    </div>
+                    <div className="p-4">
+                      <div 
+                        className="text-xs leading-relaxed prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: additionalDetailsHtml }}
+                      />
+                    </div>
+                  </Card>
+                )}
+
+                {/* Scheduling & Communication */}
+                {hasSchedulingData && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Scheduling & Communication</span>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {preferredDay && (
+                          <div>
+                            <p className="text-muted-foreground text-xs">Preferred Service Day</p>
+                            <p className="font-medium">{preferredDay}</p>
+                          </div>
+                        )}
+                        {preferredTime && (
+                          <div>
+                            <p className="text-muted-foreground text-xs">Preferred Service Time</p>
+                            <p className="font-medium">{preferredTime}</p>
+                          </div>
+                        )}
+                        {pointOfContact && (
+                          <div>
+                            <p className="text-muted-foreground text-xs">Main Point of Contact</p>
+                            <p className="font-medium">{pointOfContact}</p>
+                          </div>
+                        )}
+                        {contactPhoneNum && (
+                          <div>
+                            <p className="text-muted-foreground text-xs">Phone #</p>
+                            <p className="font-medium">{contactPhoneNum}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Setup Materials */}
+                {hasMaterials && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Setup Materials</span>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-1.5">
+                        {materials.map((mat, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span className="font-medium">{mat.name}</span>
+                            <span className="text-muted-foreground">×{mat.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
             </div>
           </main>
         </div>
-      )}
+        );
+      })()}
 
       {/* Page 3: Property Images */}
       {report.property_images && report.property_images.length > 0 && (
