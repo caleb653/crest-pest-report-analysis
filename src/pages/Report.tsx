@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
