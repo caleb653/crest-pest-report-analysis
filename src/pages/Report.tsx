@@ -790,7 +790,27 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setEditableTitle(row.report_title);
       }
       if (row.notes) {
-        setAdditionalDetails(row.notes);
+        // notes is stored as JSON string with structured data or plain string
+        if (typeof row.notes === 'string') {
+          try {
+            const parsed = JSON.parse(row.notes);
+            if (parsed && typeof parsed === 'object' && parsed._structuredNotes) {
+              setAdditionalDetails(parsed.additionalDetails || "");
+              setPropertyType(parsed.propertyType || "Residential");
+              setPreferredServiceDay(parsed.preferredServiceDay || "");
+              setPreferredServiceTime(parsed.preferredServiceTime || "");
+              setMainPointOfContact(parsed.mainPointOfContact || "");
+              setContactPhone(parsed.contactPhone || "");
+              setSetupMaterials(parsed.setupMaterials || []);
+            } else {
+              setAdditionalDetails(row.notes);
+            }
+          } catch {
+            setAdditionalDetails(row.notes);
+          }
+        } else {
+          setAdditionalDetails(row.notes as string);
+        }
       }
       
       // Load sent status for read-only mode
