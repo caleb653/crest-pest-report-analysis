@@ -2353,28 +2353,15 @@ Crest Pest Control
       {/* Page 2 - Map & Property Images */}
       <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
-          {/* Page Header - with property type toggle */}
+          {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Details</h1>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground mr-1">Property Type:</span>
-              {PROPERTY_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setPropertyType(type)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    propertyType === type
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+              <span className="text-xs font-semibold text-muted-foreground">Property Type:</span>
+              <span className="text-xs font-medium text-foreground">{propertyType}</span>
             </div>
           </div>
 
