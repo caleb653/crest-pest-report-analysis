@@ -542,6 +542,36 @@ const Report = () => {
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(14); // in pixels
   const [showSignature, setShowSignature] = useState(true);
+  
+  // Property type
+  const PROPERTY_TYPES = ["Residential", "Commercial", "Apartment", "HOA", "Restaurant"] as const;
+  const [propertyType, setPropertyType] = useState<string>("Residential");
+  
+  // Scheduling & Customer Communication
+  const [preferredServiceDay, setPreferredServiceDay] = useState("");
+  const [preferredServiceTime, setPreferredServiceTime] = useState("");
+  const [mainPointOfContact, setMainPointOfContact] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  
+  // Setup Materials
+  interface SetupMaterial {
+    name: string;
+    quantity: string;
+  }
+  const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
+  const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
+  const [newMaterialName, setNewMaterialName] = useState("");
+  const [newMaterialQty, setNewMaterialQty] = useState("");
+  
+  const addSetupMaterial = (name: string, quantity: string) => {
+    if (name.trim() && quantity.trim()) {
+      setSetupMaterials(prev => [...prev, { name: name.trim(), quantity: quantity.trim() }]);
+    }
+  };
+  const removeSetupMaterial = (index: number) => {
+    setSetupMaterials(prev => prev.filter((_, i) => i !== index));
+  };
+  
 const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   const [customProductName, setCustomProductName] = useState("");
   const [customProductChemical, setCustomProductChemical] = useState("");
