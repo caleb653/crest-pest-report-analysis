@@ -69,6 +69,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const [rectBorderColor, setRectBorderColor] = useState('#000000');
   const [rectFillTransparent, setRectFillTransparent] = useState(false);
   const hasLoadedInitialRef = useRef(false);
+  const isLoadingDataRef = useRef(false);
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
   // Line drawing state
@@ -182,6 +183,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     document.addEventListener('keydown', handleKeyDown);
 
     const resizeCanvas = () => {
+      // Skip resize scaling while loading saved data to prevent position corruption
+      if (isLoadingDataRef.current) return;
+      
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
       if (parentRect) {
         const oldWidth = canvas.getWidth();
@@ -481,8 +485,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     
     if (!fabricCanvasRef.current || !initialData || hasLoadedInitialRef.current) return;
     
-    // Set this BEFORE loading to prevent race conditions
+    // Set flags BEFORE loading to prevent race conditions
     hasLoadedInitialRef.current = true;
+    isLoadingDataRef.current = true;
     
     try {
       const savedData = JSON.parse(initialData);
@@ -496,6 +501,18 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
           const canvas = fabricCanvasRef.current!;
           console.log('Canvas loaded, object count:', canvas.getObjects().length);
+          
+          // Re-sync canvas dimensions with actual parent before scaling
+          const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
+          if (parentRect) {
+            const actualW = Math.floor(parentRect.width);
+            const actualH = Math.floor(parentRect.height);
+            const canvasW = canvas.getWidth();
+            const canvasH = canvas.getHeight();
+            if (Math.abs(canvasW - actualW) > 1 || Math.abs(canvasH - actualH) > 1) {
+              canvas.setDimensions({ width: actualW, height: actualH });
+            }
+          }
           
           const attemptAdjust = (attempt: number = 0) => {
             const objs = canvas.getObjects();
@@ -515,13 +532,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             // Calculate scale factors - pure proportional scaling
             const scaleX = currW / baseW;
             const scaleY = currH / baseH;
-            // Use uniform scale to maintain aspect ratio of icons
-            // Cap the scale factor to prevent icons from getting too large on smaller screens
             const uniformScale = Math.min(scaleX, scaleY);
             
-            // Target icon size relative to canvas - icons should be roughly same % of canvas on all devices
-            // This ensures consistent visual appearance
-            const targetIconScale = Math.min(currW, currH) / 800; // Normalize to ~800px reference
+            // Target icon size relative to canvas
+            const targetIconScale = Math.min(currW, currH) / 800;
             
             console.log('Scaling objects:', { scaleX, scaleY, uniformScale, targetIconScale, currW, currH, baseW, baseH, objectCount: objs.length, isNormalized });
             
@@ -531,18 +545,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               const origLeft = obj.left || 0;
               const origTop = obj.top || 0;
               
-              // Pure proportional scaling - same relative position on all devices
               obj.left = origLeft * scaleX;
               obj.top = origTop * scaleY;
               
-              // For object sizes, use target scale to ensure icons are consistent size relative to canvas
-              // This makes a 32px icon on a 1600px canvas appear the same relative size as on a 800px canvas
               if (isNormalized) {
-                // New format: scales were normalized, apply target scale
                 obj.scaleX = (obj.scaleX || 1) * targetIconScale;
                 obj.scaleY = (obj.scaleY || 1) * targetIconScale;
               } else {
-                // Legacy format: keep original scales but cap them
                 const maxScale = targetIconScale * 1.5;
                 obj.scaleX = Math.min(obj.scaleX || 1, maxScale);
                 obj.scaleY = Math.min(obj.scaleY || 1, maxScale);
@@ -552,10 +561,17 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               obj.setCoords();
             });
             canvas.renderAll();
+            
+            // Allow resize handler to work again after load is complete
+            setTimeout(() => {
+              isLoadingDataRef.current = false;
+            }, 300);
           };
 
           attemptAdjust();
         });
+      } else {
+        isLoadingDataRef.current = false;
       }
       if (savedData.legendItems) {
         setLegendItems(savedData.legendItems);
@@ -564,6 +580,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       console.log('Load complete');
     } catch (error) {
       console.error('Error loading canvas data:', error);
+      isLoadingDataRef.current = false;
     }
   }, [initialData]);
 

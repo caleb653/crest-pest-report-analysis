@@ -603,24 +603,23 @@ export default function CustomerReportView() {
           </header>
 
           <main className="p-4 space-y-4">
+            {(report.rendered_map_url || report.custom_map_url) ? (
             <div className="grid grid-cols-[2fr_3fr] gap-4">
-              {/* Map Section - Use rendered map (with annotations) if available, fallback to dynamic canvas */}
-              {(report.rendered_map_url || report.custom_map_url) && (
-                <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
-                  {report.rendered_map_url ? (
-                    <img 
-                      src={report.rendered_map_url} 
-                      alt="Property map with annotations" 
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <ReadOnlyMapCanvas 
-                      mapUrl={report.custom_map_url!}
-                      mapData={mapDataString}
-                    />
-                  )}
-                </div>
-              )}
+              {/* Map Section */}
+              <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
+                {report.rendered_map_url ? (
+                  <img 
+                    src={report.rendered_map_url} 
+                    alt="Property map with annotations" 
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <ReadOnlyMapCanvas 
+                    mapUrl={report.custom_map_url!}
+                    mapData={mapDataString}
+                  />
+                )}
+              </div>
 
               {/* Right column: Additional Details + Scheduling + Materials */}
               <div className="space-y-4">
@@ -696,6 +695,82 @@ export default function CustomerReportView() {
                 )}
               </div>
             </div>
+            ) : (
+            /* No map - show details/scheduling/materials in full width */
+            <div className="space-y-4">
+              {additionalDetailsHtml && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Additional Details</span>
+                  </div>
+                  <div className="p-4">
+                    <div 
+                      className="text-xs leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: additionalDetailsHtml }}
+                    />
+                  </div>
+                </Card>
+              )}
+
+              {(hasSchedulingData || hasMaterials) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {hasSchedulingData && (
+                    <Card className="overflow-hidden">
+                      <div className="bg-brand-black text-white px-4 py-2">
+                        <span className="text-xs font-bold uppercase">Scheduling & Communication</span>
+                      </div>
+                      <div className="p-4">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          {preferredDay && (
+                            <div>
+                              <p className="text-muted-foreground text-xs">Preferred Service Day</p>
+                              <p className="font-medium">{preferredDay}</p>
+                            </div>
+                          )}
+                          {preferredTime && (
+                            <div>
+                              <p className="text-muted-foreground text-xs">Preferred Service Time</p>
+                              <p className="font-medium">{preferredTime}</p>
+                            </div>
+                          )}
+                          {pointOfContact && (
+                            <div>
+                              <p className="text-muted-foreground text-xs">Main Point of Contact</p>
+                              <p className="font-medium">{pointOfContact}</p>
+                            </div>
+                          )}
+                          {contactPhoneNum && (
+                            <div>
+                              <p className="text-muted-foreground text-xs">Phone #</p>
+                              <p className="font-medium">{contactPhoneNum}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
+                  {hasMaterials && (
+                    <Card className="overflow-hidden">
+                      <div className="bg-brand-black text-white px-4 py-2">
+                        <span className="text-xs font-bold uppercase">Setup Materials</span>
+                      </div>
+                      <div className="p-4">
+                        <div className="space-y-1.5">
+                          {materials.map((mat, idx) => (
+                            <div key={idx} className="flex justify-between text-sm">
+                              <span className="font-medium">{mat.name}</span>
+                              <span className="text-muted-foreground">×{mat.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+            )}
           </main>
         </div>
         );
