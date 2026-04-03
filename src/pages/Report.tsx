@@ -2854,7 +2854,29 @@ Crest Pest Control`;
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(optional — press Enter or comma to add)</span></Label>
+              <Label htmlFor="email-cc">CC <span className="text-muted-foreground font-normal">(click to add from directory, or type and press Enter)</span></Label>
+              {/* Office Directory Quick-Add Buttons */}
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  "caleb@crestpestco.com",
+                  "jakee@crestpestco.com",
+                  "dlongoria@crestpestco.com",
+                  "jlatham@crestpestco.com",
+                  "dtanner@crestpestco.com",
+                  "jangulo@crestpestco.com",
+                  "dgallegoss@crestpestco.com",
+                  "mmuniz@crestpestco.com",
+                ].filter(email => !ccEmails.includes(email)).map((email) => (
+                  <button
+                    key={email}
+                    type="button"
+                    onClick={() => setCcEmails(prev => [...prev, email])}
+                    className="text-xs px-2 py-1 rounded-full border border-input bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    + {email}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-wrap gap-1.5 p-2 border border-input rounded-md bg-background min-h-[40px]">
                 {ccEmails.map((email, i) => (
                   <span key={i} className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-sm">
