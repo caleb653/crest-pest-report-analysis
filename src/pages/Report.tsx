@@ -2806,7 +2806,7 @@ Crest Pest Control`;
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
-                Click the button above to upload up to 8 images.
+                Click the button above to upload up to 12 images.
               </p>
             </div>
           )}

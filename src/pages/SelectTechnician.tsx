@@ -10,11 +10,13 @@ const SelectTechnician = () => {
   const [selectedTech, setSelectedTech] = useState("");
 
   const technicians = [
-    "Alexis Rodriguez",
     "Darrell Tanner",
     "Jesse Angulo",
+    "Jake Shubin",
     "Caleb Whalen",
-    "Jacob Shubin"
+    "Jackson Latham",
+    "Dylan Gallegos",
+    "Michael Muniz",
   ];
 
   const handleNext = () => {
