@@ -545,7 +545,23 @@ const Report = () => {
   const [showSignature, setShowSignature] = useState(true);
   
   // Property type
-  const PROPERTY_TYPES = ["Residential", "Commercial", "Apartment", "HOA", "Restaurant"] as const;
+  const PROPERTY_TYPES = [
+    "Residential",
+    "Commercial",
+    "Apartment",
+    "HOA",
+    "Restaurant",
+    "Automotive",
+    "Education",
+    "Entertainment / Events",
+    "Healthcare",
+    "Hotel / Motel / Resort",
+    "Industrial / Warehouse",
+    "Mobile Home Park",
+    "Multi-Unit Property",
+    "Office",
+    "Retail",
+  ] as const;
   const [propertyType, setPropertyType] = useState<string>("Residential");
   
   // Scheduling & Customer Communication
