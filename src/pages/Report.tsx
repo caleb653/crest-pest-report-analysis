@@ -2724,7 +2724,7 @@ Crest Pest Control`;
             <div className="relative inline-flex">
               <Button variant="outline" size="sm" type="button">
                 <FileDown className="w-4 h-4 mr-2" />
-                Upload Images (up to 8)
+                Upload Images (up to 12)
               </Button>
               <input
                 id="property-images-upload"
