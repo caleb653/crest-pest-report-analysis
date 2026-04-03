@@ -183,6 +183,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     document.addEventListener('keydown', handleKeyDown);
 
     const resizeCanvas = () => {
+      // Skip resize scaling while loading saved data to prevent position corruption
+      if (isLoadingDataRef.current) return;
+      
       const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
       if (parentRect) {
         const oldWidth = canvas.getWidth();
