@@ -388,9 +388,10 @@ const Report = () => {
       setEditableTargetPests(Array.from(allPests));
     }
 
-    // Auto-populate additional details for Attic Services
+    // Auto-populate additional details for Attic Services + reduce font size
     if (hasAtticService && !additionalDetails) {
       setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
+      setAdditionalDetailsFontSize(10); // Smaller font to fit attic details
     }
 
     // Skip service description auto-population for existing reports until loaded
