@@ -1080,7 +1080,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
 
     const newId = crypto.randomUUID();
-    const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportData }]);
+    const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportData } as any]);
 
     if (insertError) throw insertError;
 
