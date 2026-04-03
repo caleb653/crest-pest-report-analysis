@@ -991,6 +991,102 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
+  const buildStructuredNotes = () =>
+    JSON.stringify({
+      _structuredNotes: true,
+      additionalDetails: additionalDetails || notes || "",
+      propertyType,
+      preferredServiceDay,
+      preferredServiceTime,
+      mainPointOfContact,
+      contactPhone,
+      setupMaterials,
+    });
+
+  const buildServicesPayload = () =>
+    services
+      .filter((service) => service.serviceType)
+      .map((service) => ({
+        serviceType: service.serviceType,
+        initialPrice: service.initialPrice,
+        recurringPrice: service.recurringPrice,
+        frequency: service.frequency,
+      }));
+
+  const buildBaseReportPayload = (mapPayload: any, finalSignature?: string | null) => ({
+    technician_name: editableTech,
+    customer_name: editableCustomer,
+    address: editableAddress || extractedAddress || address,
+    notes: buildStructuredNotes(),
+    findings: editableFindings,
+    recommendations: [],
+    next_steps: [],
+    map_url: coordinates
+      ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+      : null,
+    map_data: mapPayload,
+    custom_map_url: customMapImage,
+    rendered_map_url: renderedMapImage,
+    property_images: propertyImages,
+    customer_signature: finalSignature,
+    services: buildServicesPayload() as unknown as any[],
+    service_date: editableServiceDate,
+    license_number: editableLicenseNumber,
+    target_pests: editableTargetPests,
+    products_used: editableProductsUsed,
+    equipment: editableEquipment,
+    report_title: editableTitle,
+  });
+
+  const persistReport = async (reportData: Record<string, unknown>) => {
+    const adminSessionToken = localStorage.getItem("admin_session");
+
+    if (reportId) {
+      let savedViaAdmin = false;
+
+      if (adminSessionToken) {
+        console.log("Saving via admin-reports API...");
+        try {
+          const { data, error: invokeError } = await supabase.functions.invoke("admin-reports", {
+            body: {
+              sessionToken: adminSessionToken,
+              action: "update",
+              reportId,
+              reportData,
+            },
+          });
+
+          if (!invokeError && data?.ok) {
+            savedViaAdmin = true;
+            if (data.report?.services) {
+              setServices(data.report.services);
+            }
+            console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
+          } else {
+            console.warn("Admin save failed, falling back to direct update", data?.error);
+          }
+        } catch (error) {
+          console.warn("Admin API error, falling back to direct update", error);
+        }
+      }
+
+      if (!savedViaAdmin) {
+        const { error: updateError } = await supabase.from("reports").update(reportData).eq("id", reportId);
+        if (updateError) throw updateError;
+      }
+
+      return reportId;
+    }
+
+    const newId = crypto.randomUUID();
+    const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportData }]);
+
+    if (insertError) throw insertError;
+
+    navigate({ pathname: location.pathname, search: `?id=${newId}` }, { replace: true });
+    return newId;
+  };
+
   const handleSubmit = async () => {
     if (!editableTech) {
       toast.error("Please enter technician name");
@@ -999,7 +1095,6 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
     setIsSaving(true);
     try {
-      // Force-save signature from canvas (ensures iPad captures it)
       const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
 
       const rawMap = latestMapDataRef.current ?? mapData;
@@ -1023,99 +1118,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         }
       }
 
-      // Ensure services array is properly formatted
-      const finalServices = services.filter(s => s.serviceType).map(s => ({
-        serviceType: s.serviceType,
-        initialPrice: s.initialPrice,
-        recurringPrice: s.recurringPrice,
-        frequency: s.frequency,
-      }));
-
-      const reportDataPayload = {
-        technician_name: editableTech,
-        customer_name: editableCustomer,
-        address: editableAddress || extractedAddress || address,
-        notes: JSON.stringify({
-          _structuredNotes: true,
-          additionalDetails: additionalDetails || notes || "",
-          propertyType,
-          preferredServiceDay,
-          preferredServiceTime,
-          mainPointOfContact,
-          contactPhone,
-          setupMaterials,
-        }),
-        findings: editableFindings,
-        recommendations: [],
-        next_steps: [],
-        map_url: coordinates
-          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
-          : null,
-        map_data: mapPayload,
-        custom_map_url: customMapImage,
-        rendered_map_url: renderedMapImage, // Static map with annotations baked in
-        property_images: propertyImages,
-        customer_signature: finalSignature,
-        services: finalServices as unknown as any[],
-        service_date: editableServiceDate,
-        license_number: editableLicenseNumber,
-        target_pests: editableTargetPests,
-        products_used: editableProductsUsed,
-        equipment: editableEquipment,
-        report_title: editableTitle,
-      };
-
-      // Check if admin session exists - if so, use admin-reports API for guaranteed save
-      const adminSessionToken = localStorage.getItem("admin_session");
-
-      if (reportId) {
-        let savedViaAdmin = false;
-
-        if (adminSessionToken) {
-          // Try admin backend API first for reliable save
-          console.log("Saving via admin-reports API...");
-          try {
-            const { data, error: invokeError } = await supabase.functions.invoke("admin-reports", {
-              body: { 
-                sessionToken: adminSessionToken, 
-                action: "update", 
-                reportId, 
-                reportData: reportDataPayload 
-              },
-            });
-
-            if (!invokeError && data?.ok) {
-              savedViaAdmin = true;
-              if (data.report?.services) {
-                setServices(data.report.services);
-              }
-              console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
-            } else {
-              console.warn("Admin save failed, falling back to direct update", data?.error);
-            }
-          } catch (e) {
-            console.warn("Admin API error, falling back to direct update", e);
-          }
-        }
-
-        if (!savedViaAdmin) {
-          // Fallback to direct client update
-          const { error: updateError } = await supabase.from("reports").update(reportDataPayload).eq("id", reportId);
-          if (updateError) throw updateError;
-        }
-        toast.success("Report saved successfully!");
-      } else {
-        // Generate an id client-side so we don't need RETURNING/SELECT (which is blocked by RLS for public users)
-        const newId = crypto.randomUUID();
-
-        const { error: insertError } = await supabase.from("reports").insert([{ id: newId, ...reportDataPayload }]);
-
-        if (insertError) throw insertError;
-
-        // Update the URL so subsequent saves update this same report
-        navigate({ pathname: location.pathname, search: `?id=${newId}` }, { replace: true });
-        toast.success("Report saved successfully!");
-      }
+      await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
+      toast.success("Report saved successfully!");
     } catch (error: any) {
       toast.error("Failed to save report");
       console.error(error);
@@ -1198,11 +1202,9 @@ Crest Pest Control`;
 
     setIsSendingEmail(true);
     try {
-      // CRITICAL: Save ALL report data first before sending email
-      // This ensures dollar values, services, and all other changes are persisted
       const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
       const rawMap = latestMapDataRef.current ?? mapData;
-      
+
       let mapPayload: any = null;
       if (rawMap) {
         try {
@@ -1212,70 +1214,19 @@ Crest Pest Control`;
         }
       }
 
-      const finalServices = services.filter(s => s.serviceType).map(s => ({
-        serviceType: s.serviceType,
-        initialPrice: s.initialPrice,
-        recurringPrice: s.recurringPrice,
-        frequency: s.frequency,
-      }));
-
-      const fullReportData = {
-        technician_name: editableTech,
-        customer_name: editableCustomer,
-        address: editableAddress || extractedAddress || address,
-        notes: additionalDetails || notes,
-        findings: editableFindings,
-        recommendations: [],
-        next_steps: [],
-        map_url: coordinates
-          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
-          : null,
-        map_data: mapPayload,
-        custom_map_url: customMapImage,
-        rendered_map_url: renderedMapImage,
-        property_images: propertyImages,
-        customer_signature: finalSignature,
-        services: finalServices as unknown as any[],
-        service_date: editableServiceDate,
-        license_number: editableLicenseNumber,
-        target_pests: editableTargetPests,
-        products_used: editableProductsUsed,
-        equipment: editableEquipment,
-        report_title: editableTitle,
+      const finalReportId = await persistReport({
+        ...buildBaseReportPayload(mapPayload, finalSignature),
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
-      };
+      });
 
-      // Save all report data including sent status
-      let finalReportId = reportId;
-      
-      if (reportId) {
-        const { error: updateError } = await supabase
-          .from("reports")
-          .update(fullReportData)
-          .eq("id", reportId);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new report if none exists
-        const newId = crypto.randomUUID();
-        const { error: insertError } = await supabase
-          .from("reports")
-          .insert([{ id: newId, ...fullReportData }]);
-
-        if (insertError) throw insertError;
-        finalReportId = newId;
-        navigate({ pathname: `/report/${newId}` }, { replace: true });
-      }
-
-      // Now send the email with the correct report ID
-      const { data, error } = await supabase.functions.invoke("send-report-email", {
+      const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
           ccEmails: ccEmails.length > 0 ? ccEmails : undefined,
           customerName: editableCustomer,
           technicianName: editableTech,
-          address: extractedAddress || address || "",
+          address: editableAddress || extractedAddress || address || "",
           reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
           emailSubject,
           emailMessage,
