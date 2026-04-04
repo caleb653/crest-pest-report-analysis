@@ -69,6 +69,8 @@ const PEST_OPTIONS = [
   "Millipedes",
   "Box Elder Bugs",
   "American Roaches",
+  "Gophers",
+  "Drain Flies",
   "Other",
 ];
 
