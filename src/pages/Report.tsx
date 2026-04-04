@@ -69,6 +69,8 @@ const PEST_OPTIONS = [
   "Millipedes",
   "Box Elder Bugs",
   "American Roaches",
+  "Gophers",
+  "Drain Flies",
   "Other",
 ];
 
@@ -120,31 +122,31 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 95,
+    defaultInitial: 75,
     defaultRecurring: 75,
   },
   "Bi-Monthly Services": {
     frequency: 60,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 95,
-    defaultRecurring: 105,
+      `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
+    defaultInitial: 110,
+    defaultRecurring: 110,
   },
   "Quarterly Services": {
     frequency: 90,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 95,
-    defaultRecurring: 125,
+      `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
+    defaultInitial: 135,
+    defaultRecurring: 135,
   },
   "Commercial General Pest": {
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
-    defaultInitial: 150,
+    defaultInitial: 100,
     defaultRecurring: 100,
   },
   "Rodent Exclusion": {
@@ -177,7 +179,7 @@ const SERVICE_CONFIG: Record<
     proposedServices:
       `<b>Rodent Bait Boxes:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Strategically move bait boxes depending on ongoing rodent activity`,
     defaultInitial: 200,
-    defaultRecurring: 60,
+    defaultRecurring: 70,
   },
   "Mosquito Service": {
     frequency: 30,
@@ -200,14 +202,14 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>General Pest Control:</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 95,
+    defaultInitial: 75,
     defaultRecurring: 75,
   },
   "De-webbing": {
     frequency: 0,
     targetPests: ["Spiders"],
     proposedServices:
-      `<b>De-webbing:</b><br>• De-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Remove spider webs and egg sacs to reduce spider populations`,
+      `<b>De-webbing:</b><br>• Thoroughly de-web the entire property including eaves, outdoor furniture, and high visibility areas`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -225,15 +227,63 @@ const SERVICE_CONFIG: Record<
     proposedServices:
       `<b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
     defaultInitial: 200,
-    defaultRecurring: 60,
+    defaultRecurring: 70,
   },
   "Commercial Rodent and Pest": {
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
     proposedServices:
-      `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management<br><br><b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+      `<b>Commercial General Pest & Rodent:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest and rodent activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Strategically place traps and bait stations in areas of highest rodent activity<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
     defaultInitial: 250,
     defaultRecurring: 150,
+  },
+  "Bed Bug Treatment": {
+    frequency: 0,
+    targetPests: ["Bed Bugs"],
+    proposedServices:
+      `<b>Bed Bug Treatment:</b><br>• Conduct thorough inspection of all sleeping areas, furniture, and harborage points<br>• Apply targeted treatments using residual and contact products to eliminate bed bug populations<br>• Provide follow-up treatment recommendations to ensure complete eradication`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Flea & Tick Treatment": {
+    frequency: 0,
+    targetPests: ["Fleas & Ticks"],
+    proposedServices:
+      `<b>Flea & Tick Treatment:</b><br>• Treat interior and exterior areas to eliminate active flea and tick populations<br>• Apply growth regulators to break the flea lifecycle and prevent re-infestation<br>• Focus on pet resting areas, carpeted zones, and yard perimeter`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "German Cockroach Treatment": {
+    frequency: 0,
+    targetPests: ["Roaches"],
+    proposedServices:
+      `<b>German Cockroach Treatment:</b><br>• Apply gel baits, growth regulators, and residual products to eliminate German cockroach infestations<br>• Target kitchens, bathrooms, and other moisture-heavy areas where activity is concentrated<br>• Provide follow-up treatments to ensure full eradication of all life stages`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Gopher Service": {
+    frequency: 0,
+    targetPests: ["Gophers"],
+    proposedServices:
+      `<b>Gopher Service:</b><br>• Identify active gopher tunnels and mounds throughout the property<br>• Deploy targeted trapping and/or baiting methods to eliminate gopher activity<br>• Monitor and adjust treatment strategy as needed`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Bee Removal": {
+    frequency: 0,
+    targetPests: ["Bees"],
+    proposedServices:
+      `<b>Bee Removal:</b><br>• Safely locate and assess the bee colony<br>• Remove or treat the colony using appropriate methods depending on species and location<br>• Seal entry points to prevent future colonization`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Drain Fly Treatment": {
+    frequency: 0,
+    targetPests: ["Drain Flies"],
+    proposedServices:
+      `<b>Drain Fly Treatment:</b><br>• Inspect and identify breeding sources in drains, pipes, and moist areas<br>• Apply biological and chemical treatments to eliminate larvae and adult drain flies<br>• Recommend sanitation practices to prevent recurrence`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
   },
 };
 
@@ -2762,6 +2812,18 @@ Crest Pest Control`;
               </p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Crest Guarantee */}
+      <div className="print-page-break-avoid bg-background">
+        <div className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
+          <div className="border-2 border-border rounded-lg p-4 print:p-5 text-center bg-muted/30">
+            <h3 className="text-sm print:text-base font-bold text-foreground mb-2">The Crest Guarantee</h3>
+            <p className="text-xs print:text-sm text-foreground leading-relaxed max-w-2xl mx-auto">
+              If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. And if we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+            </p>
+          </div>
         </div>
       </div>
 
