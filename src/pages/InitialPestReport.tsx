@@ -94,6 +94,9 @@ const PRODUCT_OPTIONS = [
   "Contrac California",
   "Delta Dust (Bayer)",
   "In2Care Mix",
+  "OneGuard",
+  "Advion Microflow",
+  "Optigard",
   "Other",
 ];
 
