@@ -72,6 +72,9 @@ const PRODUCT_LIST = [
   { name: "Contrac California", chemical: "Bromethalin" },
   { name: "Delta Dust (Bayer)", chemical: "Deltamethrin" },
   { name: "In2Care Mix", chemical: "Pyriproxyfen, Beauveria bassiana Strain GHA" },
+  { name: "OneGuard", chemical: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl butoxide" },
+  { name: "Advion Microflow", chemical: "Indoxacarb" },
+  { name: "Optigard", chemical: "Thiamethoxam" },
 ];
 
 // Helper to format frequency to readable string
