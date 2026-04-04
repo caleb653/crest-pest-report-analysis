@@ -1947,6 +1947,18 @@ Crest Pest Control
         </div>
       </div>
 
+      {/* Crest Guarantee */}
+      <div className="bg-background">
+        <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
+          <div className="border-2 border-border rounded-lg p-4 text-center bg-muted/30">
+            <h3 className="text-sm font-bold text-foreground mb-2">The Crest Guarantee</h3>
+            <p className="text-xs text-foreground leading-relaxed max-w-2xl mx-auto">
+              If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. And if we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Image Annotator Dialog */}
       {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
         <ImageAnnotator

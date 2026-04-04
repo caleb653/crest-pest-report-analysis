@@ -816,6 +816,16 @@ export default function CustomerReportView() {
         </div>
       )}
 
+      {/* Crest Guarantee */}
+      <div className="max-w-5xl mx-auto mt-8 px-4">
+        <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
+          <h3 className="text-sm font-bold text-foreground mb-2">The Crest Guarantee</h3>
+          <p className="text-xs text-foreground leading-relaxed max-w-2xl mx-auto">
+            If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. And if we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+          </p>
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground py-8 border-t border-border mt-8">
         <p>Questions? Contact Crest Pest Control</p>
