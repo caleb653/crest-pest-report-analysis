@@ -53,6 +53,7 @@ const PEST_OPTIONS = [
   "Spiders",
   "Rodents",
   "Roaches",
+  "American Roaches",
   "Wasps",
   "Bed Bugs",
   "Fleas",
@@ -61,6 +62,10 @@ const PEST_OPTIONS = [
   "Silverfish",
   "Earwigs",
   "Crickets",
+  "Centipedes",
+  "Millipedes",
+  "Gophers",
+  "Drain Flies",
   "Other",
 ];
 
