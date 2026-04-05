@@ -50,6 +50,7 @@ const TECHNICIANS = [
 ];
 
 const PEST_OPTIONS = [
+  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)",
   "Ants",
   "Spiders",
   "Rodents",
@@ -65,10 +66,13 @@ const PEST_OPTIONS = [
   "Crickets",
   "Centipedes",
   "Millipedes",
-  
   "Drain Flies",
   "Other",
 ];
+
+const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
+
+const GENERAL_PESTS_OPTION = PEST_OPTIONS[0];
 
 const PRODUCT_OPTIONS = [
   "Alpine WSG",
@@ -151,23 +155,22 @@ const Report = () => {
     }
     setTechDropdownOpen(false);
   };
-  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || ["Ants", "Spiders", "Roaches"]);
+  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || [GENERAL_PESTS_OPTION]);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
+  const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
+  const [customerPreference, setCustomerPreference] = useState<string>("");
+  const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState<string>("");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
-  const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
-  const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
-  const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
-  const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
@@ -222,14 +225,16 @@ const Report = () => {
     return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks.";
   };
 
-  const generateRecommendations = (pests: string[], equipment: string[]) => {
+  const generateRecommendations = (pests: string[]) => {
     const lines: string[] = [];
     
-    // Knowledge base pest-specific recommendations - exact format from knowledge base
-    if (pests.includes("Ants")) {
+    // If "General Pests" is selected, default to ants + spiders recommendations
+    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
+    
+    if (isGeneralPests || pests.includes("Ants")) {
       lines.push("<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering");
     }
-    if (pests.includes("Spiders")) {
+    if (isGeneralPests || pests.includes("Spiders")) {
       lines.push("<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting");
     }
     if (pests.includes("American Roaches") || pests.includes("Oriental Roaches") || pests.includes("Roaches")) {
@@ -278,7 +283,6 @@ const Report = () => {
       lines.push("<strong>Mice:</strong> (1) Store food sealed (2) Clean crumbs & spills promptly");
     }
     
-    // If no specific pests selected, provide general recommendations
     if (lines.length === 0) {
       lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
       lines.push("<strong>Moisture:</strong> (1) Fix leaks promptly (2) Improve ventilation in damp areas");
@@ -296,7 +300,7 @@ const Report = () => {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests, editableEquipment)]);
+      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
   }, [editableTargetPests, editableEquipment, editableProductsUsed, reportId, hasManuallyEditedFindings]);
 
@@ -318,7 +322,7 @@ const Report = () => {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests, editableEquipment)]);
+      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
   }, []);
 
@@ -385,12 +389,6 @@ const Report = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pestsDropdownRef.current && !pestsDropdownRef.current.contains(event.target as Node)) {
         setPestsDropdownOpen(false);
-      }
-      if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
-        setProductsDropdownOpen(false);
-      }
-      if (equipmentDropdownRef.current && !equipmentDropdownRef.current.contains(event.target as Node)) {
-        setEquipmentDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -1351,7 +1349,7 @@ Crest Pest Control
               <p className="text-xs text-foreground leading-tight">
                 We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
                 size fits all" approach and there are often a number of factors that lead to increased pest activity.
-                We've created this educational report to help you and your family get one step closer to living a
+                We've created this educational report to help you get one step closer to living a
                 pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
                 any questions.
               </p>
@@ -1565,23 +1563,26 @@ Crest Pest Control
               </Card>
             )}
 
-            {/* Target Pest(s) Section */}
-            <Card className="print-section p-0 overflow-visible">
+            {/* Target Pest(s) Section - Made more prominent */}
+            <Card className="print-section p-0 overflow-visible border-2 border-primary/50">
               <div className="relative" ref={pestsDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setPestsDropdownOpen(!pestsDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
+                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer bg-primary"
                 >
-                  <span>Target Pest(s)</span>
+                  <span className="flex items-center gap-2">
+                    🎯 Target Pest(s)
+                    <span className="text-sm font-normal opacity-80">— tap to select</span>
+                  </span>
                   <ChevronDown
-                    className={`w-5 h-5 text-white transition-transform no-print ${pestsDropdownOpen ? "rotate-180" : ""}`}
+                    className={`w-6 h-6 text-white transition-transform no-print ${pestsDropdownOpen ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 {pestsDropdownOpen && (
                   <div
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-50 w-full mt-0 bg-background border-2 border-primary/30 rounded-b-md shadow-lg max-h-60 overflow-y-auto"
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     {PEST_OPTIONS.map((pest) => (
@@ -1596,23 +1597,23 @@ Crest Pest Control
                             prev.includes(pest) ? prev.filter((p) => p !== pest) : [...prev, pest],
                           );
                         }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                        className={`w-full px-3 py-2.5 text-left text-sm hover:bg-muted flex items-center justify-between ${
                           editableTargetPests.includes(pest) ? "bg-primary/10 text-primary font-medium" : ""
                         }`}
                       >
                         {pest}
-                        {editableTargetPests.includes(pest) && <span className="text-primary">✓</span>}
+                        {editableTargetPests.includes(pest) && <span className="text-primary text-lg">✓</span>}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
               {editableTargetPests.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
+                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-3 bg-background">
                   {editableTargetPests.map((pest) => (
                     <span
                       key={pest}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      className="print-tag inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-primary text-primary-foreground"
                     >
                       {pest}
                       <button
@@ -1626,191 +1627,141 @@ Crest Pest Control
                   ))}
                 </div>
               )}
-            </Card>
-
-            {/* Products Used Section */}
-            <Card className="print-section p-0 overflow-visible">
-              <div className="relative" ref={productsDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setProductsDropdownOpen(!productsDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
-                >
-                  <span>Product(s) Used</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-white transition-transform no-print ${productsDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {productsDropdownOpen && (
-                  <div
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {PRODUCT_OPTIONS.map((product) => (
-                      <button
-                        key={product}
-                        type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditableProductsUsed((prev) =>
-                            prev.includes(product) ? prev.filter((p) => p !== product) : [...prev, product],
-                          );
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
-                          editableProductsUsed.includes(product) ? "bg-primary/10 text-primary font-medium" : ""
-                        }`}
-                      >
-                        {product}
-                        {editableProductsUsed.includes(product) && <span className="text-primary">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {editableProductsUsed.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
-                  {editableProductsUsed.map((product) => (
-                    <span
-                      key={product}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
-                    >
-                      {product}
-                      <button
-                        type="button"
-                        onClick={() => setEditableProductsUsed((prev) => prev.filter((p) => p !== product))}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
+              {editableTargetPests.length === 0 && (
+                <div className="p-4 text-center text-muted-foreground animate-pulse no-print">
+                  ☝️ Tap above to select target pests
                 </div>
               )}
             </Card>
 
-            {/* Equipment Section */}
-            <Card className="print-section p-0 overflow-visible">
-              <div className="relative" ref={equipmentDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setEquipmentDropdownOpen(!equipmentDropdownOpen)}
-                  className="print-section-header text-lg md:text-xl font-bold w-full flex items-center justify-between cursor-pointer"
-                >
-                  <span>Equipment</span>
-                  <ChevronDown
-                    className={`w-5 h-5 text-white transition-transform no-print ${equipmentDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {equipmentDropdownOpen && (
-                  <div
-                    className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-60 overflow-y-auto"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    {EQUIPMENT_OPTIONS.map((equipment) => (
-                      <button
-                        key={equipment}
-                        type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditableEquipment((prev) =>
-                            prev.includes(equipment) ? prev.filter((eq) => eq !== equipment) : [...prev, equipment],
-                          );
-                        }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
-                          editableEquipment.includes(equipment) ? "bg-primary/10 text-primary font-medium" : ""
-                        }`}
-                      >
-                        {equipment}
-                        {editableEquipment.includes(equipment) && <span className="text-primary">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {editableEquipment.length > 0 && (
-                <div className="print-tags flex flex-wrap gap-2 items-start content-start p-2 bg-background">
-                  {editableEquipment.map((equipment) => (
-                    <span
-                      key={equipment}
-                      className="print-tag inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-primary text-primary-foreground"
-                    >
-                      {equipment}
-                      <button
-                        type="button"
-                        onClick={() => setEditableEquipment((prev) => prev.filter((eq) => eq !== equipment))}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* Findings Section */}
+            {/* Customer Key Areas */}
             <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Findings & Actions Taken</h2>
-              {isAnalyzing ? (
-                <div className="text-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Analyzing...</p>
-                </div>
-              ) : (
-                <div className="space-y-3 p-3">
-                  <Textarea
-                    value={editableFindings[0] || ""}
-                    onChange={(e) => {
-                      updateItem(0, e.target.value, setEditableFindings);
-                      setHasManuallyEditedFindings(true);
-                    }}
-                    placeholder="Enter finding or action taken..."
-                    className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
-                    rows={5}
-                  />
-                  <div
-                    className="hidden print-content-formatted"
-                    dangerouslySetInnerHTML={{
-                      __html: (editableFindings[0] || "")
-                        .replace(/^(.*?:)/gm, "<strong>$1</strong>")
-                        .replace(/\n/g, "<br/>"),
-                    }}
-                  />
-                  <Button
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Key Areas</h2>
+              <div className="flex flex-wrap gap-2 p-2">
+                {CUSTOMER_KEY_AREAS.map((area) => (
+                  <button
+                    key={area}
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                    disabled={isExpandingFindings}
-                    className="no-print"
+                    onClick={() => {
+                      setCustomerKeyAreas((prev) =>
+                        prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
+                      );
+                    }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                      customerKeyAreas.includes(area)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground border-border hover:border-primary/50"
+                    }`}
                   >
-                    {isExpandingFindings ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    Expand with AI
-                  </Button>
+                    {area === "Children" && "👶 "}
+                    {area === "Pets" && "🐾 "}
+                    {area === "Elderly" && "👴 "}
+                    {area === "Garden" && "🌿 "}
+                    {area}
+                    {customerKeyAreas.includes(area) && " ✓"}
+                  </button>
+                ))}
+              </div>
+              {customerKeyAreas.length > 0 && (
+                <div className="hidden print-content-formatted p-3">
+                  <p className="text-sm">{customerKeyAreas.join(", ")}</p>
                 </div>
               )}
             </Card>
 
-            {/* What to Expect Section */}
+            {/* Customer Preferences */}
             <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">What to Expect</h2>
-              <div className="space-y-3 p-3">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Preferences</h2>
+              <div className="space-y-3 p-2">
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomerPreference(customerPreference === "Organic" ? "" : "Organic")}
+                    className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                      customerPreference === "Organic"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    🌱 Organic {customerPreference === "Organic" && "✓"}
+                  </button>
+                </div>
+                <Textarea
+                  value={customerPreferenceNotes}
+                  onChange={(e) => setCustomerPreferenceNotes(e.target.value)}
+                  placeholder="Additional preferences or notes..."
+                  className="text-sm resize-y min-h-[60px] leading-relaxed"
+                  rows={2}
+                />
+              </div>
+              {(customerPreference || customerPreferenceNotes) && (
+                <div className="hidden print-content-formatted p-3">
+                  {customerPreference && <p className="text-sm font-medium">{customerPreference}</p>}
+                  {customerPreferenceNotes && <p className="text-sm">{customerPreferenceNotes}</p>}
+                </div>
+              )}
+            </Card>
+
+            {/* Service Area Section (replaces old Findings, What to Expect, Recommendations) */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Area</h2>
+              
+              {/* Findings subsection */}
+              <div className="p-3 space-y-3">
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Findings</h3>
+                {isAnalyzing ? (
+                  <div className="text-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+                    <p className="text-xs text-muted-foreground">Analyzing...</p>
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      value={editableFindings[0] || ""}
+                      onChange={(e) => {
+                        updateItem(0, e.target.value, setEditableFindings);
+                        setHasManuallyEditedFindings(true);
+                      }}
+                      placeholder="Enter findings..."
+                      className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
+                      rows={4}
+                    />
+                    <div
+                      className="hidden print-content-formatted"
+                      dangerouslySetInnerHTML={{
+                        __html: (editableFindings[0] || "")
+                          .replace(/^(.*?:)/gm, "<strong>$1</strong>")
+                          .replace(/\n/g, "<br/>"),
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
+                      disabled={isExpandingFindings}
+                      className="no-print"
+                    >
+                      {isExpandingFindings ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      Expand with AI
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Actions subsection */}
+              <div className="p-3 space-y-3 border-t border-border mt-3">
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Actions</h3>
                 <Textarea
                   value={editableExpectations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
-                  placeholder="Enter what the customer should expect..."
-                  className="text-sm resize-y min-h-[120px] leading-relaxed no-print"
-                  rows={5}
+                  placeholder="Enter actions taken..."
+                  className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
+                  rows={4}
                 />
                 <div
                   className="hidden print-content-formatted"
