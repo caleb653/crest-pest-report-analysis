@@ -1750,7 +1750,7 @@ Crest Pest Control`;
               </div>
 
               {/* Right side: 3-column info grid - pushed right */}
-              <div className="grid grid-cols-2 print:grid-cols-3 gap-4 lg:gap-6 ml-auto">
+              <div className="grid grid-cols-2 print:grid-cols-3 gap-4 lg:gap-6 print:gap-4 ml-auto">
                 {/* Column 1: Customer Details (Name, Address) */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>

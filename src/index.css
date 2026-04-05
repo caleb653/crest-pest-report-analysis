@@ -324,7 +324,7 @@
   .print-header p,
   .print-header span {
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.8 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
@@ -333,7 +333,7 @@
 
   .print-header input:not(.print-title) {
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.8 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
@@ -378,7 +378,7 @@
 
   /* Field value spacing */
   .print-header .space-y-0\.5 {
-    gap: 0.8mm !important;
+    gap: 1.5mm !important;
   }
 
   .print-header .gap-6 {
