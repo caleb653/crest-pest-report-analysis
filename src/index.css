@@ -765,12 +765,14 @@
     break-inside: auto !important;
   }
 
-  /* Page 2: Constrain Additional Details so Page 2 doesn't get pushed blank */
+  /* Page 2: Constrain Additional Details so it fits on the page */
   .print-page-break .additional-details-card {
     page-break-inside: auto !important;
     break-inside: auto !important;
-    margin-top: 4mm !important;
-    height: 170mm !important;
+    margin-top: 0 !important;
+    height: auto !important;
+    max-height: 120mm !important;
+    flex: 1 !important;
   }
 
   .print-page-break .additional-details-body {
@@ -779,8 +781,8 @@
 
   .print-page-break .additional-details-editor {
     min-height: 0 !important;
-    height: 156mm !important;
-    max-height: 156mm !important;
+    height: auto !important;
+    max-height: 108mm !important;
     overflow: hidden !important;
     padding: 2mm 3mm !important;
   }
