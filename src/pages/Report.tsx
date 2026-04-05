@@ -2833,7 +2833,7 @@ Crest Pest Control`;
               ))}
             </div>
           ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+            <div className="no-images-placeholder h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
