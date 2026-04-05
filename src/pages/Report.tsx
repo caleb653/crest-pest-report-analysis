@@ -1754,8 +1754,8 @@ Crest Pest Control`;
               <div className="grid grid-cols-2 gap-4 lg:gap-8 ml-auto">
                 {/* Column 1: Customer Details (Name, Address, Date) */}
                 <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Customer Details:</p>
-                  <div className="space-y-0.5 text-xs">
+                  <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
+                  <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
                       {isReadOnly ? (
