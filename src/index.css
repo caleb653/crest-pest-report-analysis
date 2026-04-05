@@ -278,9 +278,9 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 1.5mm 6mm !important;
+    padding: 3mm 6mm !important;
     box-shadow: none !important;
-    background: hsl(130 14% 89%) !important;
+    background: hsl(130 14% 82%) !important;
     border: none !important;
     border-bottom: 2px solid hsl(130 7% 61%) !important;
   }
