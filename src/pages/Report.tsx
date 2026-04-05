@@ -1727,23 +1727,23 @@ Crest Pest Control`;
               </Button>
             </div>
 
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex items-start justify-between gap-4">
               {/* Left side: Logo + Title */}
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-24 w-auto object-contain" />
                   <span className="text-sm text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex flex-col justify-center">
                   {isReadOnly ? (
-                    <h1 className="print-title font-bold text-foreground text-4xl print:text-3xl">
+                    <h1 className="print-title font-bold text-foreground text-3xl print:text-2xl leading-tight">
                       {editableTitle}
                     </h1>
                   ) : (
                     <Input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-4xl print:text-3xl h-16 print:h-11 w-48 lg:w-96 print:w-80 focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-auto w-48 lg:w-80 print:w-auto focus-visible:ring-0"
                     />
                   )}
                 </div>
