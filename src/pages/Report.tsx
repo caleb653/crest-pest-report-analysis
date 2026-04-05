@@ -1749,9 +1749,9 @@ Crest Pest Control`;
                 </div>
               </div>
 
-              {/* Right side: 3-column info grid - pushed right */}
+              {/* Right side: info grid - 2 cols on desktop, 3 cols in print */}
               <div className="grid grid-cols-2 print:grid-cols-3 gap-4 lg:gap-6 print:gap-4 ml-auto">
-                {/* Column 1: Customer Details (Name, Address) */}
+                {/* Column 1: Customer Details */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
                   <div className="space-y-0.5 text-sm">
@@ -1760,14 +1760,12 @@ Crest Pest Control`;
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
                       ) : (
-                        <>
-                          <Input
-                            value={editableCustomer}
-                            onChange={(e) => setEditableCustomer(e.target.value)}
-                            placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
-                          />
-                        </>
+                        <Input
+                          value={editableCustomer}
+                          onChange={(e) => setEditableCustomer(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
+                        />
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1775,20 +1773,53 @@ Crest Pest Control`;
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
                       ) : (
+                        <Input
+                          value={editableAddress || extractedAddress}
+                          onChange={(e) => setEditableAddress(e.target.value)}
+                          placeholder="Enter address"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    {/* Date & Type - shown here on desktop, hidden in print (moved to col 2) */}
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Date:</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                      ) : (
+                        <Input
+                          type="date"
+                          value={editableServiceDate}
+                          onChange={(e) => setEditableServiceDate(e.target.value)}
+                          className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Type:</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                      ) : (
                         <>
-                          <Input
-                            value={editableAddress || extractedAddress}
-                            onChange={(e) => setEditableAddress(e.target.value)}
-                            placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
-                          />
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Column 2: Property Info (Date, Type) - only separate column in print */}
+                {/* Column 2: Property Info - only in print */}
                 <div className="hidden print:block">
                   <p className="font-semibold text-foreground text-sm mb-0.5">Property Info:</p>
                   <div className="space-y-0.5 text-sm">
@@ -1803,48 +1834,7 @@ Crest Pest Control`;
                   </div>
                 </div>
 
-                {/* Date & Type fields shown inline on screen (hidden in print since they're in col 2) */}
-                <div className="print:hidden col-span-2 -mt-3">
-                  <div className="space-y-0.5 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Date:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
-                      ) : (
-                        <Input
-                          type="date"
-                          value={editableServiceDate}
-                          onChange={(e) => setEditableServiceDate(e.target.value)}
-                          className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Type:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{propertyType || "—"}</span>
-                      ) : (
-                        <>
-                        <Select value={propertyType} onValueChange={setPropertyType}>
-                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PROPERTY_TYPES.map((type) => (
-                              <SelectItem key={type} value={type} className="text-xs">
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="print-only-text hidden text-foreground">{propertyType}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Column 3: Technician Info */}
+                {/* Column 2 (desktop) / Column 3 (print): Technician Info */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
                   <div className="space-y-0.5 text-sm">
