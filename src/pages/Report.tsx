@@ -1424,7 +1424,7 @@ Crest Pest Control`;
     });
     if (!files) return;
 
-    const fileArray = Array.from(files).slice(0, 8);
+    const fileArray = Array.from(files).slice(0, 12);
 
     if (fileArray.some((file) => file.size === 0)) {
       toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
@@ -2752,6 +2752,14 @@ Crest Pest Control`;
               </div>
             </div>
           </div>
+
+          {/* Crest Guarantee - compact, at bottom of page 2 */}
+          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-4">
+            <p className="text-[10px] print:text-[9px] text-foreground leading-snug">
+              <span className="font-bold">The Crest Guarantee:</span>{" "}
+              If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -2883,17 +2891,6 @@ Crest Pest Control`;
         </div>
       </div>
 
-      {/* Crest Guarantee */}
-      <div data-pdf-page="4" className="print-page-break-avoid bg-background">
-        <div data-pdf-capture="4" className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
-          <div className="border-2 border-border rounded-lg p-4 print:p-5 text-center bg-muted/30">
-            <h3 className="text-sm print:text-base font-bold text-foreground mb-2">The Crest Guarantee</h3>
-            <p className="text-xs print:text-sm text-foreground leading-relaxed max-w-2xl mx-auto">
-              If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. And if we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
-            </p>
-          </div>
-        </div>
-      </div>
 
 
 

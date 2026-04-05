@@ -18,7 +18,7 @@ const BRUSH_SIZES = [
 
 const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotatorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState("#FF0000");
   const [brushSize, setBrushSize] = useState(4);
@@ -26,31 +26,42 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [canvasDims, setCanvasDims] = useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!wrapperRef.current) return;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = imageUrl;
     img.onload = () => {
       bgImageRef.current = img;
-      const container = containerRef.current!;
-      const containerW = container.clientWidth;
-      const containerH = container.clientHeight;
+      // Use the wrapper's width (set by the parent aspect-[4/3] container)
+      const wrapper = wrapperRef.current!;
+      const w = wrapper.clientWidth;
+      const h = wrapper.clientHeight;
 
-      canvas.width = containerW;
-      canvas.height = containerH;
+      // If parent has no height yet, calculate from aspect ratio
+      const canvasW = w || 300;
+      const canvasH = h || Math.round(canvasW * 0.75);
 
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      setHistory([ctx.getImageData(0, 0, canvas.width, canvas.height)]);
-      setReady(true);
+      setCanvasDims({ w: canvasW, h: canvasH });
     };
   }, [imageUrl]);
+
+  // Once dims are set and canvas is mounted, draw the image
+  useEffect(() => {
+    if (!canvasDims || !canvasRef.current || !bgImageRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = canvasDims.w;
+    canvas.height = canvasDims.h;
+    ctx.drawImage(bgImageRef.current, 0, 0, canvasDims.w, canvasDims.h);
+    setHistory([ctx.getImageData(0, 0, canvasDims.w, canvasDims.h)]);
+    setReady(true);
+  }, [canvasDims]);
 
   const getPos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;
@@ -121,8 +132,8 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
   };
 
   return (
-    <div className="relative" ref={containerRef}>
-      {/* Toolbar - positioned above the image */}
+    <div ref={wrapperRef} className="w-full h-full relative">
+      {/* Toolbar */}
       <div className="absolute top-1 left-1 right-1 z-20 flex flex-wrap items-center gap-1 bg-black/70 rounded-md px-2 py-1">
         <div className="flex gap-0.5">
           {COLORS.map((c) => (
@@ -158,18 +169,20 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
         </div>
       </div>
 
-      {/* Canvas overlay */}
-      <canvas
-        ref={canvasRef}
-        className={`absolute inset-0 w-full h-full z-10 ${ready ? "cursor-crosshair" : ""} touch-none`}
-        onMouseDown={startDraw}
-        onMouseMove={draw}
-        onMouseUp={endDraw}
-        onMouseLeave={endDraw}
-        onTouchStart={startDraw}
-        onTouchMove={draw}
-        onTouchEnd={endDraw}
-      />
+      {/* Canvas - fills the aspect-ratio container */}
+      {canvasDims && (
+        <canvas
+          ref={canvasRef}
+          className={`absolute inset-0 w-full h-full z-10 ${ready ? "cursor-crosshair" : ""} touch-none`}
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={endDraw}
+          onMouseLeave={endDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={endDraw}
+        />
+      )}
     </div>
   );
 };
