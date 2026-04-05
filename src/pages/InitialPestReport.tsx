@@ -155,11 +155,14 @@ const Report = () => {
     }
     setTechDropdownOpen(false);
   };
-  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || ["Ants", "Spiders", "Roaches"]);
+  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || [GENERAL_PESTS_OPTION]);
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
+  const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
+  const [customerPreference, setCustomerPreference] = useState<string>("");
+  const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState<string>("");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
