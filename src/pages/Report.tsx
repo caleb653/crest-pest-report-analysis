@@ -2092,7 +2092,7 @@ Crest Pest Control`;
             <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
               <Card className="print-section p-0 overflow-visible rounded-lg">
-                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                   <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Target Pest(s)</span>
                 </div>
                 <div className="relative" ref={pestsDropdownRef}>
@@ -2173,7 +2173,7 @@ Crest Pest Control`;
 
               {/* Products */}
               <Card className="print-section p-0 overflow-hidden rounded-lg">
-                <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                   <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Products</span>
                 </div>
                 <div className="p-2.5 print:p-1.5">
@@ -2231,7 +2231,7 @@ Crest Pest Control`;
 
             {/* Right Column - Proposed Services */}
             <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
-              <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                 <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Proposed Services</span>
               </div>
               <div className="p-3 print:p-1.5 flex-1 flex flex-col">
@@ -2289,7 +2289,7 @@ Crest Pest Control`;
                   >
                     Hide
                   </Button>
-                  <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+                  <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Customer Signature</span>
                   </div>
                   <div className="p-1 print:p-1 flex items-center gap-1.5 print:gap-2">
@@ -2377,7 +2377,7 @@ Crest Pest Control`;
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
             <Card className="print-section p-0 overflow-hidden rounded-lg">
-              <div className="print-section-header py-0.5 px-2.5 print:px-2 rounded-t-lg">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                 <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Pesticide Notice</span>
               </div>
               <div className="p-1.5 print:p-1">
@@ -2543,7 +2543,7 @@ Crest Pest Control`;
             <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
               <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-[0.8] flex flex-col">
-                <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
                     value={additionalDetailsHeader}
@@ -2568,7 +2568,7 @@ Crest Pest Control`;
               <div className="grid grid-cols-2 gap-3 print:gap-2">
                 {/* Scheduling & Customer Communication */}
                 <Card className="print-section p-0 overflow-hidden rounded-lg">
-                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Scheduling & Communication</span>
                   </div>
                   <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
@@ -2629,7 +2629,7 @@ Crest Pest Control`;
 
                 {/* Setup Materials */}
                 <Card className="print-section p-0 overflow-hidden rounded-lg">
-                  <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
+                  <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase leading-none">Setup Materials</span>
                   </div>
                   <div className="p-2.5 print:p-1.5">
