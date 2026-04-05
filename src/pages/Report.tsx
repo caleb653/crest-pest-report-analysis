@@ -1697,11 +1697,9 @@ Crest Pest Control`;
         </div>
       )}
 
-      {/* Wrapper for PDF capture - header + page 1 content */}
-      <div data-pdf-capture="1">
-      {/* Desktop Header - included in PDF capture for page 1 */}
+      {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
+        <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
@@ -1885,7 +1883,7 @@ Crest Pest Control`;
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
+      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
@@ -2396,7 +2394,7 @@ Crest Pest Control`;
           </div>
         </div>
       </div>
-      </div>{/* Close pdf-capture="1" wrapper */}
+      
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">

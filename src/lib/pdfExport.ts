@@ -164,17 +164,47 @@ export async function buildMergedPDF(options: {
 
   outDoc.addPage(coverPage);
 
+  // Group captures: combine header (capture "0") with content (capture "1") on the same page
+  let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
+  let pendingHeaderH = 0;
+
   for (const el of reportPages) {
     const dataUrl = await captureElement(el);
     const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
     const img = await outDoc.embedJpg(imgBytes);
+    const captureId = el.dataset.pdfCapture ?? "";
+
+    if (captureId === "0") {
+      // This is the header — save it to draw on the same page as capture "1"
+      const scale = pageW / img.width;
+      pendingHeaderImg = img;
+      pendingHeaderH = img.height * scale;
+      continue;
+    }
 
     const page = outDoc.addPage([pageW, pageH]);
-    const scale = pageW / img.width;
-    const drawW = pageW;
-    const drawH = img.height * scale;
-    const drawY = Math.max(pageH - drawH, 0);
-    page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
+
+    if (captureId === "1" && pendingHeaderImg) {
+      // Draw header at top, then content below it
+      const headerScale = pageW / pendingHeaderImg.width;
+      const headerDrawH = pendingHeaderImg.height * headerScale;
+      const headerDrawY = pageH - headerDrawH;
+      page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
+
+      const contentScale = pageW / img.width;
+      const contentDrawH = img.height * contentScale;
+      const contentDrawY = headerDrawY - contentDrawH;
+      page.drawImage(img, { x: 0, y: Math.max(contentDrawY, 0), width: pageW, height: contentDrawH });
+
+      pendingHeaderImg = null;
+      pendingHeaderH = 0;
+    } else {
+      const scale = pageW / img.width;
+      const drawW = pageW;
+      const drawH = img.height * scale;
+      const drawY = Math.max(pageH - drawH, 0);
+      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
+    }
   }
 
   const marketingPageIndices = [];
