@@ -17,6 +17,7 @@ interface SendReportRequest {
   technicianName: string;
   address: string;
   reportUrl: string;
+  pdfUrl?: string;
   emailSubject?: string;
   emailMessage?: string;
   baseUrl?: string;
@@ -35,6 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
       technicianName,
       address,
       reportUrl,
+      pdfUrl,
       emailSubject,
       emailMessage,
       baseUrl,
@@ -99,6 +101,17 @@ const handler = async (req: Request): Promise<Response> => {
                       <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
                         Click the button above to view and sign your proposal.
                       </p>
+                    </td>
+                  </tr>
+                </table>
+                ` : ""}
+
+                ${pdfUrl ? `
+                <!-- PDF Download Button -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 16px;">
+                  <tr>
+                    <td style="text-align: center;">
+                      <a href="${pdfUrl}" style="display: inline-block; background-color: #ffffff; color: #2A2A2A; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; border: 2px solid #2A2A2A;">📄 Download Full Proposal (PDF)</a>
                     </td>
                   </tr>
                 </table>
