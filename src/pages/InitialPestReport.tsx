@@ -929,6 +929,8 @@ Crest Pest Control
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
+        customer_key_areas: customerKeyAreas.length > 0 ? customerKeyAreas : null,
+        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
       };
