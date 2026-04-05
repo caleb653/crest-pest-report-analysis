@@ -447,9 +447,9 @@
     background: rgba(255, 255, 255, 0.95) !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 4px !important;
-    padding: 2mm !important;
+    padding: 3mm !important;
     z-index: 50 !important;
-    max-width: 35mm !important;
+    max-width: 45mm !important;
     overflow: visible !important;
     max-height: none !important;
     backdrop-filter: none !important;
