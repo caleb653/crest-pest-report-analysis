@@ -2802,7 +2802,7 @@ Crest Pest Control`;
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
             </p>
-            <img src={bugIconSvg} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
+            <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
           </div>
         </div>
       </div>
