@@ -152,6 +152,12 @@ const handler = async (req: Request): Promise<Response> => {
       ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: finalSubject,
       html: emailHtml,
+      ...(pdfBase64 ? {
+        attachments: [{
+          filename: pdfFilename || "Crest_Proposal.pdf",
+          content: pdfBase64,
+        }],
+      } : {}),
     };
 
     const res = await fetch("https://api.resend.com/emails", {
