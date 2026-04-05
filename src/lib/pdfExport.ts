@@ -181,23 +181,11 @@ export async function buildMergedPDF(options: {
     const img = await outDoc.embedJpg(imgBytes);
 
     const page = outDoc.addPage([pageW, pageH]);
-    const captureId = el.dataset.pdfCapture ?? "";
-    const shouldUseCoverScaling = captureId === "2" || captureId === "3";
-
-    if (shouldUseCoverScaling) {
-      const scale = Math.max(pageW / img.width, pageH / img.height);
-      const drawW = img.width * scale;
-      const drawH = img.height * scale;
-      const drawX = (pageW - drawW) / 2;
-      const drawY = (pageH - drawH) / 2;
-      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
-    } else {
-      const scale = pageW / img.width;
-      const drawW = pageW;
-      const drawH = img.height * scale;
-      const drawY = Math.max(pageH - drawH, 0);
-      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
-    }
+    const scale = pageW / img.width;
+    const drawW = pageW;
+    const drawH = img.height * scale;
+    const drawY = Math.max(pageH - drawH, 0);
+    page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
   }
 
   const marketingPageIndices = [];
