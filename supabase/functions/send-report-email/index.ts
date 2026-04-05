@@ -20,6 +20,8 @@ interface SendReportRequest {
   emailSubject?: string;
   emailMessage?: string;
   baseUrl?: string;
+  pdfBase64?: string;
+  pdfFilename?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
