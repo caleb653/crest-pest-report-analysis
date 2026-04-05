@@ -35,8 +35,7 @@ const App = () => (
                 <Route path="/report/:reportId" element={<Report />} />
                 <Route path="/initial-pest-report" element={<InitialPestReport />} />
                 <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
-                <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>
