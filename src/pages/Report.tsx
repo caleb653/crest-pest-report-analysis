@@ -571,7 +571,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("Your Pest Control Report from Crest");
+  const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com"]);
   const [ccInput, setCcInput] = useState("");
