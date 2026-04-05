@@ -1054,7 +1054,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             </select>
           </div>
         )}
-          size="icon"
+        <Button
           variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
           onClick={() => { setTool('icon'); setShowIconPicker((prev) => !prev); }}
           title="Add Icon"
