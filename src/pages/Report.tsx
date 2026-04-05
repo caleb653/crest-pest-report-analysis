@@ -1217,16 +1217,31 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     const additionalLine = additionalServices ? `, as well as ${additionalServices}` : "";
     const freqLine = freqLabel ? ` every ${freqLabel}` : "";
 
+    const serviceLines = [primaryService, ...activeServices.slice(1).map((s) => s.serviceType)].filter(Boolean);
+    const normalizedServiceLines = [...Array.from({ length: 4 }, (_, i) => serviceLines[i] || "")];
+
     const defaultMessage = `Hi ${editableCustomer || "there"},
 
-Nice meeting with you today, I appreciate you taking the time to show the property.
+Thank you for the opportunity to prepare a proposal for your property.
 
-We've put together a proposal that we believe will effectively address your pest control needs. This will include ${primaryService}${freqLine}${additionalLine}.
+Based on our assessment, we’ve put together a plan designed to effectively address your pest control needs. This proposal includes:
 
-We look forward to keeping your property protected, and please let us know if you have any questions.
+- ${normalizedServiceLines[0] || "Service 1"}
+
+- ${normalizedServiceLines[1] || "Service 2"}
+
+- ${normalizedServiceLines[2] || "Service 3"}
+
+- ${normalizedServiceLines[3] || "Service 4"}
+
+Our goal is to provide reliable, proactive protection so you can have peace of mind knowing your property is covered.
+
+Please feel free to reach out with any questions or if you'd like to move forward, we’re happy to help.
 
 Best,
+
 ${editableTech || "Your Technician"}
+
 Crest Pest Control`;
     setEmailMessage(defaultMessage);
     setShowComposeDialog(true);
@@ -2443,7 +2458,7 @@ Crest Pest Control`;
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
-        <div data-pdf-capture="2" className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="2" className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
@@ -2457,7 +2472,7 @@ Crest Pest Control`;
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center print:mt-2">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center print:mt-2 print:flex-1">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
             <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2] print:mt-1">
               <div 
@@ -2761,8 +2776,8 @@ Crest Pest Control`;
             </div>
           </div>
 
-          {/* Crest Guarantee - compact, at bottom of page 2 */}
-          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-4">
+          {/* Crest Guarantee - compact, pinned to bottom of page 2 */}
+          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-auto print:pt-3 print:pb-0 print:border-x-0 print:border-b-0 print:rounded-none">
             <p className="text-[10px] print:text-[9px] text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
