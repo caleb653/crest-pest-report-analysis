@@ -147,20 +147,22 @@ export async function generateMergedPDF(
     const imageBytes = await captureElementAsImage(el);
     const image = await finalDoc.embedJpg(imageBytes);
     
-    // Create a landscape letter page (matching template)
-    const page = finalDoc.addPage([792, 612]);
+    // Create a landscape A4 page (matching template: 841.89 x 595.28)
+    const pageW = 841.89;
+    const pageH = 595.28;
+    const page = finalDoc.addPage([pageW, pageH]);
     
-    // Scale image to fit the page with margins
-    const margin = 20;
-    const maxW = 792 - margin * 2;
-    const maxH = 612 - margin * 2;
+    // Scale image to fit the page with minimal margins
+    const margin = 10;
+    const maxW = pageW - margin * 2;
+    const maxH = pageH - margin * 2;
     const scale = Math.min(maxW / image.width, maxH / image.height);
     const scaledW = image.width * scale;
     const scaledH = image.height * scale;
     
     // Center the image on the page
-    const x = (792 - scaledW) / 2;
-    const y = (612 - scaledH) / 2;
+    const x = (pageW - scaledW) / 2;
+    const y = (pageH - scaledH) / 2;
 
     page.drawImage(image, {
       x,
