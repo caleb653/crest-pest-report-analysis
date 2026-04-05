@@ -2396,6 +2396,7 @@ Crest Pest Control`;
           </div>
         </div>
       </div>
+      </div>{/* Close pdf-capture="1" wrapper */}
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
