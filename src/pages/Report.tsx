@@ -1746,6 +1746,8 @@ Crest Pest Control`;
         </div>
       )}
 
+      {/* Page 1 wrapper - includes header + contract content for PDF capture */}
+      <div data-pdf-page="1">
       {/* Desktop Header */}
       {!isMobile && (
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
