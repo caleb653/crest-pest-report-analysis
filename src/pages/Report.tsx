@@ -1746,6 +1746,8 @@ Crest Pest Control`;
         </div>
       )}
 
+      {/* Page 1 wrapper - includes header + contract content for PDF capture */}
+      <div data-pdf-page="1">
       {/* Desktop Header */}
       {!isMobile && (
         <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
@@ -1932,7 +1934,7 @@ Crest Pest Control`;
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
+      <div className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
@@ -2443,6 +2445,7 @@ Crest Pest Control`;
           </div>
         </div>
       </div>
+      </div>{/* end data-pdf-page="1" wrapper */}
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
