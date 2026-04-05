@@ -68,7 +68,6 @@ const PEST_OPTIONS = [
   "Bees",
   "Mosquitoes",
   "Millipedes",
-  "Box Elder Bugs",
   "American Roaches",
   "Gophers",
   "Drain Flies",
@@ -120,7 +119,7 @@ const SERVICE_CONFIG: Record<
 > = {
   "Monthly Services": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
     defaultInitial: 75,
@@ -128,7 +127,7 @@ const SERVICE_CONFIG: Record<
   },
   "Bi-Monthly Services": {
     frequency: 60,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
     defaultInitial: 110,
@@ -136,7 +135,7 @@ const SERVICE_CONFIG: Record<
   },
   "Quarterly Services": {
     frequency: 90,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
     defaultInitial: 135,
@@ -144,7 +143,7 @@ const SERVICE_CONFIG: Record<
   },
   "Commercial General Pest": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
     defaultInitial: 100,
@@ -200,7 +199,7 @@ const SERVICE_CONFIG: Record<
   },
   "General Pest Control": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>General Pest Control:</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
     defaultInitial: 75,
@@ -232,7 +231,7 @@ const SERVICE_CONFIG: Record<
   },
   "Commercial Rodent and Pest": {
     frequency: 30,
-    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Box Elder Bugs", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
     proposedServices:
       `<b>Commercial General Pest & Rodent:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest and rodent activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Strategically place traps and bait stations in areas of highest rodent activity<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
     defaultInitial: 250,
@@ -1728,23 +1727,23 @@ Crest Pest Control`;
               </Button>
             </div>
 
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex items-start justify-between gap-4">
               {/* Left side: Logo + Title */}
-              <div className="flex items-center gap-4 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-24 w-auto object-contain" />
                   <span className="text-sm text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex flex-col justify-center">
                   {isReadOnly ? (
-                    <h1 className="print-title font-bold text-foreground text-4xl print:text-3xl">
+                    <h1 className="print-title font-bold text-foreground text-3xl print:text-2xl leading-tight">
                       {editableTitle}
                     </h1>
                   ) : (
                     <Input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-4xl print:text-3xl h-16 print:h-11 w-48 lg:w-96 print:w-80 focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-auto w-48 lg:w-80 print:w-auto focus-visible:ring-0"
                     />
                   )}
                 </div>
@@ -2412,9 +2411,9 @@ Crest Pest Control`;
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center print:mt-2">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
-            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2]">
+            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2] print:mt-1">
               <div 
                 className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
                 onPaste={handleMapPaste}
