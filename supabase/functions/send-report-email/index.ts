@@ -17,6 +17,7 @@ interface SendReportRequest {
   technicianName: string;
   address: string;
   reportUrl: string;
+  pdfUrl?: string;
   emailSubject?: string;
   emailMessage?: string;
   baseUrl?: string;
