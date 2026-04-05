@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import bugIconSvg from "@/assets/icons/bug-icon.svg";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
