@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
+import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
