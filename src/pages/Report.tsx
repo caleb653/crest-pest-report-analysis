@@ -276,10 +276,11 @@ const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
   { label: "One-Time", days: 0 },
+  { label: "Weekly", days: 7 },
+  { label: "Bi-Weekly", days: 14 },
   { label: "30 days", days: 30 },
   { label: "60 days", days: 60 },
   { label: "90 days", days: 90 },
-  { label: "Weekly Visits", days: 7 },
 ];
 
 interface AnalysisData {
