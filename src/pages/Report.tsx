@@ -1732,19 +1732,19 @@ Crest Pest Control`;
               {/* Left side: Logo + Title */}
               <div className="flex items-center gap-4 shrink-0">
                 <div className="flex flex-col items-center">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto object-contain" />
-                  <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-24 w-auto object-contain" />
+                  <span className="text-sm text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex flex-col justify-center">
                   {isReadOnly ? (
-                    <h1 className="print-title font-bold text-foreground text-3xl print:text-2xl">
+                    <h1 className="print-title font-bold text-foreground text-4xl print:text-3xl">
                       {editableTitle}
                     </h1>
                   ) : (
                     <Input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-9 w-48 lg:w-96 print:w-80 focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-4xl print:text-3xl h-16 print:h-11 w-48 lg:w-96 print:w-80 focus-visible:ring-0"
                     />
                   )}
                 </div>
@@ -1754,8 +1754,8 @@ Crest Pest Control`;
               <div className="grid grid-cols-2 gap-4 lg:gap-8 ml-auto">
                 {/* Column 1: Customer Details (Name, Address, Date) */}
                 <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Customer Details:</p>
-                  <div className="space-y-0.5 text-xs">
+                  <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
+                  <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
                       {isReadOnly ? (
@@ -1826,8 +1826,8 @@ Crest Pest Control`;
 
                 {/* Column 2: Technician Info */}
                 <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Technician Information:</p>
-                  <div className="space-y-0.5 text-xs">
+                  <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
+                  <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
                       <Select value={editableTech} onValueChange={handleTechnicianChange}>
@@ -2542,7 +2542,7 @@ Crest Pest Control`;
             {/* Right Column - Additional Details + Scheduling + Setup Materials */}
             <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
-              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
+              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-[0.8] flex flex-col">
                 <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
@@ -2559,7 +2559,7 @@ Crest Pest Control`;
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[200px] print:min-h-0"
+                    className="additional-details-editor flex-1 min-h-[150px] print:min-h-0"
                   />
                 </div>
               </Card>
