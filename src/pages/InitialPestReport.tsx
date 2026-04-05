@@ -499,6 +499,9 @@ const Report = () => {
       setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
       setEditableExpectations((row.next_steps as string[]) || []);
+      if (row.recommendations && Array.isArray(row.recommendations)) {
+        setEditableRecommendations(row.recommendations as string[]);
+      }
 
       // Load additional fields
       if (row.service_date) {
@@ -515,6 +518,14 @@ const Report = () => {
       }
       if (row.equipment && Array.isArray(row.equipment)) {
         setEditableEquipment(row.equipment as string[]);
+      }
+      if (row.customer_key_areas && Array.isArray(row.customer_key_areas)) {
+        setCustomerKeyAreas(row.customer_key_areas as string[]);
+      }
+      if (row.customer_preferences) {
+        const prefs = row.customer_preferences as any;
+        if (prefs.preference) setCustomerPreference(prefs.preference);
+        if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
       }
 
       console.log("Loading report map_data:", {
@@ -751,6 +762,8 @@ const Report = () => {
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
+        customer_key_areas: customerKeyAreas.length > 0 ? customerKeyAreas : null,
+        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
       };
 
       if (reportId) {
@@ -863,7 +876,8 @@ const Report = () => {
 
   const handleOpenCompose = () => {
     // Set a default email message when opening compose
-    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+    const firstName = (editableCustomer || "").split(" ")[0] || "there";
+    const defaultMessage = `Hi ${firstName},
 
 Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
 
@@ -926,6 +940,8 @@ Crest Pest Control
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
+        customer_key_areas: customerKeyAreas.length > 0 ? customerKeyAreas : null,
+        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
       };

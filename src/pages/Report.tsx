@@ -1228,7 +1228,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     const serviceLines = [primaryService, ...activeServices.slice(1).map((s) => s.serviceType)].filter(Boolean);
     const normalizedServiceLines = [...Array.from({ length: 4 }, (_, i) => serviceLines[i] || "")];
 
-    const defaultMessage = `Hi ${editableCustomer || "there"},
+    const firstName = (editableCustomer || "").split(" ")[0] || "there";
+    const defaultMessage = `Hi ${firstName},
 
 Thank you for the opportunity to prepare a proposal for your property.
 

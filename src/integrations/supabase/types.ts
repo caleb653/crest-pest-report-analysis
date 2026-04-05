@@ -45,8 +45,10 @@ export type Database = {
           created_by: string | null
           custom_map_url: string | null
           customer_email: string | null
+          customer_key_areas: Json | null
           customer_name: string | null
           customer_phone: string | null
+          customer_preferences: Json | null
           customer_signature: string | null
           equipment: Json | null
           findings: Json | null
@@ -75,8 +77,10 @@ export type Database = {
           created_by?: string | null
           custom_map_url?: string | null
           customer_email?: string | null
+          customer_key_areas?: Json | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_preferences?: Json | null
           customer_signature?: string | null
           equipment?: Json | null
           findings?: Json | null
@@ -105,8 +109,10 @@ export type Database = {
           created_by?: string | null
           custom_map_url?: string | null
           customer_email?: string | null
+          customer_key_areas?: Json | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_preferences?: Json | null
           customer_signature?: string | null
           equipment?: Json | null
           findings?: Json | null

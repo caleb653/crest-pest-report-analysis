@@ -44,6 +44,8 @@ interface ReportData {
   license_number: string | null;
   recommendations: string[] | null;
   next_steps: string[] | null;
+  customer_key_areas: string[] | null;
+  customer_preferences: { preference?: string; notes?: string } | null;
 }
 
 // Full product list with chemicals (legally required)
@@ -136,6 +138,8 @@ export default function CustomerReportView() {
         property_images: reportRow.property_images ? (Array.isArray(reportRow.property_images) ? (reportRow.property_images as unknown as PropertyImage[]) : []) : null,
         recommendations: reportRow.recommendations ? (Array.isArray(reportRow.recommendations) ? (reportRow.recommendations as unknown as string[]) : []) : null,
         next_steps: reportRow.next_steps ? (Array.isArray(reportRow.next_steps) ? (reportRow.next_steps as unknown as string[]) : []) : null,
+        customer_key_areas: (reportRow as any).customer_key_areas ? (Array.isArray((reportRow as any).customer_key_areas) ? ((reportRow as any).customer_key_areas as string[]) : []) : null,
+        customer_preferences: (reportRow as any).customer_preferences ? ((reportRow as any).customer_preferences as any) : null,
       };
 
       setReport(parsedReport);
@@ -309,6 +313,41 @@ export default function CustomerReportView() {
                         </span>
                       ))}
                     </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Customer Key Areas */}
+              {report.customer_key_areas && report.customer_key_areas.length > 0 && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Customer Key Areas</span>
+                  </div>
+                  <div className="p-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.customer_key_areas.map((area, idx) => (
+                        <span key={idx} className="bg-primary text-primary-foreground px-2.5 py-1 rounded-full text-xs font-medium">
+                          {area === "Children" && "👶 "}{area === "Pets" && "🐾 "}{area === "Elderly" && "👴 "}{area === "Garden" && "🌿 "}{area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Customer Preferences */}
+              {report.customer_preferences && (report.customer_preferences.preference || report.customer_preferences.notes) && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Customer Preferences</span>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {report.customer_preferences.preference && (
+                      <p className="text-sm font-medium">🌱 {report.customer_preferences.preference}</p>
+                    )}
+                    {report.customer_preferences.notes && (
+                      <p className="text-sm text-muted-foreground">{report.customer_preferences.notes}</p>
+                    )}
                   </div>
                 </Card>
               )}
