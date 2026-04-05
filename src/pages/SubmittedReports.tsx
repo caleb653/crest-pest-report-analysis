@@ -136,18 +136,39 @@ const SubmittedReports = () => {
     }
   };
 
-  const handleDelete = async (reportId: string, e: React.MouseEvent) => {
+  const promptDelete = (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
+    setDeleteTargetId(reportId);
+    setDeletePassword("");
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId || !deletePassword.trim()) return;
+    setDeleting(true);
 
     try {
-      const { error } = await supabase.from("reports").delete().eq("id", reportId);
+      const { data, error } = await supabase.functions.invoke("delete-report", {
+        body: { password: deletePassword, reportId: deleteTargetId },
+      });
+
       if (error) throw error;
+      if (!data?.ok) {
+        if (data?.error === "invalid_password") {
+          toast.error("Incorrect password");
+          return;
+        }
+        throw new Error(data?.error || "Delete failed");
+      }
+
       toast.success("Report deleted");
+      setDeleteDialogOpen(false);
       await loadReports();
     } catch (error: any) {
       console.error(error);
       toast.error("Failed to delete report");
+    } finally {
+      setDeleting(false);
     }
   };
 
