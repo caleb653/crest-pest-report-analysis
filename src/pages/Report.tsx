@@ -2481,9 +2481,9 @@ Crest Pest Control`;
           </div>
 
           {/* Map and Property Images Side by Side */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-6 print:px-4 print:items-start print:justify-center print:mt-2 print:flex-1">
+          <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-5 print:px-4 print:items-start print:justify-center print:mt-2 print:flex-1">
             {/* Map Section - FIXED size on all devices for perfect consistency */}
-            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.2] print:mt-1">
+            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.12] print:mt-1">
               <div 
                 className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
                 onPaste={handleMapPaste}
@@ -2795,8 +2795,8 @@ Crest Pest Control`;
           </div>
 
           {/* Crest Guarantee - compact, pinned to bottom of page 2 */}
-          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-auto print:pt-3 print:pb-0 print:border-x-0 print:border-b-0 print:rounded-none">
-            <p className="text-[10px] print:text-[9px] text-foreground leading-snug">
+          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-auto print:pt-2.5 print:pb-0 print:border-x-0 print:border-b-0 print:rounded-none">
+            <p className="text-[10px] print:text-[10px] text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
             </p>
@@ -2811,9 +2811,9 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div data-pdf-capture="3" className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="3" className={isMobile ? "p-4" : "p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6 print:mb-8 pb-2 print:pb-3 border-b-2 border-border">
+          <div className="flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Images</h1>
