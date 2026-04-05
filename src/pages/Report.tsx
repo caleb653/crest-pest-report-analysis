@@ -1209,6 +1209,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       toast.success("PDF downloaded!");
     } catch (e) {
       console.error("PDF export error:", e);
+      setPdfExportMode(false);
       toast.dismiss("pdf-gen");
       toast.error("PDF generation failed. Try again.");
     }
