@@ -2141,7 +2141,7 @@ Crest Pest Control`;
           </Card>
 
           {/* Left: Target Pests + Products, Right: Proposed Services */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5">
+          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:items-start">
             {/* Left Column - Target Pests and Products stacked */}
             <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
@@ -2232,7 +2232,7 @@ Crest Pest Control`;
               </Card>
 
               {/* Products */}
-              <Card className="print-section p-0 overflow-hidden rounded-lg">
+              <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                   <span className="text-xs print:text-[10px] font-bold uppercase">Products</span>
                 </div>
@@ -2290,7 +2290,7 @@ Crest Pest Control`;
             </div>
 
             {/* Right Column - Proposed Services */}
-            <Card className="print-section p-0 flex flex-col overflow-hidden rounded-lg">
+            <Card className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                 <span className="text-xs print:text-[10px] font-bold uppercase">Proposed Services</span>
               </div>
@@ -2301,35 +2301,44 @@ Crest Pest Control`;
                     <p className="text-xs text-muted-foreground">Analyzing...</p>
                   </div>
                 ) : (
-                  <div className="flex-1 flex flex-col space-y-1">
-                  <RichTextEditor
-                      value={editableFindings[0] || ""}
-                      onChange={(newValue) => {
-                        findingsEditedRef.current = true;
-                        setUserEditedFindings(true);
-                        updateItem(0, newValue, setEditableFindings);
+                  <>
+                    <div className="no-print flex-1 flex flex-col space-y-1">
+                      <RichTextEditor
+                        value={editableFindings[0] || ""}
+                        onChange={(newValue) => {
+                          findingsEditedRef.current = true;
+                          setUserEditedFindings(true);
+                          updateItem(0, newValue, setEditableFindings);
+                        }}
+                        placeholder="• Enter proposed services..."
+                        fontSize={proposedServicesFontSize}
+                        onFontSizeChange={setProposedServicesFontSize}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
+                        disabled={isExpandingFindings}
+                        className="no-print h-6 text-xs"
+                      >
+                        {isExpandingFindings ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3 h-3 mr-1" />
+                        )}
+                        Expand with AI
+                      </Button>
+                    </div>
+                    <div
+                      className="hidden print-content-formatted"
+                      style={{ fontSize: `${proposedServicesFontSize}px` }}
+                      dangerouslySetInnerHTML={{
+                        __html: formatProposedServices(editableFindings[0] || ""),
                       }}
-                      placeholder="• Enter proposed services..."
-                      fontSize={proposedServicesFontSize}
-                      onFontSizeChange={setProposedServicesFontSize}
-                      className="flex-1"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                      disabled={isExpandingFindings}
-                      className="no-print h-6 text-xs"
-                    >
-                      {isExpandingFindings ? (
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-3 h-3 mr-1" />
-                      )}
-                      Expand with AI
-                    </Button>
-                  </div>
+                  </>
                 )}
               </div>
             </Card>
@@ -2338,7 +2347,7 @@ Crest Pest Control`;
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
           <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) - compact to match Pesticide Notice */}
-            <div className={`p-0 overflow-hidden rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
+            <div className={`p-0 overflow-hidden print:overflow-visible rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
                 <>
                   <Button
@@ -2436,7 +2445,7 @@ Crest Pest Control`;
             </div>
 
             {/* Pesticide Notice - Right (same width as Proposed Services) */}
-            <Card className="print-section p-0 overflow-hidden rounded-lg">
+            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                 <span className="text-xs print:text-[10px] font-bold uppercase">Pesticide Notice</span>
               </div>
@@ -2602,7 +2611,7 @@ Crest Pest Control`;
             {/* Right Column - Additional Details + Scheduling + Setup Materials */}
             <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
-              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-[0.8] flex flex-col">
+              <Card className="print-section additional-details-card p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.8] flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
@@ -2614,13 +2623,22 @@ Crest Pest Control`;
                   <span className="print-only-text hidden">{additionalDetailsHeader}</span>
                 </div>
                 <div className="additional-details-body p-2 flex-1 flex flex-col">
-                  <RichTextEditor
-                    value={additionalDetails}
-                    onChange={setAdditionalDetails}
-                    placeholder="• Enter any additional details, notes, or observations..."
-                    fontSize={additionalDetailsFontSize}
-                    onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[150px] print:min-h-0"
+                  <div className="no-print flex-1 flex flex-col">
+                    <RichTextEditor
+                      value={additionalDetails}
+                      onChange={setAdditionalDetails}
+                      placeholder="• Enter any additional details, notes, or observations..."
+                      fontSize={additionalDetailsFontSize}
+                      onFontSizeChange={setAdditionalDetailsFontSize}
+                      className="additional-details-editor flex-1 min-h-[150px] print:min-h-0"
+                    />
+                  </div>
+                  <div
+                    className="hidden print-content-formatted"
+                    style={{ fontSize: `${additionalDetailsFontSize}px` }}
+                    dangerouslySetInnerHTML={{
+                      __html: formatProposedServices(additionalDetails || ""),
+                    }}
                   />
                 </div>
               </Card>
@@ -2628,7 +2646,7 @@ Crest Pest Control`;
               {/* Bottom row: Scheduling + Setup Materials side by side */}
               <div className="grid grid-cols-2 gap-3 print:gap-2">
                 {/* Scheduling & Customer Communication */}
-                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
                   </div>
@@ -2689,7 +2707,7 @@ Crest Pest Control`;
                 </Card>
 
                 {/* Setup Materials */}
-                <Card className="print-section p-0 overflow-hidden rounded-lg">
+                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase">Setup Materials</span>
                   </div>
