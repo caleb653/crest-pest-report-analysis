@@ -317,6 +317,41 @@ export default function CustomerReportView() {
                 </Card>
               )}
 
+              {/* Customer Key Areas */}
+              {report.customer_key_areas && report.customer_key_areas.length > 0 && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Customer Key Areas</span>
+                  </div>
+                  <div className="p-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      {report.customer_key_areas.map((area, idx) => (
+                        <span key={idx} className="bg-primary text-primary-foreground px-2.5 py-1 rounded-full text-xs font-medium">
+                          {area === "Children" && "👶 "}{area === "Pets" && "🐾 "}{area === "Elderly" && "👴 "}{area === "Garden" && "🌿 "}{area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Customer Preferences */}
+              {report.customer_preferences && (report.customer_preferences.preference || report.customer_preferences.notes) && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Customer Preferences</span>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {report.customer_preferences.preference && (
+                      <p className="text-sm font-medium">🌱 {report.customer_preferences.preference}</p>
+                    )}
+                    {report.customer_preferences.notes && (
+                      <p className="text-sm text-muted-foreground">{report.customer_preferences.notes}</p>
+                    )}
+                  </div>
+                </Card>
+              )}
+
               {/* Findings & Actions Taken */}
               {findingsHtml && (
                 <Card className="overflow-hidden">
