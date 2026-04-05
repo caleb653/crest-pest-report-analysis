@@ -71,7 +71,7 @@ const PinGate = ({ children }: { children: React.ReactNode }) => {
                 id="username"
                 value={username}
                 onChange={(e) => { setUsername(e.target.value); setError(""); }}
-                placeholder="e.g. caleb"
+                placeholder="e.g. jsmith"
                 className="text-center text-lg h-12 lowercase"
                 autoFocus
                 autoComplete="off"

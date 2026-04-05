@@ -41,6 +41,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import ImageAnnotator from "@/components/ImageAnnotator";
+import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, downloadPDF } from "@/lib/pdfExport";
 
 const TECHNICIANS = [
@@ -65,11 +66,9 @@ const PEST_OPTIONS = [
   "Rodents",
   "Fleas & Ticks",
   "Bed Bugs",
-  "Bees",
   "Mosquitoes",
   "Millipedes",
   "American Roaches",
-  "Gophers",
   "Drain Flies",
   "Other",
 ];
@@ -186,8 +185,8 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Mosquitoes"],
     proposedServices:
       `<b>Mosquito Service:</b><br>• Set up mosquito buckets, which interrupt breeding cycle and neutralize future generations<br>• Target adult mosquitoes and larvae by treating with long lasting products`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
+    defaultInitial: 150,
+    defaultRecurring: 75,
   },
   "Attic Services (see details below)": {
     frequency: 0,
@@ -210,8 +209,8 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Spiders"],
     proposedServices:
       `<b>De-webbing:</b><br>• Thoroughly de-web the entire property including eaves, outdoor furniture, and high visibility areas`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
+    defaultInitial: 100,
+    defaultRecurring: 100,
   },
   "Rodent Sanitation": {
     frequency: 0,
@@ -261,22 +260,6 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 0,
     defaultRecurring: 0,
   },
-  "Gopher Service": {
-    frequency: 0,
-    targetPests: ["Gophers"],
-    proposedServices:
-      `<b>Gopher Service:</b><br>• Identify active gopher tunnels and mounds throughout the property<br>• Deploy targeted trapping and/or baiting methods to eliminate gopher activity<br>• Monitor and adjust treatment strategy as needed`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
-  },
-  "Bee Removal": {
-    frequency: 0,
-    targetPests: ["Bees"],
-    proposedServices:
-      `<b>Bee Removal:</b><br>• Safely locate and assess the bee colony<br>• Remove or treat the colony using appropriate methods depending on species and location<br>• Seal entry points to prevent future colonization`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
-  },
   "Drain Fly Treatment": {
     frequency: 0,
     targetPests: ["Drain Flies"],
@@ -294,10 +277,11 @@ const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
   { label: "One-Time", days: 0 },
+  { label: "Weekly", days: 7 },
+  { label: "Bi-Weekly", days: 14 },
   { label: "30 days", days: 30 },
   { label: "60 days", days: 60 },
   { label: "90 days", days: 90 },
-  { label: "Weekly Visits", days: 7 },
 ];
 
 interface AnalysisData {
@@ -2813,7 +2797,7 @@ Crest Pest Control`;
 
           {/* Property Images Grid - larger images */}
           {propertyImages.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-4 print:grid-cols-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
               {propertyImages.map((item, index) => (
                 <div
                   key={index}
@@ -2824,35 +2808,53 @@ Crest Pest Control`;
                   onDragEnd={handleImageDragEnd}
                 >
                   <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-border bg-muted print:w-full print:h-auto relative group">
-                    <img
-                      src={item.image}
-                      alt={`Property ${index + 1}`}
-                      className="w-full h-full object-cover pointer-events-none"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPropertyImages((prev) => prev.filter((_, i) => i !== index));
-                        toast.info("Image removed");
-                      }}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAnnotatingImageIndex(index);
-                      }}
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Draw
-                    </Button>
+                    {annotatingImageIndex === index ? (
+                      <InlineImageAnnotator
+                        imageUrl={item.image}
+                        onSave={(annotatedDataUrl) => {
+                          setPropertyImages((prev) => {
+                            const updated = [...prev];
+                            updated[index] = { ...updated[index], image: annotatedDataUrl };
+                            return updated;
+                          });
+                          setAnnotatingImageIndex(null);
+                          toast.success("Annotations saved");
+                        }}
+                        onCancel={() => setAnnotatingImageIndex(null)}
+                      />
+                    ) : (
+                      <>
+                        <img
+                          src={item.image}
+                          alt={`Property ${index + 1}`}
+                          className="w-full h-full object-cover pointer-events-none"
+                        />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                            toast.info("Image removed");
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAnnotatingImageIndex(index);
+                          }}
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Draw
+                        </Button>
+                      </>
+                    )}
                   </div>
                   <Input
                     value={item.caption || ""}
@@ -2893,23 +2895,8 @@ Crest Pest Control`;
         </div>
       </div>
 
-      {/* Image Annotator Dialog */}
-      {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
-        <ImageAnnotator
-          imageUrl={propertyImages[annotatingImageIndex].image}
-          open={true}
-          onClose={() => setAnnotatingImageIndex(null)}
-          onSave={(annotatedDataUrl) => {
-            setPropertyImages((prev) => {
-              const updated = [...prev];
-              updated[annotatingImageIndex] = { ...updated[annotatingImageIndex], image: annotatedDataUrl };
-              return updated;
-            });
-            setAnnotatingImageIndex(null);
-            toast.success("Annotations saved");
-          }}
-        />
-      )}
+
+
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>

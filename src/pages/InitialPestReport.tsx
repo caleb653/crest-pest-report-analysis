@@ -37,6 +37,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
+import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -64,7 +65,7 @@ const PEST_OPTIONS = [
   "Crickets",
   "Centipedes",
   "Millipedes",
-  "Gophers",
+  
   "Drain Flies",
   "Other",
 ];
@@ -1909,27 +1910,45 @@ Crest Pest Control
               {propertyImages.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted relative group">
-                    <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
-                      onClick={() => {
-                        setPropertyImages((prev) => prev.filter((_, i) => i !== index));
-                        toast.info("Image removed");
-                      }}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
-                      onClick={() => setAnnotatingImageIndex(index)}
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Draw
-                    </Button>
+                    {annotatingImageIndex === index ? (
+                      <InlineImageAnnotator
+                        imageUrl={item.image}
+                        onSave={(annotatedDataUrl) => {
+                          setPropertyImages((prev) => {
+                            const updated = [...prev];
+                            updated[index] = { ...updated[index], image: annotatedDataUrl };
+                            return updated;
+                          });
+                          setAnnotatingImageIndex(null);
+                          toast.success("Annotations saved");
+                        }}
+                        onCancel={() => setAnnotatingImageIndex(null)}
+                      />
+                    ) : (
+                      <>
+                        <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                          onClick={() => {
+                            setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                            toast.info("Image removed");
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
+                          onClick={() => setAnnotatingImageIndex(index)}
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Draw
+                        </Button>
+                      </>
+                    )}
                   </div>
                   {item.caption && (
                     <div className="p-1.5 bg-card rounded border border-border">
@@ -1967,23 +1986,8 @@ Crest Pest Control
         </div>
       </div>
 
-      {/* Image Annotator Dialog */}
-      {annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
-        <ImageAnnotator
-          imageUrl={propertyImages[annotatingImageIndex].image}
-          open={true}
-          onClose={() => setAnnotatingImageIndex(null)}
-          onSave={(annotatedDataUrl) => {
-            setPropertyImages((prev) => {
-              const updated = [...prev];
-              updated[annotatingImageIndex] = { ...updated[annotatingImageIndex], image: annotatedDataUrl };
-              return updated;
-            });
-            setAnnotatingImageIndex(null);
-            toast.success("Annotations saved");
-          }}
-        />
-      )}
+
+
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
