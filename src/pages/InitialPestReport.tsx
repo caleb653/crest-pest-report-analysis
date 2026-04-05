@@ -391,12 +391,6 @@ const Report = () => {
       if (pestsDropdownRef.current && !pestsDropdownRef.current.contains(event.target as Node)) {
         setPestsDropdownOpen(false);
       }
-      if (productsDropdownRef.current && !productsDropdownRef.current.contains(event.target as Node)) {
-        setProductsDropdownOpen(false);
-      }
-      if (equipmentDropdownRef.current && !equipmentDropdownRef.current.contains(event.target as Node)) {
-        setEquipmentDropdownOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
