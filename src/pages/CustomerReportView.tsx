@@ -138,6 +138,8 @@ export default function CustomerReportView() {
         property_images: reportRow.property_images ? (Array.isArray(reportRow.property_images) ? (reportRow.property_images as unknown as PropertyImage[]) : []) : null,
         recommendations: reportRow.recommendations ? (Array.isArray(reportRow.recommendations) ? (reportRow.recommendations as unknown as string[]) : []) : null,
         next_steps: reportRow.next_steps ? (Array.isArray(reportRow.next_steps) ? (reportRow.next_steps as unknown as string[]) : []) : null,
+        customer_key_areas: (reportRow as any).customer_key_areas ? (Array.isArray((reportRow as any).customer_key_areas) ? ((reportRow as any).customer_key_areas as string[]) : []) : null,
+        customer_preferences: (reportRow as any).customer_preferences ? ((reportRow as any).customer_preferences as any) : null,
       };
 
       setReport(parsedReport);
