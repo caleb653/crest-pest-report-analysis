@@ -516,6 +516,14 @@ const Report = () => {
       if (row.equipment && Array.isArray(row.equipment)) {
         setEditableEquipment(row.equipment as string[]);
       }
+      if (row.customer_key_areas && Array.isArray(row.customer_key_areas)) {
+        setCustomerKeyAreas(row.customer_key_areas as string[]);
+      }
+      if (row.customer_preferences) {
+        const prefs = row.customer_preferences as any;
+        if (prefs.preference) setCustomerPreference(prefs.preference);
+        if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
+      }
 
       console.log("Loading report map_data:", {
         hasMapData: !!row.map_data,
