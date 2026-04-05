@@ -1934,7 +1934,7 @@ Crest Pest Control`;
           )}
 
           {/* Services - Full Width at Top */}
-          <Card className="print-section p-2 print:p-0.5 print:py-1 col-span-2">
+          <Card className="print-section print-pricing-table p-2 print:p-0.5 print:py-1 col-span-2">
             <div className="space-y-1 print:space-y-0">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
