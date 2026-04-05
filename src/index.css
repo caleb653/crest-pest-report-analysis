@@ -551,6 +551,15 @@
     background: hsl(130 14% 94%) !important;
   }
 
+  /* Pricing table row cells - ensure vertical centering and consistent padding */
+  .print-pricing-table .grid > div {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 6mm !important;
+    padding-top: 0.5mm !important;
+    padding-bottom: 0.5mm !important;
+  }
+
   .print-section-header {
     background: hsl(0 0% 16%) !important;
     padding: 1mm 3mm 1mm 3.5mm !important;
