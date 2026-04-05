@@ -534,6 +534,7 @@
     border: 1.5px solid hsl(130 10% 80%) !important;
     width: 100% !important;
     flex: 0 0 auto !important;
+    overflow: visible !important;
   }
 
   .print-pricing-table {
@@ -594,10 +595,10 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 1.4mm 3.5mm 1.2mm 3.5mm !important;
+    padding: 1.8mm 3.5mm 1.35mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
-    line-height: 1.05 !important;
+    line-height: 1.15 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
     border-bottom: 2px solid hsl(130 14% 79%) !important;
@@ -606,14 +607,14 @@
     gap: 0.4rem;
     border-radius: 1.5mm 1.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 6mm !important;
+    min-height: 7.2mm !important;
+    overflow: visible !important;
   }
 
   .print-section-header > * {
     margin: 0 !important;
-    line-height: 1.05 !important;
-    display: flex !important;
-    align-items: center !important;
+    line-height: 1.1 !important;
+    display: block !important;
   }
 
   .print-section-header input {
