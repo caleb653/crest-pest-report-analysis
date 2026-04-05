@@ -147,13 +147,14 @@ export async function generateMergedPDF(
     const imageBytes = await captureElementAsImage(el);
     const image = await finalDoc.embedJpg(imageBytes);
     
-    // Create a portrait A4 page for report content (595.28 x 841.89)
-    const pageW = 595.28;
-    const pageH = 841.89;
+    // Keep app-generated report pages at the original landscape export size
+    // so they match the browser layout that previously filled the page well.
+    const pageW = 792;
+    const pageH = 612;
     const page = finalDoc.addPage([pageW, pageH]);
     
-    // Scale image to fill the page with minimal margins
-    const margin = 10;
+    // Scale image to fit the page with the original export margins
+    const margin = 20;
     const maxW = pageW - margin * 2;
     const maxH = pageH - margin * 2;
     const scale = Math.min(maxW / image.width, maxH / image.height);
