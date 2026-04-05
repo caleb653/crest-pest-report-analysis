@@ -1197,21 +1197,48 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
   const exportToPDF = async () => {
     try {
-      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach((toastEl) => {
-        (toastEl as HTMLElement).style.display = "none";
+      toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
+
+      // Hide non-print elements temporarily
+      const noPrintEls = document.querySelectorAll('.no-print');
+      noPrintEls.forEach((el) => (el as HTMLElement).style.display = 'none');
+
+      // Also show print-only elements temporarily
+      const printOnlyEls = document.querySelectorAll('.print-only-text, [class*="print:block"]');
+      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = 'block');
+
+      // Collect all report page sections
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-page]")
+      ).sort((a, b) => Number(a.dataset.pdfPage) - Number(b.dataset.pdfPage));
+
+      // Filter out empty property images page
+      const reportPages = pageEls.filter((el) => {
+        if (el.querySelector(".no-images-placeholder")) return false;
+        return true;
       });
 
-      await new Promise((r) => setTimeout(r, 150));
-      window.print();
+      const pdfBytes = await buildMergedPDF({
+        customerName: editableCustomer || "",
+        technicianName: editableTech || "",
+        address: editableAddress || extractedAddress || address || "",
+        reportPages,
+      });
 
-      setTimeout(() => {
-        toasts.forEach((toastEl) => {
-          (toastEl as HTMLElement).style.display = "";
-        });
-      }, 500);
+      // Restore visibility
+      noPrintEls.forEach((el) => (el as HTMLElement).style.display = '');
+      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = '');
+
+      toast.dismiss("pdf-gen");
+
+      const filename = `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
+      downloadPDF(pdfBytes, filename);
+
+      toast.success("PDF downloaded!");
     } catch (e) {
-      toast.error("Print failed");
+      console.error("PDF export error:", e);
+      toast.dismiss("pdf-gen");
+      toast.error("PDF generation failed. Try again.");
     }
   };
 
