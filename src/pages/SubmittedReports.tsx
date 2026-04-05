@@ -84,13 +84,19 @@ function isWithinDays(dateStr: string, days: number): boolean {
   return d >= cutoff;
 }
 
+const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "Jesse Angulo"];
+
 const SubmittedReports = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState<ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [techFilter, setTechFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  const loggedInUser = sessionStorage.getItem("app_logged_in_user") || "";
+  const defaultTech = TECH_ONLY_USERS.includes(loggedInUser) ? loggedInUser : "all";
+
+  const [techFilter, setTechFilter] = useState(defaultTech);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("created");
   const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
   const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
