@@ -42,7 +42,7 @@ function getPrintCssText() {
   return cachedPrintCss;
 }
 
-function trimCanvasWhitespace(source: HTMLCanvasElement, threshold = 250) {
+function trimCanvasWhitespace(source: HTMLCanvasElement, threshold = 245) {
   const context = source.getContext("2d");
   if (!context) return source;
 
@@ -140,11 +140,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
         body > * {
           margin: 0 !important;
+          background: #ffffff !important;
         }
 
-        .pdf-export-root {
-          width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
-          min-width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
+        .pdf-export-root,
+        .pdf-export-root > div {
+          width: 100% !important;
+          max-width: none !important;
           margin: 0 !important;
           padding: 0 !important;
           background: #ffffff !important;
@@ -152,12 +154,12 @@ async function captureElement(el: HTMLElement): Promise<string> {
           overflow: visible !important;
         }
 
-        .pdf-export-root [class*="max-w-"] {
+        .pdf-export-root [class*="bg-background"],
+        .pdf-export-root [class*="max-w-"],
+        .pdf-export-root [class*="mx-auto"] {
+          background: #ffffff !important;
           max-width: none !important;
           width: 100% !important;
-        }
-
-        .pdf-export-root [class*="mx-auto"] {
           margin-left: 0 !important;
           margin-right: 0 !important;
         }
@@ -187,6 +189,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.padding = "0";
       clonedPage.style.overflow = "visible";
       clonedPage.style.boxSizing = "border-box";
+      clonedPage.style.background = "#ffffff";
     },
   });
 
