@@ -36,6 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
       technicianName,
       address,
       reportUrl,
+      pdfUrl,
       emailSubject,
       emailMessage,
       baseUrl,
