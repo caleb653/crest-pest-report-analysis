@@ -2397,7 +2397,7 @@ Crest Pest Control`;
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
-        <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="2" className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
