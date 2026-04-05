@@ -1728,9 +1728,10 @@ Crest Pest Control`;
               </Button>
               </>
               )}
-              <Button onClick={exportToPDF} variant="outline" size="sm">
-                <FileDown className="w-3 h-3 mr-1" />
+              <Button onClick={exportToPDF} disabled={isExportingPDF} variant="outline" size="sm">
+                {isExportingPDF ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileDown className="w-3 h-3 mr-1" />}
                 PDF
+              </Button>
               </Button>
               <Button onClick={() => navigate("/")} variant="outline" size="sm">
                 <Home className="w-3 h-3" />
