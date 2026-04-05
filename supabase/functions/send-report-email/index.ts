@@ -40,6 +40,8 @@ const handler = async (req: Request): Promise<Response> => {
       emailSubject,
       emailMessage,
       baseUrl,
+      pdfBase64,
+      pdfFilename,
     }: SendReportRequest = await req.json();
 
     if (!customerEmail) {
