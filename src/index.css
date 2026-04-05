@@ -338,8 +338,8 @@
 
   /* Section labels in header */
   .print-header p[class*="font-semibold"] {
-    font-size: 11px !important;
-    font-weight: 600 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
     margin-bottom: 1mm !important;
     letter-spacing: 0.02em !important;
   }
