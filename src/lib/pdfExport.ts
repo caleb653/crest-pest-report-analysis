@@ -105,8 +105,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.classList.add("pdf-export-root");
       clonedPage.style.width = `${A4_LANDSCAPE_WIDTH_PX}px`;
       clonedPage.style.minWidth = `${A4_LANDSCAPE_WIDTH_PX}px`;
-      clonedPage.style.margin = "0";
-      clonedPage.style.padding = "0";
       clonedPage.style.background = "#ffffff";
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
