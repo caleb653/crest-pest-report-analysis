@@ -520,7 +520,7 @@
   }
 
   .print-section {
-    margin: 0 0 1mm 0 !important;
+    margin: 0 0 0.5mm 0 !important;
     border-radius: 3mm !important;
     box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
     padding: 0 !important;
