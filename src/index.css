@@ -515,8 +515,8 @@
 /* Continue general print styles */
 @media print {
   .print-layout > div:last-child {
-    height: 140mm !important;
-    max-height: 140mm !important;
+    height: 138mm !important;
+    max-height: 138mm !important;
     overflow: hidden !important;
     padding-top: 0 !important;
     padding-left: 0 !important;
