@@ -562,6 +562,7 @@ const Report = () => {
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null); // Static map with annotations
+  const [pdfExportMode, setPdfExportMode] = useState(false);
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -570,7 +571,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("Your Pest Control Report from Crest");
+  const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com"]);
   const [ccInput, setCcInput] = useState("");
@@ -1182,6 +1183,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
+      // Switch to static map image for capture
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 150));
+
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
@@ -1195,6 +1200,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         reportPages,
       });
 
+      setPdfExportMode(false);
+
       toast.dismiss("pdf-gen");
 
       const filename = `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
@@ -1202,6 +1209,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       toast.success("PDF downloaded!");
     } catch (e) {
       console.error("PDF export error:", e);
+      setPdfExportMode(false);
       toast.dismiss("pdf-gen");
       toast.error("PDF generation failed. Try again.");
     }
@@ -1283,6 +1291,10 @@ Crest Pest Control`;
       toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
       let pdfBase64: string | undefined;
       try {
+        // Switch to static map image for capture
+        setPdfExportMode(true);
+        await new Promise((r) => setTimeout(r, 150));
+
         const pageEls = Array.from(
           document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
         ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
@@ -1295,10 +1307,13 @@ Crest Pest Control`;
           reportPages,
         });
 
+        setPdfExportMode(false);
+
         // Convert Uint8Array to base64
         const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
         pdfBase64 = btoa(binary);
       } catch (pdfErr) {
+        setPdfExportMode(false);
         console.warn("PDF generation failed, sending email without attachment:", pdfErr);
       }
       toast.dismiss("pdf-email");
@@ -2500,6 +2515,9 @@ Crest Pest Control`;
 
                 {mapUrl || customMapImage ? (
                   <div className="relative h-full w-full">
+                    {pdfExportMode && renderedMapImage ? (
+                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                    ) : (
                     <MapCanvas
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
                       mapUrl={customMapImage || mapUrl}
@@ -2507,6 +2525,7 @@ Crest Pest Control`;
                       onExportImage={setRenderedMapImage}
                       initialData={mapData}
                     />
+                    )}
 
                     {/* Upload custom map button */}
                     <div className="no-print absolute top-4 right-4 z-20">

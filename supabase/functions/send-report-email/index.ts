@@ -143,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending email to:", customerEmail);
 
-    const finalSubject = emailSubject || `Your Pest Control Proposal from Crest`;
+    const finalSubject = emailSubject || `Crest Pest Control: Service Proposal`;
 
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
