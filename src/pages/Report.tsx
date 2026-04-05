@@ -68,7 +68,6 @@ const PEST_OPTIONS = [
   "Bees",
   "Mosquitoes",
   "Millipedes",
-  "Box Elder Bugs",
   "American Roaches",
   "Gophers",
   "Drain Flies",
