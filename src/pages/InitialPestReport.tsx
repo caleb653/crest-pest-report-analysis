@@ -1233,167 +1233,126 @@ Crest Pest Control
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-3">
+        <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
-            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
-              <Button
-                onClick={handleOpenCompose}
-                variant="secondary"
-                size="sm"
-              >
-                <Mail className="w-3 h-3 mr-1" />
-                Email
-              </Button>
+            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-1 flex-wrap">
+              <Button onClick={handleOpenCompose} variant="secondary" size="sm"><Mail className="w-3 h-3 mr-1" />Email</Button>
               <Button onClick={handleSubmit} disabled={isSaving} size="sm">
-                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                Save
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}Save
               </Button>
-              <Button onClick={exportToPDF} variant="outline" size="sm">
-                <FileDown className="w-3 h-3 mr-1" />
-                PDF
-              </Button>
-              <Button onClick={() => navigate("/")} variant="outline" size="sm">
-                <Home className="w-3 h-3" />
-              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm"><FileDown className="w-3 h-3 mr-1" />PDF</Button>
+              <Button onClick={() => navigate("/")} variant="outline" size="sm"><Home className="w-3 h-3" /></Button>
             </div>
 
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-6 flex-1">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1">
                 <div className="flex flex-col items-center shrink-0">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-20 w-auto min-w-[80px] no-print-compress" />
-                  <span className="text-xs text-muted-foreground mt-1">PR #9859</span>
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-14 w-auto min-w-[60px] no-print-compress" />
+                  <span className="text-[10px] text-muted-foreground">PR #9859</span>
                 </div>
-                <div className="flex-1 ml-4">
-                  <h1 className="text-xl font-bold text-foreground mb-2">Initial Pest Report</h1>
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-1">
+                    <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Initial Pest Report</h1>
+                  </div>
 
-                  <div className="flex gap-8">
-                    <div className="flex-[2]">
-                      <p className="font-semibold text-foreground text-xs mb-1">Customer Information:</p>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-20">Name:</span>
-                          <Input
-                            value={editableCustomer}
-                            onChange={(e) => setEditableCustomer(e.target.value)}
-                            placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 md:h-5 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0 no-print"
-                          />
-                          <span className="print-only-text hidden text-foreground">{editableCustomer || "Customer name"}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-20">Address:</span>
-                          <Input
-                            value={editableAddress || extractedAddress}
-                            onChange={(e) => setEditableAddress(e.target.value)}
-                            placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 md:h-5 h-10 text-xs md:text-xs text-base flex-1 focus-visible:ring-0 no-print"
-                          />
-                          <span className="print-only-text hidden text-foreground">{displayAddress}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-20">Service Date:</span>
-                          <Input
-                            type="date"
-                            value={editableServiceDate}
-                            onChange={(e) => setEditableServiceDate(e.target.value)}
-                            className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-32 focus-visible:ring-0 no-print"
-                          />
-                          <span className="print-only-text hidden text-foreground">{editableServiceDate}</span>
-                        </div>
+                  <div className="flex gap-6 text-xs">
+                    <div className="flex-[2] space-y-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground w-16 shrink-0">Name:</span>
+                        <Input
+                          value={editableCustomer}
+                          onChange={(e) => setEditableCustomer(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                        />
+                        <span className="print-only-text hidden text-foreground">{editableCustomer || "Customer name"}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground w-16 shrink-0">Address:</span>
+                        <Input
+                          value={editableAddress || extractedAddress}
+                          onChange={(e) => setEditableAddress(e.target.value)}
+                          placeholder="Enter address"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                        />
+                        <span className="print-only-text hidden text-foreground">{displayAddress}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground w-16 shrink-0">Date:</span>
+                        <Input
+                          type="date"
+                          value={editableServiceDate}
+                          onChange={(e) => setEditableServiceDate(e.target.value)}
+                          className="bg-transparent border-b border-border text-foreground px-1 h-5 text-xs w-28 focus-visible:ring-0 no-print rounded-none"
+                        />
+                        <span className="print-only-text hidden text-foreground">{editableServiceDate}</span>
                       </div>
                     </div>
 
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground text-xs mb-1">Technician Information:</p>
-                      <div className="space-y-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-24">Name:</span>
-                          <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                role="combobox"
-                                aria-expanded={techDropdownOpen}
-                                className="h-5 px-1 text-xs justify-between bg-transparent border-b border-border rounded-none hover:bg-transparent focus-visible:ring-0 flex-1 no-print"
-                              >
-                                {editableTech || "Select technician"}
-                                <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[200px] p-0 z-50 bg-background border border-border">
-                              <Command>
-                                <CommandInput placeholder="Search technician..." className="h-8 text-xs" />
-                                <CommandList>
-                                  <CommandEmpty>No technician found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {TECHNICIANS.map((tech) => (
-                                      <CommandItem
-                                        key={tech.name}
-                                        value={tech.name}
-                                        onSelect={handleTechnicianChange}
-                                        className="text-xs"
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-3 w-3",
-                                            editableTech === tech.name ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        {tech.name}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          <span className="print-only-text hidden">{editableTech}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground w-24 whitespace-nowrap">License Number:</span>
-                          <span className="text-foreground text-xs">{editableLicenseNumber || "License #"}</span>
-                        </div>
+                    <div className="flex-1 space-y-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground w-16 shrink-0">Tech:</span>
+                        <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              role="combobox"
+                              aria-expanded={techDropdownOpen}
+                              className="h-5 px-1 text-xs justify-between bg-transparent border-b border-border rounded-none hover:bg-transparent focus-visible:ring-0 flex-1 no-print"
+                            >
+                              {editableTech || "Select technician"}
+                              <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[200px] p-0 z-50 bg-background border border-border">
+                            <Command>
+                              <CommandInput placeholder="Search technician..." className="h-8 text-xs" />
+                              <CommandList>
+                                <CommandEmpty>No technician found.</CommandEmpty>
+                                <CommandGroup>
+                                  {TECHNICIANS.map((tech) => (
+                                    <CommandItem key={tech.name} value={tech.name} onSelect={handleTechnicianChange} className="text-xs">
+                                      <Check className={cn("mr-2 h-3 w-3", editableTech === tech.name ? "opacity-100" : "opacity-0")} />
+                                      {tech.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <span className="print-only-text hidden">{editableTech}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground w-16 shrink-0">License:</span>
+                        <span className="text-foreground text-xs">{editableLicenseNumber || "—"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-2 no-print shrink-0">
-                <Button
-                  onClick={handleOpenCompose}
-                  variant="secondary"
-                  size="sm"
-                  className="h-8 px-2 text-xs"
-                >
-                  <Mail className="w-3.5 h-3.5 mr-1" />
-                  Email
+              <div className="flex gap-1.5 no-print shrink-0">
+                <Button onClick={handleOpenCompose} variant="secondary" size="sm" className="h-7 px-2 text-xs hidden lg:flex">
+                  <Mail className="w-3 h-3 mr-1" />Email
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSaving} variant="default" size="sm" className="h-8 px-2 text-xs">
-                  {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1" />}
-                  Save
+                <Button onClick={handleSubmit} disabled={isSaving} variant="default" size="sm" className="h-7 px-2 text-xs hidden lg:flex">
+                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}Save
                 </Button>
-                <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 px-2 text-xs">
-                  <FileDown className="w-3.5 h-3.5 mr-1" />
-                  PDF
+                <Button onClick={exportToPDF} variant="outline" size="sm" className="h-7 px-2 text-xs hidden lg:flex">
+                  <FileDown className="w-3 h-3 mr-1" />PDF
                 </Button>
-                <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-8 w-8">
-                  <Home className="w-3.5 h-3.5" />
+                <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-7 w-7 hidden lg:flex">
+                  <Home className="w-3 h-3" />
                 </Button>
               </div>
             </div>
 
-            {/* Purpose Text */}
-            <div className="mt-2 p-2 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-foreground leading-tight">
-                We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
-                size fits all" approach and there are often a number of factors that lead to increased pest activity.
-                We've created this educational report to help you get one step closer to living a
-                pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
-                any questions.
-              </p>
-            </div>
+            {/* Purpose Text - condensed */}
+            <p className="mt-1 text-[10px] text-foreground leading-tight opacity-80">
+              We appreciate you entrusting Crest with your pest control needs. We've created this educational report to help you get one step closer to living a pest-free life. Call <span className="font-semibold">949-424-5000</span> with any questions.
+            </p>
           </div>
         </div>
       )}
