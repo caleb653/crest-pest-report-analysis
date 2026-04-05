@@ -543,7 +543,7 @@
 
   .print-pricing-table > div > div:first-child {
     background: hsl(130 14% 82%) !important;
-    padding: 1mm 2mm !important;
+    padding: 0.5mm 2mm !important;
     border-bottom: 1.5px solid hsl(130 10% 72%) !important;
   }
 
