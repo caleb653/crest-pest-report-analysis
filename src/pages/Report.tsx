@@ -2159,7 +2159,7 @@ Crest Pest Control`;
                 <div className="p-1.5 print:p-1 bg-card">
                   {editableTargetPests.length > 0 && (
                     <>
-                      <div className="print:hidden print-tags flex flex-wrap gap-1 print:gap-0.5">
+                      <div className="print:hidden flex flex-wrap gap-1">
                         {editableTargetPests.map((pest) => (
                           <span
                             key={pest}
@@ -2169,7 +2169,7 @@ Crest Pest Control`;
                             <button
                               type="button"
                               onClick={() => setEditableTargetPests((prev) => prev.filter((p) => p !== pest))}
-                              className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                              className="hover:bg-primary-foreground/20 rounded-full p-0.5"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -2177,13 +2177,9 @@ Crest Pest Control`;
                         ))}
                       </div>
 
-                      <div className="hidden print:flex print-tags flex-wrap">
-                        {editableTargetPests.map((pest) => (
-                          <span key={`${pest}-print`} className="print-tag">
-                            {pest}
-                          </span>
-                        ))}
-                      </div>
+                      <p className="hidden print:block text-xs leading-relaxed">
+                        {editableTargetPests.join(", ")}
+                      </p>
                     </>
                   )}
                   <Input
