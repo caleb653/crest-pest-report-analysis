@@ -20,7 +20,7 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser';
+type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser' | 'draw';
 
 interface LegendItem {
   icon: string;
