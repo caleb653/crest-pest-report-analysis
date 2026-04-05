@@ -2,53 +2,16 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
-const A4_LANDSCAPE_WIDTH_PX = 1123;
-const A4_LANDSCAPE_HEIGHT_PX = 794;
-
-let cachedPrintCss = "";
-
-function collectPrintRules(rules: CSSRuleList, output: string[]) {
-  for (const rule of Array.from(rules)) {
-    if (rule instanceof CSSMediaRule) {
-      if (rule.media.mediaText.includes("print")) {
-        output.push(...Array.from(rule.cssRules).map((nestedRule) => nestedRule.cssText));
-      }
-      continue;
-    }
-
-    if ("cssRules" in rule) {
-      try {
-        collectPrintRules((rule as CSSGroupingRule).cssRules, output);
-      } catch {
-        // Ignore inaccessible nested rules
-      }
-    }
-  }
-}
-
-function getPrintCssText() {
-  if (cachedPrintCss) return cachedPrintCss;
-
-  const output: string[] = [];
-
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      collectPrintRules(sheet.cssRules, output);
-    } catch {
-      // Ignore cross-origin or inaccessible stylesheets
-    }
-  }
-
-  cachedPrintCss = output.join("\n");
-  return cachedPrintCss;
-}
+// A4 landscape at 96dpi
+const A4_W = 1123;
+const A4_H = 794;
 
 /**
- * Capture a DOM element as a high-resolution JPEG data URL using print styles.
+ * Capture a DOM element as a high-resolution JPEG data URL.
+ * Uses html2canvas onclone to apply print styles in an isolated clone.
  */
 async function captureElement(el: HTMLElement): Promise<string> {
   const pageId = el.dataset.pdfPage;
-  const printCss = getPrintCssText();
 
   const canvas = await html2canvas(el, {
     scale: 2,
@@ -56,61 +19,45 @@ async function captureElement(el: HTMLElement): Promise<string> {
     allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
-    width: A4_LANDSCAPE_WIDTH_PX,
-    height: A4_LANDSCAPE_HEIGHT_PX,
-    windowWidth: A4_LANDSCAPE_WIDTH_PX,
-    windowHeight: A4_LANDSCAPE_HEIGHT_PX,
+    windowWidth: A4_W,
     onclone: (clonedDoc) => {
+      // Inject print-mode overrides into the clone
       const style = clonedDoc.createElement("style");
       style.textContent = `
-        ${printCss}
+        /* Force print-like layout */
+        .no-print,
+        button:not(.print-keep),
+        [role="status"],
+        .sonner,
+        [data-sonner-toaster] {
+          display: none !important;
+        }
+
+        .print-only-text {
+          display: inline !important;
+        }
+
+        /* Print-only block elements (like select replacements) */
+        .hidden.print\\:block,
+        [class*="hidden"][class*="print\\:block"] {
+          display: block !important;
+        }
 
         html, body {
-          width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
-          min-width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
-          height: auto !important;
+          width: ${A4_W}px !important;
           margin: 0 !important;
           padding: 0 !important;
           overflow: visible !important;
           background: #ffffff !important;
         }
 
-        body > * {
-          margin: 0 !important;
-        }
-
-        .pdf-export-root {
-          width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
-          min-width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
-          height: ${A4_LANDSCAPE_HEIGHT_PX}px !important;
-          min-height: ${A4_LANDSCAPE_HEIGHT_PX}px !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
-          background: #ffffff !important;
-          box-sizing: border-box !important;
-        }
-
-        .pdf-export-root [class*="max-w-"] {
+        [class*="max-w-"] {
           max-width: none !important;
-          width: 100% !important;
         }
 
-        .pdf-export-root [class*="mx-auto"] {
+        [class*="mx-auto"] {
           margin-left: 0 !important;
           margin-right: 0 !important;
-        }
-
-        .pdf-export-root .no-print,
-        .pdf-export-root button:not(.print-keep),
-        .pdf-export-root [role="status"],
-        .pdf-export-root .sonner,
-        .pdf-export-root [data-sonner-toaster] {
-          display: none !important;
-        }
-
-        .pdf-export-root .print-only-text {
-          display: inline !important;
         }
       `;
       clonedDoc.head.appendChild(style);
@@ -120,13 +67,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
       const clonedPage = clonedDoc.querySelector<HTMLElement>(`[data-pdf-page="${pageId}"]`);
       if (!clonedPage) return;
 
-      clonedPage.classList.add("pdf-export-root");
-      clonedPage.style.width = `${A4_LANDSCAPE_WIDTH_PX}px`;
-      clonedPage.style.minHeight = `${A4_LANDSCAPE_HEIGHT_PX}px`;
-      clonedPage.style.height = `${A4_LANDSCAPE_HEIGHT_PX}px`;
+      // Let the page render at natural height — do NOT constrain height
+      clonedPage.style.width = `${A4_W}px`;
       clonedPage.style.margin = "0";
-      clonedPage.style.padding = "0";
-      clonedPage.style.overflow = "hidden";
+      clonedPage.style.padding = "4px 8px";
+      clonedPage.style.boxSizing = "border-box";
     },
   });
 
@@ -136,7 +81,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
 /**
  * Build a merged proposal PDF:
  *  - Template Page 1 (cover) with customer/tech info overlaid
- *  - App report pages captured from the DOM
+ *  - App report pages captured from the DOM (scaled to fit A4 landscape)
  *  - Template Pages 2-4 (marketing)
  */
 export async function buildMergedPDF(options: {
@@ -159,50 +104,64 @@ export async function buildMergedPDF(options: {
 
   if (customerName) {
     coverPage.drawText(customerName, {
-      x: 58,
-      y: 340,
-      size: 20,
-      font: helveticaBold,
-      color: rgb(1, 1, 1),
+      x: 58, y: 340, size: 20,
+      font: helveticaBold, color: rgb(1, 1, 1),
     });
   }
 
   if (address) {
     coverPage.drawText(address, {
-      x: 58,
-      y: 310,
-      size: 14,
-      font: helvetica,
-      color: rgb(0.85, 0.85, 0.85),
+      x: 58, y: 310, size: 14,
+      font: helvetica, color: rgb(0.85, 0.85, 0.85),
     });
   }
 
   if (technicianName) {
     coverPage.drawText(technicianName, {
-      x: 58,
-      y: 138,
-      size: 14,
-      font: helveticaBold,
-      color: rgb(0.2, 0.2, 0.2),
+      x: 58, y: 138, size: 14,
+      font: helveticaBold, color: rgb(0.2, 0.2, 0.2),
     });
   }
 
   outDoc.addPage(coverPage);
 
+  // Capture and insert app report pages
   for (const el of reportPages) {
     const dataUrl = await captureElement(el);
     const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
     const img = await outDoc.embedJpg(imgBytes);
 
     const page = outDoc.addPage([pageW, pageH]);
-    page.drawImage(img, { x: 0, y: 0, width: pageW, height: pageH });
+
+    // Scale to fit page while preserving aspect ratio
+    const imgAspect = img.width / img.height;
+    const pageAspect = pageW / pageH;
+
+    let drawW: number, drawH: number, drawX: number, drawY: number;
+
+    if (imgAspect > pageAspect) {
+      // Wider than page — fit to width, center vertically
+      drawW = pageW;
+      drawH = pageW / imgAspect;
+      drawX = 0;
+      drawY = pageH - drawH; // Anchor to top
+    } else {
+      // Taller than page — fit to height, center horizontally
+      drawH = pageH;
+      drawW = pageH * imgAspect;
+      drawX = (pageW - drawW) / 2;
+      drawY = 0;
+    }
+
+    page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
   }
 
-  const marketingPageIndices = [];
+  // Append template marketing pages
+  const marketingIndices = [];
   for (let i = 1; i < templateDoc.getPageCount(); i++) {
-    marketingPageIndices.push(i);
+    marketingIndices.push(i);
   }
-  const marketingPages = await outDoc.copyPages(templateDoc, marketingPageIndices);
+  const marketingPages = await outDoc.copyPages(templateDoc, marketingIndices);
   for (const mp of marketingPages) {
     outDoc.addPage(mp);
   }
