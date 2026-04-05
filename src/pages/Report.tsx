@@ -2752,6 +2752,14 @@ Crest Pest Control`;
               </div>
             </div>
           </div>
+
+          {/* Crest Guarantee - compact, at bottom of page 2 */}
+          <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 mt-3 print:mt-4">
+            <p className="text-[10px] print:text-[9px] text-foreground leading-snug">
+              <span className="font-bold">The Crest Guarantee:</span>{" "}
+              If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+            </p>
+          </div>
         </div>
       </div>
 
