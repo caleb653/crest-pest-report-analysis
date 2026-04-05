@@ -1199,24 +1199,11 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
-      // Hide non-print elements temporarily
-      const noPrintEls = document.querySelectorAll('.no-print');
-      noPrintEls.forEach((el) => (el as HTMLElement).style.display = 'none');
-
-      // Also show print-only elements temporarily
-      const printOnlyEls = document.querySelectorAll('.print-only-text, [class*="print:block"]');
-      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = 'block');
-
-      // Collect all report page sections
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-page]")
       ).sort((a, b) => Number(a.dataset.pdfPage) - Number(b.dataset.pdfPage));
 
-      // Filter out empty property images page
-      const reportPages = pageEls.filter((el) => {
-        if (el.querySelector(".no-images-placeholder")) return false;
-        return true;
-      });
+      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
       const pdfBytes = await buildMergedPDF({
         customerName: editableCustomer || "",
@@ -1225,15 +1212,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         reportPages,
       });
 
-      // Restore visibility
-      noPrintEls.forEach((el) => (el as HTMLElement).style.display = '');
-      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = '');
-
       toast.dismiss("pdf-gen");
 
       const filename = `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
       downloadPDF(pdfBytes, filename);
-
       toast.success("PDF downloaded!");
     } catch (e) {
       console.error("PDF export error:", e);

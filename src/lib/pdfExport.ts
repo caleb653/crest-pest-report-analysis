@@ -2,36 +2,53 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
+const A4_LANDSCAPE_WIDTH_PX = 1123;
+const A4_LANDSCAPE_HEIGHT_PX = 794;
+
+let cachedPrintCss = "";
+
+function collectPrintRules(rules: CSSRuleList, output: string[]) {
+  for (const rule of Array.from(rules)) {
+    if (rule instanceof CSSMediaRule) {
+      if (rule.media.mediaText.includes("print")) {
+        output.push(...Array.from(rule.cssRules).map((nestedRule) => nestedRule.cssText));
+      }
+      continue;
+    }
+
+    if ("cssRules" in rule) {
+      try {
+        collectPrintRules((rule as CSSGroupingRule).cssRules, output);
+      } catch {
+        // Ignore inaccessible nested rules
+      }
+    }
+  }
+}
+
+function getPrintCssText() {
+  if (cachedPrintCss) return cachedPrintCss;
+
+  const output: string[] = [];
+
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      collectPrintRules(sheet.cssRules, output);
+    } catch {
+      // Ignore cross-origin or inaccessible stylesheets
+    }
+  }
+
+  cachedPrintCss = output.join("\n");
+  return cachedPrintCss;
+}
 
 /**
- * Capture a DOM element as a high-resolution JPEG data URL.
- * Temporarily strips padding/margins/max-width so the content fills edge-to-edge.
+ * Capture a DOM element as a high-resolution JPEG data URL using print styles.
  */
 async function captureElement(el: HTMLElement): Promise<string> {
-  // Save original styles
-  const saved = new Map<HTMLElement, string>();
-
-  // Strip padding on the element itself
-  saved.set(el, el.getAttribute("style") || "");
-  el.style.overflow = "visible";
-  el.style.padding = "0";
-  el.style.margin = "0";
-
-  // Strip max-width and padding from inner containers
-  const containers = el.querySelectorAll<HTMLElement>('[class*="max-w-"]');
-  containers.forEach((c) => {
-    saved.set(c, c.getAttribute("style") || "");
-    c.style.maxWidth = "none";
-    c.style.padding = "4px 12px";
-    c.style.margin = "0";
-  });
-
-  // Hide no-print elements
-  const noPrint = el.querySelectorAll<HTMLElement>(".no-print");
-  noPrint.forEach((n) => {
-    saved.set(n, n.getAttribute("style") || "");
-    n.style.display = "none";
-  });
+  const pageId = el.dataset.pdfPage;
+  const printCss = getPrintCssText();
 
   const canvas = await html2canvas(el, {
     scale: 2,
@@ -39,17 +56,78 @@ async function captureElement(el: HTMLElement): Promise<string> {
     allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
-    windowWidth: el.scrollWidth,
-    windowHeight: el.scrollHeight,
-  });
+    width: A4_LANDSCAPE_WIDTH_PX,
+    height: A4_LANDSCAPE_HEIGHT_PX,
+    windowWidth: A4_LANDSCAPE_WIDTH_PX,
+    windowHeight: A4_LANDSCAPE_HEIGHT_PX,
+    onclone: (clonedDoc) => {
+      const style = clonedDoc.createElement("style");
+      style.textContent = `
+        ${printCss}
 
-  // Restore all styles
-  saved.forEach((original, node) => {
-    if (original) {
-      node.setAttribute("style", original);
-    } else {
-      node.removeAttribute("style");
-    }
+        html, body {
+          width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
+          min-width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: visible !important;
+          background: #ffffff !important;
+        }
+
+        body > * {
+          margin: 0 !important;
+        }
+
+        .pdf-export-root {
+          width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
+          min-width: ${A4_LANDSCAPE_WIDTH_PX}px !important;
+          height: ${A4_LANDSCAPE_HEIGHT_PX}px !important;
+          min-height: ${A4_LANDSCAPE_HEIGHT_PX}px !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          overflow: hidden !important;
+          background: #ffffff !important;
+          box-sizing: border-box !important;
+        }
+
+        .pdf-export-root [class*="max-w-"] {
+          max-width: none !important;
+          width: 100% !important;
+        }
+
+        .pdf-export-root [class*="mx-auto"] {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+
+        .pdf-export-root .no-print,
+        .pdf-export-root button:not(.print-keep),
+        .pdf-export-root [role="status"],
+        .pdf-export-root .sonner,
+        .pdf-export-root [data-sonner-toaster] {
+          display: none !important;
+        }
+
+        .pdf-export-root .print-only-text {
+          display: inline !important;
+        }
+      `;
+      clonedDoc.head.appendChild(style);
+
+      if (!pageId) return;
+
+      const clonedPage = clonedDoc.querySelector<HTMLElement>(`[data-pdf-page="${pageId}"]`);
+      if (!clonedPage) return;
+
+      clonedPage.classList.add("pdf-export-root");
+      clonedPage.style.width = `${A4_LANDSCAPE_WIDTH_PX}px`;
+      clonedPage.style.minHeight = `${A4_LANDSCAPE_HEIGHT_PX}px`;
+      clonedPage.style.height = `${A4_LANDSCAPE_HEIGHT_PX}px`;
+      clonedPage.style.margin = "0";
+      clonedPage.style.padding = "0";
+      clonedPage.style.overflow = "hidden";
+    },
   });
 
   return canvas.toDataURL("image/jpeg", 0.92);
@@ -69,36 +147,23 @@ export async function buildMergedPDF(options: {
 }): Promise<Uint8Array> {
   const { customerName, technicianName, address, reportPages } = options;
 
-  // 1. Load the template PDF
   const templateBytes = await fetch(TEMPLATE_PDF_URL).then((r) => r.arrayBuffer());
   const templateDoc = await PDFDocument.load(templateBytes);
 
-  // 2. Create the output PDF
   const outDoc = await PDFDocument.create();
   const helvetica = await outDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await outDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // 3. Copy template page 1 (cover) and overlay text
   const [coverPage] = await outDoc.copyPages(templateDoc, [0]);
   const { width: pageW, height: pageH } = coverPage.getSize();
-  // pageW ≈ 841.89, pageH ≈ 595.28
-
-  // --- Overlay text on cover page ---
-  // "Prepared for:" + customer name — below "PEST CONTROL PROPOSAL" heading
-  // Based on the template layout, the lines are approximately:
-  //   First line: x=58, y=350 from bottom (customer name)
-  //   Second line: x=58, y=325 from bottom (address)
-  // "PREPARED BY" section at bottom-left:
-  //   Name line: x=58, y=138 from bottom
 
   if (customerName) {
-    // Customer name on the first line under the heading
     coverPage.drawText(customerName, {
       x: 58,
       y: 340,
       size: 20,
       font: helveticaBold,
-      color: rgb(1, 1, 1), // white text on dark background
+      color: rgb(1, 1, 1),
     });
   }
 
@@ -113,31 +178,26 @@ export async function buildMergedPDF(options: {
   }
 
   if (technicianName) {
-    // Inspector name in the "PREPARED BY" section
     coverPage.drawText(technicianName, {
       x: 58,
       y: 138,
       size: 14,
       font: helveticaBold,
-      color: rgb(0.2, 0.2, 0.2), // dark text on light background
+      color: rgb(0.2, 0.2, 0.2),
     });
   }
 
   outDoc.addPage(coverPage);
 
-  // 4. Capture and insert app report pages
   for (const el of reportPages) {
     const dataUrl = await captureElement(el);
     const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
     const img = await outDoc.embedJpg(imgBytes);
 
     const page = outDoc.addPage([pageW, pageH]);
-
-    // Fill the entire page — the report is already laid out for A4 landscape
     page.drawImage(img, { x: 0, y: 0, width: pageW, height: pageH });
   }
 
-  // 5. Append template pages 2-4 (marketing pages)
   const marketingPageIndices = [];
   for (let i = 1; i < templateDoc.getPageCount(); i++) {
     marketingPageIndices.push(i);
@@ -147,13 +207,9 @@ export async function buildMergedPDF(options: {
     outDoc.addPage(mp);
   }
 
-  // 6. Save and return
   return outDoc.save();
 }
 
-/**
- * Trigger download of a PDF blob.
- */
 export function downloadPDF(pdfBytes: Uint8Array, filename: string) {
   const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
