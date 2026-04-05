@@ -1826,8 +1826,8 @@ Crest Pest Control`;
 
                 {/* Column 2: Technician Info */}
                 <div>
-                  <p className="font-semibold text-foreground text-xs mb-0.5">Technician Information:</p>
-                  <div className="space-y-0.5 text-xs">
+                  <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
+                  <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
                       <Select value={editableTech} onValueChange={handleTechnicianChange}>
