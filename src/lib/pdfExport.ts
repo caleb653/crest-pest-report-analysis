@@ -5,10 +5,33 @@ const TEMPLATE_PDF_URL = "/proposal-template.pdf";
 
 /**
  * Capture a DOM element as a high-resolution JPEG data URL.
+ * Temporarily strips padding/margins/max-width so the content fills edge-to-edge.
  */
 async function captureElement(el: HTMLElement): Promise<string> {
-  // Temporarily force print-like styles
+  // Save original styles
+  const saved = new Map<HTMLElement, string>();
+
+  // Strip padding on the element itself
+  saved.set(el, el.getAttribute("style") || "");
   el.style.overflow = "visible";
+  el.style.padding = "0";
+  el.style.margin = "0";
+
+  // Strip max-width and padding from inner containers
+  const containers = el.querySelectorAll<HTMLElement>('[class*="max-w-"]');
+  containers.forEach((c) => {
+    saved.set(c, c.getAttribute("style") || "");
+    c.style.maxWidth = "none";
+    c.style.padding = "4px 12px";
+    c.style.margin = "0";
+  });
+
+  // Hide no-print elements
+  const noPrint = el.querySelectorAll<HTMLElement>(".no-print");
+  noPrint.forEach((n) => {
+    saved.set(n, n.getAttribute("style") || "");
+    n.style.display = "none";
+  });
 
   const canvas = await html2canvas(el, {
     scale: 2,
@@ -16,12 +39,18 @@ async function captureElement(el: HTMLElement): Promise<string> {
     allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
-    // Capture full scrollable content
     windowWidth: el.scrollWidth,
     windowHeight: el.scrollHeight,
   });
 
-  el.style.overflow = "";
+  // Restore all styles
+  saved.forEach((original, node) => {
+    if (original) {
+      node.setAttribute("style", original);
+    } else {
+      node.removeAttribute("style");
+    }
+  });
 
   return canvas.toDataURL("image/jpeg", 0.92);
 }
