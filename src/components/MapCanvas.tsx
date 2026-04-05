@@ -1026,6 +1026,35 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         </Button>
         <Button
           size="icon"
+          variant={tool === 'draw' ? 'default' : 'outline'}
+          onClick={() => { setTool('draw'); setShowIconPicker(false); }}
+          title="Freehand Draw"
+          className="h-7 w-7"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        {tool === 'draw' && (
+          <div className="flex items-center gap-1 px-1.5 py-1 border-l border-border">
+            <input
+              type="color"
+              value={drawColor}
+              onChange={(e) => setDrawColor(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer"
+              title="Draw Color"
+            />
+            <select
+              value={drawBrushSize}
+              onChange={(e) => setDrawBrushSize(Number(e.target.value))}
+              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+            >
+              <option value={2}>Thin</option>
+              <option value={4}>Medium</option>
+              <option value={8}>Thick</option>
+              <option value={12}>Bold</option>
+            </select>
+          </div>
+        )}
+          size="icon"
           variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
           onClick={() => { setTool('icon'); setShowIconPicker((prev) => !prev); }}
           title="Add Icon"
