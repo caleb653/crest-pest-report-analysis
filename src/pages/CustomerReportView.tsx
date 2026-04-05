@@ -44,6 +44,8 @@ interface ReportData {
   license_number: string | null;
   recommendations: string[] | null;
   next_steps: string[] | null;
+  customer_key_areas: string[] | null;
+  customer_preferences: { preference?: string; notes?: string } | null;
 }
 
 // Full product list with chemicals (legally required)
