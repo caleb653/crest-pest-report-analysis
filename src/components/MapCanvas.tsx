@@ -268,7 +268,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         const svgPath = iconData?.svgPath || bugIcon;
         
         // Load and add SVG icon
-        FabricImage.fromURL(svgPath, { crossOrigin: 'anonymous' }).then((img) => {
+        FabricImage.fromURL(svgPath).then((img) => {
           img.set({
             left: pt.x - 16,
             top: pt.y - 16,

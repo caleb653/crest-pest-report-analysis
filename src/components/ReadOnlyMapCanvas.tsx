@@ -125,7 +125,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           
           if (iconInfo) {
             foundIcons.add(iconType);
-            const promise = FabricImage.fromURL(iconInfo.svgPath, { crossOrigin: 'anonymous' }).then((img) => {
+            const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
               img.set({
                 left: (obj.left || 0) * scaleX,
                 top: (obj.top || 0) * scaleY,
