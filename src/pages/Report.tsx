@@ -41,6 +41,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import ImageAnnotator from "@/components/ImageAnnotator";
+import { buildMergedPDF, downloadPDF } from "@/lib/pdfExport";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -1196,21 +1197,48 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
   const exportToPDF = async () => {
     try {
-      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach((toastEl) => {
-        (toastEl as HTMLElement).style.display = "none";
+      toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
+
+      // Hide non-print elements temporarily
+      const noPrintEls = document.querySelectorAll('.no-print');
+      noPrintEls.forEach((el) => (el as HTMLElement).style.display = 'none');
+
+      // Also show print-only elements temporarily
+      const printOnlyEls = document.querySelectorAll('.print-only-text, [class*="print:block"]');
+      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = 'block');
+
+      // Collect all report page sections
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-page]")
+      ).sort((a, b) => Number(a.dataset.pdfPage) - Number(b.dataset.pdfPage));
+
+      // Filter out empty property images page
+      const reportPages = pageEls.filter((el) => {
+        if (el.querySelector(".no-images-placeholder")) return false;
+        return true;
       });
 
-      await new Promise((r) => setTimeout(r, 150));
-      window.print();
+      const pdfBytes = await buildMergedPDF({
+        customerName: editableCustomer || "",
+        technicianName: editableTech || "",
+        address: editableAddress || extractedAddress || address || "",
+        reportPages,
+      });
 
-      setTimeout(() => {
-        toasts.forEach((toastEl) => {
-          (toastEl as HTMLElement).style.display = "";
-        });
-      }, 500);
+      // Restore visibility
+      noPrintEls.forEach((el) => (el as HTMLElement).style.display = '');
+      printOnlyEls.forEach((el) => (el as HTMLElement).style.display = '');
+
+      toast.dismiss("pdf-gen");
+
+      const filename = `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
+      downloadPDF(pdfBytes, filename);
+
+      toast.success("PDF downloaded!");
     } catch (e) {
-      toast.error("Print failed");
+      console.error("PDF export error:", e);
+      toast.dismiss("pdf-gen");
+      toast.error("PDF generation failed. Try again.");
     }
   };
 
@@ -1873,7 +1901,7 @@ Crest Pest Control`;
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
+      <div data-pdf-page="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
@@ -2386,7 +2414,7 @@ Crest Pest Control`;
       </div>
 
       {/* Page 2 - Map & Property Images */}
-      <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
+      <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
@@ -2708,6 +2736,7 @@ Crest Pest Control`;
 
       {/* Page 3 - Property Images */}
       <div 
+        data-pdf-page="3"
         className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]"
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
@@ -2804,7 +2833,7 @@ Crest Pest Control`;
               ))}
             </div>
           ) : (
-            <div className="h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+            <div className="no-images-placeholder h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
@@ -2816,7 +2845,7 @@ Crest Pest Control`;
       </div>
 
       {/* Crest Guarantee */}
-      <div className="print-page-break-avoid bg-background">
+      <div data-pdf-page="4" className="print-page-break-avoid bg-background">
         <div className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
           <div className="border-2 border-border rounded-lg p-4 print:p-5 text-center bg-muted/30">
             <h3 className="text-sm print:text-base font-bold text-foreground mb-2">The Crest Guarantee</h3>
