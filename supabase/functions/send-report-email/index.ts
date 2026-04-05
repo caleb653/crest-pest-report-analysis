@@ -20,6 +20,8 @@ interface SendReportRequest {
   emailSubject?: string;
   emailMessage?: string;
   baseUrl?: string;
+  pdfBase64?: string;
+  pdfFilename?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -38,6 +40,8 @@ const handler = async (req: Request): Promise<Response> => {
       emailSubject,
       emailMessage,
       baseUrl,
+      pdfBase64,
+      pdfFilename,
     }: SendReportRequest = await req.json();
 
     if (!customerEmail) {
@@ -148,6 +152,12 @@ const handler = async (req: Request): Promise<Response> => {
       ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: finalSubject,
       html: emailHtml,
+      ...(pdfBase64 ? {
+        attachments: [{
+          filename: pdfFilename || "Crest_Proposal.pdf",
+          content: pdfBase64,
+        }],
+      } : {}),
     };
 
     const res = await fetch("https://api.resend.com/emails", {

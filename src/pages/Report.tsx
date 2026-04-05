@@ -1280,6 +1280,30 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
+      // Generate PDF to attach
+      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+      let pdfBase64: string | undefined;
+      try {
+        const pageEls = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+        ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+        const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+        const pdfBytes = await buildMergedPDF({
+          customerName: editableCustomer || "",
+          technicianName: editableTech || "",
+          address: editableAddress || extractedAddress || address || "",
+          reportPages,
+        });
+
+        // Convert Uint8Array to base64
+        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+        pdfBase64 = btoa(binary);
+      } catch (pdfErr) {
+        console.warn("PDF generation failed, sending email without attachment:", pdfErr);
+      }
+      toast.dismiss("pdf-email");
+
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
@@ -1291,6 +1315,8 @@ Crest Pest Control`;
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
+          pdfBase64,
+          pdfFilename: `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
         },
       });
 
