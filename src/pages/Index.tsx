@@ -22,11 +22,11 @@ const reportTypes = [
     state: null,
   },
   {
-    id: "admin",
-    title: "Admin Portal",
+    id: "submitted-reports",
+    title: "Submitted Reports",
     description: "View and manage all submitted reports",
     icon: Shield,
-    path: "/admin-login",
+    path: "/submitted-reports",
     state: null,
   },
 ];
