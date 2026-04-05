@@ -766,10 +766,10 @@
   }
 
   .print-tag {
-    font-size: 9px !important;
-    padding: 0.5mm 1.5mm !important;
+    font-size: 10px !important;
+    padding: 0.4mm 1.5mm 0.2mm 1.5mm !important;
     border-radius: 2mm !important;
-    line-height: 1.2 !important;
+    line-height: 1.1 !important;
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;
