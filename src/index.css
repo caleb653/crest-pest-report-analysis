@@ -758,7 +758,7 @@
 
   /* Print tags styling with brand colors */
   .print-tags {
-    padding: 1mm 2mm !important;
+    padding: 0.5mm 2mm 1mm 2mm !important;
     gap: 1mm !important;
     align-items: flex-start !important;
     align-content: flex-start !important;
