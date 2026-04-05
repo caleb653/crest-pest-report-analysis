@@ -1750,7 +1750,7 @@ Crest Pest Control`;
       <div data-pdf-page="1">
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
+        <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">

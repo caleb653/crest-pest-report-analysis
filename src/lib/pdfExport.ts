@@ -16,21 +16,39 @@ async function captureElementAsImage(el: HTMLElement): Promise<Uint8Array> {
   const origOverflow = el.style.overflow;
   el.style.overflow = "visible";
 
+  // Before capture: show print-only elements, hide no-print elements
+  // (html2canvas sees screen styles, not @media print)
+  const noPrintEls = el.querySelectorAll('.no-print');
+  const printOnlyEls = el.querySelectorAll('.print-only-text');
+  const hiddenPrintBlocks = el.querySelectorAll('[class*="print\\:block"]');
+
+  noPrintEls.forEach((e) => (e as HTMLElement).style.display = 'none');
+  printOnlyEls.forEach((e) => (e as HTMLElement).style.display = 'inline');
+
+  // For elements with hidden + print:block classes, show them
+  hiddenPrintBlocks.forEach((e) => {
+    const htmlEl = e as HTMLElement;
+    if (htmlEl.classList.contains('hidden')) {
+      htmlEl.style.display = 'block';
+    }
+  });
+
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
     allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
-    // Remove no-print elements
+    // Only remove actual UI-only elements, NOT inputs with data
     ignoreElements: (element) => {
-      return element.classList.contains("no-print") || 
-             element.classList.contains("no-pdf") ||
-             element.tagName === "INPUT" ||
-             element.tagName === "BUTTON";
+      return element.classList.contains("no-pdf");
     },
   });
 
+  // Restore original visibility
+  noPrintEls.forEach((e) => (e as HTMLElement).style.display = '');
+  printOnlyEls.forEach((e) => (e as HTMLElement).style.display = '');
+  hiddenPrintBlocks.forEach((e) => (e as HTMLElement).style.display = '');
   el.style.overflow = origOverflow;
 
   return new Promise((resolve) => {
