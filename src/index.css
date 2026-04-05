@@ -548,7 +548,7 @@
     border-bottom: 1.5px solid hsl(130 10% 72%) !important;
   }
 
-  .print-pricing-table > div > div:nth-child(even) {
+  .print-pricing-table > div > div:nth-child(odd):not(:first-child) {
     background: hsl(130 14% 94%) !important;
   }
 
