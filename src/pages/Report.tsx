@@ -2878,7 +2878,7 @@ Crest Pest Control`;
                   "jlatham@crestpestco.com",
                   "dtanner@crestpestco.com",
                   "jangulo@crestpestco.com",
-                  "dgallegoss@crestpestco.com",
+                  "dgallegos@crestpestco.com",
                   "mmuniz@crestpestco.com",
                 ].filter(email => !ccEmails.includes(email)).map((email) => (
                   <button
