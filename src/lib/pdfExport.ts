@@ -6,6 +6,20 @@ const A4_LANDSCAPE_WIDTH_PX = 1123;
 
 let cachedPrintCss = "";
 
+function getContainedImageSize(
+  imgWidth: number,
+  imgHeight: number,
+  maxWidth: number,
+  maxHeight: number,
+) {
+  const scale = Math.min(maxWidth / imgWidth, maxHeight / imgHeight);
+
+  return {
+    width: imgWidth * scale,
+    height: imgHeight * scale,
+  };
+}
+
 function collectPrintRules(rules: CSSRuleList, output: string[]) {
   for (const rule of Array.from(rules)) {
     if (rule instanceof CSSMediaRule) {
@@ -166,7 +180,6 @@ export async function buildMergedPDF(options: {
 
   // Group captures: combine header (capture "0") with content (capture "1") on the same page
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
-  let pendingHeaderH = 0;
 
   for (const el of reportPages) {
     const dataUrl = await captureElement(el);
@@ -176,9 +189,7 @@ export async function buildMergedPDF(options: {
 
     if (captureId === "0") {
       // This is the header — save it to draw on the same page as capture "1"
-      const scale = pageW / img.width;
       pendingHeaderImg = img;
-      pendingHeaderH = img.height * scale;
       continue;
     }
 
@@ -187,23 +198,33 @@ export async function buildMergedPDF(options: {
     if (captureId === "1" && pendingHeaderImg) {
       // Draw header at top, then content below it
       const headerScale = pageW / pendingHeaderImg.width;
+      const headerDrawW = pageW;
       const headerDrawH = pendingHeaderImg.height * headerScale;
       const headerDrawY = pageH - headerDrawH;
-      page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
+      page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
 
-      const contentScale = pageW / img.width;
-      const contentDrawH = img.height * contentScale;
+      const remainingHeight = Math.max(headerDrawY, 0);
+      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
+        img.width,
+        img.height,
+        pageW,
+        remainingHeight,
+      );
       const contentDrawY = headerDrawY - contentDrawH;
-      page.drawImage(img, { x: 0, y: Math.max(contentDrawY, 0), width: pageW, height: contentDrawH });
+      const contentDrawX = (pageW - contentDrawW) / 2;
+      page.drawImage(img, {
+        x: contentDrawX,
+        y: Math.max(contentDrawY, 0),
+        width: contentDrawW,
+        height: contentDrawH,
+      });
 
       pendingHeaderImg = null;
-      pendingHeaderH = 0;
     } else {
-      const scale = pageW / img.width;
-      const drawW = pageW;
-      const drawH = img.height * scale;
-      const drawY = Math.max(pageH - drawH, 0);
-      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
+      const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
+      const drawX = (pageW - drawW) / 2;
+      const drawY = pageH - drawH;
+      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
     }
   }
 
