@@ -65,11 +65,9 @@ const PEST_OPTIONS = [
   "Rodents",
   "Fleas & Ticks",
   "Bed Bugs",
-  "Bees",
   "Mosquitoes",
   "Millipedes",
   "American Roaches",
-  "Gophers",
   "Drain Flies",
   "Other",
 ];
