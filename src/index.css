@@ -390,8 +390,8 @@
     display: grid !important;
     grid-template-columns: 118mm 1fr !important;
     column-gap: 6mm !important;
-    height: 140mm !important;
-    margin: 1mm auto 0 auto !important;
+    height: 142mm !important;
+    margin: 0mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
     /* Kill flex/min-height from screen styles */
