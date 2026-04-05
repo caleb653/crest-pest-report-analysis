@@ -323,7 +323,7 @@ const Report = () => {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
       setEditableFindings([content]);
       setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests, editableEquipment)]);
+      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
   }, []);
 
