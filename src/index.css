@@ -760,7 +760,7 @@
 
   /* Print tags styling with brand colors */
   .print-tags {
-    padding: 0mm 2mm 1mm 2mm !important;
+    padding: 1mm 2mm 1mm 2mm !important;
     gap: 1mm !important;
     align-items: flex-start !important;
     align-content: flex-start !important;
@@ -772,7 +772,7 @@
     padding: 0.15mm 1.5mm 0.15mm 1.5mm !important;
     border-radius: 2mm !important;
     line-height: 1 !important;
-    transform: translateY(-1.5mm) !important;
+    transform: translateY(0) !important;
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;
