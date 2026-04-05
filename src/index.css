@@ -864,7 +864,7 @@
     page-break-before: always !important;
     break-before: page !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 1.5mm 0 0 0 !important;
     border: 0 !important;
     clear: both !important;
   }
