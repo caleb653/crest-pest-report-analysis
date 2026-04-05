@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus, Eraser } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group } from 'fabric';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
