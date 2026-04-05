@@ -161,8 +161,8 @@ export async function generateMergedPDF(
     const scaledH = image.height * scale;
     
     // Center the image on the page
-    const x = (792 - scaledW) / 2;
-    const y = (612 - scaledH) / 2;
+    const x = (pageW - scaledW) / 2;
+    const y = (pageH - scaledH) / 2;
 
     page.drawImage(image, {
       x,
