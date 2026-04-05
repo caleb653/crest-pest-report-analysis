@@ -1183,6 +1183,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
+      // Switch to static map image for capture
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 150));
+
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
@@ -1195,6 +1199,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         address: editableAddress || extractedAddress || address || "",
         reportPages,
       });
+
+      setPdfExportMode(false);
 
       toast.dismiss("pdf-gen");
 
