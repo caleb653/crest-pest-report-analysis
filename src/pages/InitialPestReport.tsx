@@ -191,12 +191,11 @@ const Report = () => {
   // Generate findings and expectations based on selected pests, equipment, and products
   const generateContentFromSelections = (pests: string[], equipment: string[], products: string[]) => {
     const lines: string[] = [];
-
-    // Check if using organic products (Essentria)
+    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
     const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
 
-    // Standard general pest control from knowledge base
-    if (pests.length > 0) {
+    // General pest control findings (for General Pests or any standard pests)
+    if (isGeneralPests || pests.some(p => ["Ants", "Spiders", "Roaches", "American Roaches", "Wasps", "Earwigs", "Crickets", "Silverfish", "Centipedes", "Millipedes", "Fleas", "Ticks"].includes(p))) {
       lines.push("• Inspected interior and exterior for pest activity and entry points");
       const treatmentLine = usesOrganic 
         ? "• Applied targeted treatments, including organic solutions, to ensure a protective barrier around the home"
@@ -205,9 +204,27 @@ const Report = () => {
       lines.push("• De-webbed the entire home");
     }
 
-    // Only add rodent-specific if Rodents selected
+    // Rodent-specific
     if (pests.includes("Rodents")) {
       lines.push("• Strategically placed traps in areas of highest activity");
+      lines.push("• Will monitor and adjust trap placement as needed to ensure effective control");
+    }
+
+    // Mosquito-specific
+    if (pests.includes("Mosquitoes")) {
+      lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future generations");
+      lines.push("• Targeted adult mosquitoes and larvae with long-lasting products");
+    }
+
+    // Bed bug-specific
+    if (pests.includes("Bed Bugs")) {
+      lines.push("• Inspected sleeping areas, furniture, and baseboards for bed bug activity");
+      lines.push("• Applied targeted bed bug treatments to affected areas");
+    }
+
+    // Drain fly-specific
+    if (pests.includes("Drain Flies")) {
+      lines.push("• Inspected and treated drains for drain fly breeding activity");
     }
 
     // Equipment-based additions
@@ -216,6 +233,9 @@ const Report = () => {
     }
     if (equipment.includes("Rodent Traps")) {
       lines.push("• Placed rodent traps for population control");
+    }
+    if (equipment.includes("Mosquito Buckets")) {
+      lines.push("• Installed mosquito stations around the property");
     }
 
     return lines.join("\n");
