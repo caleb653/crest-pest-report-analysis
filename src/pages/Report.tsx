@@ -1194,23 +1194,42 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
   const exportToPDF = async () => {
     try {
-      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach((toastEl) => {
-        (toastEl as HTMLElement).style.display = "none";
-      });
+      setIsExportingPDF(true);
+      toast.info("Generating PDF... This may take a moment.");
 
-      await new Promise((r) => setTimeout(r, 150));
-      window.print();
+      // Dynamically import the PDF export utility
+      const { downloadMergedPDF } = await import("@/lib/pdfExport");
 
-      setTimeout(() => {
-        toasts.forEach((toastEl) => {
-          (toastEl as HTMLElement).style.display = "";
-        });
-      }, 500);
+      // Collect report page elements
+      const reportPages: HTMLElement[] = [];
+      const page1 = document.querySelector('[data-pdf-page="1"]') as HTMLElement;
+      const page2 = document.querySelector('[data-pdf-page="2"]') as HTMLElement;
+      const page3 = document.querySelector('[data-pdf-page="3"]') as HTMLElement;
+      if (page1) reportPages.push(page1);
+      if (page2) reportPages.push(page2);
+      if (page3 && propertyImages.length > 0) reportPages.push(page3);
+
+      await downloadMergedPDF(
+        {
+          customerName: editableCustomer || "",
+          address: editableAddress || extractedAddress || address || "",
+          technicianName: editableTech || "",
+          licenseNumber: editableLicenseNumber || "",
+        },
+        reportPages,
+        `Crest_Proposal_${(editableCustomer || "Report").replace(/\s+/g, "_")}.pdf`
+      );
+
+      toast.success("PDF downloaded!");
     } catch (e) {
-      toast.error("Print failed");
+      console.error("PDF export failed:", e);
+      toast.error("PDF export failed. Please try again.");
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
