@@ -553,7 +553,7 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 2.5mm 3mm 2mm 3.5mm !important;
+    padding: 1.5mm 3mm 1.2mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
     line-height: 1.35 !important;
