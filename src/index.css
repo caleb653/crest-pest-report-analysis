@@ -378,7 +378,7 @@
 
   /* Field value spacing */
   .print-header .space-y-0\.5 {
-    gap: 0.8mm !important;
+    gap: 1.5mm !important;
   }
 
   .print-header .gap-6 {
