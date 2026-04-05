@@ -593,6 +593,19 @@
     white-space: nowrap !important;
   }
 
+  .print-pricing-table input,
+  .print-pricing-table textarea {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
   .print-section-header {
     background: hsl(0 0% 16%) !important;
     padding: 1.2mm 3.5mm 1mm 3.5mm !important;
