@@ -5,7 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Calendar,
   CheckCircle,
@@ -16,7 +25,6 @@ import {
   Search,
   Mail,
   PenLine,
-  Filter,
 } from "lucide-react";
 import {
   Select,
@@ -85,6 +93,10 @@ const SubmittedReports = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
   const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadReports();
@@ -124,18 +136,39 @@ const SubmittedReports = () => {
     }
   };
 
-  const handleDelete = async (reportId: string, e: React.MouseEvent) => {
+  const promptDelete = (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
+    setDeleteTargetId(reportId);
+    setDeletePassword("");
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId || !deletePassword.trim()) return;
+    setDeleting(true);
 
     try {
-      const { error } = await supabase.from("reports").delete().eq("id", reportId);
+      const { data, error } = await supabase.functions.invoke("delete-report", {
+        body: { password: deletePassword, reportId: deleteTargetId },
+      });
+
       if (error) throw error;
+      if (!data?.ok) {
+        if (data?.error === "invalid_password") {
+          toast.error("Incorrect password");
+          return;
+        }
+        throw new Error(data?.error || "Delete failed");
+      }
+
       toast.success("Report deleted");
+      setDeleteDialogOpen(false);
       await loadReports();
     } catch (error: any) {
       console.error(error);
       toast.error("Failed to delete report");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -390,7 +423,7 @@ const SubmittedReports = () => {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={(e) => handleDelete(report.id, e)}
+                              onClick={(e) => promptDelete(report.id, e)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               title="Delete report"
                             >
@@ -411,6 +444,41 @@ const SubmittedReports = () => {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Report</DialogTitle>
+            <DialogDescription>
+              Enter the admin password to permanently delete this report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="delete-password">Password</Label>
+            <Input
+              id="delete-password"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Enter admin password"
+              onKeyDown={(e) => e.key === "Enter" && confirmDelete()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleting || !deletePassword.trim()}
+            >
+              {deleting ? "Deleting..." : "Delete Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
