@@ -1749,9 +1749,9 @@ Crest Pest Control`;
                 </div>
               </div>
 
-              {/* Right side: 2-column info grid - pushed right */}
-              <div className="grid grid-cols-2 gap-4 lg:gap-8 ml-auto">
-                {/* Column 1: Customer Details (Name, Address, Date) */}
+              {/* Right side: 3-column info grid - pushed right */}
+              <div className="grid grid-cols-2 print:grid-cols-3 gap-4 lg:gap-6 ml-auto">
+                {/* Column 1: Customer Details (Name, Address) */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
                   <div className="space-y-0.5 text-sm">
@@ -1785,6 +1785,27 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                {/* Column 2: Property Info (Date, Type) - only separate column in print */}
+                <div className="hidden print:block">
+                  <p className="font-semibold text-foreground text-sm mb-0.5">Property Info:</p>
+                  <div className="space-y-0.5 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Date:</span>
+                      <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Type:</span>
+                      <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date & Type fields shown inline on screen (hidden in print since they're in col 2) */}
+                <div className="print:hidden col-span-2 -mt-3">
+                  <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Date:</span>
                       {isReadOnly ? (
@@ -1823,7 +1844,7 @@ Crest Pest Control`;
                   </div>
                 </div>
 
-                {/* Column 2: Technician Info */}
+                {/* Column 3: Technician Info */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
                   <div className="space-y-0.5 text-sm">
