@@ -562,6 +562,7 @@ const Report = () => {
   const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null); // Static map with annotations
+  const [pdfExportMode, setPdfExportMode] = useState(false);
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
