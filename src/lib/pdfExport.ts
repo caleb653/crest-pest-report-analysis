@@ -104,27 +104,8 @@ export async function buildMergedPDF(options: {
 
     const page = outDoc.addPage([pageW, pageH]);
 
-    // Scale image to fill the page while maintaining aspect ratio
-    const imgAspect = img.width / img.height;
-    const pageAspect = pageW / pageH;
-
-    let drawW: number, drawH: number, drawX: number, drawY: number;
-
-    if (imgAspect > pageAspect) {
-      // Image is wider — fit to width
-      drawW = pageW;
-      drawH = pageW / imgAspect;
-      drawX = 0;
-      drawY = (pageH - drawH) / 2;
-    } else {
-      // Image is taller — fit to height
-      drawH = pageH;
-      drawW = pageH * imgAspect;
-      drawX = (pageW - drawW) / 2;
-      drawY = 0;
-    }
-
-    page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+    // Fill the entire page — the report is already laid out for A4 landscape
+    page.drawImage(img, { x: 0, y: 0, width: pageW, height: pageH });
   }
 
   // 5. Append template pages 2-4 (marketing pages)
