@@ -278,7 +278,7 @@
     max-width: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 3mm 6mm !important;
+    padding: 4mm 6mm !important;
     box-shadow: none !important;
     background: hsl(130 14% 82%) !important;
     border: none !important;
@@ -301,13 +301,18 @@
   }
 
   .print-header .print-title {
-    font-size: 36px !important;
+    font-size: 28px !important;
     font-weight: 700 !important;
-    margin-top: 1mm !important;
-    margin-bottom: 1mm !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
     letter-spacing: -0.015em !important;
-    line-height: 1.05 !important;
+    line-height: 1.15 !important;
     height: auto !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    width: auto !important;
+    max-width: none !important;
   }
 
   .print-header h2 {
