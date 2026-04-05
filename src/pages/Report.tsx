@@ -2037,7 +2037,7 @@ Crest Pest Control`;
                       <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className="bg-white/80 rounded px-1 print:border print:border-black/10">
+                  <div className="bg-white/80 rounded px-1">
                     <Select
                       value={service.frequency.toString()}
                       onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
