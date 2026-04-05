@@ -1350,7 +1350,7 @@ Crest Pest Control
               <p className="text-xs text-foreground leading-tight">
                 We appreciate you entrusting Crest with your pest control needs. With mother nature, there is no "one
                 size fits all" approach and there are often a number of factors that lead to increased pest activity.
-                We've created this educational report to help you and your family get one step closer to living a
+                We've created this educational report to help you get one step closer to living a
                 pest-free life. Please give us a call at <span className="font-semibold">949-424-5000</span> if you have
                 any questions.
               </p>
