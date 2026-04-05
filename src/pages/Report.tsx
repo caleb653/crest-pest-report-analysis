@@ -208,8 +208,8 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Spiders"],
     proposedServices:
       `<b>De-webbing:</b><br>• Thoroughly de-web the entire property including eaves, outdoor furniture, and high visibility areas`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
+    defaultInitial: 100,
+    defaultRecurring: 100,
   },
   "Rodent Sanitation": {
     frequency: 0,
