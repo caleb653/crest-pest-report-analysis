@@ -1424,7 +1424,7 @@ Crest Pest Control`;
     });
     if (!files) return;
 
-    const fileArray = Array.from(files).slice(0, 8);
+    const fileArray = Array.from(files).slice(0, 12);
 
     if (fileArray.some((file) => file.size === 0)) {
       toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
