@@ -1977,7 +1977,7 @@ Crest Pest Control`;
                   key={index}
                   className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center print:py-0"
                 >
-                  <div className="flex items-center gap-2 bg-white/80 rounded px-1 print:border print:border-black/10">
+                  <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                     <Select
                       value={service.serviceType}
                       onValueChange={(val) => handleServiceChange(index, "serviceType", val)}
