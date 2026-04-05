@@ -184,8 +184,8 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Mosquitoes"],
     proposedServices:
       `<b>Mosquito Service:</b><br>• Set up mosquito buckets, which interrupt breeding cycle and neutralize future generations<br>• Target adult mosquitoes and larvae by treating with long lasting products`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
+    defaultInitial: 150,
+    defaultRecurring: 75,
   },
   "Attic Services (see details below)": {
     frequency: 0,
