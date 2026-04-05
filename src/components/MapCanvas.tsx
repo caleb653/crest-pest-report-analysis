@@ -103,28 +103,39 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     rectFillTransparentRef.current = rectFillTransparent;
   }, [rectFillTransparent]);
 
-  // Disable selection when tool is 'line' or 'eraser' to prevent moving objects while drawing/erasing
+  // Disable selection when tool is 'line', 'eraser', or 'draw' to prevent moving objects
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
-    if (tool === 'line' || tool === 'eraser') {
+    if (tool === 'line' || tool === 'eraser' || tool === 'draw') {
       canvas.selection = false;
       canvas.getObjects().forEach(obj => {
         obj.selectable = false;
-        obj.evented = tool === 'eraser'; // Allow evented for eraser to detect clicks
+        obj.evented = tool === 'eraser';
       });
     } else {
       canvas.selection = true;
       canvas.getObjects().forEach(obj => {
-        // Don't enable selection for temp lines
         if (obj !== tempLineRef.current) {
           obj.selectable = true;
           obj.evented = true;
         }
       });
     }
+    
+    // Toggle freehand drawing mode
+    if (tool === 'draw') {
+      canvas.isDrawingMode = true;
+      const brush = new PencilBrush(canvas);
+      brush.color = drawColor;
+      brush.width = drawBrushSize;
+      canvas.freeDrawingBrush = brush;
+    } else {
+      canvas.isDrawingMode = false;
+    }
+    
     canvas.renderAll();
-  }, [tool]);
+  }, [tool, drawColor, drawBrushSize]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
