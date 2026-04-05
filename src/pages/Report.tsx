@@ -1290,6 +1290,45 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
+      // Generate merged PDF and upload to storage
+      toast.info("Generating proposal PDF...");
+      let pdfUrl: string | undefined;
+      try {
+        const { generateMergedPDFBlob } = await import("@/lib/pdfExport");
+        const reportPages: HTMLElement[] = [];
+        const page1 = document.querySelector('[data-pdf-page="1"]') as HTMLElement;
+        const page2 = document.querySelector('[data-pdf-page="2"]') as HTMLElement;
+        const page3 = document.querySelector('[data-pdf-page="3"]') as HTMLElement;
+        if (page1) reportPages.push(page1);
+        if (page2) reportPages.push(page2);
+        if (page3 && propertyImages.length > 0) reportPages.push(page3);
+
+        const pdfBlob = await generateMergedPDFBlob(
+          {
+            customerName: editableCustomer || "",
+            address: editableAddress || extractedAddress || address || "",
+            technicianName: editableTech || "",
+            licenseNumber: editableLicenseNumber || "",
+          },
+          reportPages
+        );
+
+        // Upload PDF to storage
+        const pdfFileName = `${finalReportId}/proposal_${Date.now()}.pdf`;
+        const { error: uploadErr } = await supabase.storage
+          .from("report-images")
+          .upload(pdfFileName, pdfBlob, { upsert: true, contentType: "application/pdf" });
+        
+        if (!uploadErr) {
+          const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(pdfFileName);
+          pdfUrl = publicUrl;
+        } else {
+          console.warn("PDF upload failed, sending email without PDF link:", uploadErr);
+        }
+      } catch (pdfErr) {
+        console.warn("PDF generation failed, sending email without PDF:", pdfErr);
+      }
+
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
@@ -1298,6 +1337,7 @@ Crest Pest Control`;
           technicianName: editableTech,
           address: editableAddress || extractedAddress || address || "",
           reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
+          pdfUrl,
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
