@@ -33,16 +33,46 @@ async function captureElementAsImage(el: HTMLElement): Promise<Uint8Array> {
     }
   });
 
+  // Replace <canvas> elements with <img> snapshots to avoid tainted canvas errors
+  // Fabric.js canvases with local SVG icons can become "tainted" and block html2canvas
+  const canvasReplacements: { canvas: HTMLCanvasElement; img: HTMLImageElement }[] = [];
+  const canvasElements = el.querySelectorAll('canvas');
+  canvasElements.forEach((cvs) => {
+    try {
+      const dataUrl = cvs.toDataURL('image/png');
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.width = cvs.width;
+      img.height = cvs.height;
+      img.style.cssText = window.getComputedStyle(cvs).cssText;
+      img.style.width = cvs.style.width || cvs.offsetWidth + 'px';
+      img.style.height = cvs.style.height || cvs.offsetHeight + 'px';
+      img.style.position = cvs.style.position;
+      cvs.parentNode?.insertBefore(img, cvs);
+      cvs.style.display = 'none';
+      canvasReplacements.push({ canvas: cvs, img });
+    } catch {
+      // Canvas is tainted - try using the exported map image instead
+      console.warn('Canvas tainted, skipping replacement');
+    }
+  });
+
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: "#ffffff",
     logging: false,
     // Only remove actual UI-only elements, NOT inputs with data
     ignoreElements: (element) => {
       return element.classList.contains("no-pdf");
     },
+  });
+
+  // Restore canvas elements
+  canvasReplacements.forEach(({ canvas: cvs, img }) => {
+    cvs.style.display = '';
+    img.parentNode?.removeChild(img);
   });
 
   // Restore original visibility
