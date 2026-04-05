@@ -2797,7 +2797,7 @@ Crest Pest Control`;
 
           {/* Crest Guarantee - compact, pinned to bottom of page 2 */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 mt-3 print:mt-auto print:pt-3 print:pb-1 print:border-x-0 print:border-b-0 print:rounded-none flex items-center justify-center gap-3">
-            <img src={bugIconSvg} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
+            <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
             <p className="text-xs print:text-[13px] text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. If we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
