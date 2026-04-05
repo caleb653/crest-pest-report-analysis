@@ -291,10 +291,10 @@ const Report = () => {
     return lines.join("<br>");
   };
 
-  // Auto-update content when pests, equipment, or products change
+  // Auto-update content when pests change
   useEffect(() => {
-    // Skip if loading a report or if user has manually edited
-    if (reportId || hasManuallyEditedFindings) return;
+    // Skip only on initial load of existing report (handled by loadReport)
+    if (hasManuallyEditedFindings) return;
     
     if (editableTargetPests.length > 0 || editableEquipment.length > 0) {
       const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
@@ -302,7 +302,7 @@ const Report = () => {
       setEditableExpectations([generateExpectations()]);
       setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
-  }, [editableTargetPests, editableEquipment, editableProductsUsed, reportId, hasManuallyEditedFindings]);
+  }, [editableTargetPests, editableEquipment, editableProductsUsed, hasManuallyEditedFindings]);
 
   // Auto-add rodent equipment when Rodents is selected
   useEffect(() => {
