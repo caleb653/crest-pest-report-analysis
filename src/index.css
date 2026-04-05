@@ -436,11 +436,11 @@
 
   .print-map-container canvas {
     width: 100% !important;
-    height: calc(100% + 8mm) !important;
-    /* Compress horizontally to fix icons spreading too far left/right */
-    transform: translate(4mm, -3mm) scale(0.88, 0.80) !important;
+    height: 100% !important;
+    transform: none !important;
     transform-origin: top left !important;
     display: block !important;
+    object-fit: contain !important;
   }
 
   /* Show legend in print */
@@ -538,7 +538,7 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 4mm 3mm 2.5mm 3.5mm !important;
+    padding: 2.5mm 3mm 2mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
     line-height: 1.35 !important;
@@ -546,11 +546,11 @@
     letter-spacing: 0.08em !important;
     border-bottom: 2px solid hsl(130 14% 79%) !important;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.4rem;
     border-radius: 2.5mm 2.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 9.5mm !important;
+    min-height: 7mm !important;
   }
 
   /* Force Additional Details header input to be visible */
