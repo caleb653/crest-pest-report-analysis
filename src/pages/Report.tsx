@@ -1200,8 +1200,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
       const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-page]")
-      ).sort((a, b) => Number(a.dataset.pdfPage) - Number(b.dataset.pdfPage));
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
 
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
