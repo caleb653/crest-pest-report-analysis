@@ -538,19 +538,19 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 3.5mm 3mm 3mm 3.5mm !important;
+    padding: 4mm 3mm 2.5mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
     border-bottom: 2px solid hsl(130 14% 79%) !important;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.4rem;
     border-radius: 2.5mm 2.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 9mm !important;
+    min-height: 9.5mm !important;
   }
 
   /* Force Additional Details header input to be visible */
@@ -560,7 +560,7 @@
     color: hsl(0 0% 100%) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    line-height: 1.4 !important;
+    line-height: 1.35 !important;
     padding: 0 !important;
     margin: 0 !important;
     height: auto !important;
@@ -766,10 +766,10 @@
   }
 
   .print-tag {
-    font-size: 9px !important;
-    padding: 0.5mm 1.5mm !important;
+    font-size: 10px !important;
+    padding: 0.4mm 1.5mm 0.2mm 1.5mm !important;
     border-radius: 2mm !important;
-    line-height: 1.2 !important;
+    line-height: 1.1 !important;
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;

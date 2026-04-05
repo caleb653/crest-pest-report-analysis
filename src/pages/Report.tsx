@@ -1760,12 +1760,15 @@ Crest Pest Control`;
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
                       ) : (
-                        <Input
-                          value={editableCustomer}
-                          onChange={(e) => setEditableCustomer(e.target.value)}
-                          placeholder="Customer name"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
-                        />
+                        <>
+                          <Input
+                            value={editableCustomer}
+                            onChange={(e) => setEditableCustomer(e.target.value)}
+                            placeholder="Customer name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                          />
+                          <span className="print-only-text hidden text-foreground font-medium">{editableCustomer || "—"}</span>
+                        </>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1773,15 +1776,17 @@ Crest Pest Control`;
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
                       ) : (
-                        <Input
-                          value={editableAddress || extractedAddress}
-                          onChange={(e) => setEditableAddress(e.target.value)}
-                          placeholder="Enter address"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0"
-                        />
+                        <>
+                          <Input
+                            value={editableAddress || extractedAddress}
+                            onChange={(e) => setEditableAddress(e.target.value)}
+                            placeholder="Enter address"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                          />
+                          <span className="print-only-text hidden text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
+                        </>
                       )}
                     </div>
-                    {/* Date & Type - shown here on desktop, hidden in print (moved to col 2) */}
                     <div className="flex items-center gap-2 print:hidden">
                       <span className="text-muted-foreground w-16">Date:</span>
                       {isReadOnly ? (
@@ -1801,18 +1806,18 @@ Crest Pest Control`;
                         <span className="text-foreground font-medium">{propertyType || "—"}</span>
                       ) : (
                         <>
-                        <Select value={propertyType} onValueChange={setPropertyType}>
-                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
-                            <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PROPERTY_TYPES.map((type) => (
-                              <SelectItem key={type} value={type} className="text-xs">
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <Select value={propertyType} onValueChange={setPropertyType}>
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PROPERTY_TYPES.map((type) => (
+                                <SelectItem key={type} value={type} className="text-xs">
+                                  {type}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </>
                       )}
                     </div>
@@ -1840,19 +1845,25 @@ Crest Pest Control`;
                   <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
-                      <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                        <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
-                          <SelectValue placeholder="Select technician" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TECHNICIANS.map((tech) => (
-                            <SelectItem key={tech.name} value={tech.name} className="text-xs">
-                              {tech.name} ({tech.license})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <span className="print-only-text hidden text-foreground">{editableTech}</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableTech || "—"}</span>
+                      ) : (
+                        <>
+                          <Select value={editableTech} onValueChange={handleTechnicianChange}>
+                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
+                              <SelectValue placeholder="Select technician" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TECHNICIANS.map((tech) => (
+                                <SelectItem key={tech.name} value={tech.name} className="text-xs">
+                                  {tech.name} ({tech.license})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="print-only-text hidden text-foreground font-medium">{editableTech || "—"}</span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">License:</span>
@@ -2147,11 +2158,11 @@ Crest Pest Control`;
                 </div>
                 <div className="p-1.5 print:p-1 bg-card">
                   {editableTargetPests.length > 0 && (
-                    <div className="flex flex-wrap gap-1 print:gap-0.5">
+                    <div className="print-tags flex flex-wrap gap-1 print:gap-0.5">
                       {editableTargetPests.map((pest) => (
                         <span
                           key={pest}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                          className="print-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                         >
                           {pest}
                           <button
@@ -2558,9 +2569,10 @@ Crest Pest Control`;
                     type="text"
                     value={additionalDetailsHeader}
                     onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
-                    className="text-xs font-bold border-none outline-none w-full bg-transparent"
+                    className="text-xs font-bold border-none outline-none w-full bg-transparent no-print"
                     style={{ color: "#ffffff", caretColor: "#ffffff" }}
                   />
+                  <span className="print-only-text hidden">{additionalDetailsHeader}</span>
                 </div>
                 <div className="additional-details-body p-2 flex-1 flex flex-col">
                   <RichTextEditor
