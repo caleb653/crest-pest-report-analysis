@@ -762,17 +762,20 @@
   .print-tags {
     padding: 1mm 2mm 1mm 2mm !important;
     gap: 1mm !important;
-    align-items: flex-start !important;
+    align-items: center !important;
     align-content: flex-start !important;
     justify-content: flex-start !important;
   }
 
   .print-tag {
     font-size: 10px !important;
-    padding: 0.15mm 1.5mm 0.15mm 1.5mm !important;
+    padding: 0.5mm 1.5mm 0.45mm 1.5mm !important;
     border-radius: 2mm !important;
     line-height: 1 !important;
-    transform: translateY(0) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+    transform: none !important;
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;

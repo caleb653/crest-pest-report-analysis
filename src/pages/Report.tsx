@@ -2158,23 +2158,33 @@ Crest Pest Control`;
                 </div>
                 <div className="p-1.5 print:p-1 bg-card">
                   {editableTargetPests.length > 0 && (
-                    <div className="print-tags flex flex-wrap gap-1 print:gap-0.5">
-                      {editableTargetPests.map((pest) => (
-                        <span
-                          key={pest}
-                          className="print-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
-                        >
-                          {pest}
-                          <button
-                            type="button"
-                            onClick={() => setEditableTargetPests((prev) => prev.filter((p) => p !== pest))}
-                            className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                    <>
+                      <div className="print:hidden print-tags flex flex-wrap gap-1 print:gap-0.5">
+                        {editableTargetPests.map((pest) => (
+                          <span
+                            key={pest}
+                            className="print-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                           >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
+                            {pest}
+                            <button
+                              type="button"
+                              onClick={() => setEditableTargetPests((prev) => prev.filter((p) => p !== pest))}
+                              className="hover:bg-primary-foreground/20 rounded-full p-0.5 no-print"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="hidden print:flex print-tags flex-wrap">
+                        {editableTargetPests.map((pest) => (
+                          <span key={`${pest}-print`} className="print-tag">
+                            {pest}
+                          </span>
+                        ))}
+                      </div>
+                    </>
                   )}
                   <Input
                     placeholder="Add custom pest..."
