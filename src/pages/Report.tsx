@@ -1997,7 +1997,7 @@ Crest Pest Control`;
                       {service.serviceType || "-"}
                     </div>
                   </div>
-                  <div className="relative bg-white/80 rounded print:border print:border-black/10">
+                  <div className="relative bg-white/80 rounded">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none no-print">
                       $
                     </span>
