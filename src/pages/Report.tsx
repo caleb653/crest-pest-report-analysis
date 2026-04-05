@@ -1978,11 +1978,12 @@ Crest Pest Control`;
                         ))}
                       </SelectContent>
                     </Select>
-                    {/* Print-only text display */}
-                    <span className="hidden print:block text-sm font-medium">{service.serviceType || "-"}</span>
+                    <div className="hidden print:flex print-pricing-display print-pricing-display--left text-sm font-medium">
+                      {service.serviceType || "-"}
+                    </div>
                   </div>
                   <div className="relative bg-white/80 rounded print:border print:border-black/10">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none no-print">
                       $
                     </span>
                     <Input
@@ -1994,11 +1995,15 @@ Crest Pest Control`;
                         handleServiceChange(index, "initialPrice", val);
                       }}
                       placeholder="0"
-                      className="h-6 text-sm pl-4 text-center pr-2 bg-transparent border-0 shadow-none"
+                      className="h-6 text-sm pl-4 text-center pr-2 bg-transparent border-0 shadow-none no-print"
                     />
+                    <div className="hidden print:flex print-pricing-display print-pricing-money text-sm">
+                      <span className="text-muted-foreground">$</span>
+                      <span>{(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</span>
+                    </div>
                   </div>
                   <div className="relative bg-white/80 rounded print:border print:border-black/10">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none no-print">
                       $
                     </span>
                     <Input
@@ -2010,8 +2015,12 @@ Crest Pest Control`;
                         handleServiceChange(index, "recurringPrice", val);
                       }}
                       placeholder="0"
-                      className="h-6 text-sm pl-4 text-center pr-2 bg-transparent border-0 shadow-none"
+                      className="h-6 text-sm pl-4 text-center pr-2 bg-transparent border-0 shadow-none no-print"
                     />
+                    <div className="hidden print:flex print-pricing-display print-pricing-money text-sm">
+                      <span className="text-muted-foreground">$</span>
+                      <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
+                    </div>
                   </div>
                   <div className="bg-white/80 rounded px-1 print:border print:border-black/10">
                     <Select
@@ -2029,10 +2038,9 @@ Crest Pest Control`;
                         ))}
                       </SelectContent>
                     </Select>
-                    {/* Print-only text display */}
-                    <span className="hidden print:block text-sm text-center">
+                    <div className="hidden print:flex print-pricing-display text-sm">
                       {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
-                    </span>
+                    </div>
                   </div>
                   <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0 print:border print:border-black/10">
                     {service.frequency > 0 ? (
