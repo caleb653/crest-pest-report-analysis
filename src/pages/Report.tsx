@@ -259,22 +259,6 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 0,
     defaultRecurring: 0,
   },
-  "Gopher Service": {
-    frequency: 0,
-    targetPests: ["Gophers"],
-    proposedServices:
-      `<b>Gopher Service:</b><br>• Identify active gopher tunnels and mounds throughout the property<br>• Deploy targeted trapping and/or baiting methods to eliminate gopher activity<br>• Monitor and adjust treatment strategy as needed`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
-  },
-  "Bee Removal": {
-    frequency: 0,
-    targetPests: ["Bees"],
-    proposedServices:
-      `<b>Bee Removal:</b><br>• Safely locate and assess the bee colony<br>• Remove or treat the colony using appropriate methods depending on species and location<br>• Seal entry points to prevent future colonization`,
-    defaultInitial: 0,
-    defaultRecurring: 0,
-  },
   "Drain Fly Treatment": {
     frequency: 0,
     targetPests: ["Drain Flies"],
