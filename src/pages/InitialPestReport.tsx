@@ -1052,11 +1052,11 @@ Crest Pest Control
     const files = e.target.files;
     console.log("[upload] property images selected", {
       count: files?.length,
-      types: files ? Array.from(files).slice(0, 5).map((f) => f.type) : [],
+      types: files ? Array.from(files).slice(0, 12).map((f) => f.type) : [],
     });
     if (!files) return;
 
-    const fileArray = Array.from(files).slice(0, 5);
+    const fileArray = Array.from(files).slice(0, 12);
 
     if (fileArray.some((file) => file.size === 0)) {
       toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
@@ -1170,9 +1170,9 @@ Crest Pest Control
     e.preventDefault();
 
     // Limit to 5 images total for this report type
-    const maxNew = Math.min(imageFiles.length, 5 - propertyImages.length);
+    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 5 images allowed");
+      toast.error("Maximum 12 images allowed");
       return;
     }
 
@@ -1876,7 +1876,7 @@ Crest Pest Control
             <div className="relative inline-flex">
               <Button variant="outline" size="lg" type="button">
                 <FileDown className="w-5 h-5 mr-2" />
-                Upload Images (up to 5)
+                Upload Images (up to 12)
               </Button>
               <input
                 id="property-images-upload"
@@ -1959,7 +1959,7 @@ Crest Pest Control
 
           {propertyImages.length === 0 && (
             <div className="no-images-placeholder text-center py-12 text-muted-foreground">
-              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 5 images.</p>
+              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 12 images.</p>
             </div>
           )}
         </div>
