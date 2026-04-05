@@ -134,8 +134,8 @@ export async function buildMergedPDF(options: {
 
   if (customerName) {
     coverPage.drawText(customerName, {
-      x: 50,
-      y: 320,
+      x: 42,
+      y: 326,
       size: 24,
       font: helveticaBold,
       color: rgb(1, 1, 1),
@@ -144,8 +144,8 @@ export async function buildMergedPDF(options: {
 
   if (address) {
     coverPage.drawText(address, {
-      x: 50,
-      y: 286,
+      x: 42,
+      y: 298,
       size: 14,
       font: helvetica,
       color: rgb(0.85, 0.85, 0.85),
@@ -154,8 +154,8 @@ export async function buildMergedPDF(options: {
 
   if (technicianName) {
     coverPage.drawText(technicianName, {
-      x: 58,
-      y: 138,
+      x: 42,
+      y: 128,
       size: 14,
       font: helveticaBold,
       color: rgb(0.2, 0.2, 0.2),

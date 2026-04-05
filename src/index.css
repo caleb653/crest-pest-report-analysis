@@ -571,10 +571,12 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 0.5mm 4mm 2mm 4mm !important;
+    padding: 0mm 4mm 2mm 4mm !important;
     font-size: 11px !important;
     line-height: 1.3 !important;
     color: hsl(var(--foreground)) !important;
+    display: flex !important;
+    align-items: flex-start !important;
   }
 
   .print-section-content ul {
@@ -758,7 +760,7 @@
 
   /* Print tags styling with brand colors */
   .print-tags {
-    padding: 0.5mm 2mm 1mm 2mm !important;
+    padding: 0mm 2mm 1mm 2mm !important;
     gap: 1mm !important;
     align-items: flex-start !important;
     align-content: flex-start !important;
@@ -767,9 +769,10 @@
 
   .print-tag {
     font-size: 10px !important;
-    padding: 0.4mm 1.5mm 0.2mm 1.5mm !important;
+    padding: 0.15mm 1.5mm 0.15mm 1.5mm !important;
     border-radius: 2mm !important;
-    line-height: 1.1 !important;
+    line-height: 1 !important;
+    transform: translateY(-1.5mm) !important;
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;
