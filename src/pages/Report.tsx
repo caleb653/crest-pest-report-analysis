@@ -1977,7 +1977,7 @@ Crest Pest Control`;
                   key={index}
                   className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center print:py-0"
                 >
-                  <div className="flex items-center gap-2 bg-white/80 rounded px-1 print:border print:border-black/10">
+                  <div className="flex items-center gap-2 bg-white/80 rounded px-1">
                     <Select
                       value={service.serviceType}
                       onValueChange={(val) => handleServiceChange(index, "serviceType", val)}
@@ -1997,7 +1997,7 @@ Crest Pest Control`;
                       {service.serviceType || "-"}
                     </div>
                   </div>
-                  <div className="relative bg-white/80 rounded print:border print:border-black/10">
+                  <div className="relative bg-white/80 rounded">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none no-print">
                       $
                     </span>
@@ -2017,7 +2017,7 @@ Crest Pest Control`;
                       <span>{(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className="relative bg-white/80 rounded print:border print:border-black/10">
+                  <div className="relative bg-white/80 rounded">
                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none no-print">
                       $
                     </span>
@@ -2037,7 +2037,7 @@ Crest Pest Control`;
                       <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
                     </div>
                   </div>
-                  <div className="bg-white/80 rounded px-1 print:border print:border-black/10">
+                  <div className="bg-white/80 rounded px-1">
                     <Select
                       value={service.frequency.toString()}
                       onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
@@ -2057,7 +2057,7 @@ Crest Pest Control`;
                       {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                     </div>
                   </div>
-                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0 print:border print:border-black/10">
+                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0">
                     {service.frequency > 0 ? (
                       <div className="flex flex-wrap gap-0.5 print:gap-0">
                         {(() => {
