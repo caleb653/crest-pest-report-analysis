@@ -458,9 +458,9 @@
   }
 
   .print-legend h3 {
-    font-size: 8px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
-    margin-bottom: 1mm !important;
+    margin-bottom: 1.5mm !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
     display: block !important;
