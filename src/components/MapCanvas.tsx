@@ -76,6 +76,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
   const tempLineRef = useRef<Line | null>(null);
+  const [drawColor, setDrawColor] = useState('#DC2626');
+  const [drawBrushSize, setDrawBrushSize] = useState(4);
   
   // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
   const isMapInteractive = false;
