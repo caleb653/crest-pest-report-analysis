@@ -1883,7 +1883,7 @@ Crest Pest Control`;
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
+      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
