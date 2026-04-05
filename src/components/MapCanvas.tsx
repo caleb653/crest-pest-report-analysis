@@ -268,7 +268,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         const svgPath = iconData?.svgPath || bugIcon;
         
         // Load and add SVG icon
-        FabricImage.fromURL(svgPath, { crossOrigin: 'anonymous' }).then((img) => {
+        FabricImage.fromURL(svgPath).then((img) => {
           img.set({
             left: pt.x - 16,
             top: pt.y - 16,
@@ -511,16 +511,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       });
       
       if (savedData.objects) {
-        // Inject crossOrigin on all Image objects to prevent tainted canvas
         const jsonData = typeof savedData.objects === 'string' ? JSON.parse(savedData.objects) : savedData.objects;
-        if (jsonData.objects) {
-          jsonData.objects = jsonData.objects.map((obj: any) => {
-            if (obj.type === 'Image' || obj.type === 'image') {
-              return { ...obj, crossOrigin: 'anonymous' };
-            }
-            return obj;
-          });
-        }
+
         fabricCanvasRef.current.loadFromJSON(jsonData, () => {
           const canvas = fabricCanvasRef.current!;
           console.log('Canvas loaded, object count:', canvas.getObjects().length);
