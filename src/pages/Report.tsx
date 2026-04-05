@@ -2708,6 +2708,7 @@ Crest Pest Control`;
 
       {/* Page 3 - Property Images */}
       <div 
+        data-pdf-page="3"
         className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]"
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
