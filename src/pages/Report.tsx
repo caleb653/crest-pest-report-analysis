@@ -1688,8 +1688,8 @@ Crest Pest Control`;
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2 no-print">
-              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
-                <FileDown className="w-4 h-4" />
+              <Button size="sm" variant="default" onClick={exportToPDF} disabled={isExportingPDF} className="h-9">
+                {isExportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               </Button>
               {!isReadOnly && (
               <>
