@@ -769,7 +769,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     if (!fabricCanvasRef.current || !onSave) return;
     
     const saveCanvasData = async () => {
-      if (!fabricCanvasRef.current) return;
+      // CRITICAL: Never save while loading data - objects are in intermediate state
+      if (!fabricCanvasRef.current || isLoadingDataRef.current) return;
       const canvas = fabricCanvasRef.current;
       const currW = canvas.getWidth();
       const currH = canvas.getHeight();
@@ -828,16 +829,16 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     canvas.on('object:added', handleImmediateSave);
     canvas.on('object:modified', handleImmediateSave);
     canvas.on('object:removed', handleImmediateSave);
-    canvas.on('mouse:up', handleImmediateSave);
     canvas.on('text:changed', handleDebouncedSave as any);
+    canvas.on('path:created', handleImmediateSave);
     
     return () => {
       clearTimeout(saveTimeout);
       canvas.off('object:added', handleImmediateSave);
       canvas.off('object:modified', handleImmediateSave);
       canvas.off('object:removed', handleImmediateSave);
-      canvas.off('mouse:up', handleImmediateSave);
       canvas.off('text:changed', handleDebouncedSave as any);
+      canvas.off('path:created', handleImmediateSave);
     };
   }, [onSave, onExportImage, legendItems, mapUrl]);
 
