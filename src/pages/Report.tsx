@@ -1291,6 +1291,10 @@ Crest Pest Control`;
       toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
       let pdfBase64: string | undefined;
       try {
+        // Switch to static map image for capture
+        setPdfExportMode(true);
+        await new Promise((r) => setTimeout(r, 150));
+
         const pageEls = Array.from(
           document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
         ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
@@ -1303,10 +1307,13 @@ Crest Pest Control`;
           reportPages,
         });
 
+        setPdfExportMode(false);
+
         // Convert Uint8Array to base64
         const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
         pdfBase64 = btoa(binary);
       } catch (pdfErr) {
+        setPdfExportMode(false);
         console.warn("PDF generation failed, sending email without attachment:", pdfErr);
       }
       toast.dismiss("pdf-email");
