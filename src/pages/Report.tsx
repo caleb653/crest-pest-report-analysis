@@ -2158,11 +2158,11 @@ Crest Pest Control`;
                 </div>
                 <div className="p-1.5 print:p-1 bg-card">
                   {editableTargetPests.length > 0 && (
-                    <div className="flex flex-wrap gap-1 print:gap-0.5">
+                    <div className="print-tags flex flex-wrap gap-1 print:gap-0.5">
                       {editableTargetPests.map((pest) => (
                         <span
                           key={pest}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
+                          className="print-tag inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground"
                         >
                           {pest}
                           <button
