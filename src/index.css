@@ -333,7 +333,7 @@
 
   .print-header input:not(.print-title) {
     font-size: 12px !important;
-    line-height: 1.8 !important;
+    line-height: 2.2 !important;
     background: transparent !important;
     border: none !important;
     margin: 0;
