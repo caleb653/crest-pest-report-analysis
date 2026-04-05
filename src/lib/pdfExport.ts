@@ -192,7 +192,7 @@ export async function downloadMergedPDF(
   filename?: string
 ): Promise<void> {
   const pdfBytes = await generateMergedPDF(coverData, reportPageElements);
-  const blob = new Blob([pdfBytes.buffer], { type: "application/pdf" });
+  const blob = new Blob([pdfBytes as unknown as ArrayBuffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
