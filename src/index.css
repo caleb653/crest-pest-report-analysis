@@ -483,13 +483,13 @@
   .print-legend .space-y-1 > div {
     display: flex !important;
     align-items: center !important;
-    gap: 1mm !important;
-    margin-bottom: 0.5mm !important;
+    gap: 1.5mm !important;
+    margin-bottom: 1mm !important;
   }
 
   .print-legend .space-y-1 > div img {
-    width: 3.5mm !important;
-    height: 3.5mm !important;
+    width: 5mm !important;
+    height: 5mm !important;
     display: block !important;
   }
 
