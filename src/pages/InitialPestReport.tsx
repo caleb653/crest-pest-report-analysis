@@ -226,14 +226,16 @@ const Report = () => {
     return "• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks.";
   };
 
-  const generateRecommendations = (pests: string[], equipment: string[]) => {
+  const generateRecommendations = (pests: string[]) => {
     const lines: string[] = [];
     
-    // Knowledge base pest-specific recommendations - exact format from knowledge base
-    if (pests.includes("Ants")) {
+    // If "General Pests" is selected, default to ants + spiders recommendations
+    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
+    
+    if (isGeneralPests || pests.includes("Ants")) {
       lines.push("<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering");
     }
-    if (pests.includes("Spiders")) {
+    if (isGeneralPests || pests.includes("Spiders")) {
       lines.push("<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting");
     }
     if (pests.includes("American Roaches") || pests.includes("Oriental Roaches") || pests.includes("Roaches")) {
@@ -282,7 +284,6 @@ const Report = () => {
       lines.push("<strong>Mice:</strong> (1) Store food sealed (2) Clean crumbs & spills promptly");
     }
     
-    // If no specific pests selected, provide general recommendations
     if (lines.length === 0) {
       lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
       lines.push("<strong>Moisture:</strong> (1) Fix leaks promptly (2) Improve ventilation in damp areas");
