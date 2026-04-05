@@ -2723,7 +2723,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="3" className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 print:mb-8 pb-2 print:pb-3 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
