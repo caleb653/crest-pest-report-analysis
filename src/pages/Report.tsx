@@ -1200,8 +1200,8 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
       const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-page]")
-      ).sort((a, b) => Number(a.dataset.pdfPage) - Number(b.dataset.pdfPage));
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
 
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
@@ -1883,7 +1883,7 @@ Crest Pest Control`;
       )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
+      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-3 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
         {/* Two Column Layout for Desktop */}
         <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
           {/* Mobile: Customer & Technician */}
@@ -2397,7 +2397,7 @@ Crest Pest Control`;
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
-        <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="2" className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
@@ -2723,7 +2723,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="3" className={isMobile ? "p-4" : "p-4 print:p-6 print:pt-8 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 print:mb-8 pb-2 print:pb-3 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
@@ -2828,7 +2828,7 @@ Crest Pest Control`;
 
       {/* Crest Guarantee */}
       <div data-pdf-page="4" className="print-page-break-avoid bg-background">
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="4" className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
           <div className="border-2 border-border rounded-lg p-4 print:p-5 text-center bg-muted/30">
             <h3 className="text-sm print:text-base font-bold text-foreground mb-2">The Crest Guarantee</h3>
             <p className="text-xs print:text-sm text-foreground leading-relaxed max-w-2xl mx-auto">
