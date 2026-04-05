@@ -769,7 +769,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     if (!fabricCanvasRef.current || !onSave) return;
     
     const saveCanvasData = async () => {
-      if (!fabricCanvasRef.current) return;
+      // CRITICAL: Never save while loading data - objects are in intermediate state
+      if (!fabricCanvasRef.current || isLoadingDataRef.current) return;
       const canvas = fabricCanvasRef.current;
       const currW = canvas.getWidth();
       const currH = canvas.getHeight();
