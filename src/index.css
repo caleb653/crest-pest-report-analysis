@@ -527,7 +527,7 @@
 
   .print-section {
     margin: 0 0 0.5mm 0 !important;
-    border-radius: 3mm !important;
+    border-radius: 2mm !important;
     box-shadow: 0 1px 4px hsl(130 10% 50% / 0.1) !important;
     padding: 0 !important;
     background: hsl(0 0% 100%) !important;
@@ -543,6 +543,7 @@
   .print-pricing-table > div > div:first-child {
     background: hsl(130 14% 82%) !important;
     padding: 0.35mm 2mm !important;
+    min-height: 5mm !important;
     border-bottom: 1.5px solid hsl(130 10% 72%) !important;
   }
 
@@ -554,8 +555,8 @@
     display: flex !important;
     align-items: center !important;
     min-height: 5.25mm !important;
-    padding-top: 0.2mm !important;
-    padding-bottom: 0.2mm !important;
+    padding-top: 0.4mm !important;
+    padding-bottom: 0.4mm !important;
   }
 
   .print-pricing-table .grid:first-child > span {
@@ -593,7 +594,7 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 0.7mm 3mm 0.75mm 3.5mm !important;
+    padding: 1.4mm 3.5mm 1.2mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
     line-height: 1.05 !important;
@@ -603,9 +604,9 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    border-radius: 2.5mm 2.5mm 0 0 !important;
+    border-radius: 1.5mm 1.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 4.8mm !important;
+    min-height: 6mm !important;
   }
 
   .print-section-header > * {
@@ -631,8 +632,8 @@
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) {
-    padding-top: 0.35mm !important;
-    padding-bottom: 0.65mm !important;
+    padding-top: 0.6mm !important;
+    padding-bottom: 0.8mm !important;
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) p,
