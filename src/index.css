@@ -346,7 +346,7 @@
 
   /* Field labels */
   .print-header span[class*="text-muted"] {
-    font-size: 9px !important;
+    font-size: 11px !important;
     font-weight: 500 !important;
     min-width: 40px !important;
     width: auto !important;
