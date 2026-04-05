@@ -1,0 +1,418 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import {
+  Calendar,
+  CheckCircle,
+  FileText,
+  LogOut,
+  Trash2,
+  User,
+  Search,
+  Mail,
+  PenLine,
+  Filter,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import crestLogo from "@/assets/crest-logo-black.png";
+
+type ReportType = "sales" | "initial";
+
+type StatusFilter = "all" | "created" | "sent" | "signed";
+type DateFilter = "recent" | "week" | "month" | "all";
+
+interface ReportListItem {
+  id: string;
+  technician_name: string;
+  customer_name: string | null;
+  address: string | null;
+  created_at: string;
+  report_type: ReportType;
+  is_signed: boolean;
+  is_sent: boolean;
+}
+
+const TECHNICIANS = [
+  "Caleb Whalen",
+  "Jake Shubin",
+  "Darrell Tanner",
+  "Jesse Angulo",
+  "Jackson Latham",
+  "Dylan Gallegos",
+  "Michael Muniz",
+];
+
+function getStatusLabel(report: ReportListItem): "Signed" | "Sent" | "Created" {
+  if (report.is_signed) return "Signed";
+  if (report.is_sent) return "Sent";
+  return "Created";
+}
+
+function isRecentDate(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+  return d >= yesterday;
+}
+
+function isWithinDays(dateStr: string, days: number): boolean {
+  const d = new Date(dateStr);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  return d >= cutoff;
+}
+
+const SubmittedReports = () => {
+  const navigate = useNavigate();
+  const [reports, setReports] = useState<ReportListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [techFilter, setTechFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
+  const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("id, technician_name, customer_name, address, created_at, next_steps, customer_signature, sent_to_customer_at")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
+        const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
+        return {
+          id: r.id,
+          technician_name: r.technician_name,
+          customer_name: r.customer_name,
+          address: r.address,
+          created_at: r.created_at,
+          report_type: isInitial ? "initial" : "sales",
+          is_signed: !!r.customer_signature,
+          is_sent: !!r.sent_to_customer_at,
+        };
+      });
+
+      setReports(mapped);
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to load reports");
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this report? This action cannot be undone.")) return;
+
+    try {
+      const { error } = await supabase.from("reports").delete().eq("id", reportId);
+      if (error) throw error;
+      toast.success("Report deleted");
+      await loadReports();
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to delete report");
+    }
+  };
+
+  const viewReport = (report: ReportListItem) => {
+    const path = report.report_type === "initial" ? `/initial-pest-report/${report.id}` : `/report/${report.id}`;
+    navigate(path);
+  };
+
+  const handleSignOut = () => {
+    sessionStorage.removeItem("app_authenticated");
+    sessionStorage.removeItem("app_logged_in_user");
+    toast.success("Signed out");
+    navigate("/");
+  };
+
+  const visibleReports = useMemo(() => {
+    let filtered = reports;
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          (r.customer_name || "").toLowerCase().includes(q) ||
+          (r.address || "").toLowerCase().includes(q)
+      );
+    }
+
+    // Technician
+    if (techFilter !== "all") {
+      filtered = filtered.filter((r) => r.technician_name === techFilter);
+    }
+
+    // Type
+    if (typeFilter !== "all") {
+      filtered = filtered.filter((r) => r.report_type === typeFilter);
+    }
+
+    // Status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((r) => {
+        const status = getStatusLabel(r);
+        return status.toLowerCase() === statusFilter;
+      });
+    }
+
+    // Date
+    if (dateFilter === "recent") {
+      filtered = filtered.filter((r) => isRecentDate(r.created_at));
+    } else if (dateFilter === "week") {
+      filtered = filtered.filter((r) => isWithinDays(r.created_at, 7));
+    } else if (dateFilter === "month") {
+      filtered = filtered.filter((r) => isWithinDays(r.created_at, 30));
+    }
+
+    return filtered;
+  }, [reports, searchQuery, techFilter, statusFilter, dateFilter, typeFilter]);
+
+  const counts = useMemo(() => {
+    return {
+      total: visibleReports.length,
+      created: visibleReports.filter((r) => getStatusLabel(r) === "Created").length,
+      sent: visibleReports.filter((r) => getStatusLabel(r) === "Sent").length,
+      signed: visibleReports.filter((r) => getStatusLabel(r) === "Signed").length,
+    };
+  }, [visibleReports]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img src={crestLogo} alt="Crest Pest Control logo" className="h-12" />
+            <h1 className="text-xl md:text-2xl font-bold">Submitted Reports</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+              Home
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6 md:py-8 space-y-4">
+        {/* Search and Filters */}
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by customer name or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Select value={techFilter} onValueChange={setTechFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Technician" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Technicians</SelectItem>
+                  {TECHNICIANS.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="created">Created</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="signed">Signed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | ReportType)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Report Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="sales">Sales</SelectItem>
+                  <SelectItem value="initial">Initial</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as DateFilter)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Today / Yesterday</SelectItem>
+                  <SelectItem value="week">Last 7 Days</SelectItem>
+                  <SelectItem value="month">Last 30 Days</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status summary chips */}
+            <div className="flex flex-wrap gap-2 text-sm">
+              <Badge variant="outline" className="font-normal">
+                {counts.total} total
+              </Badge>
+              <Badge variant="outline" className="font-normal bg-muted/50">
+                <PenLine className="w-3 h-3 mr-1" />
+                {counts.created} Created
+              </Badge>
+              <Badge variant="outline" className="font-normal bg-blue-50 text-blue-700 border-blue-200">
+                <Mail className="w-3 h-3 mr-1" />
+                {counts.sent} Sent
+              </Badge>
+              <Badge variant="outline" className="font-normal bg-green-50 text-green-700 border-green-200">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                {counts.signed} Signed
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reports List */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">
+                {visibleReports.length} Report{visibleReports.length !== 1 ? "s" : ""}
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={loadReports} disabled={loading}>
+                Refresh
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading reports...</div>
+            ) : visibleReports.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No reports match your filters
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {visibleReports.map((report) => {
+                  const status = getStatusLabel(report);
+                  return (
+                    <Card
+                      key={report.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => viewReport(report)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div className="min-w-0">
+                                <div className="text-xs text-muted-foreground">Technician</div>
+                                <div className="font-semibold text-sm truncate">{report.technician_name}</div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div className="min-w-0">
+                                <div className="text-xs text-muted-foreground">Customer</div>
+                                <div className="font-semibold text-sm truncate">{report.customer_name || "N/A"}</div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div className="min-w-0">
+                                <div className="text-xs text-muted-foreground">Date</div>
+                                <div className="font-semibold text-sm truncate">
+                                  {new Date(report.created_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge
+                              variant="outline"
+                              className={
+                                status === "Signed"
+                                  ? "bg-green-50 text-green-700 border-green-200"
+                                  : status === "Sent"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                                  : "bg-muted/50"
+                              }
+                            >
+                              {status === "Signed" && <CheckCircle className="w-3 h-3 mr-1" />}
+                              {status === "Sent" && <Mail className="w-3 h-3 mr-1" />}
+                              {status === "Created" && <PenLine className="w-3 h-3 mr-1" />}
+                              {status}
+                            </Badge>
+
+                            <Badge variant={report.report_type === "initial" ? "secondary" : "default"}>
+                              {report.report_type === "initial" ? "Initial" : "Sales"}
+                            </Badge>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => handleDelete(report.id, e)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete report"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {report.address && (
+                          <div className="mt-2 text-xs text-muted-foreground truncate">{report.address}</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default SubmittedReports;
