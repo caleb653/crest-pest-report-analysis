@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Type, X, Square, Bug, Minus, Eraser } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group } from 'fabric';
+import { Trash2, Type, X, Square, Bug, Minus, Eraser, Pencil } from 'lucide-react';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
@@ -20,7 +20,7 @@ interface MapCanvasProps {
   initialData?: string | null;
 }
 
-type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser';
+type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser' | 'draw';
 
 interface LegendItem {
   icon: string;
@@ -76,6 +76,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
   const tempLineRef = useRef<Line | null>(null);
+  const [drawColor, setDrawColor] = useState('#DC2626');
+  const [drawBrushSize, setDrawBrushSize] = useState(4);
   
   // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
   const isMapInteractive = false;
@@ -101,28 +103,39 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     rectFillTransparentRef.current = rectFillTransparent;
   }, [rectFillTransparent]);
 
-  // Disable selection when tool is 'line' or 'eraser' to prevent moving objects while drawing/erasing
+  // Disable selection when tool is 'line', 'eraser', or 'draw' to prevent moving objects
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
-    if (tool === 'line' || tool === 'eraser') {
+    if (tool === 'line' || tool === 'eraser' || tool === 'draw') {
       canvas.selection = false;
       canvas.getObjects().forEach(obj => {
         obj.selectable = false;
-        obj.evented = tool === 'eraser'; // Allow evented for eraser to detect clicks
+        obj.evented = tool === 'eraser';
       });
     } else {
       canvas.selection = true;
       canvas.getObjects().forEach(obj => {
-        // Don't enable selection for temp lines
         if (obj !== tempLineRef.current) {
           obj.selectable = true;
           obj.evented = true;
         }
       });
     }
+    
+    // Toggle freehand drawing mode
+    if (tool === 'draw') {
+      canvas.isDrawingMode = true;
+      const brush = new PencilBrush(canvas);
+      brush.color = drawColor;
+      brush.width = drawBrushSize;
+      canvas.freeDrawingBrush = brush;
+    } else {
+      canvas.isDrawingMode = false;
+    }
+    
     canvas.renderAll();
-  }, [tool]);
+  }, [tool, drawColor, drawBrushSize]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -1013,6 +1026,35 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         </Button>
         <Button
           size="icon"
+          variant={tool === 'draw' ? 'default' : 'outline'}
+          onClick={() => { setTool('draw'); setShowIconPicker(false); }}
+          title="Freehand Draw"
+          className="h-7 w-7"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>
+        {tool === 'draw' && (
+          <div className="flex items-center gap-1 px-1.5 py-1 border-l border-border">
+            <input
+              type="color"
+              value={drawColor}
+              onChange={(e) => setDrawColor(e.target.value)}
+              className="w-6 h-6 rounded cursor-pointer"
+              title="Draw Color"
+            />
+            <select
+              value={drawBrushSize}
+              onChange={(e) => setDrawBrushSize(Number(e.target.value))}
+              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+            >
+              <option value={2}>Thin</option>
+              <option value={4}>Medium</option>
+              <option value={8}>Thick</option>
+              <option value={12}>Bold</option>
+            </select>
+          </div>
+        )}
+        <Button
           variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
           onClick={() => { setTool('icon'); setShowIconPicker((prev) => !prev); }}
           title="Add Icon"
