@@ -553,7 +553,7 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 1.5mm 3mm 1.2mm 3.5mm !important;
+    padding: 1mm 3mm 1mm 3.5mm !important;
     font-size: 11px !important;
     font-weight: 800 !important;
     line-height: 1.35 !important;
@@ -565,7 +565,7 @@
     gap: 0.4rem;
     border-radius: 2.5mm 2.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 7mm !important;
+    min-height: 5.5mm !important;
   }
 
   /* Force Additional Details header input to be visible */
