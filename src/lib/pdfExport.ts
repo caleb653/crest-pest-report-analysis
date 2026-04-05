@@ -212,5 +212,5 @@ export async function generateMergedPDFBlob(
   reportPageElements: HTMLElement[]
 ): Promise<Blob> {
   const pdfBytes = await generateMergedPDF(coverData, reportPageElements);
-  return new Blob([pdfBytes.buffer], { type: "application/pdf" });
+  return new Blob([pdfBytes as unknown as ArrayBuffer], { type: "application/pdf" });
 }
