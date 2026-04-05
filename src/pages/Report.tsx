@@ -2778,7 +2778,7 @@ Crest Pest Control`;
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                      className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAnnotatingImageIndex(index);
