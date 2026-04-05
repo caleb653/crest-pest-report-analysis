@@ -2873,12 +2873,12 @@ Crest Pest Control`;
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {[
                   "caleb@crestpestco.com",
-                  "jakee@crestpestco.com",
+                  "jake@crestpestco.com",
                   "dlongoria@crestpestco.com",
                   "jlatham@crestpestco.com",
                   "dtanner@crestpestco.com",
                   "jangulo@crestpestco.com",
-                  "dgallegoss@crestpestco.com",
+                  "dgallegos@crestpestco.com",
                   "mmuniz@crestpestco.com",
                 ].filter(email => !ccEmails.includes(email)).map((email) => (
                   <button
