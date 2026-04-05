@@ -863,7 +863,8 @@ const Report = () => {
 
   const handleOpenCompose = () => {
     // Set a default email message when opening compose
-    const defaultMessage = `Dear ${editableCustomer || "Valued Customer"},
+    const firstName = (editableCustomer || "").split(" ")[0] || "there";
+    const defaultMessage = `Hi ${firstName},
 
 Thank you for choosing Crest Pest Control! Please find your pest control service report linked below.
 
