@@ -7,7 +7,8 @@ import { toast } from "sonner";
 
 const SelectTechnician = () => {
   const navigate = useNavigate();
-  const [selectedTech, setSelectedTech] = useState("");
+  const loggedInUser = sessionStorage.getItem("app_logged_in_user") || "";
+  const [selectedTech, setSelectedTech] = useState(loggedInUser);
 
   const technicians = [
     "Darrell Tanner",
