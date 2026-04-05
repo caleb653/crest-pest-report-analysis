@@ -2569,9 +2569,10 @@ Crest Pest Control`;
                     type="text"
                     value={additionalDetailsHeader}
                     onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
-                    className="text-xs font-bold border-none outline-none w-full bg-transparent"
+                    className="text-xs font-bold border-none outline-none w-full bg-transparent no-print"
                     style={{ color: "#ffffff", caretColor: "#ffffff" }}
                   />
+                  <span className="print-only-text hidden">{additionalDetailsHeader}</span>
                 </div>
                 <div className="additional-details-body p-2 flex-1 flex flex-col">
                   <RichTextEditor
