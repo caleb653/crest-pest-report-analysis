@@ -536,6 +536,21 @@
     flex: 1 !important;
   }
 
+  /* Pricing table green accents */
+  .print-pricing-table {
+    border: 1.5px solid hsl(130 10% 72%) !important;
+  }
+
+  .print-pricing-table > div > div:first-child {
+    background: hsl(130 14% 82%) !important;
+    padding: 1mm 2mm !important;
+    border-bottom: 1.5px solid hsl(130 10% 72%) !important;
+  }
+
+  .print-pricing-table > div > div:nth-child(even) {
+    background: hsl(130 14% 94%) !important;
+  }
+
   .print-section-header {
     background: hsl(0 0% 16%) !important;
     padding: 2.5mm 3mm 2mm 3.5mm !important;
