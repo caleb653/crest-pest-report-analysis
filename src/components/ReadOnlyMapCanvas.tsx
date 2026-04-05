@@ -231,15 +231,15 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
 
       {/* Legend */}
       {legendItems.length > 0 && (
-        <div className="absolute bottom-3 left-3 bg-white/95 border border-border rounded-lg p-2 shadow-sm">
-          <div className="text-[10px] font-bold mb-1 text-foreground uppercase tracking-wide">Legend</div>
-          <div className="space-y-0.5">
+        <div className="absolute bottom-3 left-3 bg-white/95 border border-border rounded-lg p-3 shadow-sm">
+          <div className="text-xs font-bold mb-1.5 text-foreground uppercase tracking-wide">Legend</div>
+          <div className="space-y-1">
             {legendItems.map((item, idx) => {
               const iconInfo = AVAILABLE_ICONS.find(i => i.icon === item.icon);
               return (
-                <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                <div key={idx} className="flex items-center gap-2 text-xs">
                   {iconInfo?.svgPath && (
-                    <img src={iconInfo.svgPath} alt="" className="w-3.5 h-3.5" />
+                    <img src={iconInfo.svgPath} alt="" className="w-5 h-5" />
                   )}
                   <span className="text-foreground">{item.label}</span>
                 </div>

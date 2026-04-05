@@ -2542,7 +2542,7 @@ Crest Pest Control`;
             {/* Right Column - Additional Details + Scheduling + Setup Materials */}
             <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
-              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-1 flex flex-col">
+              <Card className="print-section additional-details-card p-0 overflow-hidden rounded-lg flex-[0.8] flex flex-col">
                 <div className="print-section-header py-0.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
@@ -2559,7 +2559,7 @@ Crest Pest Control`;
                     placeholder="• Enter any additional details, notes, or observations..."
                     fontSize={additionalDetailsFontSize}
                     onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[200px] print:min-h-0"
+                    className="additional-details-editor flex-1 min-h-[150px] print:min-h-0"
                   />
                 </div>
               </Card>
