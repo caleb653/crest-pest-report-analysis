@@ -2515,6 +2515,9 @@ Crest Pest Control`;
 
                 {mapUrl || customMapImage ? (
                   <div className="relative h-full w-full">
+                    {pdfExportMode && renderedMapImage ? (
+                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                    ) : (
                     <MapCanvas
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
                       mapUrl={customMapImage || mapUrl}
@@ -2522,6 +2525,7 @@ Crest Pest Control`;
                       onExportImage={setRenderedMapImage}
                       initialData={mapData}
                     />
+                    )}
 
                     {/* Upload custom map button */}
                     <div className="no-print absolute top-4 right-4 z-20">
