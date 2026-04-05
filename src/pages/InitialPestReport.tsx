@@ -499,6 +499,9 @@ const Report = () => {
       setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
       setEditableExpectations((row.next_steps as string[]) || []);
+      if (row.recommendations && Array.isArray(row.recommendations)) {
+        setEditableRecommendations(row.recommendations as string[]);
+      }
 
       // Load additional fields
       if (row.service_date) {
