@@ -555,9 +555,9 @@
   .print-pricing-table .grid > div {
     display: flex !important;
     align-items: center !important;
-    min-height: 5.25mm !important;
-    padding-top: 0.4mm !important;
-    padding-bottom: 0.4mm !important;
+    min-height: 7mm !important;
+    padding-top: 0.8mm !important;
+    padding-bottom: 0.8mm !important;
   }
 
   .print-pricing-table .grid:first-child > span {
