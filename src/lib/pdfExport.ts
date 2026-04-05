@@ -64,10 +64,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           overflow: visible !important;
         }
 
-        .pdf-export-root,
-        .pdf-export-root > div {
-          margin: 0 !important;
-          padding: 0 !important;
+        .pdf-export-root {
           background: #ffffff !important;
           box-sizing: border-box !important;
           overflow: visible !important;
@@ -75,12 +72,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
         .pdf-export-root [class*="max-w-"] {
           max-width: none !important;
-          width: 100% !important;
-        }
-
-        .pdf-export-root [class*="mx-auto"] {
-          margin-left: 0 !important;
-          margin-right: 0 !important;
         }
 
         .pdf-export-root [class*="bg-background"] {
@@ -114,8 +105,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.classList.add("pdf-export-root");
       clonedPage.style.width = `${A4_LANDSCAPE_WIDTH_PX}px`;
       clonedPage.style.minWidth = `${A4_LANDSCAPE_WIDTH_PX}px`;
-      clonedPage.style.margin = "0";
-      clonedPage.style.padding = "0";
       clonedPage.style.background = "#ffffff";
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
