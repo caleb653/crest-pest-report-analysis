@@ -166,15 +166,11 @@ const Report = () => {
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
   const [editableExpectations, setEditableExpectations] = useState<string[]>([]);
   const [editableRecommendations, setEditableRecommendations] = useState<string[]>([]);
-  const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
-  const equipmentDropdownRef = useRef<HTMLDivElement>(null);
   const [mapData, setMapData] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(20);
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
-  const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
-  const productsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
