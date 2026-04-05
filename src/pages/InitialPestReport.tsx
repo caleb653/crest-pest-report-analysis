@@ -194,35 +194,55 @@ const Report = () => {
     const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
     const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
 
-    // General pest control findings (for General Pests or any standard pests)
-    if (isGeneralPests || pests.some(p => ["Ants", "Spiders", "Roaches", "American Roaches", "Wasps", "Earwigs", "Crickets", "Silverfish", "Centipedes", "Millipedes", "Fleas", "Ticks"].includes(p))) {
-      lines.push("• Inspected interior and exterior for pest activity and entry points");
-      const treatmentLine = usesOrganic 
-        ? "• Applied targeted treatments, including organic solutions, to ensure a protective barrier around the home"
-        : "• Applied targeted treatments to ensure a protective barrier around the home";
+    if (isGeneralPests) {
+      lines.push("• Inspected interior and exterior for general pest activity and entry points");
+      const treatmentLine = usesOrganic
+        ? "• Applied targeted general pest treatments, including organic solutions, to ensure a protective barrier around the home"
+        : "• Applied targeted general pest treatments to ensure a protective barrier around the home";
       lines.push(treatmentLine);
       lines.push("• De-webbed the entire home");
     }
 
-    // Rodent-specific
-    if (pests.includes("Rodents")) {
-      lines.push("• Strategically placed traps in areas of highest activity");
-      lines.push("• Will monitor and adjust trap placement as needed to ensure effective control");
+    // Individual pest-specific findings — mention each by name
+    if (pests.includes("Ants")) {
+      lines.push("• Inspected for ant activity and treated ant trails and entry points");
     }
-
-    // Mosquito-specific
+    if (pests.includes("Spiders")) {
+      lines.push("• Inspected for spider activity, removed webs, and applied spider-targeted treatments");
+    }
+    if (pests.includes("Roaches") || pests.includes("American Roaches")) {
+      lines.push("• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas");
+    }
+    if (pests.includes("Wasps")) {
+      lines.push("• Inspected for wasp nests and treated active wasp activity areas");
+    }
+    if (pests.includes("Earwigs")) {
+      lines.push("• Inspected for earwig activity and treated entry points and harborage areas");
+    }
+    if (pests.includes("Crickets")) {
+      lines.push("• Inspected for cricket activity and treated perimeter and entry points");
+    }
+    if (pests.includes("Silverfish")) {
+      lines.push("• Inspected for silverfish activity in moisture-prone areas and applied treatments");
+    }
+    if (pests.includes("Centipedes") || pests.includes("Millipedes")) {
+      lines.push("• Inspected for centipede/millipede activity and treated perimeter and foundation areas");
+    }
+    if (pests.includes("Fleas") || pests.includes("Ticks")) {
+      lines.push("• Inspected for flea and tick activity in outdoor areas and applied treatments");
+    }
+    if (pests.includes("Rodents")) {
+      lines.push("• Inspected for rodent activity and strategically placed traps in areas of highest activity");
+      lines.push("• Will monitor and adjust trap placement as needed to ensure effective rodent control");
+    }
     if (pests.includes("Mosquitoes")) {
-      lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future generations");
+      lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations");
       lines.push("• Targeted adult mosquitoes and larvae with long-lasting products");
     }
-
-    // Bed bug-specific
     if (pests.includes("Bed Bugs")) {
       lines.push("• Inspected sleeping areas, furniture, and baseboards for bed bug activity");
       lines.push("• Applied targeted bed bug treatments to affected areas");
     }
-
-    // Drain fly-specific
     if (pests.includes("Drain Flies")) {
       lines.push("• Inspected and treated drains for drain fly breeding activity");
     }
@@ -1032,11 +1052,11 @@ Crest Pest Control
     const files = e.target.files;
     console.log("[upload] property images selected", {
       count: files?.length,
-      types: files ? Array.from(files).slice(0, 5).map((f) => f.type) : [],
+      types: files ? Array.from(files).slice(0, 12).map((f) => f.type) : [],
     });
     if (!files) return;
 
-    const fileArray = Array.from(files).slice(0, 5);
+    const fileArray = Array.from(files).slice(0, 12);
 
     if (fileArray.some((file) => file.size === 0)) {
       toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
@@ -1150,9 +1170,9 @@ Crest Pest Control
     e.preventDefault();
 
     // Limit to 5 images total for this report type
-    const maxNew = Math.min(imageFiles.length, 5 - propertyImages.length);
+    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 5 images allowed");
+      toast.error("Maximum 12 images allowed");
       return;
     }
 
@@ -1856,7 +1876,7 @@ Crest Pest Control
             <div className="relative inline-flex">
               <Button variant="outline" size="lg" type="button">
                 <FileDown className="w-5 h-5 mr-2" />
-                Upload Images (up to 5)
+                Upload Images (up to 12)
               </Button>
               <input
                 id="property-images-upload"
@@ -1939,7 +1959,7 @@ Crest Pest Control
 
           {propertyImages.length === 0 && (
             <div className="no-images-placeholder text-center py-12 text-muted-foreground">
-              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 5 images.</p>
+              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 12 images.</p>
             </div>
           )}
         </div>
