@@ -2057,7 +2057,7 @@ Crest Pest Control`;
                       {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                     </div>
                   </div>
-                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0 print:border print:border-black/10">
+                  <div className="min-w-0 bg-white/80 rounded px-1.5 py-0.5 print:py-0">
                     {service.frequency > 0 ? (
                       <div className="flex flex-wrap gap-0.5 print:gap-0">
                         {(() => {
