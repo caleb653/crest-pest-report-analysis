@@ -165,7 +165,7 @@ export async function buildMergedPDF(options: {
   outDoc.addPage(coverPage);
 
   // Group captures: combine header (capture "0") with content (capture "1") on the same page
-  let pendingHeaderImg: typeof img | null = null;
+  let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
   let pendingHeaderH = 0;
 
   for (const el of reportPages) {
