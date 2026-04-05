@@ -2796,7 +2796,7 @@ Crest Pest Control`;
 
           {/* Property Images Grid - larger images */}
           {propertyImages.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-4 print:grid-cols-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
               {propertyImages.map((item, index) => (
                 <div
                   key={index}
