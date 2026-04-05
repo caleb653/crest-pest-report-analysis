@@ -1194,42 +1194,23 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
-
   const exportToPDF = async () => {
     try {
-      setIsExportingPDF(true);
-      toast.info("Generating PDF... This may take a moment.");
+      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
+      toasts.forEach((toastEl) => {
+        (toastEl as HTMLElement).style.display = "none";
+      });
 
-      // Dynamically import the PDF export utility
-      const { downloadMergedPDF } = await import("@/lib/pdfExport");
+      await new Promise((r) => setTimeout(r, 150));
+      window.print();
 
-      // Collect report page elements
-      const reportPages: HTMLElement[] = [];
-      const page1 = document.querySelector('[data-pdf-page="1"]') as HTMLElement;
-      const page2 = document.querySelector('[data-pdf-page="2"]') as HTMLElement;
-      const page3 = document.querySelector('[data-pdf-page="3"]') as HTMLElement;
-      if (page1) reportPages.push(page1);
-      if (page2) reportPages.push(page2);
-      if (page3 && propertyImages.length > 0) reportPages.push(page3);
-
-      await downloadMergedPDF(
-        {
-          customerName: editableCustomer || "",
-          address: editableAddress || extractedAddress || address || "",
-          technicianName: editableTech || "",
-          licenseNumber: editableLicenseNumber || "",
-        },
-        reportPages,
-        `Crest_Proposal_${(editableCustomer || "Report").replace(/\s+/g, "_")}.pdf`
-      );
-
-      toast.success("PDF downloaded!");
+      setTimeout(() => {
+        toasts.forEach((toastEl) => {
+          (toastEl as HTMLElement).style.display = "";
+        });
+      }, 500);
     } catch (e) {
-      console.error("PDF export failed:", e);
-      toast.error("PDF export failed. Please try again.");
-    } finally {
-      setIsExportingPDF(false);
+      toast.error("Print failed");
     }
   };
 
@@ -1290,45 +1271,6 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
-      // Generate merged PDF and upload to storage
-      toast.info("Generating proposal PDF...");
-      let pdfUrl: string | undefined;
-      try {
-        const { generateMergedPDFBlob } = await import("@/lib/pdfExport");
-        const reportPages: HTMLElement[] = [];
-        const page1 = document.querySelector('[data-pdf-page="1"]') as HTMLElement;
-        const page2 = document.querySelector('[data-pdf-page="2"]') as HTMLElement;
-        const page3 = document.querySelector('[data-pdf-page="3"]') as HTMLElement;
-        if (page1) reportPages.push(page1);
-        if (page2) reportPages.push(page2);
-        if (page3 && propertyImages.length > 0) reportPages.push(page3);
-
-        const pdfBlob = await generateMergedPDFBlob(
-          {
-            customerName: editableCustomer || "",
-            address: editableAddress || extractedAddress || address || "",
-            technicianName: editableTech || "",
-            licenseNumber: editableLicenseNumber || "",
-          },
-          reportPages
-        );
-
-        // Upload PDF to storage
-        const pdfFileName = `${finalReportId}/proposal_${Date.now()}.pdf`;
-        const { error: uploadErr } = await supabase.storage
-          .from("report-images")
-          .upload(pdfFileName, pdfBlob, { upsert: true, contentType: "application/pdf" });
-        
-        if (!uploadErr) {
-          const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(pdfFileName);
-          pdfUrl = publicUrl;
-        } else {
-          console.warn("PDF upload failed, sending email without PDF link:", uploadErr);
-        }
-      } catch (pdfErr) {
-        console.warn("PDF generation failed, sending email without PDF:", pdfErr);
-      }
-
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
@@ -1337,7 +1279,6 @@ Crest Pest Control`;
           technicianName: editableTech,
           address: editableAddress || extractedAddress || address || "",
           reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
-          pdfUrl,
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
@@ -1728,8 +1669,8 @@ Crest Pest Control`;
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2 no-print">
-              <Button size="sm" variant="default" onClick={exportToPDF} disabled={isExportingPDF} className="h-9">
-                {isExportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
+                <FileDown className="w-4 h-4" />
               </Button>
               {!isReadOnly && (
               <>
@@ -1746,11 +1687,9 @@ Crest Pest Control`;
         </div>
       )}
 
-      {/* Page 1 wrapper - includes header + contract content for PDF capture */}
-      <div data-pdf-page="1">
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2.5 print:py-1.5">
+        <div className="print-header bg-card shadow-md border-b border-border px-6 py-2.5 print:py-1.5">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
@@ -1770,8 +1709,8 @@ Crest Pest Control`;
               </Button>
               </>
               )}
-              <Button onClick={exportToPDF} disabled={isExportingPDF} variant="outline" size="sm">
-                {isExportingPDF ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileDown className="w-3 h-3 mr-1" />}
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <FileDown className="w-3 h-3 mr-1" />
                 PDF
               </Button>
               <Button onClick={() => navigate("/")} variant="outline" size="sm">
@@ -1920,8 +1859,8 @@ Crest Pest Control`;
                 </Button>
                 </>
                 )}
-                <Button onClick={exportToPDF} disabled={isExportingPDF} variant="outline" size="sm">
-                  {isExportingPDF ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileDown className="w-3 h-3 mr-1" />}
+                <Button onClick={exportToPDF} variant="outline" size="sm">
+                  <FileDown className="w-3 h-3 mr-1" />
                   PDF
                 </Button>
                 <Button onClick={() => navigate("/")} variant="outline" size="sm">
@@ -2445,10 +2384,9 @@ Crest Pest Control`;
           </div>
         </div>
       </div>
-      </div>{/* end data-pdf-page="1" wrapper */}
 
       {/* Page 2 - Map & Property Images */}
-      <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
+      <div className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
@@ -2770,7 +2708,6 @@ Crest Pest Control`;
 
       {/* Page 3 - Property Images */}
       <div 
-        data-pdf-page="3"
         className="print-page-break bg-background print:flex print:flex-col print:justify-start print:min-h-[100vh]"
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}

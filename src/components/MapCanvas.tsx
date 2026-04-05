@@ -511,9 +511,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       });
       
       if (savedData.objects) {
-        const jsonData = typeof savedData.objects === 'string' ? JSON.parse(savedData.objects) : savedData.objects;
-
-        fabricCanvasRef.current.loadFromJSON(jsonData, () => {
+        fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
           const canvas = fabricCanvasRef.current!;
           console.log('Canvas loaded, object count:', canvas.getObjects().length);
           
