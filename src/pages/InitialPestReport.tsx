@@ -50,6 +50,7 @@ const TECHNICIANS = [
 ];
 
 const PEST_OPTIONS = [
+  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)",
   "Ants",
   "Spiders",
   "Rodents",
@@ -65,10 +66,13 @@ const PEST_OPTIONS = [
   "Crickets",
   "Centipedes",
   "Millipedes",
-  
   "Drain Flies",
   "Other",
 ];
+
+const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
+
+const GENERAL_PESTS_OPTION = PEST_OPTIONS[0];
 
 const PRODUCT_OPTIONS = [
   "Alpine WSG",
