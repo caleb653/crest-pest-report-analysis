@@ -2828,7 +2828,7 @@ Crest Pest Control`;
 
       {/* Crest Guarantee */}
       <div data-pdf-page="4" className="print-page-break-avoid bg-background">
-        <div className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="4" className={isMobile ? "p-4" : "p-4 print:p-6 max-w-[1800px] mx-auto"}>
           <div className="border-2 border-border rounded-lg p-4 print:p-5 text-center bg-muted/30">
             <h3 className="text-sm print:text-base font-bold text-foreground mb-2">The Crest Guarantee</h3>
             <p className="text-xs print:text-sm text-foreground leading-relaxed max-w-2xl mx-auto">
