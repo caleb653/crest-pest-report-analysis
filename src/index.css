@@ -394,13 +394,13 @@
     width: 210mm !important;
     max-width: 210mm !important;
     display: grid !important;
-    grid-template-columns: 140mm 68mm !important;
+    grid-template-columns: 130mm 78mm !important;
     column-gap: 2mm !important;
     height: 188mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     align-items: stretch !important;
-    justify-content: center !important;
+    justify-content: start !important;
     min-height: 0 !important;
     flex-direction: unset !important;
   }
