@@ -240,6 +240,66 @@ export async function buildMergedPDF(options: {
   return outDoc.save();
 }
 
+/**
+ * Builds a PDF containing only the app-captured report pages (no template
+ * cover page or marketing pages). Used for Initial Pest Reports.
+ */
+export async function buildSimplePDF(options: {
+  reportPages: HTMLElement[];
+}): Promise<Uint8Array> {
+  const { reportPages } = options;
+
+  const outDoc = await PDFDocument.create();
+  // Use A4 landscape dimensions
+  const pageW = 842;
+  const pageH = 595;
+
+  let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
+
+  for (const el of reportPages) {
+    const dataUrl = await captureElement(el);
+    const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
+    const img = await outDoc.embedJpg(imgBytes);
+    const captureId = el.dataset.pdfCapture ?? "";
+
+    if (captureId === "0") {
+      pendingHeaderImg = img;
+      continue;
+    }
+
+    const page = outDoc.addPage([pageW, pageH]);
+
+    if (captureId === "1" && pendingHeaderImg) {
+      const headerScale = pageW / pendingHeaderImg.width;
+      const headerDrawW = pageW;
+      const headerDrawH = pendingHeaderImg.height * headerScale;
+      const headerDrawY = pageH - headerDrawH;
+      page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
+
+      const remainingHeight = Math.max(headerDrawY, 0);
+      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
+        img.width, img.height, pageW, remainingHeight,
+      );
+      const contentDrawY = headerDrawY - contentDrawH;
+      const contentDrawX = (pageW - contentDrawW) / 2;
+      page.drawImage(img, {
+        x: contentDrawX,
+        y: Math.max(contentDrawY, 0),
+        width: contentDrawW,
+        height: contentDrawH,
+      });
+      pendingHeaderImg = null;
+    } else {
+      const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
+      const drawX = (pageW - drawW) / 2;
+      const drawY = pageH - drawH;
+      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+    }
+  }
+
+  return outDoc.save();
+}
+
 export function downloadPDF(pdfBytes: Uint8Array, filename: string) {
   const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
