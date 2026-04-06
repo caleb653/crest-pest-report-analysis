@@ -656,23 +656,26 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     
     return new Promise((resolve) => {
       bgImg.onload = () => {
-        // Draw background image to fill canvas while maintaining aspect ratio
+        // Draw background image to fully cover the canvas without stretching,
+        // matching the in-browser map presentation exactly.
         const imgAspect = bgImg.width / bgImg.height;
         const canvasAspect = exportWidth / exportHeight;
-        
+
         let drawWidth = exportWidth;
         let drawHeight = exportHeight;
         let drawX = 0;
         let drawY = 0;
-        
+
         if (imgAspect > canvasAspect) {
-          drawHeight = exportWidth / imgAspect;
-          drawY = (exportHeight - drawHeight) / 2;
-        } else {
+          drawHeight = exportHeight;
           drawWidth = exportHeight * imgAspect;
           drawX = (exportWidth - drawWidth) / 2;
+        } else {
+          drawWidth = exportWidth;
+          drawHeight = exportWidth / imgAspect;
+          drawY = (exportHeight - drawHeight) / 2;
         }
-        
+
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, exportWidth, exportHeight);
         ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
