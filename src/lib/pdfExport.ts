@@ -221,31 +221,53 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           display: block !important;
         }
 
-        /* Scale up page header (Initial Pest Report top bar) */
+        /* ===== PAGE HEADER (capture 0) — bold, readable ===== */
+        .pdf-export-root.print-header {
+          padding: 6mm 8mm 4mm 8mm !important;
+        }
+
         .pdf-export-root.print-header h1 {
-          font-size: 28px !important;
+          font-size: 32px !important;
           font-weight: 800 !important;
+          letter-spacing: -0.02em !important;
+          margin-bottom: 3mm !important;
         }
 
-        .pdf-export-root.print-header .text-xs {
-          font-size: 16px !important;
-          line-height: 1.4 !important;
-        }
-
-        .pdf-export-root.print-header .text-\\[10px\\] {
-          font-size: 12px !important;
+        .pdf-export-root.print-header .text-xs,
+        .pdf-export-root.print-header span,
+        .pdf-export-root.print-header input:not(.print-title) {
+          font-size: 18px !important;
+          line-height: 1.6 !important;
         }
 
         .pdf-export-root.print-header .text-muted-foreground {
-          font-size: 16px !important;
-        }
+          font-size: 18px !important;
+          font-weight: 600 !important;
         }
 
-        /* Force smaller typography specifically in the Initial Pest Report right column */
+        .pdf-export-root.print-header .text-\\[10px\\] {
+          font-size: 13px !important;
+        }
+
+        .pdf-export-root.print-header img[alt="Crest Pest Control"] {
+          height: 80px !important;
+          width: auto !important;
+        }
+
+        /* Purpose text beneath header */
+        .pdf-export-root.print-header p[class*="text-\\[10px\\]"] {
+          font-size: 12px !important;
+          line-height: 1.4 !important;
+          margin-top: 3mm !important;
+        }
+
+        /* ===== RIGHT COLUMN SECTIONS (capture 1) ===== */
+
+        /* Body text in sections */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header),
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) * {
           font-size: 14px !important;
-          line-height: 1.25 !important;
+          line-height: 1.35 !important;
           font-weight: 500 !important;
           overflow-wrap: break-word !important;
           word-break: break-word !important;
@@ -253,56 +275,70 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           hyphens: auto !important;
         }
 
+        /* Section inner padding */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) {
-          padding: 0.75mm 2mm 1mm 2mm !important;
+          padding: 1.5mm 3mm 2mm 3mm !important;
           margin: 0 !important;
         }
 
+        /* Section headers — compact but clear */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header *,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header input {
           font-size: 15px !important;
-          line-height: 1.05 !important;
+          line-height: 1.1 !important;
           font-weight: 800 !important;
+          letter-spacing: 0.03em !important;
         }
 
+        /* Sub-headers (Findings, Actions) */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3 * {
           font-size: 13px !important;
-          line-height: 1.1 !important;
+          line-height: 1.15 !important;
           font-weight: 700 !important;
         }
 
+        /* Lists */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section ul {
-          margin: 0 !important;
-          padding-left: 2.75mm !important;
+          margin: 0.5mm 0 !important;
+          padding-left: 3.5mm !important;
         }
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-section li {
-          margin: 0 0 0.4mm 0 !important;
+          margin: 0 0 0.5mm 0 !important;
           padding: 0 !important;
         }
 
+        /* Target pest tags */
         .pdf-export-root.print-layout > div:nth-child(2) .print-tags {
-          gap: 0.2rem !important;
-          padding: 1.5mm 2mm !important;
+          gap: 0.25rem !important;
+          padding: 2mm 3mm !important;
         }
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag,
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag * {
           font-size: 10px !important;
-          line-height: 1.1 !important;
+          line-height: 1.15 !important;
         }
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-content-formatted {
           display: block !important;
         }
 
-        /* Vertical space distribution: shrink Key Areas & Preferences, grow Service Area */
+        /* Section cards — add breathing room between them */
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section {
+          margin-bottom: 1.5mm !important;
+          border-radius: 3px !important;
+          overflow: hidden !important;
+        }
+
+        /* Vertical space distribution */
         .pdf-export-root.print-layout > div:nth-child(2) > div {
           display: flex !important;
           flex-direction: column !important;
           height: 100% !important;
+          gap: 0 !important;
         }
 
         /* Target Pests (1st), Key Areas (2nd), Preferences (3rd) — compact */
@@ -312,7 +348,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           flex: 0 0 auto !important;
         }
 
-        /* Service Area (4th) — gets more space but not all */
+        /* Service Area (4th) — gets remaining space */
         .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(4) {
           flex: 2 1 0 !important;
         }
