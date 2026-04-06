@@ -224,8 +224,8 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         /* Force smaller typography specifically in the Initial Pest Report right column */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header),
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) * {
-          font-size: 9px !important;
-          line-height: 1.2 !important;
+          font-size: 10px !important;
+          line-height: 1.25 !important;
           font-weight: 500 !important;
           overflow-wrap: break-word !important;
           word-break: break-word !important;
@@ -234,7 +234,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         }
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) {
-          padding: 1mm 2mm 1.25mm 2mm !important;
+          padding: 0.75mm 2mm 1mm 2mm !important;
           margin: 0 !important;
         }
 
@@ -248,7 +248,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3 * {
-          font-size: 9.5px !important;
+          font-size: 10px !important;
           line-height: 1.1 !important;
           font-weight: 700 !important;
         }
@@ -274,8 +274,32 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           line-height: 1.1 !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-content-formatted {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-content-formatted {
           display: block !important;
+        }
+
+        /* Vertical space distribution: shrink Key Areas & Preferences, grow Service Area */
+        .pdf-export-root.print-layout > div:nth-child(2) > div {
+          display: flex !important;
+          flex-direction: column !important;
+          height: 100% !important;
+        }
+
+        /* Target Pests (1st), Key Areas (2nd), Preferences (3rd) — compact */
+        .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(1),
+        .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(2),
+        .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(3) {
+          flex: 0 0 auto !important;
+        }
+
+        /* Service Area (4th) — takes remaining space */
+        .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(4) {
+          flex: 1 1 0 !important;
+        }
+
+        /* Recommendations (5th) — compact */
+        .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(5) {
+          flex: 0 0 auto !important;
         }
       `;
       clonedDoc.head.appendChild(style);
