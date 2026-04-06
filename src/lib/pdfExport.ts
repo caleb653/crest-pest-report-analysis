@@ -127,27 +127,48 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
 
-      // Fix page 2 map: force map container to fill its column
-      const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
-      if (mapContainer) {
-        mapContainer.style.width = "100%";
-        mapContainer.style.height = "auto";
-        mapContainer.style.aspectRatio = "3 / 4";
-      }
-
       // Remove scale transforms on map parent
       clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach(el => {
         el.style.transform = "none";
       });
 
-      // Force grid layout for map + details columns
+      // Force grid layout for map + details columns — stretch to fill page height
       const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
       if (gridContainer) {
         gridContainer.style.display = "grid";
-        gridContainer.style.gridTemplateColumns = "48% 52%";
+        gridContainer.style.gridTemplateColumns = "42% 58%";
         gridContainer.style.gap = "20px";
-        gridContainer.style.alignItems = "start";
+        gridContainer.style.alignItems = "stretch";
         gridContainer.style.padding = "0 16px";
+        gridContainer.style.flex = "1";
+      }
+
+      // Make the page a flex column so the grid stretches
+      clonedPage.style.display = "flex";
+      clonedPage.style.flexDirection = "column";
+
+      // Fix page 2 map: fill the full column height, keep emblems in position
+      const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
+      if (mapContainer) {
+        mapContainer.style.width = "100%";
+        mapContainer.style.height = "100%";
+        mapContainer.style.aspectRatio = "unset";
+        // Ensure the map image uses contain so emblems stay positioned correctly
+        const mapImg = mapContainer.querySelector<HTMLImageElement>('img');
+        if (mapImg) {
+          mapImg.style.objectFit = "contain";
+          mapImg.style.width = "100%";
+          mapImg.style.height = "100%";
+          mapImg.style.backgroundColor = "#000";
+        }
+      }
+
+      // Also make the map's parent flex column stretch
+      const mapParent = clonedPage.querySelector<HTMLElement>('.flex.flex-col.min-h-0');
+      if (mapParent) {
+        mapParent.style.flex = "1";
+        mapParent.style.display = "flex";
+        mapParent.style.flexDirection = "column";
       }
 
       // Auto-shrink additional details text to fit
