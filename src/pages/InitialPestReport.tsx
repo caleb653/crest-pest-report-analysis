@@ -163,6 +163,8 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
+  const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState<string>("");
+  const [todaysFindings, setTodaysFindings] = useState<string>("");
   const [customerPreference, setCustomerPreference] = useState<string>("");
   const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState<string>("");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
