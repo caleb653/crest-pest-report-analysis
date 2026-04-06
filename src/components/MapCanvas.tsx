@@ -925,9 +925,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     <div className="relative w-full h-full">
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
-        <img
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-card"
-          style={{ 
+          <img
+            className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
+            style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',
             zIndex: 0
