@@ -1730,9 +1730,22 @@ Crest Pest Control
                   </button>
                 ))}
               </div>
-              {customerKeyAreas.length > 0 && (
+              <div className="px-2 pt-2">
+                <Textarea
+                  value={customerKeyAreasNotes}
+                  onChange={(e) => setCustomerKeyAreasNotes(e.target.value)}
+                  placeholder="Type additional key areas or notes..."
+                  className="text-sm resize-y min-h-[50px] leading-relaxed"
+                  rows={2}
+                />
+              </div>
+              {(customerKeyAreas.length > 0 || customerKeyAreasNotes) && (
                 <div className="hidden print-content-formatted p-3">
-                  <p className="text-sm">{customerKeyAreas.join(", ")}</p>
+                  <p className="text-sm">
+                    {customerKeyAreas.join(", ")}
+                    {customerKeyAreas.length > 0 && customerKeyAreasNotes && " — "}
+                    {customerKeyAreasNotes}
+                  </p>
                 </div>
               )}
             </Card>
