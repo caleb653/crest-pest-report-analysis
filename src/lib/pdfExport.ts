@@ -109,26 +109,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
           display: block !important;
         }
 
-        /* Sales report page 2: map fills its grid column */
-        .pdf-export-root [class*="w-\\[400px\\]"][class*="h-\\[533px\\]"] {
-          width: 100% !important;
-          height: auto !important;
-          aspect-ratio: 3 / 4 !important;
-        }
-
-        /* Remove scale transform on map parent */
-        .pdf-export-root [class*="print\\:scale-"] {
-          transform: none !important;
-        }
-
-        /* Force grid layout for map + details */
-        .pdf-export-root [class*="lg\\:grid-cols-"] {
-          display: grid !important;
-          grid-template-columns: 48% 52% !important;
-          gap: 20px !important;
-          align-items: start !important;
-        }
-
         .pdf-export-root .print-content-formatted {
           display: block !important;
         }
@@ -146,6 +126,29 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.background = "#ffffff";
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
+
+      // Fix page 2 map: force map container to fill its column
+      const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
+      if (mapContainer) {
+        mapContainer.style.width = "100%";
+        mapContainer.style.height = "auto";
+        mapContainer.style.aspectRatio = "3 / 4";
+      }
+
+      // Remove scale transforms on map parent
+      clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach(el => {
+        el.style.transform = "none";
+      });
+
+      // Force grid layout for map + details columns
+      const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
+      if (gridContainer) {
+        gridContainer.style.display = "grid";
+        gridContainer.style.gridTemplateColumns = "48% 52%";
+        gridContainer.style.gap = "20px";
+        gridContainer.style.alignItems = "start";
+        gridContainer.style.padding = "0 16px";
+      }
     },
   });
 
