@@ -221,6 +221,26 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           display: block !important;
         }
 
+        /* Scale up page header (Initial Pest Report top bar) */
+        .pdf-export-root.print-header h1 {
+          font-size: 28px !important;
+          font-weight: 800 !important;
+        }
+
+        .pdf-export-root.print-header .text-xs {
+          font-size: 16px !important;
+          line-height: 1.4 !important;
+        }
+
+        .pdf-export-root.print-header .text-\\[10px\\] {
+          font-size: 12px !important;
+        }
+
+        .pdf-export-root.print-header .text-muted-foreground {
+          font-size: 16px !important;
+        }
+        }
+
         /* Force smaller typography specifically in the Initial Pest Report right column */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header),
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) * {
