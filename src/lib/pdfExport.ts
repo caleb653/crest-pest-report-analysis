@@ -320,7 +320,7 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = 650;
+  const SIMPLE_CAPTURE_WIDTH = 500;
 
   const outDoc = await PDFDocument.create();
   // A4 landscape
