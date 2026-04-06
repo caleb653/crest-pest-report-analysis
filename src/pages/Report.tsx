@@ -1291,42 +1291,44 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
-      // Generate PDF to attach
-      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+      // Generate PDF to attach (only if toggle is on)
       let pdfBase64: string | undefined;
-      try {
-        const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
-        if (exportFn) {
-          const freshRender = await exportFn();
-          if (freshRender) setRenderedMapImage(freshRender);
+      if (includePdf) {
+        toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+        try {
+          const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+          if (exportFn) {
+            const freshRender = await exportFn();
+            if (freshRender) setRenderedMapImage(freshRender);
+          }
+
+          // Switch to static map image for capture
+          setPdfExportMode(true);
+          await new Promise((r) => setTimeout(r, 200));
+
+          const pageEls = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+          ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+          const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+          const pdfBytes = await buildMergedPDF({
+            customerName: editableCustomer || "",
+            technicianName: editableTech || "",
+            address: editableAddress || extractedAddress || address || "",
+            reportPages,
+          });
+
+          setPdfExportMode(false);
+
+          // Convert Uint8Array to base64
+          const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+          pdfBase64 = btoa(binary);
+        } catch (pdfErr) {
+          setPdfExportMode(false);
+          console.warn("PDF generation failed, sending email without attachment:", pdfErr);
         }
-
-        // Switch to static map image for capture
-        setPdfExportMode(true);
-        await new Promise((r) => setTimeout(r, 200));
-
-        const pageEls = Array.from(
-          document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-        ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-        const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-        const pdfBytes = await buildMergedPDF({
-          customerName: editableCustomer || "",
-          technicianName: editableTech || "",
-          address: editableAddress || extractedAddress || address || "",
-          reportPages,
-        });
-
-        setPdfExportMode(false);
-
-        // Convert Uint8Array to base64
-        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
-        pdfBase64 = btoa(binary);
-      } catch (pdfErr) {
-        setPdfExportMode(false);
-        console.warn("PDF generation failed, sending email without attachment:", pdfErr);
+        toast.dismiss("pdf-email");
       }
-      toast.dismiss("pdf-email");
 
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
@@ -1339,8 +1341,10 @@ Crest Pest Control`;
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
-          pdfBase64,
-          pdfFilename: `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          ...(pdfBase64 ? {
+            pdfBase64,
+            pdfFilename: `Crest_Proposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          } : {}),
         },
       });
 
