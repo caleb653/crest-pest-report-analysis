@@ -360,7 +360,7 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = 794; // ~210mm at 96dpi, matches print layout width
+  const SIMPLE_CAPTURE_WIDTH = 842; // Match A4 landscape page width for full-width capture
 
   const outDoc = await PDFDocument.create();
   // A4 landscape
@@ -394,9 +394,8 @@ export async function buildSimplePDF(options: {
         img.width, img.height, pageW, remainingHeight,
       );
       const contentDrawY = headerDrawY - contentDrawH;
-      const contentDrawX = (pageW - contentDrawW) / 2;
       page.drawImage(img, {
-        x: contentDrawX,
+        x: 0,
         y: Math.max(contentDrawY, 0),
         width: contentDrawW,
         height: contentDrawH,
@@ -404,9 +403,8 @@ export async function buildSimplePDF(options: {
       pendingHeaderImg = null;
     } else {
       const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
-      const drawX = (pageW - drawW) / 2;
       const drawY = pageH - drawH;
-      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
     }
   }
 

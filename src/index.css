@@ -394,7 +394,7 @@
     width: 210mm !important;
     max-width: 210mm !important;
     display: grid !important;
-    grid-template-columns: 130mm 78mm !important;
+    grid-template-columns: 130mm 1fr !important;
     column-gap: 2mm !important;
     height: 188mm !important;
     margin: 0 auto !important;
@@ -530,9 +530,9 @@
     padding-top: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
-    width: 68mm !important;
-    min-width: 68mm !important;
-    max-width: 68mm !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
   }
 
   .print-layout > div:last-child > div {
@@ -541,18 +541,18 @@
     flex: 1 1 0 !important;
     min-height: 0 !important;
     height: 100% !important;
-    width: 68mm !important;
-    min-width: 68mm !important;
-    max-width: 68mm !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
   }
 
   .print-layout > div:last-child > div > .print-section {
     flex: 1 1 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    width: 68mm !important;
-    min-width: 68mm !important;
-    max-width: 68mm !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
   }
 
   .print-layout > div:last-child > div > .print-section > :not(.print-section-header) {
