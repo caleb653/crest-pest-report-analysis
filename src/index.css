@@ -394,9 +394,9 @@
     width: calc(100% - 10mm) !important;
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 121mm minmax(0, 1fr) !important;
+    grid-template-columns: 130mm minmax(0, 1fr) !important;
     column-gap: 4mm !important;
-    height: 162mm !important;
+    height: 180mm !important;
     margin: 0mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
@@ -411,7 +411,7 @@
     box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important;
-    height: 162mm !important;
+    height: 180mm !important;
     width: 100% !important;
     max-width: none !important;
     flex: none !important;
