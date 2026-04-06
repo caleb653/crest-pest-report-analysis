@@ -650,12 +650,20 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     const ctx = tempCanvas.getContext('2d');
     if (!ctx) return null;
     
-    // Draw the background map image first
-    const bgImg = new Image();
-    bgImg.crossOrigin = 'anonymous';
-    
-    return new Promise((resolve) => {
+    // Draw the background map image first – fetch as blob to avoid CORS tainting
+    return new Promise(async (resolve) => {
+      let bgSrc = mapUrl;
+      try {
+        const resp = await fetch(mapUrl);
+        const blob = await resp.blob();
+        bgSrc = URL.createObjectURL(blob);
+      } catch {
+        // Fall back to direct URL
+      }
+      const bgImg = new Image();
       bgImg.onload = () => {
+        // Revoke blob URL after drawing
+        if (bgSrc !== mapUrl) URL.revokeObjectURL(bgSrc);
         // Draw background image to fully cover the canvas without stretching,
         // matching the in-browser map presentation exactly.
         const imgAspect = bgImg.width / bgImg.height;
