@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus, Eraser, Pencil } from 'lucide-react';
@@ -46,6 +47,7 @@ const REFERENCE_HEIGHT = 1000;
 
 export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const rectTextMap = useRef(new WeakMap<FabricRect, boolean>());
@@ -629,178 +631,171 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     return labels[emoji] || 'Bait station';
   };
 
+  const loadImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+
+  const drawLegendToContext = async (
+    ctx: CanvasRenderingContext2D,
+    exportWidth: number,
+    exportHeight: number,
+  ) => {
+    if (legendItems.length === 0) return;
+
+    const legendPadding = 12;
+    const iconSize = 22;
+    const legendLineHeight = 30;
+    const legendWidth = 200;
+    const legendHeight = 34 + legendItems.length * legendLineHeight;
+    const legendX = 14;
+    const legendY = exportHeight - legendHeight - 14;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('LEGEND', legendX + legendPadding, legendY + 20);
+
+    const iconPromises = legendItems.map((item, i) => {
+      return new Promise<void>((resolveIcon) => {
+        const iconInfo = AVAILABLE_ICONS.find((ic) => ic.icon === item.icon);
+        const y = legendY + 34 + i * legendLineHeight;
+
+        if (iconInfo?.svgPath) {
+          const iconImg = new Image();
+          iconImg.onload = () => {
+            ctx.drawImage(iconImg, legendX + legendPadding, y, iconSize, iconSize);
+            ctx.fillStyle = '#374151';
+            ctx.font = '14px sans-serif';
+            ctx.fillText(item.label, legendX + legendPadding + iconSize + 6, y + 16);
+            resolveIcon();
+          };
+          iconImg.onerror = () => {
+            ctx.fillStyle = '#374151';
+            ctx.font = '14px sans-serif';
+            ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
+            resolveIcon();
+          };
+          iconImg.src = iconInfo.svgPath;
+        } else {
+          ctx.fillStyle = '#374151';
+          ctx.font = '14px sans-serif';
+          ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
+          resolveIcon();
+        }
+      });
+    });
+
+    await Promise.all(iconPromises);
+  };
+
   // Export canvas with background as a single image
   const exportAsImage = async (): Promise<string | null> => {
     if (!fabricCanvasRef.current || !canvasRef.current) return null;
-    
+
     const canvas = fabricCanvasRef.current;
-    const displayWidth = canvas.getWidth();
-    const displayHeight = canvas.getHeight();
-    
-    // Export at reference resolution for consistent quality
+    const stageEl = stageRef.current;
+    const displayWidth = stageEl?.clientWidth || canvas.getWidth();
+    const displayHeight = stageEl?.clientHeight || canvas.getHeight();
+
+    if (!displayWidth || !displayHeight) return null;
+
     const exportWidth = REFERENCE_WIDTH;
-    const exportHeight = REFERENCE_HEIGHT;
-    const scaleX = exportWidth / displayWidth;
-    const scaleY = exportHeight / displayHeight;
-    
-    // Create a temporary canvas at reference resolution
+    const exportScale = exportWidth / displayWidth;
+    const exportHeight = Math.round(displayHeight * exportScale);
+
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = exportWidth;
     tempCanvas.height = exportHeight;
     const ctx = tempCanvas.getContext('2d');
     if (!ctx) return null;
-    
-    // Draw the background map image first – fetch as blob to avoid CORS tainting
-    return new Promise(async (resolve) => {
-      let bgSrc = mapUrl;
+
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(0, 0, exportWidth, exportHeight);
+
+    if (stageEl && !stageEl.querySelector('iframe')) {
       try {
-        const resp = await fetch(mapUrl);
-        const blob = await resp.blob();
-        bgSrc = URL.createObjectURL(blob);
-      } catch {
-        // Fall back to direct URL
+        const capturedStage = await html2canvas(stageEl, {
+          scale: exportScale,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#f5f5f5',
+          logging: false,
+        });
+
+        ctx.drawImage(capturedStage, 0, 0, exportWidth, exportHeight);
+        await drawLegendToContext(ctx, exportWidth, exportHeight);
+        return tempCanvas.toDataURL('image/jpeg', 0.85);
+      } catch (e) {
+        console.warn('Exact stage capture failed, falling back to manual map export:', e);
       }
-      const bgImg = new Image();
-      bgImg.onload = () => {
-        // Revoke blob URL after drawing
-        if (bgSrc !== mapUrl) URL.revokeObjectURL(bgSrc);
-        // Draw background image to fully cover the canvas without stretching,
-        // matching the in-browser map presentation exactly.
-        const imgAspect = bgImg.width / bgImg.height;
-        const canvasAspect = exportWidth / exportHeight;
+    }
 
-        let drawWidth = exportWidth;
-        let drawHeight = exportHeight;
-        let drawX = 0;
-        let drawY = 0;
+    let bgSrc = mapUrl;
 
-        if (imgAspect > canvasAspect) {
-          drawHeight = exportHeight;
-          drawWidth = exportHeight * imgAspect;
-          drawX = (exportWidth - drawWidth) / 2;
-        } else {
-          drawWidth = exportWidth;
-          drawHeight = exportWidth / imgAspect;
-          drawY = (exportHeight - drawHeight) / 2;
-        }
+    try {
+      const resp = await fetch(mapUrl);
+      const blob = await resp.blob();
+      bgSrc = URL.createObjectURL(blob);
+    } catch {
+      // Fall back to direct URL
+    }
 
-        ctx.fillStyle = '#f5f5f5';
-        ctx.fillRect(0, 0, exportWidth, exportHeight);
-        ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
-        
-        // Export annotations at higher resolution using multiplier
-        let annotationsDataUrl: string | null = null;
-        try {
-          annotationsDataUrl = canvas.toDataURL({ 
-            multiplier: scaleX, 
-            format: 'png',
-          });
-        } catch (e) {
-          console.warn('Canvas tainted, exporting without annotation overlay:', e);
-        }
+    try {
+      const bgImg = await loadImage(bgSrc);
+      const imgAspect = bgImg.width / bgImg.height;
+      const canvasAspect = exportWidth / exportHeight;
 
-        if (!annotationsDataUrl) {
-          // Tainted canvas fallback – just return the background with legend
-          if (legendItems.length > 0) {
-            // Draw legend directly (same code as below)
-            const legendPadding = 12;
-            const iconSize = 22;
-            const legendLineHeight = 30;
-            const legendWidth = 200;
-            const legendHeight = 34 + legendItems.length * legendLineHeight;
-            const legendX = 14;
-            const legendY = exportHeight - legendHeight - 14;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = '#1f2937';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 20);
-            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
-          } else {
-            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
-          }
-          return;
-        }
-        const annotationsImg = new Image();
-        annotationsImg.onload = () => {
-          ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
-          
-          // Draw legend if present
-          if (legendItems.length > 0) {
-            const legendPadding = 12;
-            const iconSize = 22;
-            const legendLineHeight = 30;
-            const legendWidth = 200;
-            const legendHeight = 34 + legendItems.length * legendLineHeight;
-            const legendX = 14;
-            const legendY = exportHeight - legendHeight - 14;
-            
-            // Legend background
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
-            ctx.fill();
-            ctx.stroke();
-            
-            // Legend title
-            ctx.fillStyle = '#1f2937';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 20);
-            
-            // Load icon images and draw legend items
-            const iconPromises = legendItems.map((item, i) => {
-              return new Promise<void>((resolveIcon) => {
-                const iconInfo = AVAILABLE_ICONS.find(ic => ic.icon === item.icon);
-                const y = legendY + 34 + i * legendLineHeight;
-                
-                if (iconInfo?.svgPath) {
-                  const iconImg = new Image();
-                  iconImg.onload = () => {
-                    ctx.drawImage(iconImg, legendX + legendPadding, y, iconSize, iconSize);
-                    ctx.fillStyle = '#374151';
-                    ctx.font = '14px sans-serif';
-                    ctx.fillText(item.label, legendX + legendPadding + iconSize + 6, y + 16);
-                    resolveIcon();
-                  };
-                  iconImg.onerror = () => {
-                    ctx.fillStyle = '#374151';
-                    ctx.font = '14px sans-serif';
-                    ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
-                    resolveIcon();
-                  };
-                  iconImg.src = iconInfo.svgPath;
-                } else {
-                  ctx.fillStyle = '#374151';
-                  ctx.font = '14px sans-serif';
-                  ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
-                  resolveIcon();
-                }
-              });
-            });
-            
-            Promise.all(iconPromises).then(() => {
-              resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
-            });
-          } else {
-            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
-          }
-        };
-        annotationsImg.onerror = () => resolve(null);
-        annotationsImg.src = annotationsDataUrl;
-      };
-      bgImg.onerror = () => {
-        if (bgSrc !== mapUrl) URL.revokeObjectURL(bgSrc);
-        resolve(null);
-      };
-      bgImg.src = bgSrc;
-    });
+      let drawWidth = exportWidth;
+      let drawHeight = exportHeight;
+      let drawX = 0;
+      let drawY = 0;
+
+      if (imgAspect > canvasAspect) {
+        drawHeight = exportHeight;
+        drawWidth = exportHeight * imgAspect;
+        drawX = (exportWidth - drawWidth) / 2;
+      } else {
+        drawWidth = exportWidth;
+        drawHeight = exportWidth / imgAspect;
+        drawY = (exportHeight - drawHeight) / 2;
+      }
+
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(0, 0, exportWidth, exportHeight);
+      ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
+
+      try {
+        const annotationsDataUrl = canvas.toDataURL({
+          multiplier: exportScale,
+          format: 'png',
+        });
+        const annotationsImg = await loadImage(annotationsDataUrl);
+        ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
+      } catch (e) {
+        console.warn('Canvas tainted, exporting without annotation overlay:', e);
+      }
+
+      await drawLegendToContext(ctx, exportWidth, exportHeight);
+      return tempCanvas.toDataURL('image/jpeg', 0.85);
+    } catch (e) {
+      console.error('Failed to export map image:', e);
+      return null;
+    } finally {
+      if (bgSrc !== mapUrl) {
+        URL.revokeObjectURL(bgSrc);
+      }
+    }
   };
   
   // Expose export function via window for external access
@@ -967,6 +962,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
 
   return (
     <div className="relative w-full h-full">
+      <div ref={stageRef} className="absolute inset-0 overflow-hidden rounded-lg">
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
           <img
@@ -1003,6 +999,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           zIndex: 10
         }}
       />
+      </div>
 
       {/* Drawing tools */}
       <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">

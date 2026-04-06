@@ -147,18 +147,22 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.display = "flex";
       clonedPage.style.flexDirection = "column";
 
-      // Fix page 2 map: maintain 3:4 aspect ratio (matches baked image)
-      // but maximize within available height so emblems stay positioned correctly
+      // Fix page 2 map: use the baked image's own aspect ratio so annotations
+      // stay locked to the exact same pixels as the web app at any size.
       const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
       if (mapContainer) {
         mapContainer.style.width = "100%";
         mapContainer.style.height = "100%";
         mapContainer.style.maxHeight = "100%";
-        mapContainer.style.aspectRatio = "3 / 4";
-        // Use object-cover to match the baked image's cover logic
         const mapImg = mapContainer.querySelector<HTMLImageElement>('img');
+        mapContainer.style.aspectRatio = mapImg?.naturalWidth && mapImg?.naturalHeight
+          ? `${mapImg.naturalWidth} / ${mapImg.naturalHeight}`
+          : "3 / 4";
+        mapContainer.style.display = "flex";
+        mapContainer.style.alignItems = "stretch";
         if (mapImg) {
-          mapImg.style.objectFit = "cover";
+          mapImg.style.objectFit = "contain";
+          mapImg.style.objectPosition = "center";
           mapImg.style.width = "100%";
           mapImg.style.height = "100%";
         }
