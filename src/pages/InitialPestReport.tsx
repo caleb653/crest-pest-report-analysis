@@ -526,13 +526,22 @@ const Report = () => {
       if (row.equipment && Array.isArray(row.equipment)) {
         setEditableEquipment(row.equipment as string[]);
       }
-      if (row.customer_key_areas && Array.isArray(row.customer_key_areas)) {
-        setCustomerKeyAreas(row.customer_key_areas as string[]);
+      if (row.customer_key_areas && typeof row.customer_key_areas === 'object') {
+        const keyAreas = row.customer_key_areas as any;
+        if (Array.isArray(keyAreas)) {
+          setCustomerKeyAreas(keyAreas as string[]);
+        } else if (keyAreas.areas) {
+          setCustomerKeyAreas(keyAreas.areas as string[]);
+          if (keyAreas.notes) setCustomerKeyAreasNotes(keyAreas.notes);
+        }
       }
       if (row.customer_preferences) {
         const prefs = row.customer_preferences as any;
         if (prefs.preference) setCustomerPreference(prefs.preference);
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
+      }
+      if (row.notes) {
+        setTodaysFindings(row.notes as string);
       }
 
       console.log("Loading report map_data:", {
