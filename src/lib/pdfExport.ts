@@ -320,7 +320,7 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = 500;
+  const SIMPLE_CAPTURE_WIDTH = 580;
 
   const outDoc = await PDFDocument.create();
   // A4 landscape
@@ -350,9 +350,9 @@ export async function buildSimplePDF(options: {
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
 
       const remainingHeight = Math.max(headerDrawY, 0);
-      const contentScale = remainingHeight / img.height;
-      const contentDrawW = img.width * contentScale;
-      const contentDrawH = remainingHeight;
+      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
+        img.width, img.height, pageW, remainingHeight,
+      );
       const contentDrawY = headerDrawY - contentDrawH;
       const contentDrawX = (pageW - contentDrawW) / 2;
       page.drawImage(img, {
