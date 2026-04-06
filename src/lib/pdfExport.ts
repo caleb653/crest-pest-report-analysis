@@ -350,9 +350,9 @@ export async function buildSimplePDF(options: {
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
 
       const remainingHeight = Math.max(headerDrawY, 0);
-      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
-        img.width, img.height, pageW, remainingHeight,
-      );
+      const contentScale = remainingHeight / img.height;
+      const contentDrawW = img.width * contentScale;
+      const contentDrawH = remainingHeight;
       const contentDrawY = headerDrawY - contentDrawH;
       const contentDrawX = (pageW - contentDrawW) / 2;
       page.drawImage(img, {
