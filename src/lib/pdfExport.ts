@@ -63,7 +63,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: "#ffffff",
     logging: false,
     onclone: (clonedDoc) => {
@@ -135,7 +135,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
   const canvas = await html2canvas(el, {
     scale: 2,
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: "#ffffff",
     logging: false,
     onclone: (clonedDoc) => {
