@@ -690,9 +690,9 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 1mm 3mm 1.5mm 3mm !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    padding: 1.5mm 3mm 2mm 3mm !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
     display: block !important;
     align-items: initial !important;
@@ -706,14 +706,14 @@
   .print-section-content li {
     margin: 0 0 1.2mm 0 !important;
     padding: 0 !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
   }
 
   .print-section-content,
   .print-section-content * {
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
