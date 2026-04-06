@@ -844,12 +844,7 @@ const Report = () => {
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-      const pdfBytes = await buildMergedPDF({
-        customerName: editableCustomer || "",
-        technicianName: editableTech || "",
-        address: editableAddress || extractedAddress || address || "",
-        reportPages,
-      });
+      const pdfBytes = await buildSimplePDF({ reportPages });
 
       setPdfExportMode(false);
       toast.dismiss("pdf-gen");
