@@ -394,9 +394,9 @@
     width: calc(100% - 6mm) !important;
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 168mm minmax(0, 1fr) !important;
+    grid-template-columns: 180mm minmax(0, 1fr) !important;
     column-gap: 1.5mm !important;
-    height: 175mm !important;
+    height: 182mm !important;
     margin: 0mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
