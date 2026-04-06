@@ -38,7 +38,7 @@ import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildMergedPDF } from "@/lib/pdfExport";
+import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -844,12 +844,7 @@ const Report = () => {
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-      const pdfBytes = await buildMergedPDF({
-        customerName: editableCustomer || "",
-        technicianName: editableTech || "",
-        address: editableAddress || extractedAddress || address || "",
-        reportPages,
-      });
+      const pdfBytes = await buildSimplePDF({ reportPages });
 
       setPdfExportMode(false);
       toast.dismiss("pdf-gen");
@@ -976,15 +971,10 @@ Crest Pest Control
         ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
         const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-        const pdfBytes = await buildMergedPDF({
-          customerName: editableCustomer || "",
-          technicianName: editableTech || "",
-          address: editableAddress || extractedAddress || address || "",
-          reportPages,
-        });
+        const pdfBytes = await buildSimplePDF({ reportPages });
 
         setPdfExportMode(false);
-        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+        const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
         pdfBase64 = btoa(binary);
       } catch (pdfErr) {
         setPdfExportMode(false);
