@@ -3101,9 +3101,22 @@ Crest Pest Control`;
             </div>
           </div>
           
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch checked={includePdf} onCheckedChange={setIncludePdf} id="include-pdf" className="data-[state=checked]:bg-green-500" />
-            <Label htmlFor="include-pdf" className="text-sm font-medium cursor-pointer">Include PDF attachment</Label>
+          <div className="pt-2 space-y-2">
+            <Label className="text-sm font-medium">PDF Attachment</Label>
+            <RadioGroup value={pdfAttachOption} onValueChange={(v) => setPdfAttachOption(v as "short" | "full" | "none")} className="flex flex-col gap-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="short" id="pdf-short" />
+                <Label htmlFor="pdf-short" className="text-sm cursor-pointer">Short PDF (app pages only)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="full" id="pdf-full" />
+                <Label htmlFor="pdf-full" className="text-sm cursor-pointer">Full proposal PDF (with template pages)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="none" id="pdf-none" />
+                <Label htmlFor="pdf-none" className="text-sm cursor-pointer">No PDF attachment</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <DialogFooter>
