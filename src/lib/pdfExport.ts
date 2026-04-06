@@ -108,6 +108,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
         .pdf-export-root [class*="hidden"][class*="print\\:block"] {
           display: block !important;
         }
+
+        .pdf-export-root .print-content-formatted {
+          display: block !important;
+        }
       `;
       clonedDoc.head.appendChild(style);
 
@@ -122,6 +126,42 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.background = "#ffffff";
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
+
+      // Fix page 2 map: force map container to fill its column
+      const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
+      if (mapContainer) {
+        mapContainer.style.width = "100%";
+        mapContainer.style.height = "auto";
+        mapContainer.style.aspectRatio = "3 / 4";
+      }
+
+      // Remove scale transforms on map parent
+      clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach(el => {
+        el.style.transform = "none";
+      });
+
+      // Force grid layout for map + details columns
+      const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
+      if (gridContainer) {
+        gridContainer.style.display = "grid";
+        gridContainer.style.gridTemplateColumns = "48% 52%";
+        gridContainer.style.gap = "20px";
+        gridContainer.style.alignItems = "start";
+        gridContainer.style.padding = "0 16px";
+      }
+
+      // Auto-shrink additional details text to fit
+      const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
+      const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
+      if (detailsBody && detailsCard) {
+        let fontSize = parseFloat(detailsBody.style.fontSize) || 11;
+        const minFont = 7;
+        // Shrink until content fits or we hit minimum
+        while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
+          fontSize -= 0.5;
+          detailsBody.style.fontSize = `${fontSize}px`;
+        }
+      }
     },
   });
 

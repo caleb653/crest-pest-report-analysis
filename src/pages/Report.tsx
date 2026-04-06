@@ -2494,10 +2494,10 @@ Crest Pest Control`;
 
           {/* Map and Property Images Side by Side */}
           <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-5 print:px-4 print:items-start print:justify-center print:mt-2 print:flex-1">
-            {/* Map Section - FIXED size on all devices for perfect consistency */}
-            <div className="flex flex-col min-h-0 print:origin-top-left print:scale-[1.12] print:mt-1">
+            {/* Map Section - fills column in print, fixed on screen */}
+            <div className="flex flex-col min-h-0 print:mt-1">
               <div 
-                className="w-[400px] h-[533px] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
+                className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
                 onPaste={handleMapPaste}
                 tabIndex={0}
               >
@@ -2513,7 +2513,7 @@ Crest Pest Control`;
                 {mapUrl || customMapImage ? (
                   <div className="relative h-full w-full">
                     {pdfExportMode && renderedMapImage ? (
-                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-cover" />
                     ) : (
                     <MapCanvas
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
