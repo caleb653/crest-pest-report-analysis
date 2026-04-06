@@ -221,34 +221,61 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           display: block !important;
         }
 
-        /* Force small fonts for Initial Pest Report export */
-        .pdf-export-root .print-section-content,
-        .pdf-export-root .print-section-content * {
-          font-size: 8px !important;
-          line-height: 1.2 !important;
+        /* Force smaller typography specifically in the Initial Pest Report right column */
+        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header),
+        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header) * {
+          font-size: 7px !important;
+          line-height: 1.15 !important;
+          font-weight: 500 !important;
+          color: hsl(var(--foreground)) !important;
+          overflow-wrap: break-word !important;
+          word-break: break-word !important;
+          white-space: normal !important;
+          hyphens: auto !important;
         }
 
-        .pdf-export-root .print-section-content ul {
+        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header) {
+          padding: 1mm 2mm 1.25mm 2mm !important;
           margin: 0 !important;
-          padding-left: 3mm !important;
         }
 
-        .pdf-export-root .print-section-content li {
-          margin: 0 0 0.5mm 0 !important;
+        .pdf-export-root.print-layout > div:last-child .print-section-header,
+        .pdf-export-root.print-layout > div:last-child .print-section-header *,
+        .pdf-export-root.print-layout > div:last-child .print-section-header input {
+          font-size: 10px !important;
+          line-height: 1.05 !important;
+          font-weight: 800 !important;
+        }
+
+        .pdf-export-root.print-layout > div:last-child .print-section h3,
+        .pdf-export-root.print-layout > div:last-child .print-section h3 * {
+          font-size: 8px !important;
+          line-height: 1.1 !important;
+          font-weight: 700 !important;
+        }
+
+        .pdf-export-root.print-layout > div:last-child .print-section ul {
+          margin: 0 !important;
+          padding-left: 2.75mm !important;
+        }
+
+        .pdf-export-root.print-layout > div:last-child .print-section li {
+          margin: 0 0 0.4mm 0 !important;
           padding: 0 !important;
         }
 
-        .pdf-export-root .print-section-content {
-          padding: 1mm 2.5mm 1.5mm 2.5mm !important;
+        .pdf-export-root.print-layout > div:last-child .print-tags {
+          gap: 0.2rem !important;
+          padding: 1.5mm 2mm !important;
         }
 
-        .pdf-export-root .print-section-header {
-          font-size: 11px !important;
-          padding: 0.15rem 0.5rem !important;
-          min-height: 1rem !important;
+        .pdf-export-root.print-layout > div:last-child .print-tag,
+        .pdf-export-root.print-layout > div:last-child .print-tag * {
+          font-size: 7px !important;
+          line-height: 1.1 !important;
         }
 
-        .pdf-export-root .print-content-formatted {
+        .pdf-export-root.print-layout > div:last-child .print-content-formatted {
           display: block !important;
         }
       `;
