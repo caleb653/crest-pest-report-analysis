@@ -445,8 +445,10 @@
 
   .print-map-container img,
   .print-map-container iframe {
-    width: 100% !important;
-    height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     object-fit: contain !important;
   }
 
