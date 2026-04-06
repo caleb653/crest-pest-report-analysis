@@ -1743,9 +1743,17 @@ Crest Pest Control`;
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2 no-print">
-              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
-                <FileDown className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="default" className="h-9">
+                    <FileDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {!isReadOnly && (
               <>
               <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
