@@ -1401,7 +1401,7 @@ Crest Pest Control
       )}
 
       {/* Main Content */}
-      <div className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
+      <div data-pdf-page="1" data-pdf-capture="1" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
@@ -1426,12 +1426,17 @@ Crest Pest Control
 
               {mapUrl || customMapImage ? (
                 <div className="relative h-full w-full">
-                  <MapCanvas
-                    key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
-                    mapUrl={customMapImage || mapUrl}
-                    onSave={setMapData}
-                    initialData={mapData}
-                  />
+                  {pdfExportMode && renderedMapImage ? (
+                    <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                  ) : (
+                    <MapCanvas
+                      key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                      mapUrl={customMapImage || mapUrl}
+                      onSave={setMapData}
+                      onExportImage={setRenderedMapImage}
+                      initialData={mapData}
+                    />
+                  )}
 
                   {/* Upload custom map button */}
                   <div className="no-print absolute top-4 right-4 z-20">
