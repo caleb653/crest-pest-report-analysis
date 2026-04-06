@@ -43,7 +43,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildMergedPDF, downloadPDF } from "@/lib/pdfExport";
+import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -572,7 +573,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [includePdf, setIncludePdf] = useState(false);
+  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("short");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "jake@crestpestco.com", "caleb@crestpestco.com"]);
@@ -1292,9 +1293,9 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
-      // Generate PDF to attach (only if toggle is on)
+      // Generate PDF to attach based on option
       let pdfBase64: string | undefined;
-      if (includePdf) {
+      if (pdfAttachOption !== "none") {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
           const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
@@ -1303,7 +1304,6 @@ Crest Pest Control`;
             if (freshRender) setRenderedMapImage(freshRender);
           }
 
-          // Switch to static map image for capture
           setPdfExportMode(true);
           await new Promise((r) => setTimeout(r, 200));
 
@@ -1312,16 +1312,20 @@ Crest Pest Control`;
           ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
           const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-          const pdfBytes = await buildMergedPDF({
-            customerName: editableCustomer || "",
-            technicianName: editableTech || "",
-            address: editableAddress || extractedAddress || address || "",
-            reportPages,
-          });
+          let pdfBytes: Uint8Array;
+          if (pdfAttachOption === "full") {
+            pdfBytes = await buildMergedPDF({
+              customerName: editableCustomer || "",
+              technicianName: editableTech || "",
+              address: editableAddress || extractedAddress || address || "",
+              reportPages,
+            });
+          } else {
+            pdfBytes = await buildSimplePDF({ reportPages }) as Uint8Array;
+          }
 
           setPdfExportMode(false);
 
-          // Convert Uint8Array to base64
           const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
           pdfBase64 = btoa(binary);
         } catch (pdfErr) {
@@ -3097,9 +3101,22 @@ Crest Pest Control`;
             </div>
           </div>
           
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch checked={includePdf} onCheckedChange={setIncludePdf} id="include-pdf" className="data-[state=checked]:bg-green-500" />
-            <Label htmlFor="include-pdf" className="text-sm font-medium cursor-pointer">Include PDF attachment</Label>
+          <div className="pt-2 space-y-2">
+            <Label className="text-sm font-medium">PDF Attachment</Label>
+            <RadioGroup value={pdfAttachOption} onValueChange={(v) => setPdfAttachOption(v as "short" | "full" | "none")} className="flex flex-col gap-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="short" id="pdf-short" />
+                <Label htmlFor="pdf-short" className="text-sm cursor-pointer">Short PDF (app pages only)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="full" id="pdf-full" />
+                <Label htmlFor="pdf-full" className="text-sm cursor-pointer">Full proposal PDF (with template pages)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="none" id="pdf-none" />
+                <Label htmlFor="pdf-none" className="text-sm cursor-pointer">No PDF attachment</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <DialogFooter>
