@@ -411,11 +411,10 @@
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important;
     height: 188mm !important;
-    width: 100% !important;
-    max-width: none !important;
+    width: auto !important;
+    max-width: 100% !important;
     flex: none !important;
     padding: 0 !important;
-    aspect-ratio: 3 / 4 !important;
     position: relative !important;
   }
 
