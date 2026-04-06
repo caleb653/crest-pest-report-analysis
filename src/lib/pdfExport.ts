@@ -468,10 +468,12 @@ export async function buildMergedPDF(options: {
 
       pendingHeaderImg = null;
     } else {
-      const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
-      const drawX = (pageW - drawW) / 2;
+      // Always stretch to full page width, cap height to page
+      const scale = pageW / img.width;
+      const drawW = pageW;
+      const drawH = Math.min(img.height * scale, pageH);
       const drawY = pageH - drawH;
-      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
     }
   }
 
