@@ -452,28 +452,28 @@ export async function buildMergedPDF(options: {
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
 
+      // Always stretch content to full page width
+      const contentScale = pageW / img.width;
+      const contentDrawW = pageW;
+      const contentDrawH = img.height * contentScale;
       const remainingHeight = Math.max(headerDrawY, 0);
-      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
-        img.width,
-        img.height,
-        pageW,
-        remainingHeight,
-      );
-      const contentDrawY = headerDrawY - contentDrawH;
-      const contentDrawX = (pageW - contentDrawW) / 2;
+      const finalH = Math.min(contentDrawH, remainingHeight);
+      const contentDrawY = headerDrawY - finalH;
       page.drawImage(img, {
-        x: contentDrawX,
+        x: 0,
         y: Math.max(contentDrawY, 0),
         width: contentDrawW,
-        height: contentDrawH,
+        height: finalH,
       });
 
       pendingHeaderImg = null;
     } else {
-      const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
-      const drawX = (pageW - drawW) / 2;
+      // Always stretch to full page width, cap height to page
+      const scale = pageW / img.width;
+      const drawW = pageW;
+      const drawH = Math.min(img.height * scale, pageH);
       const drawY = pageH - drawH;
-      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
     }
   }
 
