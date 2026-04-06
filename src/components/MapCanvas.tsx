@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from 'react';
-import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus, Eraser, Pencil } from 'lucide-react';
@@ -47,7 +46,6 @@ const REFERENCE_HEIGHT = 1000;
 
 export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const rectTextMap = useRef(new WeakMap<FabricRect, boolean>());
@@ -699,20 +697,99 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     await Promise.all(iconPromises);
   };
 
+  const buildNormalizedCanvasState = () => {
+    if (!fabricCanvasRef.current) return null;
+
+    const canvas = fabricCanvasRef.current;
+    const currW = canvas.getWidth();
+    const currH = canvas.getHeight();
+
+    if (!currW || !currH) return null;
+
+    const targetObjectScale = Math.min(currW, currH) / 800;
+    const normalizedObjects = canvas.getObjects().map((obj: any) => {
+      const objJSON = obj.toJSON();
+      objJSON.left = ((obj.left || 0) / currW) * REFERENCE_WIDTH;
+      objJSON.top = ((obj.top || 0) / currH) * REFERENCE_HEIGHT;
+      objJSON.scaleX = (obj.scaleX || 1) / targetObjectScale;
+      objJSON.scaleY = (obj.scaleY || 1) / targetObjectScale;
+      return objJSON;
+    });
+
+    return {
+      objects: { ...canvas.toJSON(), objects: normalizedObjects },
+      legendItems,
+      base: { width: REFERENCE_WIDTH, height: REFERENCE_HEIGHT },
+      version: 2,
+    };
+  };
+
+  const renderNormalizedAnnotations = async (
+    canvasState: NonNullable<ReturnType<typeof buildNormalizedCanvasState>>,
+    exportWidth: number,
+    exportHeight: number,
+  ) => {
+    const tempCanvasEl = document.createElement('canvas');
+    tempCanvasEl.width = exportWidth;
+    tempCanvasEl.height = exportHeight;
+
+    const tempFabric = new FabricCanvas(tempCanvasEl, {
+      width: exportWidth,
+      height: exportHeight,
+      backgroundColor: 'transparent',
+      selection: false,
+    });
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        try {
+          tempFabric.loadFromJSON(canvasState.objects, () => {
+            const baseW = canvasState.base?.width || REFERENCE_WIDTH;
+            const baseH = canvasState.base?.height || REFERENCE_HEIGHT;
+            const scaleX = exportWidth / baseW;
+            const scaleY = exportHeight / baseH;
+            const targetObjectScale = Math.min(exportWidth, exportHeight) / 800;
+
+            tempFabric.getObjects().forEach((obj: any) => {
+              obj.left = (obj.left || 0) * scaleX;
+              obj.top = (obj.top || 0) * scaleY;
+              obj.scaleX = (obj.scaleX || 1) * targetObjectScale;
+              obj.scaleY = (obj.scaleY || 1) * targetObjectScale;
+              obj.selectable = false;
+              obj.evented = false;
+              obj.setCoords();
+            });
+
+            tempFabric.renderAll();
+            resolve();
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      return tempFabric.toDataURL({ format: 'png', multiplier: 1 });
+    } finally {
+      tempFabric.dispose();
+    }
+  };
+
   // Export canvas with background as a single image
-  const exportAsImage = async (): Promise<string | null> => {
+  const exportAsImage = async (
+    precomputedState?: NonNullable<ReturnType<typeof buildNormalizedCanvasState>>,
+  ): Promise<string | null> => {
     if (!fabricCanvasRef.current || !canvasRef.current) return null;
 
     const canvas = fabricCanvasRef.current;
-    const stageEl = stageRef.current;
-    const displayWidth = stageEl?.clientWidth || canvas.getWidth();
-    const displayHeight = stageEl?.clientHeight || canvas.getHeight();
+    const displayWidth = canvas.getWidth();
+    const displayHeight = canvas.getHeight();
 
     if (!displayWidth || !displayHeight) return null;
 
     const exportWidth = REFERENCE_WIDTH;
     const exportScale = exportWidth / displayWidth;
     const exportHeight = Math.round(displayHeight * exportScale);
+    const canvasState = precomputedState ?? buildNormalizedCanvasState();
 
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = exportWidth;
@@ -722,24 +799,6 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
 
     ctx.fillStyle = '#f5f5f5';
     ctx.fillRect(0, 0, exportWidth, exportHeight);
-
-    if (stageEl && !stageEl.querySelector('iframe')) {
-      try {
-        const capturedStage = await html2canvas(stageEl, {
-          scale: exportScale,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: '#f5f5f5',
-          logging: false,
-        });
-
-        ctx.drawImage(capturedStage, 0, 0, exportWidth, exportHeight);
-        await drawLegendToContext(ctx, exportWidth, exportHeight);
-        return tempCanvas.toDataURL('image/jpeg', 0.85);
-      } catch (e) {
-        console.warn('Exact stage capture failed, falling back to manual map export:', e);
-      }
-    }
 
     let bgSrc = mapUrl;
 
@@ -775,15 +834,14 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       ctx.fillRect(0, 0, exportWidth, exportHeight);
       ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
 
-      try {
-        const annotationsDataUrl = canvas.toDataURL({
-          multiplier: exportScale,
-          format: 'png',
-        });
-        const annotationsImg = await loadImage(annotationsDataUrl);
-        ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
-      } catch (e) {
-        console.warn('Canvas tainted, exporting without annotation overlay:', e);
+      if (canvasState && canvasState.objects.objects.length > 0) {
+        try {
+          const annotationsDataUrl = await renderNormalizedAnnotations(canvasState, exportWidth, exportHeight);
+          const annotationsImg = await loadImage(annotationsDataUrl);
+          ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
+        } catch (e) {
+          console.warn('Normalized annotation render failed, exporting without annotation overlay:', e);
+        }
       }
 
       await drawLegendToContext(ctx, exportWidth, exportHeight);
@@ -813,41 +871,19 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     const saveCanvasData = async () => {
       // CRITICAL: Never save while loading data - objects are in intermediate state
       if (!fabricCanvasRef.current || isLoadingDataRef.current) return;
-      const canvas = fabricCanvasRef.current;
-      const currW = canvas.getWidth();
-      const currH = canvas.getHeight();
-      
-      // Calculate the target scale that was applied on load
-      const targetIconScale = Math.min(currW, currH) / 800;
-      
-      // Normalize all object positions and scales to reference coordinates before saving
-      const normalizedObjects = canvas.getObjects().map((obj: any) => {
-        const objJSON = obj.toJSON();
-        // Convert current position to reference coordinates (percentage-based)
-        objJSON.left = (obj.left / currW) * REFERENCE_WIDTH;
-        objJSON.top = (obj.top / currH) * REFERENCE_HEIGHT;
-        // Normalize scale back to reference size (divide by the scale we applied)
-        objJSON.scaleX = (obj.scaleX || 1) / targetIconScale;
-        objJSON.scaleY = (obj.scaleY || 1) / targetIconScale;
-        return objJSON;
-      });
-      
-      const canvasData = JSON.stringify({
-        objects: { ...canvas.toJSON(), objects: normalizedObjects },
-        legendItems: legendItems,
-        base: { width: REFERENCE_WIDTH, height: REFERENCE_HEIGHT },
-        version: 2 // Mark as using normalized coordinates
-      });
+      const canvasState = buildNormalizedCanvasState();
+      if (!canvasState) return;
+
+      const canvasData = JSON.stringify(canvasState);
       console.log('Saving normalized canvas data:', { 
-        objectCount: normalizedObjects.length,
-        legendCount: legendItems.length,
-        currW, currH
+        objectCount: canvasState.objects.objects.length,
+        legendCount: canvasState.legendItems.length,
       });
       onSave(canvasData);
       
       // Also export as static image if callback provided
-      if (onExportImage && normalizedObjects.length > 0) {
-        const imageDataUrl = await exportAsImage();
+      if (onExportImage && canvasState.objects.objects.length > 0) {
+        const imageDataUrl = await exportAsImage(canvasState);
         if (imageDataUrl) {
           onExportImage(imageDataUrl);
         }
@@ -962,7 +998,6 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
 
   return (
     <div className="relative w-full h-full">
-      <div ref={stageRef} className="absolute inset-0 overflow-hidden rounded-lg">
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
           <img
@@ -999,7 +1034,6 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           zIndex: 10
         }}
       />
-      </div>
 
       {/* Drawing tools */}
       <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
