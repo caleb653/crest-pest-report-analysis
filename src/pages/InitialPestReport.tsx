@@ -936,7 +936,7 @@ Crest Pest Control
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
-        notes: notes,
+        notes: todaysFindings || notes || null,
         findings: editableFindings,
         recommendations: editableRecommendations,
         next_steps: editableExpectations,
