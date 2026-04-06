@@ -224,7 +224,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         /* Force smaller typography specifically in the Initial Pest Report right column */
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header),
         .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) * {
-          font-size: 10px !important;
+          font-size: 12px !important;
           line-height: 1.25 !important;
           font-weight: 500 !important;
           overflow-wrap: break-word !important;
@@ -241,14 +241,14 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header *,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header input {
-          font-size: 10px !important;
+          font-size: 11px !important;
           line-height: 1.05 !important;
           font-weight: 800 !important;
         }
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section h3 * {
-          font-size: 10px !important;
+          font-size: 11px !important;
           line-height: 1.1 !important;
           font-weight: 700 !important;
         }
@@ -270,7 +270,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag,
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag * {
-          font-size: 8px !important;
+          font-size: 10px !important;
           line-height: 1.1 !important;
         }
 
@@ -292,9 +292,9 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           flex: 0 0 auto !important;
         }
 
-        /* Service Area (4th) — takes remaining space */
+        /* Service Area (4th) — gets more space but not all */
         .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(4) {
-          flex: 1 1 0 !important;
+          flex: 2 1 0 !important;
         }
 
         /* Recommendations (5th) — compact */
