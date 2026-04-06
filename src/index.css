@@ -394,12 +394,12 @@
     width: calc(100% - 6mm) !important;
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 140mm minmax(0, 1fr) !important;
-    column-gap: 1.5mm !important;
+    grid-template-columns: minmax(0, 1fr) 68mm !important;
+    column-gap: 2mm !important;
     height: 188mm !important;
     margin: 0mm auto 0 auto !important;
     padding: 0 !important;
-    align-items: flex-start !important;
+    align-items: stretch !important;
     min-height: 0 !important;
     flex-direction: unset !important;
   }
@@ -529,7 +529,9 @@
     padding-top: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
-    width: 100% !important;
+    width: 68mm !important;
+    min-width: 68mm !important;
+    max-width: 68mm !important;
   }
 
   .print-layout > div:last-child > div {
@@ -538,12 +540,18 @@
     flex: 1 1 0 !important;
     min-height: 0 !important;
     height: 100% !important;
+    width: 68mm !important;
+    min-width: 68mm !important;
+    max-width: 68mm !important;
   }
 
   .print-layout > div:last-child > div > .print-section {
     flex: 1 1 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    width: 68mm !important;
+    min-width: 68mm !important;
+    max-width: 68mm !important;
   }
 
   .print-layout > div:last-child > div > .print-section > :not(.print-section-header) {
@@ -737,6 +745,9 @@
     font-weight: 500 !important;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    hyphens: auto !important;
   }
 
   /* Findings & Expectations textareas in print */
@@ -772,6 +783,10 @@
     font-size: 16px !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    hyphens: auto !important;
   }
 
   .print-section .print-content-formatted > :first-child,
@@ -920,9 +935,10 @@
   .print-tags {
     padding: 2mm 3mm 2mm 3mm !important;
     gap: 1.5mm !important;
-    align-items: center !important;
+    align-items: stretch !important;
     align-content: flex-start !important;
     justify-content: flex-start !important;
+    flex-direction: column !important;
   }
 
   .print-tag {
@@ -937,6 +953,10 @@
     background: hsl(130 14% 79%) !important;
     color: hsl(0 0% 16%) !important;
     border: 1px solid hsl(130 7% 61%) !important;
+    width: 100% !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
   }
 
   /* Allow selected sections to flow across pages (override global avoid-break) */
