@@ -1786,13 +1786,13 @@ Crest Pest Control
               )}
             </Card>
 
-            {/* Service Area Section (replaces old Findings, What to Expect, Recommendations) */}
+            {/* Service Area Section */}
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Area</h2>
               
-              {/* Findings subsection */}
+              {/* Services Completed subsection (was Findings) */}
               <div className="p-3 space-y-3">
-                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Findings</h3>
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Services Completed</h3>
                 {isAnalyzing ? (
                   <div className="text-center py-4">
                     <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
@@ -1806,7 +1806,7 @@ Crest Pest Control
                         updateItem(0, e.target.value, setEditableFindings);
                         setHasManuallyEditedFindings(true);
                       }}
-                      placeholder="Enter findings..."
+                      placeholder="Enter services completed..."
                       className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
                       rows={4}
                     />
@@ -1837,13 +1837,57 @@ Crest Pest Control
                 )}
               </div>
 
-              {/* Actions subsection */}
+              {/* Today's Findings subsection */}
               <div className="p-3 space-y-3 border-t border-border mt-3">
-                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Actions</h3>
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Today's Findings</h3>
+                <Textarea
+                  value={todaysFindings}
+                  onChange={(e) => setTodaysFindings(e.target.value)}
+                  placeholder="Describe what was found during today's visit..."
+                  className="text-sm resize-y min-h-[80px] leading-relaxed no-print"
+                  rows={3}
+                />
+                <div
+                  className="hidden print-content-formatted"
+                  dangerouslySetInnerHTML={{
+                    __html: (todaysFindings || "").replace(/\n/g, "<br/>"),
+                  }}
+                />
+              </div>
+            </Card>
+
+            {/* Recommendations Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
+              <div className="p-3 no-print">
+                <RichTextEditor
+                  value={editableRecommendations[0] || ""}
+                  onChange={(val) => updateItem(0, val, setEditableRecommendations)}
+                  placeholder="Enter recommendations for the customer..."
+                  fontSize={recommendationsFontSize}
+                  onFontSizeChange={setRecommendationsFontSize}
+                  className="min-h-[120px] text-dark-sage"
+                  showControls={true}
+                />
+              </div>
+              {/* Print version */}
+              <div
+                className="hidden print-content-formatted text-dark-sage p-3"
+                style={{ fontSize: `${recommendationsFontSize}px` }}
+                dangerouslySetInnerHTML={{
+                  __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
+                }}
+              />
+            </Card>
+
+            {/* What to Expect Section (was Actions) */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">What to Expect</h2>
+              <div className="p-3 space-y-3">
                 <Textarea
                   value={editableExpectations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
-                  placeholder="Enter actions taken..."
+                  placeholder="What the customer should expect..."
                   className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
                   rows={4}
                 />
@@ -1871,30 +1915,6 @@ Crest Pest Control
                   Expand with AI
                 </Button>
               </div>
-            </Card>
-
-            {/* Recommendations Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
-              <div className="p-3 no-print">
-                <RichTextEditor
-                  value={editableRecommendations[0] || ""}
-                  onChange={(val) => updateItem(0, val, setEditableRecommendations)}
-                  placeholder="Enter recommendations for the customer..."
-                  fontSize={recommendationsFontSize}
-                  onFontSizeChange={setRecommendationsFontSize}
-                  className="min-h-[120px] text-dark-sage"
-                  showControls={true}
-                />
-              </div>
-              {/* Print version */}
-              <div
-                className="hidden print-content-formatted text-dark-sage p-3"
-                style={{ fontSize: `${recommendationsFontSize}px` }}
-                dangerouslySetInnerHTML={{
-                  __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
-                }}
-              />
             </Card>
           </div>
         </div>
