@@ -690,9 +690,9 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 1mm 3mm 1.5mm 3mm !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    padding: 1.5mm 3mm 2mm 3mm !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
     display: block !important;
     align-items: initial !important;
@@ -706,14 +706,14 @@
   .print-section-content li {
     margin: 0 0 1.2mm 0 !important;
     padding: 0 !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
   }
 
   .print-section-content,
   .print-section-content * {
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
@@ -732,7 +732,7 @@
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
     border: none !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
     white-space: pre-wrap !important;
     display: none !important;
   }
@@ -745,10 +745,10 @@
     max-height: none !important;
     overflow: visible !important;
     line-height: 1.45 !important;
-    padding: 1mm 3mm 1.5mm 3mm !important;
+    padding: 1.5mm 3mm 2mm 3mm !important;
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
@@ -897,18 +897,18 @@
 
   /* Print tags styling with brand colors */
   .print-tags {
-    padding: 1mm 2mm 1mm 2mm !important;
-    gap: 1mm !important;
+    padding: 2mm 3mm 2mm 3mm !important;
+    gap: 1.5mm !important;
     align-items: center !important;
     align-content: flex-start !important;
     justify-content: flex-start !important;
   }
 
   .print-tag {
-    font-size: 10px !important;
-    padding: 0.5mm 1.5mm 0.45mm 1.5mm !important;
-    border-radius: 2mm !important;
-    line-height: 1 !important;
+    font-size: 14px !important;
+    padding: 1.5mm 3mm 1.2mm 3mm !important;
+    border-radius: 3mm !important;
+    line-height: 1.2 !important;
     display: inline-flex !important;
     align-items: center !important;
     vertical-align: middle !important;
