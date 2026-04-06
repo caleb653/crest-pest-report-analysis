@@ -688,54 +688,54 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           
           // Draw legend if present
           if (legendItems.length > 0) {
-            const legendPadding = 8;
-            const iconSize = 14;
-            const legendLineHeight = 20;
-            const legendWidth = 140;
-            const legendHeight = 24 + legendItems.length * legendLineHeight;
-            const legendX = 12;
-            const legendY = exportHeight - legendHeight - 12;
+            const legendPadding = 12;
+            const iconSize = 22;
+            const legendLineHeight = 30;
+            const legendWidth = 200;
+            const legendHeight = 34 + legendItems.length * legendLineHeight;
+            const legendX = 14;
+            const legendY = exportHeight - legendHeight - 14;
             
             // Legend background
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 6);
+            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
             ctx.fill();
             ctx.stroke();
             
             // Legend title
             ctx.fillStyle = '#1f2937';
-            ctx.font = 'bold 10px sans-serif';
-            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 14);
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 20);
             
             // Load icon images and draw legend items
             const iconPromises = legendItems.map((item, i) => {
               return new Promise<void>((resolveIcon) => {
                 const iconInfo = AVAILABLE_ICONS.find(ic => ic.icon === item.icon);
-                const y = legendY + 24 + i * legendLineHeight;
+                const y = legendY + 34 + i * legendLineHeight;
                 
                 if (iconInfo?.svgPath) {
                   const iconImg = new Image();
                   iconImg.onload = () => {
                     ctx.drawImage(iconImg, legendX + legendPadding, y, iconSize, iconSize);
                     ctx.fillStyle = '#374151';
-                    ctx.font = '10px sans-serif';
-                    ctx.fillText(item.label, legendX + legendPadding + iconSize + 4, y + 11);
+                    ctx.font = '14px sans-serif';
+                    ctx.fillText(item.label, legendX + legendPadding + iconSize + 6, y + 16);
                     resolveIcon();
                   };
                   iconImg.onerror = () => {
                     ctx.fillStyle = '#374151';
-                    ctx.font = '10px sans-serif';
-                    ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 11);
+                    ctx.font = '14px sans-serif';
+                    ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
                     resolveIcon();
                   };
                   iconImg.src = iconInfo.svgPath;
                 } else {
                   ctx.fillStyle = '#374151';
-                  ctx.font = '10px sans-serif';
-                  ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 11);
+                  ctx.font = '14px sans-serif';
+                  ctx.fillText(`• ${item.label}`, legendX + legendPadding, y + 16);
                   resolveIcon();
                 }
               });
