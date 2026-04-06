@@ -222,56 +222,55 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         }
 
         /* Force smaller typography specifically in the Initial Pest Report right column */
-        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header),
-        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header) * {
-          font-size: 7px !important;
-          line-height: 1.15 !important;
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header),
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) * {
+          font-size: 9px !important;
+          line-height: 1.2 !important;
           font-weight: 500 !important;
-          color: hsl(var(--foreground)) !important;
           overflow-wrap: break-word !important;
           word-break: break-word !important;
           white-space: normal !important;
           hyphens: auto !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-section > :not(.print-section-header) {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section > :not(.print-section-header) {
           padding: 1mm 2mm 1.25mm 2mm !important;
           margin: 0 !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-section-header,
-        .pdf-export-root.print-layout > div:last-child .print-section-header *,
-        .pdf-export-root.print-layout > div:last-child .print-section-header input {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section-header,
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section-header *,
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section-header input {
           font-size: 10px !important;
           line-height: 1.05 !important;
           font-weight: 800 !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-section h3,
-        .pdf-export-root.print-layout > div:last-child .print-section h3 * {
-          font-size: 8px !important;
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section h3,
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section h3 * {
+          font-size: 9.5px !important;
           line-height: 1.1 !important;
           font-weight: 700 !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-section ul {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section ul {
           margin: 0 !important;
           padding-left: 2.75mm !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-section li {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-section li {
           margin: 0 0 0.4mm 0 !important;
           padding: 0 !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-tags {
+        .pdf-export-root.print-layout > div:nth-child(2) .print-tags {
           gap: 0.2rem !important;
           padding: 1.5mm 2mm !important;
         }
 
-        .pdf-export-root.print-layout > div:last-child .print-tag,
-        .pdf-export-root.print-layout > div:last-child .print-tag * {
-          font-size: 7px !important;
+        .pdf-export-root.print-layout > div:nth-child(2) .print-tag,
+        .pdf-export-root.print-layout > div:nth-child(2) .print-tag * {
+          font-size: 8px !important;
           line-height: 1.1 !important;
         }
 
