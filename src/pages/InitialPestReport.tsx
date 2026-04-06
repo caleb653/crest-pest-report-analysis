@@ -974,7 +974,7 @@ Crest Pest Control
         const pdfBytes = await buildSimplePDF({ reportPages });
 
         setPdfExportMode(false);
-        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+        const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
         pdfBase64 = btoa(binary);
       } catch (pdfErr) {
         setPdfExportMode(false);
