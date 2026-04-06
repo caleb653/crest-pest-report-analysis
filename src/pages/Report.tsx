@@ -1183,9 +1183,15 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
+      const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+      if (exportFn) {
+        const freshRender = await exportFn();
+        if (freshRender) setRenderedMapImage(freshRender);
+      }
+
       // Switch to static map image for capture
       setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 200));
 
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
@@ -1288,9 +1294,15 @@ Crest Pest Control`;
       toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
       let pdfBase64: string | undefined;
       try {
+        const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+        if (exportFn) {
+          const freshRender = await exportFn();
+          if (freshRender) setRenderedMapImage(freshRender);
+        }
+
         // Switch to static map image for capture
         setPdfExportMode(true);
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 200));
 
         const pageEls = Array.from(
           document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
