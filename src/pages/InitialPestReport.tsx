@@ -2103,6 +2103,11 @@ Crest Pest Control
             </div>
           </div>
           
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch checked={includePdf} onCheckedChange={setIncludePdf} id="include-pdf-ipr" />
+            <Label htmlFor="include-pdf-ipr" className="text-sm font-medium cursor-pointer">Include PDF attachment</Label>
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowComposeDialog(false)}>
               Cancel
