@@ -360,7 +360,7 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = A4_LANDSCAPE_WIDTH_PX;
+  const SIMPLE_CAPTURE_WIDTH = 794; // ~210mm at 96dpi, matches print layout width
 
   const outDoc = await PDFDocument.create();
   // A4 landscape
