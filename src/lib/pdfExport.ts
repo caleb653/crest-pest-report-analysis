@@ -6,19 +6,6 @@ const A4_LANDSCAPE_WIDTH_PX = 1123;
 
 let cachedPrintCss = "";
 
-function getContainedImageSize(
-  imgWidth: number,
-  imgHeight: number,
-  maxWidth: number,
-  maxHeight: number,
-) {
-  const scale = Math.min(maxWidth / imgWidth, maxHeight / imgHeight);
-
-  return {
-    width: imgWidth * scale,
-    height: imgHeight * scale,
-  };
-}
 
 function collectPrintRules(rules: CSSRuleList, output: string[]) {
   for (const rule of Array.from(rules)) {
