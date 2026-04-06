@@ -615,8 +615,8 @@
 
   .print-section-header {
     background: hsl(0 0% 16%) !important;
-    padding: 1.5mm 3.5mm 1.2mm 3.5mm !important;
-    font-size: 14px !important;
+    padding: 1.2mm 3mm 1mm 3mm !important;
+    font-size: 12px !important;
     font-weight: 800 !important;
     line-height: 1.15 !important;
     text-transform: uppercase !important;
@@ -627,7 +627,7 @@
     gap: 0.4rem;
     border-radius: 1.5mm 1.5mm 0 0 !important;
     color: hsl(0 0% 100%) !important;
-    min-height: 8mm !important;
+    min-height: 6.5mm !important;
     overflow: visible !important;
   }
 
