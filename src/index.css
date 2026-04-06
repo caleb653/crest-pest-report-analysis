@@ -906,8 +906,8 @@
   }
 
   .print-tag {
-    font-size: 14px !important;
-    padding: 1.5mm 3mm 1.2mm 3mm !important;
+    font-size: 12px !important;
+    padding: 1mm 2.5mm 0.8mm 2.5mm !important;
     border-radius: 3mm !important;
     line-height: 1.2 !important;
     display: inline-flex !important;
