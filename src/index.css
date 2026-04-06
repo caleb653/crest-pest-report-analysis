@@ -449,7 +449,7 @@
   .print-map-container iframe {
     width: 100% !important;
     height: 100% !important;
-    object-fit: contain !important;
+    object-fit: cover !important;
   }
 
   /* Show legend in print */
