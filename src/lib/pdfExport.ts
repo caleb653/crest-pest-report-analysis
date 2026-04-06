@@ -320,12 +320,12 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = 800;
+  const SIMPLE_CAPTURE_WIDTH = 750;
 
   const outDoc = await PDFDocument.create();
-  // Use A4 portrait dimensions for taller pages
-  const pageW = 595;
-  const pageH = 842;
+  // A4 landscape
+  const pageW = 842;
+  const pageH = 595;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
