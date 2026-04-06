@@ -2513,7 +2513,7 @@ Crest Pest Control`;
                 {mapUrl || customMapImage ? (
                   <div className="relative h-full w-full">
                     {pdfExportMode && renderedMapImage ? (
-                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                      <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-cover" />
                     ) : (
                     <MapCanvas
                       key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
