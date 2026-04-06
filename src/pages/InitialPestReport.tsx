@@ -38,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
+import { buildMergedPDF } from "@/lib/pdfExport";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -173,6 +174,8 @@ const Report = () => {
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
+  const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
+  const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
@@ -831,46 +834,40 @@ const Report = () => {
 
   const exportToPDF = async () => {
     try {
-      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach((toastEl) => {
-        (toastEl as HTMLElement).style.display = "none";
+      toast.info("Generating PDF...", { duration: 15000, id: "pdf-gen" });
+
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 150));
+
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+      const pdfBytes = await buildMergedPDF({
+        customerName: editableCustomer || "",
+        technicianName: editableTech || "",
+        address: editableAddress || extractedAddress || address || "",
+        reportPages,
       });
 
-      // Downscale all visible images to reduce PDF size
-      const images = document.querySelectorAll<HTMLImageElement>("img:not(.no-print-compress)");
-      const originals: { el: HTMLImageElement; src: string }[] = [];
+      setPdfExportMode(false);
+      toast.dismiss("pdf-gen");
 
-      await Promise.all(
-        Array.from(images).map(async (img) => {
-          if (!img.complete || img.naturalWidth === 0) return;
-          // Skip tiny images (icons, logos under 50px)
-          if (img.naturalWidth <= 100 && img.naturalHeight <= 100) return;
-          try {
-            const compressed = await downscaleImg(img, 800, 0.5);
-            if (compressed) {
-              originals.push({ el: img, src: img.src });
-              img.src = compressed;
-            }
-          } catch { /* skip */ }
-        })
-      );
-
-      // Also downscale any canvases to JPEG
-      const canvases = document.querySelectorAll<HTMLCanvasElement>("canvas");
-      const origCanvases: { el: HTMLCanvasElement; parent: HTMLElement; clone: HTMLCanvasElement }[] = [];
-
-      await new Promise((r) => setTimeout(r, 200));
-      window.print();
-
-      // Restore original sources
-      setTimeout(() => {
-        originals.forEach(({ el, src }) => { el.src = src; });
-        toasts.forEach((toastEl) => {
-          (toastEl as HTMLElement).style.display = "";
-        });
-      }, 500);
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error("Print failed");
+      console.error("PDF export error:", e);
+      setPdfExportMode(false);
+      toast.dismiss("pdf-gen");
+      toast.error("PDF generation failed. Try again.");
     }
   };
 
@@ -967,6 +964,34 @@ Crest Pest Control
         navigate(`/initial-pest-report/${newId}`, { replace: true });
       }
 
+      // Generate PDF to attach
+      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+      let pdfBase64: string | undefined;
+      try {
+        setPdfExportMode(true);
+        await new Promise((r) => setTimeout(r, 150));
+
+        const pageEls = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+        ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+        const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+        const pdfBytes = await buildMergedPDF({
+          customerName: editableCustomer || "",
+          technicianName: editableTech || "",
+          address: editableAddress || extractedAddress || address || "",
+          reportPages,
+        });
+
+        setPdfExportMode(false);
+        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+        pdfBase64 = btoa(binary);
+      } catch (pdfErr) {
+        setPdfExportMode(false);
+        console.warn("PDF generation failed, sending email without attachment:", pdfErr);
+      }
+      toast.dismiss("pdf-email");
+
       // Now send the email with the correct report ID
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
@@ -979,6 +1004,8 @@ Crest Pest Control
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
+          pdfBase64,
+          pdfFilename: `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
         },
       });
 
@@ -1374,7 +1401,7 @@ Crest Pest Control
       )}
 
       {/* Main Content */}
-      <div className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
+      <div data-pdf-page="1" data-pdf-capture="1" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
@@ -1399,12 +1426,17 @@ Crest Pest Control
 
               {mapUrl || customMapImage ? (
                 <div className="relative h-full w-full">
-                  <MapCanvas
-                    key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
-                    mapUrl={customMapImage || mapUrl}
-                    onSave={setMapData}
-                    initialData={mapData}
-                  />
+                  {pdfExportMode && renderedMapImage ? (
+                    <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-contain" />
+                  ) : (
+                    <MapCanvas
+                      key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                      mapUrl={customMapImage || mapUrl}
+                      onSave={setMapData}
+                      onExportImage={setRenderedMapImage}
+                      initialData={mapData}
+                    />
+                  )}
 
                   {/* Upload custom map button */}
                   <div className="no-print absolute top-4 right-4 z-20">
@@ -1833,6 +1865,8 @@ Crest Pest Control
 
       {/* Second Page - Property Images */}
       <div 
+        data-pdf-page="2"
+        data-pdf-capture="2"
         className={`print-page-break bg-background ${propertyImages.length === 0 ? 'print:hidden' : ''}`}
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}

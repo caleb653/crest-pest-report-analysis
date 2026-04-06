@@ -58,6 +58,8 @@ serve(async (req) => {
           "license_number",
           "recommendations",
           "next_steps",
+          "customer_key_areas",
+          "customer_preferences",
         ].join(",")
       )
       .eq("id", reportId)
