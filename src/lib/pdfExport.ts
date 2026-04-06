@@ -270,7 +270,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
 
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag,
         .pdf-export-root.print-layout > div:nth-child(2) .print-tag * {
-          font-size: 8px !important;
+          font-size: 10px !important;
           line-height: 1.1 !important;
         }
 
