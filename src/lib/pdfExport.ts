@@ -128,6 +128,78 @@ async function captureElement(el: HTMLElement): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
+async function captureElementSimple(el: HTMLElement, captureWidth: number): Promise<string> {
+  const captureKey = el.dataset.pdfCapture;
+  const printCss = getPrintCssText();
+
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    onclone: (clonedDoc) => {
+      const style = clonedDoc.createElement("style");
+      style.textContent = `
+        ${printCss}
+
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          background: #ffffff !important;
+          overflow: visible !important;
+        }
+
+        .pdf-export-root {
+          background: #ffffff !important;
+          box-sizing: border-box !important;
+          overflow: visible !important;
+        }
+
+        .pdf-export-root [class*="max-w-"] {
+          max-width: none !important;
+        }
+
+        .pdf-export-root [class*="bg-background"] {
+          background: #ffffff !important;
+        }
+
+        .pdf-export-root .no-print,
+        .pdf-export-root button:not(.print-keep),
+        .pdf-export-root [role="status"],
+        .pdf-export-root .sonner,
+        .pdf-export-root [data-sonner-toaster] {
+          display: none !important;
+        }
+
+        .pdf-export-root .print-only-text {
+          display: inline !important;
+        }
+
+        .pdf-export-root .hidden.print\\:block,
+        .pdf-export-root [class*="hidden"][class*="print\\:block"] {
+          display: block !important;
+        }
+      `;
+      clonedDoc.head.appendChild(style);
+
+      if (!captureKey) return;
+
+      const clonedPage = clonedDoc.querySelector<HTMLElement>(`[data-pdf-capture="${captureKey}"]`);
+      if (!clonedPage) return;
+
+      clonedPage.classList.add("pdf-export-root");
+      clonedPage.style.width = `${captureWidth}px`;
+      clonedPage.style.minWidth = `${captureWidth}px`;
+      clonedPage.style.background = "#ffffff";
+      clonedPage.style.boxSizing = "border-box";
+      clonedPage.style.overflow = "visible";
+    },
+  });
+
+  return canvas.toDataURL("image/jpeg", 0.92);
+}
+
 export async function buildMergedPDF(options: {
   customerName: string;
   technicianName: string;
