@@ -1266,7 +1266,7 @@ Crest Pest Control
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
+        <div data-pdf-page="0" data-pdf-capture="0" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-1 flex-wrap">
