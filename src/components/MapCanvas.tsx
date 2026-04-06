@@ -724,59 +724,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     };
   };
 
-  const renderNormalizedAnnotations = async (
-    canvasState: NonNullable<ReturnType<typeof buildNormalizedCanvasState>>,
-    exportWidth: number,
-    exportHeight: number,
-  ) => {
-    const tempCanvasEl = document.createElement('canvas');
-    tempCanvasEl.width = exportWidth;
-    tempCanvasEl.height = exportHeight;
-
-    const tempFabric = new FabricCanvas(tempCanvasEl, {
-      width: exportWidth,
-      height: exportHeight,
-      backgroundColor: 'transparent',
-      selection: false,
-    });
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        try {
-          tempFabric.loadFromJSON(canvasState.objects, () => {
-            const baseW = canvasState.base?.width || REFERENCE_WIDTH;
-            const baseH = canvasState.base?.height || REFERENCE_HEIGHT;
-            const scaleX = exportWidth / baseW;
-            const scaleY = exportHeight / baseH;
-            const targetObjectScale = Math.min(exportWidth, exportHeight) / 800;
-
-            tempFabric.getObjects().forEach((obj: any) => {
-              obj.left = (obj.left || 0) * scaleX;
-              obj.top = (obj.top || 0) * scaleY;
-              obj.scaleX = (obj.scaleX || 1) * targetObjectScale;
-              obj.scaleY = (obj.scaleY || 1) * targetObjectScale;
-              obj.selectable = false;
-              obj.evented = false;
-              obj.setCoords();
-            });
-
-            tempFabric.renderAll();
-            resolve();
-          });
-        } catch (error) {
-          reject(error);
-        }
-      });
-
-      return tempFabric.toDataURL({ format: 'png', multiplier: 1 });
-    } finally {
-      tempFabric.dispose();
-    }
-  };
-
   // Export canvas with background as a single image
   const exportAsImage = async (
-    precomputedState?: NonNullable<ReturnType<typeof buildNormalizedCanvasState>>,
   ): Promise<string | null> => {
     if (!fabricCanvasRef.current || !canvasRef.current) return null;
 
@@ -789,7 +738,6 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     const exportWidth = REFERENCE_WIDTH;
     const exportScale = exportWidth / displayWidth;
     const exportHeight = Math.round(displayHeight * exportScale);
-    const canvasState = precomputedState ?? buildNormalizedCanvasState();
 
     const tempCanvas = document.createElement('canvas');
     tempCanvas.width = exportWidth;
@@ -834,13 +782,19 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       ctx.fillRect(0, 0, exportWidth, exportHeight);
       ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
 
-      if (canvasState && canvasState.objects.objects.length > 0) {
+      // Export the live Fabric canvas annotations directly — positions are already
+      // correct relative to the display canvas, and the multiplier scales them
+      // to the export resolution, keeping exact alignment.
+      if (canvas.getObjects().length > 0) {
         try {
-          const annotationsDataUrl = await renderNormalizedAnnotations(canvasState, exportWidth, exportHeight);
+          const annotationsDataUrl = canvas.toDataURL({
+            multiplier: exportScale,
+            format: 'png',
+          });
           const annotationsImg = await loadImage(annotationsDataUrl);
           ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
         } catch (e) {
-          console.warn('Normalized annotation render failed, exporting without annotation overlay:', e);
+          console.warn('Canvas tainted, exporting without annotation overlay:', e);
         }
       }
 
@@ -882,8 +836,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       onSave(canvasData);
       
       // Also export as static image if callback provided
-      if (onExportImage && canvasState.objects.objects.length > 0) {
-        const imageDataUrl = await exportAsImage(canvasState);
+      if (onExportImage && canvas.getObjects().length > 0) {
+        const imageDataUrl = await exportAsImage();
         if (imageDataUrl) {
           onExportImage(imageDataUrl);
         }
