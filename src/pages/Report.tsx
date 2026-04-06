@@ -1791,10 +1791,19 @@ Crest Pest Control`;
               </Button>
               </>
               )}
-              <Button onClick={exportToPDF} variant="outline" size="sm">
-                <FileDown className="w-3 h-3 mr-1" />
-                PDF
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FileDown className="w-3 h-3 mr-1" />
+                    PDF
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button onClick={() => navigate("/")} variant="outline" size="sm">
                 <Home className="w-3 h-3" />
               </Button>
