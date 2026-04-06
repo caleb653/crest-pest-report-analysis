@@ -108,6 +108,30 @@ async function captureElement(el: HTMLElement): Promise<string> {
         .pdf-export-root [class*="hidden"][class*="print\\:block"] {
           display: block !important;
         }
+
+        /* Sales report page 2: map fills its grid column */
+        .pdf-export-root [class*="w-\\[400px\\]"][class*="h-\\[533px\\]"] {
+          width: 100% !important;
+          height: auto !important;
+          aspect-ratio: 3 / 4 !important;
+        }
+
+        /* Remove scale transform on map parent */
+        .pdf-export-root [class*="print\\:scale-"] {
+          transform: none !important;
+        }
+
+        /* Force grid layout for map + details */
+        .pdf-export-root [class*="lg\\:grid-cols-"] {
+          display: grid !important;
+          grid-template-columns: 48% 52% !important;
+          gap: 20px !important;
+          align-items: start !important;
+        }
+
+        .pdf-export-root .print-content-formatted {
+          display: block !important;
+        }
       `;
       clonedDoc.head.appendChild(style);
 
