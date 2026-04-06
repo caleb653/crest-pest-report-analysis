@@ -1183,7 +1183,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
-  const exportToPDF = async () => {
+  const exportToPDF = async (mode: "short" | "full" = "short") => {
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
@@ -1203,12 +1203,17 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-      const pdfBytes = await buildMergedPDF({
-        customerName: editableCustomer || "",
-        technicianName: editableTech || "",
-        address: editableAddress || extractedAddress || address || "",
-        reportPages,
-      });
+      let pdfBytes: Uint8Array;
+      if (mode === "full") {
+        pdfBytes = await buildMergedPDF({
+          customerName: editableCustomer || "",
+          technicianName: editableTech || "",
+          address: editableAddress || extractedAddress || address || "",
+          reportPages,
+        });
+      } else {
+        pdfBytes = await buildSimplePDF({ reportPages });
+      }
 
       setPdfExportMode(false);
 
