@@ -43,7 +43,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildMergedPDF, downloadPDF } from "@/lib/pdfExport";
+import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
