@@ -964,6 +964,34 @@ Crest Pest Control
         navigate(`/initial-pest-report/${newId}`, { replace: true });
       }
 
+      // Generate PDF to attach
+      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+      let pdfBase64: string | undefined;
+      try {
+        setPdfExportMode(true);
+        await new Promise((r) => setTimeout(r, 150));
+
+        const pageEls = Array.from(
+          document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+        ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+        const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+        const pdfBytes = await buildMergedPDF({
+          customerName: editableCustomer || "",
+          technicianName: editableTech || "",
+          address: editableAddress || extractedAddress || address || "",
+          reportPages,
+        });
+
+        setPdfExportMode(false);
+        const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+        pdfBase64 = btoa(binary);
+      } catch (pdfErr) {
+        setPdfExportMode(false);
+        console.warn("PDF generation failed, sending email without attachment:", pdfErr);
+      }
+      toast.dismiss("pdf-email");
+
       // Now send the email with the correct report ID
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
@@ -976,6 +1004,8 @@ Crest Pest Control
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
+          pdfBase64,
+          pdfFilename: `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
         },
       });
 
