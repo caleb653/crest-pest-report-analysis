@@ -147,28 +147,30 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.display = "flex";
       clonedPage.style.flexDirection = "column";
 
-      // Fix page 2 map: fill the full column height, keep emblems in position
+      // Fix page 2 map: maintain 3:4 aspect ratio (matches baked image)
+      // but maximize within available height so emblems stay positioned correctly
       const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
       if (mapContainer) {
         mapContainer.style.width = "100%";
         mapContainer.style.height = "100%";
-        mapContainer.style.aspectRatio = "unset";
-        // Ensure the map image uses contain so emblems stay positioned correctly
+        mapContainer.style.maxHeight = "100%";
+        mapContainer.style.aspectRatio = "3 / 4";
+        // Use object-cover to match the baked image's cover logic
         const mapImg = mapContainer.querySelector<HTMLImageElement>('img');
         if (mapImg) {
-          mapImg.style.objectFit = "contain";
+          mapImg.style.objectFit = "cover";
           mapImg.style.width = "100%";
           mapImg.style.height = "100%";
-          mapImg.style.backgroundColor = "#000";
         }
       }
 
-      // Also make the map's parent flex column stretch
+      // Make the map's parent flex column stretch to fill grid cell
       const mapParent = clonedPage.querySelector<HTMLElement>('.flex.flex-col.min-h-0');
       if (mapParent) {
         mapParent.style.flex = "1";
         mapParent.style.display = "flex";
         mapParent.style.flexDirection = "column";
+        mapParent.style.justifyContent = "center";
       }
 
       // Auto-shrink additional details text to fit
