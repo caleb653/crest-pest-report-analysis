@@ -40,6 +40,7 @@ import { inferImageUploadMeta } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, downloadPDF } from "@/lib/pdfExport";
