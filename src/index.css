@@ -445,8 +445,10 @@
 
   .print-map-container img,
   .print-map-container iframe {
-    width: 100% !important;
-    height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     object-fit: contain !important;
   }
 
@@ -652,8 +654,8 @@
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) {
-    padding-top: 0.6mm !important;
-    padding-bottom: 0.8mm !important;
+    padding-top: 1.5mm !important;
+    padding-bottom: 2mm !important;
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) p,
@@ -690,7 +692,7 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 1.5mm 3mm 2mm 3mm !important;
+    padding: 2.5mm 3.5mm 3mm 3.5mm !important;
     font-size: 16px !important;
     line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
@@ -745,7 +747,7 @@
     max-height: none !important;
     overflow: visible !important;
     line-height: 1.45 !important;
-    padding: 1.5mm 3mm 2mm 3mm !important;
+    padding: 2.5mm 3.5mm 3mm 3.5mm !important;
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
     font-size: 16px !important;
