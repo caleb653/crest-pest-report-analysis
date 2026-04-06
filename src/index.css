@@ -394,9 +394,9 @@
     width: calc(100% - 6mm) !important;
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 200mm minmax(0, 1fr) !important;
+    grid-template-columns: 140mm minmax(0, 1fr) !important;
     column-gap: 1.5mm !important;
-    height: 182mm !important;
+    height: 188mm !important;
     margin: 0mm auto 0 auto !important;
     padding: 0 !important;
     align-items: flex-start !important;
@@ -410,7 +410,7 @@
     box-shadow: 0 2px 8px hsl(130 10% 50% / 0.1);
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important;
-    height: 182mm !important;
+    height: 188mm !important;
     width: 100% !important;
     max-width: none !important;
     flex: none !important;
@@ -523,13 +523,31 @@
 /* Continue general print styles */
 @media print {
   .print-layout > div:last-child {
-    height: auto !important;
-    max-height: none !important;
+    height: 188mm !important;
+    max-height: 188mm !important;
     overflow: visible !important;
     padding-top: 0 !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     width: 100% !important;
+  }
+
+  .print-layout > div:last-child > div {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  .print-layout > div:last-child > div > .print-section {
+    flex: 1 1 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .print-layout > div:last-child > div > .print-section > :not(.print-section-header) {
+    flex: 1 1 0 !important;
   }
 
   .print-section {
@@ -713,7 +731,7 @@
 
   .print-section-content,
   .print-section-content * {
-    font-size: 15px !important;
+    font-size: 16px !important;
     line-height: 1.45 !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
@@ -747,11 +765,11 @@
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
     padding: 2mm 3mm 2.5mm 3mm !important;
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
-    font-size: 14px !important;
+    font-size: 16px !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
@@ -908,7 +926,7 @@
   }
 
   .print-tag {
-    font-size: 12px !important;
+    font-size: 14px !important;
     padding: 1mm 2.5mm 0.8mm 2.5mm !important;
     border-radius: 3mm !important;
     line-height: 1.2 !important;
