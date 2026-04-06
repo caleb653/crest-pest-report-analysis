@@ -967,37 +967,37 @@ Crest Pest Control
         navigate(`/initial-pest-report/${newId}`, { replace: true });
       }
 
-      // Generate PDF to attach
-      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+      // Generate PDF to attach (only if toggle is on)
       let pdfBase64: string | undefined;
-      try {
-        // Capture fresh map render before entering PDF mode
-        const emailExportFn = (window as any).exportMapAsImage;
-        if (emailExportFn) {
-          const freshRender = await emailExportFn();
-          if (freshRender) setRenderedMapImage(freshRender);
+      if (includePdf) {
+        toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
+        try {
+          const emailExportFn = (window as any).exportMapAsImage;
+          if (emailExportFn) {
+            const freshRender = await emailExportFn();
+            if (freshRender) setRenderedMapImage(freshRender);
+          }
+
+          setPdfExportMode(true);
+          await new Promise((r) => setTimeout(r, 200));
+
+          const pageEls = Array.from(
+            document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+          ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+          const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+          const pdfBytes = await buildSimplePDF({ reportPages });
+
+          setPdfExportMode(false);
+          const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
+          pdfBase64 = btoa(binary);
+        } catch (pdfErr) {
+          setPdfExportMode(false);
+          console.warn("PDF generation failed, sending email without attachment:", pdfErr);
         }
-
-        setPdfExportMode(true);
-        await new Promise((r) => setTimeout(r, 200));
-
-        const pageEls = Array.from(
-          document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-        ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-        const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-        const pdfBytes = await buildSimplePDF({ reportPages });
-
-        setPdfExportMode(false);
-        const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
-        pdfBase64 = btoa(binary);
-      } catch (pdfErr) {
-        setPdfExportMode(false);
-        console.warn("PDF generation failed, sending email without attachment:", pdfErr);
+        toast.dismiss("pdf-email");
       }
-      toast.dismiss("pdf-email");
 
-      // Now send the email with the correct report ID
       const { data, error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
@@ -1009,8 +1009,10 @@ Crest Pest Control
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
-          pdfBase64,
-          pdfFilename: `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          ...(pdfBase64 ? {
+            pdfBase64,
+            pdfFilename: `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          } : {}),
         },
       });
 
