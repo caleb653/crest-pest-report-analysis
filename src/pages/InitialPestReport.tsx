@@ -1896,7 +1896,7 @@ Crest Pest Control
 
           {/* Property Images Grid - All 5 images in a row */}
           {propertyImages.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
               {propertyImages.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted relative group">
