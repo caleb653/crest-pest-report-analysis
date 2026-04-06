@@ -1748,8 +1748,11 @@ Crest Pest Control
               </div>
               {(customerPreference || customerPreferenceNotes) && (
                 <div className="hidden print-content-formatted p-3">
-                  {customerPreference && <p className="text-sm font-medium">{customerPreference}</p>}
-                  {customerPreferenceNotes && <p className="text-sm">{customerPreferenceNotes}</p>}
+                  <p className="text-sm">
+                    {customerPreference && <span className="font-medium">{customerPreference}</span>}
+                    {customerPreference && customerPreferenceNotes && <span> — </span>}
+                    {customerPreferenceNotes && <span>{customerPreferenceNotes}</span>}
+                  </p>
                 </div>
               )}
             </Card>
