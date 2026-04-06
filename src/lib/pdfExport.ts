@@ -403,9 +403,8 @@ export async function buildSimplePDF(options: {
       pendingHeaderImg = null;
     } else {
       const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
-      const drawX = (pageW - drawW) / 2;
       const drawY = pageH - drawH;
-      page.drawImage(img, { x: drawX, y: drawY, width: drawW, height: drawH });
+      page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
     }
   }
 
