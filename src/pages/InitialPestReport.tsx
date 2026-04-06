@@ -38,7 +38,7 @@ import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildMergedPDF } from "@/lib/pdfExport";
+import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
