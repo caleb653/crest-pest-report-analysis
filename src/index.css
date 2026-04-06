@@ -391,15 +391,16 @@
   }
 
   .print-layout {
-    width: calc(100% - 6mm) !important;
-    max-width: none !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 68mm !important;
+    grid-template-columns: 140mm 68mm !important;
     column-gap: 2mm !important;
     height: 188mm !important;
-    margin: 0mm auto 0 auto !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     align-items: stretch !important;
+    justify-content: center !important;
     min-height: 0 !important;
     flex-direction: unset !important;
   }
@@ -411,8 +412,9 @@
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important;
     height: 188mm !important;
-    width: auto !important;
-    max-width: 100% !important;
+    width: 140mm !important;
+    min-width: 140mm !important;
+    max-width: 140mm !important;
     flex: none !important;
     padding: 0 !important;
     position: relative !important;
