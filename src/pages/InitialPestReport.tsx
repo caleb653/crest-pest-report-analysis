@@ -1865,6 +1865,8 @@ Crest Pest Control
 
       {/* Second Page - Property Images */}
       <div 
+        data-pdf-page="2"
+        data-pdf-capture="2"
         className={`print-page-break bg-background ${propertyImages.length === 0 ? 'print:hidden' : ''}`}
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
