@@ -524,17 +524,17 @@ export async function buildSimplePDF(options: {
   reportPages: HTMLElement[];
 }): Promise<Uint8Array> {
   const { reportPages } = options;
-  const SIMPLE_CAPTURE_WIDTH = 842; // Match A4 landscape page width for full-width capture
 
   const outDoc = await PDFDocument.create();
-  // A4 landscape
+  // Use the same page size as the merged PDF template (letter landscape)
   const pageW = 842;
   const pageH = 595;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
   for (const el of reportPages) {
-    const dataUrl = await captureElementSimple(el, SIMPLE_CAPTURE_WIDTH);
+    // Use the same captureElement function as the full proposal
+    const dataUrl = await captureElement(el);
     const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
     const img = await outDoc.embedJpg(imgBytes);
     const captureId = el.dataset.pdfCapture ?? "";
@@ -547,26 +547,31 @@ export async function buildSimplePDF(options: {
     const page = outDoc.addPage([pageW, pageH]);
 
     if (captureId === "1" && pendingHeaderImg) {
+      // Draw header at top, then content below — same as buildMergedPDF
       const headerScale = pageW / pendingHeaderImg.width;
       const headerDrawW = pageW;
       const headerDrawH = pendingHeaderImg.height * headerScale;
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: headerDrawW, height: headerDrawH });
 
+      const contentScale = pageW / img.width;
+      const contentDrawW = pageW;
+      const contentDrawH = img.height * contentScale;
       const remainingHeight = Math.max(headerDrawY, 0);
-      const { width: contentDrawW, height: contentDrawH } = getContainedImageSize(
-        img.width, img.height, pageW, remainingHeight,
-      );
-      const contentDrawY = headerDrawY - contentDrawH;
+      const finalH = Math.min(contentDrawH, remainingHeight);
+      const contentDrawY = headerDrawY - finalH;
       page.drawImage(img, {
         x: 0,
         y: Math.max(contentDrawY, 0),
         width: contentDrawW,
-        height: contentDrawH,
+        height: finalH,
       });
       pendingHeaderImg = null;
     } else {
-      const { width: drawW, height: drawH } = getContainedImageSize(img.width, img.height, pageW, pageH);
+      // Stretch to full page width, cap height — same as buildMergedPDF
+      const scale = pageW / img.width;
+      const drawW = pageW;
+      const drawH = Math.min(img.height * scale, pageH);
       const drawY = pageH - drawH;
       page.drawImage(img, { x: 0, y: drawY, width: drawW, height: drawH });
     }
