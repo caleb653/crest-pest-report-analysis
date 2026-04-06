@@ -690,9 +690,9 @@
 
   .print-section-content {
     background: hsl(0 0% 100%) !important;
-    padding: 0.45mm 3mm 0.75mm 3mm !important;
-    font-size: 14px !important;
-    line-height: 1.35 !important;
+    padding: 1mm 3mm 1.5mm 3mm !important;
+    font-size: 16px !important;
+    line-height: 1.4 !important;
     color: hsl(var(--foreground)) !important;
     display: block !important;
     align-items: initial !important;
@@ -704,16 +704,16 @@
   }
 
   .print-section-content li {
-    margin: 0 0 1mm 0 !important;
+    margin: 0 0 1.2mm 0 !important;
     padding: 0 !important;
-    font-size: 14px !important;
-    line-height: 1.35 !important;
+    font-size: 16px !important;
+    line-height: 1.4 !important;
   }
 
   .print-section-content,
   .print-section-content * {
-    font-size: 14px !important;
-    line-height: 1.35 !important;
+    font-size: 16px !important;
+    line-height: 1.4 !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
