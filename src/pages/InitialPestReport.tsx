@@ -970,8 +970,15 @@ Crest Pest Control
       toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
       let pdfBase64: string | undefined;
       try {
+        // Capture fresh map render before entering PDF mode
+        const emailExportFn = (window as any).exportMapAsImage;
+        if (emailExportFn) {
+          const freshRender = await emailExportFn();
+          if (freshRender) setRenderedMapImage(freshRender);
+        }
+
         setPdfExportMode(true);
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 200));
 
         const pageEls = Array.from(
           document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
