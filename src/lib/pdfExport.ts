@@ -149,6 +149,19 @@ async function captureElement(el: HTMLElement): Promise<string> {
         gridContainer.style.alignItems = "start";
         gridContainer.style.padding = "0 16px";
       }
+
+      // Auto-shrink additional details text to fit
+      const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
+      const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
+      if (detailsBody && detailsCard) {
+        let fontSize = parseFloat(detailsBody.style.fontSize) || 11;
+        const minFont = 7;
+        // Shrink until content fits or we hit minimum
+        while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
+          fontSize -= 0.5;
+          detailsBody.style.fontSize = `${fontSize}px`;
+        }
+      }
     },
   });
 
