@@ -391,8 +391,8 @@
   }
 
   .print-layout {
-    width: 210mm !important;
-    max-width: 210mm !important;
+    width: 297mm !important;
+    max-width: 297mm !important;
     display: grid !important;
     grid-template-columns: 130mm 1fr !important;
     column-gap: 2mm !important;
