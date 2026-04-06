@@ -836,8 +836,15 @@ const Report = () => {
     try {
       toast.info("Generating PDF...", { duration: 15000, id: "pdf-gen" });
 
+      // Capture a fresh map render BEFORE entering PDF mode (which unmounts the canvas)
+      const exportFn = (window as any).exportMapAsImage;
+      if (exportFn) {
+        const freshRender = await exportFn();
+        if (freshRender) setRenderedMapImage(freshRender);
+      }
+
       setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 200));
 
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
