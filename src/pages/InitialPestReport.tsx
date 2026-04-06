@@ -2105,7 +2105,7 @@ Crest Pest Control
           </div>
           
           <div className="flex items-center space-x-2 pt-2">
-            <Switch checked={includePdf} onCheckedChange={setIncludePdf} id="include-pdf-ipr" />
+            <Switch checked={includePdf} onCheckedChange={setIncludePdf} id="include-pdf-ipr" className="data-[state=checked]:bg-green-500" />
             <Label htmlFor="include-pdf-ipr" className="text-sm font-medium cursor-pointer">Include PDF attachment</Label>
           </div>
 
