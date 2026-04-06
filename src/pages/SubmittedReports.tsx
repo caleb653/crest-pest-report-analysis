@@ -98,8 +98,7 @@ const SubmittedReports = () => {
   const [techFilter, setTechFilter] = useState(defaultTech);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("created");
   const [dateFilter, setDateFilter] = useState<DateFilter>("month");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+
 
   const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
