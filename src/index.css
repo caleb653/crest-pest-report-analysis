@@ -394,13 +394,13 @@
     width: 210mm !important;
     max-width: 210mm !important;
     display: grid !important;
-    grid-template-columns: 140mm 68mm !important;
+    grid-template-columns: 130mm 78mm !important;
     column-gap: 2mm !important;
     height: 188mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     align-items: stretch !important;
-    justify-content: center !important;
+    justify-content: start !important;
     min-height: 0 !important;
     flex-direction: unset !important;
   }
@@ -412,9 +412,9 @@
     overflow: hidden !important;
     background: hsl(130 14% 79%) !important;
     height: 188mm !important;
-    width: 140mm !important;
-    min-width: 140mm !important;
-    max-width: 140mm !important;
+    width: 130mm !important;
+    min-width: 130mm !important;
+    max-width: 130mm !important;
     flex: none !important;
     padding: 0 !important;
     position: relative !important;
@@ -442,14 +442,14 @@
     transform: none !important;
     transform-origin: top left !important;
     display: block !important;
-    object-fit: contain !important;
+    object-fit: cover !important;
   }
 
   .print-map-container img,
   .print-map-container iframe {
     width: 100% !important;
     height: 100% !important;
-    object-fit: contain !important;
+    object-fit: cover !important;
   }
 
   /* Show legend in print */
