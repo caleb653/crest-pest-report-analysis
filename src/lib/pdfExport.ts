@@ -292,9 +292,9 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
           flex: 0 0 auto !important;
         }
 
-        /* Service Area (4th) — takes remaining space */
+        /* Service Area (4th) — gets more space but not all */
         .pdf-export-root.print-layout > div:nth-child(2) > div > .print-section:nth-child(4) {
-          flex: 1 1 0 !important;
+          flex: 2 1 0 !important;
         }
 
         /* Recommendations (5th) — compact */
