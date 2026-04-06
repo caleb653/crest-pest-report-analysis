@@ -448,13 +448,9 @@
 
   .print-map-container img,
   .print-map-container iframe {
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
     object-fit: contain !important;
-    margin: auto !important;
-    display: block !important;
   }
 
   /* Show legend in print */
