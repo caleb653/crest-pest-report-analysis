@@ -41,6 +41,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
@@ -1182,7 +1183,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
-  const exportToPDF = async () => {
+  const exportToPDF = async (mode: "short" | "full" = "short") => {
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
@@ -1202,12 +1203,17 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-      const pdfBytes = await buildMergedPDF({
-        customerName: editableCustomer || "",
-        technicianName: editableTech || "",
-        address: editableAddress || extractedAddress || address || "",
-        reportPages,
-      });
+      let pdfBytes: Uint8Array;
+      if (mode === "full") {
+        pdfBytes = await buildMergedPDF({
+          customerName: editableCustomer || "",
+          technicianName: editableTech || "",
+          address: editableAddress || extractedAddress || address || "",
+          reportPages,
+        });
+      } else {
+        pdfBytes = await buildSimplePDF({ reportPages });
+      }
 
       setPdfExportMode(false);
 
@@ -1737,9 +1743,17 @@ Crest Pest Control`;
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10" />
             <div className="flex gap-2 no-print">
-              <Button size="sm" variant="default" onClick={exportToPDF} className="h-9">
-                <FileDown className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="default" className="h-9">
+                    <FileDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {!isReadOnly && (
               <>
               <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
@@ -1777,10 +1791,19 @@ Crest Pest Control`;
               </Button>
               </>
               )}
-              <Button onClick={exportToPDF} variant="outline" size="sm">
-                <FileDown className="w-3 h-3 mr-1" />
-                PDF
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FileDown className="w-3 h-3 mr-1" />
+                    PDF
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button onClick={() => navigate("/")} variant="outline" size="sm">
                 <Home className="w-3 h-3" />
               </Button>
@@ -1949,10 +1972,19 @@ Crest Pest Control`;
                 </Button>
                 </>
                 )}
-                <Button onClick={exportToPDF} variant="outline" size="sm">
-                  <FileDown className="w-3 h-3 mr-1" />
-                  PDF
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileDown className="w-3 h-3 mr-1" />
+                      PDF
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button onClick={() => navigate("/")} variant="outline" size="sm">
                   <Home className="w-3 h-3" />
                 </Button>
