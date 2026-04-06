@@ -1397,7 +1397,7 @@ Crest Pest Control
           className={`print-map-container ${
             isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none p-4"
           }`}
-          style={!isMobileOrTablet ? { width: 'calc((100vh - 88px) * 0.75)', maxWidth: '50%' } : undefined}
+          style={!isMobileOrTablet ? { width: 'calc((100vh - 88px) * 0.75)', maxWidth: '55%' } : undefined}
         >
           <div 
             className="relative w-full bg-sage rounded-lg print-map-aspect" 
