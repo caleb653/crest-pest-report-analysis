@@ -745,11 +745,11 @@
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
-    line-height: 1.45 !important;
-    padding: 2.5mm 3.5mm 3mm 3.5mm !important;
+    line-height: 1.4 !important;
+    padding: 2mm 3mm 2.5mm 3mm !important;
     margin: 0 !important;
     background: hsl(0 0% 100%) !important;
-    font-size: 16px !important;
+    font-size: 14px !important;
     color: hsl(var(--foreground)) !important;
     font-weight: 500 !important;
   }
