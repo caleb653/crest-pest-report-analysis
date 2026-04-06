@@ -1861,12 +1861,12 @@ Crest Pest Control
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
+        <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-border">
-            <div className="flex items-center gap-4">
-              <img src={crestLogo} alt="Crest Pest Control" className="h-16 no-print-compress" />
-              <h1 className="text-2xl font-bold text-foreground">Property Images</h1>
+          <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
+            <div className="flex items-center gap-3">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
+              <h1 className="text-lg font-bold text-foreground">Property Images</h1>
             </div>
           </div>
 
@@ -1896,7 +1896,7 @@ Crest Pest Control
 
           {/* Property Images Grid - All 5 images in a row */}
           {propertyImages.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
               {propertyImages.map((item, index) => (
                 <div key={index} className="space-y-1">
                   <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted relative group">
