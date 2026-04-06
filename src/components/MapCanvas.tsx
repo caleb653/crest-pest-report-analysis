@@ -762,8 +762,11 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         annotationsImg.onerror = () => resolve(null);
         annotationsImg.src = annotationsDataUrl;
       };
-      bgImg.onerror = () => resolve(null);
-      bgImg.src = mapUrl;
+      bgImg.onerror = () => {
+        if (bgSrc !== mapUrl) URL.revokeObjectURL(bgSrc);
+        resolve(null);
+      };
+      bgImg.src = bgSrc;
     });
   };
   
