@@ -656,23 +656,26 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     
     return new Promise((resolve) => {
       bgImg.onload = () => {
-        // Draw background image to fill canvas while maintaining aspect ratio
+        // Draw background image to fully cover the canvas without stretching,
+        // matching the in-browser map presentation exactly.
         const imgAspect = bgImg.width / bgImg.height;
         const canvasAspect = exportWidth / exportHeight;
-        
+
         let drawWidth = exportWidth;
         let drawHeight = exportHeight;
         let drawX = 0;
         let drawY = 0;
-        
+
         if (imgAspect > canvasAspect) {
-          drawHeight = exportWidth / imgAspect;
-          drawY = (exportHeight - drawHeight) / 2;
-        } else {
+          drawHeight = exportHeight;
           drawWidth = exportHeight * imgAspect;
           drawX = (exportWidth - drawWidth) / 2;
+        } else {
+          drawWidth = exportWidth;
+          drawHeight = exportWidth / imgAspect;
+          drawY = (exportHeight - drawHeight) / 2;
         }
-        
+
         ctx.fillStyle = '#f5f5f5';
         ctx.fillRect(0, 0, exportWidth, exportHeight);
         ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
@@ -922,9 +925,9 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     <div className="relative w-full h-full">
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
-        <img
-          className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-contain bg-card"
-          style={{ 
+          <img
+            className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
+            style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',
             zIndex: 0
