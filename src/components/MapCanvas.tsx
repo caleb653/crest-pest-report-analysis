@@ -689,10 +689,43 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         ctx.drawImage(bgImg, drawX, drawY, drawWidth, drawHeight);
         
         // Export annotations at higher resolution using multiplier
-        const annotationsDataUrl = canvas.toDataURL({ 
-          multiplier: scaleX, 
-          format: 'png',
-        });
+        let annotationsDataUrl: string | null = null;
+        try {
+          annotationsDataUrl = canvas.toDataURL({ 
+            multiplier: scaleX, 
+            format: 'png',
+          });
+        } catch (e) {
+          console.warn('Canvas tainted, exporting without annotation overlay:', e);
+        }
+
+        if (!annotationsDataUrl) {
+          // Tainted canvas fallback – just return the background with legend
+          if (legendItems.length > 0) {
+            // Draw legend directly (same code as below)
+            const legendPadding = 12;
+            const iconSize = 22;
+            const legendLineHeight = 30;
+            const legendWidth = 200;
+            const legendHeight = 34 + legendItems.length * legendLineHeight;
+            const legendX = 14;
+            const legendY = exportHeight - legendHeight - 14;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#1f2937';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('LEGEND', legendX + legendPadding, legendY + 20);
+            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
+          } else {
+            resolve(tempCanvas.toDataURL('image/jpeg', 0.7));
+          }
+          return;
+        }
         const annotationsImg = new Image();
         annotationsImg.onload = () => {
           ctx.drawImage(annotationsImg, 0, 0, exportWidth, exportHeight);
