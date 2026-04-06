@@ -184,6 +184,7 @@ const Report = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
+  const [includePdf, setIncludePdf] = useState(false);
   const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "jake@crestpestco.com", "caleb@crestpestco.com"]);
