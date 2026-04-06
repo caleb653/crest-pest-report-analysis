@@ -241,7 +241,7 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header *,
         .pdf-export-root.print-layout > div:nth-child(2) .print-section-header input {
-          font-size: 10px !important;
+          font-size: 11px !important;
           line-height: 1.05 !important;
           font-weight: 800 !important;
         }
