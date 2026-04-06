@@ -834,46 +834,40 @@ const Report = () => {
 
   const exportToPDF = async () => {
     try {
-      const toasts = document.querySelectorAll('[role="status"], .sonner, [data-sonner-toaster]');
-      toasts.forEach((toastEl) => {
-        (toastEl as HTMLElement).style.display = "none";
+      toast.info("Generating PDF...", { duration: 15000, id: "pdf-gen" });
+
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 150));
+
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+
+      const pdfBytes = await buildMergedPDF({
+        customerName: editableCustomer || "",
+        technicianName: editableTech || "",
+        address: editableAddress || extractedAddress || address || "",
+        reportPages,
       });
 
-      // Downscale all visible images to reduce PDF size
-      const images = document.querySelectorAll<HTMLImageElement>("img:not(.no-print-compress)");
-      const originals: { el: HTMLImageElement; src: string }[] = [];
+      setPdfExportMode(false);
+      toast.dismiss("pdf-gen");
 
-      await Promise.all(
-        Array.from(images).map(async (img) => {
-          if (!img.complete || img.naturalWidth === 0) return;
-          // Skip tiny images (icons, logos under 50px)
-          if (img.naturalWidth <= 100 && img.naturalHeight <= 100) return;
-          try {
-            const compressed = await downscaleImg(img, 800, 0.5);
-            if (compressed) {
-              originals.push({ el: img, src: img.src });
-              img.src = compressed;
-            }
-          } catch { /* skip */ }
-        })
-      );
-
-      // Also downscale any canvases to JPEG
-      const canvases = document.querySelectorAll<HTMLCanvasElement>("canvas");
-      const origCanvases: { el: HTMLCanvasElement; parent: HTMLElement; clone: HTMLCanvasElement }[] = [];
-
-      await new Promise((r) => setTimeout(r, 200));
-      window.print();
-
-      // Restore original sources
-      setTimeout(() => {
-        originals.forEach(({ el, src }) => { el.src = src; });
-        toasts.forEach((toastEl) => {
-          (toastEl as HTMLElement).style.display = "";
-        });
-      }, 500);
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error("Print failed");
+      console.error("PDF export error:", e);
+      setPdfExportMode(false);
+      toast.dismiss("pdf-gen");
+      toast.error("PDF generation failed. Try again.");
     }
   };
 
