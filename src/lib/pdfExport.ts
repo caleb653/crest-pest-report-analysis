@@ -394,9 +394,8 @@ export async function buildSimplePDF(options: {
         img.width, img.height, pageW, remainingHeight,
       );
       const contentDrawY = headerDrawY - contentDrawH;
-      const contentDrawX = (pageW - contentDrawW) / 2;
       page.drawImage(img, {
-        x: contentDrawX,
+        x: 0,
         y: Math.max(contentDrawY, 0),
         width: contentDrawW,
         height: contentDrawH,
