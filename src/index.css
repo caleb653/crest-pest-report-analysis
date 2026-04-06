@@ -416,6 +416,9 @@
     flex: none !important;
     padding: 0 !important;
     aspect-ratio: 3 / 4 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   /* Kill percentage-based padding that creates blank space in print */
