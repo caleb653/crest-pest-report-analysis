@@ -652,8 +652,8 @@
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) {
-    padding-top: 0.6mm !important;
-    padding-bottom: 0.8mm !important;
+    padding-top: 1.5mm !important;
+    padding-bottom: 2mm !important;
   }
 
   .print-section:not(.print-pricing-table) > :not(.print-section-header) p,
