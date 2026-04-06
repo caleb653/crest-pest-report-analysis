@@ -1292,9 +1292,9 @@ Crest Pest Control`;
         sent_to_customer_at: new Date().toISOString(),
       });
 
-      // Generate PDF to attach (only if toggle is on)
+      // Generate PDF to attach based on option
       let pdfBase64: string | undefined;
-      if (includePdf) {
+      if (pdfAttachOption !== "none") {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
           const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
@@ -1303,7 +1303,6 @@ Crest Pest Control`;
             if (freshRender) setRenderedMapImage(freshRender);
           }
 
-          // Switch to static map image for capture
           setPdfExportMode(true);
           await new Promise((r) => setTimeout(r, 200));
 
@@ -1312,16 +1311,20 @@ Crest Pest Control`;
           ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
           const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
 
-          const pdfBytes = await buildMergedPDF({
-            customerName: editableCustomer || "",
-            technicianName: editableTech || "",
-            address: editableAddress || extractedAddress || address || "",
-            reportPages,
-          });
+          let pdfBytes: Uint8Array;
+          if (pdfAttachOption === "full") {
+            pdfBytes = await buildMergedPDF({
+              customerName: editableCustomer || "",
+              technicianName: editableTech || "",
+              address: editableAddress || extractedAddress || address || "",
+              reportPages,
+            });
+          } else {
+            pdfBytes = await buildSimplePDF({ reportPages }) as Uint8Array;
+          }
 
           setPdfExportMode(false);
 
-          // Convert Uint8Array to base64
           const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
           pdfBase64 = btoa(binary);
         } catch (pdfErr) {
