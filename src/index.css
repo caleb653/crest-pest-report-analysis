@@ -391,10 +391,10 @@
   }
 
   .print-layout {
-    width: calc(100% - 20mm) !important;
+    width: calc(100% - 10mm) !important;
     max-width: none !important;
     display: grid !important;
-    grid-template-columns: 135mm minmax(0, 1fr) !important;
+    grid-template-columns: 121mm minmax(0, 1fr) !important;
     column-gap: 4mm !important;
     height: 162mm !important;
     margin: 0mm auto 0 auto !important;
@@ -416,6 +416,7 @@
     max-width: none !important;
     flex: none !important;
     padding: 0 !important;
+    aspect-ratio: 3 / 4 !important;
   }
 
   /* Kill percentage-based padding that creates blank space in print */
@@ -440,6 +441,13 @@
     transform: none !important;
     transform-origin: top left !important;
     display: block !important;
+    object-fit: contain !important;
+  }
+
+  .print-map-container img,
+  .print-map-container iframe {
+    width: 100% !important;
+    height: 100% !important;
     object-fit: contain !important;
   }
 
@@ -508,8 +516,7 @@
 /* iPad-specific print adjustments */
 @media print and (max-width: 1024px) {
   .print-map-container canvas {
-    /* Compress horizontally + shift for iPad export */
-    transform: translate(2mm, -1mm) scale(0.88, 0.80) !important;
+    transform: none !important;
   }
 }
 
