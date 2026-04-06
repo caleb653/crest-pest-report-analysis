@@ -163,6 +163,8 @@ const Report = () => {
   );
   const [editableEquipment, setEditableEquipment] = useState<string[]>([]);
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
+  const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState<string>("");
+  const [todaysFindings, setTodaysFindings] = useState<string>("");
   const [customerPreference, setCustomerPreference] = useState<string>("");
   const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState<string>("");
   const [editableFindings, setEditableFindings] = useState<string[]>([]);
@@ -524,13 +526,22 @@ const Report = () => {
       if (row.equipment && Array.isArray(row.equipment)) {
         setEditableEquipment(row.equipment as string[]);
       }
-      if (row.customer_key_areas && Array.isArray(row.customer_key_areas)) {
-        setCustomerKeyAreas(row.customer_key_areas as string[]);
+      if (row.customer_key_areas && typeof row.customer_key_areas === 'object') {
+        const keyAreas = row.customer_key_areas as any;
+        if (Array.isArray(keyAreas)) {
+          setCustomerKeyAreas(keyAreas as string[]);
+        } else if (keyAreas.areas) {
+          setCustomerKeyAreas(keyAreas.areas as string[]);
+          if (keyAreas.notes) setCustomerKeyAreasNotes(keyAreas.notes);
+        }
       }
       if (row.customer_preferences) {
         const prefs = row.customer_preferences as any;
         if (prefs.preference) setCustomerPreference(prefs.preference);
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
+      }
+      if (row.notes) {
+        setTodaysFindings(row.notes as string);
       }
 
       console.log("Loading report map_data:", {
@@ -750,7 +761,7 @@ const Report = () => {
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
-        notes: notes,
+        notes: todaysFindings || notes || null,
         findings: editableFindings,
         recommendations: editableRecommendations,
         next_steps: editableExpectations,
@@ -767,8 +778,9 @@ const Report = () => {
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
-        customer_key_areas: customerKeyAreas.length > 0 ? customerKeyAreas : null,
+        customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        
       };
 
       if (reportId) {
@@ -924,7 +936,7 @@ Crest Pest Control
         technician_name: editableTech,
         customer_name: editableCustomer,
         address: editableAddress || extractedAddress || address,
-        notes: notes,
+        notes: todaysFindings || notes || null,
         findings: editableFindings,
         recommendations: editableRecommendations,
         next_steps: editableExpectations,
@@ -941,7 +953,7 @@ Crest Pest Control
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
-        customer_key_areas: customerKeyAreas.length > 0 ? customerKeyAreas : null,
+        customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
@@ -1718,9 +1730,22 @@ Crest Pest Control
                   </button>
                 ))}
               </div>
-              {customerKeyAreas.length > 0 && (
+              <div className="px-2 pt-2">
+                <Textarea
+                  value={customerKeyAreasNotes}
+                  onChange={(e) => setCustomerKeyAreasNotes(e.target.value)}
+                  placeholder="Type additional key areas or notes..."
+                  className="text-sm resize-y min-h-[50px] leading-relaxed"
+                  rows={2}
+                />
+              </div>
+              {(customerKeyAreas.length > 0 || customerKeyAreasNotes) && (
                 <div className="hidden print-content-formatted p-3">
-                  <p className="text-sm">{customerKeyAreas.join(", ")}</p>
+                  <p className="text-sm">
+                    {customerKeyAreas.join(", ")}
+                    {customerKeyAreas.length > 0 && customerKeyAreasNotes && " — "}
+                    {customerKeyAreasNotes}
+                  </p>
                 </div>
               )}
             </Card>
@@ -1761,13 +1786,13 @@ Crest Pest Control
               )}
             </Card>
 
-            {/* Service Area Section (replaces old Findings, What to Expect, Recommendations) */}
+            {/* Service Area Section */}
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Service Area</h2>
               
-              {/* Findings subsection */}
+              {/* Services Completed subsection (was Findings) */}
               <div className="p-3 space-y-3">
-                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Findings</h3>
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Services Completed</h3>
                 {isAnalyzing ? (
                   <div className="text-center py-4">
                     <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
@@ -1781,7 +1806,7 @@ Crest Pest Control
                         updateItem(0, e.target.value, setEditableFindings);
                         setHasManuallyEditedFindings(true);
                       }}
-                      placeholder="Enter findings..."
+                      placeholder="Enter services completed..."
                       className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
                       rows={4}
                     />
@@ -1812,13 +1837,57 @@ Crest Pest Control
                 )}
               </div>
 
-              {/* Actions subsection */}
+              {/* Today's Findings subsection */}
               <div className="p-3 space-y-3 border-t border-border mt-3">
-                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Actions</h3>
+                <h3 className="text-base font-semibold text-foreground border-b border-border pb-1">Today's Findings</h3>
+                <Textarea
+                  value={todaysFindings}
+                  onChange={(e) => setTodaysFindings(e.target.value)}
+                  placeholder="Describe what was found during today's visit..."
+                  className="text-sm resize-y min-h-[80px] leading-relaxed no-print"
+                  rows={3}
+                />
+                <div
+                  className="hidden print-content-formatted"
+                  dangerouslySetInnerHTML={{
+                    __html: (todaysFindings || "").replace(/\n/g, "<br/>"),
+                  }}
+                />
+              </div>
+            </Card>
+
+            {/* Recommendations Section */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
+              <div className="p-3 no-print">
+                <RichTextEditor
+                  value={editableRecommendations[0] || ""}
+                  onChange={(val) => updateItem(0, val, setEditableRecommendations)}
+                  placeholder="Enter recommendations for the customer..."
+                  fontSize={recommendationsFontSize}
+                  onFontSizeChange={setRecommendationsFontSize}
+                  className="min-h-[120px] text-dark-sage"
+                  showControls={true}
+                />
+              </div>
+              {/* Print version */}
+              <div
+                className="hidden print-content-formatted text-dark-sage p-3"
+                style={{ fontSize: `${recommendationsFontSize}px` }}
+                dangerouslySetInnerHTML={{
+                  __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
+                }}
+              />
+            </Card>
+
+            {/* What to Expect Section (was Actions) */}
+            <Card className="print-section p-3 md:p-4">
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">What to Expect</h2>
+              <div className="p-3 space-y-3">
                 <Textarea
                   value={editableExpectations[0] || ""}
                   onChange={(e) => updateItem(0, e.target.value, setEditableExpectations)}
-                  placeholder="Enter actions taken..."
+                  placeholder="What the customer should expect..."
                   className="text-sm resize-y min-h-[100px] leading-relaxed no-print"
                   rows={4}
                 />
@@ -1846,30 +1915,6 @@ Crest Pest Control
                   Expand with AI
                 </Button>
               </div>
-            </Card>
-
-            {/* Recommendations Section */}
-            <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
-              <div className="p-3 no-print">
-                <RichTextEditor
-                  value={editableRecommendations[0] || ""}
-                  onChange={(val) => updateItem(0, val, setEditableRecommendations)}
-                  placeholder="Enter recommendations for the customer..."
-                  fontSize={recommendationsFontSize}
-                  onFontSizeChange={setRecommendationsFontSize}
-                  className="min-h-[120px] text-dark-sage"
-                  showControls={true}
-                />
-              </div>
-              {/* Print version */}
-              <div
-                className="hidden print-content-formatted text-dark-sage p-3"
-                style={{ fontSize: `${recommendationsFontSize}px` }}
-                dangerouslySetInnerHTML={{
-                  __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
-                }}
-              />
             </Card>
           </div>
         </div>
