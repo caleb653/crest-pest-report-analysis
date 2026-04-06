@@ -1226,22 +1226,18 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     const freqLine = freqLabel ? ` every ${freqLabel}` : "";
 
     const serviceLines = [primaryService, ...activeServices.slice(1).map((s) => s.serviceType)].filter(Boolean);
-    const normalizedServiceLines = [...Array.from({ length: 4 }, (_, i) => serviceLines[i] || "")];
 
     const firstName = (editableCustomer || "").split(" ")[0] || "there";
+    const serviceBullets = serviceLines.length > 0
+      ? serviceLines.map((s) => `- ${s}`).join("\n\n")
+      : "- General Pest Control";
     const defaultMessage = `Hi ${firstName},
 
 Thank you for the opportunity to prepare a proposal for your property.
 
-Based on our assessment, we’ve put together a plan designed to effectively address your pest control needs. This proposal includes:
+Based on our assessment, we've put together a plan designed to effectively address your pest control needs. This proposal includes:
 
-- ${normalizedServiceLines[0] || "Service 1"}
-
-- ${normalizedServiceLines[1] || "Service 2"}
-
-- ${normalizedServiceLines[2] || "Service 3"}
-
-- ${normalizedServiceLines[3] || "Service 4"}
+${serviceBullets}
 
 Our goal is to provide reliable, proactive protection so you can have peace of mind knowing your property is covered.
 
