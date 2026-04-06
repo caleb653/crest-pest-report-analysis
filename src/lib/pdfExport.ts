@@ -220,36 +220,6 @@ async function captureElementSimple(el: HTMLElement, captureWidth: number): Prom
         .pdf-export-root [class*="hidden"][class*="print\\:block"] {
           display: block !important;
         }
-
-        .pdf-export-root .print-section-content,
-        .pdf-export-root .print-section-content *,
-        .pdf-export-root .print-section-content p,
-        .pdf-export-root .print-section-content li,
-        .pdf-export-root .print-section-content span,
-        .pdf-export-root .print-section-content div {
-          font-size: 8px !important;
-          line-height: 1.2 !important;
-        }
-
-        .pdf-export-root .print-section-content ul {
-          margin: 0 !important;
-          padding-left: 3mm !important;
-        }
-
-        .pdf-export-root .print-section-content li {
-          margin: 0 0 0.5mm 0 !important;
-          padding: 0 !important;
-        }
-
-        .pdf-export-root .print-section-content {
-          padding: 1mm 2.5mm 1.5mm 2.5mm !important;
-        }
-
-        .pdf-export-root .print-section-header {
-          font-size: 11px !important;
-          padding: 0.15rem 0.5rem !important;
-          min-height: 1rem !important;
-        }
       `;
       clonedDoc.head.appendChild(style);
 
