@@ -1053,7 +1053,30 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         frequency: service.frequency,
       }));
 
-  const buildBaseReportPayload = (mapPayload: any, finalSignature?: string | null) => ({
+  const waitForPdfMapRender = () =>
+    new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+
+  const captureFreshRenderedMap = async (): Promise<string | null> => {
+    const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+    if (!exportFn) return renderedMapImage;
+
+    const freshRender = await exportFn();
+    if (!freshRender) return renderedMapImage;
+
+    setRenderedMapImage(freshRender);
+    await waitForPdfMapRender();
+    return freshRender;
+  };
+
+  const buildBaseReportPayload = (
+    mapPayload: any,
+    finalSignature?: string | null,
+    renderedMapUrl?: string | null,
+  ) => ({
     technician_name: editableTech,
     customer_name: editableCustomer,
     address: editableAddress || extractedAddress || address,
@@ -1066,7 +1089,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       : null,
     map_data: mapPayload,
     custom_map_url: customMapImage,
-    rendered_map_url: renderedMapImage,
+    rendered_map_url: renderedMapUrl ?? renderedMapImage,
     property_images: propertyImages,
     customer_signature: finalSignature,
     services: buildServicesPayload() as unknown as any[],
@@ -1187,11 +1210,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     try {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
 
-      const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
-      if (exportFn) {
-        const freshRender = await exportFn();
-        if (freshRender) setRenderedMapImage(freshRender);
-      }
+      await captureFreshRenderedMap();
 
       // Switch to static map image for capture
       setPdfExportMode(true);
@@ -1293,10 +1312,12 @@ Crest Pest Control`;
         }
       }
 
+      const freshRenderedMap = await captureFreshRenderedMap();
+      const sentAt = new Date().toISOString();
       const finalReportId = await persistReport({
-        ...buildBaseReportPayload(mapPayload, finalSignature),
+        ...buildBaseReportPayload(mapPayload, finalSignature, freshRenderedMap),
         customer_email: customerEmail,
-        sent_to_customer_at: new Date().toISOString(),
+        sent_to_customer_at: sentAt,
       });
 
       // Generate PDF to attach based on option
@@ -1304,12 +1325,6 @@ Crest Pest Control`;
       if (pdfAttachOption !== "none") {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
-          const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
-          if (exportFn) {
-            const freshRender = await exportFn();
-            if (freshRender) setRenderedMapImage(freshRender);
-          }
-
           setPdfExportMode(true);
           await new Promise((r) => setTimeout(r, 200));
 
@@ -1361,7 +1376,7 @@ Crest Pest Control`;
 
       if (error) throw error;
 
-      setSentToCustomerAt(new Date().toISOString());
+      setSentToCustomerAt(sentAt);
       setSavedCustomerEmail(customerEmail);
 
       toast.success(`Report saved and sent to ${customerEmail}`);

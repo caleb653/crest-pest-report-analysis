@@ -273,52 +273,79 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ═══════════════════════════════════════════════════════════
              INITIAL PEST REPORT — compact scale
-             Applied when [data-report-type="pest-report"] is set on
-             the root by JS below (only on pest report captures).
+             Applied when [data-report-type="initial-pest"] is present.
+             Legacy [data-report-type="pest-report"] remains supported.
              ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root[data-report-type="initial-pest"],
           .pdf-export-root[data-report-type="pest-report"] {
-            font-size: 9px !important;
-            line-height: 1.35 !important;
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
           }
+          .pdf-export-root[data-report-type="initial-pest"] p,
+          .pdf-export-root[data-report-type="initial-pest"] li,
+          .pdf-export-root[data-report-type="initial-pest"] span,
+          .pdf-export-root[data-report-type="initial-pest"] div,
+          .pdf-export-root[data-report-type="initial-pest"] b,
+          .pdf-export-root[data-report-type="initial-pest"] strong,
           .pdf-export-root[data-report-type="pest-report"] p,
           .pdf-export-root[data-report-type="pest-report"] li,
           .pdf-export-root[data-report-type="pest-report"] span,
           .pdf-export-root[data-report-type="pest-report"] div,
           .pdf-export-root[data-report-type="pest-report"] b,
           .pdf-export-root[data-report-type="pest-report"] strong {
-            font-size: 9px !important;
-            line-height: 1.35 !important;
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
           }
           /* Prose / rich text overrides */
+          .pdf-export-root[data-report-type="initial-pest"] .prose,
+          .pdf-export-root[data-report-type="initial-pest"] .prose *,
+          .pdf-export-root[data-report-type="initial-pest"] .ql-editor,
+          .pdf-export-root[data-report-type="initial-pest"] .ql-editor *,
+          .pdf-export-root[data-report-type="initial-pest"] [contenteditable] *,
           .pdf-export-root[data-report-type="pest-report"] .prose,
           .pdf-export-root[data-report-type="pest-report"] .prose *,
           .pdf-export-root[data-report-type="pest-report"] .ql-editor,
           .pdf-export-root[data-report-type="pest-report"] .ql-editor *,
-          .pdf-export-root[data-report-type="pest-report"] [contenteditable] *,
-          .pdf-export-root[data-report-type="pest-report"] [dangerouslysetinnerhtml] * {
-            font-size: 9px !important;
-            line-height: 1.35 !important;
+          .pdf-export-root[data-report-type="pest-report"] [contenteditable] * {
+            font-size: 8.5px !important;
+            line-height: 1.3 !important;
           }
           /* Tailwind overrides inside pest report */
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-xs"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-sm"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-base"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-lg"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-xl"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-sm"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-base"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-lg"],
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"] { font-size: 9px !important; line-height: 1.35 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"] { font-size: 8.5px !important; line-height: 1.3 !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-2xl"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-2xl"]  { font-size: 20px !important; line-height: 1.3 !important; }
-          /* Headings inside pest report — same 9px as body, except the report title */
+          /* Headings inside pest report — compact body, strong title */
+          .pdf-export-root[data-report-type="initial-pest"] h1,
           .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 20px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 9px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 9px !important; font-weight: 600 !important; }
+          .pdf-export-root[data-report-type="initial-pest"] h2,
+          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 8.5px !important; font-weight: 700 !important; }
+          .pdf-export-root[data-report-type="initial-pest"] h3,
+          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 8.5px !important; font-weight: 600 !important; }
           /* Tighter bullets */
+          .pdf-export-root[data-report-type="initial-pest"] ul li,
+          .pdf-export-root[data-report-type="initial-pest"] ol li,
           .pdf-export-root[data-report-type="pest-report"] ul li,
           .pdf-export-root[data-report-type="pest-report"] ol li { margin-bottom: 0px !important; }
           /* Tighter card padding */
+          .pdf-export-root[data-report-type="initial-pest"] [class*="p-3"],
           .pdf-export-root[data-report-type="pest-report"] [class*="p-3"] { padding: 4px 6px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="p-4"],
           .pdf-export-root[data-report-type="pest-report"] [class*="p-4"] { padding: 6px 8px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="gap-3"],
           .pdf-export-root[data-report-type="pest-report"] [class*="gap-3"] { gap: 3px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="gap-4"],
           .pdf-export-root[data-report-type="pest-report"] [class*="gap-4"] { gap: 5px !important; }
           /* Section header bars in pest report: same visual, slightly shorter */
+          .pdf-export-root[data-report-type="initial-pest"] [data-crest-dark="1"],
           .pdf-export-root[data-report-type="pest-report"] [data-crest-dark="1"] {
             padding-top: 5px !important; padding-bottom: 5px !important;
           }
