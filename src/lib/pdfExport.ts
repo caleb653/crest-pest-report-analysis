@@ -286,7 +286,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root[data-report-type="initial-pest"] span,
           .pdf-export-root[data-report-type="initial-pest"] div,
           .pdf-export-root[data-report-type="initial-pest"] b,
-          .pdf-export-root[data-report-type="initial-pest"] strong,
+          .pdf-export-root[data-report-type="initial-pest"] strong {
+            font-size: 10.5px !important;
+            line-height: 1.3 !important;
+          }
           .pdf-export-root[data-report-type="pest-report"] p,
           .pdf-export-root[data-report-type="pest-report"] li,
           .pdf-export-root[data-report-type="pest-report"] span,
@@ -301,7 +304,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root[data-report-type="initial-pest"] .prose *,
           .pdf-export-root[data-report-type="initial-pest"] .ql-editor,
           .pdf-export-root[data-report-type="initial-pest"] .ql-editor *,
-          .pdf-export-root[data-report-type="initial-pest"] [contenteditable] *,
+          .pdf-export-root[data-report-type="initial-pest"] [contenteditable] * {
+            font-size: 10.5px !important;
+            line-height: 1.3 !important;
+          }
           .pdf-export-root[data-report-type="pest-report"] .prose,
           .pdf-export-root[data-report-type="pest-report"] .prose *,
           .pdf-export-root[data-report-type="pest-report"] .ql-editor,
@@ -315,7 +321,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-sm"],
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-base"],
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-lg"],
-          .pdf-export-root[data-report-type="initial-pest"] [class*="text-xl"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-xl"] { font-size: 10.5px !important; line-height: 1.3 !important; }
           .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-sm"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-base"],
@@ -326,9 +332,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
           /* Headings inside pest report — compact body, strong title */
           .pdf-export-root[data-report-type="initial-pest"] h1,
           .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 20px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="initial-pest"] h2,
+          .pdf-export-root[data-report-type="initial-pest"] h2 { font-size: 10.5px !important; font-weight: 700 !important; }
           .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 8.5px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="initial-pest"] h3,
+          .pdf-export-root[data-report-type="initial-pest"] h3 { font-size: 10.5px !important; font-weight: 600 !important; }
           .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 8.5px !important; font-weight: 600 !important; }
           /* Tighter bullets */
           .pdf-export-root[data-report-type="initial-pest"] ul li,
