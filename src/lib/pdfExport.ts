@@ -277,8 +277,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
              the root by JS below (only on pest report captures).
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root[data-report-type="pest-report"] {
-            font-size: 11px !important;
-            line-height: 1.45 !important;
+            font-size: 9px !important;
+            line-height: 1.35 !important;
           }
           .pdf-export-root[data-report-type="pest-report"] p,
           .pdf-export-root[data-report-type="pest-report"] li,
