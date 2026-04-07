@@ -346,6 +346,21 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* Bullet breathing room */
           .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
+
+          /* ═══════════════════════════════════════════════════════════════
+             INITIAL PEST REPORT — compact font sizes for dense layout
+             ═══════════════════════════════════════════════════════════════ */
+          .pdf-export-root[data-report-type="initial-pest"] {
+            font-size: 9px !important; line-height: 1.4 !important;
+          }
+          .pdf-export-root[data-report-type="initial-pest"] h1 { font-size: 14px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] h2 { font-size: 12px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] h3 { font-size: 10px !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-sm"],
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-base"] { font-size: 9px !important; line-height: 1.4 !important; }
+          .pdf-export-root[data-report-type="initial-pest"] [class*="text-xs"] { font-size: 8px !important; line-height: 1.35 !important; }
+          .pdf-export-root[data-report-type="initial-pest"] ul li,
+          .pdf-export-root[data-report-type="initial-pest"] ol li { margin-bottom: 1px !important; }
         `;
         clonedDoc.head.appendChild(style);
 

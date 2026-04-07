@@ -1296,7 +1296,7 @@ Crest Pest Control
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div data-pdf-page="0" data-pdf-capture="0" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
+        <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-1 flex-wrap">
@@ -1421,7 +1421,7 @@ Crest Pest Control
       )}
 
       {/* Main Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
+      <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
@@ -1924,6 +1924,7 @@ Crest Pest Control
       <div 
         data-pdf-page="2"
         data-pdf-capture="2"
+        data-report-type="initial-pest"
         className={`print-page-break bg-background ${propertyImages.length === 0 ? 'print:hidden' : ''}`}
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
