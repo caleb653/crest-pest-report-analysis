@@ -277,35 +277,47 @@ async function captureElement(el: HTMLElement): Promise<string> {
              the root by JS below (only on pest report captures).
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root[data-report-type="pest-report"] {
-            font-size: 11px !important;
-            line-height: 1.45 !important;
+            font-size: 9px !important;
+            line-height: 1.35 !important;
           }
           .pdf-export-root[data-report-type="pest-report"] p,
           .pdf-export-root[data-report-type="pest-report"] li,
           .pdf-export-root[data-report-type="pest-report"] span,
-          .pdf-export-root[data-report-type="pest-report"] div {
-            font-size: inherit !important;
-            line-height: 1.45 !important;
+          .pdf-export-root[data-report-type="pest-report"] div,
+          .pdf-export-root[data-report-type="pest-report"] b,
+          .pdf-export-root[data-report-type="pest-report"] strong {
+            font-size: 9px !important;
+            line-height: 1.35 !important;
+          }
+          /* Prose / rich text overrides */
+          .pdf-export-root[data-report-type="pest-report"] .prose,
+          .pdf-export-root[data-report-type="pest-report"] .prose *,
+          .pdf-export-root[data-report-type="pest-report"] .ql-editor,
+          .pdf-export-root[data-report-type="pest-report"] .ql-editor *,
+          .pdf-export-root[data-report-type="pest-report"] [contenteditable] *,
+          .pdf-export-root[data-report-type="pest-report"] [dangerouslysetinnerhtml] * {
+            font-size: 9px !important;
+            line-height: 1.35 !important;
           }
           /* Tailwind overrides inside pest report */
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"]   { font-size: 11px !important; line-height: 1.45 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-sm"]   { font-size: 11px !important; line-height: 1.45 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-base"] { font-size: 11px !important; line-height: 1.45 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-lg"]   { font-size: 11px !important; line-height: 1.45 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"]   { font-size: 11px !important; line-height: 1.45 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"],
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-sm"],
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-base"],
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-lg"],
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"] { font-size: 9px !important; line-height: 1.35 !important; }
           .pdf-export-root[data-report-type="pest-report"] [class*="text-2xl"]  { font-size: 20px !important; line-height: 1.3 !important; }
-          /* Headings inside pest report — same 11px as body, except the report title (h1 with text-2xl) */
+          /* Headings inside pest report — same 9px as body, except the report title */
           .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 20px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 11px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 11px !important; font-weight: 600 !important; }
+          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 9px !important; font-weight: 700 !important; }
+          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 9px !important; font-weight: 600 !important; }
           /* Tighter bullets */
           .pdf-export-root[data-report-type="pest-report"] ul li,
-          .pdf-export-root[data-report-type="pest-report"] ol li { margin-bottom: 1px !important; }
+          .pdf-export-root[data-report-type="pest-report"] ol li { margin-bottom: 0px !important; }
           /* Tighter card padding */
-          .pdf-export-root[data-report-type="pest-report"] [class*="p-3"] { padding: 6px 8px !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="p-4"] { padding: 8px 10px !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="gap-3"] { gap: 5px !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="gap-4"] { gap: 7px !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="p-3"] { padding: 4px 6px !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="p-4"] { padding: 6px 8px !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="gap-3"] { gap: 3px !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="gap-4"] { gap: 5px !important; }
           /* Section header bars in pest report: same visual, slightly shorter */
           .pdf-export-root[data-report-type="pest-report"] [data-crest-dark="1"] {
             padding-top: 5px !important; padding-bottom: 5px !important;
