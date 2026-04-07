@@ -391,6 +391,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
         });
 
+        // ── Phase 2b2: Hide empty scheduling section ──
+        clonedPage.querySelectorAll<HTMLElement>("[data-scheduling-empty='true']").forEach((el) => {
+          sp(el, "display", "none");
+        });
+
         // ── Phase 2c: Pricing grid — show print elements, hide inputs ───────
         clonedPage.querySelectorAll<HTMLElement>(".print-pricing-display").forEach((el) => {
           sp(el, "display", "flex");

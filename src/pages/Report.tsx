@@ -2716,7 +2716,7 @@ Crest Pest Control`;
               {/* Bottom row: Scheduling + Setup Materials side by side */}
               <div className="grid grid-cols-2 gap-3 print:gap-2">
                 {/* Scheduling & Customer Communication */}
-                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg" data-scheduling-empty={!preferredServiceDay && !preferredServiceTime && !mainPointOfContact && !contactPhone ? "true" : undefined}>
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
                   </div>
