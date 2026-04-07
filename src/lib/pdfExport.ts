@@ -365,15 +365,30 @@ async function captureElement(el: HTMLElement): Promise<string> {
         // Adds inline-style !important on top of the CSS layer for max certainty
         remakePricingTable(clonedPage);
 
-        // ── Phase 2b: Title — remove width constraints ──────────────────────
+        // ── Phase 2b: Title — replace input with plain span so it never clips ──
         clonedPage.querySelectorAll<HTMLElement>(".print-title").forEach((el) => {
-          sp(el, "width", "auto");
-          sp(el, "max-width", "none");
-          sp(el, "min-width", "0");
-          sp(el, "overflow", "visible");
-          sp(el, "text-overflow", "unset");
-          sp(el, "white-space", "normal");
-          sp(el, "word-break", "break-word");
+          if (el.tagName === "INPUT") {
+            const span = clonedDoc.createElement("span");
+            span.textContent = (el as HTMLInputElement).value || "";
+            // Copy over class list but remove width constraints
+            span.className = el.className
+              .replace(/\bw-\d+\b/g, "")
+              .replace(/\blg:w-\d+\b/g, "")
+              .replace(/\bh-\d+\b/g, "");
+            sp(span, "width", "auto");
+            sp(span, "max-width", "none");
+            sp(span, "overflow", "visible");
+            sp(span, "white-space", "nowrap");
+            sp(span, "display", "inline-block");
+            sp(span, "line-height", "1.2");
+            sp(span, "border", "none");
+            el.replaceWith(span);
+          } else {
+            sp(el, "width", "auto");
+            sp(el, "max-width", "none");
+            sp(el, "overflow", "visible");
+            sp(el, "white-space", "normal");
+          }
         });
 
         // ── Phase 2c: Pricing grid — show print elements, hide inputs ───────
