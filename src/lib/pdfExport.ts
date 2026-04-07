@@ -276,7 +276,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
              Applied when [data-report-type="initial-pest"] is present.
              Legacy [data-report-type="pest-report"] remains supported.
              ═══════════════════════════════════════════════════════════ */
-          .pdf-export-root[data-report-type="initial-pest"],
+          .pdf-export-root[data-report-type="initial-pest"] {
+            font-size: 10.5px !important;
+            line-height: 1.3 !important;
+          }
           .pdf-export-root[data-report-type="pest-report"] {
             font-size: 8.5px !important;
             line-height: 1.3 !important;
