@@ -4,16 +4,14 @@ import html2canvas from "html2canvas";
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
 const A4_LANDSCAPE_WIDTH_PX = 1123;
 
-// ─── Brand palette ────────────────────────────────────────────────────────────
 const BRAND = {
   black: "#2A2A2A",
   offWhite: "#F2F2F2",
   sage: "#C3D1C5",
   darkSage: "#95A197",
-  sageTint: "#f3f6f3", // barely-there sage wash for zebra rows
-  border: "#e0e4e0", // subtle greenish-grey border
-  body: "#3a3a3a", // slightly softened body text
-  muted: "#666666", // secondary labels, fine print
+  sageTint: "#f3f6f3",
+  border: "#dde2dd",
+  muted: "#666666",
 };
 
 let cachedPrintCss = "";
@@ -21,9 +19,7 @@ let cachedPrintCss = "";
 function collectPrintRules(rules: CSSRuleList, output: string[]) {
   for (const rule of Array.from(rules)) {
     if (rule instanceof CSSMediaRule) {
-      if (rule.media.mediaText.includes("print")) {
-        output.push(...Array.from(rule.cssRules).map((r) => r.cssText));
-      }
+      if (rule.media.mediaText.includes("print")) output.push(...Array.from(rule.cssRules).map((r) => r.cssText));
       continue;
     }
     if ("cssRules" in rule) {
@@ -38,18 +34,161 @@ function collectPrintRules(rules: CSSRuleList, output: string[]) {
 
 function getPrintCssText() {
   if (cachedPrintCss) return cachedPrintCss;
-  const output: string[] = [];
+  const out: string[] = [];
   for (const sheet of Array.from(document.styleSheets)) {
     try {
-      collectPrintRules(sheet.cssRules, output);
+      collectPrintRules(sheet.cssRules, out);
     } catch {
       /* noop */
     }
   }
-  cachedPrintCss = output.join("\n");
+  cachedPrintCss = out.join("\n");
   return cachedPrintCss;
 }
 
+// ─── Luminance helper ────────────────────────────────────────────────────────
+function cssRgbLuminance(cssColor: string): number | null {
+  const m = cssColor.match(/[\d.]+/g);
+  if (!m || m.length < 3) return null;
+  return (0.299 * +m[0] + 0.587 * +m[1] + 0.114 * +m[2]) / 255;
+}
+
+// ─── JS: fix ALL dark-background elements ───────────────────────────────────
+// CSS class selectors (e.g. [class*="bg-black"]) miss arbitrary Tailwind values
+// like bg-[#2A2A2A]. This reads the ACTUAL computed background color so it
+// catches every dark element regardless of how it was styled.
+function fixDarkBackgrounds(root: HTMLElement, dv: Window) {
+  root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+    try {
+      const bg = dv.getComputedStyle(el).backgroundColor;
+      if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") return;
+      const lum = cssRgbLuminance(bg);
+      if (lum === null || lum >= 0.25) return;
+
+      // Dark background confirmed — brand-black it and force all text white
+      el.style.setProperty("background-color", BRAND.black, "important");
+      el.style.setProperty("color", BRAND.offWhite, "important");
+      el.querySelectorAll<HTMLElement>("*").forEach((child) => {
+        child.style.setProperty("color", BRAND.offWhite, "important");
+        child.style.setProperty("letter-spacing", "0.07em", "important");
+      });
+    } catch {
+      /* noop */
+    }
+  });
+}
+
+// ─── JS: fix sage-tinted elements ───────────────────────────────────────────
+// Same problem: bg-[#C3D1C5] won't match CSS [class*="bg-green-"] selectors.
+function fixSageBackgrounds(root: HTMLElement, dv: Window) {
+  root.querySelectorAll<HTMLElement>("*").forEach((el) => {
+    try {
+      const bg = dv.getComputedStyle(el).backgroundColor;
+      if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") return;
+      const m = bg.match(/[\d.]+/g);
+      if (!m || m.length < 3) return;
+      const r = +m[0],
+        g = +m[1],
+        b = +m[2];
+      // Sage is greenish-grey — mid-luminance, green channel dominant
+      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      if (lum > 0.55 && lum < 0.85 && g > r && g > b) {
+        el.style.setProperty("background-color", BRAND.sage, "important");
+        el.querySelectorAll<HTMLElement>("*").forEach((child) => {
+          child.style.setProperty("color", BRAND.black, "important");
+        });
+      }
+    } catch {
+      /* noop */
+    }
+  });
+}
+
+// ─── JS: completely remake the pricing table ─────────────────────────────────
+function remakePricingTable(root: HTMLElement) {
+  const table = root.querySelector<HTMLTableElement>("table");
+  if (!table) return;
+
+  // Wrapper: clean collapse, no extra borders
+  table.style.setProperty("border-collapse", "collapse", "important");
+  table.style.setProperty("width", "100%", "important");
+  table.style.setProperty("border", "1px solid " + BRAND.border, "important");
+  table.style.setProperty("border-radius", "6px", "important");
+  table.style.setProperty("overflow", "hidden", "important");
+
+  // ── Header row ─────────────────────────────────────────────────────────────
+  table.querySelectorAll<HTMLElement>("thead th, thead td").forEach((th) => {
+    th.style.setProperty("background-color", BRAND.black, "important");
+    th.style.setProperty("color", BRAND.offWhite, "important");
+    th.style.setProperty("font-size", "10px", "important");
+    th.style.setProperty("font-weight", "700", "important");
+    th.style.setProperty("letter-spacing", "0.09em", "important");
+    th.style.setProperty("text-transform", "uppercase", "important");
+    th.style.setProperty("padding", "10px 14px", "important");
+    th.style.setProperty("border", "none", "important");
+    th.style.setProperty("white-space", "nowrap", "important");
+    th.style.setProperty("vertical-align", "middle", "important");
+    // Force any child spans/divs inside the header to also be white
+    th.querySelectorAll<HTMLElement>("*").forEach((c) => {
+      c.style.setProperty("color", BRAND.offWhite, "important");
+      c.style.setProperty("letter-spacing", "0.09em", "important");
+    });
+  });
+
+  // ── Body rows ───────────────────────────────────────────────────────────────
+  table.querySelectorAll<HTMLTableRowElement>("tbody tr").forEach((row, rowIdx) => {
+    const cells = row.querySelectorAll<HTMLElement>("td");
+    cells.forEach((cell, colIdx) => {
+      const isEven = rowIdx % 2 === 1;
+      cell.style.setProperty("padding", "10px 14px", "important");
+      cell.style.setProperty("vertical-align", "middle", "important");
+      cell.style.setProperty("border-bottom", "1px solid " + BRAND.border, "important");
+      cell.style.setProperty("background-color", isEven ? BRAND.sageTint : "#ffffff", "important");
+
+      if (colIdx === 0) {
+        // Service name: clear and readable
+        cell.style.setProperty("font-size", "13px", "important");
+        cell.style.setProperty("font-weight", "500", "important");
+        cell.style.setProperty("color", BRAND.black, "important");
+      } else if (colIdx === 1 || colIdx === 2) {
+        // Initial / Recurring prices: big and prominent
+        cell.style.setProperty("font-size", "15px", "important");
+        cell.style.setProperty("font-weight", "700", "important");
+        cell.style.setProperty("color", BRAND.black, "important");
+      } else if (colIdx === 3) {
+        // Frequency
+        cell.style.setProperty("font-size", "12px", "important");
+        cell.style.setProperty("color", BRAND.muted, "important");
+      } else {
+        // Schedule
+        cell.style.setProperty("font-size", "11px", "important");
+        cell.style.setProperty("color", BRAND.black, "important");
+      }
+    });
+  });
+
+  // ── Total / footer row ──────────────────────────────────────────────────────
+  // Try tfoot first, fall back to the last tbody row
+  const totalRows = [
+    ...Array.from(table.querySelectorAll<HTMLElement>("tfoot tr")),
+    ...(table.querySelector("tfoot")
+      ? []
+      : ([table.querySelector<HTMLElement>("tbody tr:last-child")].filter(Boolean) as HTMLElement[])),
+  ];
+  totalRows.forEach((row) => {
+    row.querySelectorAll<HTMLElement>("td, th").forEach((cell, colIdx) => {
+      cell.style.setProperty("border-top", "2px solid " + BRAND.black, "important");
+      cell.style.setProperty("border-bottom", "none", "important");
+      cell.style.setProperty("background-color", "#ffffff", "important");
+      cell.style.setProperty("color", BRAND.black, "important");
+      cell.style.setProperty("padding", "11px 14px", "important");
+      cell.style.setProperty("font-weight", "700", "important");
+      cell.style.setProperty("font-size", colIdx >= 1 && colIdx <= 2 ? "16px" : "14px", "important");
+    });
+  });
+}
+
+// ─── captureElement ──────────────────────────────────────────────────────────
 async function captureElement(el: HTMLElement): Promise<string> {
   const captureKey = el.dataset.pdfCapture;
   const printCss = getPrintCssText();
@@ -61,229 +200,69 @@ async function captureElement(el: HTMLElement): Promise<string> {
     backgroundColor: "#ffffff",
     logging: false,
     onclone: (clonedDoc) => {
+      // ── 1. Inject base CSS (only truly safe global rules) ────────────────
       const style = clonedDoc.createElement("style");
       style.textContent = `
         ${printCss}
 
-        /* ── Page reset ────────────────────────────────────────────── */
         html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          background: #ffffff !important;
+          margin: 0 !important; padding: 0 !important;
+          background: #ffffff !important; overflow: visible !important;
+        }
+
+        /* Rendering quality — no word-break/overflow-wrap overrides (cause mid-word breaks) */
+        * {
+          hyphens: none !important; -webkit-hyphens: none !important;
+          -webkit-font-smoothing: antialiased !important;
+          text-rendering: optimizeLegibility !important;
+        }
+
+        .pdf-export-root {
+          background: #ffffff !important; box-sizing: border-box !important;
           overflow: visible !important;
         }
-
-        /* ── Safe global rendering improvements ────────────────────
-           NOTE: No overflow-wrap or word-break overrides here.
-           Those cause mid-word line breaks in narrow columns.       */
-        * {
-          hyphens:                none !important;
-          -webkit-hyphens:        none !important;
-          -ms-hyphens:            none !important;
-          -webkit-font-smoothing: antialiased !important;
-          text-rendering:         optimizeLegibility !important;
-        }
-
-        /* ── Root export wrapper ───────────────────────────────────── */
-        .pdf-export-root {
-          background: #ffffff !important;
-          box-sizing: border-box !important;
-          overflow:   visible !important;
-        }
-
         .pdf-export-root [class*="max-w-"]        { max-width: none !important; }
         .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
-        /* ── Hide non-print noise ──────────────────────────────────── */
+        /* Hide noise */
         .pdf-export-root .no-print,
         .pdf-export-root button:not(.print-keep),
         .pdf-export-root [role="status"],
         .pdf-export-root .sonner,
-        .pdf-export-root [data-sonner-toaster]     { display: none !important; }
-
-        .pdf-export-root .print-only-text                          { display: inline !important; }
+        .pdf-export-root [data-sonner-toaster]            { display: none !important; }
+        .pdf-export-root .print-only-text                 { display: inline !important; }
         .pdf-export-root .hidden.print\\:block,
-        .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important;  }
-        .pdf-export-root .print-content-formatted                  { display: block !important;  }
+        .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
+        .pdf-export-root .print-content-formatted         { display: block !important; }
 
-
-        /* ════════════════════════════════════════════════════════════
-           DARK SECTION HEADER BARS
-           Two-step approach so header text is ALWAYS visible:
-             1. Force brand-black background
-             2. Force ALL children to off-white (higher specificity
-                than any global body-text rule below)
-           ════════════════════════════════════════════════════════════ */
-
-        .pdf-export-root [class*="bg-black"],
-        .pdf-export-root [class*="bg-gray-900"],
-        .pdf-export-root [class*="bg-zinc-900"],
-        .pdf-export-root [class*="bg-neutral-900"],
-        .pdf-export-root [class*="bg-stone-900"] {
-          background-color: ${BRAND.black} !important;
-        }
-
-        .pdf-export-root [class*="bg-black"]       *,
-        .pdf-export-root [class*="bg-gray-900"]    *,
-        .pdf-export-root [class*="bg-zinc-900"]    *,
-        .pdf-export-root [class*="bg-neutral-900"] *,
-        .pdf-export-root [class*="bg-stone-900"]   * {
-          color:          ${BRAND.offWhite} !important;
-          letter-spacing: 0.06em !important;
-        }
-
-
-        /* ════════════════════════════════════════════════════════════
-           TABLE (service pricing)
-           ════════════════════════════════════════════════════════════ */
-
-        .pdf-export-root table {
-          border-collapse: collapse !important;
-          width:           100% !important;
-        }
-
-        /* Header row: brand black */
-        .pdf-export-root thead th,
-        .pdf-export-root thead td {
-          background-color: ${BRAND.black} !important;
-          color:            ${BRAND.offWhite} !important;
-          font-size:        10.5px !important;
-          font-weight:      700 !important;
-          letter-spacing:   0.07em !important;
-          padding:          9px 12px !important;
-          border:           none !important;
-        }
-
-        /* Body rows */
-        .pdf-export-root tbody td {
-          padding:          9px 12px !important;
-          vertical-align:   middle !important;
-          line-height:      1.5 !important;
-          font-size:        13px !important;
-          color:            ${BRAND.body} !important;
-          border-bottom:    1px solid ${BRAND.border} !important;
-          background-color: transparent !important;
-        }
-
-        /* Zebra: barely-there sage wash */
-        .pdf-export-root tbody tr:nth-child(even) td {
-          background-color: ${BRAND.sageTint} !important;
-        }
-
-        /* Total row: strong top accent */
-        .pdf-export-root tfoot td,
-        .pdf-export-root tfoot th {
-          border-top:    2.5px solid ${BRAND.black} !important;
-          border-bottom: none !important;
-          font-weight:   700 !important;
-          font-size:     13px !important;
-          padding:       9px 12px !important;
-          color:         ${BRAND.black} !important;
-        }
-
-
-        /* ════════════════════════════════════════════════════════════
-           SAGE ACCENT ELEMENTS
-           (pest info banner, schedule chips, etc.)
-           ════════════════════════════════════════════════════════════ */
-
-        .pdf-export-root [class*="bg-green-"],
-        .pdf-export-root [class*="bg-sage"],
-        .pdf-export-root [class*="bg-emerald-"],
-        .pdf-export-root [class*="bg-teal-"] {
-          background-color: ${BRAND.sage} !important;
-        }
-
-        .pdf-export-root [class*="bg-green-"]   *,
-        .pdf-export-root [class*="bg-sage"]     *,
-        .pdf-export-root [class*="bg-emerald-"] *,
-        .pdf-export-root [class*="bg-teal-"]    * {
-          color: ${BRAND.black} !important;
-        }
-
-
-        /* ════════════════════════════════════════════════════════════
-           TYPOGRAPHY
-           Note: bold/semibold selectors exclude elements that are
-           inside dark backgrounds (bg-*) or already text-white,
-           so we don't accidentally kill white header text.
-           ════════════════════════════════════════════════════════════ */
-
-        .pdf-export-root p,
-        .pdf-export-root li {
-          color:       ${BRAND.body} !important;
-          line-height: 1.6 !important;
-        }
-
-        .pdf-export-root [class*="text-sm"] {
-          font-size:   12px !important;
-          line-height: 1.6 !important;
-        }
-
-        /* Bold headings in light-BG areas only */
-        .pdf-export-root [class*="font-semibold"]:not([class*="bg-"]):not([class*="text-white"]),
-        .pdf-export-root [class*="font-bold"]:not([class*="bg-"]):not([class*="text-white"]) {
-          color: ${BRAND.black} !important;
-        }
-
-        /* Products two-column list — compact but legible */
+        /* Products two-column list: compact */
         .pdf-export-root [class*="columns-2"] p,
         .pdf-export-root [class*="columns-2"] li {
-          font-size:   9.5px !important;
-          line-height: 1.65 !important;
-          margin:      1px 0 !important;
-          color:       ${BRAND.body} !important;
-        }
-
-        /* Uppercase tracked labels */
-        .pdf-export-root [class*="uppercase"][class*="tracking"],
-        .pdf-export-root [class*="text-xs"][class*="uppercase"] {
-          letter-spacing: 0.08em !important;
+          font-size: 9.5px !important; line-height: 1.65 !important; margin: 1px 0 !important;
         }
 
         /* Bullet list breathing room */
-        .pdf-export-root ul li,
-        .pdf-export-root ol li {
-          margin-bottom: 4px !important;
-        }
+        .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
 
         /* Fine print */
         .pdf-export-root [class*="text-\\[8px\\]"] {
-          font-size:   8px !important;
-          line-height: 1.55 !important;
-          color:       ${BRAND.muted} !important;
+          font-size: 8px !important; line-height: 1.55 !important; color: ${BRAND.muted} !important;
         }
         .pdf-export-root [class*="text-\\[9px\\]"],
         .pdf-export-root [class*="text-\\[10px\\]"] {
-          line-height: 1.55 !important;
-          color:       ${BRAND.muted} !important;
+          line-height: 1.55 !important; color: ${BRAND.muted} !important;
         }
 
+        /* Clean borders */
+        .pdf-export-root [class*="border"]   { border-color: ${BRAND.border} !important; }
+        .pdf-export-root [class*="rounded-lg"],
+        .pdf-export-root [class*="rounded-md"] { border-radius: 5px !important; }
 
-        /* ════════════════════════════════════════════════════════════
-           BORDERS, CARDS & DIVIDERS
-           ════════════════════════════════════════════════════════════ */
-
-        .pdf-export-root [class*="border"] {
-          border-color: ${BRAND.border} !important;
-        }
-
-        /* Guarantee bar: dark-sage top accent */
+        /* Guarantee bar top accent */
         .pdf-export-root [class*="border-t"] {
           border-top-color: ${BRAND.darkSage} !important;
           border-top-width: 2px !important;
         }
-
-        .pdf-export-root [class*="rounded-lg"],
-        .pdf-export-root [class*="rounded-md"] {
-          border-radius: 5px !important;
-        }
-
-        /* Section card inner padding */
-        .pdf-export-root [class*="p-3"]   { padding: 9px !important; }
-        .pdf-export-root [class*="p-4"]   { padding: 12px !important; }
-        .pdf-export-root [class*="gap-3"] { gap: 8px !important; }
-        .pdf-export-root [class*="gap-4"] { gap: 12px !important; }
       `;
       clonedDoc.head.appendChild(style);
 
@@ -299,12 +278,23 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
 
-      // Remove scale transforms on map parent
+      const dv = clonedDoc.defaultView;
+
+      // ── 2. JS: detect + fix dark backgrounds (catches bg-[#2A2A2A] etc.) ──
+      if (dv) {
+        fixDarkBackgrounds(clonedPage, dv);
+        fixSageBackgrounds(clonedPage, dv);
+      }
+
+      // ── 3. JS: completely remake the pricing table ────────────────────────
+      remakePricingTable(clonedPage);
+
+      // ── 4. Layout: remove scale transforms on map parent ─────────────────
       clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach((el) => {
         el.style.transform = "none";
       });
 
-      // Force grid layout for map + details columns
+      // ── 5. Layout: grid for map + details columns ─────────────────────────
       const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
       if (gridContainer) {
         gridContainer.style.display = "grid";
@@ -315,11 +305,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
         gridContainer.style.flex = "1";
       }
 
-      // Page is a flex column so the grid stretches
       clonedPage.style.display = "flex";
       clonedPage.style.flexDirection = "column";
 
-      // Map: lock to image's own aspect ratio so annotations stay pinned
+      // ── 6. Map: preserve aspect ratio so annotations stay pinned ──────────
       const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
       if (mapContainer) {
         mapContainer.style.width = "100%";
@@ -338,7 +327,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
         }
       }
 
-      // Map parent — stretch to fill grid cell
       const mapParent = clonedPage.querySelector<HTMLElement>(".flex.flex-col.min-h-0");
       if (mapParent) {
         mapParent.style.flex = "1";
@@ -347,7 +335,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
         mapParent.style.justifyContent = "center";
       }
 
-      // Auto-shrink additional-details text to fit its card
+      // ── 7. Auto-shrink additional-details text to fit its card ────────────
       const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
       const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
       if (detailsBody && detailsCard) {
@@ -364,8 +352,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.95);
 }
 
-/* ─── buildMergedPDF ─────────────────────────────────────────────────────────
-   Proposal PDF: cover from template + report pages + marketing tail pages.   */
+// ─── buildMergedPDF ───────────────────────────────────────────────────────────
 export async function buildMergedPDF(options: {
   customerName: string;
   technicianName: string;
@@ -384,33 +371,11 @@ export async function buildMergedPDF(options: {
   const [coverPage] = await outDoc.copyPages(templateDoc, [0]);
   const { width: pageW, height: pageH } = coverPage.getSize();
 
-  if (customerName) {
-    coverPage.drawText(customerName, {
-      x: 42,
-      y: 326,
-      size: 24,
-      font: helveticaBold,
-      color: rgb(1, 1, 1),
-    });
-  }
-  if (address) {
-    coverPage.drawText(address, {
-      x: 42,
-      y: 298,
-      size: 14,
-      font: helvetica,
-      color: rgb(0.85, 0.85, 0.85),
-    });
-  }
-  if (technicianName) {
-    coverPage.drawText(technicianName, {
-      x: 42,
-      y: 128,
-      size: 14,
-      font: helveticaBold,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-  }
+  if (customerName)
+    coverPage.drawText(customerName, { x: 42, y: 326, size: 24, font: helveticaBold, color: rgb(1, 1, 1) });
+  if (address) coverPage.drawText(address, { x: 42, y: 298, size: 14, font: helvetica, color: rgb(0.85, 0.85, 0.85) });
+  if (technicianName)
+    coverPage.drawText(technicianName, { x: 42, y: 128, size: 14, font: helveticaBold, color: rgb(0.2, 0.2, 0.2) });
 
   outDoc.addPage(coverPage);
 
@@ -430,38 +395,31 @@ export async function buildMergedPDF(options: {
     const page = outDoc.addPage([pageW, pageH]);
 
     if (captureId === "1" && pendingHeaderImg) {
-      const headerScale = pageW / pendingHeaderImg.width;
-      const headerDrawH = pendingHeaderImg.height * headerScale;
+      const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
 
-      const contentScale = pageW / img.width;
-      const contentDrawH = img.height * contentScale;
+      const contentDrawH = img.height * (pageW / img.width);
       const remaining = Math.max(headerDrawY, 0);
       const finalH = Math.min(contentDrawH, remaining);
-      page.drawImage(img, {
-        x: 0,
-        y: Math.max(headerDrawY - finalH, 0),
-        width: pageW,
-        height: finalH,
-      });
+      page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
       pendingHeaderImg = null;
     } else {
-      const scale = pageW / img.width;
-      const drawH = Math.min(img.height * scale, pageH);
+      const drawH = Math.min(img.height * (pageW / img.width), pageH);
       page.drawImage(img, { x: 0, y: pageH - drawH, width: pageW, height: drawH });
     }
   }
 
-  const marketingIndices = Array.from({ length: templateDoc.getPageCount() - 1 }, (_, i) => i + 1);
-  const marketingPages = await outDoc.copyPages(templateDoc, marketingIndices);
+  const marketingPages = await outDoc.copyPages(
+    templateDoc,
+    Array.from({ length: templateDoc.getPageCount() - 1 }, (_, i) => i + 1),
+  );
   for (const mp of marketingPages) outDoc.addPage(mp);
 
   return outDoc.save();
 }
 
-/* ─── buildSimplePDF ─────────────────────────────────────────────────────────
-   Initial Pest Report: captured pages only, no template wrapper.             */
+// ─── buildSimplePDF ───────────────────────────────────────────────────────────
 export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): Promise<Uint8Array> {
   const { reportPages } = options;
 
@@ -485,25 +443,17 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
     const page = outDoc.addPage([pageW, pageH]);
 
     if (captureId === "1" && pendingHeaderImg) {
-      const headerScale = pageW / pendingHeaderImg.width;
-      const headerDrawH = pendingHeaderImg.height * headerScale;
+      const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
 
-      const contentScale = pageW / img.width;
-      const contentDrawH = img.height * contentScale;
+      const contentDrawH = img.height * (pageW / img.width);
       const remaining = Math.max(headerDrawY, 0);
       const finalH = Math.min(contentDrawH, remaining);
-      page.drawImage(img, {
-        x: 0,
-        y: Math.max(headerDrawY - finalH, 0),
-        width: pageW,
-        height: finalH,
-      });
+      page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
       pendingHeaderImg = null;
     } else {
-      const scale = pageW / img.width;
-      const drawH = Math.min(img.height * scale, pageH);
+      const drawH = Math.min(img.height * (pageW / img.width), pageH);
       page.drawImage(img, { x: 0, y: pageH - drawH, width: pageW, height: drawH });
     }
   }
@@ -511,6 +461,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   return outDoc.save();
 }
 
+// ─── downloadPDF ─────────────────────────────────────────────────────────────
 export function downloadPDF(pdfBytes: Uint8Array, filename: string) {
   const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
