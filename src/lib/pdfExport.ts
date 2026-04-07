@@ -11,7 +11,7 @@ const BRAND = {
   darkSage: "#95A197",
   sageTint: "#f3f6f3",
   border: "#dde2dd",
-  muted: "#666666",
+  muted: "#5a5a5a",
 };
 
 let cachedPrintCss = "";
@@ -26,7 +26,7 @@ function collectPrintRules(rules: CSSRuleList, output: string[]) {
       try {
         collectPrintRules((rule as CSSGroupingRule).cssRules, output);
       } catch {
-        /* noop */
+        /**/
       }
     }
   }
@@ -39,153 +39,159 @@ function getPrintCssText() {
     try {
       collectPrintRules(sheet.cssRules, out);
     } catch {
-      /* noop */
+      /**/
     }
   }
   cachedPrintCss = out.join("\n");
   return cachedPrintCss;
 }
 
-// ─── Luminance helper ────────────────────────────────────────────────────────
-function cssRgbLuminance(cssColor: string): number | null {
-  const m = cssColor.match(/[\d.]+/g);
-  if (!m || m.length < 3) return null;
-  return (0.299 * +m[0] + 0.587 * +m[1] + 0.114 * +m[2]) / 255;
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+function sp(el: HTMLElement, prop: string, val: string) {
+  el.style.setProperty(prop, val, "important");
 }
 
-// ─── JS: fix ALL dark-background elements ───────────────────────────────────
-// CSS class selectors (e.g. [class*="bg-black"]) miss arbitrary Tailwind values
-// like bg-[#2A2A2A]. This reads the ACTUAL computed background color so it
-// catches every dark element regardless of how it was styled.
-function fixDarkBackgrounds(root: HTMLElement, dv: Window) {
-  root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    try {
-      const bg = dv.getComputedStyle(el).backgroundColor;
-      if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") return;
-      const lum = cssRgbLuminance(bg);
-      if (lum === null || lum >= 0.25) return;
+function spChildren(el: HTMLElement, prop: string, val: string) {
+  el.querySelectorAll<HTMLElement>("*").forEach((c) => sp(c, prop, val));
+}
 
-      // Dark background confirmed — brand-black it and force all text white
-      el.style.setProperty("background-color", BRAND.black, "important");
-      el.style.setProperty("color", BRAND.offWhite, "important");
-      el.querySelectorAll<HTMLElement>("*").forEach((child) => {
-        child.style.setProperty("color", BRAND.offWhite, "important");
-        child.style.setProperty("letter-spacing", "0.07em", "important");
-      });
-    } catch {
-      /* noop */
-    }
+// ─── Dark section-header bars ────────────────────────────────────────────────
+// WHY class names not getComputedStyle: the cloned iframe may not fully resolve
+// CSS variables (e.g. bg-[#2A2A2A], bg-foreground), causing getComputedStyle
+// to return transparent. Reading the raw class string is 100% reliable.
+const DARK_BG_PATTERNS = [
+  "bg-[#2",
+  "bg-[#1",
+  "bg-[#0", // arbitrary hex dark values
+  "bg-black",
+  "bg-foreground",
+  "bg-gray-9",
+  "bg-zinc-9",
+  "bg-neutral-9",
+  "bg-stone-9",
+  "bg-slate-9",
+  "bg-gray-8",
+  "bg-zinc-8",
+  "bg-neutral-8",
+];
+
+function fixDarkSectionHeaders(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>("[class]").forEach((el) => {
+    const cls = el.getAttribute("class") ?? "";
+    if (!DARK_BG_PATTERNS.some((p) => cls.includes(p))) return;
+    sp(el, "background-color", BRAND.black);
+    sp(el, "color", BRAND.offWhite);
+    // ALL descendants must be off-white — no exceptions
+    el.querySelectorAll<HTMLElement>("*").forEach((child) => {
+      sp(child, "color", BRAND.offWhite);
+      sp(child, "letter-spacing", "0.07em");
+    });
   });
 }
 
-// ─── JS: fix sage-tinted elements ───────────────────────────────────────────
-// Same problem: bg-[#C3D1C5] won't match CSS [class*="bg-green-"] selectors.
-function fixSageBackgrounds(root: HTMLElement, dv: Window) {
-  root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    try {
-      const bg = dv.getComputedStyle(el).backgroundColor;
-      if (!bg || bg === "rgba(0, 0, 0, 0)" || bg === "transparent") return;
-      const m = bg.match(/[\d.]+/g);
-      if (!m || m.length < 3) return;
-      const r = +m[0],
-        g = +m[1],
-        b = +m[2];
-      // Sage is greenish-grey — mid-luminance, green channel dominant
-      const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      if (lum > 0.55 && lum < 0.85 && g > r && g > b) {
-        el.style.setProperty("background-color", BRAND.sage, "important");
-        el.querySelectorAll<HTMLElement>("*").forEach((child) => {
-          child.style.setProperty("color", BRAND.black, "important");
-        });
-      }
-    } catch {
-      /* noop */
-    }
+// ─── Sage / green elements ────────────────────────────────────────────────────
+const SAGE_BG_PATTERNS = [
+  "bg-[#C3D1C5",
+  "bg-[#c3d1c5",
+  "bg-[#95A197",
+  "bg-[#95a197",
+  "bg-sage",
+  "bg-primary",
+  "bg-green-",
+  "bg-emerald-",
+  "bg-teal-",
+];
+
+function fixSageElements(root: HTMLElement) {
+  root.querySelectorAll<HTMLElement>("[class]").forEach((el) => {
+    const cls = el.getAttribute("class") ?? "";
+    if (!SAGE_BG_PATTERNS.some((p) => cls.includes(p))) return;
+    sp(el, "background-color", BRAND.sage);
+    spChildren(el, "color", BRAND.black);
   });
 }
 
-// ─── JS: completely remake the pricing table ─────────────────────────────────
+// ─── Pricing table complete remake ───────────────────────────────────────────
 function remakePricingTable(root: HTMLElement) {
   const table = root.querySelector<HTMLTableElement>("table");
   if (!table) return;
 
-  // Wrapper: clean collapse, no extra borders
-  table.style.setProperty("border-collapse", "collapse", "important");
-  table.style.setProperty("width", "100%", "important");
-  table.style.setProperty("border", "1px solid " + BRAND.border, "important");
-  table.style.setProperty("border-radius", "6px", "important");
-  table.style.setProperty("overflow", "hidden", "important");
+  sp(table, "border-collapse", "collapse");
+  sp(table, "width", "100%");
 
-  // ── Header row ─────────────────────────────────────────────────────────────
+  // ── Header row ──────────────────────────────────────────────────────────────
   table.querySelectorAll<HTMLElement>("thead th, thead td").forEach((th) => {
-    th.style.setProperty("background-color", BRAND.black, "important");
-    th.style.setProperty("color", BRAND.offWhite, "important");
-    th.style.setProperty("font-size", "10px", "important");
-    th.style.setProperty("font-weight", "700", "important");
-    th.style.setProperty("letter-spacing", "0.09em", "important");
-    th.style.setProperty("text-transform", "uppercase", "important");
-    th.style.setProperty("padding", "10px 14px", "important");
-    th.style.setProperty("border", "none", "important");
-    th.style.setProperty("white-space", "nowrap", "important");
-    th.style.setProperty("vertical-align", "middle", "important");
-    // Force any child spans/divs inside the header to also be white
+    sp(th, "background-color", BRAND.black);
+    sp(th, "color", BRAND.offWhite);
+    sp(th, "font-size", "10px");
+    sp(th, "font-weight", "700");
+    sp(th, "letter-spacing", "0.1em");
+    sp(th, "text-transform", "uppercase");
+    sp(th, "padding", "11px 14px");
+    sp(th, "border", "none");
+    sp(th, "white-space", "nowrap");
+    sp(th, "vertical-align", "middle");
+    // Force any inline elements (spans) inside header cells to also be white
     th.querySelectorAll<HTMLElement>("*").forEach((c) => {
-      c.style.setProperty("color", BRAND.offWhite, "important");
-      c.style.setProperty("letter-spacing", "0.09em", "important");
+      sp(c, "color", BRAND.offWhite);
+      sp(c, "letter-spacing", "0.1em");
     });
   });
 
-  // ── Body rows ───────────────────────────────────────────────────────────────
+  // ── Body rows ────────────────────────────────────────────────────────────────
   table.querySelectorAll<HTMLTableRowElement>("tbody tr").forEach((row, rowIdx) => {
+    // Skip if this row contains "Total" — handle separately below
+    if (row.textContent?.match(/total/i)) return;
+
     const cells = row.querySelectorAll<HTMLElement>("td");
+    const isEven = rowIdx % 2 === 1;
+
     cells.forEach((cell, colIdx) => {
-      const isEven = rowIdx % 2 === 1;
-      cell.style.setProperty("padding", "10px 14px", "important");
-      cell.style.setProperty("vertical-align", "middle", "important");
-      cell.style.setProperty("border-bottom", "1px solid " + BRAND.border, "important");
-      cell.style.setProperty("background-color", isEven ? BRAND.sageTint : "#ffffff", "important");
+      sp(cell, "padding", "10px 14px");
+      sp(cell, "vertical-align", "middle");
+      sp(cell, "border-bottom", `1px solid ${BRAND.border}`);
+      sp(cell, "background-color", isEven ? BRAND.sageTint : "#ffffff");
 
       if (colIdx === 0) {
-        // Service name: clear and readable
-        cell.style.setProperty("font-size", "13px", "important");
-        cell.style.setProperty("font-weight", "500", "important");
-        cell.style.setProperty("color", BRAND.black, "important");
+        // Service name
+        sp(cell, "font-size", "13px");
+        sp(cell, "font-weight", "500");
+        sp(cell, "color", BRAND.black);
       } else if (colIdx === 1 || colIdx === 2) {
-        // Initial / Recurring prices: big and prominent
-        cell.style.setProperty("font-size", "15px", "important");
-        cell.style.setProperty("font-weight", "700", "important");
-        cell.style.setProperty("color", BRAND.black, "important");
+        // Initial / Recurring price — make these POP
+        sp(cell, "font-size", "15px");
+        sp(cell, "font-weight", "700");
+        sp(cell, "color", BRAND.black);
       } else if (colIdx === 3) {
         // Frequency
-        cell.style.setProperty("font-size", "12px", "important");
-        cell.style.setProperty("color", BRAND.muted, "important");
+        sp(cell, "font-size", "12px");
+        sp(cell, "color", BRAND.muted);
       } else {
-        // Schedule
-        cell.style.setProperty("font-size", "11px", "important");
-        cell.style.setProperty("color", BRAND.black, "important");
+        // Schedule column
+        sp(cell, "font-size", "11px");
+        sp(cell, "color", BRAND.black);
       }
     });
   });
 
-  // ── Total / footer row ──────────────────────────────────────────────────────
-  // Try tfoot first, fall back to the last tbody row
-  const totalRows = [
-    ...Array.from(table.querySelectorAll<HTMLElement>("tfoot tr")),
-    ...(table.querySelector("tfoot")
-      ? []
-      : ([table.querySelector<HTMLElement>("tbody tr:last-child")].filter(Boolean) as HTMLElement[])),
-  ];
-  totalRows.forEach((row) => {
-    row.querySelectorAll<HTMLElement>("td, th").forEach((cell, colIdx) => {
-      cell.style.setProperty("border-top", "2px solid " + BRAND.black, "important");
-      cell.style.setProperty("border-bottom", "none", "important");
-      cell.style.setProperty("background-color", "#ffffff", "important");
-      cell.style.setProperty("color", BRAND.black, "important");
-      cell.style.setProperty("padding", "11px 14px", "important");
-      cell.style.setProperty("font-weight", "700", "important");
-      cell.style.setProperty("font-size", colIdx >= 1 && colIdx <= 2 ? "16px" : "14px", "important");
-    });
+  // ── Total row — find by content, not position ────────────────────────────────
+  let totalRow: HTMLElement | null = null;
+  table.querySelectorAll<HTMLElement>("tfoot tr, tbody tr").forEach((row) => {
+    if (row.textContent?.match(/total/i)) totalRow = row;
   });
+
+  if (totalRow) {
+    (totalRow as HTMLElement).querySelectorAll<HTMLElement>("td, th").forEach((cell, colIdx) => {
+      sp(cell, "border-top", `2px solid ${BRAND.black}`);
+      sp(cell, "border-bottom", "none");
+      sp(cell, "background-color", "#ffffff");
+      sp(cell, "color", BRAND.black);
+      sp(cell, "padding", "11px 14px");
+      sp(cell, "font-weight", "700");
+      sp(cell, "font-size", colIdx >= 1 && colIdx <= 2 ? "16px" : "14px");
+    });
+  }
 }
 
 // ─── captureElement ──────────────────────────────────────────────────────────
@@ -200,7 +206,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
     backgroundColor: "#ffffff",
     logging: false,
     onclone: (clonedDoc) => {
-      // ── 1. Inject base CSS (only truly safe global rules) ────────────────
+      // ── Phase 1: CSS injection ────────────────────────────────────────────
       const style = clonedDoc.createElement("style");
       style.textContent = `
         ${printCss}
@@ -210,7 +216,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           background: #ffffff !important; overflow: visible !important;
         }
 
-        /* Rendering quality — no word-break/overflow-wrap overrides (cause mid-word breaks) */
+        /* Rendering quality only — no word-break (causes mid-word breaks) */
         * {
           hyphens: none !important; -webkit-hyphens: none !important;
           -webkit-font-smoothing: antialiased !important;
@@ -220,7 +226,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
         .pdf-export-root {
           background: #ffffff !important; box-sizing: border-box !important;
           overflow: visible !important;
+          /* Base reading size — everything inherits this unless overridden */
+          font-size: 13px; line-height: 1.55;
         }
+
         .pdf-export-root [class*="max-w-"]        { max-width: none !important; }
         .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
@@ -235,34 +244,107 @@ async function captureElement(el: HTMLElement): Promise<string> {
         .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
         .pdf-export-root .print-content-formatted         { display: block !important; }
 
+        /* ════════════════════════════════════════════════════════════
+           TEXT SIZE NORMALIZATION
+           Target Tailwind utility classes directly. Titles (text-xl+)
+           are intentionally left at their natural larger sizes.
+           ════════════════════════════════════════════════════════════ */
+
+        /* Content body: normalise to 13 px */
+        .pdf-export-root [class*="text-sm"]   { font-size: 13px !important; line-height: 1.55 !important; }
+        .pdf-export-root [class*="text-base"] { font-size: 13px !important; line-height: 1.55 !important; }
+
+        /* Sub-headings: 14 px */
+        .pdf-export-root [class*="text-lg"]   { font-size: 14px !important; line-height: 1.5 !important; }
+
+        /* Section header bar labels — stay small + tracked (JS will set color) */
+        .pdf-export-root [class*="text-xs"] {
+          font-size: 11px !important; line-height: 1.5 !important;
+          letter-spacing: 0.06em !important;
+        }
+
+        /* ONLY things intentionally smaller */
+        .pdf-export-root [class*="text-\\[8px\\]"]  { font-size: 8px  !important; line-height: 1.55 !important; color: ${BRAND.muted} !important; }
+        .pdf-export-root [class*="text-\\[9px\\]"]  { font-size: 9px  !important; line-height: 1.55 !important; color: ${BRAND.muted} !important; }
+        .pdf-export-root [class*="text-\\[10px\\]"] { font-size: 10px !important; line-height: 1.55 !important; color: ${BRAND.muted} !important; }
+
         /* Products two-column list: compact */
+        .pdf-export-root [class*="columns-2"] *   { font-size: 9.5px !important; line-height: 1.65 !important; }
         .pdf-export-root [class*="columns-2"] p,
-        .pdf-export-root [class*="columns-2"] li {
-          font-size: 9.5px !important; line-height: 1.65 !important; margin: 1px 0 !important;
+        .pdf-export-root [class*="columns-2"] li  { margin: 1px 0 !important; }
+
+        /* Signature area: printed name smaller */
+        .pdf-export-root [class*="signature"] [class*="text"],
+        .pdf-export-root [class*="print"] [class*="name"] { font-size: 11px !important; }
+
+        /* ════════════════════════════════════════════════════════════
+           TABLE — CSS layer (JS layer adds additional specificity)
+           ════════════════════════════════════════════════════════════ */
+
+        .pdf-export-root table {
+          border-collapse: collapse !important; width: 100% !important;
+          border: 1px solid ${BRAND.border} !important;
         }
 
-        /* Bullet list breathing room */
-        .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
-
-        /* Fine print */
-        .pdf-export-root [class*="text-\\[8px\\]"] {
-          font-size: 8px !important; line-height: 1.55 !important; color: ${BRAND.muted} !important;
+        /* Header: brand black — CSS layer */
+        .pdf-export-root thead th,
+        .pdf-export-root thead td {
+          background-color: ${BRAND.black} !important;
+          color:            ${BRAND.offWhite} !important;
+          font-size:        10px !important;
+          font-weight:      700 !important;
+          letter-spacing:   0.1em !important;
+          text-transform:   uppercase !important;
+          padding:          11px 14px !important;
+          border:           none !important;
+          white-space:      nowrap !important;
+          vertical-align:   middle !important;
         }
-        .pdf-export-root [class*="text-\\[9px\\]"],
-        .pdf-export-root [class*="text-\\[10px\\]"] {
-          line-height: 1.55 !important; color: ${BRAND.muted} !important;
+        /* Force all children in thead to inherit white */
+        .pdf-export-root thead th *,
+        .pdf-export-root thead td * {
+          color:          ${BRAND.offWhite} !important;
+          letter-spacing: 0.1em !important;
         }
 
-        /* Clean borders */
-        .pdf-export-root [class*="border"]   { border-color: ${BRAND.border} !important; }
+        /* Body cells: CSS layer */
+        .pdf-export-root tbody td {
+          padding:        10px 14px !important;
+          vertical-align: middle !important;
+          font-size:      13px !important;
+          border-bottom:  1px solid ${BRAND.border} !important;
+        }
+
+        /* Zebra stripe */
+        .pdf-export-root tbody tr:nth-child(even) td {
+          background-color: ${BRAND.sageTint} !important;
+        }
+
+        /* Total row */
+        .pdf-export-root tfoot td,
+        .pdf-export-root tfoot th {
+          border-top:    2px solid ${BRAND.black} !important;
+          font-weight:   700 !important;
+          font-size:     14px !important;
+          padding:       11px 14px !important;
+        }
+
+        /* ════════════════════════════════════════════════════════════
+           BORDERS & POLISH
+           ════════════════════════════════════════════════════════════ */
+
+        .pdf-export-root [class*="border"]    { border-color: ${BRAND.border} !important; }
         .pdf-export-root [class*="rounded-lg"],
         .pdf-export-root [class*="rounded-md"] { border-radius: 5px !important; }
 
-        /* Guarantee bar top accent */
+        /* Guarantee bar: dark-sage top accent */
         .pdf-export-root [class*="border-t"] {
           border-top-color: ${BRAND.darkSage} !important;
           border-top-width: 2px !important;
         }
+
+        /* Bullet breathing room */
+        .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
       `;
       clonedDoc.head.appendChild(style);
 
@@ -278,23 +360,23 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.boxSizing = "border-box";
       clonedPage.style.overflow = "visible";
 
-      const dv = clonedDoc.defaultView;
+      // ── Phase 2: JS — dark section-header labels (class-name detection) ──
+      // This is more reliable than getComputedStyle because the cloned iframe
+      // may not resolve CSS variables (e.g. bg-[#2A2A2A], bg-foreground).
+      fixDarkSectionHeaders(clonedPage);
 
-      // ── 2. JS: detect + fix dark backgrounds (catches bg-[#2A2A2A] etc.) ──
-      if (dv) {
-        fixDarkBackgrounds(clonedPage, dv);
-        fixSageBackgrounds(clonedPage, dv);
-      }
+      // ── Phase 3: JS — sage elements ──────────────────────────────────────
+      fixSageElements(clonedPage);
 
-      // ── 3. JS: completely remake the pricing table ────────────────────────
+      // ── Phase 4: JS — pricing table (adds specificity on top of CSS) ─────
       remakePricingTable(clonedPage);
 
-      // ── 4. Layout: remove scale transforms on map parent ─────────────────
+      // ── Phase 5: Layout — map + grid (UNTOUCHED) ─────────────────────────
+
       clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach((el) => {
         el.style.transform = "none";
       });
 
-      // ── 5. Layout: grid for map + details columns ─────────────────────────
       const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
       if (gridContainer) {
         gridContainer.style.display = "grid";
@@ -308,7 +390,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
       clonedPage.style.display = "flex";
       clonedPage.style.flexDirection = "column";
 
-      // ── 6. Map: preserve aspect ratio so annotations stay pinned ──────────
       const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
       if (mapContainer) {
         mapContainer.style.width = "100%";
@@ -335,7 +416,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
         mapParent.style.justifyContent = "center";
       }
 
-      // ── 7. Auto-shrink additional-details text to fit its card ────────────
       const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
       const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
       if (detailsBody && detailsCard) {
@@ -363,7 +443,6 @@ export async function buildMergedPDF(options: {
 
   const templateBytes = await fetch(TEMPLATE_PDF_URL).then((r) => r.arrayBuffer());
   const templateDoc = await PDFDocument.load(templateBytes);
-
   const outDoc = await PDFDocument.create();
   const helvetica = await outDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await outDoc.embedFont(StandardFonts.HelveticaBold);
@@ -398,10 +477,7 @@ export async function buildMergedPDF(options: {
       const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
-
-      const contentDrawH = img.height * (pageW / img.width);
-      const remaining = Math.max(headerDrawY, 0);
-      const finalH = Math.min(contentDrawH, remaining);
+      const finalH = Math.min(img.height * (pageW / img.width), Math.max(headerDrawY, 0));
       page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
       pendingHeaderImg = null;
     } else {
@@ -422,7 +498,6 @@ export async function buildMergedPDF(options: {
 // ─── buildSimplePDF ───────────────────────────────────────────────────────────
 export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): Promise<Uint8Array> {
   const { reportPages } = options;
-
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
@@ -446,10 +521,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
       const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
-
-      const contentDrawH = img.height * (pageW / img.width);
-      const remaining = Math.max(headerDrawY, 0);
-      const finalH = Math.min(contentDrawH, remaining);
+      const finalH = Math.min(img.height * (pageW / img.width), Math.max(headerDrawY, 0));
       page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
       pendingHeaderImg = null;
     } else {
