@@ -1421,7 +1421,7 @@ Crest Pest Control
       )}
 
       {/* Main Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
+      <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
