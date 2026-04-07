@@ -233,6 +233,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .sonner,
           .pdf-export-root [data-sonner-toaster]            { display: none !important; }
           .pdf-export-root .print-only-text                 { display: inline !important; }
+          .pdf-export-root .print-pricing-display           { display: flex !important; }
           .pdf-export-root .hidden.print\\:block,
           .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
           .pdf-export-root .print-content-formatted         { display: block !important; }
@@ -363,6 +364,64 @@ async function captureElement(el: HTMLElement): Promise<string> {
         // ── Phase 2: JS — table DOM manipulation ─────────────────────────────
         // Adds inline-style !important on top of the CSS layer for max certainty
         remakePricingTable(clonedPage);
+
+        // ── Phase 2b: Title — remove width constraints ──────────────────────
+        clonedPage.querySelectorAll<HTMLElement>(".print-title").forEach((el) => {
+          sp(el, "width", "auto");
+          sp(el, "max-width", "none");
+          sp(el, "min-width", "0");
+          sp(el, "overflow", "visible");
+          sp(el, "text-overflow", "unset");
+          sp(el, "white-space", "normal");
+          sp(el, "word-break", "break-word");
+        });
+
+        // ── Phase 2c: Pricing grid — show print elements, hide inputs ───────
+        clonedPage.querySelectorAll<HTMLElement>(".print-pricing-display").forEach((el) => {
+          sp(el, "display", "flex");
+        });
+        clonedPage.querySelectorAll<HTMLElement>(".print-pricing-table .no-print").forEach((el) => {
+          sp(el, "display", "none");
+        });
+        // Force print-only-text spans visible
+        clonedPage.querySelectorAll<HTMLElement>(".print-only-text").forEach((el) => {
+          sp(el, "display", "inline");
+        });
+
+        // Style the pricing grid rows for clean export
+        const pricingTable = clonedPage.querySelector<HTMLElement>(".print-pricing-table");
+        if (pricingTable) {
+          sp(pricingTable, "border", `1.5px solid ${BRAND.border}`);
+          sp(pricingTable, "border-radius", "5px");
+          sp(pricingTable, "overflow", "hidden");
+
+          const rows = pricingTable.querySelectorAll<HTMLElement>(".grid");
+          rows.forEach((row, idx) => {
+            if (idx === 0) {
+              // Header row
+              sp(row, "background-color", BRAND.sage);
+              sp(row, "padding", "1.5mm 2mm");
+              sp(row, "border-bottom", `1.5px solid ${BRAND.border}`);
+              row.querySelectorAll<HTMLElement>("span").forEach((s) => {
+                sp(s, "font-size", "10px");
+                sp(s, "font-weight", "700");
+                sp(s, "text-transform", "uppercase");
+                sp(s, "letter-spacing", "0.08em");
+              });
+            } else if (idx === rows.length - 1 && row.textContent?.match(/total/i)) {
+              // Total row
+              sp(row, "border-top", `2px solid ${BRAND.black}`);
+              sp(row, "background-color", "#ffffff");
+              row.querySelectorAll<HTMLElement>("span").forEach((s) => {
+                sp(s, "font-weight", "700");
+              });
+            } else {
+              // Alternating body rows
+              sp(row, "background-color", idx % 2 === 0 ? BRAND.sageTint : "#ffffff");
+              sp(row, "padding", "0.8mm 0");
+            }
+          });
+        }
 
         // ── Phase 3: Layout — map + grid (UNTOUCHED) ─────────────────────────
         clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach((e) => {
