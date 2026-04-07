@@ -1368,7 +1368,7 @@ Crest Pest Control
                               <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[200px] p-0 z-50 bg-background border border-border" onOpenAutoFocus={(e) => e.preventDefault()}>
+                          <PopoverContent className="w-[200px] p-0 z-50 bg-background border border-border" onOpenAutoFocus={(e) => e.preventDefault()} onPointerDownOutside={(e) => e.preventDefault()}>
                             <Command>
                               <CommandInput placeholder="Search technician..." className="h-8 text-xs" />
                               <CommandList>
