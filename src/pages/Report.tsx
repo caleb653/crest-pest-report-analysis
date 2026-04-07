@@ -1786,7 +1786,7 @@ Crest Pest Control`;
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-6 py-4 print:py-2.5">
+        <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-6 py-4 print:py-2.5 md:sticky md:top-0 md:z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
