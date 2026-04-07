@@ -233,6 +233,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .sonner,
           .pdf-export-root [data-sonner-toaster]            { display: none !important; }
           .pdf-export-root .print-only-text                 { display: inline !important; }
+          .pdf-export-root .print-pricing-display           { display: flex !important; }
           .pdf-export-root .hidden.print\\:block,
           .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
           .pdf-export-root .print-content-formatted         { display: block !important; }
