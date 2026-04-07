@@ -1822,10 +1822,10 @@ Crest Pest Control`;
                       {editableTitle}
                     </h1>
                   ) : (
-                    <Input
+                    <input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-auto w-64 lg:w-[28rem] print:w-auto focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-auto w-full lg:w-[28rem] print:w-auto focus-visible:outline-none focus-visible:ring-0"
                     />
                   )}
                 </div>
