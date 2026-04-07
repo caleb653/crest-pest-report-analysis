@@ -1316,7 +1316,7 @@ Crest Pest Control
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-1">
-                    <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Initial Pest Report</h1>
+                    <h1 className="text-2xl font-bold text-foreground whitespace-nowrap">Initial Pest Report</h1>
                   </div>
 
                   <div className="flex gap-6 text-xs">

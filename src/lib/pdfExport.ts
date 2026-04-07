@@ -288,16 +288,16 @@ async function captureElement(el: HTMLElement): Promise<string> {
             line-height: 1.45 !important;
           }
           /* Tailwind overrides inside pest report */
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"]   { font-size: 9px  !important; line-height: 1.4 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-xs"]   { font-size: 11px !important; line-height: 1.45 !important; }
           .pdf-export-root[data-report-type="pest-report"] [class*="text-sm"]   { font-size: 11px !important; line-height: 1.45 !important; }
           .pdf-export-root[data-report-type="pest-report"] [class*="text-base"] { font-size: 11px !important; line-height: 1.45 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-lg"]   { font-size: 12px !important; line-height: 1.4 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"]   { font-size: 13px !important; line-height: 1.35 !important; }
-          .pdf-export-root[data-report-type="pest-report"] [class*="text-2xl"]  { font-size: 14px !important; line-height: 1.3 !important; }
-          /* Headings inside pest report */
-          .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 16px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 13px !important; font-weight: 700 !important; }
-          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 12px !important; font-weight: 600 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-lg"]   { font-size: 11px !important; line-height: 1.45 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"]   { font-size: 11px !important; line-height: 1.45 !important; }
+          .pdf-export-root[data-report-type="pest-report"] [class*="text-2xl"]  { font-size: 20px !important; line-height: 1.3 !important; }
+          /* Headings inside pest report — same 11px as body, except the report title (h1 with text-2xl) */
+          .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 20px !important; font-weight: 700 !important; }
+          .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 11px !important; font-weight: 700 !important; }
+          .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 11px !important; font-weight: 600 !important; }
           /* Tighter bullets */
           .pdf-export-root[data-report-type="pest-report"] ul li,
           .pdf-export-root[data-report-type="pest-report"] ol li { margin-bottom: 1px !important; }
