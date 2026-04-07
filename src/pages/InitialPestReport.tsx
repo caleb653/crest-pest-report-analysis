@@ -1924,6 +1924,7 @@ Crest Pest Control
       <div 
         data-pdf-page="2"
         data-pdf-capture="2"
+        data-report-type="initial-pest"
         className={`print-page-break bg-background ${propertyImages.length === 0 ? 'print:hidden' : ''}`}
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
