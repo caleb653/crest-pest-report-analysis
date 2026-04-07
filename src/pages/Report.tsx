@@ -1824,30 +1824,30 @@ Crest Pest Control`;
               </Button>
             </div>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-3 lg:gap-4">
               {/* Left side: Logo + Title */}
               <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
-                  <img src={crestLogo} alt="Crest Pest Control" className="h-24 w-auto object-contain" />
-                  <span className="text-sm text-muted-foreground mt-1">PR #9859</span>
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-16 lg:h-24 w-auto object-contain" />
+                  <span className="text-xs lg:text-sm text-muted-foreground mt-1">PR #9859</span>
                 </div>
                 <div className="flex flex-col justify-center">
                   {isReadOnly ? (
-                    <h1 className="print-title font-bold text-foreground text-3xl print:text-2xl leading-tight">
+                    <h1 className="print-title font-bold text-foreground text-2xl lg:text-3xl print:text-2xl leading-tight">
                       {editableTitle}
                     </h1>
                   ) : (
                     <input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-3xl print:text-2xl h-14 print:h-auto w-full lg:w-[28rem] print:w-auto focus-visible:outline-none focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-2xl lg:text-3xl print:text-2xl h-10 lg:h-14 print:h-auto w-full lg:w-[28rem] print:w-auto focus-visible:outline-none focus-visible:ring-0"
                     />
                   )}
                 </div>
               </div>
 
               {/* Right side: info grid - 2 cols on desktop, 3 cols in print */}
-              <div className="grid grid-cols-2 print:grid-cols-3 gap-4 lg:gap-6 print:gap-4 ml-auto">
+              <div className="grid grid-cols-2 print:grid-cols-3 gap-3 lg:gap-6 print:gap-4 w-full lg:w-auto lg:ml-auto">
                 {/* Column 1: Customer Details */}
                 <div>
                   <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
