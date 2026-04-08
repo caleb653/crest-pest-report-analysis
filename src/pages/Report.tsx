@@ -31,7 +31,7 @@ import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanva
 import RichTextEditor from "@/components/RichTextEditor";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -298,7 +298,7 @@ const Report = () => {
   const navigate = useNavigate();
   const { reportId: routeReportId } = useParams();
   const reportId = routeReportId ?? new URLSearchParams(location.search).get("id") ?? undefined;
-  const isMobile = useIsMobile();
+  
   const {
     technicianName,
     customerName,
@@ -1787,44 +1787,13 @@ Crest Pest Control`;
         </div>
       )}
       
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
-          <div className="flex items-center justify-between">
-            <img src={crestLogo} alt="Crest" className="h-10" />
-            <div className="flex gap-2 no-print">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="default" className="h-9">
-                    <FileDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {!isReadOnly && (
-              <>
-              <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
-                <Share2 className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
-                <Home className="w-4 h-4" />
-              </Button>
-              </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile Header is removed — always use the unified desktop/tablet header below */}
 
-      {/* Desktop Header */}
-      {!isMobile && (
-        <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-6 py-4 print:py-2.5 md:sticky md:top-0 md:z-20 lg:static">
+      {/* Unified Header — always shown */}
+      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
-            {/* Action buttons row for iPad - shown at top on medium screens */}
-            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+            {/* Action buttons row - shown on small/medium screens, hidden on large desktop */}
+            <div className="flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
               {!isReadOnly && (
               <>
               <Button
@@ -2119,61 +2088,11 @@ Crest Pest Control`;
             </div>
           </div>
         </div>
-      )}
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
-        {/* Two Column Layout for Desktop */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
-          {/* Mobile: Customer & Technician */}
-          {isMobile && (
-            <Card className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Customer Name</label>
-                  <Input
-                    value={editableCustomer}
-                    onChange={(e) => setEditableCustomer(e.target.value)}
-                    placeholder="Enter customer name"
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Technician Name</label>
-                  <Input
-                    value={editableTech}
-                    onChange={(e) => setEditableTech(e.target.value)}
-                    placeholder="Enter technician name"
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Property Type</label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {propertyType !== "Residential" && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Company Name (Optional)</label>
-                    <Input
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Enter company name"
-                      className="text-base"
-                    />
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
+      <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-2 print:gap-1">
 
           {/* Services - Full Width at Top */}
           <Card className="print-section print-pricing-table p-2 print:p-0.5 print:py-1 col-span-2">
@@ -2684,7 +2603,7 @@ Crest Pest Control`;
 
       {/* Page 2 - Map & Property Images */}
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
-        <div data-pdf-capture="2" className={isMobile ? "p-4" : "p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col"}>
+        <div data-pdf-capture="2" className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
@@ -3034,7 +2953,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div data-pdf-capture="3" className={isMobile ? "p-4" : "p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto"}>
+        <div data-pdf-capture="3" className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border">
             <div className="flex items-center gap-3 print:gap-2">
