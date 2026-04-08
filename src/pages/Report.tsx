@@ -1099,6 +1099,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     products_used: editableProductsUsed,
     equipment: editableEquipment,
     report_title: editableTitle,
+    customer_email: customerEmail || null,
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
