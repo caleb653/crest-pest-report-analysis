@@ -31,7 +31,7 @@ import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanva
 import RichTextEditor from "@/components/RichTextEditor";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -298,7 +298,7 @@ const Report = () => {
   const navigate = useNavigate();
   const { reportId: routeReportId } = useParams();
   const reportId = routeReportId ?? new URLSearchParams(location.search).get("id") ?? undefined;
-  const isMobile = useIsMobile();
+  
   const {
     technicianName,
     customerName,
