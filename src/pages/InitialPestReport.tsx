@@ -1481,6 +1481,32 @@ Crest Pest Control
                           className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
                         />
                       </div>
+                      <div className="flex items-center gap-1 no-print">
+                        <span className="text-muted-foreground w-16 shrink-0">Type:</span>
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-5 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 rounded-none">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {propertyType !== "Residential" && (
+                        <div className="flex items-center gap-1 no-print">
+                          <span className="text-muted-foreground w-16 shrink-0">Company:</span>
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company name (optional)"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
