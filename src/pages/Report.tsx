@@ -1099,6 +1099,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     products_used: editableProductsUsed,
     equipment: editableEquipment,
     report_title: editableTitle,
+    customer_email: customerEmail || null,
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
@@ -1190,6 +1191,33 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       setIsSaving(false);
     }
   };
+
+  // Auto-save flag — set after image/map uploads, cleared by the effect
+  const pendingAutoSaveRef = useRef(false);
+
+  // Silent auto-save (no toast, no loading spinner)
+  const autoSave = async () => {
+    if (!editableTech || !reportId) return;
+    try {
+      const rawMap = latestMapDataRef.current ?? mapData;
+      let mapPayload: any = null;
+      if (rawMap) {
+        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
+      }
+      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
+      console.log("[autosave] saved successfully");
+    } catch (err) {
+      console.error("[autosave] failed:", err);
+    }
+  };
+
+  // Effect: auto-save when images/map change after upload
+  useEffect(() => {
+    if (!pendingAutoSaveRef.current || !reportLoadedRef.current) return;
+    pendingAutoSaveRef.current = false;
+    autoSave();
+  }, [propertyImages, customMapImage]);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -1479,6 +1507,7 @@ Crest Pest Control`;
       // Replace local URL with permanent URL (user won't notice the switch)
       setCustomMapImage(publicUrl);
       URL.revokeObjectURL(localUrl);
+      pendingAutoSaveRef.current = true;
       toast.success("Map uploaded");
     } catch (error) {
       console.error("Error uploading map:", error);
@@ -1554,6 +1583,7 @@ Crest Pest Control`;
       
       // Replace local URLs with permanent URLs
       setPropertyImages(uploadedImages.map(({ image, caption }) => ({ image, caption })));
+      pendingAutoSaveRef.current = true;
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
@@ -1637,6 +1667,7 @@ Crest Pest Control`;
 
           setCustomMapImage(publicUrl);
           URL.revokeObjectURL(localUrl);
+          pendingAutoSaveRef.current = true;
           toast.success("Map pasted successfully");
         } catch (error) {
           console.error("Error pasting map:", error);
@@ -1729,6 +1760,7 @@ Crest Pest Control`;
         return updated;
       });
 
+      pendingAutoSaveRef.current = true;
       toast.success(`${filesToProcess.length} image(s) pasted`);
     } catch (error) {
       console.error("Error pasting images:", error);
@@ -1918,6 +1950,18 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
+                    {!isReadOnly && (
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Email:</span>
+                      <Input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="customer@email.com"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                      />
+                    </div>
+                    )}
                   </div>
                 </div>
 

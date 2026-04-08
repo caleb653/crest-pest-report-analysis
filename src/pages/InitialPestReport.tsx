@@ -177,6 +177,8 @@ const Report = () => {
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
+  const reportLoadedRef = useRef(false);
+  const pendingAutoSaveRef = useRef(false);
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
   const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
@@ -543,6 +545,9 @@ const Report = () => {
       if (row.notes) {
         setTodaysFindings(row.notes as string);
       }
+      if (row.customer_email) {
+        setCustomerEmail(row.customer_email);
+      }
 
       console.log("Loading report map_data:", {
         hasMapData: !!row.map_data,
@@ -574,6 +579,7 @@ const Report = () => {
       } else if (row.address) {
         geocodeAddress(row.address);
       }
+      reportLoadedRef.current = true;
     } catch (error: any) {
       toast.error("Failed to load report");
       console.error(error);
@@ -780,7 +786,7 @@ const Report = () => {
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
-        
+        customer_email: customerEmail || null,
       };
 
       if (reportId) {
@@ -806,6 +812,56 @@ const Report = () => {
       setIsSaving(false);
     }
   };
+
+  // Silent auto-save (no toast, no loading spinner)
+  const autoSave = async () => {
+    if (!editableTech || !reportId) return;
+    try {
+      const rawMap = latestMapDataRef.current ?? mapData;
+      let mapPayload: any = null;
+      if (rawMap) {
+        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
+      }
+      const renderedMapUrl = renderedMapImage;
+      const reportData = {
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        address: editableAddress || extractedAddress || address,
+        notes: todaysFindings || notes || null,
+        findings: editableFindings,
+        recommendations: editableRecommendations,
+        next_steps: editableExpectations,
+        map_url: coordinates
+          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+          : null,
+        map_data: mapPayload,
+        custom_map_url: customMapImage,
+        rendered_map_url: renderedMapUrl,
+        property_images: propertyImages,
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
+        report_title: "Initial Pest Report",
+        customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
+        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_email: customerEmail || null,
+      };
+      const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
+      if (error) throw error;
+      console.log("[autosave] saved successfully");
+    } catch (err) {
+      console.error("[autosave] failed:", err);
+    }
+  };
+
+  // Effect: auto-save when images/map change after upload
+  useEffect(() => {
+    if (!pendingAutoSaveRef.current || !reportLoadedRef.current) return;
+    pendingAutoSaveRef.current = false;
+    autoSave();
+  }, [propertyImages, customMapImage]);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -1104,6 +1160,7 @@ Crest Pest Control
       } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
       setCustomMapImage(publicUrl);
+      pendingAutoSaveRef.current = true;
       toast.success("Custom map image uploaded");
     } catch (error) {
       console.error("Error uploading map:", error);
@@ -1164,6 +1221,7 @@ Crest Pest Control
 
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages(uploadedImages);
+      pendingAutoSaveRef.current = true;
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
@@ -1206,6 +1264,7 @@ Crest Pest Control
           } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
           setCustomMapImage(publicUrl);
+          pendingAutoSaveRef.current = true;
           toast.success("Map pasted successfully");
         } catch (error) {
           console.error("Error pasting map:", error);
@@ -1262,6 +1321,7 @@ Crest Pest Control
 
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages(prev => [...prev, ...uploadedImages]);
+      pendingAutoSaveRef.current = true;
       toast.success(`${filesToProcess.length} image(s) pasted`);
     } catch (error) {
       console.error("Error pasting images:", error);
@@ -1296,7 +1356,7 @@ Crest Pest Control
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
+        <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2 md:sticky md:top-0 md:z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-1 flex-wrap">
@@ -1390,6 +1450,16 @@ Crest Pest Control
                       <div className="flex items-center gap-1">
                         <span className="text-muted-foreground w-16 shrink-0">License:</span>
                         <span className="text-foreground text-xs">{editableLicenseNumber || "—"}</span>
+                      </div>
+                      <div className="flex items-center gap-1 no-print">
+                        <span className="text-muted-foreground w-16 shrink-0">Email:</span>
+                        <Input
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="customer@email.com"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                        />
                       </div>
                     </div>
                   </div>
