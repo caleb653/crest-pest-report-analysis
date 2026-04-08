@@ -1792,8 +1792,8 @@ Crest Pest Control`;
       {/* Unified Header — always shown */}
       <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
-            {/* Action buttons row for iPad - shown at top on medium screens */}
-            <div className="flex md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+            {/* Action buttons row - shown on small/medium screens, hidden on large desktop */}
+            <div className="flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
               {!isReadOnly && (
               <>
               <Button
