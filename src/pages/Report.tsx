@@ -605,6 +605,7 @@ const Report = () => {
     "Retail",
   ] as const;
   const [propertyType, setPropertyType] = useState<string>("Residential");
+  const [companyName, setCompanyName] = useState<string>("");
   
   // Scheduling & Customer Communication
   const [preferredServiceDay, setPreferredServiceDay] = useState("");
