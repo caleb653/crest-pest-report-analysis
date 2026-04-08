@@ -857,6 +857,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
             if (parsed && typeof parsed === 'object' && parsed._structuredNotes) {
               setAdditionalDetails(parsed.additionalDetails || "");
               setPropertyType(parsed.propertyType || "Residential");
+              setCompanyName(parsed.companyName || "");
               setPreferredServiceDay(parsed.preferredServiceDay || "");
               setPreferredServiceTime(parsed.preferredServiceTime || "");
               setMainPointOfContact(parsed.mainPointOfContact || "");
@@ -1037,6 +1038,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       _structuredNotes: true,
       additionalDetails: additionalDetails || notes || "",
       propertyType,
+      companyName,
       preferredServiceDay,
       preferredServiceTime,
       mainPointOfContact,
