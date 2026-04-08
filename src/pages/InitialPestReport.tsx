@@ -810,7 +810,50 @@ const Report = () => {
     }
   };
 
-  const handleShare = async () => {
+  // Silent auto-save (no toast, no loading spinner)
+  const autoSave = async () => {
+    if (!editableTech || !reportId) return;
+    try {
+      const rawMap = latestMapDataRef.current ?? mapData;
+      let mapPayload: any = null;
+      if (rawMap) {
+        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
+      }
+      const renderedMapUrl = renderedMapImage;
+      const reportData = {
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        address: editableAddress || extractedAddress || address,
+        notes: todaysFindings || notes || null,
+        findings: editableFindings,
+        recommendations: editableRecommendations,
+        next_steps: editableExpectations,
+        map_url: coordinates
+          ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+          : null,
+        map_data: mapPayload,
+        custom_map_url: customMapImage,
+        rendered_map_url: renderedMapUrl,
+        property_images: propertyImages,
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        target_pests: editableTargetPests,
+        products_used: editableProductsUsed,
+        equipment: editableEquipment,
+        report_title: "Initial Pest Report",
+        customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
+        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_email: customerEmail || null,
+      };
+      const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
+      if (error) throw error;
+      console.log("[autosave] saved successfully");
+    } catch (err) {
+      console.error("[autosave] failed:", err);
+    }
+  };
+
+
     if (navigator.share) {
       try {
         await navigator.share({

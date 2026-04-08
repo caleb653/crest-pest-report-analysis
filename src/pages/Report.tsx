@@ -1192,7 +1192,24 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
-  const handleShare = async () => {
+  // Silent auto-save (no toast, no loading spinner)
+  const autoSave = async () => {
+    if (!editableTech || !reportId) return;
+    try {
+      const rawMap = latestMapDataRef.current ?? mapData;
+      let mapPayload: any = null;
+      if (rawMap) {
+        try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
+      }
+      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
+      console.log("[autosave] saved successfully");
+    } catch (err) {
+      console.error("[autosave] failed:", err);
+    }
+  };
+
+
     if (navigator.share) {
       try {
         await navigator.share({
