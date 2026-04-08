@@ -1982,22 +1982,67 @@ Crest Pest Control`;
                   </div>
                 </div>
 
-                {/* Column 2: Property Info - only in print */}
-                <div className="hidden print:block">
+                {/* Column 2: Property Info - shown on iPad (md) and print */}
+                <div className="hidden md:block lg:hidden print:block">
                   <p className="font-semibold text-foreground text-sm mb-0.5">Property Info:</p>
                   <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Date:</span>
-                      <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                      ) : (
+                        <Input
+                          type="date"
+                          value={editableServiceDate}
+                          onChange={(e) => setEditableServiceDate(e.target.value)}
+                          className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                        />
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Type:</span>
-                      <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                      {isReadOnly ? (
+                        <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                      ) : (
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
-                    {propertyType !== "Residential" && companyName && (
+                    {propertyType !== "Residential" && (
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground w-16">Company:</span>
-                        <span className="text-foreground font-medium">{companyName}</span>
+                        {isReadOnly ? (
+                          <span className="text-foreground font-medium">{companyName || "—"}</span>
+                        ) : (
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company name"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                          />
+                        )}
+                      </div>
+                    )}
+                    {!isReadOnly && (
+                      <div className="flex items-center gap-2 print:hidden">
+                        <span className="text-muted-foreground w-16">Email:</span>
+                        <Input
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="customer@email.com"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 focus-visible:ring-0"
+                        />
                       </div>
                     )}
                   </div>
