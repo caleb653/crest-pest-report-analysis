@@ -579,6 +579,7 @@ const Report = () => {
       } else if (row.address) {
         geocodeAddress(row.address);
       }
+      reportLoadedRef.current = true;
     } catch (error: any) {
       toast.error("Failed to load report");
       console.error(error);
@@ -854,6 +855,13 @@ const Report = () => {
       console.error("[autosave] failed:", err);
     }
   };
+
+  // Effect: auto-save when images/map change after upload
+  useEffect(() => {
+    if (!pendingAutoSaveRef.current || !reportLoadedRef.current) return;
+    pendingAutoSaveRef.current = false;
+    autoSave();
+  }, [propertyImages, customMapImage]);
 
   const handleShare = async () => {
     if (navigator.share) {
