@@ -1792,44 +1792,8 @@ Crest Pest Control`;
       {/* Unified Header — always shown */}
       <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
-            {/* Action buttons row - shown on small/medium screens, hidden on large desktop */}
-            <div className="flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
-              {!isReadOnly && (
-              <>
-              <Button
-                onClick={handleOpenCompose}
-                variant="secondary"
-                size="sm"
-              >
-                <Mail className="w-3 h-3 mr-1" />
-                Email
-              </Button>
-              <Button onClick={handleSubmit} disabled={isSaving} size="sm">
-                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                Save
-              </Button>
-              </>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <FileDown className="w-3 h-3 mr-1" />
-                    PDF
-                    <ChevronDown className="w-3 h-3 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button onClick={() => navigate("/")} variant="outline" size="sm">
-                <Home className="w-3 h-3" />
-              </Button>
-            </div>
-
-            <div className="flex flex-col lg:flex-row items-start justify-between gap-3 lg:gap-4 md:gap-2">
-              {/* Left side: Logo + Title */}
+            {/* Top row: Logo + Title + Action buttons */}
+            <div className="flex items-center gap-3 mb-2 print:mb-1">
               <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-16 lg:h-24 w-auto object-contain" />
@@ -1837,24 +1801,56 @@ Crest Pest Control`;
                 </div>
                 <div className="flex flex-col justify-center">
                   {isReadOnly ? (
-                    <h1 className="print-title font-bold text-foreground text-2xl lg:text-3xl print:text-2xl leading-tight">
+                    <h1 className="print-title font-bold text-foreground text-xl sm:text-2xl lg:text-3xl print:text-2xl leading-tight">
                       {editableTitle}
                     </h1>
                   ) : (
                     <input
                       value={editableTitle}
                       onChange={(e) => setEditableTitle(e.target.value)}
-                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-2xl lg:text-3xl print:text-2xl h-10 lg:h-14 print:h-auto w-full lg:w-[28rem] print:w-auto focus-visible:outline-none focus-visible:ring-0"
+                      className="print-title font-bold text-foreground bg-transparent border-b border-border px-1 text-xl sm:text-2xl lg:text-3xl print:text-2xl h-10 lg:h-14 print:h-auto w-full max-w-[14rem] sm:max-w-[20rem] lg:w-[28rem] lg:max-w-none print:w-auto focus-visible:outline-none focus-visible:ring-0"
                     />
                   )}
                 </div>
               </div>
 
-              {/* Right side: info grid - 2 cols side by side */}
-              <div className="grid grid-cols-2 print:grid-cols-3 gap-x-4 gap-y-1 print:gap-4 w-full lg:w-auto lg:ml-auto">
-                {/* Column 1: Customer Details */}
-                <div>
-                  <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
+              <div className="flex items-center gap-2 no-print ml-auto shrink-0">
+                {!isReadOnly && (
+                <>
+                <Button onClick={handleOpenCompose} variant="secondary" size="sm">
+                  <Mail className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Email</span>
+                </Button>
+                <Button onClick={handleSubmit} disabled={isSaving} size="sm">
+                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                  <span className="hidden sm:inline">Save</span>
+                </Button>
+                </>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileDown className="w-3 h-3 mr-1" />
+                      <span className="hidden sm:inline">PDF</span>
+                      <ChevronDown className="w-3 h-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button onClick={() => navigate("/")} variant="outline" size="sm">
+                  <Home className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Info grid - full width below, always 2 columns */}
+            <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-4">
+              {/* Column 1: Customer Details */}
+              <div>
+                <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
                   <div className="space-y-0.5 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground w-16">Name:</span>
