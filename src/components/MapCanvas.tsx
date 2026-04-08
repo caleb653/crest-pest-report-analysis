@@ -309,8 +309,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             cornerColor: '#16a34a',
             cornerStrokeColor: '#166534',
             transparentCorners: false,
-            data: { iconType: currentIcon, iconNumber },
           });
+          (group as any).data = { iconType: currentIcon, iconNumber };
           
           canvas.add(group);
           canvas.discardActiveObject();
