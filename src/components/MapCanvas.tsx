@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus, Eraser, Pencil } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush } from 'fabric';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush, Circle as FabricCircle } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
@@ -72,6 +72,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const isLoadingDataRef = useRef(false);
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
+  const iconCountsRef = useRef<Record<string, number>>({});
   // Line drawing state
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -267,9 +268,37 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       } else if (currentTool === 'icon') {
         const svgPath = iconData?.svgPath || bugIcon;
         
-        // Load and add SVG icon
+        // Increment count for this icon type
+        const counts = iconCountsRef.current;
+        counts[currentIcon] = (counts[currentIcon] || 0) + 1;
+        const iconNumber = counts[currentIcon];
+        
+        // Load and add SVG icon with number badge
         FabricImage.fromURL(svgPath).then((img) => {
-          img.set({
+          // Create number badge
+          const badgeSize = 14;
+          const badge = new FabricCircle({
+            radius: badgeSize / 2,
+            fill: '#DC2626',
+            originX: 'center',
+            originY: 'center',
+            left: (img.width || 32) / 2 + 8,
+            top: -4,
+          });
+          const numberText = new IText(String(iconNumber), {
+            fontSize: 10,
+            fill: '#FFFFFF',
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'bold',
+            originX: 'center',
+            originY: 'center',
+            left: (img.width || 32) / 2 + 8,
+            top: -4,
+            editable: false,
+            selectable: false,
+          });
+          
+          const group = new Group([img, badge, numberText], {
             left: pt.x - 16,
             top: pt.y - 16,
             selectable: true,
@@ -280,14 +309,14 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             cornerColor: '#16a34a',
             cornerStrokeColor: '#166534',
             transparentCorners: false,
-            // Store icon type for legend purposes
-            data: { iconType: currentIcon }
+            data: { iconType: currentIcon, iconNumber },
           });
-          canvas.add(img);
+          
+          canvas.add(group);
           canvas.discardActiveObject();
           canvas.renderAll();
           
-          console.log('Icon added to canvas:', currentIcon);
+          console.log('Icon added to canvas:', currentIcon, 'number:', iconNumber);
           
           // Add to legend if not already there
           setLegendItems(prev => {
@@ -1145,12 +1174,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
                 <button
                   key={iconData.icon}
                   onClick={() => handleIconSelect(iconData.icon)}
-                  className={`p-2 rounded hover:bg-muted transition-colors border ${
+                  className={`p-2 rounded hover:bg-muted transition-colors border flex flex-col items-center gap-1 ${
                     selectedIcon === iconData.icon ? 'bg-primary/20 border-primary' : 'border-border'
                   }`}
                   title={iconData.label}
                 >
                   <img src={iconData.svgPath} alt={iconData.label} className="w-8 h-8" />
+                  <span className="text-[9px] leading-tight text-muted-foreground text-center">{iconData.label}</span>
                 </button>
               );
             })}
