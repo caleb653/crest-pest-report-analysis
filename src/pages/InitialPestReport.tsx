@@ -783,7 +783,7 @@ const Report = () => {
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
-        
+        customer_email: customerEmail || null,
       };
 
       if (reportId) {

@@ -1918,6 +1918,18 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
+                    {!isReadOnly && (
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Email:</span>
+                      <Input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="customer@email.com"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                      />
+                    </div>
+                    )}
                   </div>
                 </div>
 
