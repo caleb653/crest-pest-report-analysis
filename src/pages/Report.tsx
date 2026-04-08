@@ -1787,37 +1787,7 @@ Crest Pest Control`;
         </div>
       )}
       
-      {/* Mobile Header */}
-      {isMobile && (
-        <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
-          <div className="flex items-center justify-between">
-            <img src={crestLogo} alt="Crest" className="h-10" />
-            <div className="flex gap-2 no-print">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="default" className="h-9">
-                    <FileDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {!isReadOnly && (
-              <>
-              <Button size="sm" variant="secondary" onClick={handleShare} className="h-9">
-                <Share2 className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={() => navigate("/")} variant="outline" className="h-9">
-                <Home className="w-4 h-4" />
-              </Button>
-              </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile Header is removed — always use the unified desktop/tablet header below */}
 
       {/* Desktop Header */}
       {!isMobile && (
