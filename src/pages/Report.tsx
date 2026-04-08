@@ -2090,9 +2090,9 @@ Crest Pest Control`;
         </div>
 
       {/* Page 1 - Contract/Form Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
-        {/* Two Column Layout for Desktop */}
-        <div className={isMobile ? "flex-1 overflow-y-auto pb-32" : "grid grid-cols-[1fr_2fr] gap-2 print:gap-1"}>
+      <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-2 print:gap-1">
           {/* Mobile: Customer & Technician */}
           {isMobile && (
             <Card className="p-4">
