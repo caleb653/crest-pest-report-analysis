@@ -805,7 +805,7 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
       };
 
@@ -865,7 +865,7 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
       };
       const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
@@ -1030,7 +1030,7 @@ Crest Pest Control
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
       };
