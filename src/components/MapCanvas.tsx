@@ -611,6 +611,18 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           };
 
           attemptAdjust();
+          
+          // Restore icon counts from loaded objects
+          const counts: Record<string, number> = {};
+          const objs = canvas.getObjects();
+          objs.forEach((obj: any) => {
+            const iconType = obj.data?.iconType;
+            const iconNum = obj.data?.iconNumber;
+            if (iconType && iconNum) {
+              counts[iconType] = Math.max(counts[iconType] || 0, iconNum);
+            }
+          });
+          iconCountsRef.current = counts;
         });
       } else {
         isLoadingDataRef.current = false;
