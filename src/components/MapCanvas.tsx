@@ -577,8 +577,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         const counts: Record<string, number> = {};
         
         objectsArray.forEach((obj: any) => {
+          const objectType = String(obj.type || '').toLowerCase();
+
           // Handle group objects (numbered icons)
-          if ((obj.type === 'group' || obj.type === 'image') && obj.data?.iconType) {
+          if ((objectType === 'group' || objectType === 'image') && obj.data?.iconType) {
             const iconType = obj.data.iconType;
             const iconNumber = obj.data.iconNumber;
             const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
@@ -640,7 +642,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               });
               loadPromises.push(promise);
             }
-          } else if (obj.type === 'rect') {
+          } else if (objectType === 'rect') {
             const rect = new FabricRect({
               left: (obj.left || 0) * scaleX,
               top: (obj.top || 0) * scaleY,
@@ -657,7 +659,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               hasControls: true,
             });
             canvas.add(rect);
-          } else if (obj.type === 'line') {
+          } else if (objectType === 'line') {
             const line = new Line([
               (obj.x1 || 0) * scaleX,
               (obj.y1 || 0) * scaleY,
@@ -670,7 +672,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               hasControls: true,
             });
             canvas.add(line);
-          } else if (obj.type === 'i-text' || obj.type === 'text') {
+          } else if (objectType === 'i-text' || objectType === 'text') {
             const text = new IText(obj.text || '', {
               left: (obj.left || 0) * scaleX,
               top: (obj.top || 0) * scaleY,
@@ -683,7 +685,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               editable: true,
             });
             canvas.add(text);
-          } else if (obj.type === 'path') {
+          } else if (objectType === 'path') {
             // For freehand drawing paths, use loadFromJSON for just this object
             canvas.loadFromJSON({ objects: [obj], version: savedData.objects.version || '6.0.0' }, () => {
               const objs = canvas.getObjects();
