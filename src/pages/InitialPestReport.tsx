@@ -559,6 +559,8 @@ const Report = () => {
         const prefs = row.customer_preferences as any;
         if (prefs.preference) setCustomerPreference(prefs.preference);
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
+        if (prefs.propertyType) setPropertyType(prefs.propertyType);
+        if (prefs.companyName) setCompanyName(prefs.companyName);
       }
       if (row.notes) {
         setTodaysFindings(row.notes as string);
