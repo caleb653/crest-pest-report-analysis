@@ -45,7 +45,7 @@ interface ReportData {
   recommendations: string[] | null;
   next_steps: string[] | null;
   customer_key_areas: string[] | null;
-  customer_preferences: { preference?: string; notes?: string } | null;
+  customer_preferences: { preference?: string; notes?: string; propertyType?: string; companyName?: string } | null;
 }
 
 // Full product list with chemicals (legally required)
@@ -239,6 +239,20 @@ export default function CustomerReportView() {
   // Determine if this is an Initial Pest Report
   const isInitialReport = report.report_title === "Initial Pest Report";
 
+  // Extract property type and company name from either source
+  let displayPropertyType = report.customer_preferences?.propertyType || "";
+  let displayCompanyName = report.customer_preferences?.companyName || "";
+  // For Sales Reports, these are in the structured notes
+  if (!displayPropertyType && report.notes) {
+    try {
+      const parsed = JSON.parse(report.notes);
+      if (parsed?._structuredNotes) {
+        displayPropertyType = parsed.propertyType || "";
+        displayCompanyName = parsed.companyName || "";
+      }
+    } catch { /* not JSON */ }
+  }
+
   // Format findings for display
   const findingsHtml = Array.isArray(report.findings)
     ? report.findings.join('<br/>')
@@ -272,6 +286,9 @@ export default function CustomerReportView() {
             <h1 className="text-lg font-bold">{report.report_title || "Pest Control Proposal"}</h1>
           </div>
           <div className="text-right text-xs text-muted-foreground">
+            {displayPropertyType && displayPropertyType !== "Residential" && (
+              <span className="font-semibold text-foreground mr-3">{displayPropertyType}</span>
+            )}
             <span className="font-bold text-foreground">PEST CONTROL</span>
           </div>
         </header>
@@ -283,6 +300,9 @@ export default function CustomerReportView() {
               <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Customer Details</h2>
               <div className="space-y-1 text-sm">
                 <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{report.customer_name || "—"}</span></p>
+                {displayCompanyName && (
+                  <p><span className="text-muted-foreground">Company:</span> <span className="font-medium">{displayCompanyName}</span></p>
+                )}
                 <p><span className="text-muted-foreground">Address:</span> <span className="font-medium">{report.address || "—"}</span></p>
                 <p><span className="text-muted-foreground">Date:</span> <span className="font-medium">{report.service_date || "—"}</span></p>
               </div>
