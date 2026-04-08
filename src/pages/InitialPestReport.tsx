@@ -40,6 +40,22 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const PROPERTY_TYPES = [
+  "Residential",
+  "Commercial",
+  "Automotive",
+  "Education",
+  "Entertainment / Events",
+  "Healthcare",
+  "Hotel / Motel / Resort",
+  "Industrial / Warehouse",
+  "Mobile Home Park",
+  "Multi-Unit Property",
+  "Office",
+  "Retail",
+] as const;
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
