@@ -1953,6 +1953,21 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
+                    {propertyType !== "Residential" && (
+                      <div className="flex items-center gap-2 print:hidden">
+                        <span className="text-muted-foreground w-16">Company:</span>
+                        {isReadOnly ? (
+                          <span className="text-foreground font-medium">{companyName || "—"}</span>
+                        ) : (
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company name (optional)"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                          />
+                        )}
+                      </div>
+                    )}
                     {!isReadOnly && (
                     <div className="flex items-center gap-2 print:hidden">
                       <span className="text-muted-foreground w-16">Email:</span>
@@ -1964,7 +1979,7 @@ Crest Pest Control`;
                         className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
                       />
                     </div>
-                    )}
+                    )
                   </div>
                 </div>
 
