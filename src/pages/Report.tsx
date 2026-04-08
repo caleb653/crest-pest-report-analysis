@@ -1846,11 +1846,11 @@ Crest Pest Control`;
               </div>
             </div>
 
-            {/* Info grid - full width below, always 2 columns */}
-            <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-4">
+            {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
+            <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
               {/* Column 1: Customer Details */}
               <div>
-                <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
+                <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Customer Details:</p>
                 <div className="space-y-0.5 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground w-16">Name:</span>
@@ -1884,6 +1884,45 @@ Crest Pest Control`;
                       </>
                     )}
                   </div>
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Email:</span>
+                      <Input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="customer@email.com"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2: Property Info (print col 2) */}
+              <div className="hidden print:block">
+                <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Property Info:</p>
+                <div className="space-y-0.5 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Date:</span>
+                    <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Type:</span>
+                    <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                  </div>
+                  {propertyType !== "Residential" && companyName && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground w-16">Company:</span>
+                      <span className="text-foreground font-medium">{companyName}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* On screen: Date/Type/Company stay in column 1 area (below customer details on screen) */}
+              <div className="print:hidden col-span-1 -mt-0.5">
+                <div className="space-y-0.5 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground w-16">Date:</span>
                     {isReadOnly ? (
@@ -1902,18 +1941,20 @@ Crest Pest Control`;
                     {isReadOnly ? (
                       <span className="text-foreground font-medium">{propertyType || "—"}</span>
                     ) : (
-                      <Select value={propertyType} onValueChange={setPropertyType}>
-                        <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PROPERTY_TYPES.map((type) => (
-                            <SelectItem key={type} value={type} className="text-xs">
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <>
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </>
                     )}
                   </div>
                   {propertyType !== "Residential" && (
@@ -1926,29 +1967,17 @@ Crest Pest Control`;
                           value={companyName}
                           onChange={(e) => setCompanyName(e.target.value)}
                           placeholder="Company name"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0"
                         />
                       )}
-                    </div>
-                  )}
-                  {!isReadOnly && (
-                    <div className="flex items-center gap-2 print:hidden">
-                      <span className="text-muted-foreground w-16">Email:</span>
-                      <Input
-                        type="email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        placeholder="customer@email.com"
-                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
-                      />
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Column 2: Technician Info */}
+              {/* Column 3 (print) / Column 2 (screen): Technician Info */}
               <div>
-                <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
+                <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Technician Information:</p>
                 <div className="space-y-0.5 text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground w-16">Name:</span>
