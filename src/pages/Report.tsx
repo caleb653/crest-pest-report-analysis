@@ -1952,7 +1952,7 @@ Crest Pest Control`;
                       )}
                     </div>
                     {propertyType !== "Residential" && (
-                      <div className="flex items-center gap-2 print:hidden">
+                      <div className="flex items-center gap-2 md:hidden print:hidden">
                         <span className="text-muted-foreground w-16">Company:</span>
                         {isReadOnly ? (
                           <span className="text-foreground font-medium">{companyName || "—"}</span>
@@ -1967,7 +1967,7 @@ Crest Pest Control`;
                       </div>
                     )}
                     {!isReadOnly && (
-                    <div className="flex items-center gap-2 print:hidden">
+                    <div className="flex items-center gap-2 md:hidden print:hidden">
                       <span className="text-muted-foreground w-16">Email:</span>
                       <Input
                         type="email"
