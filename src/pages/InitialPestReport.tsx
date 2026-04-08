@@ -853,7 +853,7 @@ const Report = () => {
     }
   };
 
-
+  const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
