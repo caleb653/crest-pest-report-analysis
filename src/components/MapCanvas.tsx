@@ -540,89 +540,175 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       });
       
       if (savedData.objects) {
-        fabricCanvasRef.current.loadFromJSON(savedData.objects, () => {
-          const canvas = fabricCanvasRef.current!;
-          console.log('Canvas loaded, object count:', canvas.getObjects().length);
-          
-          // Re-sync canvas dimensions with actual parent before scaling
-          const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
-          if (parentRect) {
-            const actualW = Math.floor(parentRect.width);
-            const actualH = Math.floor(parentRect.height);
-            const canvasW = canvas.getWidth();
-            const canvasH = canvas.getHeight();
-            if (Math.abs(canvasW - actualW) > 1 || Math.abs(canvasH - actualH) > 1) {
-              canvas.setDimensions({ width: actualW, height: actualH });
-            }
+        const canvas = fabricCanvasRef.current!;
+        
+        // Re-sync canvas dimensions with actual parent before scaling
+        const parentRect = canvasRef.current?.parentElement?.getBoundingClientRect();
+        if (parentRect) {
+          const actualW = Math.floor(parentRect.width);
+          const actualH = Math.floor(parentRect.height);
+          const canvasW = canvas.getWidth();
+          const canvasH = canvas.getHeight();
+          if (Math.abs(canvasW - actualW) > 1 || Math.abs(canvasH - actualH) > 1) {
+            canvas.setDimensions({ width: actualW, height: actualH });
           }
-          
-          const attemptAdjust = (attempt: number = 0) => {
-            const objs = canvas.getObjects();
-            if (objs.length === 0 && attempt < 5) {
-              setTimeout(() => attemptAdjust(attempt + 1), 50);
-              return;
-            }
+        }
+        
+        const currW = canvas.getWidth();
+        const currH = canvas.getHeight();
+        const baseW = savedData.base?.width || REFERENCE_WIDTH;
+        const baseH = savedData.base?.height || REFERENCE_HEIGHT;
+        const scaleX = currW / baseW;
+        const scaleY = currH / baseH;
+        const isNormalized = savedData.version === 2;
+        const targetIconScale = Math.min(currW, currH) / 800;
+        
+        // Get the raw objects array
+        let objectsArray: any[] = [];
+        if (savedData.objects?.objects && Array.isArray(savedData.objects.objects)) {
+          objectsArray = savedData.objects.objects;
+        } else if (Array.isArray(savedData.objects)) {
+          objectsArray = savedData.objects;
+        }
+        
+        console.log('Manually reconstructing', objectsArray.length, 'objects');
+        
+        const loadPromises: Promise<void>[] = [];
+        const counts: Record<string, number> = {};
+        
+        objectsArray.forEach((obj: any) => {
+          // Handle group objects (numbered icons)
+          if ((obj.type === 'group' || obj.type === 'image') && obj.data?.iconType) {
+            const iconType = obj.data.iconType;
+            const iconNumber = obj.data.iconNumber;
+            const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
             
-            const currW = canvas.getWidth();
-            const currH = canvas.getHeight();
-            
-            // Check if using new normalized format (version 2) or legacy format
-            const isNormalized = savedData.version === 2;
-            const baseW = savedData.base?.width || REFERENCE_WIDTH;
-            const baseH = savedData.base?.height || REFERENCE_HEIGHT;
-
-            // Calculate scale factors - pure proportional scaling
-            const scaleX = currW / baseW;
-            const scaleY = currH / baseH;
-            const uniformScale = Math.min(scaleX, scaleY);
-            
-            // Target icon size relative to canvas
-            const targetIconScale = Math.min(currW, currH) / 800;
-            
-            console.log('Scaling objects:', { scaleX, scaleY, uniformScale, targetIconScale, currW, currH, baseW, baseH, objectCount: objs.length, isNormalized });
-            
-            objs.forEach((obj: any) => {
-              if ((obj as any)._scaledFromBase) return;
-              
-              const origLeft = obj.left || 0;
-              const origTop = obj.top || 0;
-              
-              obj.left = origLeft * scaleX;
-              obj.top = origTop * scaleY;
-              
-              if (isNormalized) {
-                obj.scaleX = (obj.scaleX || 1) * targetIconScale;
-                obj.scaleY = (obj.scaleY || 1) * targetIconScale;
-              } else {
-                const maxScale = targetIconScale * 1.5;
-                obj.scaleX = Math.min(obj.scaleX || 1, maxScale);
-                obj.scaleY = Math.min(obj.scaleY || 1, maxScale);
+            if (iconInfo) {
+              if (iconType && iconNumber) {
+                counts[iconType] = Math.max(counts[iconType] || 0, iconNumber);
               }
-              
-              (obj as any)._scaledFromBase = true;
-              obj.setCoords();
-            });
-            canvas.renderAll();
-            
-            // Allow resize handler to work again after load is complete
-            setTimeout(() => {
-              isLoadingDataRef.current = false;
-            }, 300);
-          };
-
-          attemptAdjust();
-          
-          // Restore icon counts from loaded objects
-          const counts: Record<string, number> = {};
-          const objs = canvas.getObjects();
-          objs.forEach((obj: any) => {
-            const iconType = obj.data?.iconType;
-            const iconNum = obj.data?.iconNumber;
-            if (iconType && iconNum) {
-              counts[iconType] = Math.max(counts[iconType] || 0, iconNum);
+              const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
+                const groupObjects: any[] = [img];
+                
+                if (iconNumber) {
+                  const badgeSize = 14;
+                  const badge = new FabricCircle({
+                    radius: badgeSize / 2,
+                    fill: '#DC2626',
+                    originX: 'center',
+                    originY: 'center',
+                    left: (img.width || 32) / 2 + 8,
+                    top: -4,
+                  });
+                  const numberText = new IText(String(iconNumber), {
+                    fontSize: 10,
+                    fill: '#FFFFFF',
+                    fontFamily: 'Arial, sans-serif',
+                    fontWeight: 'bold',
+                    originX: 'center',
+                    originY: 'center',
+                    left: (img.width || 32) / 2 + 8,
+                    top: -4,
+                    editable: false,
+                    selectable: false,
+                  });
+                  groupObjects.push(badge, numberText);
+                }
+                
+                const scaledScaleX = isNormalized ? (obj.scaleX || 1) * targetIconScale : Math.min(obj.scaleX || 1, targetIconScale * 1.5);
+                const scaledScaleY = isNormalized ? (obj.scaleY || 1) * targetIconScale : Math.min(obj.scaleY || 1, targetIconScale * 1.5);
+                
+                const group = new Group(groupObjects, {
+                  left: (obj.left || 0) * scaleX,
+                  top: (obj.top || 0) * scaleY,
+                  scaleX: scaledScaleX,
+                  scaleY: scaledScaleY,
+                  angle: obj.angle || 0,
+                  selectable: true,
+                  hasControls: true,
+                  hasBorders: true,
+                  lockScalingFlip: true,
+                  cornerSize: 8,
+                  cornerColor: '#16a34a',
+                  cornerStrokeColor: '#166534',
+                  transparentCorners: false,
+                });
+                (group as any).data = { iconType, iconNumber };
+                canvas.add(group);
+              }).catch((err) => {
+                console.error('Error loading icon:', iconType, err);
+              });
+              loadPromises.push(promise);
             }
-          });
+          } else if (obj.type === 'rect') {
+            const rect = new FabricRect({
+              left: (obj.left || 0) * scaleX,
+              top: (obj.top || 0) * scaleY,
+              width: (obj.width || 100) * (isNormalized ? scaleX * (obj.scaleX || 1) : 1),
+              height: (obj.height || 50) * (isNormalized ? scaleY * (obj.scaleY || 1) : 1),
+              scaleX: isNormalized ? 1 : (obj.scaleX || 1),
+              scaleY: isNormalized ? 1 : (obj.scaleY || 1),
+              fill: obj.fill,
+              stroke: obj.stroke,
+              strokeWidth: obj.strokeWidth || 3,
+              rx: obj.rx || 4,
+              ry: obj.ry || 4,
+              selectable: true,
+              hasControls: true,
+            });
+            canvas.add(rect);
+          } else if (obj.type === 'line') {
+            const line = new Line([
+              (obj.x1 || 0) * scaleX,
+              (obj.y1 || 0) * scaleY,
+              (obj.x2 || 0) * scaleX,
+              (obj.y2 || 0) * scaleY,
+            ], {
+              stroke: obj.stroke || '#DC2626',
+              strokeWidth: obj.strokeWidth || 5,
+              selectable: true,
+              hasControls: true,
+            });
+            canvas.add(line);
+          } else if (obj.type === 'i-text' || obj.type === 'text') {
+            const text = new IText(obj.text || '', {
+              left: (obj.left || 0) * scaleX,
+              top: (obj.top || 0) * scaleY,
+              fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY),
+              fill: obj.fill || '#000000',
+              fontFamily: obj.fontFamily || 'Space Grotesk, sans-serif',
+              fontWeight: obj.fontWeight || 'bold',
+              backgroundColor: obj.backgroundColor,
+              selectable: true,
+              editable: true,
+            });
+            canvas.add(text);
+          } else if (obj.type === 'path') {
+            // For freehand drawing paths, use loadFromJSON for just this object
+            canvas.loadFromJSON({ objects: [obj], version: savedData.objects.version || '6.0.0' }, () => {
+              const objs = canvas.getObjects();
+              const lastObj = objs[objs.length - 1];
+              if (lastObj && lastObj.type === 'path') {
+                lastObj.left = (obj.left || 0) * scaleX;
+                lastObj.top = (obj.top || 0) * scaleY;
+                if (isNormalized) {
+                  lastObj.scaleX = (obj.scaleX || 1) * Math.min(scaleX, scaleY);
+                  lastObj.scaleY = (obj.scaleY || 1) * Math.min(scaleX, scaleY);
+                }
+                lastObj.setCoords();
+                canvas.renderAll();
+              }
+            });
+          }
+        });
+        
+        Promise.all(loadPromises).then(() => {
+          canvas.renderAll();
           iconCountsRef.current = counts;
+          console.log('Manual reconstruction complete, objects:', canvas.getObjects().length);
+          setTimeout(() => {
+            isLoadingDataRef.current = false;
+          }, 300);
         });
       } else {
         isLoadingDataRef.current = false;
