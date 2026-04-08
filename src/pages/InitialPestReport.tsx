@@ -40,10 +40,26 @@ import RichTextEditor from "@/components/RichTextEditor";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const PROPERTY_TYPES = [
+  "Residential",
+  "Commercial",
+  "Automotive",
+  "Education",
+  "Entertainment / Events",
+  "Healthcare",
+  "Hotel / Motel / Resort",
+  "Industrial / Warehouse",
+  "Mobile Home Park",
+  "Multi-Unit Property",
+  "Office",
+  "Retail",
+] as const;
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Jesse Angulo", license: "FR 51548" },
+  { name: "Jesse Angulo", license: "OPR #14972" },
   { name: "Jake Shubin", license: "FR 71068" },
   { name: "Caleb Whalen", license: "FR 71183" },
   { name: "Jackson Latham", license: "FR 68261" },
@@ -186,6 +202,8 @@ const Report = () => {
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
+  const [propertyType, setPropertyType] = useState<string>("Residential");
+  const [companyName, setCompanyName] = useState<string>("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
@@ -541,6 +559,8 @@ const Report = () => {
         const prefs = row.customer_preferences as any;
         if (prefs.preference) setCustomerPreference(prefs.preference);
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
+        if (prefs.propertyType) setPropertyType(prefs.propertyType);
+        if (prefs.companyName) setCompanyName(prefs.companyName);
       }
       if (row.notes) {
         setTodaysFindings(row.notes as string);
@@ -785,7 +805,7 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
       };
 
@@ -845,7 +865,7 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
       };
       const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
@@ -1010,7 +1030,7 @@ Crest Pest Control
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: (customerPreference || customerPreferenceNotes) ? { preference: customerPreference, notes: customerPreferenceNotes } : null,
+        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail,
         sent_to_customer_at: new Date().toISOString(),
       };
@@ -1461,6 +1481,32 @@ Crest Pest Control
                           className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
                         />
                       </div>
+                      <div className="flex items-center gap-1 no-print">
+                        <span className="text-muted-foreground w-16 shrink-0">Type:</span>
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-5 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 rounded-none">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {propertyType !== "Residential" && (
+                        <div className="flex items-center gap-1 no-print">
+                          <span className="text-muted-foreground w-16 shrink-0">Company:</span>
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company name (optional)"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1695,6 +1741,30 @@ Crest Pest Control
                   {editableLicenseNumber && (
                     <div className="text-sm text-muted-foreground">
                       License: {editableLicenseNumber}
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Property Type</label>
+                    <Select value={propertyType} onValueChange={setPropertyType}>
+                      <SelectTrigger className="text-base">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROPERTY_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {propertyType !== "Residential" && (
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Company Name (Optional)</label>
+                      <Input
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="Enter company name"
+                        className="text-base"
+                      />
                     </div>
                   )}
                 </div>

@@ -49,7 +49,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Jesse Angulo", license: "FR 51548" },
+  { name: "Jesse Angulo", license: "OPR #14972" },
   { name: "Jake Shubin", license: "FR 71068" },
   { name: "Caleb Whalen", license: "FR 71183" },
   { name: "Jackson Latham", license: "FR 68261" },
@@ -605,6 +605,7 @@ const Report = () => {
     "Retail",
   ] as const;
   const [propertyType, setPropertyType] = useState<string>("Residential");
+  const [companyName, setCompanyName] = useState<string>("");
   
   // Scheduling & Customer Communication
   const [preferredServiceDay, setPreferredServiceDay] = useState("");
@@ -856,6 +857,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
             if (parsed && typeof parsed === 'object' && parsed._structuredNotes) {
               setAdditionalDetails(parsed.additionalDetails || "");
               setPropertyType(parsed.propertyType || "Residential");
+              setCompanyName(parsed.companyName || "");
               setPreferredServiceDay(parsed.preferredServiceDay || "");
               setPreferredServiceTime(parsed.preferredServiceTime || "");
               setMainPointOfContact(parsed.mainPointOfContact || "");
@@ -1036,6 +1038,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       _structuredNotes: true,
       additionalDetails: additionalDetails || notes || "",
       propertyType,
+      companyName,
       preferredServiceDay,
       preferredServiceTime,
       mainPointOfContact,
@@ -1950,6 +1953,21 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
+                    {propertyType !== "Residential" && (
+                      <div className="flex items-center gap-2 print:hidden">
+                        <span className="text-muted-foreground w-16">Company:</span>
+                        {isReadOnly ? (
+                          <span className="text-foreground font-medium">{companyName || "—"}</span>
+                        ) : (
+                          <Input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company name (optional)"
+                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs min-w-[120px] lg:min-w-[80px] flex-1 focus-visible:ring-0 no-print"
+                          />
+                        )}
+                      </div>
+                    )}
                     {!isReadOnly && (
                     <div className="flex items-center gap-2 print:hidden">
                       <span className="text-muted-foreground w-16">Email:</span>
@@ -1962,6 +1980,7 @@ Crest Pest Control`;
                       />
                     </div>
                     )}
+
                   </div>
                 </div>
 
@@ -1977,6 +1996,12 @@ Crest Pest Control`;
                       <span className="text-muted-foreground w-16">Type:</span>
                       <span className="text-foreground font-medium">{propertyType || "—"}</span>
                     </div>
+                    {propertyType !== "Residential" && companyName && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground w-16">Company:</span>
+                        <span className="text-foreground font-medium">{companyName}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2079,6 +2104,30 @@ Crest Pest Control`;
                     className="text-base"
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Property Type</label>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {propertyType !== "Residential" && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Company Name (Optional)</label>
+                    <Input
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Enter company name"
+                      className="text-base"
+                    />
+                  </div>
+                )}
               </div>
             </Card>
           )}
