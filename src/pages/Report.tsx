@@ -1852,167 +1852,132 @@ Crest Pest Control`;
               <div>
                 <p className="font-semibold text-foreground text-sm mb-0.5">Customer Details:</p>
                   <div className="space-y-0.5 text-sm">
+                <div className="space-y-0.5 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Name:</span>
+                    {isReadOnly ? (
+                      <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
+                    ) : (
+                      <>
+                        <Input
+                          value={editableCustomer}
+                          onChange={(e) => setEditableCustomer(e.target.value)}
+                          placeholder="Customer name"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                        />
+                        <span className="print-only-text hidden text-foreground font-medium">{editableCustomer || "—"}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Address:</span>
+                    {isReadOnly ? (
+                      <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
+                    ) : (
+                      <>
+                        <Input
+                          value={editableAddress || extractedAddress}
+                          onChange={(e) => setEditableAddress(e.target.value)}
+                          placeholder="Enter address"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                        />
+                        <span className="print-only-text hidden text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Date:</span>
+                    {isReadOnly ? (
+                      <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                    ) : (
+                      <Input
+                        type="date"
+                        value={editableServiceDate}
+                        onChange={(e) => setEditableServiceDate(e.target.value)}
+                        className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Type:</span>
+                    {isReadOnly ? (
+                      <span className="text-foreground font-medium">{propertyType || "—"}</span>
+                    ) : (
+                      <Select value={propertyType} onValueChange={setPropertyType}>
+                        <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROPERTY_TYPES.map((type) => (
+                            <SelectItem key={type} value={type} className="text-xs">
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  {propertyType !== "Residential" && (
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Name:</span>
+                      <span className="text-muted-foreground w-16">Company:</span>
                       {isReadOnly ? (
-                        <span className="text-foreground font-medium">{editableCustomer || "—"}</span>
-                      ) : (
-                        <>
-                          <Input
-                            value={editableCustomer}
-                            onChange={(e) => setEditableCustomer(e.target.value)}
-                            placeholder="Customer name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
-                          />
-                          <span className="print-only-text hidden text-foreground font-medium">{editableCustomer || "—"}</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Address:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
-                      ) : (
-                        <>
-                          <Input
-                            value={editableAddress || extractedAddress}
-                            onChange={(e) => setEditableAddress(e.target.value)}
-                            placeholder="Enter address"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
-                          />
-                          <span className="print-only-text hidden text-foreground font-medium">{editableAddress || extractedAddress || "—"}</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Date:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
+                        <span className="text-foreground font-medium">{companyName || "—"}</span>
                       ) : (
                         <Input
-                          type="date"
-                          value={editableServiceDate}
-                          onChange={(e) => setEditableServiceDate(e.target.value)}
-                          className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-32 focus-visible:ring-0"
+                          value={companyName}
+                          onChange={(e) => setCompanyName(e.target.value)}
+                          placeholder="Company name"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
                         />
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Type:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{propertyType || "—"}</span>
-                      ) : (
-                        <Select value={propertyType} onValueChange={setPropertyType}>
-                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
-                            <SelectValue placeholder="Select type" />
+                  )}
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-2 print:hidden">
+                      <span className="text-muted-foreground w-16">Email:</span>
+                      <Input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="customer@email.com"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2: Technician Info */}
+              <div>
+                <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
+                <div className="space-y-0.5 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Name:</span>
+                    {isReadOnly ? (
+                      <span className="text-foreground font-medium">{editableTech || "—"}</span>
+                    ) : (
+                      <>
+                        <Select value={editableTech} onValueChange={handleTechnicianChange}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
+                            <SelectValue placeholder="Select technician" />
                           </SelectTrigger>
                           <SelectContent>
-                            {PROPERTY_TYPES.map((type) => (
-                              <SelectItem key={type} value={type} className="text-xs">
-                                {type}
+                            {TECHNICIANS.map((tech) => (
+                              <SelectItem key={tech.name} value={tech.name} className="text-xs">
+                                {tech.name} ({tech.license})
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      )}
-                    </div>
-                    {propertyType !== "Residential" && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground w-16">Company:</span>
-                        {isReadOnly ? (
-                          <span className="text-foreground font-medium">{companyName || "—"}</span>
-                        ) : (
-                          <Input
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            placeholder="Company name"
-                            className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
-                          />
-                        )}
-                      </div>
-                    )}
-                    {!isReadOnly && (
-                      <div className="flex items-center gap-2 print:hidden">
-                        <span className="text-muted-foreground w-16">Email:</span>
-                        <Input
-                          type="email"
-                          value={customerEmail}
-                          onChange={(e) => setCustomerEmail(e.target.value)}
-                          placeholder="customer@email.com"
-                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
-                        />
-                      </div>
+                        <span className="print-only-text hidden text-foreground font-medium">{editableTech || "—"}</span>
+                      </>
                     )}
                   </div>
-                </div>
-
-                {/* Column 2: Technician Info */}
-                <div>
-                  <p className="font-semibold text-foreground text-sm mb-0.5">Technician Information:</p>
-                  <div className="space-y-0.5 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">Name:</span>
-                      {isReadOnly ? (
-                        <span className="text-foreground font-medium">{editableTech || "—"}</span>
-                      ) : (
-                        <>
-                          <Select value={editableTech} onValueChange={handleTechnicianChange}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3 no-print">
-                              <SelectValue placeholder="Select technician" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TECHNICIANS.map((tech) => (
-                                <SelectItem key={tech.name} value={tech.name} className="text-xs">
-                                  {tech.name} ({tech.license})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <span className="print-only-text hidden text-foreground font-medium">{editableTech || "—"}</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-16">License:</span>
-                      <span className="text-foreground">{editableLicenseNumber || "—"}</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">License:</span>
+                    <span className="text-foreground">{editableLicenseNumber || "—"}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="hidden lg:flex items-center gap-2 no-print shrink-0">
-                {!isReadOnly && (
-                <>
-                <Button
-                  onClick={handleOpenCompose}
-                  variant="secondary"
-                  size="sm"
-                >
-                  <Mail className="w-3 h-3 mr-1" />
-                  Email
-                </Button>
-                <Button onClick={handleSubmit} disabled={isSaving} size="sm">
-                  {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
-                  Save
-                </Button>
-                </>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <FileDown className="w-3 h-3 mr-1" />
-                      PDF
-                      <ChevronDown className="w-3 h-3 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button onClick={() => navigate("/")} variant="outline" size="sm">
-                  <Home className="w-3 h-3" />
-                </Button>
               </div>
             </div>
           </div>
