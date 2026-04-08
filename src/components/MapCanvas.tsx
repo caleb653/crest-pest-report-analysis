@@ -749,11 +749,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
 
     const targetObjectScale = Math.min(currW, currH) / 800;
     const normalizedObjects = canvas.getObjects().map((obj: any) => {
-      const objJSON = obj.toJSON();
+      const objJSON = obj.toJSON(['data']);
       objJSON.left = ((obj.left || 0) / currW) * REFERENCE_WIDTH;
       objJSON.top = ((obj.top || 0) / currH) * REFERENCE_HEIGHT;
       objJSON.scaleX = (obj.scaleX || 1) / targetObjectScale;
       objJSON.scaleY = (obj.scaleY || 1) / targetObjectScale;
+      // Ensure data is preserved for groups
+      if (obj.data) {
+        objJSON.data = obj.data;
+      }
       return objJSON;
     });
 
