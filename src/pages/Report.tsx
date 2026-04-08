@@ -2104,6 +2104,30 @@ Crest Pest Control`;
                     className="text-base"
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Property Type</label>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger className="text-base">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {propertyType !== "Residential" && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Company Name (Optional)</label>
+                    <Input
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Enter company name"
+                      className="text-base"
+                    />
+                  </div>
+                )}
               </div>
             </Card>
           )}
