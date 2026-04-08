@@ -1919,7 +1919,7 @@ Crest Pest Control`;
                         </>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 print:hidden">
+                    <div className="flex items-center gap-2 md:hidden print:flex">
                       <span className="text-muted-foreground w-16">Date:</span>
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
@@ -1932,25 +1932,23 @@ Crest Pest Control`;
                         />
                       )}
                     </div>
-                    <div className="flex items-center gap-2 print:hidden">
+                    <div className="flex items-center gap-2 md:hidden print:hidden">
                       <span className="text-muted-foreground w-16">Type:</span>
                       {isReadOnly ? (
                         <span className="text-foreground font-medium">{propertyType || "—"}</span>
                       ) : (
-                        <>
-                          <Select value={propertyType} onValueChange={setPropertyType}>
-                            <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PROPERTY_TYPES.map((type) => (
-                                <SelectItem key={type} value={type} className="text-xs">
-                                  {type}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </>
+                        <Select value={propertyType} onValueChange={setPropertyType}>
+                          <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROPERTY_TYPES.map((type) => (
+                              <SelectItem key={type} value={type} className="text-xs">
+                                {type}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                     {propertyType !== "Residential" && (
