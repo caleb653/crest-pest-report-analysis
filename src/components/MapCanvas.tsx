@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Trash2, Type, X, Square, Bug, Minus, Eraser, Pencil } from 'lucide-react';
-import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush } from 'fabric';
+import { Canvas as FabricCanvas, IText, Rect as FabricRect, FabricObject, FabricImage, Line, Group, PencilBrush, Circle as FabricCircle } from 'fabric';
 import { toast } from 'sonner';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
@@ -72,6 +72,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   const isLoadingDataRef = useRef(false);
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
+  const iconCountsRef = useRef<Record<string, number>>({});
   // Line drawing state
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -267,9 +268,37 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       } else if (currentTool === 'icon') {
         const svgPath = iconData?.svgPath || bugIcon;
         
-        // Load and add SVG icon
+        // Increment count for this icon type
+        const counts = iconCountsRef.current;
+        counts[currentIcon] = (counts[currentIcon] || 0) + 1;
+        const iconNumber = counts[currentIcon];
+        
+        // Load and add SVG icon with number badge
         FabricImage.fromURL(svgPath).then((img) => {
-          img.set({
+          // Create number badge
+          const badgeSize = 14;
+          const badge = new FabricCircle({
+            radius: badgeSize / 2,
+            fill: '#DC2626',
+            originX: 'center',
+            originY: 'center',
+            left: (img.width || 32) / 2 + 8,
+            top: -4,
+          });
+          const numberText = new IText(String(iconNumber), {
+            fontSize: 10,
+            fill: '#FFFFFF',
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'bold',
+            originX: 'center',
+            originY: 'center',
+            left: (img.width || 32) / 2 + 8,
+            top: -4,
+            editable: false,
+            selectable: false,
+          });
+          
+          const group = new Group([img, badge, numberText], {
             left: pt.x - 16,
             top: pt.y - 16,
             selectable: true,
@@ -280,14 +309,14 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             cornerColor: '#16a34a',
             cornerStrokeColor: '#166534',
             transparentCorners: false,
-            // Store icon type for legend purposes
-            data: { iconType: currentIcon }
           });
-          canvas.add(img);
+          (group as any).data = { iconType: currentIcon, iconNumber };
+          
+          canvas.add(group);
           canvas.discardActiveObject();
           canvas.renderAll();
           
-          console.log('Icon added to canvas:', currentIcon);
+          console.log('Icon added to canvas:', currentIcon, 'number:', iconNumber);
           
           // Add to legend if not already there
           setLegendItems(prev => {
@@ -582,6 +611,18 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
           };
 
           attemptAdjust();
+          
+          // Restore icon counts from loaded objects
+          const counts: Record<string, number> = {};
+          const objs = canvas.getObjects();
+          objs.forEach((obj: any) => {
+            const iconType = obj.data?.iconType;
+            const iconNum = obj.data?.iconNumber;
+            if (iconType && iconNum) {
+              counts[iconType] = Math.max(counts[iconType] || 0, iconNum);
+            }
+          });
+          iconCountsRef.current = counts;
         });
       } else {
         isLoadingDataRef.current = false;
@@ -708,11 +749,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
 
     const targetObjectScale = Math.min(currW, currH) / 800;
     const normalizedObjects = canvas.getObjects().map((obj: any) => {
-      const objJSON = obj.toJSON();
+      const objJSON = obj.toJSON(['data']);
       objJSON.left = ((obj.left || 0) / currW) * REFERENCE_WIDTH;
       objJSON.top = ((obj.top || 0) / currH) * REFERENCE_HEIGHT;
       objJSON.scaleX = (obj.scaleX || 1) / targetObjectScale;
       objJSON.scaleY = (obj.scaleY || 1) / targetObjectScale;
+      // Ensure data is preserved for groups
+      if (obj.data) {
+        objJSON.data = obj.data;
+      }
       return objJSON;
     });
 
@@ -879,6 +924,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     fabricCanvasRef.current.clear();
     setLegendItems([]);
     setShowLegend(false);
+    iconCountsRef.current = {};
   };
 
   const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
@@ -1145,12 +1191,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
                 <button
                   key={iconData.icon}
                   onClick={() => handleIconSelect(iconData.icon)}
-                  className={`p-2 rounded hover:bg-muted transition-colors border ${
+                  className={`p-2 rounded hover:bg-muted transition-colors border flex flex-col items-center gap-1 ${
                     selectedIcon === iconData.icon ? 'bg-primary/20 border-primary' : 'border-border'
                   }`}
                   title={iconData.label}
                 >
                   <img src={iconData.svgPath} alt={iconData.label} className="w-8 h-8" />
+                  <span className="text-[9px] leading-tight text-muted-foreground text-center">{iconData.label}</span>
                 </button>
               );
             })}

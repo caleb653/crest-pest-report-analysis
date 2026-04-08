@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText, Group, Circle as FabricCircle } from 'fabric';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
 import boxIcon from '@/assets/icons/box-icon.svg';
@@ -118,10 +118,60 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       objectsArray.forEach((obj: any) => {
         console.log('Processing object:', obj.type, obj);
         
-        if (obj.type === 'image' && obj.data?.iconType) {
+        // Handle group objects (numbered icons)
+        if (obj.type === 'group' && obj.data?.iconType) {
+          const iconType = obj.data.iconType;
+          const iconNumber = obj.data.iconNumber;
+          const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
+          
+          if (iconInfo) {
+            foundIcons.add(iconType);
+            const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
+              const groupObjects: any[] = [img];
+              
+              if (iconNumber) {
+                const badgeSize = 14;
+                const badge = new FabricCircle({
+                  radius: badgeSize / 2,
+                  fill: '#DC2626',
+                  originX: 'center',
+                  originY: 'center',
+                  left: (img.width || 32) / 2 + 8,
+                  top: -4,
+                });
+                const numberText = new IText(String(iconNumber), {
+                  fontSize: 10,
+                  fill: '#FFFFFF',
+                  fontFamily: 'Arial, sans-serif',
+                  fontWeight: 'bold',
+                  originX: 'center',
+                  originY: 'center',
+                  left: (img.width || 32) / 2 + 8,
+                  top: -4,
+                  editable: false,
+                  selectable: false,
+                });
+                groupObjects.push(badge, numberText);
+              }
+              
+              const group = new Group(groupObjects, {
+                left: (obj.left || 0) * scaleX,
+                top: (obj.top || 0) * scaleY,
+                scaleX: iconTargetScale * (obj.scaleX || 1),
+                scaleY: iconTargetScale * (obj.scaleY || 1),
+                angle: obj.angle || 0,
+                selectable: false,
+                evented: false,
+              });
+              canvas.add(group);
+            }).catch((err) => {
+              console.error('Error loading icon:', iconType, err);
+            });
+            loadPromises.push(promise);
+          }
+        } else if (obj.type === 'image' && obj.data?.iconType) {
           const iconType = obj.data.iconType;
           const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
-          console.log('Loading icon:', iconType, 'found info:', !!iconInfo);
           
           if (iconInfo) {
             foundIcons.add(iconType);
@@ -136,7 +186,6 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
                 evented: false,
               });
               canvas.add(img);
-              console.log('Added icon to canvas:', iconType);
             }).catch((err) => {
               console.error('Error loading icon:', iconType, err);
             });
