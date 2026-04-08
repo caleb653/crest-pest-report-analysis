@@ -246,7 +246,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-only-text                  { display: inline !important; }
           .pdf-export-root .hidden.print\\:block,
           .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
+          .pdf-export-root [class*="print\\:hidden"],
+          .pdf-export-root .print\\:hidden                   { display: none !important; }
           .pdf-export-root .print-content-formatted          { display: block !important; }
+          /* 3-column grid for print header */
+          .pdf-export-root [class*="print\\:grid-cols-3"]    { grid-template-columns: 1fr 1fr 1fr !important; }
 
           /* ── Proposal text scale ────────────────────────────────── */
           .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.55 !important; }
