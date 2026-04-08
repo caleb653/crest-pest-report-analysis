@@ -2093,55 +2093,6 @@ Crest Pest Control`;
       <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-2 print:gap-1">
-          {/* Mobile: Customer & Technician */}
-          {isMobile && (
-            <Card className="p-4">
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Customer Name</label>
-                  <Input
-                    value={editableCustomer}
-                    onChange={(e) => setEditableCustomer(e.target.value)}
-                    placeholder="Enter customer name"
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Technician Name</label>
-                  <Input
-                    value={editableTech}
-                    onChange={(e) => setEditableTech(e.target.value)}
-                    placeholder="Enter technician name"
-                    className="text-base"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Property Type</label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger className="text-base">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROPERTY_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {propertyType !== "Residential" && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Company Name (Optional)</label>
-                    <Input
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Enter company name"
-                      className="text-base"
-                    />
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
 
           {/* Services - Full Width at Top */}
           <Card className="print-section print-pricing-table p-2 print:p-0.5 print:py-1 col-span-2">
