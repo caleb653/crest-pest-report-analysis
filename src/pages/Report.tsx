@@ -1996,6 +1996,12 @@ Crest Pest Control`;
                       <span className="text-muted-foreground w-16">Type:</span>
                       <span className="text-foreground font-medium">{propertyType || "—"}</span>
                     </div>
+                    {propertyType !== "Residential" && companyName && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground w-16">Company:</span>
+                        <span className="text-foreground font-medium">{companyName}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
