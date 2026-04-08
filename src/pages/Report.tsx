@@ -1507,6 +1507,7 @@ Crest Pest Control`;
       // Replace local URL with permanent URL (user won't notice the switch)
       setCustomMapImage(publicUrl);
       URL.revokeObjectURL(localUrl);
+      pendingAutoSaveRef.current = true;
       toast.success("Map uploaded");
     } catch (error) {
       console.error("Error uploading map:", error);
@@ -1582,6 +1583,7 @@ Crest Pest Control`;
       
       // Replace local URLs with permanent URLs
       setPropertyImages(uploadedImages.map(({ image, caption }) => ({ image, caption })));
+      pendingAutoSaveRef.current = true;
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
@@ -1665,6 +1667,7 @@ Crest Pest Control`;
 
           setCustomMapImage(publicUrl);
           URL.revokeObjectURL(localUrl);
+          pendingAutoSaveRef.current = true;
           toast.success("Map pasted successfully");
         } catch (error) {
           console.error("Error pasting map:", error);
@@ -1757,6 +1760,7 @@ Crest Pest Control`;
         return updated;
       });
 
+      pendingAutoSaveRef.current = true;
       toast.success(`${filesToProcess.length} image(s) pasted`);
     } catch (error) {
       console.error("Error pasting images:", error);
