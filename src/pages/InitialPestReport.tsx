@@ -543,6 +543,9 @@ const Report = () => {
       if (row.notes) {
         setTodaysFindings(row.notes as string);
       }
+      if (row.customer_email) {
+        setCustomerEmail(row.customer_email);
+      }
 
       console.log("Loading report map_data:", {
         hasMapData: !!row.map_data,
@@ -1296,7 +1299,7 @@ Crest Pest Control
 
       {/* Desktop Header */}
       {!isMobile && (
-        <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2">
+        <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2 md:sticky md:top-0 md:z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
             <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-1 flex-wrap">
@@ -1390,6 +1393,16 @@ Crest Pest Control
                       <div className="flex items-center gap-1">
                         <span className="text-muted-foreground w-16 shrink-0">License:</span>
                         <span className="text-foreground text-xs">{editableLicenseNumber || "—"}</span>
+                      </div>
+                      <div className="flex items-center gap-1 no-print">
+                        <span className="text-muted-foreground w-16 shrink-0">Email:</span>
+                        <Input
+                          type="email"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="customer@email.com"
+                          className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-5 text-xs flex-1 focus-visible:ring-0 no-print rounded-none"
+                        />
                       </div>
                     </div>
                   </div>
