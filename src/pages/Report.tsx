@@ -1192,6 +1192,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   };
 
+  // Auto-save flag — set after image/map uploads, cleared by the effect
+  const pendingAutoSaveRef = useRef(false);
+
   // Silent auto-save (no toast, no loading spinner)
   const autoSave = async () => {
     if (!editableTech || !reportId) return;
@@ -1208,6 +1211,13 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       console.error("[autosave] failed:", err);
     }
   };
+
+  // Effect: auto-save when images/map change after upload
+  useEffect(() => {
+    if (!pendingAutoSaveRef.current || !reportLoadedRef.current) return;
+    pendingAutoSaveRef.current = false;
+    autoSave();
+  }, [propertyImages, customMapImage]);
 
   const handleShare = async () => {
     if (navigator.share) {
