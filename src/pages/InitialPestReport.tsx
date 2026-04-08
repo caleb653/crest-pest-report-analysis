@@ -1160,6 +1160,7 @@ Crest Pest Control
       } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
       setCustomMapImage(publicUrl);
+      pendingAutoSaveRef.current = true;
       toast.success("Custom map image uploaded");
     } catch (error) {
       console.error("Error uploading map:", error);
@@ -1220,6 +1221,7 @@ Crest Pest Control
 
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages(uploadedImages);
+      pendingAutoSaveRef.current = true;
       toast.success(`${fileArray.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
@@ -1262,6 +1264,7 @@ Crest Pest Control
           } = supabase.storage.from("report-images").getPublicUrl(filePath);
 
           setCustomMapImage(publicUrl);
+          pendingAutoSaveRef.current = true;
           toast.success("Map pasted successfully");
         } catch (error) {
           console.error("Error pasting map:", error);
@@ -1318,6 +1321,7 @@ Crest Pest Control
 
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages(prev => [...prev, ...uploadedImages]);
+      pendingAutoSaveRef.current = true;
       toast.success(`${filesToProcess.length} image(s) pasted`);
     } catch (error) {
       console.error("Error pasting images:", error);
