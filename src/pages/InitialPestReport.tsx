@@ -177,6 +177,8 @@ const Report = () => {
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
+  const reportLoadedRef = useRef(false);
+  const pendingAutoSaveRef = useRef(false);
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
   const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
