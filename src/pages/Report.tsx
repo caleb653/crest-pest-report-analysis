@@ -1859,7 +1859,7 @@ Crest Pest Control`;
               </Button>
             </div>
 
-            <div className="flex flex-col lg:flex-row items-start justify-between gap-3 lg:gap-4">
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-3 lg:gap-4 md:gap-2">
               {/* Left side: Logo + Title */}
               <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
