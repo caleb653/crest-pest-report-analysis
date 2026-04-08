@@ -1793,7 +1793,7 @@ Crest Pest Control`;
       <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
-            <div className="hidden md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
+            <div className="flex md:flex lg:hidden items-center gap-2 no-print mb-3 flex-wrap">
               {!isReadOnly && (
               <>
               <Button
@@ -2088,7 +2088,6 @@ Crest Pest Control`;
             </div>
           </div>
         </div>
-      )}
 
       {/* Page 1 - Contract/Form Content */}
       <div data-pdf-page="1" data-pdf-capture="1" className={isMobile ? "flex flex-col" : "p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto"}>
