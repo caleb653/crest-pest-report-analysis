@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText, Group, Circle as FabricCircle } from 'fabric';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
 import boxIcon from '@/assets/icons/box-icon.svg';
