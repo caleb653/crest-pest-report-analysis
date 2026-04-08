@@ -908,6 +908,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
     fabricCanvasRef.current.clear();
     setLegendItems([]);
     setShowLegend(false);
+    iconCountsRef.current = {};
   };
 
   const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
