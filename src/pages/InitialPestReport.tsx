@@ -202,6 +202,8 @@ const Report = () => {
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
   const [customerEmail, setCustomerEmail] = useState("");
+  const [propertyType, setPropertyType] = useState<string>("Residential");
+  const [companyName, setCompanyName] = useState<string>("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
