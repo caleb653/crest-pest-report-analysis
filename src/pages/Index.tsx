@@ -102,7 +102,7 @@ const Index = () => {
           alt="Crest Pest Control" 
           className="h-28 mx-auto mb-4"
         />
-        <h1 className="text-3xl font-bold text-foreground mb-2">Service Reports</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">The Crest App</h1>
         <p className="text-muted-foreground">Select an option to get started</p>
       </div>
 
