@@ -115,6 +115,8 @@ const ClientPortal = () => {
     setLoading(true);
     const { data: link } = await supabase.from("portal_links").select("*").eq("token", token).eq("is_active", true).single();
     if (!link) { setError("Invalid or expired link"); setLoading(false); return; }
+    // Redirect tenant links to TenantPortal
+    if (link.link_type === "tenant") { navigate(`/tenant/${token}`, { replace: true }); return; }
     setLinkData(link);
 
     const { data: c } = await supabase.from("portal_clients").select("id, name, company").eq("id", link.client_id).single();
