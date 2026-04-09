@@ -49,6 +49,12 @@ const PRODUCT_OPTIONS = [
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
 
+const UNIT_PEST_OPTIONS = [
+  "General Pests", "Ants", "Spiders", "Rodents", "Roaches", "American Roaches", "Wasps",
+  "Bed Bugs", "Fleas", "Ticks", "Mosquitoes", "Silverfish", "Earwigs",
+  "Crickets", "Centipedes", "Millipedes", "Drain Flies", "Other",
+];
+
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
 const AppointmentReport = () => {
