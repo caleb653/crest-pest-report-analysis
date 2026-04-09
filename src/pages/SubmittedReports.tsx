@@ -249,7 +249,7 @@ const SubmittedReports = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img src={crestLogo} alt="Crest Pest Control logo" className="h-12" />
-            <h1 className="text-xl md:text-2xl font-bold">Submitted Reports</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>

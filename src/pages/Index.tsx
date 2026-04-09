@@ -23,8 +23,8 @@ const reportTypes = [
   },
   {
     id: "submitted-reports",
-    title: "Submitted Reports",
-    description: "View and manage all submitted reports",
+    title: "Created Reports",
+    description: "View and manage all created reports",
     icon: Shield,
     path: "/submitted-reports",
     state: null,
