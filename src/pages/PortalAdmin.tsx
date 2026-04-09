@@ -636,15 +636,14 @@ const PortalAdmin = () => {
       <div className="bg-foreground text-background px-4 py-2 flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => {
-            if (selectedService) { setSelectedService(null); }
-            else if (selectedProperty) { setSelectedProperty(null); }
+            if (selectedProperty) { setSelectedProperty(null); }
             else setSelectedClient(null);
           }}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            {selectedService ? "Back" : selectedProperty ? "All Properties" : "All Clients"}
+            {selectedProperty ? "All Properties" : "All Clients"}
           </Button>
           <span className="text-background/60">
-            {viewMode === "admin" ? "Crest Admin" : viewMode === "pm" ? "Property Manager" : "Tenant"} — {selectedClient.company || selectedClient.name}
+            {viewMode === "admin" ? "Crest Admin" : viewMode === "pm" ? "Property Manager" : "Tenant"} View
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -661,32 +660,46 @@ const PortalAdmin = () => {
         </div>
       </div>
 
-      {/* Portal header */}
+      {/* Page header with breadcrumb */}
       <div className="bg-card border-b px-4 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto">
           <div className="flex items-center gap-3">
             <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
-            <div>
-              <h1 className="text-lg font-bold">Client Portal</h1>
-              <p className="text-sm text-muted-foreground">{selectedProperty ? selectedProperty.name : (selectedClient.company || selectedClient.name)}</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
+                <span className="cursor-pointer hover:text-foreground" onClick={() => { setSelectedProperty(null); setSelectedClient(null); }}>Clients</span>
+                <ChevronRight className="w-3 h-3" />
+                <span className={`${!selectedProperty ? "text-foreground font-medium" : "cursor-pointer hover:text-foreground"}`} onClick={() => setSelectedProperty(null)}>
+                  {selectedClient.company || selectedClient.name}
+                </span>
+                {selectedProperty && (
+                  <>
+                    <ChevronRight className="w-3 h-3" />
+                    <span className="text-foreground font-medium">{selectedProperty.name}</span>
+                  </>
+                )}
+              </div>
+              <h1 className="text-xl font-bold">
+                {selectedProperty ? selectedProperty.name : (selectedClient.company || selectedClient.name)}
+              </h1>
+              {selectedProperty?.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
+              {!selectedProperty && (
+                <p className="text-sm text-muted-foreground">
+                  {properties.length} {properties.length === 1 ? "property" : "properties"} · {services.length} total services
+                </p>
+              )}
             </div>
           </div>
-          {!selectedProperty && <Badge variant="outline" className="text-xs">Master View</Badge>}
         </div>
       </div>
 
-      {/* Admin management panel */}
-      {viewMode === "admin" && (
+      {/* Admin management panel — client level only */}
+      {viewMode === "admin" && !selectedProperty && (
         <div className="bg-muted/50 border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{selectedClient.name} {selectedClient.company && <span className="text-muted-foreground">— {selectedClient.company}</span>}</p>
-                <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                  {selectedClient.email && <span>{selectedClient.email}</span>}
-                  {selectedClient.phone && <span>{selectedClient.phone}</span>}
-                </div>
-              </div>
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              {selectedClient.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{selectedClient.email}</span>}
+              {selectedClient.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{selectedClient.phone}</span>}
             </div>
 
             {/* Access Links */}
@@ -757,7 +770,6 @@ const PortalAdmin = () => {
               </CardContent>
             </Card>
 
-            {/* Quick actions */}
             <div className="flex gap-2 flex-wrap">
               <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
                 <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Property</Button></DialogTrigger>
@@ -779,311 +791,84 @@ const PortalAdmin = () => {
                   </div>
                 </DialogContent>
               </Dialog>
-
-              <Button size="sm" variant="outline" onClick={() => openServiceDialog()} disabled={properties.length === 0}>
-                <Plus className="w-3 h-3 mr-1" />Add Service
-              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Portal content */}
+      {/* Main content */}
       <div className="max-w-5xl mx-auto px-4 py-4">
-        {/* Quick summary */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{pastServices.length}</p><p className="text-xs text-muted-foreground">Past Services</p></CardContent></Card>
-          <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{futureServices.length}</p><p className="text-xs text-muted-foreground">Upcoming</p></CardContent></Card>
-          <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-sm leading-8">{futureServices.length > 0 && futureServices[0]?.service_date ? new Date(futureServices[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</p><p className="text-xs text-muted-foreground">Next Service</p></CardContent></Card>
-        </div>
 
-        {/* Properties list */}
-        {!selectedProperty && properties.length > 0 && (
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold mb-2 flex items-center gap-1"><MapPin className="w-4 h-4" />Properties</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {properties.map(p => (
-                <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden" onClick={() => setSelectedProperty(p)}>
-                  {p.image_url && (
-                    <div className="relative h-32 w-full">
-                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                      {viewMode === "admin" && (
-                        <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background">
-                          <Image className="w-4 h-4" />
-                          <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
-                        </label>
-                      )}
-                    </div>
-                  )}
-                  <CardContent className="p-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{p.name}</p>
-                      {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
-                      <p className="text-xs text-muted-foreground mt-1">{services.filter(s => s.property_id === p.id).length} services</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {viewMode === "admin" && !p.image_url && (
-                        <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 pointer-events-none"><Image className="w-3.5 h-3.5" /></Button>
-                          <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) updatePropertyImage(p.id, f); }} />
-                        </label>
-                      )}
-                      {viewMode === "admin" && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Selected property image */}
-        {selectedProperty?.image_url && (
-          <div className="mb-4 rounded-lg overflow-hidden relative">
-            <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
-            {viewMode === "admin" && (
-              <label className="absolute bottom-2 right-2 bg-background/80 rounded p-1.5 cursor-pointer hover:bg-background">
-                <Image className="w-4 h-4" />
-                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
-              </label>
-            )}
-          </div>
-        )}
-
-        {/* Tenant view - only requests */}
-        {viewMode === "tenant" ? (
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Inbox className="w-4 h-4" />Tenant Requests</h3>
-            {tenantRequests.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+        {/* ======= CLIENT LEVEL: Properties Grid ======= */}
+        {!selectedProperty && (
+          <>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4" />Properties
+              <span className="text-muted-foreground font-normal">({properties.length})</span>
+            </h3>
+            {properties.length === 0 ? (
+              <Card><CardContent className="p-8 text-center text-muted-foreground">
+                <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p className="font-medium">No properties yet</p>
+                <p className="text-xs mt-1">Add a property to start tracking services</p>
+              </CardContent></Card>
             ) : (
-              <div className="space-y-2">
-                {tenantRequests.map((r: any) => (
-                  <Card key={r.id}>
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                            {r.status === "in_progress" ? "In Progress" : r.status}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
-                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-sm">{r.description}</p>
-                      {r.response_notes && (
-                        <div className="bg-muted rounded-md p-2 mt-2">
-                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-        /* Service Tabs - Admin & PM */
-        <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-5" : "grid-cols-4"}`}>
-            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
-            <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
-            <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
-            {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
-            <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
-          </TabsList>
-
-          {/* Past Services */}
-          <TabsContent value="past">
-            {viewMode === "admin" && (
-              <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("completed")} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
-              </div>
-            )}
-            {pastServices.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No past services on record</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {pastServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{s.service_type}</p>
-                          <Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">{s.status}</Badge>
-                          {s.follow_up_recommended && <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">Follow-up</Badge>}
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "No date"}</span>
-                          {!selectedProperty && <span>{getPropertyName(s.property_id)}</span>}
-                          {s.technician && <span>Tech: {s.technician}</span>}
-                          {Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && (
-                            <span>{(s.unit_details as any[]).length} units</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                {properties.map(p => {
+                  const propServices = services.filter(s => s.property_id === p.id);
+                  const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+                  const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+                  return (
+                    <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => setSelectedProperty(p)}>
+                      {p.image_url && (
+                        <div className="relative h-32 w-full">
+                          <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                          {viewMode === "admin" && (
+                            <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Image className="w-4 h-4" />
+                              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
+                            </label>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {viewMode === "admin" && (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                          </>
-                        )}
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Future Services */}
-          <TabsContent value="future">
-            {(viewMode === "admin" || viewMode === "pm") && (
-              <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("scheduled")} disabled={properties.length === 0}>
-                  <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
-                </Button>
-              </div>
-            )}
-            {futureServices.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No upcoming services scheduled</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {futureServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{s.service_type}</p>
-                          <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "TBD"}</span>
-                          {!selectedProperty && <span>{getPropertyName(s.property_id)}</span>}
-                          {s.prep_required && <Badge variant="outline" className="text-xs">Prep Required</Badge>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {viewMode === "admin" && (
-                          <>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                          </>
-                        )}
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Tenant Requests */}
-          <TabsContent value="requests">
-            {tenantRequests.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {tenantRequests.map((r: any) => (
-                  <Card key={r.id}>
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
-                            {r.status === "in_progress" ? "In Progress" : r.status}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
-                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
-                      </div>
-                      <p className="text-sm mb-2">{r.description}</p>
-                      {viewMode === "admin" && (
-                        <div className="flex gap-2 mt-2">
-                          <Select value={r.status} onValueChange={async (v) => {
-                            await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
-                            if (selectedClient) loadTenantRequests(selectedClient.id);
-                          }}>
-                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="resolved">Resolved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            placeholder="Response notes..."
-                            defaultValue={r.response_notes || ""}
-                            className="h-7 text-xs flex-1"
-                            onBlur={async (e) => {
-                              if (e.target.value !== (r.response_notes || "")) {
-                                await supabase.from("portal_requests").update({ response_notes: e.target.value }).eq("id", r.id);
-                                if (selectedClient) loadTenantRequests(selectedClient.id);
-                              }
-                            }}
-                          />
-                        </div>
                       )}
-                      {viewMode !== "admin" && r.response_notes && (
-                        <div className="bg-muted rounded-md p-2 mt-2">
-                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{p.name}</p>
+                            {p.address && <p className="text-xs text-muted-foreground mt-0.5">{p.address}</p>}
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                          <span>{propPast.length} past</span>
+                          <span>·</span>
+                          <span>{propFuture.length} upcoming</span>
+                        </div>
+                        {viewMode === "admin" && (
+                          <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {!p.image_url && (
+                              <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 pointer-events-none"><Image className="w-3.5 h-3.5" /></Button>
+                                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) updatePropertyImage(p.id, f); }} />
+                              </label>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
-          </TabsContent>
 
-          <TabsContent value="prep">
-            {viewMode === "admin" && (
-              <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => { setEditingPrepSheet(null); setNewPrepSheet({ title: "", description: "", treatment_type: "", file_url: "" }); setShowAddPrepSheet(true); }}>
-                  <Plus className="w-3 h-3 mr-1" />Add Prep Sheet
-                </Button>
-              </div>
-            )}
-            {prepSheets.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No prep sheets available</CardContent></Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {prepSheets.map(ps => (
-                  <Card key={ps.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-sm">{ps.title}</p>
-                          <Badge variant="outline" className="text-xs mt-1">{ps.treatment_type}</Badge>
-                          {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {viewMode === "admin" && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
-                          {ps.file_url && <Button variant="outline" size="sm" asChild><a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a></Button>}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Chat */}
-          <TabsContent value="message">
-            <Card className="flex flex-col" style={{ height: "480px" }}>
+            {/* Client-level chat */}
+            <Card className="flex flex-col" style={{ height: "400px" }}>
               <CardHeader className="pb-2 border-b shrink-0">
-                <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}</CardTitle>
+                <CardTitle className="text-sm flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.length === 0 && <div className="text-center text-sm text-muted-foreground py-8"><p>No messages yet with this client.</p></div>}
+                {chatMessages.length === 0 && <div className="text-center text-sm text-muted-foreground py-8"><p>No messages yet.</p></div>}
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${msg.sender_type === "admin" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
@@ -1099,13 +884,246 @@ const PortalAdmin = () => {
               </CardContent>
               <div className="border-t p-3 shrink-0">
                 <form onSubmit={e => { e.preventDefault(); sendAdminChat(); }} className="flex gap-2">
-                  <Input placeholder="Type a message to this client..." value={adminChatInput} onChange={e => setAdminChatInput(e.target.value)} disabled={sendingChat} className="flex-1" />
+                  <Input placeholder="Type a message..." value={adminChatInput} onChange={e => setAdminChatInput(e.target.value)} disabled={sendingChat} className="flex-1" />
                   <Button type="submit" size="icon" disabled={!adminChatInput.trim() || sendingChat}><Send className="w-4 h-4" /></Button>
                 </form>
               </div>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
+
+        {/* ======= PROPERTY LEVEL: Summary + Tabs ======= */}
+        {selectedProperty && (
+          <>
+            {selectedProperty.image_url && (
+              <div className="mb-4 rounded-lg overflow-hidden relative">
+                <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
+                {viewMode === "admin" && (
+                  <label className="absolute bottom-2 right-2 bg-background/80 rounded p-1.5 cursor-pointer hover:bg-background">
+                    <Image className="w-4 h-4" />
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
+                  </label>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{pastServices.length}</p><p className="text-xs text-muted-foreground">Past Services</p></CardContent></Card>
+              <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{futureServices.length}</p><p className="text-xs text-muted-foreground">Upcoming</p></CardContent></Card>
+              <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-sm leading-8">{futureServices.length > 0 && futureServices[0]?.service_date ? new Date(futureServices[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</p><p className="text-xs text-muted-foreground">Next Service</p></CardContent></Card>
+            </div>
+
+            {viewMode === "tenant" ? (
+              <div>
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Inbox className="w-4 h-4" />Tenant Requests</h3>
+                {tenantRequests.length === 0 ? (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {tenantRequests.map((r: any) => (
+                      <Card key={r.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                                {r.status === "in_progress" ? "In Progress" : r.status}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                              {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm">{r.description}</p>
+                          {r.response_notes && (
+                            <div className="bg-muted rounded-md p-2 mt-2">
+                              <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+            <Tabs value={portalTab} onValueChange={setPortalTab}>
+              <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-4" : "grid-cols-3"}`}>
+                <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
+                <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
+                <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
+                {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
+              </TabsList>
+
+              <TabsContent value="past">
+                {viewMode === "admin" && (
+                  <div className="mb-3">
+                    <Button size="sm" variant="outline" onClick={() => createAndOpenReport("completed")}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
+                  </div>
+                )}
+                {pastServices.length === 0 ? (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground">No past services for {selectedProperty.name}</CardContent></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {pastServices.map(s => (
+                      <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
+                        <CardContent className="p-3 flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm">{s.service_type}</p>
+                              <Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">{s.status}</Badge>
+                              {s.follow_up_recommended && <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">Follow-up</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "No date"}</span>
+                              {s.technician && <span>Tech: {s.technician}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {viewMode === "admin" && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                              </>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="future">
+                {(viewMode === "admin" || viewMode === "pm") && (
+                  <div className="mb-3">
+                    <Button size="sm" variant="outline" onClick={() => createAndOpenReport("scheduled")}>
+                      <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
+                    </Button>
+                  </div>
+                )}
+                {futureServices.length === 0 ? (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground">No upcoming services for {selectedProperty.name}</CardContent></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {futureServices.map(s => (
+                      <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
+                        <CardContent className="p-3 flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-medium text-sm">{s.service_type}</p>
+                              <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "TBD"}</span>
+                              {s.prep_required && <Badge variant="outline" className="text-xs">Prep Required</Badge>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {viewMode === "admin" && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                              </>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="requests">
+                {tenantRequests.length === 0 ? (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests</CardContent></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {tenantRequests.map((r: any) => (
+                      <Card key={r.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                                {r.status === "in_progress" ? "In Progress" : r.status}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                              {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                            </div>
+                            <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm mb-2">{r.description}</p>
+                          {viewMode === "admin" && (
+                            <div className="flex gap-2 mt-2">
+                              <Select value={r.status} onValueChange={async (v) => {
+                                await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
+                                if (selectedClient) loadTenantRequests(selectedClient.id);
+                              }}>
+                                <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in_progress">In Progress</SelectItem>
+                                  <SelectItem value="resolved">Resolved</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input placeholder="Response notes..." defaultValue={r.response_notes || ""} className="h-7 text-xs flex-1"
+                                onBlur={async (e) => {
+                                  if (e.target.value !== (r.response_notes || "")) {
+                                    await supabase.from("portal_requests").update({ response_notes: e.target.value }).eq("id", r.id);
+                                    if (selectedClient) loadTenantRequests(selectedClient.id);
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
+                          {viewMode !== "admin" && r.response_notes && (
+                            <div className="bg-muted rounded-md p-2 mt-2">
+                              <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="prep">
+                {viewMode === "admin" && (
+                  <div className="mb-3">
+                    <Button size="sm" variant="outline" onClick={() => { setEditingPrepSheet(null); setNewPrepSheet({ title: "", description: "", treatment_type: "", file_url: "" }); setShowAddPrepSheet(true); }}>
+                      <Plus className="w-3 h-3 mr-1" />Add Prep Sheet
+                    </Button>
+                  </div>
+                )}
+                {prepSheets.length === 0 ? (
+                  <Card><CardContent className="p-6 text-center text-muted-foreground">No prep sheets available</CardContent></Card>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {prepSheets.map(ps => (
+                      <Card key={ps.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{ps.title}</p>
+                              <Badge variant="outline" className="text-xs mt-1">{ps.treatment_type}</Badge>
+                              {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {viewMode === "admin" && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
+                              {ps.file_url && <Button variant="outline" size="sm" asChild><a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a></Button>}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+            )}
+          </>
         )}
       </div>
 
