@@ -215,6 +215,11 @@ const AppointmentReport = () => {
       customer_preference: customerPreference,
       customer_preference_notes: customerPreferenceNotes,
       property_images: propertyImages,
+      unit_rows: unitRows,
+      common_area_pests: commonAreaPests,
+      common_area_notes: commonAreaNotes,
+      tech_observations: techObservations,
+      pm_name: pmName,
     };
 
     const { error } = await supabase
