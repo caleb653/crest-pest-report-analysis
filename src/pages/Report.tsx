@@ -2022,7 +2022,7 @@ Crest Pest Control`;
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
                 <span className="pl-1">Service Type</span>
                 <span className="text-center">Initial</span>
-                <span className="text-center">Monthly</span>
+                <span className="text-center">{services.some(s => s.frequency === 7 || s.frequency === 14) ? "Monthly" : "Recurring"}</span>
                 <span className="text-center">Frequency</span>
                 <span className="text-center">Schedule</span>
                 <span></span>
