@@ -600,7 +600,7 @@ const PortalAdmin = () => {
             <Settings className="w-3.5 h-3.5 mr-1" />{showAdminPanel ? "Done Editing" : "✏️ EDIT"}
           </Button>
           {masterLink && (
-            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token)}>
+            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
               <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
             </Button>
           )}
