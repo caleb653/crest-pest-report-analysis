@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, FolderLock, Loader2, Eye } from "lucide-react";
@@ -59,6 +60,7 @@ const TeamDocs = () => {
   const [repSignature, setRepSignature] = useState("");
   const [repSignedDate, setRepSignedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [submitting, setSubmitting] = useState(false);
+  const [waiverConfirmed, setWaiverConfirmed] = useState(false);
 
   // Submitted docs state
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
