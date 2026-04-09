@@ -192,17 +192,18 @@ const AppointmentReport = () => {
     setIsSaving(true);
     const reportData = {
       technician_name: technicianName, license_number: licenseNumber, service_date: serviceDate,
+      time_in: timeIn, time_out: timeOut,
       target_pests: targetPests, products_used: productsUsed, equipment,
       customer_key_areas: { areas: customerKeyAreas, notes: customerKeyAreasNotes },
-      todays_findings: todaysFindings, findings, expectations, recommendations,
+      todays_findings: todaysFindings,
       customer_preference: customerPreference, customer_preference_notes: customerPreferenceNotes,
       property_images: propertyImages, unit_rows: unitRows,
       common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
-      tech_observations: techObservations, pm_name: pmName,
+      tech_observations: techObservations,
     };
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
-      products_used: productsUsed, findings: todaysFindings || (findings.length > 0 ? findings[0] : null),
+      products_used: productsUsed, findings: todaysFindings || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
     else toast.success("Appointment Report saved!");
