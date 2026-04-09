@@ -218,6 +218,8 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          map_data: Json | null
+          map_image_url: string | null
           name: string
           notes: string | null
           updated_at: string
@@ -228,6 +230,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          map_data?: Json | null
+          map_image_url?: string | null
           name: string
           notes?: string | null
           updated_at?: string
@@ -238,6 +242,8 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          map_data?: Json | null
+          map_image_url?: string | null
           name?: string
           notes?: string | null
           updated_at?: string

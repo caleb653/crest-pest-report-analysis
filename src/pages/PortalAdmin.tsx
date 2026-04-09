@@ -73,7 +73,7 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [portalTab, setPortalTab] = useState("past");
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [viewMode, setViewMode] = useState<"admin" | "pm" | "tenant">("admin");
   const [globalTab, setGlobalTab] = useState("clients");
 
   const [chatMessages, setChatMessages] = useState<PortalMessage[]>([]);
@@ -124,6 +124,13 @@ const PortalAdmin = () => {
   }, [selectedClient]);
 
   useEffect(() => { adminChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
+
+  // Reset tab when view mode changes
+  useEffect(() => {
+    if (viewMode === "tenant") setPortalTab("requests");
+    else if (viewMode === "pm") setPortalTab("future");
+    else setPortalTab("past");
+  }, [viewMode]);
 
   const loadClients = async () => {
     const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
@@ -593,12 +600,16 @@ const PortalAdmin = () => {
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             {selectedService ? "Back" : selectedProperty ? "All Properties" : "All Clients"}
           </Button>
-          <span className="text-background/60">Admin View — {selectedClient.company || selectedClient.name}</span>
+          <span className="text-background/60">
+            {viewMode === "admin" ? "Crest Admin" : viewMode === "pm" ? "Property Manager" : "Tenant"} — {selectedClient.company || selectedClient.name}
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 px-4 rounded-md shadow-sm" onClick={() => setShowAdminPanel(!showAdminPanel)}>
-            <Settings className="w-3.5 h-3.5 mr-1" />{showAdminPanel ? "Done Editing" : "✏️ EDIT"}
-          </Button>
+          <div className="flex rounded-md overflow-hidden border border-background/20">
+            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "admin" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("admin")}>Crest</button>
+            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "pm" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("pm")}>PM</button>
+            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "tenant" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("tenant")}>Tenant</button>
+          </div>
           {masterLink && (
             <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
               <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
@@ -622,7 +633,7 @@ const PortalAdmin = () => {
       </div>
 
       {/* Admin management panel */}
-      {showAdminPanel && (
+      {viewMode === "admin" && (
         <div className="bg-muted/50 border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -753,7 +764,7 @@ const PortalAdmin = () => {
                   {p.image_url && (
                     <div className="relative h-32 w-full">
                       <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background">
                           <Image className="w-4 h-4" />
                           <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
@@ -768,13 +779,13 @@ const PortalAdmin = () => {
                       <p className="text-xs text-muted-foreground mt-1">{services.filter(s => s.property_id === p.id).length} services</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {showAdminPanel && !p.image_url && (
+                      {viewMode === "admin" && !p.image_url && (
                         <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" className="h-7 w-7 pointer-events-none"><Image className="w-3.5 h-3.5" /></Button>
                           <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) updatePropertyImage(p.id, f); }} />
                         </label>
                       )}
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                       )}
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -790,7 +801,7 @@ const PortalAdmin = () => {
         {selectedProperty?.image_url && (
           <div className="mb-4 rounded-lg overflow-hidden relative">
             <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <label className="absolute bottom-2 right-2 bg-background/80 rounded p-1.5 cursor-pointer hover:bg-background">
                 <Image className="w-4 h-4" />
                 <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
@@ -799,19 +810,53 @@ const PortalAdmin = () => {
           </div>
         )}
 
-        {/* Service Tabs */}
+        {/* Tenant view - only requests */}
+        {viewMode === "tenant" ? (
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Inbox className="w-4 h-4" />Tenant Requests</h3>
+            {tenantRequests.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {tenantRequests.map((r: any) => (
+                  <Card key={r.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                            {r.status === "in_progress" ? "In Progress" : r.status}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm">{r.description}</p>
+                      {r.response_notes && (
+                        <div className="bg-muted rounded-md p-2 mt-2">
+                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+        /* Service Tabs - Admin & PM */
         <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className="w-full grid grid-cols-5 mb-4">
-            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
+          <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-5" : "grid-cols-3"}`}>
+            {viewMode === "admin" && <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>}
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
             <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
-            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>
+            {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
             <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
           </TabsList>
 
           {/* Past Services */}
           <TabsContent value="past">
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => openServiceDialog()} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
               </div>
@@ -839,7 +884,7 @@ const PortalAdmin = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {showAdminPanel && (
+                        {viewMode === "admin" && (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -856,7 +901,7 @@ const PortalAdmin = () => {
 
           {/* Future Services */}
           <TabsContent value="future">
-            {showAdminPanel && (
+            {(viewMode === "admin" || viewMode === "pm") && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => { setServiceForm({ ...emptyServiceForm, property_id: selectedProperty?.id || "", status: "scheduled" }); setEditingService(null); setShowAddService(true); }} disabled={properties.length === 0}>
                   <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
@@ -882,7 +927,7 @@ const PortalAdmin = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {showAdminPanel && (
+                        {viewMode === "admin" && (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -917,7 +962,7 @@ const PortalAdmin = () => {
                         <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
                       </div>
                       <p className="text-sm mb-2">{r.description}</p>
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <div className="flex gap-2 mt-2">
                           <Select value={r.status} onValueChange={async (v) => {
                             await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
@@ -943,7 +988,7 @@ const PortalAdmin = () => {
                           />
                         </div>
                       )}
-                      {!showAdminPanel && r.response_notes && (
+                      {viewMode !== "admin" && r.response_notes && (
                         <div className="bg-muted rounded-md p-2 mt-2">
                           <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
                         </div>
@@ -956,7 +1001,7 @@ const PortalAdmin = () => {
           </TabsContent>
 
           <TabsContent value="prep">
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => { setEditingPrepSheet(null); setNewPrepSheet({ title: "", description: "", treatment_type: "", file_url: "" }); setShowAddPrepSheet(true); }}>
                   <Plus className="w-3 h-3 mr-1" />Add Prep Sheet
@@ -977,7 +1022,7 @@ const PortalAdmin = () => {
                           {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
                         </div>
                         <div className="flex items-center gap-1">
-                          {showAdminPanel && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
+                          {viewMode === "admin" && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
                           {ps.file_url && <Button variant="outline" size="sm" asChild><a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a></Button>}
                         </div>
                       </div>
@@ -1018,6 +1063,7 @@ const PortalAdmin = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        )}
       </div>
 
       {/* Service Detail Modal */}
@@ -1081,14 +1127,17 @@ const PortalAdmin = () => {
                   </div>
                 )}
 
-                {showAdminPanel && (
+                {viewMode === "admin" && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
+                      const prop = properties.find(p => p.id === selectedService.property_id);
                       navigate(`/appointment-report/${selectedService.id}`, {
                         state: {
                           serviceData: selectedService,
-                          propertyName: getPropertyName(selectedService.property_id),
+                          propertyName: prop?.name || "",
+                          propertyAddress: prop?.address || "",
+                          propertyId: selectedService.property_id,
                           clientName: selectedClient?.company || selectedClient?.name,
                           returnTo: "/portal-admin",
                         }
