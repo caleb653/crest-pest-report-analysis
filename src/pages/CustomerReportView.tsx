@@ -627,6 +627,7 @@ export default function CustomerReportView() {
         let pointOfContact = "";
         let contactPhoneNum = "";
         let materials: Array<{ name: string; quantity: string }> = [];
+        let limitationsTextVal = "";
 
         if (report.notes) {
           try {
@@ -639,6 +640,7 @@ export default function CustomerReportView() {
               pointOfContact = parsed.mainPointOfContact || "";
               contactPhoneNum = parsed.contactPhone || "";
               materials = parsed.setupMaterials || [];
+              limitationsTextVal = parsed.limitationsText || "";
             }
           } catch {
             // Not JSON, use as plain HTML
