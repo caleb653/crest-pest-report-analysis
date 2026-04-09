@@ -53,7 +53,7 @@ const AppointmentReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { serviceId } = useParams();
-  const { serviceData, propertyName, clientName, returnTo } = location.state || {};
+  const { serviceData, propertyName, clientName, returnTo, propertyId, propertyAddress, propertyManager } = location.state || {};
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
