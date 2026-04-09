@@ -620,7 +620,7 @@ const PortalAdmin = () => {
                 <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Access Links</CardTitle>
                 <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
                   <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Link</Button></DialogTrigger>
-                  <DialogContent>
+                   <DialogContent>
                     <DialogHeader><DialogTitle>Create Access Link</DialogTitle></DialogHeader>
                     <div className="space-y-3">
                       <div>
@@ -629,12 +629,13 @@ const PortalAdmin = () => {
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="master">Master (all properties)</SelectItem>
-                            <SelectItem value="sub">Sub (specific properties)</SelectItem>
+                            <SelectItem value="sub">Property Manager (specific properties)</SelectItem>
+                            <SelectItem value="tenant">Tenant (requests only)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div><Label>Label</Label><Input placeholder="e.g. Building A Manager" value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
-                      {newLink.link_type === "sub" && properties.length > 0 && (
+                      {(newLink.link_type === "sub" || newLink.link_type === "tenant") && properties.length > 0 && (
                         <div>
                           <Label>Assigned Properties</Label>
                           <div className="space-y-1 mt-1">
@@ -646,6 +647,12 @@ const PortalAdmin = () => {
                               </label>
                             ))}
                           </div>
+                        </div>
+                      )}
+                      {newLink.link_type === "tenant" && (
+                        <div>
+                          <Label>Unit Number</Label>
+                          <Input placeholder="e.g. 204" value={newLink.unit_number} onChange={e => setNewLink({ ...newLink, unit_number: e.target.value })} />
                         </div>
                       )}
                       <Button onClick={addLink} className="w-full">Create Link</Button>
