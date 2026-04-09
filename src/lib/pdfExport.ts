@@ -237,6 +237,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="max-w-"]        { max-width: none !important; }
           .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
+          /* Page 1 header — sage green background */
+          .pdf-export-root.print-header,
+          .pdf-export-root [class*="print-header"] {
+            background-color: ${BRAND.sage} !important;
+            border-bottom: 2px solid ${BRAND.darkSage} !important;
+          }
+
           /* Hide noise */
           .pdf-export-root .no-print,
           .pdf-export-root button:not(.print-keep),
@@ -450,17 +457,24 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: ${BRAND.black} !important;
           }
 
-          /* Page 2 section headers */
-          .pdf-export-root .print-section-header {
-            font-size: 13px !important;
+          /* Page 2 section headers — scoped to capture 2 */
+          .pdf-export-root[data-pdf-capture="2"] .print-section-header {
+            font-size: 14px !important;
             font-weight: 700 !important;
           }
 
-          /* Page 2 section content */
-          .pdf-export-root .print-section-content,
-          .pdf-export-root .print-section-content * {
+          /* Page 2 section content — scoped to capture 2 */
+          .pdf-export-root[data-pdf-capture="2"] .print-section-content,
+          .pdf-export-root[data-pdf-capture="2"] .print-section-content * {
             font-size: 12px !important;
             line-height: 1.45 !important;
+          }
+
+          /* Page 1 proposed services — slightly smaller */
+          .pdf-export-root[data-pdf-capture="1"] .print-section-content,
+          .pdf-export-root[data-pdf-capture="1"] .print-section-content * {
+            font-size: 10px !important;
+            line-height: 1.4 !important;
           }
 
           /* ═══════════════════════════════════════════════════════════
