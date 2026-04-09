@@ -431,6 +431,63 @@ export type Database = {
         }
         Relationships: []
       }
+      team_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          employee_name: string
+          employee_printed_name: string | null
+          employee_signature: string | null
+          employee_signed_date: string | null
+          form_data: Json | null
+          form_date: string | null
+          id: string
+          job_title: string | null
+          representative_name: string | null
+          representative_signature: string | null
+          representative_signed_date: string | null
+          representative_title: string | null
+          updated_at: string
+          work_location: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          employee_name: string
+          employee_printed_name?: string | null
+          employee_signature?: string | null
+          employee_signed_date?: string | null
+          form_data?: Json | null
+          form_date?: string | null
+          id?: string
+          job_title?: string | null
+          representative_name?: string | null
+          representative_signature?: string | null
+          representative_signed_date?: string | null
+          representative_title?: string | null
+          updated_at?: string
+          work_location?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          employee_name?: string
+          employee_printed_name?: string | null
+          employee_signature?: string | null
+          employee_signed_date?: string | null
+          form_data?: Json | null
+          form_date?: string | null
+          id?: string
+          job_title?: string | null
+          representative_name?: string | null
+          representative_signature?: string | null
+          representative_signed_date?: string | null
+          representative_title?: string | null
+          updated_at?: string
+          work_location?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
