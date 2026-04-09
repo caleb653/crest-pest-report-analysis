@@ -112,6 +112,7 @@ const PortalAdmin = () => {
       loadProperties(selectedClient.id);
       loadLinks(selectedClient.id);
       loadClientChat(selectedClient.id);
+      loadTenantRequests(selectedClient.id);
       setSelectedProperty(null); setSelectedService(null); setPortalTab("past");
     }
   }, [selectedClient]);
