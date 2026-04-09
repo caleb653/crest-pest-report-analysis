@@ -90,7 +90,7 @@ const PortalAdmin = () => {
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
   const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "" });
-  const [newLink, setNewLink] = useState({ link_type: "sub", label: "", assigned_property_ids: [] as string[] });
+  const [newLink, setNewLink] = useState({ link_type: "sub", label: "", assigned_property_ids: [] as string[], unit_number: "" });
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
 
   // Rich service form
