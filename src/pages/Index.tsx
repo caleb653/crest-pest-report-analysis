@@ -116,12 +116,12 @@ const Index = () => {
               className={`cursor-pointer ${report.border} hover:shadow-lg transition-all duration-200 group`}
               onClick={() => handleCardClick(report)}
             >
-              <CardContent className="flex flex-col items-center justify-center p-5 text-center min-h-[160px]">
-                <div className={`w-16 h-16 rounded-full ${report.bg} flex items-center justify-center mb-3 ${report.hoverBg} transition-colors`}>
-                  <Icon className={`w-8 h-8 ${report.color}`} />
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[220px]">
+                <div className={`w-20 h-20 rounded-full ${report.bg} flex items-center justify-center mb-4 ${report.hoverBg} transition-colors`}>
+                  <Icon className={`w-10 h-10 ${report.color}`} />
                 </div>
-                <h2 className="text-base font-semibold text-foreground mb-1">{report.title}</h2>
-                <p className="text-xs text-muted-foreground leading-tight">{report.description}</p>
+                <h2 className="text-lg font-semibold text-foreground mb-1">{report.title}</h2>
+                <p className="text-sm text-muted-foreground leading-tight">{report.description}</p>
               </CardContent>
             </Card>
           );
