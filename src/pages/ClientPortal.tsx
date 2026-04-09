@@ -271,18 +271,26 @@ const ClientPortal = () => {
           </Card>
         </div>
 
-        {/* Property filter */}
-        {properties.length > 1 && (
+        {/* Properties */}
+        {properties.length > 0 && (
           <div className="mb-4">
-            <Select value={selectedProperty} onValueChange={setSelectedProperty}>
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Filter by property" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Properties</SelectItem>
-                {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <h3 className="text-sm font-semibold mb-2">Properties</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+              {(selectedProperty === "all" ? properties : properties.filter(p => p.id === selectedProperty)).map(p => (
+                <Card key={p.id} className={`overflow-hidden cursor-pointer transition-colors ${selectedProperty === p.id ? "border-primary" : "hover:border-primary/30"}`}
+                  onClick={() => setSelectedProperty(selectedProperty === p.id ? "all" : p.id)}>
+                  {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-28 object-cover" />}
+                  <CardContent className="p-3">
+                    <p className="font-medium text-sm">{p.name}</p>
+                    {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">{services.filter(s => s.property_id === p.id).length} services</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {selectedProperty !== "all" && (
+              <Button variant="ghost" size="sm" onClick={() => setSelectedProperty("all")} className="text-xs">← All Properties</Button>
+            )}
           </div>
         )}
 
