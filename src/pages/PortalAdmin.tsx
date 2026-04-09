@@ -910,6 +910,77 @@ const PortalAdmin = () => {
               <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold text-sm leading-8">{futureServices.length > 0 && futureServices[0]?.service_date ? new Date(futureServices[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}</p><p className="text-xs text-muted-foreground">Next Service</p></CardContent></Card>
             </div>
 
+            {/* Property-level links */}
+            {viewMode === "admin" && (
+              <div className="mb-4 space-y-3">
+                {/* PM Link for this property */}
+                {(() => {
+                  const pmLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(selectedProperty.id));
+                  return pmLink ? (
+                    <div className="flex items-center gap-2 text-sm border rounded-md p-2.5 bg-background">
+                      <Badge variant="secondary">PM</Badge>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">{pmLink.label || `${selectedProperty.name} PM Link`}</span>
+                        <p className="text-xs text-muted-foreground">Share with property manager for view-only access</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => copyLink(pmLink.token, "sub")}><Copy className="w-3.5 h-3.5 mr-1" />Copy</Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(pmLink.token, "sub")}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Tenant Links */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 py-2.5">
+                    <CardTitle className="text-sm flex items-center gap-1"><Users className="w-4 h-4" />Tenant Links</CardTitle>
+                    <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
+                      <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Tenant</Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Create Tenant Link for {selectedProperty.name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4">
+                          <div><Label>Unit Number *</Label><Input placeholder="e.g. 204" value={newLink.unit_number} onChange={e => setNewLink({ ...newLink, unit_number: e.target.value })} /></div>
+                          <div><Label>Label</Label><Input placeholder={`e.g. Unit ${newLink.unit_number || "204"} Tenant`} value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
+                          <Button onClick={async () => {
+                            if (!selectedClient || !selectedProperty) return;
+                            const label = newLink.label || `Unit ${newLink.unit_number} — ${selectedProperty.name}`;
+                            const { error } = await supabase.from("portal_links").insert({
+                              client_id: selectedClient.id, link_type: "tenant", label,
+                              assigned_property_ids: [selectedProperty.id],
+                              unit_number: newLink.unit_number || null,
+                            });
+                            if (!error) { toast({ title: "Tenant link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [], unit_number: "" }); loadLinks(selectedClient.id); }
+                          }} className="w-full" disabled={!newLink.unit_number.trim()}>Create Tenant Link</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {(() => {
+                      const tenantLinks = links.filter(l => l.link_type === "tenant" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(selectedProperty.id));
+                      return tenantLinks.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">No tenant links yet. Create one to let tenants submit service requests.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {tenantLinks.map(l => (
+                            <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
+                              <Badge variant="outline">Tenant</Badge>
+                              <span className="flex-1 truncate">
+                                {l.label || "Unnamed"}
+                                {(l as any).unit_number && <span className="text-muted-foreground ml-1">(Unit {(l as any).unit_number})</span>}
+                              </span>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token, "tenant")}><Copy className="w-3.5 h-3.5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token, "tenant")}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {viewMode === "tenant" ? (
               <div>
                 <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Inbox className="w-4 h-4" />Tenant Requests</h3>
