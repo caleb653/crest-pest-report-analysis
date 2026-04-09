@@ -487,7 +487,38 @@ const AppointmentReport = () => {
                         </td>
                         <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
                         <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                        <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                                {row.productsUsed || <span className="text-muted-foreground">Select...</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search products..." />
+                                <CommandList className="max-h-48">
+                                  <CommandGroup>
+                                    {PRODUCT_OPTIONS.map(prod => {
+                                      const selected = (row.productsUsed || "").split(", ").filter(Boolean);
+                                      const isSelected = selected.includes(prod);
+                                      return (
+                                        <CommandItem key={prod} value={prod} onSelect={() => {
+                                          const current = (row.productsUsed || "").split(", ").filter(Boolean);
+                                          const next = isSelected ? current.filter(p => p !== prod) : [...current, prod];
+                                          setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: next.join(", ") } : r));
+                                        }}>
+                                          <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                          {prod}
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </td>
                         <td className="border p-0.5">
                           <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
                             <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
