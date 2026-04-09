@@ -935,12 +935,14 @@ const PortalAdmin = () => {
         {/* ======= PROPERTY LEVEL: Summary + Tabs ======= */}
         {selectedProperty && (
           <>
-            {/* Property Image — front and center */}
-            <div className="mb-4 rounded-lg overflow-hidden relative bg-muted min-h-[180px]">
+            {/* Property Image — front and center, iPad-like portrait */}
+            <div className="mb-4 rounded-lg overflow-hidden relative bg-muted max-w-md mx-auto">
               {selectedProperty.image_url ? (
-                <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
+                <div className="aspect-[3/4]">
+                  <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-full object-cover" />
+                </div>
               ) : (
-                <div className="w-full h-48 flex items-center justify-center text-muted-foreground">
+                <div className="aspect-[3/4] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Image className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No property image</p>
@@ -950,10 +952,11 @@ const PortalAdmin = () => {
               {viewMode === "admin" && (
                 <label className="absolute bottom-2 right-2 bg-background/80 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1">
                   <Image className="w-3.5 h-3.5" />
-                  {selectedProperty.image_url ? "Change" : "Upload"}
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
+                  {uploadingPropertyImage ? "Uploading..." : selectedProperty.image_url ? "Change" : "Upload"}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingPropertyImage} onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
                 </label>
               )}
+            </div>
             </div>
 
             {/* Equipment & Customer Preferences */}
