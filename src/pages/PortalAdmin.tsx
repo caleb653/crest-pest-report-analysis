@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X } from "lucide-react";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -68,6 +68,7 @@ const PortalAdmin = () => {
   const [services, setServices] = useState<PortalService[]>([]);
   const [prepSheets, setPrepSheets] = useState<PortalPrepSheet[]>([]);
   const [messages, setMessages] = useState<PortalMessage[]>([]);
+  const [tenantRequests, setTenantRequests] = useState<any[]>([]);
 
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
@@ -90,7 +91,7 @@ const PortalAdmin = () => {
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
   const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "" });
-  const [newLink, setNewLink] = useState({ link_type: "sub", label: "", assigned_property_ids: [] as string[] });
+  const [newLink, setNewLink] = useState({ link_type: "sub", label: "", assigned_property_ids: [] as string[], unit_number: "" });
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
 
   // Rich service form
@@ -111,6 +112,7 @@ const PortalAdmin = () => {
       loadProperties(selectedClient.id);
       loadLinks(selectedClient.id);
       loadClientChat(selectedClient.id);
+      loadTenantRequests(selectedClient.id);
       setSelectedProperty(null); setSelectedService(null); setPortalTab("past");
     }
   }, [selectedClient]);
@@ -153,6 +155,18 @@ const PortalAdmin = () => {
   const loadClientChat = async (clientId: string) => {
     const { data } = await supabase.from("portal_messages").select("*").eq("client_id", clientId).order("created_at", { ascending: true });
     if (data) setChatMessages(data);
+  };
+  const loadTenantRequests = async (clientId: string) => {
+    // Load requests for all links belonging to this client
+    const { data: clientLinks } = await supabase.from("portal_links").select("id").eq("client_id", clientId).eq("link_type", "tenant");
+    if (clientLinks && clientLinks.length > 0) {
+      const linkIds = clientLinks.map(l => l.id);
+      const { data } = await supabase.from("portal_requests").select("*").in("link_id", linkIds).order("created_at", { ascending: false });
+      if (data) setTenantRequests(data);
+      else setTenantRequests([]);
+    } else {
+      setTenantRequests([]);
+    }
   };
 
   const sendAdminChat = async () => {
@@ -204,8 +218,9 @@ const PortalAdmin = () => {
     const { error } = await supabase.from("portal_links").insert({
       client_id: selectedClient.id, link_type: newLink.link_type, label: newLink.label || null,
       assigned_property_ids: newLink.assigned_property_ids.length > 0 ? newLink.assigned_property_ids : null,
+      unit_number: newLink.unit_number || null,
     });
-    if (!error) { toast({ title: "Link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [] }); loadLinks(selectedClient.id); }
+    if (!error) { toast({ title: "Link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [], unit_number: "" }); loadLinks(selectedClient.id); }
   };
 
   const openServiceDialog = (forEdit?: PortalService) => {
@@ -283,8 +298,15 @@ const PortalAdmin = () => {
   const deleteLink = async (id: string) => { await supabase.from("portal_links").delete().eq("id", id); if (selectedClient) loadLinks(selectedClient.id); toast({ title: "Link deleted" }); };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); if (selectedClient) loadProperties(selectedClient.id); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
-  const copyLink = (token: string) => { navigator.clipboard.writeText(`${window.location.origin}/portal/${token}`); toast({ title: "Link copied to clipboard" }); };
-  const openPortal = (token: string) => { window.open(`/portal/${token}`, "_blank"); };
+  const copyLink = (token: string, linkType?: string) => {
+    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    navigator.clipboard.writeText(`${window.location.origin}/${prefix}/${token}`);
+    toast({ title: "Link copied to clipboard" });
+  };
+  const openPortal = (token: string, linkType?: string) => {
+    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    window.open(`/${prefix}/${token}`, "_blank");
+  };
   const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
   const today = new Date().toISOString().split("T")[0];
 
@@ -578,7 +600,7 @@ const PortalAdmin = () => {
             <Settings className="w-3.5 h-3.5 mr-1" />{showAdminPanel ? "Done Editing" : "✏️ EDIT"}
           </Button>
           {masterLink && (
-            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token)}>
+            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
               <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
             </Button>
           )}
@@ -619,7 +641,7 @@ const PortalAdmin = () => {
                 <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Access Links</CardTitle>
                 <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
                   <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Link</Button></DialogTrigger>
-                  <DialogContent>
+                   <DialogContent>
                     <DialogHeader><DialogTitle>Create Access Link</DialogTitle></DialogHeader>
                     <div className="space-y-3">
                       <div>
@@ -628,12 +650,13 @@ const PortalAdmin = () => {
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="master">Master (all properties)</SelectItem>
-                            <SelectItem value="sub">Sub (specific properties)</SelectItem>
+                            <SelectItem value="sub">Property Manager (specific properties)</SelectItem>
+                            <SelectItem value="tenant">Tenant (requests only)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div><Label>Label</Label><Input placeholder="e.g. Building A Manager" value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
-                      {newLink.link_type === "sub" && properties.length > 0 && (
+                      {(newLink.link_type === "sub" || newLink.link_type === "tenant") && properties.length > 0 && (
                         <div>
                           <Label>Assigned Properties</Label>
                           <div className="space-y-1 mt-1">
@@ -647,6 +670,12 @@ const PortalAdmin = () => {
                           </div>
                         </div>
                       )}
+                      {newLink.link_type === "tenant" && (
+                        <div>
+                          <Label>Unit Number</Label>
+                          <Input placeholder="e.g. 204" value={newLink.unit_number} onChange={e => setNewLink({ ...newLink, unit_number: e.target.value })} />
+                        </div>
+                      )}
                       <Button onClick={addLink} className="w-full">Create Link</Button>
                     </div>
                   </DialogContent>
@@ -657,10 +686,15 @@ const PortalAdmin = () => {
                   <div className="space-y-2">
                     {links.map(l => (
                       <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
-                        <Badge variant={l.link_type === "master" ? "default" : "secondary"}>{l.link_type}</Badge>
-                        <span className="flex-1 truncate">{l.label || "Unnamed"}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token)}><Copy className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token)}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                        <Badge variant={l.link_type === "master" ? "default" : l.link_type === "tenant" ? "outline" : "secondary"}>
+                          {l.link_type === "sub" ? "PM" : l.link_type}
+                        </Badge>
+                        <span className="flex-1 truncate">
+                          {l.label || "Unnamed"}
+                          {l.link_type === "tenant" && (l as any).unit_number && <span className="text-muted-foreground ml-1">(Unit {(l as any).unit_number})</span>}
+                        </span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token, l.link_type)}><Copy className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token, l.link_type)}><ExternalLink className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                       </div>
                     ))}
@@ -767,10 +801,11 @@ const PortalAdmin = () => {
 
         {/* Service Tabs */}
         <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className="w-full grid grid-cols-4 mb-4">
+          <TabsList className="w-full grid grid-cols-5 mb-4">
             <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
-            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep Sheets</TabsTrigger>
+            <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
+            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>
             <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
           </TabsList>
 
@@ -862,7 +897,64 @@ const PortalAdmin = () => {
             )}
           </TabsContent>
 
-          {/* Prep Sheets */}
+          {/* Tenant Requests */}
+          <TabsContent value="requests">
+            {tenantRequests.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {tenantRequests.map((r: any) => (
+                  <Card key={r.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                            {r.status === "in_progress" ? "In Progress" : r.status}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm mb-2">{r.description}</p>
+                      {showAdminPanel && (
+                        <div className="flex gap-2 mt-2">
+                          <Select value={r.status} onValueChange={async (v) => {
+                            await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
+                            if (selectedClient) loadTenantRequests(selectedClient.id);
+                          }}>
+                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            placeholder="Response notes..."
+                            defaultValue={r.response_notes || ""}
+                            className="h-7 text-xs flex-1"
+                            onBlur={async (e) => {
+                              if (e.target.value !== (r.response_notes || "")) {
+                                await supabase.from("portal_requests").update({ response_notes: e.target.value }).eq("id", r.id);
+                                if (selectedClient) loadTenantRequests(selectedClient.id);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                      {!showAdminPanel && r.response_notes && (
+                        <div className="bg-muted rounded-md p-2 mt-2">
+                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="prep">
             {showAdminPanel && (
               <div className="mb-3">
@@ -992,7 +1084,19 @@ const PortalAdmin = () => {
                 {showAdminPanel && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
-                    <Button variant="destructive" size="sm" className="flex-1" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
+                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
+                      navigate(`/appointment-report/${selectedService.id}`, {
+                        state: {
+                          serviceData: selectedService,
+                          propertyName: getPropertyName(selectedService.property_id),
+                          clientName: selectedClient?.company || selectedClient?.name,
+                          returnTo: "/portal-admin",
+                        }
+                      });
+                    }}>
+                      <FileText className="w-3.5 h-3.5 mr-1" />Appointment Report
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
                   </div>
                 )}
               </div>

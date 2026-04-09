@@ -81,6 +81,7 @@ export type Database = {
           label: string | null
           link_type: string
           token: string
+          unit_number: string | null
           updated_at: string
         }
         Insert: {
@@ -92,6 +93,7 @@ export type Database = {
           label?: string | null
           link_type?: string
           token?: string
+          unit_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           label?: string | null
           link_type?: string
           token?: string
+          unit_number?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -249,6 +252,60 @@ export type Database = {
           },
         ]
       }
+      portal_requests: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          link_id: string | null
+          property_id: string
+          request_type: string
+          response_notes: string | null
+          status: string
+          unit_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          link_id?: string | null
+          property_id: string
+          request_type?: string
+          response_notes?: string | null
+          status?: string
+          unit_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          link_id?: string | null
+          property_id?: string
+          request_type?: string
+          response_notes?: string | null
+          status?: string
+          unit_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_requests_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_requests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_services: {
         Row: {
           created_at: string
@@ -262,6 +319,7 @@ export type Database = {
           prep_required: boolean | null
           products_used: Json | null
           property_id: string
+          report_data: Json | null
           scheduling_status: string | null
           service_date: string | null
           service_time: string | null
@@ -286,6 +344,7 @@ export type Database = {
           prep_required?: boolean | null
           products_used?: Json | null
           property_id: string
+          report_data?: Json | null
           scheduling_status?: string | null
           service_date?: string | null
           service_time?: string | null
@@ -310,6 +369,7 @@ export type Database = {
           prep_required?: boolean | null
           products_used?: Json | null
           property_id?: string
+          report_data?: Json | null
           scheduling_status?: string | null
           service_date?: string | null
           service_time?: string | null
