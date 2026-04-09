@@ -68,6 +68,7 @@ const PortalAdmin = () => {
   const [services, setServices] = useState<PortalService[]>([]);
   const [prepSheets, setPrepSheets] = useState<PortalPrepSheet[]>([]);
   const [messages, setMessages] = useState<PortalMessage[]>([]);
+  const [tenantRequests, setTenantRequests] = useState<any[]>([]);
 
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
