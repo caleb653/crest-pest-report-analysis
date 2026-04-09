@@ -437,6 +437,8 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={findings[0] || ""}
             onChange={v => setFindings([v])}
+            fontSize={findingsFontSize}
+            onFontSizeChange={setFindingsFontSize}
           />
         </Card>
 
@@ -446,6 +448,8 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={expectations[0] || ""}
             onChange={v => setExpectations([v])}
+            fontSize={expectationsFontSize}
+            onFontSizeChange={setExpectationsFontSize}
           />
         </Card>
 
@@ -455,6 +459,8 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={recommendations[0] || ""}
             onChange={v => setRecommendations([v])}
+            fontSize={recommendationsFontSize}
+            onFontSizeChange={setRecommendationsFontSize}
           />
         </Card>
 
