@@ -620,6 +620,7 @@ const Report = () => {
   }
   const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
+  const [limitationsText, setLimitationsText] = useState("");
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
