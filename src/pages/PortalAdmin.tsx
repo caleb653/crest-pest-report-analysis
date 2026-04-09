@@ -242,13 +242,39 @@ const PortalAdmin = () => {
 
   const uploadPropertyImage = async (file: File): Promise<string | null> => {
     setUploadingPropertyImage(true);
-    const ext = file.name.split(".").pop();
-    const path = `portal-properties/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("report-images").upload(path, file, { contentType: file.type });
-    setUploadingPropertyImage(false);
-    if (error) { toast({ title: "Upload failed", variant: "destructive" }); return null; }
-    const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
-    return pub.publicUrl;
+    try {
+      // Compress image before upload
+      const compressed = await new Promise<Blob>((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 1600, maxH = 1600;
+          let w = img.width, h = img.height;
+          if (w > maxW || h > maxH) {
+            const ratio = Math.min(maxW / w, maxH / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.8);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+      const path = `portal-properties/${crypto.randomUUID()}.jpg`;
+      const { error } = await supabase.storage.from("report-images").upload(path, compressed, { contentType: "image/jpeg" });
+      if (error) { toast({ title: "Upload failed", variant: "destructive" }); return null; }
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      return pub.publicUrl;
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast({ title: "Upload failed", variant: "destructive" });
+      return null;
+    } finally {
+      setUploadingPropertyImage(false);
+    }
   };
 
   const addProperty = async () => {
