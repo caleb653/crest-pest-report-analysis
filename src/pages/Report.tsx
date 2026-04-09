@@ -2118,17 +2118,33 @@ Crest Pest Control`;
                     {service.frequency > 0 ? (
                       <div className="flex flex-wrap gap-0.5 print:gap-0">
                         {(() => {
-                          const isWeekly = service.frequency === 7;
+                          const isHighFreq = service.frequency === 7 || service.frequency === 14;
                           const today = new Date();
-                          const currentMonth = today.getMonth();
-                          const currentYear = today.getFullYear();
-                          const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-                          const daysRemaining = daysInMonth - today.getDate();
-                          const weeksRemaining = Math.ceil(daysRemaining / 7) + 1;
-                          const count = isWeekly ? weeksRemaining : 12;
 
-                          return Array.from({ length: count }, (_, i) => {
-                            const scheduleDate = new Date();
+                          if (isHighFreq) {
+                            // Show weekly/bi-weekly visits for ~1 year (perpetuity style, as many as fit)
+                            const totalDays = 365;
+                            const count = Math.floor(totalDays / service.frequency);
+                            return Array.from({ length: count }, (_, i) => {
+                              const scheduleDate = new Date(today);
+                              scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
+                              const isFirst = i === 0;
+                              return (
+                                <span
+                                  key={i}
+                                  className={`px-1 py-0.5 rounded text-[10px] whitespace-nowrap print:text-[8px] print:px-0.5 ${
+                                    isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  {scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                </span>
+                              );
+                            });
+                          }
+
+                          // Monthly+ frequencies: show 12 months
+                          return Array.from({ length: 12 }, (_, i) => {
+                            const scheduleDate = new Date(today);
                             scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
                             const isFirst = i === 0;
                             return (
@@ -2138,9 +2154,7 @@ Crest Pest Control`;
                                   isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
                                 }`}
                               >
-                                {isWeekly
-                                  ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                                  : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                                {scheduleDate.toLocaleDateString("en-US", { month: "short" })}
                               </span>
                             );
                           });
