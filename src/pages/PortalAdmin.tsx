@@ -187,6 +187,32 @@ const PortalAdmin = () => {
     if (data) setMessages(data);
   };
 
+  const loadClientChat = async (clientId: string) => {
+    const { data } = await supabase
+      .from("portal_messages")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: true });
+    if (data) setChatMessages(data);
+  };
+
+  const sendAdminChat = async () => {
+    if (!adminChatInput.trim() || !selectedClient) return;
+    setSendingChat(true);
+    const { error: err } = await supabase.from("portal_messages").insert({
+      client_id: selectedClient.id,
+      sender_name: "Crest Pest Control",
+      sender_type: "admin",
+      subject: "Portal Chat",
+      message: adminChatInput.trim(),
+    });
+    if (!err) {
+      setAdminChatInput("");
+      loadClientChat(selectedClient.id);
+    }
+    setSendingChat(false);
+  };
+
   const addClient = async () => {
     const { error } = await supabase.from("portal_clients").insert({ name: newClient.name, company: newClient.company || null, email: newClient.email || null, phone: newClient.phone || null, notes: newClient.notes || null });
     if (!error) {
