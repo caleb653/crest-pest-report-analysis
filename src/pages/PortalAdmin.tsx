@@ -135,11 +135,23 @@ const PortalAdmin = () => {
     if (selectedClient) {
       loadProperties(selectedClient.id);
       loadLinks(selectedClient.id);
+      loadClientChat(selectedClient.id);
       setSelectedProperty(null);
       setSelectedService(null);
       setPortalTab("past");
     }
   }, [selectedClient]);
+
+  // Poll for new messages when viewing a client
+  useEffect(() => {
+    if (!selectedClient) return;
+    const interval = setInterval(() => loadClientChat(selectedClient.id), 10000);
+    return () => clearInterval(interval);
+  }, [selectedClient]);
+
+  useEffect(() => {
+    adminChatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const loadClients = async () => {
     const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
