@@ -50,8 +50,6 @@ function sp(el: HTMLElement, prop: string, val: string) {
 }
 
 // ─── Dark/sage class-name detection patterns ──────────────────────────────────
-// Checked against the LIVE DOM (reliable) not the cloned iframe.
-// Do NOT include "bg-primary" — that maps to sage in this app's theme.
 const DARK_PATTERNS = [
   "bg-[#2",
   "bg-[#1",
@@ -80,13 +78,10 @@ const SAGE_PATTERNS = [
   "bg-teal-",
 ];
 
-// ─── Is this capture an Initial Pest Report? ─────────────────────────────────
-// We detect by: no <table> element (proposals have one) + has the map grid layout.
 function isInitialPestReport(el: HTMLElement): boolean {
   return !el.querySelector("table") && !!el.querySelector('[class*="lg:grid-cols-"]');
 }
 
-// ─── Pricing table complete remake ───────────────────────────────────────────
 function remakePricingTable(root: HTMLElement) {
   const table = root.querySelector<HTMLTableElement>("table");
   if (!table) return;
@@ -95,7 +90,6 @@ function remakePricingTable(root: HTMLElement) {
   sp(table, "width", "100%");
   sp(table, "border", `1px solid ${BRAND.border}`);
 
-  // ── Thead: sage green header ──────────────────────────────────────────
   const thead = table.querySelector<HTMLElement>("thead");
   if (thead) {
     sp(thead, "background-color", BRAND.sage);
@@ -123,7 +117,6 @@ function remakePricingTable(root: HTMLElement) {
     });
   }
 
-  // ── Body rows ────────────────────────────────────────────────────────────────
   const bodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>("tbody tr")).filter(
     (row) => !row.textContent?.match(/\btotal\b/i),
   );
@@ -148,11 +141,9 @@ function remakePricingTable(root: HTMLElement) {
         sp(cell, "font-size", "12px");
         sp(cell, "color", "#555");
       }
-      // Schedule column (colIdx >= 4): untouched — month chips keep own styles
     });
   });
 
-  // ── Total row — found by content, not position ──────────────────────────────
   let totalRow: HTMLTableRowElement | null = null;
   table.querySelectorAll<HTMLTableRowElement>("tfoot tr, tbody tr").forEach((row) => {
     if (row.textContent?.match(/\btotal\b/i)) totalRow = row;
@@ -170,13 +161,11 @@ function remakePricingTable(root: HTMLElement) {
   }
 }
 
-// ─── captureElement ──────────────────────────────────────────────────────────
 async function captureElement(el: HTMLElement): Promise<string> {
   const captureKey = el.dataset.pdfCapture;
   const printCss = getPrintCssText();
   const isPestReport = isInitialPestReport(el);
 
-  // ── Pre-mark dark/sage elements in the live DOM before clone ─────────────
   const marked: Array<[HTMLElement, string]> = [];
 
   el.querySelectorAll<HTMLElement>("[class]").forEach((elem) => {
@@ -190,7 +179,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
     }
   });
 
-  // Thead rows always get dark treatment (may use bg-primary via CSS variable)
   el.querySelectorAll<HTMLElement>("thead, thead tr, thead th, thead td").forEach((th) => {
     if (!th.getAttribute("data-crest-dark")) {
       th.setAttribute("data-crest-dark", "1");
@@ -206,7 +194,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
       backgroundColor: "#ffffff",
       logging: false,
       onclone: (clonedDoc) => {
-        // ── Phase 1: CSS ─────────────────────────────────────────────────────
         const style = clonedDoc.createElement("style");
         style.textContent = `
           ${printCss}
@@ -216,17 +203,12 @@ async function captureElement(el: HTMLElement): Promise<string> {
             background: #ffffff !important; overflow: visible !important;
           }
 
-          /* Safe globals only — no colour/word-break overrides */
           * {
             hyphens: none !important; -webkit-hyphens: none !important;
             -webkit-font-smoothing: antialiased !important;
             text-rendering: optimizeLegibility !important;
           }
 
-          /* ═══════════════════════════════════════════════════════════
-             ROOT BASE — 13 px for proposals; overridden to 11 px for
-             Initial Pest Reports via [data-report-type] below.
-             ═══════════════════════════════════════════════════════════ */
           .pdf-export-root {
             background: #ffffff !important; box-sizing: border-box !important;
             overflow: visible !important;
@@ -237,11 +219,32 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="max-w-"]        { max-width: none !important; }
           .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
-          /* Page 1 header — sage green background */
-          .pdf-export-root.print-header,
-          .pdf-export-root [class*="print-header"] {
+          /* ═══════════════════════════════════════════════════════════
+             PAGE 1 HEADER — boosted font sizes
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root [class*="print-header"],
+          .pdf-export-root.print-header {
             background-color: ${BRAND.sage} !important;
             border-bottom: 2px solid ${BRAND.darkSage} !important;
+          }
+          .pdf-export-root [class*="print-header"] h1,
+          .pdf-export-root [class*="print-header"] h2 {
+            font-size: 20px !important;
+            font-weight: 700 !important;
+          }
+          .pdf-export-root [class*="print-header"] h3 {
+            font-size: 15px !important;
+            font-weight: 600 !important;
+          }
+          /* All non-heading text inside the page 1 header */
+          .pdf-export-root [class*="print-header"] p,
+          .pdf-export-root [class*="print-header"] span,
+          .pdf-export-root [class*="print-header"] div,
+          .pdf-export-root [class*="print-header"] li,
+          .pdf-export-root [class*="print-header"] td,
+          .pdf-export-root [class*="print-header"] th {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
           }
 
           /* Hide noise */
@@ -256,7 +259,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="print\\:hidden"],
           .pdf-export-root .print\\:hidden                   { display: none !important; }
           .pdf-export-root .print-content-formatted          { display: block !important; }
-          /* 3-column grid for print header */
           .pdf-export-root [class*="print\\:grid-cols-3"]    { grid-template-columns: 1fr 1fr 1fr !important; }
 
           /* ── Proposal text scale ────────────────────────────────── */
@@ -267,16 +269,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="text-lg"]                { font-size: 12px !important; line-height: 1.5 !important; }
           .pdf-export-root [class*="text-xl"]                { font-size: 14px !important; line-height: 1.4 !important; }
           .pdf-export-root [class*="text-2xl"]               { font-size: 18px !important; line-height: 1.3 !important; }
-          /* Arbitrary sizes — font-size ONLY, never colour */
           .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 8px  !important; line-height: 1.55 !important; }
           .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
           .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 10px !important; line-height: 1.55 !important; }
           .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
-          /* Products list */
           .pdf-export-root [class*="columns-2"] *            { font-size: 9.5px !important; line-height: 1.65 !important; }
           .pdf-export-root [class*="columns-2"] p,
           .pdf-export-root [class*="columns-2"] li           { margin: 1px 0 !important; }
-          /* Headings */
           .pdf-export-root h1 { font-size: 20px !important; font-weight: 700 !important; overflow: visible !important; }
           .pdf-export-root h2 { font-size: 16px !important; font-weight: 700 !important; overflow: visible !important; }
           .pdf-export-root h3 { font-size: 13px !important; font-weight: 600 !important; overflow: visible !important; }
@@ -284,8 +283,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ═══════════════════════════════════════════════════════════
              INITIAL PEST REPORT — compact scale
-             Applied when [data-report-type="initial-pest"] is present.
-             Legacy [data-report-type="pest-report"] remains supported.
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root[data-report-type="initial-pest"] {
             font-size: 10.5px !important;
@@ -313,7 +310,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
             font-size: 8.5px !important;
             line-height: 1.3 !important;
           }
-          /* Prose / rich text overrides */
           .pdf-export-root[data-report-type="initial-pest"] .prose,
           .pdf-export-root[data-report-type="initial-pest"] .prose *,
           .pdf-export-root[data-report-type="initial-pest"] .ql-editor,
@@ -330,7 +326,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
             font-size: 8.5px !important;
             line-height: 1.3 !important;
           }
-          /* Tailwind overrides inside pest report */
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-xs"],
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-sm"],
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-base"],
@@ -343,19 +338,16 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root[data-report-type="pest-report"] [class*="text-xl"] { font-size: 8.5px !important; line-height: 1.3 !important; }
           .pdf-export-root[data-report-type="initial-pest"] [class*="text-2xl"],
           .pdf-export-root[data-report-type="pest-report"] [class*="text-2xl"]  { font-size: 20px !important; line-height: 1.3 !important; }
-          /* Headings inside pest report — compact body, strong title */
           .pdf-export-root[data-report-type="initial-pest"] h1,
           .pdf-export-root[data-report-type="pest-report"] h1 { font-size: 20px !important; font-weight: 700 !important; }
           .pdf-export-root[data-report-type="initial-pest"] h2 { font-size: 10.5px !important; font-weight: 700 !important; }
           .pdf-export-root[data-report-type="pest-report"] h2 { font-size: 8.5px !important; font-weight: 700 !important; }
           .pdf-export-root[data-report-type="initial-pest"] h3 { font-size: 10.5px !important; font-weight: 600 !important; }
           .pdf-export-root[data-report-type="pest-report"] h3 { font-size: 8.5px !important; font-weight: 600 !important; }
-          /* Tighter bullets */
           .pdf-export-root[data-report-type="initial-pest"] ul li,
           .pdf-export-root[data-report-type="initial-pest"] ol li,
           .pdf-export-root[data-report-type="pest-report"] ul li,
           .pdf-export-root[data-report-type="pest-report"] ol li { margin-bottom: 0px !important; }
-          /* Tighter card padding */
           .pdf-export-root[data-report-type="initial-pest"] [class*="p-3"],
           .pdf-export-root[data-report-type="pest-report"] [class*="p-3"] { padding: 4px 6px !important; }
           .pdf-export-root[data-report-type="initial-pest"] [class*="p-4"],
@@ -364,15 +356,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root[data-report-type="pest-report"] [class*="gap-3"] { gap: 3px !important; }
           .pdf-export-root[data-report-type="initial-pest"] [class*="gap-4"],
           .pdf-export-root[data-report-type="pest-report"] [class*="gap-4"] { gap: 5px !important; }
-          /* Section header bars in pest report: same visual, slightly shorter */
           .pdf-export-root[data-report-type="initial-pest"] [data-crest-dark="1"],
           .pdf-export-root[data-report-type="pest-report"] [data-crest-dark="1"] {
             padding-top: 5px !important; padding-bottom: 5px !important;
           }
 
           /* ═══════════════════════════════════════════════════════════
-             DARK SECTION HEADERS  (pre-marked with data-crest-dark)
-             Now rendered in sage green for a cleaner look.
+             DARK SECTION HEADERS
              ═══════════════════════════════════════════════════════════ */
           [data-crest-dark="1"] {
             background-color: ${BRAND.sage} !important;
@@ -384,14 +374,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
           /* ═══════════════════════════════════════════════════════════
-             SAGE ACCENT ELEMENTS  (pre-marked with data-crest-sage)
+             SAGE ACCENT ELEMENTS
              ═══════════════════════════════════════════════════════════ */
           [data-crest-sage="1"]   { background-color: ${BRAND.sage} !important; }
           [data-crest-sage="1"] * { color: ${BRAND.black} !important; }
 
           /* ═══════════════════════════════════════════════════════════
-             TABLE — CSS layer; JS remakePricingTable adds !important
-             inline styles on top for absolute override certainty
+             TABLE
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root table {
             border-collapse: collapse !important; width: 100% !important;
@@ -435,8 +424,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .additional-details-body *,
           .pdf-export-root .additional-details-body .print-content-formatted,
           .pdf-export-root .additional-details-body .print-content-formatted * {
-            font-size: 13px !important;
-            line-height: 1.5 !important;
+            font-size: 15px !important;
+            line-height: 1.55 !important;
           }
 
           /* Page 2 header bar */
@@ -453,27 +442,27 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: ${BRAND.black} !important;
           }
           .pdf-export-root .page2-header span {
-            font-size: 12px !important;
+            font-size: 14px !important;
             color: ${BRAND.black} !important;
           }
 
-          /* Page 2 section headers — scoped to capture 2 */
+          /* Page 2 section headers */
           .pdf-export-root[data-pdf-capture="2"] .print-section-header {
-            font-size: 14px !important;
+            font-size: 16px !important;
             font-weight: 700 !important;
           }
 
-          /* Page 2 section content — scoped to capture 2 */
+          /* Page 2 section content — bumped up */
           .pdf-export-root[data-pdf-capture="2"] .print-section-content,
           .pdf-export-root[data-pdf-capture="2"] .print-section-content * {
-            font-size: 12px !important;
-            line-height: 1.45 !important;
+            font-size: 14px !important;
+            line-height: 1.55 !important;
           }
 
-          /* Page 1 proposed services — slightly smaller */
+          /* Page 1 proposed services — compact */
           .pdf-export-root[data-pdf-capture="1"] .print-section-content,
           .pdf-export-root[data-pdf-capture="1"] .print-section-content * {
-            font-size: 10px !important;
+            font-size: 8.5px !important;
             line-height: 1.4 !important;
           }
 
@@ -510,24 +499,18 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.style.boxSizing = "border-box";
         clonedPage.style.overflow = "visible";
 
-        // ── Phase 2: Tag pest reports so compact CSS fires ────────────────────
-        // isInitialPestReport() was checked on the LIVE element before cloning.
         if (isPestReport) {
           clonedPage.setAttribute("data-report-type", "pest-report");
         }
 
-        // ── Phase 3: Pricing table ────────────────────────────────────────────
         remakePricingTable(clonedPage);
 
-        // ── Phase 4: Fix title clip (inputs have fixed width, truncate text) ──
         clonedPage.querySelectorAll<HTMLElement>('[class*="truncate"], [class*="overflow-hidden"]').forEach((e) => {
-          // Never touch map elements
           if (e.closest('[class*="w-[400px]"]') || e.closest('[class*="h-[533px]"]')) return;
           sp(e, "overflow", "visible");
           sp(e, "text-overflow", "clip");
         });
 
-        // ── Phase 5: Layout — map + grid (UNTOUCHED) ─────────────────────────
         clonedPage.querySelectorAll<HTMLElement>('[class*="print:scale-"]').forEach((e) => {
           e.style.transform = "none";
         });
@@ -545,7 +528,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.style.display = "flex";
         clonedPage.style.flexDirection = "column";
 
-        // MAP — completely untouched
         const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
         if (mapContainer) {
           mapContainer.style.width = "100%";
@@ -577,7 +559,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
         const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
         if (detailsBody && detailsCard) {
-          let fontSize = parseFloat(detailsBody.style.fontSize) || 13;
+          let fontSize = parseFloat(detailsBody.style.fontSize) || 15;
           const minFont = 9;
           while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
             fontSize -= 0.5;
@@ -589,7 +571,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
     return canvas.toDataURL("image/jpeg", 0.95);
   } finally {
-    // Always restore live DOM
     marked.forEach(([elem, attr]) => elem.removeAttribute(attr));
   }
 }
