@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,13 @@ const PortalAdmin = () => {
 
   // Global admin tab (when no client selected)
   const [globalTab, setGlobalTab] = useState("clients");
+
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<PortalMessage[]>([]);
+  const [adminChatInput, setAdminChatInput] = useState("");
+  const [sendingChat, setSendingChat] = useState(false);
+  const [messagesClientId, setMessagesClientId] = useState<string | null>(null);
+  const adminChatEndRef = useRef<HTMLDivElement>(null);
 
   // Dialog states
   const [showAddClient, setShowAddClient] = useState(false);
