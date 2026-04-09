@@ -235,6 +235,7 @@ export default function CustomerReportView() {
   const mapDataString = report.map_data 
     ? (typeof report.map_data === 'string' ? report.map_data : JSON.stringify(report.map_data))
     : null;
+  const shouldRenderMapFromData = !!report.custom_map_url && !!mapDataString;
 
   // Determine if this is an Initial Pest Report
   const isInitialReport = report.report_title === "Initial Pest Report";
@@ -671,7 +672,12 @@ export default function CustomerReportView() {
             <div className="grid grid-cols-[2fr_3fr] gap-4">
               {/* Map Section */}
               <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
-                {report.rendered_map_url ? (
+                {shouldRenderMapFromData ? (
+                  <ReadOnlyMapCanvas 
+                    mapUrl={report.custom_map_url!}
+                    mapData={mapDataString}
+                  />
+                ) : report.rendered_map_url ? (
                   <img 
                     src={report.rendered_map_url} 
                     alt="Property map with annotations" 
