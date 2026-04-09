@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, FolderLock, Loader2, Eye } from "lucide-react";
-import SignatureCanvas from "@/components/SignatureCanvas";
+import { SignatureCanvas } from "@/components/SignatureCanvas";
 import crestLogo from "@/assets/crest-logo-black.png";
 import { format } from "date-fns";
 
