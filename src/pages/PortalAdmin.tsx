@@ -293,6 +293,7 @@ const PortalAdmin = () => {
     const prefix = linkType === "tenant" ? "tenant" : "portal";
     window.open(`/${prefix}/${token}`, "_blank");
   };
+  const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
   const today = new Date().toISOString().split("T")[0];
 
   const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
