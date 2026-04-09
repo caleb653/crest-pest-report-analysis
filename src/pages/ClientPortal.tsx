@@ -1,17 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, ClipboardList, FileText, MessageSquare, Phone, Mail, Building2, MapPin, ChevronRight, ExternalLink, Download } from "lucide-react";
+import { Calendar, ClipboardList, FileText, MessageSquare, Phone, Mail, ChevronRight, Download, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -68,6 +66,15 @@ interface PrepSheet {
   file_url: string | null;
 }
 
+interface ChatMessage {
+  id: string;
+  sender_name: string;
+  sender_type: string;
+  message: string;
+  subject: string;
+  created_at: string;
+}
+
 const ClientPortal = () => {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
@@ -81,30 +88,36 @@ const ClientPortal = () => {
   const [activeTab, setActiveTab] = useState("past");
   const [selectedProperty, setSelectedProperty] = useState<string>("all");
 
-  // Message form
-  const [msgName, setMsgName] = useState("");
-  const [msgEmail, setMsgEmail] = useState("");
-  const [msgProperty, setMsgProperty] = useState("");
-  const [msgSubject, setMsgSubject] = useState("");
-  const [msgBody, setMsgBody] = useState("");
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (token) loadPortal();
   }, [token]);
 
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // Poll for new messages every 10 seconds
+  useEffect(() => {
+    if (!linkData) return;
+    const interval = setInterval(() => loadMessages(), 10000);
+    return () => clearInterval(interval);
+  }, [linkData]);
+
   const loadPortal = async () => {
     setLoading(true);
-    // Get link
     const { data: link } = await supabase.from("portal_links").select("*").eq("token", token).eq("is_active", true).single();
     if (!link) { setError("Invalid or expired link"); setLoading(false); return; }
     setLinkData(link);
 
-    // Get client
     const { data: c } = await supabase.from("portal_clients").select("id, name, company").eq("id", link.client_id).single();
     if (c) setClient(c);
 
-    // Get properties
     let propsQuery = supabase.from("portal_properties").select("*").eq("client_id", link.client_id);
     if (link.link_type === "sub" && Array.isArray(link.assigned_property_ids) && link.assigned_property_ids.length > 0) {
       propsQuery = propsQuery.in("id", link.assigned_property_ids as string[]);
@@ -118,31 +131,67 @@ const ClientPortal = () => {
       }
     }
 
-    // Get prep sheets
     const { data: ps } = await supabase.from("portal_prep_sheets").select("*").order("title");
     if (ps) setPrepSheets(ps);
+
+    // Load messages for this client
+    const { data: msgs } = await supabase
+      .from("portal_messages")
+      .select("id, sender_name, sender_type, message, subject, created_at")
+      .eq("client_id", link.client_id)
+      .order("created_at", { ascending: true });
+    if (msgs) setChatMessages(msgs);
 
     setLoading(false);
   };
 
-  const sendMessage = async () => {
-    if (!msgName || !msgSubject || !msgBody) return;
+  const loadMessages = async () => {
+    if (!linkData) return;
+    const { data: msgs } = await supabase
+      .from("portal_messages")
+      .select("id, sender_name, sender_type, message, subject, created_at")
+      .eq("client_id", linkData.client_id)
+      .order("created_at", { ascending: true });
+    if (msgs) setChatMessages(msgs);
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !linkData || !client) return;
     setSending(true);
+
+    const senderName = client.company || client.name;
+
+    // Save message to DB
     const { error: err } = await supabase.from("portal_messages").insert({
-      link_id: linkData?.id || null,
-      sender_name: msgName,
-      sender_email: msgEmail || null,
-      property_name: msgProperty || null,
-      subject: msgSubject,
-      message: msgBody,
+      link_id: linkData.id,
+      client_id: linkData.client_id,
+      sender_name: senderName,
+      sender_type: "client",
+      subject: "Portal Chat",
+      message: chatInput.trim(),
     });
-    setSending(false);
+
     if (!err) {
-      toast({ title: "Message sent", description: "We'll get back to you shortly." });
-      setMsgName(""); setMsgEmail(""); setMsgProperty(""); setMsgSubject(""); setMsgBody("");
+      // Email the office
+      try {
+        await supabase.functions.invoke("send-portal-message", {
+          body: {
+            senderName,
+            propertyName: client.company || null,
+            subject: `Chat from ${senderName}`,
+            message: chatInput.trim(),
+          },
+        });
+      } catch (e) {
+        console.error("Email send failed:", e);
+      }
+
+      setChatInput("");
+      loadMessages();
     } else {
-      toast({ title: "Error", description: "Could not send message. Please try again.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not send message.", variant: "destructive" });
     }
+    setSending(false);
   };
 
   const today = new Date().toISOString().split("T")[0];
@@ -154,7 +203,6 @@ const ClientPortal = () => {
   const futureServices = filteredServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
 
   const getPropertyName = (id: string) => properties.find(p => p.id === id)?.name || "";
-  const getPropertyAddress = (id: string) => properties.find(p => p.id === id)?.address || "";
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -242,7 +290,7 @@ const ClientPortal = () => {
             <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
             <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep Sheets</TabsTrigger>
-            <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Message</TabsTrigger>
+            <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
           </TabsList>
 
           {/* Past Services */}
@@ -330,41 +378,57 @@ const ClientPortal = () => {
             )}
           </TabsContent>
 
-          {/* Message Crest */}
+          {/* Chat */}
           <TabsContent value="message">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Contact Crest Pest Control</CardTitle>
+            <Card className="flex flex-col" style={{ height: "480px" }}>
+              <CardHeader className="pb-2 border-b shrink-0">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" /> Chat with Crest Pest Control
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div><Label>Your Name *</Label><Input value={msgName} onChange={e => setMsgName(e.target.value)} /></div>
-                  <div><Label>Email</Label><Input type="email" value={msgEmail} onChange={e => setMsgEmail(e.target.value)} /></div>
-                </div>
-                {properties.length > 0 && (
-                  <div>
-                    <Label>Property</Label>
-                    <Select value={msgProperty} onValueChange={setMsgProperty}>
-                      <SelectTrigger><SelectValue placeholder="Select property (optional)" /></SelectTrigger>
-                      <SelectContent>
-                        {properties.map(p => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <div className="text-center text-sm text-muted-foreground py-8">
+                    <p>No messages yet. Send a message below to get started.</p>
+                    <div className="flex items-center justify-center gap-4 mt-3 text-xs">
+                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" />949-424-5000</span>
+                      <span className="flex items-center gap-1"><Mail className="w-3 h-3" />office@crestpestco.com</span>
+                    </div>
                   </div>
                 )}
-                <div><Label>Subject *</Label><Input value={msgSubject} onChange={e => setMsgSubject(e.target.value)} /></div>
-                <div><Label>Message *</Label><Textarea rows={4} value={msgBody} onChange={e => setMsgBody(e.target.value)} /></div>
-                <Button onClick={sendMessage} disabled={!msgName || !msgSubject || !msgBody || sending} className="w-full">
-                  {sending ? "Sending..." : "Send Message"}
-                </Button>
+                {chatMessages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.sender_type === "client" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                      msg.sender_type === "client"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}>
+                      {msg.sender_type === "admin" && (
+                        <p className="text-xs font-medium mb-1 opacity-70">Crest Pest Control</p>
+                      )}
+                      <p className="whitespace-pre-wrap">{msg.message}</p>
+                      <p className={`text-xs mt-1 ${msg.sender_type === "client" ? "opacity-70" : "text-muted-foreground"}`}>
+                        {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
               </CardContent>
-            </Card>
-
-            <Card className="mt-4">
-              <CardContent className="p-4 flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /><span>949-424-5000</span></div>
-                <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /><span>office@crestpestco.com</span></div>
-              </CardContent>
+              <div className="border-t p-3 shrink-0">
+                <form onSubmit={e => { e.preventDefault(); sendChatMessage(); }} className="flex gap-2">
+                  <Input
+                    placeholder="Type a message..."
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    disabled={sending}
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="icon" disabled={!chatInput.trim() || sending}>
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
@@ -415,7 +479,6 @@ const ClientPortal = () => {
 
                 {selectedService.special_notes && <div><p className="text-xs text-muted-foreground mb-1">Special Notes</p><p>{selectedService.special_notes}</p></div>}
 
-                {/* Unit Details */}
                 {selectedService.unit_details && Array.isArray(selectedService.unit_details) && (selectedService.unit_details as any[]).length > 0 && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">Unit Details</p>

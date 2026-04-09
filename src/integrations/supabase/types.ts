@@ -117,6 +117,7 @@ export type Database = {
       }
       portal_messages: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           is_read: boolean
@@ -127,9 +128,11 @@ export type Database = {
           related_unit: string | null
           sender_email: string | null
           sender_name: string
+          sender_type: string
           subject: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -140,9 +143,11 @@ export type Database = {
           related_unit?: string | null
           sender_email?: string | null
           sender_name: string
+          sender_type?: string
           subject: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean
@@ -153,9 +158,17 @@ export type Database = {
           related_unit?: string | null
           sender_email?: string | null
           sender_name?: string
+          sender_type?: string
           subject?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "portal_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "portal_clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "portal_messages_link_id_fkey"
             columns: ["link_id"]

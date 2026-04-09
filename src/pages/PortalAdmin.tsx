@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -76,11 +76,13 @@ interface PortalMessage {
   id: string;
   sender_name: string;
   sender_email: string | null;
+  sender_type: string;
   property_name: string | null;
   subject: string;
   message: string;
   is_read: boolean;
   created_at: string;
+  client_id: string | null;
 }
 
 const PortalAdmin = () => {
@@ -101,6 +103,13 @@ const PortalAdmin = () => {
 
   // Global admin tab (when no client selected)
   const [globalTab, setGlobalTab] = useState("clients");
+
+  // Chat state
+  const [chatMessages, setChatMessages] = useState<PortalMessage[]>([]);
+  const [adminChatInput, setAdminChatInput] = useState("");
+  const [sendingChat, setSendingChat] = useState(false);
+  const [messagesClientId, setMessagesClientId] = useState<string | null>(null);
+  const adminChatEndRef = useRef<HTMLDivElement>(null);
 
   // Dialog states
   const [showAddClient, setShowAddClient] = useState(false);
@@ -126,11 +135,23 @@ const PortalAdmin = () => {
     if (selectedClient) {
       loadProperties(selectedClient.id);
       loadLinks(selectedClient.id);
+      loadClientChat(selectedClient.id);
       setSelectedProperty(null);
       setSelectedService(null);
       setPortalTab("past");
     }
   }, [selectedClient]);
+
+  // Poll for new messages when viewing a client
+  useEffect(() => {
+    if (!selectedClient) return;
+    const interval = setInterval(() => loadClientChat(selectedClient.id), 10000);
+    return () => clearInterval(interval);
+  }, [selectedClient]);
+
+  useEffect(() => {
+    adminChatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const loadClients = async () => {
     const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
@@ -164,6 +185,32 @@ const PortalAdmin = () => {
   const loadMessages = async () => {
     const { data } = await supabase.from("portal_messages").select("*").order("created_at", { ascending: false });
     if (data) setMessages(data);
+  };
+
+  const loadClientChat = async (clientId: string) => {
+    const { data } = await supabase
+      .from("portal_messages")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: true });
+    if (data) setChatMessages(data);
+  };
+
+  const sendAdminChat = async () => {
+    if (!adminChatInput.trim() || !selectedClient) return;
+    setSendingChat(true);
+    const { error: err } = await supabase.from("portal_messages").insert({
+      client_id: selectedClient.id,
+      sender_name: "Crest Pest Control",
+      sender_type: "admin",
+      subject: "Portal Chat",
+      message: adminChatInput.trim(),
+    });
+    if (!err) {
+      setAdminChatInput("");
+      loadClientChat(selectedClient.id);
+    }
+    setSendingChat(false);
   };
 
   const addClient = async () => {
@@ -413,26 +460,52 @@ const PortalAdmin = () => {
               </Card>
             </TabsContent>
 
-            {/* Messages tab */}
+            {/* Messages tab — grouped by client */}
             <TabsContent value="messages">
               <Card>
                 <CardHeader><CardTitle className="text-base">Client Messages</CardTitle></CardHeader>
                 <CardContent>
-                  {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages</p> : (
-                    <div className="space-y-3">
-                      {messages.map(m => (
-                        <div key={m.id} className={`border rounded-lg p-3 ${!m.is_read ? "border-primary/50 bg-primary/5" : ""}`}>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-medium text-sm">{m.subject}</p>
-                            {!m.is_read && <Badge className="text-xs">New</Badge>}
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">From: {m.sender_name} {m.sender_email && `(${m.sender_email})`} {m.property_name && `• ${m.property_name}`}</p>
-                          <p className="text-sm">{m.message}</p>
-                          <p className="text-xs text-muted-foreground mt-2">{new Date(m.created_at).toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages yet</p> : (() => {
+                    // Group messages by client_id and show latest per client
+                    const clientMap = new Map<string, { clientName: string; lastMessage: PortalMessage; unread: number }>();
+                    messages.forEach(m => {
+                      const key = m.client_id || m.sender_name;
+                      if (!clientMap.has(key)) {
+                        clientMap.set(key, { clientName: m.sender_name, lastMessage: m, unread: m.is_read ? 0 : 1 });
+                      } else {
+                        const existing = clientMap.get(key)!;
+                        if (!m.is_read) existing.unread++;
+                      }
+                    });
+                    return (
+                      <div className="space-y-2">
+                        {Array.from(clientMap.entries()).map(([key, data]) => {
+                          const matchingClient = clients.find(c => c.id === key);
+                          return (
+                            <div
+                              key={key}
+                              className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => {
+                                if (matchingClient) setSelectedClient(matchingClient);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-sm">{matchingClient?.name || data.clientName}</p>
+                                  <p className="text-xs text-muted-foreground truncate max-w-xs mt-1">{data.lastMessage.message}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {data.unread > 0 && <Badge className="text-xs">{data.unread}</Badge>}
+                                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{new Date(data.lastMessage.created_at).toLocaleString()}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -785,17 +858,53 @@ const PortalAdmin = () => {
             )}
           </TabsContent>
 
-          {/* Message */}
+          {/* Chat with this client */}
           <TabsContent value="message">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Contact Crest Pest Control</CardTitle></CardHeader>
-              <CardContent className="text-center text-sm text-muted-foreground">
-                <p>Messages from clients appear in the Messages tab on the main admin view.</p>
-                <div className="flex items-center justify-center gap-6 mt-4">
-                  <div className="flex items-center gap-2"><Phone className="w-4 h-4" /><span>949-424-5000</span></div>
-                  <div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>office@crestpestco.com</span></div>
-                </div>
+            <Card className="flex flex-col" style={{ height: "480px" }}>
+              <CardHeader className="pb-2 border-b shrink-0">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <div className="text-center text-sm text-muted-foreground py-8">
+                    <p>No messages yet with this client.</p>
+                  </div>
+                )}
+                {chatMessages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
+                      msg.sender_type === "admin"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}>
+                      {msg.sender_type === "client" && (
+                        <p className="text-xs font-medium mb-1 opacity-70">{msg.sender_name}</p>
+                      )}
+                      <p className="whitespace-pre-wrap">{msg.message}</p>
+                      <p className={`text-xs mt-1 ${msg.sender_type === "admin" ? "opacity-70" : "text-muted-foreground"}`}>
+                        {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <div ref={adminChatEndRef} />
               </CardContent>
+              <div className="border-t p-3 shrink-0">
+                <form onSubmit={e => { e.preventDefault(); sendAdminChat(); }} className="flex gap-2">
+                  <Input
+                    placeholder="Type a message to this client..."
+                    value={adminChatInput}
+                    onChange={e => setAdminChatInput(e.target.value)}
+                    disabled={sendingChat}
+                    className="flex-1"
+                  />
+                  <Button type="submit" size="icon" disabled={!adminChatInput.trim() || sendingChat}>
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
