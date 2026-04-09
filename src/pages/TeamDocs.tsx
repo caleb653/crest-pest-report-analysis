@@ -23,7 +23,7 @@ const EMPLOYEES = [
   "Michael Muniz",
 ];
 
-const SUBMITTED_DOCS_PASSWORD = "184444";
+const SUBMITTED_DOCS_PASSWORD = "18444";
 
 interface SubmittedDoc {
   id: string;
