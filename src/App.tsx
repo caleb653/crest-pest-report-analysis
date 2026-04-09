@@ -8,6 +8,7 @@ import SelectTechnician from "./pages/SelectTechnician";
 import DataEntry from "./pages/DataEntry";
 import Report from "./pages/Report";
 import InitialPestReport from "./pages/InitialPestReport";
+import TeamDocs from "./pages/TeamDocs";
 import SubmittedReports from "./pages/SubmittedReports";
 import CustomerReportView from "./pages/CustomerReportView";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="/portal-admin" element={<PortalAdmin />} />
+                <Route path="/team-docs" element={<TeamDocs />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>

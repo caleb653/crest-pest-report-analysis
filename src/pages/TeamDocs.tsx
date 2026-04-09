@@ -1,0 +1,542 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { ArrowLeft, FileText, FolderLock, Loader2, Eye } from "lucide-react";
+import { SignatureCanvas } from "@/components/SignatureCanvas";
+import crestLogo from "@/assets/crest-logo-black.png";
+import { format } from "date-fns";
+
+const EMPLOYEES = [
+  "Caleb Whalen",
+  "Jake Shubin",
+  "Darrell Tanner",
+  "Jesse Angulo",
+  "Jackson Latham",
+  "Dylan Gallegos",
+  "Michael Muniz",
+];
+
+const SUBMITTED_DOCS_PASSWORD = "184444";
+
+interface SubmittedDoc {
+  id: string;
+  document_type: string;
+  employee_name: string;
+  job_title: string | null;
+  work_location: string | null;
+  form_date: string | null;
+  employee_signature: string | null;
+  employee_printed_name: string | null;
+  employee_signed_date: string | null;
+  representative_name: string | null;
+  representative_title: string | null;
+  representative_signature: string | null;
+  representative_signed_date: string | null;
+  created_at: string;
+}
+
+const TeamDocs = () => {
+  const navigate = useNavigate();
+  const [activeView, setActiveView] = useState<"menu" | "waiver" | "submitted">("menu");
+
+  // Waiver form state
+  const [employeeName, setEmployeeName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [workLocation, setWorkLocation] = useState("");
+  const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [employeeSignature, setEmployeeSignature] = useState("");
+  const [employeePrintedName, setEmployeePrintedName] = useState("");
+  const [employeeSignedDate, setEmployeeSignedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [repName, setRepName] = useState("");
+  const [repTitle, setRepTitle] = useState("");
+  const [repSignature, setRepSignature] = useState("");
+  const [repSignedDate, setRepSignedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [submitting, setSubmitting] = useState(false);
+
+  // Submitted docs state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [submittedDocs, setSubmittedDocs] = useState<SubmittedDoc[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+  const [viewingDoc, setViewingDoc] = useState<SubmittedDoc | null>(null);
+
+  // Signature dialog state
+  const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [sigTarget, setSigTarget] = useState<"employee" | "rep">("employee");
+
+  const resetForm = () => {
+    setEmployeeName("");
+    setJobTitle("");
+    setWorkLocation("");
+    setFormDate(format(new Date(), "yyyy-MM-dd"));
+    setEmployeeSignature("");
+    setEmployeePrintedName("");
+    setEmployeeSignedDate(format(new Date(), "yyyy-MM-dd"));
+    setRepName("");
+    setRepTitle("");
+    setRepSignature("");
+    setRepSignedDate(format(new Date(), "yyyy-MM-dd"));
+  };
+
+  const handleSubmitWaiver = async () => {
+    if (!employeeName) {
+      toast.error("Please select an employee");
+      return;
+    }
+    if (!employeeSignature) {
+      toast.error("Employee signature is required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("team_documents").insert({
+        document_type: "meal_period_waiver",
+        employee_name: employeeName,
+        job_title: jobTitle || null,
+        work_location: workLocation || null,
+        form_date: formDate || null,
+        employee_signature: employeeSignature || null,
+        employee_printed_name: employeePrintedName || null,
+        employee_signed_date: employeeSignedDate || null,
+        representative_name: repName || null,
+        representative_title: repTitle || null,
+        representative_signature: repSignature || null,
+        representative_signed_date: repSignedDate || null,
+      } as any);
+      if (error) throw error;
+      toast.success("Waiver submitted successfully!");
+      resetForm();
+      setActiveView("menu");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to submit waiver");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenSubmitted = () => {
+    if (authenticated) {
+      loadSubmittedDocs();
+      setActiveView("submitted");
+    } else {
+      setPassword("");
+      setPasswordDialogOpen(true);
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (password === SUBMITTED_DOCS_PASSWORD) {
+      setAuthenticated(true);
+      setPasswordDialogOpen(false);
+      loadSubmittedDocs();
+      setActiveView("submitted");
+    } else {
+      toast.error("Incorrect password");
+    }
+  };
+
+  const loadSubmittedDocs = async () => {
+    setLoadingDocs(true);
+    try {
+      const { data, error } = await supabase
+        .from("team_documents")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setSubmittedDocs((data as any[]) || []);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to load documents");
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const openSignatureDialog = (target: "employee" | "rep") => {
+    setSigTarget(target);
+    setSigDialogOpen(true);
+  };
+
+  const handleSignatureSave = (dataUrl: string) => {
+    if (sigTarget === "employee") {
+      setEmployeeSignature(dataUrl);
+    } else {
+      setRepSignature(dataUrl);
+    }
+    setSigDialogOpen(false);
+  };
+
+  // --- MENU VIEW ---
+  if (activeView === "menu") {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 mb-8">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <img src={crestLogo} alt="Crest" className="h-10" />
+            <h1 className="text-2xl font-bold text-foreground">Crest Team Docs</h1>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card
+              className="cursor-pointer hover:border-violet-300 hover:shadow-lg transition-all group"
+              onClick={() => setActiveView("waiver")}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[180px]">
+                <div className="w-16 h-16 rounded-full bg-violet-50 flex items-center justify-center mb-3 group-hover:bg-violet-100 transition-colors">
+                  <FileText className="w-8 h-8 text-violet-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-foreground mb-1">Meal Period Waiver</h2>
+                <p className="text-sm text-muted-foreground">California Meal Period Waiver Agreement</p>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:border-amber-300 hover:shadow-lg transition-all group"
+              onClick={handleOpenSubmitted}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[180px]">
+                <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-3 group-hover:bg-amber-100 transition-colors">
+                  <FolderLock className="w-8 h-8 text-amber-600" />
+                </div>
+                <h2 className="text-lg font-semibold text-foreground mb-1">Submitted Docs</h2>
+                <p className="text-sm text-muted-foreground">View all submitted team documents</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Password Dialog */}
+        <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Enter Password</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label>Password</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+                placeholder="Enter password to access submitted docs"
+              />
+            </div>
+            <DialogFooter>
+              <Button onClick={handlePasswordSubmit}>Submit</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // --- SUBMITTED DOCS VIEW ---
+  if (activeView === "submitted") {
+    if (viewingDoc) {
+      return (
+        <div className="min-h-screen bg-background p-6">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Button variant="ghost" size="icon" onClick={() => setViewingDoc(null)}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-xl font-bold text-foreground">
+                Meal Period Waiver — {viewingDoc.employee_name}
+              </h1>
+            </div>
+            <Card>
+              <CardContent className="p-6 space-y-4 text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><span className="font-medium">Employee:</span> {viewingDoc.employee_name}</div>
+                  <div><span className="font-medium">Job Title:</span> {viewingDoc.job_title || "—"}</div>
+                  <div><span className="font-medium">Work Location:</span> {viewingDoc.work_location || "—"}</div>
+                  <div><span className="font-medium">Form Date:</span> {viewingDoc.form_date || "—"}</div>
+                </div>
+                <hr />
+                <h3 className="font-semibold">Employee Acknowledgment</h3>
+                {viewingDoc.employee_signature && (
+                  <div>
+                    <span className="font-medium">Signature:</span>
+                    <img src={viewingDoc.employee_signature} alt="Employee signature" className="h-16 mt-1 border rounded p-1" />
+                  </div>
+                )}
+                <div><span className="font-medium">Printed Name:</span> {viewingDoc.employee_printed_name || "—"}</div>
+                <div><span className="font-medium">Date:</span> {viewingDoc.employee_signed_date || "—"}</div>
+                <hr />
+                <h3 className="font-semibold">Employer Acknowledgment</h3>
+                <div><span className="font-medium">Representative:</span> {viewingDoc.representative_name || "—"}</div>
+                <div><span className="font-medium">Title:</span> {viewingDoc.representative_title || "—"}</div>
+                {viewingDoc.representative_signature && (
+                  <div>
+                    <span className="font-medium">Signature:</span>
+                    <img src={viewingDoc.representative_signature} alt="Rep signature" className="h-16 mt-1 border rounded p-1" />
+                  </div>
+                )}
+                <div><span className="font-medium">Date:</span> {viewingDoc.representative_signed_date || "—"}</div>
+                <p className="text-xs text-muted-foreground pt-2">
+                  Submitted: {new Date(viewingDoc.created_at).toLocaleString()}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <Button variant="ghost" size="icon" onClick={() => setActiveView("menu")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-bold text-foreground">Submitted Documents</h1>
+          </div>
+
+          {loadingDocs ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : submittedDocs.length === 0 ? (
+            <p className="text-muted-foreground text-center py-12">No documents submitted yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {submittedDocs.map((doc) => (
+                <Card
+                  key={doc.id}
+                  className="cursor-pointer hover:shadow-md transition-all"
+                  onClick={() => setViewingDoc(doc)}
+                >
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div>
+                      <p className="font-medium text-foreground">{doc.employee_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Meal Period Waiver • {doc.form_date ? format(new Date(doc.form_date + "T12:00:00"), "MMM d, yyyy") : new Date(doc.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Eye className="w-5 h-5 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- WAIVER FORM VIEW ---
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <Button variant="ghost" size="icon" onClick={() => setActiveView("menu")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <img src={crestLogo} alt="Crest" className="h-10" />
+        </div>
+
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Crest Pest Control</CardTitle>
+            <p className="text-base font-semibold text-foreground mt-1">
+              California Meal Period Waiver Agreement
+            </p>
+            <p className="text-sm text-muted-foreground">(Voluntary and Revocable)</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Employee Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Employee Name</Label>
+                <Select value={employeeName} onValueChange={setEmployeeName}>
+                  <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
+                  <SelectContent>
+                    {EMPLOYEES.map((name) => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Job Title</Label>
+                <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Pest Control Technician" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Work Location</Label>
+                <Input value={workLocation} onChange={(e) => setWorkLocation(e.target.value)} placeholder="e.g. Orange County, CA" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+              </div>
+            </div>
+
+            {/* Agreement text */}
+            <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-4">
+              <p className="font-semibold">Voluntary Meal Period Waiver</p>
+              <p>Under California law, non-exempt employees who work more than five (5) hours in a workday are generally entitled to an unpaid, duty-free meal period of at least thirty (30) minutes. California law permits a meal period waiver only in limited circumstances.</p>
+              <p>By signing below, I acknowledge and agree as follows:</p>
+
+              <div className="space-y-3 pl-2">
+                <div>
+                  <p className="font-semibold">First Meal Period Waiver (Shifts of 6 Hours or Less):</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>If my total workday is more than 5 hours but no more than 6 hours, I may voluntarily waive my first 30-minute unpaid meal period.</li>
+                    <li>I understand Crest Pest Control will still make meal periods available when legally required.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Second Meal Period Waiver (Shifts of 12 Hours or Less):</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>If my total workday is more than 10 hours but no more than 12 hours, I may voluntarily waive my second 30-minute unpaid meal period only if I took my first meal period and did not waive it.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">No Waiver for Longer Shifts:</p>
+                  <p>I understand this waiver does not apply to:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>any first meal period on shifts over 6 hours; or</li>
+                    <li>any second meal period on shifts over 12 hours.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Voluntary Agreement / No Retaliation:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>I understand signing this form is completely voluntary.</li>
+                    <li>I understand I may choose not to sign this form and will not be disciplined, retaliated against, or treated differently for declining.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Revocation:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
+                    <li>Revocation will become effective no later than the next scheduled workday after notice is received, unless otherwise agreed.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Timekeeping Requirement:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className="font-semibold">Questions:</p>
+                  <ul className="list-disc pl-5">
+                    <li>I have had the opportunity to ask questions before signing.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Employee Acknowledgment */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-semibold text-foreground">Employee Acknowledgment</h3>
+              <p className="text-sm text-muted-foreground">I voluntarily agree to this Meal Period Waiver Agreement under the conditions described above.</p>
+
+              <div className="space-y-1.5">
+                <Label>Employee Signature</Label>
+                {employeeSignature ? (
+                  <div className="flex items-center gap-3">
+                    <img src={employeeSignature} alt="Signature" className="h-14 border rounded p-1" />
+                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog("employee")}>Redo</Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" onClick={() => openSignatureDialog("employee")}>Sign Here</Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Printed Name</Label>
+                  <Input value={employeePrintedName} onChange={(e) => setEmployeePrintedName(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Date</Label>
+                  <Input type="date" value={employeeSignedDate} onChange={(e) => setEmployeeSignedDate(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Employer Acknowledgment */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-semibold text-foreground">Employer Acknowledgment</h3>
+              <p className="text-sm text-muted-foreground">Crest Pest Control confirms this waiver is voluntary and that meal periods will be provided in accordance with California law.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Authorized Company Representative</Label>
+                  <Input value={repName} onChange={(e) => setRepName(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Title</Label>
+                  <Input value={repTitle} onChange={(e) => setRepTitle(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Signature</Label>
+                {repSignature ? (
+                  <div className="flex items-center gap-3">
+                    <img src={repSignature} alt="Rep Signature" className="h-14 border rounded p-1" />
+                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog("rep")}>Redo</Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" onClick={() => openSignatureDialog("rep")}>Sign Here</Button>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Input type="date" value={repSignedDate} onChange={(e) => setRepSignedDate(e.target.value)} />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground italic">
+              This form is intended for non-exempt California employees and should be retained in the employee's personnel file.
+            </p>
+
+            <Button
+              className="w-full"
+              onClick={handleSubmitWaiver}
+              disabled={submitting}
+            >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Submit Waiver
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Signature Dialog */}
+      <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{sigTarget === "employee" ? "Employee" : "Representative"} Signature</DialogTitle>
+          </DialogHeader>
+          <SignatureCanvas onSave={handleSignatureSave} />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default TeamDocs;
