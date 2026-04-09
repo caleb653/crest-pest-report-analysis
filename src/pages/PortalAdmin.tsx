@@ -169,6 +169,7 @@ const PortalAdmin = () => {
     }
   };
 
+  const sendAdminChat = async () => {
     if (!adminChatInput.trim() || !selectedClient) return;
     setSendingChat(true);
     const { error: err } = await supabase.from("portal_messages").insert({
