@@ -60,6 +60,16 @@ const PRODUCTS = [
   "OneGuard", "Advion Microflow", "Optigard", "Bifen LP", "MasterLine B MaxxPro",
 ];
 
+const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
+
+const PREFERENCE_OPTIONS = [
+  "Green / Eco-Friendly Products",
+  "Standard Products",
+  "No Preference",
+  "Interior Treatment Only",
+  "Exterior Treatment Only",
+];
+
 const PortalAdmin = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<PortalClient[]>([]);
