@@ -1046,6 +1046,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       mainPointOfContact,
       contactPhone,
       setupMaterials,
+      limitationsText,
     });
 
   const buildServicesPayload = () =>
