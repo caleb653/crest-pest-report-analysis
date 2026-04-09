@@ -106,6 +106,7 @@ const SubmittedReports = () => {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
