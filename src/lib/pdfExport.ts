@@ -628,13 +628,24 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           // Blanket apply to ALL text nodes inside each page-2 section
           const PAGE2_FONT = 14;
-          ['additional-details', 'limitations', 'scheduling', 'setup-materials'].forEach((section) => {
+          ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
               sp(node, 'font-size', `${PAGE2_FONT}px`);
               sp(node, 'line-height', '1.4');
+            });
+          });
+
+          const PAGE2_META_FONT = 15;
+          ['scheduling', 'setup-materials'].forEach((section) => {
+            const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
+            if (!card) return;
+            card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
+              if (node.closest('.print-section-header')) return;
+              sp(node, 'font-size', `${PAGE2_META_FONT}px`);
+              sp(node, 'line-height', '1.35');
             });
           });
 
