@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Canvas as FabricCanvas, FabricImage, Rect, Line, IText, Group, Circle as FabricCircle } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Rect, IText, Group, Circle as FabricCircle } from 'fabric';
 import bugIcon from '@/assets/icons/bug-icon.svg';
 import ratIcon from '@/assets/icons/rat-icon.svg';
 import boxIcon from '@/assets/icons/box-icon.svg';
@@ -8,6 +8,7 @@ import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
 import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
 import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
+import { getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
 
 interface ReadOnlyMapCanvasProps {
   mapUrl: string;
@@ -84,16 +85,9 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       console.log('ReadOnlyMapCanvas: Parsed map data:', parsed);
       
       // Handle the nested structure: { objects: { objects: [...] }, legendItems: [...] }
-      let objectsArray: any[] = [];
+      const objectsArray = getSavedMapObjects(parsed);
       let savedLegendItems: LegendItem[] = [];
-      
-      if (parsed.objects?.objects && Array.isArray(parsed.objects.objects)) {
-        // New format: { objects: { objects: [...] } }
-        objectsArray = parsed.objects.objects;
-      } else if (parsed.objects && Array.isArray(parsed.objects)) {
-        // Old format: { objects: [...] }
-        objectsArray = parsed.objects;
-      }
+      const savedVersion = getSavedMapVersion(parsed);
       
       if (parsed.legendItems && Array.isArray(parsed.legendItems)) {
         savedLegendItems = parsed.legendItems;
@@ -208,29 +202,31 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           });
           canvas.add(rect);
         } else if (objType === 'line') {
-          // x1/y1/x2/y2 are Fabric-relative (define line shape relative to center)
-          // left/top are normalized position; use scaleX/scaleY for proper sizing
-          const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
+          const linePromise = reviveSavedFabricObject({
+            canvas,
+            obj,
+            version: savedVersion,
             left: (obj.left || 0) * scaleX,
             top: (obj.top || 0) * scaleY,
             scaleX: (obj.scaleX || 1) * iconTargetScale,
             scaleY: (obj.scaleY || 1) * iconTargetScale,
-            angle: obj.angle || 0,
-            stroke: obj.stroke || '#DC2626',
-            strokeWidth: obj.strokeWidth || 5,
             selectable: false,
             evented: false,
+          }).then(() => undefined).catch((err) => {
+            console.error('Error reviving line object:', err, obj);
           });
-          canvas.add(line);
-        } else if (objType === 'i-text' || objType === 'text') {
+          loadPromises.push(linePromise);
+        } else if (isSavedTextObject(obj.type)) {
           const text = new IText(obj.text || '', {
             left: (obj.left || 0) * scaleX,
             top: (obj.top || 0) * scaleY,
-            fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY),
+            fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY) * (obj.scaleX || 1),
             fill: obj.fill || '#000000',
             fontFamily: obj.fontFamily || 'Space Grotesk, sans-serif',
             fontWeight: obj.fontWeight || 'bold',
             backgroundColor: obj.backgroundColor,
+            width: obj.width ? obj.width * scaleX : undefined,
+            angle: obj.angle || 0,
             selectable: false,
             editable: false,
             evented: false,
@@ -243,7 +239,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
               width: canvas.getWidth(),
               height: canvas.getHeight(),
             });
-            tempCanvas.loadFromJSON({ objects: [obj], version: '6.0.0' }, () => {
+            tempCanvas.loadFromJSON({ objects: [obj], version: savedVersion }, () => {
               const pathObj = tempCanvas.getObjects()[0];
               if (pathObj) {
                 pathObj.set({

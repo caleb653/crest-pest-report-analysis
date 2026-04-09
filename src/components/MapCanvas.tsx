@@ -12,6 +12,7 @@ import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
 import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
 import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
+import { getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
 
 interface MapCanvasProps {
   mapUrl: string;
@@ -572,13 +573,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
         const isNormalized = savedData.version === 2;
         const targetIconScale = Math.min(currW, currH) / 800;
         
-        // Get the raw objects array
-        let objectsArray: any[] = [];
-        if (savedData.objects?.objects && Array.isArray(savedData.objects.objects)) {
-          objectsArray = savedData.objects.objects;
-        } else if (Array.isArray(savedData.objects)) {
-          objectsArray = savedData.objects;
-        }
+        const objectsArray = getSavedMapObjects(savedData);
+        const savedVersion = getSavedMapVersion(savedData);
         
         console.log('Manually reconstructing', objectsArray.length, 'objects');
         
@@ -669,49 +665,55 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             });
             canvas.add(rect);
           } else if (objectType === 'line') {
-            // x1/y1/x2/y2 are Fabric-relative (define line shape relative to center)
-            // left/top are normalized position; scaleX/scaleY are normalized scale
-            const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
+            const linePromise = reviveSavedFabricObject({
+              canvas,
+              obj,
+              version: savedVersion,
               left: (obj.left || 0) * scaleX,
               top: (obj.top || 0) * scaleY,
               scaleX: isNormalized ? (obj.scaleX || 1) * targetIconScale : (obj.scaleX || 1),
               scaleY: isNormalized ? (obj.scaleY || 1) * targetIconScale : (obj.scaleY || 1),
-              angle: obj.angle || 0,
-              stroke: obj.stroke || '#DC2626',
-              strokeWidth: obj.strokeWidth || 5,
               selectable: true,
+              evented: true,
               hasControls: true,
+              hasBorders: true,
+            }).then(() => undefined).catch((err) => {
+              console.error('Error reviving line object:', err, obj);
             });
-            canvas.add(line);
-          } else if (objectType === 'i-text' || objectType === 'text') {
+            loadPromises.push(linePromise);
+          } else if (isSavedTextObject(obj.type)) {
             const text = new IText(obj.text || '', {
               left: (obj.left || 0) * scaleX,
               top: (obj.top || 0) * scaleY,
-              fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY),
+              fontSize: (obj.fontSize || 16) * Math.min(scaleX, scaleY) * (obj.scaleX || 1),
               fill: obj.fill || '#000000',
               fontFamily: obj.fontFamily || 'Space Grotesk, sans-serif',
               fontWeight: obj.fontWeight || 'bold',
               backgroundColor: obj.backgroundColor,
+              width: obj.width ? obj.width * scaleX : undefined,
+              angle: obj.angle || 0,
               selectable: true,
               editable: true,
             });
             canvas.add(text);
           } else if (objectType === 'path') {
             // For freehand drawing paths, use loadFromJSON for just this object
-            canvas.loadFromJSON({ objects: [obj], version: savedData.objects.version || '6.0.0' }, () => {
-              const objs = canvas.getObjects();
-              const lastObj = objs[objs.length - 1];
-              if (lastObj && lastObj.type === 'path') {
-                lastObj.left = (obj.left || 0) * scaleX;
-                lastObj.top = (obj.top || 0) * scaleY;
-                if (isNormalized) {
-                  lastObj.scaleX = (obj.scaleX || 1) * Math.min(scaleX, scaleY);
-                  lastObj.scaleY = (obj.scaleY || 1) * Math.min(scaleX, scaleY);
-                }
-                lastObj.setCoords();
-                canvas.renderAll();
-              }
+            const pathPromise = reviveSavedFabricObject({
+              canvas,
+              obj,
+              version: savedVersion,
+              left: (obj.left || 0) * scaleX,
+              top: (obj.top || 0) * scaleY,
+              scaleX: isNormalized ? (obj.scaleX || 1) * Math.min(scaleX, scaleY) : (obj.scaleX || 1),
+              scaleY: isNormalized ? (obj.scaleY || 1) * Math.min(scaleX, scaleY) : (obj.scaleY || 1),
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+            }).then(() => undefined).catch((err) => {
+              console.error('Error reviving path object:', err, obj);
             });
+            loadPromises.push(pathPromise);
           }
         });
         
