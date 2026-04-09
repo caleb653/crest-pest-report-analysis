@@ -880,7 +880,7 @@ export default function CustomerReportView() {
         <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
           <h3 className="text-sm font-bold text-foreground mb-2">The Crest Guarantee</h3>
           <p className="text-xs text-foreground leading-relaxed max-w-2xl mx-auto">
-            If we haven't lived up to our promise on the first visit, let us know within 30 days and we'll fully refund your payment. And if we haven't lived up to our promises in follow-up visits, cancel any time. No fees. No notice period. No hassle.
+            If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
           </p>
         </div>
       </div>
