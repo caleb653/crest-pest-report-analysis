@@ -207,6 +207,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           });
           canvas.add(rect);
         } else if (obj.type === 'line') {
+          // Use the normalized absolute coordinates
           const line = new Line([
             (obj.x1 || 0) * scaleX,
             (obj.y1 || 0) * scaleY,
@@ -233,6 +234,32 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             evented: false,
           });
           canvas.add(text);
+        } else if (obj.type === 'path') {
+          // Freehand drawing paths - reconstruct via loadFromJSON for this single object
+          const pathPromise = new Promise<void>((resolveP) => {
+            const tempCanvas = new FabricCanvas(document.createElement('canvas'), {
+              width: canvas.getWidth(),
+              height: canvas.getHeight(),
+            });
+            tempCanvas.loadFromJSON({ objects: [obj], version: '6.0.0' }, () => {
+              const pathObj = tempCanvas.getObjects()[0];
+              if (pathObj) {
+                pathObj.set({
+                  left: (obj.left || 0) * scaleX,
+                  top: (obj.top || 0) * scaleY,
+                  scaleX: (obj.scaleX || 1) * Math.min(scaleX, scaleY),
+                  scaleY: (obj.scaleY || 1) * Math.min(scaleX, scaleY),
+                  selectable: false,
+                  evented: false,
+                });
+                pathObj.setCoords();
+                canvas.add(pathObj);
+              }
+              tempCanvas.dispose();
+              resolveP();
+            });
+          });
+          loadPromises.push(pathPromise);
         }
       });
 

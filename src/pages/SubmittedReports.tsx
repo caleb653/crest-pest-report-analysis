@@ -18,6 +18,7 @@ import {
 import {
   Calendar,
   CheckCircle,
+  Copy,
   FileText,
   LogOut,
   Trash2,
@@ -25,6 +26,7 @@ import {
   Search,
   Mail,
   PenLine,
+  Loader2,
 } from "lucide-react";
 import {
   Select,
