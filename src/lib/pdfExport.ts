@@ -532,8 +532,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
         const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
         if (detailsBody && detailsCard) {
-          let fontSize = parseFloat(detailsBody.style.fontSize) || 11;
-          const minFont = 7;
+          let fontSize = parseFloat(detailsBody.style.fontSize) || 13;
+          const minFont = 9;
           while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
             fontSize -= 0.5;
             detailsBody.style.fontSize = `${fontSize}px`;
