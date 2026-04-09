@@ -12,6 +12,8 @@ import SubmittedReports from "./pages/SubmittedReports";
 import CustomerReportView from "./pages/CustomerReportView";
 import NotFound from "./pages/NotFound";
 import PinGate from "./components/PinGate";
+import PortalAdmin from "./pages/PortalAdmin";
+import ClientPortal from "./pages/ClientPortal";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +24,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public customer portal - no PIN required */}
+          {/* Public routes - no PIN required */}
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
+          <Route path="/portal/:token" element={<ClientPortal />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
@@ -36,6 +39,7 @@ const App = () => (
                 <Route path="/initial-pest-report" element={<InitialPestReport />} />
                 <Route path="/initial-pest-report/:reportId" element={<InitialPestReport />} />
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
+                <Route path="/portal-admin" element={<PortalAdmin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>

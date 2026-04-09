@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClipboardList, FileText, Shield } from "lucide-react";
+import { ClipboardList, FileText, Shield, Building2 } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
 
@@ -27,6 +27,14 @@ const reportTypes = [
     description: "View and manage all submitted reports",
     icon: Shield,
     path: "/submitted-reports",
+    state: null,
+  },
+  {
+    id: "client-portal",
+    title: "Client Portal",
+    description: "Manage commercial & property manager portals",
+    icon: Building2,
+    path: "/portal-admin",
     state: null,
   },
 ];
