@@ -596,8 +596,8 @@ const PortalAdmin = () => {
           <span className="text-background/60">Admin View — {selectedClient.company || selectedClient.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 px-4 rounded-md shadow-sm" onClick={() => setShowAdminPanel(!showAdminPanel)}>
-            <Settings className="w-3.5 h-3.5 mr-1" />{showAdminPanel ? "Done Editing" : "✏️ EDIT"}
+          <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 px-4 rounded-md shadow-sm" onClick={() => setViewMode(viewMode === "admin" ? "pm" : "admin")}>
+            <Settings className="w-3.5 h-3.5 mr-1" />{viewMode === "admin" ? "Done Editing" : "✏️ EDIT"}
           </Button>
           {masterLink && (
             <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
@@ -622,7 +622,7 @@ const PortalAdmin = () => {
       </div>
 
       {/* Admin management panel */}
-      {showAdminPanel && (
+      {viewMode === "admin" && (
         <div className="bg-muted/50 border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -753,7 +753,7 @@ const PortalAdmin = () => {
                   {p.image_url && (
                     <div className="relative h-32 w-full">
                       <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background">
                           <Image className="w-4 h-4" />
                           <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
@@ -768,13 +768,13 @@ const PortalAdmin = () => {
                       <p className="text-xs text-muted-foreground mt-1">{services.filter(s => s.property_id === p.id).length} services</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {showAdminPanel && !p.image_url && (
+                      {viewMode === "admin" && !p.image_url && (
                         <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" className="h-7 w-7 pointer-events-none"><Image className="w-3.5 h-3.5" /></Button>
                           <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) updatePropertyImage(p.id, f); }} />
                         </label>
                       )}
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                       )}
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -790,7 +790,7 @@ const PortalAdmin = () => {
         {selectedProperty?.image_url && (
           <div className="mb-4 rounded-lg overflow-hidden relative">
             <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <label className="absolute bottom-2 right-2 bg-background/80 rounded p-1.5 cursor-pointer hover:bg-background">
                 <Image className="w-4 h-4" />
                 <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
@@ -811,7 +811,7 @@ const PortalAdmin = () => {
 
           {/* Past Services */}
           <TabsContent value="past">
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => openServiceDialog()} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
               </div>
@@ -839,7 +839,7 @@ const PortalAdmin = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {showAdminPanel && (
+                        {viewMode === "admin" && (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -856,7 +856,7 @@ const PortalAdmin = () => {
 
           {/* Future Services */}
           <TabsContent value="future">
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => { setServiceForm({ ...emptyServiceForm, property_id: selectedProperty?.id || "", status: "scheduled" }); setEditingService(null); setShowAddService(true); }} disabled={properties.length === 0}>
                   <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
@@ -882,7 +882,7 @@ const PortalAdmin = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {showAdminPanel && (
+                        {viewMode === "admin" && (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); openServiceDialog(s); }}><Edit className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -917,7 +917,7 @@ const PortalAdmin = () => {
                         <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
                       </div>
                       <p className="text-sm mb-2">{r.description}</p>
-                      {showAdminPanel && (
+                      {viewMode === "admin" && (
                         <div className="flex gap-2 mt-2">
                           <Select value={r.status} onValueChange={async (v) => {
                             await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
@@ -943,7 +943,7 @@ const PortalAdmin = () => {
                           />
                         </div>
                       )}
-                      {!showAdminPanel && r.response_notes && (
+                      {!viewMode === "admin" && r.response_notes && (
                         <div className="bg-muted rounded-md p-2 mt-2">
                           <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
                         </div>
@@ -956,7 +956,7 @@ const PortalAdmin = () => {
           </TabsContent>
 
           <TabsContent value="prep">
-            {showAdminPanel && (
+            {viewMode === "admin" && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => { setEditingPrepSheet(null); setNewPrepSheet({ title: "", description: "", treatment_type: "", file_url: "" }); setShowAddPrepSheet(true); }}>
                   <Plus className="w-3 h-3 mr-1" />Add Prep Sheet
@@ -977,7 +977,7 @@ const PortalAdmin = () => {
                           {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
                         </div>
                         <div className="flex items-center gap-1">
-                          {showAdminPanel && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
+                          {viewMode === "admin" && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPrepSheet(ps)}><Edit className="w-3.5 h-3.5" /></Button>}
                           {ps.file_url && <Button variant="outline" size="sm" asChild><a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a></Button>}
                         </div>
                       </div>
@@ -1081,7 +1081,7 @@ const PortalAdmin = () => {
                   </div>
                 )}
 
-                {showAdminPanel && (
+                {viewMode === "admin" && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
