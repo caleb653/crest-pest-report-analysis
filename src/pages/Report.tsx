@@ -2093,6 +2093,9 @@ Crest Pest Control`;
                       <span className="text-muted-foreground">$</span>
                       <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
                     </div>
+                    {(service.frequency === 7 || service.frequency === 14) && (
+                      <span className="absolute -bottom-3.5 left-0 right-0 text-center text-[9px] text-muted-foreground print:text-[8px]">/month</span>
+                    )}
                   </div>
                   <div className="bg-white/80 rounded px-1">
                     <Select
