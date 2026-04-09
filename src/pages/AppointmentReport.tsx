@@ -453,7 +453,38 @@ const AppointmentReport = () => {
                       <tr key={i}>
                         <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
                         <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
-                        <td className="border p-0.5"><Input value={row.targetPests} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                                {row.targetPests || <span className="text-muted-foreground">Select...</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search pests..." />
+                                <CommandList className="max-h-48">
+                                  <CommandGroup>
+                                    {UNIT_PEST_OPTIONS.map(pest => {
+                                      const selected = (row.targetPests || "").split(", ").filter(Boolean);
+                                      const isSelected = selected.includes(pest);
+                                      return (
+                                        <CommandItem key={pest} value={pest} onSelect={() => {
+                                          const current = (row.targetPests || "").split(", ").filter(Boolean);
+                                          const next = isSelected ? current.filter(p => p !== pest) : [...current, pest];
+                                          setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: next.join(", ") } : r));
+                                        }}>
+                                          <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                          {pest}
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </td>
                         <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
                         <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
                         <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
