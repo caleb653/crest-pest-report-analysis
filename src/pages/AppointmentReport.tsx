@@ -173,58 +173,6 @@ const AppointmentReport = () => {
     setTechDropdownOpen(false);
   };
 
-  // Generate findings from pest selections
-  const generateContentFromSelections = (pests: string[], equip: string[], products: string[]) => {
-    const lines: string[] = [];
-    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
-    const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
-    if (isGeneralPests) {
-      lines.push("• Inspected interior and exterior for general pest activity and entry points");
-      lines.push(usesOrganic
-        ? "• Applied targeted general pest treatments, including organic solutions, to ensure a protective barrier around the home"
-        : "• Applied targeted general pest treatments to ensure a protective barrier around the home");
-      lines.push("• De-webbed the entire home");
-    }
-    if (pests.includes("Ants")) lines.push("• Inspected for ant activity and treated ant trails and entry points");
-    if (pests.includes("Spiders")) lines.push("• Inspected for spider activity, removed webs, and applied spider-targeted treatments");
-    if (pests.includes("Roaches") || pests.includes("American Roaches")) lines.push("• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas");
-    if (pests.includes("Wasps")) lines.push("• Inspected for wasp nests and treated active wasp activity areas");
-    if (pests.includes("Rodents")) {
-      lines.push("• Inspected for rodent activity and strategically placed traps in areas of highest activity");
-      lines.push("• Will monitor and adjust trap placement as needed to ensure effective rodent control");
-    }
-    if (pests.includes("Mosquitoes")) lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations");
-    if (pests.includes("Bed Bugs")) {
-      lines.push("• Inspected sleeping areas, furniture, and baseboards for bed bug activity");
-      lines.push("• Applied targeted bed bug treatments to affected areas");
-    }
-    if (equip.includes("Rodent Bait Stations")) lines.push("• Installed rodent bait stations around the property perimeter");
-    if (equip.includes("Rodent Traps")) lines.push("• Placed rodent traps for population control");
-    if (equip.includes("Mosquito Buckets")) lines.push("• Installed mosquito stations around the property");
-    return lines.join("\n");
-  };
-
-  const generateRecommendations = (pests: string[]) => {
-    const lines: string[] = [];
-    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
-    if (isGeneralPests || pests.includes("Ants")) lines.push("<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering");
-    if (isGeneralPests || pests.includes("Spiders")) lines.push("<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting");
-    if (pests.includes("Rodents")) lines.push("<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free");
-    if (pests.includes("Bed Bugs")) lines.push("<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements");
-    if (pests.includes("Mosquitoes")) lines.push("<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation");
-    if (lines.length === 0) lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
-    return lines.join("<br>");
-  };
-
-  useEffect(() => {
-    if (targetPests.length > 0 || equipment.length > 0) {
-      const content = generateContentFromSelections(targetPests, equipment, productsUsed);
-      setFindings([content]);
-      setExpectations(["• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks."]);
-      setRecommendations([generateRecommendations(targetPests)]);
-    }
-  }, [targetPests, equipment, productsUsed]);
-
   const togglePest = (pest: string) => setTargetPests(prev => prev.includes(pest) ? prev.filter(p => p !== pest) : [...prev, pest]);
   const toggleProduct = (product: string) => setProductsUsed(prev => prev.includes(product) ? prev.filter(p => p !== product) : [...prev, product]);
   const toggleEquipment = (item: string) => setEquipment(prev => prev.includes(item) ? prev.filter(e => e !== item) : [...prev, item]);
