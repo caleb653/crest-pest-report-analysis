@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/tenant/:token" element={<TenantPortal />} />
+          <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
@@ -45,7 +46,6 @@ const App = () => (
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="/portal-admin" element={<PortalAdmin />} />
                 <Route path="/team-docs" element={<TeamDocs />} />
-                <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>
