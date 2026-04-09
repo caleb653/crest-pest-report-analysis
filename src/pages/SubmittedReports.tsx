@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +90,7 @@ const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "
 
 const SubmittedReports = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [reports, setReports] = useState<ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,7 +102,10 @@ const SubmittedReports = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 
-  const [typeFilter, setTypeFilter] = useState<"all" | ReportType>("all");
+  const locationFilter = (location.state as any)?.filter;
+  const [typeFilter, setTypeFilter] = useState<"all" | ReportType>(
+    locationFilter === "initial" || locationFilter === "sales" ? locationFilter : "all"
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
