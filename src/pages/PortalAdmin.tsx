@@ -801,10 +801,11 @@ const PortalAdmin = () => {
 
         {/* Service Tabs */}
         <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className="w-full grid grid-cols-4 mb-4">
+          <TabsList className="w-full grid grid-cols-5 mb-4">
             <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
-            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep Sheets</TabsTrigger>
+            <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
+            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>
             <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
           </TabsList>
 
