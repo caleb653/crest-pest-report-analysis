@@ -76,11 +76,13 @@ interface PortalMessage {
   id: string;
   sender_name: string;
   sender_email: string | null;
+  sender_type: string;
   property_name: string | null;
   subject: string;
   message: string;
   is_read: boolean;
   created_at: string;
+  client_id: string | null;
 }
 
 const PortalAdmin = () => {
