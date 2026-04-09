@@ -237,6 +237,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="max-w-"]        { max-width: none !important; }
           .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
+          /* Page 1 header — sage green background */
+          .pdf-export-root.print-header,
+          .pdf-export-root [class*="print-header"] {
+            background-color: ${BRAND.sage} !important;
+            border-bottom: 2px solid ${BRAND.darkSage} !important;
+          }
+
           /* Hide noise */
           .pdf-export-root .no-print,
           .pdf-export-root button:not(.print-keep),
