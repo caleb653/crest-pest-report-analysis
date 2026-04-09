@@ -31,6 +31,7 @@ const App = () => (
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/tenant/:token" element={<TenantPortal />} />
+          <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
