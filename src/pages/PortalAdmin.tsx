@@ -204,8 +204,9 @@ const PortalAdmin = () => {
     const { error } = await supabase.from("portal_links").insert({
       client_id: selectedClient.id, link_type: newLink.link_type, label: newLink.label || null,
       assigned_property_ids: newLink.assigned_property_ids.length > 0 ? newLink.assigned_property_ids : null,
+      unit_number: newLink.unit_number || null,
     });
-    if (!error) { toast({ title: "Link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [] }); loadLinks(selectedClient.id); }
+    if (!error) { toast({ title: "Link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [], unit_number: "" }); loadLinks(selectedClient.id); }
   };
 
   const openServiceDialog = (forEdit?: PortalService) => {
