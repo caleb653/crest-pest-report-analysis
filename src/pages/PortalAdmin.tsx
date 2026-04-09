@@ -128,7 +128,6 @@ const PortalAdmin = () => {
   // Reset tab when view mode changes
   useEffect(() => {
     if (viewMode === "tenant") setPortalTab("requests");
-    else if (viewMode === "pm") setPortalTab("future");
     else setPortalTab("past");
   }, [viewMode]);
 
