@@ -803,13 +803,47 @@ const PortalAdmin = () => {
           </div>
         )}
 
-        {/* Service Tabs */}
+        {/* Tenant view - only requests */}
+        {viewMode === "tenant" ? (
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Inbox className="w-4 h-4" />Tenant Requests</h3>
+            {tenantRequests.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {tenantRequests.map((r: any) => (
+                  <Card key={r.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                            {r.status === "in_progress" ? "In Progress" : r.status}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm">{r.description}</p>
+                      {r.response_notes && (
+                        <div className="bg-muted rounded-md p-2 mt-2">
+                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+        /* Service Tabs - Admin & PM */
         <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className="w-full grid grid-cols-5 mb-4">
-            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
+          <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-5" : "grid-cols-3"}`}>
+            {viewMode === "admin" && <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>}
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
             <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
-            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>
+            {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
             <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
           </TabsList>
 
