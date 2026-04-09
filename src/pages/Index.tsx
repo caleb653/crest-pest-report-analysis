@@ -8,7 +8,7 @@ const reportTypes = [
   {
     id: "initial-pest",
     title: "Initial Pest Report",
-    description: "Complete pest inspection and treatment documentation",
+    description: "Used for our first treatment/service",
     icon: ClipboardList,
     path: "/initial-pest-report",
     state: null,
