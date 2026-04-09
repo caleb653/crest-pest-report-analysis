@@ -488,62 +488,153 @@ const AppointmentReport = () => {
               <p className="text-xs text-muted-foreground italic">Note: See full service report for details on pesticide usage and observations for exterior and common areas.</p>
             </Card>
 
-            {/* Target Pests */}
-            <Card className="p-4">
-              <Label className="mb-2 block font-semibold">Target Pests</Label>
-              <div className="flex flex-wrap gap-1.5" ref={pestsDropdownRef}>
-                {PEST_OPTIONS.map(pest => (
-                  <Badge key={pest} variant={targetPests.includes(pest) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => togglePest(pest)}>
-                    {pest.length > 40 ? "General Pests" : pest}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
+            {/* Selections: Pests, Products, Equipment, Customer Info */}
+            <Card className="p-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Target Pests */}
+                <div className="space-y-1.5">
+                  <Label className="font-semibold text-sm">Target Pests</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal h-auto min-h-[36px] text-xs">
+                        <span className="text-left line-clamp-2 flex-1">
+                          {targetPests.length > 0 ? targetPests.map(p => p.length > 40 ? "General Pests" : p).join(", ") : "Select pests..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search pests..." />
+                        <CommandList className="max-h-56">
+                          <CommandEmpty>No match.</CommandEmpty>
+                          <CommandGroup>
+                            {PEST_OPTIONS.map(pest => (
+                              <CommandItem key={pest} value={pest} onSelect={() => togglePest(pest)}>
+                                <Check className={cn("mr-2 h-3.5 w-3.5", targetPests.includes(pest) ? "opacity-100" : "opacity-0")} />
+                                {pest.length > 40 ? "General Pests" : pest}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {targetPests.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {targetPests.map(p => (
+                        <Badge key={p} variant="default" className="text-[10px] cursor-pointer" onClick={() => togglePest(p)}>
+                          {p.length > 40 ? "General Pests" : p} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* Products Used */}
-            <Card className="p-4">
-              <Label className="mb-2 block font-semibold">Products Used</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {PRODUCT_OPTIONS.map(p => (
-                  <Badge key={p} variant={productsUsed.includes(p) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => toggleProduct(p)}>{p}</Badge>
-                ))}
-              </div>
-            </Card>
+                {/* Products Used */}
+                <div className="space-y-1.5">
+                  <Label className="font-semibold text-sm">Products Used</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal h-auto min-h-[36px] text-xs">
+                        <span className="text-left line-clamp-2 flex-1">
+                          {productsUsed.length > 0 ? productsUsed.join(", ") : "Select products..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search products..." />
+                        <CommandList className="max-h-56">
+                          <CommandEmpty>No match.</CommandEmpty>
+                          <CommandGroup>
+                            {PRODUCT_OPTIONS.map(p => (
+                              <CommandItem key={p} value={p} onSelect={() => toggleProduct(p)}>
+                                <Check className={cn("mr-2 h-3.5 w-3.5", productsUsed.includes(p) ? "opacity-100" : "opacity-0")} />
+                                {p}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {productsUsed.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {productsUsed.map(p => (
+                        <Badge key={p} variant="default" className="text-[10px] cursor-pointer" onClick={() => toggleProduct(p)}>
+                          {p} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* Equipment */}
-            <Card className="p-4">
-              <Label className="mb-2 block font-semibold">Equipment</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {EQUIPMENT_OPTIONS.map(e => (
-                  <Badge key={e} variant={equipment.includes(e) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => toggleEquipment(e)}>{e}</Badge>
-                ))}
-              </div>
-            </Card>
+                {/* Equipment */}
+                <div className="space-y-1.5">
+                  <Label className="font-semibold text-sm">Equipment</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal h-auto min-h-[36px] text-xs">
+                        <span className="text-left line-clamp-2 flex-1">
+                          {equipment.length > 0 ? equipment.join(", ") : "Select equipment..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-3.5 w-3.5 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            {EQUIPMENT_OPTIONS.map(eq => (
+                              <CommandItem key={eq} value={eq} onSelect={() => toggleEquipment(eq)}>
+                                <Check className={cn("mr-2 h-3.5 w-3.5", equipment.includes(eq) ? "opacity-100" : "opacity-0")} />
+                                {eq}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {equipment.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {equipment.map(eq => (
+                        <Badge key={eq} variant="default" className="text-[10px] cursor-pointer" onClick={() => toggleEquipment(eq)}>
+                          {eq} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* Customer Key Areas */}
-            <Card className="p-4 space-y-3">
-              <Label className="font-semibold">Customer Key Areas of Concern</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {CUSTOMER_KEY_AREAS.map(area => (
-                  <Badge key={area} variant={customerKeyAreas.includes(area) ? "default" : "outline"} className="cursor-pointer text-xs"
-                    onClick={() => setCustomerKeyAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}>{area}</Badge>
-                ))}
+                {/* Customer Preference */}
+                <div className="space-y-1.5">
+                  <Label className="font-semibold text-sm">Customer Preference</Label>
+                  <Select value={customerPreference} onValueChange={setCustomerPreference}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select preference" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Interior & Exterior">Interior & Exterior</SelectItem>
+                      <SelectItem value="Exterior Only">Exterior Only</SelectItem>
+                      <SelectItem value="Interior Only">Interior Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Textarea placeholder="Additional notes..." value={customerPreferenceNotes} onChange={e => setCustomerPreferenceNotes(e.target.value)} rows={2} className="text-xs" />
+                </div>
               </div>
-              <Textarea placeholder="Notes about key areas..." value={customerKeyAreasNotes} onChange={e => setCustomerKeyAreasNotes(e.target.value)} rows={2} />
-            </Card>
 
-            {/* Customer Preference */}
-            <Card className="p-4 space-y-3">
-              <Label className="font-semibold">Customer Preference</Label>
-              <Select value={customerPreference} onValueChange={setCustomerPreference}>
-                <SelectTrigger><SelectValue placeholder="Select preference" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Interior & Exterior">Interior & Exterior</SelectItem>
-                  <SelectItem value="Exterior Only">Exterior Only</SelectItem>
-                  <SelectItem value="Interior Only">Interior Only</SelectItem>
-                </SelectContent>
-              </Select>
-              <Textarea placeholder="Additional notes..." value={customerPreferenceNotes} onChange={e => setCustomerPreferenceNotes(e.target.value)} rows={2} />
+              {/* Customer Key Areas */}
+              <div className="border-t pt-3 space-y-2">
+                <Label className="font-semibold text-sm">Customer Key Areas of Concern</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {CUSTOMER_KEY_AREAS.map(area => (
+                    <Badge key={area} variant={customerKeyAreas.includes(area) ? "default" : "outline"} className="cursor-pointer text-xs"
+                      onClick={() => setCustomerKeyAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}>{area}</Badge>
+                  ))}
+                </div>
+                <Textarea placeholder="Notes about key areas..." value={customerKeyAreasNotes} onChange={e => setCustomerKeyAreasNotes(e.target.value)} rows={2} className="text-xs" />
+              </div>
             </Card>
 
             {/* Today's Findings */}
