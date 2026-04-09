@@ -81,13 +81,13 @@ const AppointmentReport = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
-  const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
-  const pestsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [technicianName, setTechnicianName] = useState(serviceData?.technician || "");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [serviceDate, setServiceDate] = useState(serviceData?.service_date || new Date().toISOString().split("T")[0]);
+  const [timeIn, setTimeIn] = useState("");
+  const [timeOut, setTimeOut] = useState("");
   const [targetPests, setTargetPests] = useState<string[]>([PEST_OPTIONS[0]]);
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
@@ -96,13 +96,7 @@ const AppointmentReport = () => {
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
   const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState("");
   const [todaysFindings, setTodaysFindings] = useState(serviceData?.findings || "");
-  const [findings, setFindings] = useState<string[]>([]);
-  const [expectations, setExpectations] = useState<string[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
   const [customerPreference, setCustomerPreference] = useState("");
-  const [findingsFontSize, setFindingsFontSize] = useState(14);
-  const [expectationsFontSize, setExpectationsFontSize] = useState(14);
-  const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
   const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState("");
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +112,6 @@ const AppointmentReport = () => {
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
-  const [pmName, setPmName] = useState(initialState.propertyManager || "");
 
   // Property map - persistent per property
   const [propertyId, setPropertyId] = useState<string | null>(initPropertyId || null);
