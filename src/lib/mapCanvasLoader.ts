@@ -1,4 +1,4 @@
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Line } from 'fabric';
 
 export const normalizeSavedObjectType = (value: unknown) => String(value ?? '').toLowerCase();
 
@@ -21,6 +21,62 @@ export const getSavedMapObjects = (parsed: any): any[] => {
 
 export const getSavedMapVersion = (parsed: any, obj?: any) => {
   return parsed?.objects?.version || parsed?.version || obj?.version || '6.0.0';
+};
+
+interface CreateSavedLineObjectOptions {
+  obj: any;
+  left: number;
+  top: number;
+  scaleX: number;
+  scaleY: number;
+  selectable: boolean;
+  evented: boolean;
+  hasControls?: boolean;
+  hasBorders?: boolean;
+}
+
+export const createSavedLineObject = ({
+  obj,
+  left,
+  top,
+  scaleX,
+  scaleY,
+  selectable,
+  evented,
+  hasControls,
+  hasBorders,
+}: CreateSavedLineObjectOptions) => {
+  const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
+    left,
+    top,
+    scaleX,
+    scaleY,
+    angle: obj.angle || 0,
+    originX: obj.originX || 'left',
+    originY: obj.originY || 'top',
+    stroke: obj.stroke || '#DC2626',
+    strokeWidth: obj.strokeWidth || 5,
+    strokeLineCap: obj.strokeLineCap || 'butt',
+    strokeLineJoin: obj.strokeLineJoin || 'miter',
+    strokeDashArray: Array.isArray(obj.strokeDashArray) ? obj.strokeDashArray : undefined,
+    strokeDashOffset: obj.strokeDashOffset || 0,
+    strokeMiterLimit: obj.strokeMiterLimit || 4,
+    strokeUniform: obj.strokeUniform || false,
+    fill: obj.fill || 'rgb(0,0,0)',
+    opacity: obj.opacity ?? 1,
+    visible: obj.visible ?? true,
+    flipX: obj.flipX || false,
+    flipY: obj.flipY || false,
+    skewX: obj.skewX || 0,
+    skewY: obj.skewY || 0,
+    selectable,
+    evented,
+    ...(typeof hasControls === 'boolean' ? { hasControls } : {}),
+    ...(typeof hasBorders === 'boolean' ? { hasBorders } : {}),
+  });
+
+  line.setCoords();
+  return line;
 };
 
 interface ReviveSavedFabricObjectOptions {

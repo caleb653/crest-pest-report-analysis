@@ -12,7 +12,7 @@ import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
 import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
 import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
-import { getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
+import { createSavedLineObject, getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
 
 interface MapCanvasProps {
   mapUrl: string;
@@ -665,10 +665,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             });
             canvas.add(rect);
           } else if (objectType === 'line') {
-            const linePromise = reviveSavedFabricObject({
-              canvas,
+            const line = createSavedLineObject({
               obj,
-              version: savedVersion,
               left: (obj.left || 0) * scaleX,
               top: (obj.top || 0) * scaleY,
               scaleX: isNormalized ? (obj.scaleX || 1) * targetIconScale : (obj.scaleX || 1),
@@ -677,10 +675,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               evented: true,
               hasControls: true,
               hasBorders: true,
-            }).then(() => undefined).catch((err) => {
-              console.error('Error reviving line object:', err, obj);
             });
-            loadPromises.push(linePromise);
+            canvas.add(line);
           } else if (isSavedTextObject(obj.type)) {
             const text = new IText(obj.text || '', {
               left: (obj.left || 0) * scaleX,
