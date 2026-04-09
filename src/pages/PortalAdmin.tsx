@@ -344,6 +344,20 @@ const PortalAdmin = () => {
     window.open(`/appointment-report/${data.id}`, "_blank");
     if (selectedClient) loadProperties(selectedClient.id);
   };
+
+  const openServiceReport = (s: PortalService) => {
+    const prop = properties.find(p => p.id === s.property_id);
+    const stateData = {
+      serviceData: s,
+      propertyName: prop?.name || "",
+      propertyAddress: prop?.address || "",
+      propertyId: s.property_id,
+      clientName: selectedClient?.company || selectedClient?.name,
+      returnTo: "/portal-admin",
+    };
+    sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
+    window.open(`/appointment-report/${s.id}`, "_blank");
+  };
   const today = new Date().toISOString().split("T")[0];
 
   const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
