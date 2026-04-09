@@ -672,10 +672,15 @@ const PortalAdmin = () => {
                   <div className="space-y-2">
                     {links.map(l => (
                       <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
-                        <Badge variant={l.link_type === "master" ? "default" : "secondary"}>{l.link_type}</Badge>
-                        <span className="flex-1 truncate">{l.label || "Unnamed"}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token)}><Copy className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token)}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                        <Badge variant={l.link_type === "master" ? "default" : l.link_type === "tenant" ? "outline" : "secondary"}>
+                          {l.link_type === "sub" ? "PM" : l.link_type}
+                        </Badge>
+                        <span className="flex-1 truncate">
+                          {l.label || "Unnamed"}
+                          {l.link_type === "tenant" && (l as any).unit_number && <span className="text-muted-foreground ml-1">(Unit {(l as any).unit_number})</span>}
+                        </span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token, l.link_type)}><Copy className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token, l.link_type)}><ExternalLink className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                       </div>
                     ))}
