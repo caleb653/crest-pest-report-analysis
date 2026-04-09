@@ -214,6 +214,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          image_url: string | null
           name: string
           notes: string | null
           updated_at: string
@@ -223,6 +224,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          image_url?: string | null
           name: string
           notes?: string | null
           updated_at?: string
@@ -232,6 +234,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           name?: string
           notes?: string | null
           updated_at?: string
