@@ -33,6 +33,7 @@ interface PropertyData {
   id: string;
   name: string;
   address: string | null;
+  image_url: string | null;
 }
 
 interface ServiceData {
