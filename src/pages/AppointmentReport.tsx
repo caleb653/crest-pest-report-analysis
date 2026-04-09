@@ -369,7 +369,6 @@ const AppointmentReport = () => {
                 <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
                 <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
                 <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
-                <div><span className="text-muted-foreground">Property Manager:</span> <Input value={pmName} onChange={e => setPmName(e.target.value)} placeholder="PM name" className="h-7 text-xs inline-block w-40 ml-1" /></div>
               </div>
 
               {/* Unit Table */}
