@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClipboardList, FileText, Shield, Building2 } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
 
@@ -8,42 +8,81 @@ const reportTypes = [
   {
     id: "initial-pest",
     title: "Initial Pest Report",
-    description: "Used for our first treatment/service",
+    description: "Create a new initial service report",
     icon: ClipboardList,
     path: "/initial-pest-report",
-    state: null,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    hoverBg: "hover:bg-emerald-100",
+    border: "hover:border-emerald-300",
   },
   {
     id: "sales",
     title: "Sales Report",
-    description: "Sales consultation and proposal documentation",
+    description: "Create a new sales consultation report",
     icon: FileText,
     path: "/report",
-    state: null,
-  },
-  {
-    id: "submitted-reports",
-    title: "Created Reports",
-    description: "View and manage all created reports",
-    icon: Shield,
-    path: "/submitted-reports",
-    state: null,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    hoverBg: "hover:bg-blue-100",
+    border: "hover:border-blue-300",
   },
   {
     id: "client-portal",
     title: "Client Portal",
-    description: "Manage commercial & property manager portals",
+    description: "Manage commercial & property portals",
     icon: Building2,
     path: "/portal-admin",
-    state: null,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    hoverBg: "hover:bg-amber-100",
+    border: "hover:border-amber-300",
+  },
+  {
+    id: "created-initial",
+    title: "Created Initial Reports",
+    description: "View and manage initial pest reports",
+    icon: FolderOpen,
+    path: "/submitted-reports",
+    state: { filter: "initial" },
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    hoverBg: "hover:bg-emerald-100",
+    border: "hover:border-emerald-300",
+  },
+  {
+    id: "created-sales",
+    title: "Created Sales Reports",
+    description: "View and manage sales reports",
+    icon: Archive,
+    path: "/submitted-reports",
+    state: { filter: "sales" },
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    hoverBg: "hover:bg-blue-100",
+    border: "hover:border-blue-300",
+  },
+  {
+    id: "team-docs",
+    title: "Crest Team Docs",
+    description: "Internal team documents & resources",
+    icon: BookOpen,
+    path: "/team-docs",
+    color: "text-violet-600",
+    bg: "bg-violet-50",
+    hoverBg: "hover:bg-violet-100",
+    border: "hover:border-violet-300",
   },
 ];
+
+// Layout order: row1 = [0,1,2], row2 = [3,4,5]
+const gridOrder = [0, 1, 2, 3, 4, 5];
 
 const Index = () => {
   const navigate = useNavigate();
 
   const handleCardClick = (report: typeof reportTypes[0]) => {
-    if (report.state) {
+    if ("state" in report && report.state) {
       navigate(report.path, { state: report.state });
     } else {
       navigate(report.path);
@@ -64,24 +103,25 @@ const Index = () => {
           className="h-28 mx-auto mb-4"
         />
         <h1 className="text-3xl font-bold text-foreground mb-2">Service Reports</h1>
-        <p className="text-muted-foreground">Select a report type to get started</p>
+        <p className="text-muted-foreground">Select an option to get started</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 max-w-2xl w-full">
-        {reportTypes.map((report) => {
+      <div className="grid grid-cols-3 gap-4 max-w-3xl w-full">
+        {gridOrder.map((idx) => {
+          const report = reportTypes[idx];
           const Icon = report.icon;
           return (
             <Card
               key={report.id}
-              className="cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-200 group"
+              className={`cursor-pointer ${report.border} hover:shadow-lg transition-all duration-200 group`}
               onClick={() => handleCardClick(report)}
             >
-              <CardContent className="flex flex-col items-center justify-center p-6 text-center min-h-[200px]">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <Icon className="w-12 h-12 text-primary" />
+              <CardContent className="flex flex-col items-center justify-center p-5 text-center min-h-[160px]">
+                <div className={`w-16 h-16 rounded-full ${report.bg} flex items-center justify-center mb-3 ${report.hoverBg} transition-colors`}>
+                  <Icon className={`w-8 h-8 ${report.color}`} />
                 </div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">{report.title}</h2>
-                <p className="text-sm text-muted-foreground leading-tight">{report.description}</p>
+                <h2 className="text-base font-semibold text-foreground mb-1">{report.title}</h2>
+                <p className="text-xs text-muted-foreground leading-tight">{report.description}</p>
               </CardContent>
             </Card>
           );
