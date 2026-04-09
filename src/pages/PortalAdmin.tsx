@@ -389,6 +389,9 @@ const PortalAdmin = () => {
       propertyId: propId,
       clientName: selectedClient?.company || selectedClient?.name,
       returnTo: "/portal-admin",
+      propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
+      customerPreference: (prop?.customer_preferences as any)?.preference || "",
+      customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
     };
     sessionStorage.setItem(`appointment-report-${data.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${data.id}`, "_blank");
