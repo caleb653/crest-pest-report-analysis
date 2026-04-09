@@ -125,6 +125,13 @@ const PortalAdmin = () => {
 
   useEffect(() => { adminChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
 
+  // Reset tab when view mode changes
+  useEffect(() => {
+    if (viewMode === "tenant") setPortalTab("requests");
+    else if (viewMode === "pm") setPortalTab("future");
+    else setPortalTab("past");
+  }, [viewMode]);
+
   const loadClients = async () => {
     const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
     if (data) setClients(data);
