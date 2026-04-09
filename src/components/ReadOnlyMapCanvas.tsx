@@ -207,13 +207,14 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           });
           canvas.add(rect);
         } else if (obj.type === 'line') {
-          // Use the normalized absolute coordinates
-          const line = new Line([
-            (obj.x1 || 0) * scaleX,
-            (obj.y1 || 0) * scaleY,
-            (obj.x2 || 0) * scaleX,
-            (obj.y2 || 0) * scaleY,
-          ], {
+          // x1/y1/x2/y2 are Fabric-relative (define line shape relative to center)
+          // left/top are normalized position; use scaleX/scaleY for proper sizing
+          const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            scaleX: (obj.scaleX || 1) * iconTargetScale,
+            scaleY: (obj.scaleY || 1) * iconTargetScale,
+            angle: obj.angle || 0,
             stroke: obj.stroke || '#DC2626',
             strokeWidth: obj.strokeWidth || 5,
             selectable: false,

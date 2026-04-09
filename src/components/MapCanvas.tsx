@@ -669,12 +669,14 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
             });
             canvas.add(rect);
           } else if (objectType === 'line') {
-            const line = new Line([
-              (obj.x1 || 0) * scaleX,
-              (obj.y1 || 0) * scaleY,
-              (obj.x2 || 0) * scaleX,
-              (obj.y2 || 0) * scaleY,
-            ], {
+            // x1/y1/x2/y2 are Fabric-relative (define line shape relative to center)
+            // left/top are normalized position; scaleX/scaleY are normalized scale
+            const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
+              left: (obj.left || 0) * scaleX,
+              top: (obj.top || 0) * scaleY,
+              scaleX: isNormalized ? (obj.scaleX || 1) * targetIconScale : (obj.scaleX || 1),
+              scaleY: isNormalized ? (obj.scaleY || 1) * targetIconScale : (obj.scaleY || 1),
+              angle: obj.angle || 0,
               stroke: obj.stroke || '#DC2626',
               strokeWidth: obj.strokeWidth || 5,
               selectable: true,
