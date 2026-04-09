@@ -463,6 +463,21 @@ const SubmittedReports = () => {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={(e) => duplicateReport(report.id, e)}
+                              disabled={duplicating === report.id}
+                              className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                              title="Duplicate report"
+                            >
+                              {duplicating === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => promptDelete(report.id, e)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               title="Delete report"
