@@ -15,6 +15,8 @@ import NotFound from "./pages/NotFound";
 import PinGate from "./components/PinGate";
 import PortalAdmin from "./pages/PortalAdmin";
 import ClientPortal from "./pages/ClientPortal";
+import TenantPortal from "./pages/TenantPortal";
+import AppointmentReport from "./pages/AppointmentReport";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,7 @@ const App = () => (
           {/* Public routes - no PIN required */}
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
           <Route path="/portal/:token" element={<ClientPortal />} />
+          <Route path="/tenant/:token" element={<TenantPortal />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
@@ -42,6 +45,7 @@ const App = () => (
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="/portal-admin" element={<PortalAdmin />} />
                 <Route path="/team-docs" element={<TeamDocs />} />
+                <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>
