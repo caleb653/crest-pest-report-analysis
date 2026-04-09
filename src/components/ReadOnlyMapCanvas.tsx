@@ -170,7 +170,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             });
             loadPromises.push(promise);
           }
-        } else if (obj.type === 'image' && obj.data?.iconType) {
+        } else if (objType === 'image' && obj.data?.iconType) {
           const iconType = obj.data.iconType;
           const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
           
