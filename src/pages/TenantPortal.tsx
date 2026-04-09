@@ -70,7 +70,7 @@ const TenantPortal = () => {
       const { data: prop } = await supabase
         .from("portal_properties")
         .select("name")
-        .eq("id", link.assigned_property_ids[0])
+        .eq("id", String(link.assigned_property_ids[0]))
         .single();
       if (prop) setPropertyName(prop.name);
     }

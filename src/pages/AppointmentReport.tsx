@@ -434,7 +434,6 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={findings[0] || ""}
             onChange={v => setFindings([v])}
-            minHeight="120px"
           />
         </Card>
 
@@ -444,7 +443,6 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={expectations[0] || ""}
             onChange={v => setExpectations([v])}
-            minHeight="100px"
           />
         </Card>
 
@@ -454,7 +452,6 @@ const AppointmentReport = () => {
           <RichTextEditor
             value={recommendations[0] || ""}
             onChange={v => setRecommendations([v])}
-            minHeight="100px"
           />
         </Card>
 
