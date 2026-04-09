@@ -242,13 +242,39 @@ const PortalAdmin = () => {
 
   const uploadPropertyImage = async (file: File): Promise<string | null> => {
     setUploadingPropertyImage(true);
-    const ext = file.name.split(".").pop();
-    const path = `portal-properties/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("report-images").upload(path, file, { contentType: file.type });
-    setUploadingPropertyImage(false);
-    if (error) { toast({ title: "Upload failed", variant: "destructive" }); return null; }
-    const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
-    return pub.publicUrl;
+    try {
+      // Compress image before upload
+      const compressed = await new Promise<Blob>((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxW = 1600, maxH = 1600;
+          let w = img.width, h = img.height;
+          if (w > maxW || h > maxH) {
+            const ratio = Math.min(maxW / w, maxH / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.8);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+      const path = `portal-properties/${crypto.randomUUID()}.jpg`;
+      const { error } = await supabase.storage.from("report-images").upload(path, compressed, { contentType: "image/jpeg" });
+      if (error) { toast({ title: "Upload failed", variant: "destructive" }); return null; }
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      return pub.publicUrl;
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast({ title: "Upload failed", variant: "destructive" });
+      return null;
+    } finally {
+      setUploadingPropertyImage(false);
+    }
   };
 
   const addProperty = async () => {
@@ -909,12 +935,14 @@ const PortalAdmin = () => {
         {/* ======= PROPERTY LEVEL: Summary + Tabs ======= */}
         {selectedProperty && (
           <>
-            {/* Property Image — front and center */}
-            <div className="mb-4 rounded-lg overflow-hidden relative bg-muted min-h-[180px]">
+            {/* Property Image — front and center, iPad-like portrait */}
+            <div className="mb-4 rounded-lg overflow-hidden relative bg-muted max-w-md mx-auto">
               {selectedProperty.image_url ? (
-                <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
+                <div className="aspect-[3/4]">
+                  <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-full object-cover" />
+                </div>
               ) : (
-                <div className="w-full h-48 flex items-center justify-center text-muted-foreground">
+                <div className="aspect-[3/4] flex items-center justify-center text-muted-foreground">
                   <div className="text-center">
                     <Image className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">No property image</p>
@@ -924,8 +952,8 @@ const PortalAdmin = () => {
               {viewMode === "admin" && (
                 <label className="absolute bottom-2 right-2 bg-background/80 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1">
                   <Image className="w-3.5 h-3.5" />
-                  {selectedProperty.image_url ? "Change" : "Upload"}
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
+                  {uploadingPropertyImage ? "Uploading..." : selectedProperty.image_url ? "Change" : "Upload"}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingPropertyImage} onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
                 </label>
               )}
             </div>
