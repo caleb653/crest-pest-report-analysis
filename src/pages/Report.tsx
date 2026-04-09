@@ -2899,7 +2899,7 @@ Crest Pest Control`;
       >
         <div data-pdf-capture="3" className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border">
+          <div className="page2-header flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Images</h1>
