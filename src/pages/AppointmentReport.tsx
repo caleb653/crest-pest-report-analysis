@@ -271,6 +271,11 @@ const AppointmentReport = () => {
             if (rd.customer_preference) setCustomerPreference(rd.customer_preference);
             if (rd.customer_preference_notes) setCustomerPreferenceNotes(rd.customer_preference_notes);
             if (rd.property_images) setPropertyImages(rd.property_images);
+            if (rd.unit_rows) setUnitRows(rd.unit_rows);
+            if (rd.common_area_pests) setCommonAreaPests(rd.common_area_pests);
+            if (rd.common_area_notes) setCommonAreaNotes(rd.common_area_notes);
+            if (rd.tech_observations) setTechObservations(rd.tech_observations);
+            if (rd.pm_name) setPmName(rd.pm_name);
           } else if (data) {
             // Pre-fill from service data
             if (data.technician) setTechnicianName(data.technician);
