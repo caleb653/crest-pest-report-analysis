@@ -42,6 +42,7 @@ interface PortalMessage {
 }
 interface UnitDetail {
   unit_number: string; findings: string; notes: string; pest_activity: string; products_used: string; status: string;
+  [key: string]: string;
 }
 
 const SERVICE_TYPES = [
