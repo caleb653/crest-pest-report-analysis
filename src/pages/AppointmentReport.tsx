@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Check, ChevronsUpDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import crestLogo from "@/assets/crest-logo.png";
