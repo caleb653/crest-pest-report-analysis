@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Check, ChevronsUpDown, Plus } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import crestLogo from "@/assets/crest-logo.png";
@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RichTextEditor from "@/components/RichTextEditor";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
+import { MapCanvas } from "@/components/MapCanvas";
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -53,7 +55,23 @@ const AppointmentReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { serviceId } = useParams();
-  const { serviceData, propertyName, clientName, returnTo, propertyId, propertyAddress, propertyManager } = location.state || {};
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isMobileOrTablet = isMobile || isTablet;
+
+  // Get state from location.state or sessionStorage (for new tab opens)
+  const getInitialState = () => {
+    if (location.state) return location.state;
+    if (serviceId) {
+      const stored = sessionStorage.getItem(`appointment-report-${serviceId}`);
+      if (stored) {
+        try { return JSON.parse(stored); } catch { return {}; }
+      }
+    }
+    return {};
+  };
+  const initialState = getInitialState();
+  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress } = initialState;
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -86,25 +104,67 @@ const AppointmentReport = () => {
 
   // Unit overview table
   interface UnitRow {
-    unit: string;
-    targetPests: string;
-    notes: string;
-    areasTreated: string;
-    productsUsed: string;
-    followUp: string;
-    followUpNotes: string;
+    unit: string; targetPests: string; notes: string; areasTreated: string;
+    productsUsed: string; followUp: string; followUpNotes: string;
   }
   const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
   const [unitRows, setUnitRows] = useState<UnitRow[]>([{ ...emptyUnit }]);
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
-  const [pmName, setPmName] = useState(propertyManager || "");
+  const [pmName, setPmName] = useState(initialState.propertyManager || "");
 
-  // Property map
-  const [propertyMapData, setPropertyMapData] = useState<string | null>(null);
+  // Property map - persistent per property
+  const [propertyId, setPropertyId] = useState<string | null>(initPropertyId || null);
+  const [propertyName, setPropertyName] = useState(initPropertyName || "");
+  const [mapData, setMapData] = useState<string | null>(null);
   const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
+  const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
+  const [customMapImage, setCustomMapImage] = useState<string | null>(null);
+  const latestMapDataRef = useRef<string | null>(null);
   const mapFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load property map data (persistent across appointments)
+  useEffect(() => {
+    if (!propertyId) return;
+    supabase.from("portal_properties").select("map_data, map_image_url, name, address").eq("id", propertyId).single()
+      .then(({ data }) => {
+        if (data) {
+          if (data.map_data) {
+            try { setMapData(typeof data.map_data === "string" ? data.map_data : JSON.stringify(data.map_data)); } catch {}
+          }
+          if (data.map_image_url) setCustomMapImage(data.map_image_url);
+          if (data.name && !propertyName) setPropertyName(data.name);
+        }
+      });
+  }, [propertyId]);
+
+  // Save map data back to property (persistent)
+  const handleMapSave = (data: string) => {
+    setMapData(data);
+    latestMapDataRef.current = data;
+    if (propertyId) {
+      let parsed: any = null;
+      try { parsed = JSON.parse(data); } catch { parsed = data; }
+      supabase.from("portal_properties").update({ map_data: parsed }).eq("id", propertyId).then(() => {});
+    }
+  };
+
+  const handleCustomMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split(".").pop();
+    const path = `portal-maps/${propertyId || crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("report-images").upload(path, file, { contentType: file.type, upsert: true });
+    if (error) { toast.error("Upload failed"); return; }
+    const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+    const url = pub.publicUrl;
+    setCustomMapImage(url);
+    if (propertyId) {
+      await supabase.from("portal_properties").update({ map_image_url: url }).eq("id", propertyId);
+    }
+    toast.success("Map image uploaded");
+  };
 
   // Auto-set license when technician changes
   const handleTechnicianChange = (name: string) => {
@@ -119,7 +179,6 @@ const AppointmentReport = () => {
     const lines: string[] = [];
     const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
     const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
-
     if (isGeneralPests) {
       lines.push("• Inspected interior and exterior for general pest activity and entry points");
       lines.push(usesOrganic
@@ -135,9 +194,7 @@ const AppointmentReport = () => {
       lines.push("• Inspected for rodent activity and strategically placed traps in areas of highest activity");
       lines.push("• Will monitor and adjust trap placement as needed to ensure effective rodent control");
     }
-    if (pests.includes("Mosquitoes")) {
-      lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations");
-    }
+    if (pests.includes("Mosquitoes")) lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations");
     if (pests.includes("Bed Bugs")) {
       lines.push("• Inspected sleeping areas, furniture, and baseboards for bed bug activity");
       lines.push("• Applied targeted bed bug treatments to affected areas");
@@ -156,13 +213,10 @@ const AppointmentReport = () => {
     if (pests.includes("Rodents")) lines.push("<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free");
     if (pests.includes("Bed Bugs")) lines.push("<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements");
     if (pests.includes("Mosquitoes")) lines.push("<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation");
-    if (lines.length === 0) {
-      lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
-    }
+    if (lines.length === 0) lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
     return lines.join("<br>");
   };
 
-  // Auto-update content when selections change
   useEffect(() => {
     if (targetPests.length > 0 || equipment.length > 0) {
       const content = generateContentFromSelections(targetPests, equipment, productsUsed);
@@ -172,26 +226,16 @@ const AppointmentReport = () => {
     }
   }, [targetPests, equipment, productsUsed]);
 
-  const togglePest = (pest: string) => {
-    setTargetPests(prev => prev.includes(pest) ? prev.filter(p => p !== pest) : [...prev, pest]);
-  };
-
-  const toggleProduct = (product: string) => {
-    setProductsUsed(prev => prev.includes(product) ? prev.filter(p => p !== product) : [...prev, product]);
-  };
-
-  const toggleEquipment = (item: string) => {
-    setEquipment(prev => prev.includes(item) ? prev.filter(e => e !== item) : [...prev, item]);
-  };
+  const togglePest = (pest: string) => setTargetPests(prev => prev.includes(pest) ? prev.filter(p => p !== pest) : [...prev, pest]);
+  const toggleProduct = (product: string) => setProductsUsed(prev => prev.includes(product) ? prev.filter(p => p !== product) : [...prev, product]);
+  const toggleEquipment = (item: string) => setEquipment(prev => prev.includes(item) ? prev.filter(e => e !== item) : [...prev, item]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     for (const file of Array.from(files)) {
       const reader = new FileReader();
-      reader.onload = () => {
-        setPropertyImages(prev => [...prev, { image: reader.result as string }]);
-      };
+      reader.onload = () => setPropertyImages(prev => [...prev, { image: reader.result as string }]);
       reader.readAsDataURL(file);
     }
   };
@@ -199,92 +243,63 @@ const AppointmentReport = () => {
   const saveReport = async () => {
     if (!serviceId) return;
     setIsSaving(true);
-
     const reportData = {
-      technician_name: technicianName,
-      license_number: licenseNumber,
-      service_date: serviceDate,
-      target_pests: targetPests,
-      products_used: productsUsed,
-      equipment,
+      technician_name: technicianName, license_number: licenseNumber, service_date: serviceDate,
+      target_pests: targetPests, products_used: productsUsed, equipment,
       customer_key_areas: { areas: customerKeyAreas, notes: customerKeyAreasNotes },
-      todays_findings: todaysFindings,
-      findings,
-      expectations,
-      recommendations,
-      customer_preference: customerPreference,
-      customer_preference_notes: customerPreferenceNotes,
-      property_images: propertyImages,
-      unit_rows: unitRows,
-      common_area_pests: commonAreaPests,
-      common_area_notes: commonAreaNotes,
-      tech_observations: techObservations,
-      pm_name: pmName,
+      todays_findings: todaysFindings, findings, expectations, recommendations,
+      customer_preference: customerPreference, customer_preference_notes: customerPreferenceNotes,
+      property_images: propertyImages, unit_rows: unitRows,
+      common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
+      tech_observations: techObservations, pm_name: pmName,
     };
-
-    const { error } = await supabase
-      .from("portal_services")
-      .update({
-        report_data: reportData as any,
-        technician: technicianName,
-        service_date: serviceDate,
-        products_used: productsUsed,
-        findings: todaysFindings || (findings.length > 0 ? findings[0] : null),
-      })
-      .eq("id", serviceId);
-
-    if (error) {
-      toast.error("Failed to save report");
-    } else {
-      toast.success("Appointment Report saved!");
-      if (returnTo) navigate(returnTo);
-      else navigate(-1);
-    }
+    const { error } = await supabase.from("portal_services").update({
+      report_data: reportData as any, technician: technicianName, service_date: serviceDate,
+      products_used: productsUsed, findings: todaysFindings || (findings.length > 0 ? findings[0] : null),
+    }).eq("id", serviceId);
+    if (error) toast.error("Failed to save report");
+    else toast.success("Appointment Report saved!");
     setIsSaving(false);
   };
 
   // Load existing report data
   useEffect(() => {
-    if (serviceId) {
-      supabase
-        .from("portal_services")
-        .select("*")
-        .eq("id", serviceId)
-        .single()
-        .then(({ data }) => {
-          if (data?.report_data && typeof data.report_data === "object") {
-            const rd = data.report_data as any;
-            if (rd.technician_name) setTechnicianName(rd.technician_name);
-            if (rd.license_number) setLicenseNumber(rd.license_number);
-            if (rd.service_date) setServiceDate(rd.service_date);
-            if (rd.target_pests) setTargetPests(rd.target_pests);
-            if (rd.products_used) setProductsUsed(rd.products_used);
-            if (rd.equipment) setEquipment(rd.equipment);
-            if (rd.customer_key_areas) {
-              setCustomerKeyAreas(rd.customer_key_areas.areas || []);
-              setCustomerKeyAreasNotes(rd.customer_key_areas.notes || "");
-            }
-            if (rd.todays_findings) setTodaysFindings(rd.todays_findings);
-            if (rd.findings) setFindings(rd.findings);
-            if (rd.expectations) setExpectations(rd.expectations);
-            if (rd.recommendations) setRecommendations(rd.recommendations);
-            if (rd.customer_preference) setCustomerPreference(rd.customer_preference);
-            if (rd.customer_preference_notes) setCustomerPreferenceNotes(rd.customer_preference_notes);
-            if (rd.property_images) setPropertyImages(rd.property_images);
-            if (rd.unit_rows) setUnitRows(rd.unit_rows);
-            if (rd.common_area_pests) setCommonAreaPests(rd.common_area_pests);
-            if (rd.common_area_notes) setCommonAreaNotes(rd.common_area_notes);
-            if (rd.tech_observations) setTechObservations(rd.tech_observations);
-            if (rd.pm_name) setPmName(rd.pm_name);
-          } else if (data) {
-            // Pre-fill from service data
-            if (data.technician) setTechnicianName(data.technician);
-            if (data.service_date) setServiceDate(data.service_date);
-            if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
-            if (data.findings) setTodaysFindings(data.findings);
-          }
-        });
-    }
+    if (!serviceId) return;
+    supabase.from("portal_services").select("*").eq("id", serviceId).single().then(({ data }) => {
+      if (!data) return;
+      // Set propertyId for map loading
+      if (data.property_id && !propertyId) setPropertyId(data.property_id);
+      if (data.report_data && typeof data.report_data === "object") {
+        const rd = data.report_data as any;
+        if (rd.technician_name) setTechnicianName(rd.technician_name);
+        if (rd.license_number) setLicenseNumber(rd.license_number);
+        if (rd.service_date) setServiceDate(rd.service_date);
+        if (rd.target_pests) setTargetPests(rd.target_pests);
+        if (rd.products_used) setProductsUsed(rd.products_used);
+        if (rd.equipment) setEquipment(rd.equipment);
+        if (rd.customer_key_areas) {
+          setCustomerKeyAreas(rd.customer_key_areas.areas || []);
+          setCustomerKeyAreasNotes(rd.customer_key_areas.notes || "");
+        }
+        if (rd.todays_findings) setTodaysFindings(rd.todays_findings);
+        if (rd.findings) setFindings(rd.findings);
+        if (rd.expectations) setExpectations(rd.expectations);
+        if (rd.recommendations) setRecommendations(rd.recommendations);
+        if (rd.customer_preference) setCustomerPreference(rd.customer_preference);
+        if (rd.customer_preference_notes) setCustomerPreferenceNotes(rd.customer_preference_notes);
+        if (rd.property_images) setPropertyImages(rd.property_images);
+        if (rd.unit_rows) setUnitRows(rd.unit_rows);
+        if (rd.common_area_pests) setCommonAreaPests(rd.common_area_pests);
+        if (rd.common_area_notes) setCommonAreaNotes(rd.common_area_notes);
+        if (rd.tech_observations) setTechObservations(rd.tech_observations);
+        if (rd.pm_name) setPmName(rd.pm_name);
+      } else {
+        if (data.technician) setTechnicianName(data.technician);
+        if (data.service_date) setServiceDate(data.service_date);
+        if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
+        if (data.findings) setTodaysFindings(data.findings);
+      }
+    });
   }, [serviceId]);
 
   const reportTitle = serviceDate
@@ -294,348 +309,295 @@ const AppointmentReport = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card border-b px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <img src={crestLogo} alt="Crest" className="h-8" />
-        <div className="flex-1">
-          <h1 className="text-base font-bold">{reportTitle}</h1>
-          {propertyName && <p className="text-xs text-muted-foreground">{propertyName}</p>}
+      <div className="bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-4 py-2 sticky top-0 z-10">
+        <div className="max-w-[1800px] mx-auto flex items-center gap-3">
+          <img src={crestLogo} alt="Crest" className="h-10" />
+          <div className="flex-1">
+            <h1 className="text-lg font-bold">{reportTitle}</h1>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {propertyName && <span>{propertyName}</span>}
+              {clientName && <span>— {clientName}</span>}
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <Button onClick={saveReport} disabled={isSaving} size="sm" className="h-7 px-2 text-xs">
+              {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}Save
+            </Button>
+            <Button onClick={() => navigate("/portal-admin")} variant="outline" size="icon" className="h-7 w-7">
+              <Home className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
-        <Button onClick={saveReport} disabled={isSaving}>
-          {isSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-          Save
-        </Button>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Report Title */}
-        <div className="text-center">
-          <img src={crestLogo} alt="Crest Pest Control" className="h-14 mx-auto mb-2" />
-          <h2 className="text-xl font-bold">{reportTitle}</h2>
-          {clientName && <p className="text-sm text-muted-foreground mt-1">{clientName}</p>}
-          {propertyName && <p className="text-sm text-muted-foreground">{propertyName}</p>}
+      {/* Main content: Map on left, form on right — like InitialPestReport */}
+      <div className={`${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-52px)]"}`}>
+        {/* Map Section */}
+        <div
+          className={`${isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none p-4"}`}
+          style={!isMobileOrTablet ? { width: 'min(130mm, calc((100vh - 52px) * 0.75))', maxWidth: '42%' } : undefined}
+        >
+          <div className="relative w-full bg-muted rounded-lg" style={{ paddingBottom: "133%" }}>
+            <div className="absolute inset-0">
+              {customMapImage ? (
+                <div className="relative h-full w-full">
+                  <MapCanvas
+                    key={`map-${customMapImage}`}
+                    mapUrl={customMapImage}
+                    onSave={handleMapSave}
+                    onExportImage={setRenderedMapImage}
+                    initialData={mapData}
+                  />
+                  <div className="absolute top-3 right-3 z-20">
+                    <div className="relative inline-flex">
+                      <Button size="sm" variant="secondary" type="button">
+                        <FileDown className="w-4 h-4 mr-1" />Replace Map
+                      </Button>
+                      <input type="file" accept="image/*" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={handleCustomMapUpload} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                  <p className="text-sm font-medium mb-2">No property map</p>
+                  <p className="text-xs mb-3 text-center px-4">Upload a satellite/aerial image to annotate pest concerns for this property</p>
+                  <div className="relative inline-flex">
+                    <Button size="sm" variant="outline">Upload Map Image</Button>
+                    <input type="file" accept="image/*" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" onChange={handleCustomMapUpload} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">This map is shared across all appointments for this property</p>
         </div>
 
-        {/* Technician & Date */}
-        <Card className="p-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Technician</Label>
-              <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                    {technicianName || "Select technician"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search..." />
-                    <CommandList>
-                      <CommandEmpty>No match.</CommandEmpty>
-                      <CommandGroup>
-                        {TECHNICIANS.map(t => (
-                          <CommandItem key={t.name} value={t.name} onSelect={() => handleTechnicianChange(t.name)}>
-                            <Check className={cn("mr-2 h-4 w-4", technicianName === t.name ? "opacity-100" : "opacity-0")} />
-                            {t.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label>License #</Label>
-              <Input value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
-            </div>
-            <div>
-              <Label>Service Date</Label>
-              <Input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} />
-            </div>
-          </div>
-        </Card>
-
-        {/* Property & Service Overview */}
-        <Card className="p-4 space-y-4">
-          <Label className="font-semibold text-base">Property & Service Overview</Label>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
-            <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
-            <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
-            <div><span className="text-muted-foreground">Property Manager:</span> <Input value={pmName} onChange={e => setPmName(e.target.value)} placeholder="PM name" className="h-7 text-xs inline-block w-40 ml-1" /></div>
-          </div>
-
-          {/* Unit Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="border p-1.5 text-left w-10">#</th>
-                  <th className="border p-1.5 text-left w-16">Unit</th>
-                  <th className="border p-1.5 text-left">Target Pests</th>
-                  <th className="border p-1.5 text-left">Notes</th>
-                  <th className="border p-1.5 text-left">Areas Treated</th>
-                  <th className="border p-1.5 text-left">Products Used</th>
-                  <th className="border p-1.5 text-left w-16">Follow-Up?</th>
-                  <th className="border p-1.5 text-left">Follow-Up Notes</th>
-                  <th className="border p-1.5 w-8"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {unitRows.map((row, i) => (
-                  <tr key={i}>
-                    <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
-                    <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
-                    <td className="border p-0.5"><Input value={row.targetPests} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                    <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                    <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                    <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                    <td className="border p-0.5">
-                      <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
-                        <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="No">No</SelectItem><SelectItem value="Yes">Yes</SelectItem></SelectContent>
-                      </Select>
-                    </td>
-                    <td className="border p-0.5"><Input value={row.followUpNotes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUpNotes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                    <td className="border p-0.5 text-center">
-                      {unitRows.length > 1 && <button className="text-destructive text-xs" onClick={() => setUnitRows(prev => prev.filter((_, j) => j !== i))}>×</button>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => setUnitRows(prev => [...prev, { ...emptyUnit }])}>
-              <Plus className="w-3 h-3 mr-1" />Add Unit
-            </Button>
-          </div>
-
-          {/* Common Area */}
-          <div className="border-t pt-3 space-y-2">
-            <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs">Target Pests</Label><Input value={commonAreaPests} onChange={e => setCommonAreaPests(e.target.value)} className="h-7 text-xs" placeholder="e.g. Ants, Spiders" /></div>
-              <div><Label className="text-xs">Notes</Label><Input value={commonAreaNotes} onChange={e => setCommonAreaNotes(e.target.value)} className="h-7 text-xs" /></div>
-            </div>
-          </div>
-
-          {/* Technician Observations */}
-          <div className="border-t pt-3 space-y-2">
-            <p className="text-sm font-medium">Crest Technician: Observations & Notes</p>
-            <Textarea value={techObservations} onChange={e => setTechObservations(e.target.value)} placeholder="Technician observations and notes..." rows={3} className="text-xs" />
-          </div>
-
-          <p className="text-xs text-muted-foreground italic">Note: See full service report for details on pesticide usage and observations for exterior and common areas.</p>
-        </Card>
-
-        {/* Property Map */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="font-semibold">Property Map</Label>
-            <Button variant="outline" size="sm" onClick={() => mapFileInputRef.current?.click()}>
-              {mapImageUrl ? "Replace Map" : "Upload Map Image"}
-            </Button>
-            <input ref={mapFileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const reader = new FileReader();
-              reader.onload = () => setMapImageUrl(reader.result as string);
-              reader.readAsDataURL(file);
-            }} />
-          </div>
-          {mapImageUrl ? (
-            <div className="relative">
-              <img src={mapImageUrl} alt="Property Map" className="w-full rounded border" />
-              <p className="text-xs text-muted-foreground mt-1">This map persists across all appointments for this property. Annotate pest concerns directly on the map.</p>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
-              <p className="text-sm">No property map uploaded yet</p>
-              <p className="text-xs mt-1">Upload a satellite/aerial image of the property to annotate pest concerns</p>
-            </div>
-          )}
-        </Card>
-
-        {/* Target Pests */}
-        <Card className="p-4">
-          <Label className="mb-2 block font-semibold">Target Pests</Label>
-          <div className="flex flex-wrap gap-1.5" ref={pestsDropdownRef}>
-            {PEST_OPTIONS.map(pest => (
-              <Badge
-                key={pest}
-                variant={targetPests.includes(pest) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-                onClick={() => togglePest(pest)}
-              >
-                {pest.length > 40 ? "General Pests" : pest}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-
-        {/* Products Used */}
-        <Card className="p-4">
-          <Label className="mb-2 block font-semibold">Products Used</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {PRODUCT_OPTIONS.map(p => (
-              <Badge
-                key={p}
-                variant={productsUsed.includes(p) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-                onClick={() => toggleProduct(p)}
-              >
-                {p}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-
-        {/* Equipment */}
-        <Card className="p-4">
-          <Label className="mb-2 block font-semibold">Equipment</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {EQUIPMENT_OPTIONS.map(e => (
-              <Badge
-                key={e}
-                variant={equipment.includes(e) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-                onClick={() => toggleEquipment(e)}
-              >
-                {e}
-              </Badge>
-            ))}
-          </div>
-        </Card>
-
-        {/* Customer Key Areas */}
-        <Card className="p-4 space-y-3">
-          <Label className="font-semibold">Customer Key Areas of Concern</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {CUSTOMER_KEY_AREAS.map(area => (
-              <Badge
-                key={area}
-                variant={customerKeyAreas.includes(area) ? "default" : "outline"}
-                className="cursor-pointer text-xs"
-                onClick={() => setCustomerKeyAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}
-              >
-                {area}
-              </Badge>
-            ))}
-          </div>
-          <Textarea
-            placeholder="Notes about key areas..."
-            value={customerKeyAreasNotes}
-            onChange={e => setCustomerKeyAreasNotes(e.target.value)}
-            rows={2}
-          />
-        </Card>
-
-        {/* Customer Preference */}
-        <Card className="p-4 space-y-3">
-          <Label className="font-semibold">Customer Preference</Label>
-          <Select value={customerPreference} onValueChange={setCustomerPreference}>
-            <SelectTrigger><SelectValue placeholder="Select preference" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Interior & Exterior">Interior & Exterior</SelectItem>
-              <SelectItem value="Exterior Only">Exterior Only</SelectItem>
-              <SelectItem value="Interior Only">Interior Only</SelectItem>
-            </SelectContent>
-          </Select>
-          <Textarea
-            placeholder="Additional notes..."
-            value={customerPreferenceNotes}
-            onChange={e => setCustomerPreferenceNotes(e.target.value)}
-            rows={2}
-          />
-        </Card>
-
-        {/* Today's Findings */}
-        <Card className="p-4 space-y-2">
-          <Label className="font-semibold">Today's Findings</Label>
-          <Textarea
-            placeholder="What was found during today's service..."
-            value={todaysFindings}
-            onChange={e => setTodaysFindings(e.target.value)}
-            rows={4}
-          />
-        </Card>
-
-        {/* Service Performed */}
-        <Card className="p-4 space-y-2">
-          <Label className="font-semibold">Service Performed</Label>
-          <RichTextEditor
-            value={findings[0] || ""}
-            onChange={v => setFindings([v])}
-            fontSize={findingsFontSize}
-            onFontSizeChange={setFindingsFontSize}
-          />
-        </Card>
-
-        {/* Expectations */}
-        <Card className="p-4 space-y-2">
-          <Label className="font-semibold">What to Expect</Label>
-          <RichTextEditor
-            value={expectations[0] || ""}
-            onChange={v => setExpectations([v])}
-            fontSize={expectationsFontSize}
-            onFontSizeChange={setExpectationsFontSize}
-          />
-        </Card>
-
-        {/* Recommendations */}
-        <Card className="p-4 space-y-2">
-          <Label className="font-semibold">Recommendations</Label>
-          <RichTextEditor
-            value={recommendations[0] || ""}
-            onChange={v => setRecommendations([v])}
-            fontSize={recommendationsFontSize}
-            onFontSizeChange={setRecommendationsFontSize}
-          />
-        </Card>
-
-        {/* Property Images */}
-        <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="font-semibold">Property Images</Label>
-            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-              Add Photo
-            </Button>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
-          </div>
-          {propertyImages.length > 0 && (
-            <div className="grid grid-cols-2 gap-2">
-              {propertyImages.map((img, i) => (
-                <div key={i} className="relative">
-                  <img
-                    src={img.image}
-                    alt={img.caption || `Photo ${i + 1}`}
-                    className="w-full h-32 object-cover rounded cursor-pointer"
-                    onClick={() => setAnnotatingImageIndex(i)}
-                  />
-                  <button
-                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    onClick={() => setPropertyImages(prev => prev.filter((_, j) => j !== i))}
-                  >×</button>
-                  <Input
-                    placeholder="Caption..."
-                    value={img.caption || ""}
-                    onChange={e => setPropertyImages(prev => prev.map((p, j) => j === i ? { ...p, caption: e.target.value } : p))}
-                    className="mt-1 text-xs h-7"
-                  />
+        {/* Right column - form content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl px-4 py-4 space-y-4">
+            {/* Technician & Date */}
+            <Card className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Technician</Label>
+                  <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                        {technicianName || "Select technician"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search..." />
+                        <CommandList>
+                          <CommandEmpty>No match.</CommandEmpty>
+                          <CommandGroup>
+                            {TECHNICIANS.map(t => (
+                              <CommandItem key={t.name} value={t.name} onSelect={() => handleTechnicianChange(t.name)}>
+                                <Check className={cn("mr-2 h-4 w-4", technicianName === t.name ? "opacity-100" : "opacity-0")} />
+                                {t.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                <div>
+                  <Label>License #</Label>
+                  <Input value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Service Date</Label>
+                  <Input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} />
+                </div>
+              </div>
+            </Card>
 
-        {/* Save */}
-        <Button className="w-full" size="lg" onClick={saveReport} disabled={isSaving}>
-          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          Save Appointment Report
-        </Button>
+            {/* Property & Service Overview */}
+            <Card className="p-4 space-y-4">
+              <Label className="font-semibold text-base">Property & Service Overview</Label>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
+                <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
+                <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
+                <div><span className="text-muted-foreground">Property Manager:</span> <Input value={pmName} onChange={e => setPmName(e.target.value)} placeholder="PM name" className="h-7 text-xs inline-block w-40 ml-1" /></div>
+              </div>
+
+              {/* Unit Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="border p-1.5 text-left w-10">#</th>
+                      <th className="border p-1.5 text-left w-16">Unit</th>
+                      <th className="border p-1.5 text-left">Target Pests</th>
+                      <th className="border p-1.5 text-left">Notes</th>
+                      <th className="border p-1.5 text-left">Areas Treated</th>
+                      <th className="border p-1.5 text-left">Products Used</th>
+                      <th className="border p-1.5 text-left w-16">Follow-Up?</th>
+                      <th className="border p-1.5 text-left">Follow-Up Notes</th>
+                      <th className="border p-1.5 w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unitRows.map((row, i) => (
+                      <tr key={i}>
+                        <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
+                        <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
+                        <td className="border p-0.5"><Input value={row.targetPests} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
+                            <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="No">No</SelectItem><SelectItem value="Yes">Yes</SelectItem></SelectContent>
+                          </Select>
+                        </td>
+                        <td className="border p-0.5"><Input value={row.followUpNotes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUpNotes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5 text-center">
+                          {unitRows.length > 1 && <button className="text-destructive text-xs" onClick={() => setUnitRows(prev => prev.filter((_, j) => j !== i))}>×</button>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => setUnitRows(prev => [...prev, { ...emptyUnit }])}>
+                  <Plus className="w-3 h-3 mr-1" />Add Unit
+                </Button>
+              </div>
+
+              {/* Common Area */}
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><Label className="text-xs">Target Pests</Label><Input value={commonAreaPests} onChange={e => setCommonAreaPests(e.target.value)} className="h-7 text-xs" placeholder="e.g. Ants, Spiders" /></div>
+                  <div><Label className="text-xs">Notes</Label><Input value={commonAreaNotes} onChange={e => setCommonAreaNotes(e.target.value)} className="h-7 text-xs" /></div>
+                </div>
+              </div>
+
+              {/* Technician Observations */}
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-sm font-medium">Crest Technician: Observations & Notes</p>
+                <Textarea value={techObservations} onChange={e => setTechObservations(e.target.value)} placeholder="Technician observations and notes..." rows={3} className="text-xs" />
+              </div>
+
+              <p className="text-xs text-muted-foreground italic">Note: See full service report for details on pesticide usage and observations for exterior and common areas.</p>
+            </Card>
+
+            {/* Target Pests */}
+            <Card className="p-4">
+              <Label className="mb-2 block font-semibold">Target Pests</Label>
+              <div className="flex flex-wrap gap-1.5" ref={pestsDropdownRef}>
+                {PEST_OPTIONS.map(pest => (
+                  <Badge key={pest} variant={targetPests.includes(pest) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => togglePest(pest)}>
+                    {pest.length > 40 ? "General Pests" : pest}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+
+            {/* Products Used */}
+            <Card className="p-4">
+              <Label className="mb-2 block font-semibold">Products Used</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {PRODUCT_OPTIONS.map(p => (
+                  <Badge key={p} variant={productsUsed.includes(p) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => toggleProduct(p)}>{p}</Badge>
+                ))}
+              </div>
+            </Card>
+
+            {/* Equipment */}
+            <Card className="p-4">
+              <Label className="mb-2 block font-semibold">Equipment</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {EQUIPMENT_OPTIONS.map(e => (
+                  <Badge key={e} variant={equipment.includes(e) ? "default" : "outline"} className="cursor-pointer text-xs" onClick={() => toggleEquipment(e)}>{e}</Badge>
+                ))}
+              </div>
+            </Card>
+
+            {/* Customer Key Areas */}
+            <Card className="p-4 space-y-3">
+              <Label className="font-semibold">Customer Key Areas of Concern</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {CUSTOMER_KEY_AREAS.map(area => (
+                  <Badge key={area} variant={customerKeyAreas.includes(area) ? "default" : "outline"} className="cursor-pointer text-xs"
+                    onClick={() => setCustomerKeyAreas(prev => prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area])}>{area}</Badge>
+                ))}
+              </div>
+              <Textarea placeholder="Notes about key areas..." value={customerKeyAreasNotes} onChange={e => setCustomerKeyAreasNotes(e.target.value)} rows={2} />
+            </Card>
+
+            {/* Customer Preference */}
+            <Card className="p-4 space-y-3">
+              <Label className="font-semibold">Customer Preference</Label>
+              <Select value={customerPreference} onValueChange={setCustomerPreference}>
+                <SelectTrigger><SelectValue placeholder="Select preference" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Interior & Exterior">Interior & Exterior</SelectItem>
+                  <SelectItem value="Exterior Only">Exterior Only</SelectItem>
+                  <SelectItem value="Interior Only">Interior Only</SelectItem>
+                </SelectContent>
+              </Select>
+              <Textarea placeholder="Additional notes..." value={customerPreferenceNotes} onChange={e => setCustomerPreferenceNotes(e.target.value)} rows={2} />
+            </Card>
+
+            {/* Today's Findings */}
+            <Card className="p-4 space-y-2">
+              <Label className="font-semibold">Today's Findings</Label>
+              <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
+            </Card>
+
+            {/* Service Performed */}
+            <Card className="p-4 space-y-2">
+              <Label className="font-semibold">Service Performed</Label>
+              <RichTextEditor value={findings[0] || ""} onChange={v => setFindings([v])} fontSize={findingsFontSize} onFontSizeChange={setFindingsFontSize} />
+            </Card>
+
+            {/* Expectations */}
+            <Card className="p-4 space-y-2">
+              <Label className="font-semibold">What to Expect</Label>
+              <RichTextEditor value={expectations[0] || ""} onChange={v => setExpectations([v])} fontSize={expectationsFontSize} onFontSizeChange={setExpectationsFontSize} />
+            </Card>
+
+            {/* Recommendations */}
+            <Card className="p-4 space-y-2">
+              <Label className="font-semibold">Recommendations</Label>
+              <RichTextEditor value={recommendations[0] || ""} onChange={v => setRecommendations([v])} fontSize={recommendationsFontSize} onFontSizeChange={setRecommendationsFontSize} />
+            </Card>
+
+            {/* Property Images */}
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold">Property Images</Label>
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Add Photo</Button>
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
+              </div>
+              {propertyImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {propertyImages.map((img, i) => (
+                    <div key={i} className="relative">
+                      <img src={img.image} alt={img.caption || `Photo ${i + 1}`} className="w-full h-32 object-cover rounded cursor-pointer" onClick={() => setAnnotatingImageIndex(i)} />
+                      <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        onClick={() => setPropertyImages(prev => prev.filter((_, j) => j !== i))}>×</button>
+                      <Input placeholder="Caption..." value={img.caption || ""} onChange={e => setPropertyImages(prev => prev.map((p, j) => j === i ? { ...p, caption: e.target.value } : p))} className="mt-1 text-xs h-7" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Save */}
+            <Button className="w-full" size="lg" onClick={saveReport} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Appointment Report
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Image annotator */}
