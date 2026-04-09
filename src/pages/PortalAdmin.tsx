@@ -73,7 +73,7 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [portalTab, setPortalTab] = useState("past");
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [viewMode, setViewMode] = useState<"admin" | "pm" | "tenant">("admin");
   const [globalTab, setGlobalTab] = useState("clients");
 
   const [chatMessages, setChatMessages] = useState<PortalMessage[]>([]);
