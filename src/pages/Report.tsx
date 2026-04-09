@@ -2022,7 +2022,7 @@ Crest Pest Control`;
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
                 <span className="pl-1">Service Type</span>
                 <span className="text-center">Initial</span>
-                <span className="text-center">Recurring</span>
+                <span className="text-center">Monthly</span>
                 <span className="text-center">Frequency</span>
                 <span className="text-center">Schedule</span>
                 <span></span>
@@ -2093,9 +2093,6 @@ Crest Pest Control`;
                       <span className="text-muted-foreground">$</span>
                       <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
                     </div>
-                    {(service.frequency === 7 || service.frequency === 14) && (
-                      <span className="absolute -bottom-3.5 left-0 right-0 text-center text-[9px] text-muted-foreground print:text-[8px]">/month</span>
-                    )}
                   </div>
                   <div className="bg-white/80 rounded px-1">
                     <Select
