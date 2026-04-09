@@ -46,7 +46,6 @@ const App = () => (
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="/portal-admin" element={<PortalAdmin />} />
                 <Route path="/team-docs" element={<TeamDocs />} />
-                <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>
