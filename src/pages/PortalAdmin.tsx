@@ -460,26 +460,52 @@ const PortalAdmin = () => {
               </Card>
             </TabsContent>
 
-            {/* Messages tab */}
+            {/* Messages tab — grouped by client */}
             <TabsContent value="messages">
               <Card>
                 <CardHeader><CardTitle className="text-base">Client Messages</CardTitle></CardHeader>
                 <CardContent>
-                  {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages</p> : (
-                    <div className="space-y-3">
-                      {messages.map(m => (
-                        <div key={m.id} className={`border rounded-lg p-3 ${!m.is_read ? "border-primary/50 bg-primary/5" : ""}`}>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-medium text-sm">{m.subject}</p>
-                            {!m.is_read && <Badge className="text-xs">New</Badge>}
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">From: {m.sender_name} {m.sender_email && `(${m.sender_email})`} {m.property_name && `• ${m.property_name}`}</p>
-                          <p className="text-sm">{m.message}</p>
-                          <p className="text-xs text-muted-foreground mt-2">{new Date(m.created_at).toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages yet</p> : (() => {
+                    // Group messages by client_id and show latest per client
+                    const clientMap = new Map<string, { clientName: string; lastMessage: PortalMessage; unread: number }>();
+                    messages.forEach(m => {
+                      const key = m.client_id || m.sender_name;
+                      if (!clientMap.has(key)) {
+                        clientMap.set(key, { clientName: m.sender_name, lastMessage: m, unread: m.is_read ? 0 : 1 });
+                      } else {
+                        const existing = clientMap.get(key)!;
+                        if (!m.is_read) existing.unread++;
+                      }
+                    });
+                    return (
+                      <div className="space-y-2">
+                        {Array.from(clientMap.entries()).map(([key, data]) => {
+                          const matchingClient = clients.find(c => c.id === key);
+                          return (
+                            <div
+                              key={key}
+                              className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                              onClick={() => {
+                                if (matchingClient) setSelectedClient(matchingClient);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-sm">{matchingClient?.name || data.clientName}</p>
+                                  <p className="text-xs text-muted-foreground truncate max-w-xs mt-1">{data.lastMessage.message}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {data.unread > 0 && <Badge className="text-xs">{data.unread}</Badge>}
+                                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{new Date(data.lastMessage.created_at).toLocaleString()}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
