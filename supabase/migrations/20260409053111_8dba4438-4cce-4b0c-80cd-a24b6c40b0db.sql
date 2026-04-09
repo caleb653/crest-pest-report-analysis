@@ -1,0 +1,1 @@
+ALTER TABLE public.portal_properties ADD COLUMN image_url text;
