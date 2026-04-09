@@ -683,23 +683,6 @@ const AppointmentReport = () => {
               <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
             </Card>
 
-            {/* Service Performed */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Service Performed</Label>
-              <RichTextEditor value={findings[0] || ""} onChange={v => setFindings([v])} fontSize={findingsFontSize} onFontSizeChange={setFindingsFontSize} />
-            </Card>
-
-            {/* Expectations */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">What to Expect</Label>
-              <RichTextEditor value={expectations[0] || ""} onChange={v => setExpectations([v])} fontSize={expectationsFontSize} onFontSizeChange={setExpectationsFontSize} />
-            </Card>
-
-            {/* Recommendations */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Recommendations</Label>
-              <RichTextEditor value={recommendations[0] || ""} onChange={v => setRecommendations([v])} fontSize={recommendationsFontSize} onFontSizeChange={setRecommendationsFontSize} />
-            </Card>
 
             {/* Property Images */}
             <Card className="p-4 space-y-3">
