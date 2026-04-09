@@ -76,6 +76,9 @@ const AppointmentReport = () => {
   const [expectations, setExpectations] = useState<string[]>([]);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [customerPreference, setCustomerPreference] = useState("");
+  const [findingsFontSize, setFindingsFontSize] = useState(14);
+  const [expectationsFontSize, setExpectationsFontSize] = useState(14);
+  const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
   const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState("");
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
