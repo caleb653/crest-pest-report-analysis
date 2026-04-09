@@ -323,7 +323,7 @@ const AppointmentReport = () => {
           <div className="max-w-3xl px-4 py-4 space-y-4">
             {/* Technician & Date */}
             <Card className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div>
                   <Label>Technician</Label>
                   <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
