@@ -2676,7 +2676,7 @@ Crest Pest Control`;
             {/* Right Column - Additional Details + Scheduling + Setup Materials */}
             <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
-              <Card className="print-section additional-details-card p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.8] flex flex-col">
+              <Card className="print-section additional-details-card p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.5] flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
@@ -2695,7 +2695,7 @@ Crest Pest Control`;
                       placeholder="• Enter any additional details, notes, or observations..."
                       fontSize={additionalDetailsFontSize}
                       onFontSizeChange={setAdditionalDetailsFontSize}
-                      className="additional-details-editor flex-1 min-h-[150px] print:min-h-0"
+                      className="additional-details-editor flex-1 min-h-[80px] print:min-h-0"
                     />
                   </div>
                   <div
@@ -2705,6 +2705,25 @@ Crest Pest Control`;
                       __html: formatProposedServices(additionalDetails || ""),
                     }}
                   />
+                </div>
+              </Card>
+
+              {/* Limitations Section */}
+              <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.3] flex flex-col">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Limitations</span>
+                </div>
+                <div className="p-2 flex-1 flex flex-col">
+                  {isReadOnly ? (
+                    <p className="text-xs text-foreground whitespace-pre-wrap">{limitationsText || "None"}</p>
+                  ) : (
+                    <textarea
+                      value={limitationsText}
+                      onChange={(e) => setLimitationsText(e.target.value)}
+                      placeholder="• Enter any limitations or exclusions..."
+                      className="text-xs w-full flex-1 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground"
+                    />
+                  )}
                 </div>
               </Card>
 
