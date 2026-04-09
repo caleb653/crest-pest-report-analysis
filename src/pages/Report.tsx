@@ -864,6 +864,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
               setMainPointOfContact(parsed.mainPointOfContact || "");
               setContactPhone(parsed.contactPhone || "");
               setSetupMaterials(parsed.setupMaterials || []);
+              setLimitationsText(parsed.limitationsText || "");
             } else {
               setAdditionalDetails(row.notes);
             }
