@@ -12,7 +12,7 @@ import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
 import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
 import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
-import { createSavedLineObject, getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
+import { createSavedImageObject, createSavedLineObject, getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject, safeDisposeFabricCanvas } from '@/lib/mapCanvasLoader';
 
 interface MapCanvasProps {
   mapUrl: string;
@@ -516,7 +516,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       clearTimeout(resizeTimeout);
       window.removeEventListener('resize', debouncedResize);
       document.removeEventListener('keydown', handleKeyDown);
-      canvas.dispose();
+      fabricCanvasRef.current = null;
+      void safeDisposeFabricCanvas(canvas);
     };
   }, []); // Only run once on mount
 
@@ -647,6 +648,23 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
               });
               loadPromises.push(promise);
             }
+          } else if (objectType === 'image' && obj.src) {
+            const imagePromise = createSavedImageObject({
+              obj,
+              left: (obj.left || 0) * scaleX,
+              top: (obj.top || 0) * scaleY,
+              scaleX: isNormalized ? (obj.scaleX || 1) * targetIconScale : (obj.scaleX || 1),
+              scaleY: isNormalized ? (obj.scaleY || 1) * targetIconScale : (obj.scaleY || 1),
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+            }).then((image) => {
+              canvas.add(image);
+            }).catch((err) => {
+              console.error('Error loading legacy image object:', err, obj);
+            });
+            loadPromises.push(imagePromise);
           } else if (objectType === 'rect') {
             const rect = new FabricRect({
               left: (obj.left || 0) * scaleX,

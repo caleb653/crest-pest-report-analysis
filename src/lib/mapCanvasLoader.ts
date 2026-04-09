@@ -1,4 +1,4 @@
-import { Canvas as FabricCanvas, Line } from 'fabric';
+import { Canvas as FabricCanvas, FabricImage, Line } from 'fabric';
 
 export const normalizeSavedObjectType = (value: unknown) => String(value ?? '').toLowerCase();
 
@@ -24,6 +24,18 @@ export const getSavedMapVersion = (parsed: any, obj?: any) => {
 };
 
 interface CreateSavedLineObjectOptions {
+  obj: any;
+  left: number;
+  top: number;
+  scaleX: number;
+  scaleY: number;
+  selectable: boolean;
+  evented: boolean;
+  hasControls?: boolean;
+  hasBorders?: boolean;
+}
+
+interface CreateSavedImageObjectOptions {
   obj: any;
   left: number;
   top: number;
@@ -77,6 +89,58 @@ export const createSavedLineObject = ({
 
   line.setCoords();
   return line;
+};
+
+export const createSavedImageObject = async ({
+  obj,
+  left,
+  top,
+  scaleX,
+  scaleY,
+  selectable,
+  evented,
+  hasControls,
+  hasBorders,
+}: CreateSavedImageObjectOptions) => {
+  const image = await FabricImage.fromURL(obj.src || '');
+
+  image.set({
+    left,
+    top,
+    scaleX,
+    scaleY,
+    angle: obj.angle || 0,
+    originX: obj.originX || 'left',
+    originY: obj.originY || 'top',
+    cropX: obj.cropX || 0,
+    cropY: obj.cropY || 0,
+    opacity: obj.opacity ?? 1,
+    visible: obj.visible ?? true,
+    flipX: obj.flipX || false,
+    flipY: obj.flipY || false,
+    skewX: obj.skewX || 0,
+    skewY: obj.skewY || 0,
+    selectable,
+    evented,
+    ...(typeof hasControls === 'boolean' ? { hasControls } : {}),
+    ...(typeof hasBorders === 'boolean' ? { hasBorders } : {}),
+  });
+
+  image.setCoords();
+  return image;
+};
+
+export const safeDisposeFabricCanvas = async (canvas: FabricCanvas | null | undefined) => {
+  if (!canvas) return;
+
+  try {
+    const disposeResult = canvas.dispose();
+    if (disposeResult && typeof (disposeResult as Promise<unknown>).then === 'function') {
+      await (disposeResult as Promise<unknown>).catch(() => undefined);
+    }
+  } catch {
+    // Ignore Fabric cleanup errors from detached/temp canvases
+  }
 };
 
 interface ReviveSavedFabricObjectOptions {
@@ -140,6 +204,6 @@ export const reviveSavedFabricObject = async ({
     canvas.add(revivedObject);
     return revivedObject;
   } finally {
-    tempCanvas.dispose();
+    await safeDisposeFabricCanvas(tempCanvas);
   }
 };
