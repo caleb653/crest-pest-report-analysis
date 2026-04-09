@@ -284,9 +284,15 @@ const PortalAdmin = () => {
   const deleteLink = async (id: string) => { await supabase.from("portal_links").delete().eq("id", id); if (selectedClient) loadLinks(selectedClient.id); toast({ title: "Link deleted" }); };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); if (selectedClient) loadProperties(selectedClient.id); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
-  const copyLink = (token: string) => { navigator.clipboard.writeText(`${window.location.origin}/portal/${token}`); toast({ title: "Link copied to clipboard" }); };
-  const openPortal = (token: string) => { window.open(`/portal/${token}`, "_blank"); };
-  const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
+  const copyLink = (token: string, linkType?: string) => {
+    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    navigator.clipboard.writeText(`${window.location.origin}/${prefix}/${token}`);
+    toast({ title: "Link copied to clipboard" });
+  };
+  const openPortal = (token: string, linkType?: string) => {
+    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    window.open(`/${prefix}/${token}`, "_blank");
+  };
   const today = new Date().toISOString().split("T")[0];
 
   const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
