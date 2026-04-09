@@ -452,17 +452,15 @@ async function captureElement(el: HTMLElement): Promise<string> {
             font-weight: 700 !important;
           }
 
-          /* Page 2 section content — bumped up */
+          /* Page 2 section content — modest bump */
           .pdf-export-root[data-pdf-capture="2"] .print-section-content,
           .pdf-export-root[data-pdf-capture="2"] .print-section-content * {
-            font-size: 14px !important;
             line-height: 1.55 !important;
           }
 
-          /* Page 1 proposed services — compact */
+          /* Page 1 proposed services — leave layout alone, sizing handled inline */
           .pdf-export-root[data-pdf-capture="1"] .print-section-content,
           .pdf-export-root[data-pdf-capture="1"] .print-section-content * {
-            font-size: 8.5px !important;
             line-height: 1.4 !important;
           }
 
@@ -556,14 +554,47 @@ async function captureElement(el: HTMLElement): Promise<string> {
           mapParent.style.justifyContent = "center";
         }
 
-        const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
-        const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
-        if (detailsBody && detailsCard) {
-          let fontSize = parseFloat(detailsBody.style.fontSize) || 15;
-          const minFont = 9;
-          while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
-            fontSize -= 0.5;
-            detailsBody.style.fontSize = `${fontSize}px`;
+        if (captureKey === "1") {
+          const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
+          if (proposedServices) {
+            sp(proposedServices, "font-size", "7.5px");
+            sp(proposedServices, "line-height", "1.32");
+            proposedServices.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
+              sp(node, "font-size", "7.5px");
+              sp(node, "line-height", "1.32");
+            });
+          }
+        }
+
+        if (captureKey === "2") {
+          const applySectionFont = (selector: string, size: number, lineHeight = 1.45) => {
+            clonedPage.querySelectorAll<HTMLElement>(selector).forEach((section) => {
+              sp(section, "font-size", `${size}px`);
+              sp(section, "line-height", `${lineHeight}`);
+              section.querySelectorAll<HTMLElement>("p, li, span, div, strong, b, label").forEach((node) => {
+                sp(node, "font-size", `${size}px`);
+                sp(node, "line-height", `${lineHeight}`);
+              });
+            });
+          };
+
+          applySectionFont('[data-pdf-section="additional-details"] .print-content-formatted', 13, 1.45);
+          applySectionFont('[data-pdf-section="limitations"] .text-foreground, [data-pdf-section="limitations"] p', 12.5, 1.45);
+          applySectionFont('[data-pdf-section="scheduling"] .text-xs, [data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground', 12, 1.4);
+          applySectionFont('[data-pdf-section="setup-materials"] .text-xs, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold', 12, 1.4);
+
+          const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
+          const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
+          if (detailsBody && detailsCard) {
+            let fontSize = 13;
+            const minFont = 11;
+            while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
+              fontSize -= 0.25;
+              sp(detailsBody, 'font-size', `${fontSize}px`);
+              detailsBody.querySelectorAll<HTMLElement>('p, li, span, div, strong, b').forEach((node) => {
+                sp(node, 'font-size', `${fontSize}px`);
+              });
+            }
           }
         }
       },
