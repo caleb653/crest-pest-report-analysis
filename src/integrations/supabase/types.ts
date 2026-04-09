@@ -216,6 +216,8 @@ export type Database = {
           address: string | null
           client_id: string
           created_at: string
+          customer_preferences: Json | null
+          equipment: Json | null
           id: string
           image_url: string | null
           map_data: Json | null
@@ -228,6 +230,8 @@ export type Database = {
           address?: string | null
           client_id: string
           created_at?: string
+          customer_preferences?: Json | null
+          equipment?: Json | null
           id?: string
           image_url?: string | null
           map_data?: Json | null
@@ -240,6 +244,8 @@ export type Database = {
           address?: string | null
           client_id?: string
           created_at?: string
+          customer_preferences?: Json | null
+          equipment?: Json | null
           id?: string
           image_url?: string | null
           map_data?: Json | null
