@@ -887,7 +887,7 @@ const PortalAdmin = () => {
           <TabsContent value="past">
             {viewMode === "admin" && (
               <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => openServiceDialog()} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
+                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("completed")} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
               </div>
             )}
             {pastServices.length === 0 ? (
@@ -932,7 +932,7 @@ const PortalAdmin = () => {
           <TabsContent value="future">
             {(viewMode === "admin" || viewMode === "pm") && (
               <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => { setServiceForm({ ...emptyServiceForm, property_id: selectedProperty?.id || "", status: "scheduled" }); setEditingService(null); setShowAddService(true); }} disabled={properties.length === 0}>
+                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("scheduled")} disabled={properties.length === 0}>
                   <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
                 </Button>
               </div>
