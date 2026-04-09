@@ -229,11 +229,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
           .pdf-export-root [class*="print-header"] h1,
           .pdf-export-root [class*="print-header"] h2 {
-            font-size: 20px !important;
+            font-size: 24px !important;
             font-weight: 700 !important;
           }
           .pdf-export-root [class*="print-header"] h3 {
-            font-size: 15px !important;
+            font-size: 17px !important;
             font-weight: 600 !important;
           }
           /* All non-heading text inside the page 1 header */
@@ -243,8 +243,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="print-header"] li,
           .pdf-export-root [class*="print-header"] td,
           .pdf-export-root [class*="print-header"] th {
-            font-size: 13px !important;
-            line-height: 1.5 !important;
+            font-size: 15px !important;
+            line-height: 1.45 !important;
           }
 
           /* Hide noise */
@@ -437,18 +437,18 @@ async function captureElement(el: HTMLElement): Promise<string> {
             margin-bottom: 12px !important;
           }
           .pdf-export-root .page2-header h1 {
-            font-size: 18px !important;
+            font-size: 22px !important;
             font-weight: 700 !important;
             color: ${BRAND.black} !important;
           }
           .pdf-export-root .page2-header span {
-            font-size: 14px !important;
+            font-size: 15px !important;
             color: ${BRAND.black} !important;
           }
 
           /* Page 2 section headers */
           .pdf-export-root[data-pdf-capture="2"] .print-section-header {
-            font-size: 16px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
           }
 
@@ -555,13 +555,43 @@ async function captureElement(el: HTMLElement): Promise<string> {
         }
 
         if (captureKey === "1") {
+          const headerRoot = document.querySelector<HTMLElement>('[data-pdf-capture="0"]');
+          if (headerRoot) {
+            sp(headerRoot, "background-color", BRAND.sage);
+            sp(headerRoot, "border-bottom", `2px solid ${BRAND.darkSage}`);
+            const title = headerRoot.querySelector<HTMLElement>(".print-title, h1");
+            if (title) {
+              sp(title, "font-size", "24px");
+              sp(title, "line-height", "1.15");
+            }
+            headerRoot.querySelectorAll<HTMLElement>("h2, h3").forEach((node) => {
+              sp(node, "font-size", "16px");
+              sp(node, "line-height", "1.2");
+            });
+            headerRoot.querySelectorAll<HTMLElement>("p, span, div").forEach((node) => {
+              if (node.closest(".no-print")) return;
+              sp(node, "font-size", "14px");
+              sp(node, "line-height", "1.35");
+            });
+          }
+
           const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
+          const proposedHeader = clonedPage.querySelector<HTMLElement>('[data-pdf-section="proposed-services"] .print-section-header');
           if (proposedServices) {
-            sp(proposedServices, "font-size", "7.5px");
-            sp(proposedServices, "line-height", "1.32");
+            const targetSize = proposedHeader ? 13 : 12.5;
+            sp(proposedServices, "font-size", `${targetSize}px`);
+            sp(proposedServices, "line-height", "1.38");
             proposedServices.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
-              sp(node, "font-size", "7.5px");
-              sp(node, "line-height", "1.32");
+              sp(node, "font-size", `${targetSize}px`);
+              sp(node, "line-height", "1.38");
+            });
+          }
+          if (proposedHeader) {
+            sp(proposedHeader, "font-size", "13px");
+            sp(proposedHeader, "line-height", "1.2");
+            proposedHeader.querySelectorAll<HTMLElement>("span, div").forEach((node) => {
+              sp(node, "font-size", "13px");
+              sp(node, "line-height", "1.2");
             });
           }
         }
@@ -578,16 +608,34 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           };
 
-          applySectionFont('[data-pdf-section="additional-details"] .print-content-formatted', 13, 1.45);
-          applySectionFont('[data-pdf-section="limitations"] .text-foreground, [data-pdf-section="limitations"] p', 12.5, 1.45);
-          applySectionFont('[data-pdf-section="scheduling"] .text-xs, [data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground', 12, 1.4);
-          applySectionFont('[data-pdf-section="setup-materials"] .text-xs, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold', 12, 1.4);
+          clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
+            sp(node, 'font-size', '22px');
+            sp(node, 'line-height', '1.15');
+          });
+          clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
+            sp(node, 'font-size', '15px');
+            sp(node, 'line-height', '1.25');
+          });
+
+          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="additional-details"] .print-section-header, [data-pdf-section="limitations"] .print-section-header, [data-pdf-section="scheduling"] .print-section-header, [data-pdf-section="setup-materials"] .print-section-header').forEach((node) => {
+            sp(node, 'font-size', '13px');
+            sp(node, 'line-height', '1.2');
+            node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
+              sp(child, 'font-size', '13px');
+              sp(child, 'line-height', '1.2');
+            });
+          });
+
+          applySectionFont('[data-pdf-section="additional-details"] .print-content-formatted', 13, 1.38);
+          applySectionFont('[data-pdf-section="limitations"] .text-foreground, [data-pdf-section="limitations"] p', 13, 1.38);
+          applySectionFont('[data-pdf-section="scheduling"] .text-xs, [data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground', 13, 1.32);
+          applySectionFont('[data-pdf-section="setup-materials"] .text-xs, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold', 13, 1.32);
 
           const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
           const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
           if (detailsBody && detailsCard) {
             let fontSize = 13;
-            const minFont = 11;
+            const minFont = 12;
             while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
               fontSize -= 0.25;
               sp(detailsBody, 'font-size', `${fontSize}px`);
