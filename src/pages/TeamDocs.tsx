@@ -267,16 +267,19 @@ const TeamDocs = () => {
                 {/* Full agreement text */}
                 <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-3">
                   <p>California law generally requires a 30-minute unpaid, duty-free meal period for non-exempt employees who work more than five (5) hours in a workday.</p>
-                  <p className="font-semibold">I understand and agree:</p>
+                  <p className="font-semibold">For the work date listed above, I understand and agree:</p>
                   <ul className="list-disc pl-5 space-y-2">
-                    <li>If I work more than 5 hours but no more than 6 hours, I may voluntarily waive my first meal period.</li>
-                    <li>If I work more than 10 hours but no more than 12 hours, I may voluntarily waive my second meal period only if I took my first meal period.</li>
-                    <li>I understand meal period waivers are not allowed beyond these limits.</li>
-                    <li>I understand this waiver is completely voluntary.</li>
-                    <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
-                    <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
+                    <li>I am scheduled to work more than 5 hours but no more than 6 hours, and I voluntarily choose to waive my first 30-minute meal period for this shift only; OR</li>
+                    <li>I am scheduled to work more than 10 hours but no more than 12 hours, I took my first meal period, and I voluntarily choose to waive my second meal period for this shift only.</li>
                   </ul>
-                  <p className="font-medium pt-1">By signing below, I voluntarily agree to waive my meal period only when legally permitted under California law.</p>
+                  <p className="font-semibold">I understand:</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>Meal period waivers are not permitted outside these limits.</li>
+                    <li>This decision is voluntary and applies only to the date above.</li>
+                    <li>I may choose not to waive a meal period and will not be subject to retaliation.</li>
+                    <li>I must accurately record all hours worked and any meal periods taken.</li>
+                  </ul>
+                  <p className="font-medium pt-1">☑ I confirm my shift for the work date above qualifies for a meal period waiver under California law, and I voluntarily waive my meal period for this shift only.</p>
                 </div>
 
                 <hr />
@@ -355,7 +358,7 @@ const TeamDocs = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-xl">Crest Pest Control</CardTitle>
             <p className="text-base font-semibold text-foreground mt-1">
-              California Meal Period Waiver Agreement
+              California Daily Meal Period Waiver (Shift-Specific)
             </p>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -373,7 +376,7 @@ const TeamDocs = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Date</Label>
+                <Label>Work Date</Label>
                 <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
               </div>
             </div>
@@ -382,17 +385,26 @@ const TeamDocs = () => {
             <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-3">
               <p>California law generally requires a 30-minute unpaid, duty-free meal period for non-exempt employees who work more than five (5) hours in a workday.</p>
 
-              <p className="font-semibold">I understand and agree:</p>
+              <p className="font-semibold">For the work date listed above, I understand and agree:</p>
               <ul className="list-disc pl-5 space-y-2">
-                <li>If I work more than 5 hours but no more than 6 hours, I may voluntarily waive my first meal period.</li>
-                <li>If I work more than 10 hours but no more than 12 hours, I may voluntarily waive my second meal period only if I took my first meal period.</li>
-                <li>I understand meal period waivers are not allowed beyond these limits.</li>
-                <li>I understand this waiver is completely voluntary.</li>
-                <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
-                <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
+                <li>I am scheduled to work more than 5 hours but no more than 6 hours, and I voluntarily choose to waive my first 30-minute meal period for this shift only; OR</li>
+                <li>I am scheduled to work more than 10 hours but no more than 12 hours, I took my first meal period, and I voluntarily choose to waive my second meal period for this shift only.</li>
               </ul>
 
-              <p className="font-medium pt-1">By signing below, I voluntarily agree to waive my meal period only when legally permitted under California law.</p>
+              <p className="font-semibold">I understand:</p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>Meal period waivers are not permitted outside these limits.</li>
+                <li>This decision is voluntary and applies only to the date above.</li>
+                <li>I may choose not to waive a meal period and will not be subject to retaliation.</li>
+                <li>I must accurately record all hours worked and any meal periods taken.</li>
+              </ul>
+
+              <div className="flex items-start gap-2 pt-2">
+                <Checkbox checked={waiverConfirmed} onCheckedChange={(v) => setWaiverConfirmed(v === true)} id="waiver-confirm" className="mt-0.5" />
+                <label htmlFor="waiver-confirm" className="text-sm leading-snug cursor-pointer">
+                  I confirm my shift for the work date above qualifies for a meal period waiver under California law, and I voluntarily waive my meal period for this shift only.
+                </label>
+              </div>
             </div>
 
             {/* Employee Signature */}
