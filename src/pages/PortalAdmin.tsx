@@ -710,24 +710,27 @@ const PortalAdmin = () => {
             {/* Access Links */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2 py-3">
-                <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Access Links</CardTitle>
+                <div>
+                  <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Client Portal Links</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Shareable links that give clients access to their portal</p>
+                </div>
                 <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
                   <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Link</Button></DialogTrigger>
                    <DialogContent>
-                    <DialogHeader><DialogTitle>Create Access Link</DialogTitle></DialogHeader>
-                    <div className="space-y-3">
+                    <DialogHeader><DialogTitle>Create Portal Link</DialogTitle></DialogHeader>
+                    <div className="space-y-4">
                       <div>
-                        <Label>Type</Label>
+                        <Label>Link Type</Label>
                         <Select value={newLink.link_type} onValueChange={v => setNewLink({ ...newLink, link_type: v })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="master">Master (all properties)</SelectItem>
-                            <SelectItem value="sub">Property Manager (specific properties)</SelectItem>
-                            <SelectItem value="tenant">Tenant (requests only)</SelectItem>
+                            <SelectItem value="master">Admin Portal — full access to all properties</SelectItem>
+                            <SelectItem value="sub">Property Manager — view assigned properties only</SelectItem>
+                            <SelectItem value="tenant">Tenant — submit requests for a specific unit</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div><Label>Label</Label><Input placeholder="e.g. Building A Manager" value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
+                      <div><Label>Link Name</Label><Input placeholder={newLink.link_type === "master" ? `e.g. ${selectedClient?.company || selectedClient?.name} Admin Portal` : newLink.link_type === "tenant" ? "e.g. Unit 204 Tenant" : "e.g. Fountain Valley PM"} value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
                       {(newLink.link_type === "sub" || newLink.link_type === "tenant") && properties.length > 0 && (
                         <div>
                           <Label>Assigned Properties</Label>
@@ -754,22 +757,30 @@ const PortalAdmin = () => {
                 </Dialog>
               </CardHeader>
               <CardContent className="pt-0">
-                {links.length === 0 ? <p className="text-xs text-muted-foreground">No links created</p> : (
+                {links.length === 0 ? <p className="text-xs text-muted-foreground">No portal links created yet. Create one to share access with this client.</p> : (
                   <div className="space-y-2">
-                    {links.map(l => (
-                      <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
-                        <Badge variant={l.link_type === "master" ? "default" : l.link_type === "tenant" ? "outline" : "secondary"}>
-                          {l.link_type === "sub" ? "PM" : l.link_type}
-                        </Badge>
-                        <span className="flex-1 truncate">
-                          {l.label || "Unnamed"}
-                          {l.link_type === "tenant" && (l as any).unit_number && <span className="text-muted-foreground ml-1">(Unit {(l as any).unit_number})</span>}
-                        </span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token, l.link_type)}><Copy className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token, l.link_type)}><ExternalLink className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      </div>
-                    ))}
+                    {links.map(l => {
+                      const assignedNames = l.link_type !== "master" && l.assigned_property_ids
+                        ? (l.assigned_property_ids as string[]).map(pid => properties.find(p => p.id === pid)?.name).filter(Boolean).join(", ")
+                        : null;
+                      const typeLabel = l.link_type === "master" ? "Admin" : l.link_type === "tenant" ? "Tenant" : "PM";
+                      return (
+                        <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
+                          <Badge variant={l.link_type === "master" ? "default" : l.link_type === "tenant" ? "outline" : "secondary"}>
+                            {typeLabel}
+                          </Badge>
+                          <div className="flex-1 min-w-0">
+                            <span className="truncate block font-medium">{l.label || "Unnamed"}</span>
+                            {l.link_type === "master" && <span className="text-xs text-muted-foreground">All properties</span>}
+                            {assignedNames && <span className="text-xs text-muted-foreground block truncate">{assignedNames}</span>}
+                            {l.link_type === "tenant" && (l as any).unit_number && <span className="text-xs text-muted-foreground">Unit {(l as any).unit_number}</span>}
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token, l.link_type)}><Copy className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token, l.link_type)}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
