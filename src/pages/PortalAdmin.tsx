@@ -574,8 +574,8 @@ const PortalAdmin = () => {
           <span className="text-background/60">Admin View — {selectedClient.company || selectedClient.name}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => setShowAdminPanel(!showAdminPanel)}>
-            <Settings className="w-3.5 h-3.5 mr-1" />Manage
+          <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 px-4 rounded-md shadow-sm" onClick={() => setShowAdminPanel(!showAdminPanel)}>
+            <Settings className="w-3.5 h-3.5 mr-1" />{showAdminPanel ? "Done Editing" : "✏️ EDIT"}
           </Button>
           {masterLink && (
             <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token)}>

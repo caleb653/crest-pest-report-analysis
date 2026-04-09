@@ -270,9 +270,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="columns-2"] p,
           .pdf-export-root [class*="columns-2"] li           { margin: 1px 0 !important; }
           /* Headings */
-          .pdf-export-root h1 { font-size: 22px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h2 { font-size: 18px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h3 { font-size: 15px !important; font-weight: 600 !important; overflow: visible !important; }
+          .pdf-export-root h1 { font-size: 20px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h2 { font-size: 16px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h3 { font-size: 13px !important; font-weight: 600 !important; overflow: visible !important; }
           .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
 
           /* ═══════════════════════════════════════════════════════════
@@ -422,7 +422,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
           /* ═══════════════════════════════════════════════════════════
-             PAGE 2 — Larger text in right column
+             PAGE 2 — Larger text everywhere
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root .additional-details-body,
           .pdf-export-root .additional-details-body *,
@@ -430,6 +430,37 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .additional-details-body .print-content-formatted * {
             font-size: 13px !important;
             line-height: 1.5 !important;
+          }
+
+          /* Page 2 header bar */
+          .pdf-export-root .page2-header {
+            background-color: ${BRAND.sage} !important;
+            padding: 8px 16px !important;
+            border-radius: 4px !important;
+            border-bottom: 2px solid ${BRAND.darkSage} !important;
+            margin-bottom: 12px !important;
+          }
+          .pdf-export-root .page2-header h1 {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: ${BRAND.black} !important;
+          }
+          .pdf-export-root .page2-header span {
+            font-size: 12px !important;
+            color: ${BRAND.black} !important;
+          }
+
+          /* Page 2 section headers */
+          .pdf-export-root .print-section-header {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+          }
+
+          /* Page 2 section content */
+          .pdf-export-root .print-section-content,
+          .pdf-export-root .print-section-content * {
+            font-size: 12px !important;
+            line-height: 1.45 !important;
           }
 
           /* ═══════════════════════════════════════════════════════════

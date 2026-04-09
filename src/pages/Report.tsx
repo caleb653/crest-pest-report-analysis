@@ -2530,14 +2530,14 @@ Crest Pest Control`;
       <div data-pdf-page="2" className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
         <div data-pdf-capture="2" className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border">
+          <div className="page2-header flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
               <h1 className="text-xl print:text-lg font-bold text-foreground">Property Map & Details</h1>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground">Property Type:</span>
-              <span className="text-xs font-medium text-foreground">{propertyType}</span>
+              <span className="text-sm font-semibold text-muted-foreground">Property Type:</span>
+              <span className="text-sm font-medium text-foreground">{propertyType}</span>
             </div>
           </div>
 
