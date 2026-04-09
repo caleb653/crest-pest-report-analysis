@@ -897,7 +897,64 @@ const PortalAdmin = () => {
             )}
           </TabsContent>
 
-          {/* Prep Sheets */}
+          {/* Tenant Requests */}
+          <TabsContent value="requests">
+            {tenantRequests.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No tenant requests yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {tenantRequests.map((r: any) => (
+                  <Card key={r.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={r.status === "resolved" ? "default" : r.status === "in_progress" ? "secondary" : "outline"} className="text-xs">
+                            {r.status === "in_progress" ? "In Progress" : r.status}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">{r.request_type}</Badge>
+                          {r.unit_number && <span className="text-xs text-muted-foreground">Unit {r.unit_number}</span>}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm mb-2">{r.description}</p>
+                      {showAdminPanel && (
+                        <div className="flex gap-2 mt-2">
+                          <Select value={r.status} onValueChange={async (v) => {
+                            await supabase.from("portal_requests").update({ status: v }).eq("id", r.id);
+                            if (selectedClient) loadTenantRequests(selectedClient.id);
+                          }}>
+                            <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="resolved">Resolved</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            placeholder="Response notes..."
+                            defaultValue={r.response_notes || ""}
+                            className="h-7 text-xs flex-1"
+                            onBlur={async (e) => {
+                              if (e.target.value !== (r.response_notes || "")) {
+                                await supabase.from("portal_requests").update({ response_notes: e.target.value }).eq("id", r.id);
+                                if (selectedClient) loadTenantRequests(selectedClient.id);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                      {!showAdminPanel && r.response_notes && (
+                        <div className="bg-muted rounded-md p-2 mt-2">
+                          <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="prep">
             {showAdminPanel && (
               <div className="mb-3">
