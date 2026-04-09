@@ -263,11 +263,30 @@ const TeamDocs = () => {
                   <div><span className="font-medium">Date:</span> {viewingDoc.form_date || "—"}</div>
                 </div>
                 <hr />
-                {viewingDoc.employee_signature && (
+
+                {/* Full agreement text */}
+                <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-3">
+                  <p>California law generally requires a 30-minute unpaid, duty-free meal period for non-exempt employees who work more than five (5) hours in a workday.</p>
+                  <p className="font-semibold">I understand and agree:</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>If I work more than 5 hours but no more than 6 hours, I may voluntarily waive my first meal period.</li>
+                    <li>If I work more than 10 hours but no more than 12 hours, I may voluntarily waive my second meal period only if I took my first meal period.</li>
+                    <li>I understand meal period waivers are not allowed beyond these limits.</li>
+                    <li>I understand this waiver is completely voluntary.</li>
+                    <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
+                    <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
+                  </ul>
+                  <p className="font-medium pt-1">By signing below, I voluntarily agree to waive my meal period only when legally permitted under California law.</p>
+                </div>
+
+                <hr />
+                {viewingDoc.employee_signature ? (
                   <div>
-                    <span className="font-medium">Signature:</span>
+                    <span className="font-medium">Employee Signature:</span>
                     <img src={viewingDoc.employee_signature} alt="Employee signature" className="h-16 mt-1 border rounded p-1" />
                   </div>
+                ) : (
+                  <div><span className="font-medium">Employee Signature:</span> Not signed</div>
                 )}
                 <p className="text-xs text-muted-foreground pt-2">
                   Submitted: {new Date(viewingDoc.created_at).toLocaleString()}
