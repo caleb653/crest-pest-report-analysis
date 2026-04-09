@@ -148,7 +148,34 @@ const PortalAdmin = () => {
   };
   const loadLinks = async (clientId: string) => {
     const { data } = await supabase.from("portal_links").select("*").eq("client_id", clientId);
-    if (data) setLinks(data);
+    if (data) {
+      setLinks(data);
+      // Auto-create master link if none exists
+      const hasMaster = data.some(l => l.link_type === "master");
+      if (!hasMaster) {
+        const client = clients.find(c => c.id === clientId);
+        await supabase.from("portal_links").insert({
+          client_id: clientId, link_type: "master",
+          label: `${client?.company || client?.name || "Client"} Portal`,
+        });
+        const { data: refreshed } = await supabase.from("portal_links").select("*").eq("client_id", clientId);
+        if (refreshed) setLinks(refreshed);
+      }
+    }
+  };
+
+  // Auto-create a PM link for a property if none exists
+  const ensurePropertyLink = async (propertyId: string, propertyName: string) => {
+    const existing = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(propertyId));
+    if (!existing && selectedClient) {
+      await supabase.from("portal_links").insert({
+        client_id: selectedClient.id, link_type: "sub",
+        label: `${propertyName} — PM Link`,
+        assigned_property_ids: [propertyId],
+      });
+      const { data: refreshed } = await supabase.from("portal_links").select("*").eq("client_id", selectedClient.id);
+      if (refreshed) setLinks(refreshed);
+    }
   };
   const loadPrepSheets = async () => {
     const { data } = await supabase.from("portal_prep_sheets").select("*").order("title");
