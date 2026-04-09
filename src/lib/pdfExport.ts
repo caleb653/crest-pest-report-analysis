@@ -626,10 +626,17 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          applySectionFont('[data-pdf-section="additional-details"] .print-content-formatted', 13, 1.38);
-          applySectionFont('[data-pdf-section="limitations"] .text-foreground, [data-pdf-section="limitations"] p', 13, 1.38);
-          applySectionFont('[data-pdf-section="scheduling"] .text-xs, [data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground', 13, 1.32);
-          applySectionFont('[data-pdf-section="setup-materials"] .text-xs, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold', 13, 1.32);
+          // Blanket apply to ALL text nodes inside each page-2 section
+          const PAGE2_FONT = 14;
+          ['additional-details', 'limitations', 'scheduling', 'setup-materials'].forEach((section) => {
+            const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
+            if (!card) return;
+            card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
+              if (node.closest('.print-section-header')) return;
+              sp(node, 'font-size', `${PAGE2_FONT}px`);
+              sp(node, 'line-height', '1.4');
+            });
+          });
 
           const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
           const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
