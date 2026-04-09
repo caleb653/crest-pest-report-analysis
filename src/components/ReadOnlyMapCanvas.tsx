@@ -116,10 +116,11 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       const foundIcons = new Set<string>();
 
       objectsArray.forEach((obj: any) => {
-        console.log('Processing object:', obj.type, obj);
+        const objType = String(obj.type || '').toLowerCase();
+        console.log('Processing object:', objType, obj);
         
         // Handle group objects (numbered icons)
-        if (obj.type === 'group' && obj.data?.iconType) {
+        if ((objType === 'group' || objType === 'image') && obj.data?.iconType) {
           const iconType = obj.data.iconType;
           const iconNumber = obj.data.iconNumber;
           const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
