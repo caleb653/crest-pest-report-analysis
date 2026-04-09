@@ -128,7 +128,6 @@ const PortalAdmin = () => {
   // Reset tab when view mode changes
   useEffect(() => {
     if (viewMode === "tenant") setPortalTab("requests");
-    else if (viewMode === "pm") setPortalTab("future");
     else setPortalTab("past");
   }, [viewMode]);
 
@@ -846,8 +845,8 @@ const PortalAdmin = () => {
         ) : (
         /* Service Tabs - Admin & PM */
         <Tabs value={portalTab} onValueChange={setPortalTab}>
-          <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-5" : "grid-cols-3"}`}>
-            {viewMode === "admin" && <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>}
+          <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-5" : "grid-cols-4"}`}>
+            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
             <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
             <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
             {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
@@ -1132,16 +1131,18 @@ const PortalAdmin = () => {
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
                       const prop = properties.find(p => p.id === selectedService.property_id);
-                      navigate(`/appointment-report/${selectedService.id}`, {
-                        state: {
-                          serviceData: selectedService,
-                          propertyName: prop?.name || "",
-                          propertyAddress: prop?.address || "",
-                          propertyId: selectedService.property_id,
-                          clientName: selectedClient?.company || selectedClient?.name,
-                          returnTo: "/portal-admin",
-                        }
-                      });
+                      const url = `/appointment-report/${selectedService.id}`;
+                      // Store state in sessionStorage for new tab access
+                      const stateData = {
+                        serviceData: selectedService,
+                        propertyName: prop?.name || "",
+                        propertyAddress: prop?.address || "",
+                        propertyId: selectedService.property_id,
+                        clientName: selectedClient?.company || selectedClient?.name,
+                        returnTo: "/portal-admin",
+                      };
+                      sessionStorage.setItem(`appointment-report-${selectedService.id}`, JSON.stringify(stateData));
+                      window.open(url, "_blank");
                     }}>
                       <FileText className="w-3.5 h-3.5 mr-1" />Appointment Report
                     </Button>
