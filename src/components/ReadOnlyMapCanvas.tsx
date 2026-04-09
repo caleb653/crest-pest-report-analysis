@@ -192,7 +192,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             });
             loadPromises.push(promise);
           }
-        } else if (obj.type === 'rect') {
+        } else if (objType === 'rect') {
           const rect = new Rect({
             left: (obj.left || 0) * scaleX,
             top: (obj.top || 0) * scaleY,
@@ -207,7 +207,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             evented: false,
           });
           canvas.add(rect);
-        } else if (obj.type === 'line') {
+        } else if (objType === 'line') {
           // x1/y1/x2/y2 are Fabric-relative (define line shape relative to center)
           // left/top are normalized position; use scaleX/scaleY for proper sizing
           const line = new Line([obj.x1 || 0, obj.y1 || 0, obj.x2 || 0, obj.y2 || 0], {
@@ -222,7 +222,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             evented: false,
           });
           canvas.add(line);
-        } else if (obj.type === 'i-text' || obj.type === 'text') {
+        } else if (objType === 'i-text' || objType === 'text') {
           const text = new IText(obj.text || '', {
             left: (obj.left || 0) * scaleX,
             top: (obj.top || 0) * scaleY,
@@ -236,7 +236,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             evented: false,
           });
           canvas.add(text);
-        } else if (obj.type === 'path') {
+        } else if (objType === 'path') {
           // Freehand drawing paths - reconstruct via loadFromJSON for this single object
           const pathPromise = new Promise<void>((resolveP) => {
             const tempCanvas = new FabricCanvas(document.createElement('canvas'), {
