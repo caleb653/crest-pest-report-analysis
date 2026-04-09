@@ -186,8 +186,38 @@ const SubmittedReports = () => {
     const path = report.report_type === "initial" ? `/initial-pest-report/${report.id}` : `/report/${report.id}`;
     navigate(path);
   };
+  const duplicateReport = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDuplicating(reportId);
+    try {
+      const { data: original, error: fetchError } = await supabase
+        .from("reports")
+        .select("*")
+        .eq("id", reportId)
+        .maybeSingle();
 
-  const handleSignOut = () => {
+      if (fetchError || !original) throw fetchError || new Error("Report not found");
+
+      const newId = crypto.randomUUID();
+      const { id, created_at, updated_at, customer_signature, sent_to_customer_at, customer_email, ...rest } = original as any;
+
+      const { error: insertError } = await supabase
+        .from("reports")
+        .insert([{ id: newId, ...rest, report_title: (rest.report_title || "Report") + " (Copy)" }]);
+
+      if (insertError) throw insertError;
+
+      toast.success("Report duplicated!");
+      await loadReports();
+    } catch (error: any) {
+      console.error("Duplicate error:", error);
+      toast.error("Failed to duplicate report");
+    } finally {
+      setDuplicating(null);
+    }
+  };
+
+
     sessionStorage.removeItem("app_authenticated");
     sessionStorage.removeItem("app_logged_in_user");
     toast.success("Signed out");
