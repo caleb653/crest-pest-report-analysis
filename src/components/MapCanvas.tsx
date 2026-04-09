@@ -855,13 +855,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       if (obj.data) {
         objJSON.data = obj.data;
       }
-      // Normalize line endpoints to reference coordinates
-      if (String(obj.type || '').toLowerCase() === 'line') {
-        objJSON.x1 = ((obj.x1 || 0) / currW) * REFERENCE_WIDTH;
-        objJSON.y1 = ((obj.y1 || 0) / currH) * REFERENCE_HEIGHT;
-        objJSON.x2 = ((obj.x2 || 0) / currW) * REFERENCE_WIDTH;
-        objJSON.y2 = ((obj.y2 || 0) / currH) * REFERENCE_HEIGHT;
-      }
+      // Lines: do NOT normalize x1/y1/x2/y2 — they are relative to the line's
+      // center and define its shape. Position is handled by left/top, size by scaleX/scaleY.
       return objJSON;
     });
 
