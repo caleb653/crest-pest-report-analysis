@@ -894,7 +894,7 @@ const PortalAdmin = () => {
 
           {/* Future Services */}
           <TabsContent value="future">
-            {viewMode === "admin" && (
+            {(viewMode === "admin" || viewMode === "pm") && (
               <div className="mb-3">
                 <Button size="sm" variant="outline" onClick={() => { setServiceForm({ ...emptyServiceForm, property_id: selectedProperty?.id || "", status: "scheduled" }); setEditingService(null); setShowAddService(true); }} disabled={properties.length === 0}>
                   <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
