@@ -2351,7 +2351,7 @@ Crest Pest Control`;
             </div>
 
             {/* Right Column - Proposed Services */}
-            <Card className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
+            <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
                 <span className="text-xs print:text-[10px] font-bold uppercase">Proposed Services</span>
               </div>
@@ -2393,6 +2393,7 @@ Crest Pest Control`;
                       </Button>
                     </div>
                     <div
+                      data-pdf-content="proposed-services"
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{
@@ -2674,9 +2675,9 @@ Crest Pest Control`;
             </div>
 
             {/* Right Column - Additional Details + Scheduling + Setup Materials */}
-            <div className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
+            <div data-pdf-section="page2-details-column" className="flex flex-col gap-3 print:gap-2 h-full print:h-auto print:min-h-0 print:mt-0">
               {/* Additional Details Section - now shorter */}
-              <Card className="print-section additional-details-card p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.5] flex flex-col">
+              <Card data-pdf-section="additional-details" className="print-section additional-details-card p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.5] flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                   <input
                     type="text"
@@ -2709,7 +2710,7 @@ Crest Pest Control`;
               </Card>
 
               {/* Limitations Section */}
-              <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.3] flex flex-col">
+              <Card data-pdf-section="limitations" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.3] flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                   <span className="text-xs print:text-[10px] font-bold uppercase">Limitations</span>
                 </div>
@@ -2730,7 +2731,7 @@ Crest Pest Control`;
               {/* Bottom row: Scheduling + Setup Materials side by side */}
               <div className="grid grid-cols-2 gap-3 print:gap-2">
                 {/* Scheduling & Customer Communication */}
-                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg" data-scheduling-empty={!preferredServiceDay && !preferredServiceTime && !mainPointOfContact && !contactPhone ? "true" : undefined}>
+                <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg" data-scheduling-empty={!preferredServiceDay && !preferredServiceTime && !mainPointOfContact && !contactPhone ? "true" : undefined}>
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
                   </div>
@@ -2791,7 +2792,7 @@ Crest Pest Control`;
                 </Card>
 
                 {/* Setup Materials */}
-                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+                <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
                     <span className="text-xs print:text-[10px] font-bold uppercase">Setup Materials</span>
                   </div>
