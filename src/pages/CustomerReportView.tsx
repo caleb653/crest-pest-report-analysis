@@ -627,6 +627,7 @@ export default function CustomerReportView() {
         let pointOfContact = "";
         let contactPhoneNum = "";
         let materials: Array<{ name: string; quantity: string }> = [];
+        let limitationsTextVal = "";
 
         if (report.notes) {
           try {
@@ -639,6 +640,7 @@ export default function CustomerReportView() {
               pointOfContact = parsed.mainPointOfContact || "";
               contactPhoneNum = parsed.contactPhone || "";
               materials = parsed.setupMaterials || [];
+              limitationsTextVal = parsed.limitationsText || "";
             }
           } catch {
             // Not JSON, use as plain HTML
@@ -696,6 +698,18 @@ export default function CustomerReportView() {
                         className="text-xs leading-relaxed prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: additionalDetailsHtml }}
                       />
+                    </div>
+                  </Card>
+                )}
+
+                {/* Limitations */}
+                {limitationsTextVal && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Limitations</span>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-xs leading-relaxed whitespace-pre-wrap">{limitationsTextVal}</p>
                     </div>
                   </Card>
                 )}
@@ -770,6 +784,18 @@ export default function CustomerReportView() {
                       className="text-xs leading-relaxed prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ __html: additionalDetailsHtml }}
                     />
+                  </div>
+                </Card>
+              )}
+
+              {/* Limitations */}
+              {limitationsTextVal && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Limitations</span>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-xs leading-relaxed whitespace-pre-wrap">{limitationsTextVal}</p>
                   </div>
                 </Card>
               )}
