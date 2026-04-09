@@ -1131,10 +1131,13 @@ const PortalAdmin = () => {
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
+                      const prop = properties.find(p => p.id === selectedService.property_id);
                       navigate(`/appointment-report/${selectedService.id}`, {
                         state: {
                           serviceData: selectedService,
-                          propertyName: getPropertyName(selectedService.property_id),
+                          propertyName: prop?.name || "",
+                          propertyAddress: prop?.address || "",
+                          propertyId: selectedService.property_id,
                           clientName: selectedClient?.company || selectedClient?.name,
                           returnTo: "/portal-admin",
                         }
