@@ -359,6 +359,106 @@ const AppointmentReport = () => {
           </div>
         </Card>
 
+        {/* Property & Service Overview */}
+        <Card className="p-4 space-y-4">
+          <Label className="font-semibold text-base">Property & Service Overview</Label>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
+            <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
+            <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
+            <div><span className="text-muted-foreground">Property Manager:</span> <Input value={pmName} onChange={e => setPmName(e.target.value)} placeholder="PM name" className="h-7 text-xs inline-block w-40 ml-1" /></div>
+          </div>
+
+          {/* Unit Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="border p-1.5 text-left w-10">#</th>
+                  <th className="border p-1.5 text-left w-16">Unit</th>
+                  <th className="border p-1.5 text-left">Target Pests</th>
+                  <th className="border p-1.5 text-left">Notes</th>
+                  <th className="border p-1.5 text-left">Areas Treated</th>
+                  <th className="border p-1.5 text-left">Products Used</th>
+                  <th className="border p-1.5 text-left w-16">Follow-Up?</th>
+                  <th className="border p-1.5 text-left">Follow-Up Notes</th>
+                  <th className="border p-1.5 w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {unitRows.map((row, i) => (
+                  <tr key={i}>
+                    <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
+                    <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
+                    <td className="border p-0.5"><Input value={row.targetPests} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                    <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                    <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                    <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                    <td className="border p-0.5">
+                      <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
+                        <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
+                        <SelectContent><SelectItem value="No">No</SelectItem><SelectItem value="Yes">Yes</SelectItem></SelectContent>
+                      </Select>
+                    </td>
+                    <td className="border p-0.5"><Input value={row.followUpNotes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUpNotes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                    <td className="border p-0.5 text-center">
+                      {unitRows.length > 1 && <button className="text-destructive text-xs" onClick={() => setUnitRows(prev => prev.filter((_, j) => j !== i))}>×</button>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => setUnitRows(prev => [...prev, { ...emptyUnit }])}>
+              <Plus className="w-3 h-3 mr-1" />Add Unit
+            </Button>
+          </div>
+
+          {/* Common Area */}
+          <div className="border-t pt-3 space-y-2">
+            <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label className="text-xs">Target Pests</Label><Input value={commonAreaPests} onChange={e => setCommonAreaPests(e.target.value)} className="h-7 text-xs" placeholder="e.g. Ants, Spiders" /></div>
+              <div><Label className="text-xs">Notes</Label><Input value={commonAreaNotes} onChange={e => setCommonAreaNotes(e.target.value)} className="h-7 text-xs" /></div>
+            </div>
+          </div>
+
+          {/* Technician Observations */}
+          <div className="border-t pt-3 space-y-2">
+            <p className="text-sm font-medium">Crest Technician: Observations & Notes</p>
+            <Textarea value={techObservations} onChange={e => setTechObservations(e.target.value)} placeholder="Technician observations and notes..." rows={3} className="text-xs" />
+          </div>
+
+          <p className="text-xs text-muted-foreground italic">Note: See full service report for details on pesticide usage and observations for exterior and common areas.</p>
+        </Card>
+
+        {/* Property Map */}
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold">Property Map</Label>
+            <Button variant="outline" size="sm" onClick={() => mapFileInputRef.current?.click()}>
+              {mapImageUrl ? "Replace Map" : "Upload Map Image"}
+            </Button>
+            <input ref={mapFileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => setMapImageUrl(reader.result as string);
+              reader.readAsDataURL(file);
+            }} />
+          </div>
+          {mapImageUrl ? (
+            <div className="relative">
+              <img src={mapImageUrl} alt="Property Map" className="w-full rounded border" />
+              <p className="text-xs text-muted-foreground mt-1">This map persists across all appointments for this property. Annotate pest concerns directly on the map.</p>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
+              <p className="text-sm">No property map uploaded yet</p>
+              <p className="text-xs mt-1">Upload a satellite/aerial image of the property to annotate pest concerns</p>
+            </div>
+          )}
+        </Card>
+
         {/* Target Pests */}
         <Card className="p-4">
           <Label className="mb-2 block font-semibold">Target Pests</Label>
