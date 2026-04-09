@@ -131,6 +131,13 @@ const PortalAdmin = () => {
     else setPortalTab("past");
   }, [viewMode]);
 
+  // Auto-create PM link when entering a property
+  useEffect(() => {
+    if (selectedProperty && selectedClient) {
+      ensurePropertyLink(selectedProperty.id, selectedProperty.name);
+    }
+  }, [selectedProperty]);
+
   const loadClients = async () => {
     const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
     if (data) setClients(data);
