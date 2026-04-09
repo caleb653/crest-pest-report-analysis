@@ -38,6 +38,284 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_clients: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portal_links: {
+        Row: {
+          assigned_property_ids: Json | null
+          client_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          link_type: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_property_ids?: Json | null
+          client_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          link_type?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_property_ids?: Json | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          link_type?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_links_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "portal_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          link_id: string | null
+          message: string
+          property_name: string | null
+          related_service_date: string | null
+          related_unit: string | null
+          sender_email: string | null
+          sender_name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link_id?: string | null
+          message: string
+          property_name?: string | null
+          related_service_date?: string | null
+          related_unit?: string | null
+          sender_email?: string | null
+          sender_name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link_id?: string | null
+          message?: string
+          property_name?: string | null
+          related_service_date?: string | null
+          related_unit?: string | null
+          sender_email?: string | null
+          sender_name?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_messages_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "portal_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_prep_sheets: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          title: string
+          treatment_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          title: string
+          treatment_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string
+          treatment_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portal_properties: {
+        Row: {
+          address: string | null
+          client_id: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "portal_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_services: {
+        Row: {
+          created_at: string
+          findings: string | null
+          follow_up_notes: string | null
+          follow_up_recommended: boolean | null
+          id: string
+          notes: string | null
+          photos: Json | null
+          prep_notes: string | null
+          prep_required: boolean | null
+          products_used: Json | null
+          property_id: string
+          scheduling_status: string | null
+          service_date: string | null
+          service_time: string | null
+          service_type: string
+          special_notes: string | null
+          status: string
+          summary: string | null
+          technician: string | null
+          unit_details: Json | null
+          units_planned: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          findings?: string | null
+          follow_up_notes?: string | null
+          follow_up_recommended?: boolean | null
+          id?: string
+          notes?: string | null
+          photos?: Json | null
+          prep_notes?: string | null
+          prep_required?: boolean | null
+          products_used?: Json | null
+          property_id: string
+          scheduling_status?: string | null
+          service_date?: string | null
+          service_time?: string | null
+          service_type: string
+          special_notes?: string | null
+          status?: string
+          summary?: string | null
+          technician?: string | null
+          unit_details?: Json | null
+          units_planned?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          findings?: string | null
+          follow_up_notes?: string | null
+          follow_up_recommended?: boolean | null
+          id?: string
+          notes?: string | null
+          photos?: Json | null
+          prep_notes?: string | null
+          prep_required?: boolean | null
+          products_used?: Json | null
+          property_id?: string
+          scheduling_status?: string | null
+          service_date?: string | null
+          service_time?: string | null
+          service_type?: string
+          special_notes?: string | null
+          status?: string
+          summary?: string | null
+          technician?: string | null
+          unit_details?: Json | null
+          units_planned?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_services_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           address: string | null
