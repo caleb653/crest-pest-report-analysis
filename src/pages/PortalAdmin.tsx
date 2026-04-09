@@ -314,6 +314,36 @@ const PortalAdmin = () => {
     window.open(`/${prefix}/${token}`, "_blank");
   };
   const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
+
+  // Create a new service and open Appointment Report in new tab
+  const createAndOpenReport = async (status: string) => {
+    const propId = selectedProperty?.id || (properties.length === 1 ? properties[0].id : "");
+    if (!propId) {
+      toast({ title: "Select a property first", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.from("portal_services").insert({
+      property_id: propId,
+      service_type: "General Pest Control",
+      status,
+      service_date: status === "scheduled" ? null : new Date().toISOString().split("T")[0],
+    }).select("id").single();
+    if (error || !data) {
+      toast({ title: "Failed to create service", variant: "destructive" });
+      return;
+    }
+    const prop = properties.find(p => p.id === propId);
+    const stateData = {
+      propertyName: prop?.name || "",
+      propertyAddress: prop?.address || "",
+      propertyId: propId,
+      clientName: selectedClient?.company || selectedClient?.name,
+      returnTo: "/portal-admin",
+    };
+    sessionStorage.setItem(`appointment-report-${data.id}`, JSON.stringify(stateData));
+    window.open(`/appointment-report/${data.id}`, "_blank");
+    if (selectedClient) loadProperties(selectedClient.id);
+  };
   const today = new Date().toISOString().split("T")[0];
 
   const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
