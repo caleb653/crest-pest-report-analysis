@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -47,6 +47,7 @@ interface PortalService {
   id: string;
   property_id: string;
   service_date: string | null;
+  service_time: string | null;
   service_type: string;
   technician: string | null;
   status: string;
@@ -55,8 +56,12 @@ interface PortalService {
   notes: string | null;
   products_used: any;
   follow_up_recommended: boolean | null;
+  follow_up_notes: string | null;
   scheduling_status: string | null;
+  prep_required: boolean | null;
+  prep_notes: string | null;
   unit_details: any;
+  special_notes: string | null;
 }
 
 interface PortalPrepSheet {
@@ -87,7 +92,15 @@ const PortalAdmin = () => {
   const [services, setServices] = useState<PortalService[]>([]);
   const [prepSheets, setPrepSheets] = useState<PortalPrepSheet[]>([]);
   const [messages, setMessages] = useState<PortalMessage[]>([]);
-  const [activeTab, setActiveTab] = useState("clients");
+
+  // Client portal view state
+  const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
+  const [selectedService, setSelectedService] = useState<PortalService | null>(null);
+  const [portalTab, setPortalTab] = useState("past");
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  // Global admin tab (when no client selected)
+  const [globalTab, setGlobalTab] = useState("clients");
 
   // Dialog states
   const [showAddClient, setShowAddClient] = useState(false);
@@ -113,6 +126,9 @@ const PortalAdmin = () => {
     if (selectedClient) {
       loadProperties(selectedClient.id);
       loadLinks(selectedClient.id);
+      setSelectedProperty(null);
+      setSelectedService(null);
+      setPortalTab("past");
     }
   }, [selectedClient]);
 
@@ -188,8 +204,10 @@ const PortalAdmin = () => {
   };
 
   const addService = async () => {
+    const propId = newService.property_id || (selectedProperty?.id) || "";
+    if (!propId) return;
     const { error } = await supabase.from("portal_services").insert({
-      property_id: newService.property_id,
+      property_id: propId,
       service_date: newService.service_date || null,
       service_type: newService.service_type,
       technician: newService.technician || null,
@@ -231,6 +249,7 @@ const PortalAdmin = () => {
 
   const deleteProperty = async (id: string) => {
     await supabase.from("portal_properties").delete().eq("id", id);
+    if (selectedProperty?.id === id) setSelectedProperty(null);
     if (selectedClient) loadProperties(selectedClient.id);
     toast({ title: "Property deleted" });
   };
@@ -263,39 +282,47 @@ const PortalAdmin = () => {
     window.open(`/portal/${token}`, "_blank");
   };
 
-  const getPropertyName = (propertyId: string) => {
-    return properties.find(p => p.id === propertyId)?.name || "Unknown";
-  };
+  const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b px-4 py-3 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <img src={crestLogo} alt="Crest" className="h-8" />
-        <h1 className="text-lg font-bold">Client Portal Admin</h1>
-      </div>
+  const today = new Date().toISOString().split("T")[0];
 
-      <div className="p-4 max-w-7xl mx-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="clients"><Building2 className="w-4 h-4 mr-1" />Clients</TabsTrigger>
-            <TabsTrigger value="prep-sheets"><FileText className="w-4 h-4 mr-1" />Prep Sheets</TabsTrigger>
-            <TabsTrigger value="messages"><MessageSquare className="w-4 h-4 mr-1" />Messages</TabsTrigger>
-          </TabsList>
+  // Filter services based on selected property or show all
+  const visibleServices = selectedProperty
+    ? services.filter(s => s.property_id === selectedProperty.id)
+    : services;
 
-          {/* ====== CLIENTS TAB ====== */}
-          <TabsContent value="clients">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Client list */}
-              <Card className="lg:col-span-1">
+  const pastServices = visibleServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const futureServices = visibleServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+
+  const masterLink = links.find(l => l.link_type === "master");
+
+  // ============ CLIENT LIST VIEW ============
+  if (!selectedClient) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-card border-b px-4 py-3 flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <img src={crestLogo} alt="Crest" className="h-8" />
+          <h1 className="text-lg font-bold">Client Portal Admin</h1>
+        </div>
+
+        <div className="p-4 max-w-5xl mx-auto">
+          <Tabs value={globalTab} onValueChange={setGlobalTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="clients"><Building2 className="w-4 h-4 mr-1" />Clients</TabsTrigger>
+              <TabsTrigger value="prep-sheets"><FileText className="w-4 h-4 mr-1" />Prep Sheets</TabsTrigger>
+              <TabsTrigger value="messages"><MessageSquare className="w-4 h-4 mr-1" />Messages</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="clients">
+              <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">Clients</CardTitle>
                   <Dialog open={showAddClient} onOpenChange={setShowAddClient}>
                     <DialogTrigger asChild>
-                      <Button size="sm"><Plus className="w-4 h-4 mr-1" />Add</Button>
+                      <Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Client</Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader><DialogTitle>Add Client</DialogTitle></DialogHeader>
@@ -310,25 +337,26 @@ const PortalAdmin = () => {
                     </DialogContent>
                   </Dialog>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent>
                   {clients.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-4">No clients yet</p>
+                    <p className="text-sm text-muted-foreground">No clients yet. Add your first client above.</p>
                   ) : (
-                    <div className="divide-y max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-2">
                       {clients.map(c => (
                         <div
                           key={c.id}
-                          className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${selectedClient?.id === c.id ? "bg-primary/10" : ""}`}
+                          className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors"
                           onClick={() => setSelectedClient(c)}
                         >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm">{c.name}</p>
-                              {c.company && <p className="text-xs text-muted-foreground">{c.company}</p>}
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteClient(c.id); }}>
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          <div>
+                            <p className="font-medium">{c.name}</p>
+                            {c.company && <p className="text-sm text-muted-foreground">{c.company}</p>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={e => { e.stopPropagation(); deleteClient(c.id); }}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
+                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
                           </div>
                         </div>
                       ))}
@@ -336,265 +364,523 @@ const PortalAdmin = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              {/* Client detail */}
-              <div className="lg:col-span-2 space-y-4">
-                {!selectedClient ? (
-                  <Card><CardContent className="p-8 text-center text-muted-foreground">Select a client to manage</CardContent></Card>
-                ) : (
-                  <>
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">{selectedClient.name} {selectedClient.company && <span className="text-muted-foreground font-normal">— {selectedClient.company}</span>}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="text-sm space-y-1">
-                        {selectedClient.email && <p>Email: {selectedClient.email}</p>}
-                        {selectedClient.phone && <p>Phone: {selectedClient.phone}</p>}
-                        {selectedClient.notes && <p className="text-muted-foreground">{selectedClient.notes}</p>}
-                      </CardContent>
-                    </Card>
-
-                    {/* Access Links */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Access Links</CardTitle>
-                        <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
-                          <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Link</Button></DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Create Access Link</DialogTitle></DialogHeader>
-                            <div className="space-y-3">
-                              <div>
-                                <Label>Type</Label>
-                                <Select value={newLink.link_type} onValueChange={v => setNewLink({ ...newLink, link_type: v })}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="master">Master (all properties)</SelectItem>
-                                    <SelectItem value="sub">Sub (specific properties)</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div><Label>Label</Label><Input placeholder="e.g. Building A Manager" value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
-                              {newLink.link_type === "sub" && properties.length > 0 && (
-                                <div>
-                                  <Label>Assigned Properties</Label>
-                                  <div className="space-y-1 mt-1">
-                                    {properties.map(p => (
-                                      <label key={p.id} className="flex items-center gap-2 text-sm">
-                                        <input
-                                          type="checkbox"
-                                          checked={newLink.assigned_property_ids.includes(p.id)}
-                                          onChange={e => {
-                                            if (e.target.checked) setNewLink({ ...newLink, assigned_property_ids: [...newLink.assigned_property_ids, p.id] });
-                                            else setNewLink({ ...newLink, assigned_property_ids: newLink.assigned_property_ids.filter(id => id !== p.id) });
-                                          }}
-                                        />
-                                        {p.name}
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              <Button onClick={addLink} className="w-full">Create Link</Button>
+            {/* Prep Sheets tab */}
+            <TabsContent value="prep-sheets">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-base">Prep Sheets</CardTitle>
+                  <Dialog open={showAddPrepSheet} onOpenChange={setShowAddPrepSheet}>
+                    <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Add</Button></DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Add Prep Sheet</DialogTitle></DialogHeader>
+                      <div className="space-y-3">
+                        <div><Label>Title *</Label><Input value={newPrepSheet.title} onChange={e => setNewPrepSheet({ ...newPrepSheet, title: e.target.value })} /></div>
+                        <div><Label>Treatment Type *</Label><Input placeholder="e.g. Bed Bug, Roach" value={newPrepSheet.treatment_type} onChange={e => setNewPrepSheet({ ...newPrepSheet, treatment_type: e.target.value })} /></div>
+                        <div><Label>Description</Label><Textarea value={newPrepSheet.description} onChange={e => setNewPrepSheet({ ...newPrepSheet, description: e.target.value })} /></div>
+                        <div><Label>File URL</Label><Input placeholder="https://..." value={newPrepSheet.file_url} onChange={e => setNewPrepSheet({ ...newPrepSheet, file_url: e.target.value })} /></div>
+                        <Button onClick={addPrepSheet} disabled={!newPrepSheet.title || !newPrepSheet.treatment_type} className="w-full">Add Prep Sheet</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {prepSheets.length === 0 ? <p className="text-sm text-muted-foreground">No prep sheets</p> : (
+                    <div className="space-y-2">
+                      {prepSheets.map(ps => (
+                        <div key={ps.id} className="flex items-center justify-between border rounded-md p-3">
+                          <div>
+                            <p className="font-medium text-sm">{ps.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">{ps.treatment_type}</Badge>
+                              {ps.description && <span className="text-xs text-muted-foreground">{ps.description}</span>}
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                      </CardHeader>
-                      <CardContent>
-                        {links.length === 0 ? <p className="text-xs text-muted-foreground">No links created</p> : (
-                          <div className="space-y-2">
-                            {links.map(l => (
-                              <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
-                                <Badge variant={l.link_type === "master" ? "default" : "secondary"}>{l.link_type}</Badge>
-                                <span className="flex-1 truncate">{l.label || "Unnamed"}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token)}><Copy className="w-3.5 h-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token)}><ExternalLink className="w-3.5 h-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                              </div>
-                            ))}
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Properties */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm flex items-center gap-1"><MapPin className="w-4 h-4" />Properties</CardTitle>
-                        <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
-                          <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Property</Button></DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
-                            <div className="space-y-3">
-                              <div><Label>Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
-                              <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
-                              <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
-                              <Button onClick={addProperty} disabled={!newProperty.name} className="w-full">Add Property</Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </CardHeader>
-                      <CardContent>
-                        {properties.length === 0 ? <p className="text-xs text-muted-foreground">No properties</p> : (
-                          <div className="space-y-2">
-                            {properties.map(p => (
-                              <div key={p.id} className="flex items-center justify-between text-sm border rounded-md p-2">
-                                <div>
-                                  <p className="font-medium">{p.name}</p>
-                                  {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteProperty(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                              </div>
-                            ))}
+                          <div className="flex items-center gap-1">
+                            {ps.file_url && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                <a href={ps.file_url} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-3.5 h-3.5" /></a>
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePrepSheet(ps.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                    {/* Services */}
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm flex items-center gap-1"><ClipboardList className="w-4 h-4" />Services</CardTitle>
-                        <Dialog open={showAddService} onOpenChange={setShowAddService}>
-                          <DialogTrigger asChild><Button size="sm" variant="outline" disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Service</Button></DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader><DialogTitle>Add Service</DialogTitle></DialogHeader>
-                            <div className="space-y-3">
-                              <div>
-                                <Label>Property *</Label>
-                                <Select value={newService.property_id} onValueChange={v => setNewService({ ...newService, property_id: v })}>
-                                  <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
-                                  <SelectContent>
-                                    {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div><Label>Service Date</Label><Input type="date" value={newService.service_date} onChange={e => setNewService({ ...newService, service_date: e.target.value })} /></div>
-                              <div><Label>Service Type *</Label><Input placeholder="e.g. General Pest Control" value={newService.service_type} onChange={e => setNewService({ ...newService, service_type: e.target.value })} /></div>
-                              <div><Label>Technician</Label><Input value={newService.technician} onChange={e => setNewService({ ...newService, technician: e.target.value })} /></div>
-                              <div>
-                                <Label>Status</Label>
-                                <Select value={newService.status} onValueChange={v => setNewService({ ...newService, status: v })}>
-                                  <SelectTrigger><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div><Label>Summary</Label><Textarea value={newService.summary} onChange={e => setNewService({ ...newService, summary: e.target.value })} /></div>
-                              <div><Label>Findings</Label><Textarea value={newService.findings} onChange={e => setNewService({ ...newService, findings: e.target.value })} /></div>
-                              <div><Label>Notes</Label><Textarea value={newService.notes} onChange={e => setNewService({ ...newService, notes: e.target.value })} /></div>
-                              <Button onClick={addService} disabled={!newService.property_id || !newService.service_type} className="w-full">Add Service</Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </CardHeader>
-                      <CardContent>
-                        {services.length === 0 ? <p className="text-xs text-muted-foreground">No services</p> : (
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Property</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead></TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {services.map(s => (
-                                <TableRow key={s.id}>
-                                  <TableCell className="text-xs">{s.service_date || "—"}</TableCell>
-                                  <TableCell className="text-xs">{getPropertyName(s.property_id)}</TableCell>
-                                  <TableCell className="text-xs">{s.service_type}</TableCell>
-                                  <TableCell><Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">{s.status}</Badge></TableCell>
-                                  <TableCell><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteService(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button></TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
+            {/* Messages tab */}
+            <TabsContent value="messages">
+              <Card>
+                <CardHeader><CardTitle className="text-base">Client Messages</CardTitle></CardHeader>
+                <CardContent>
+                  {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages</p> : (
+                    <div className="space-y-3">
+                      {messages.map(m => (
+                        <div key={m.id} className={`border rounded-lg p-3 ${!m.is_read ? "border-primary/50 bg-primary/5" : ""}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-medium text-sm">{m.subject}</p>
+                            {!m.is_read && <Badge className="text-xs">New</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">From: {m.sender_name} {m.sender_email && `(${m.sender_email})`} {m.property_name && `• ${m.property_name}`}</p>
+                          <p className="text-sm">{m.message}</p>
+                          <p className="text-xs text-muted-foreground mt-2">{new Date(m.created_at).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  }
+
+  // ============ CLIENT PORTAL VIEW (Admin impersonation) ============
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Admin bar */}
+      <div className="bg-foreground text-background px-4 py-2 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => {
+            if (selectedProperty) { setSelectedProperty(null); setSelectedService(null); }
+            else setSelectedClient(null);
+          }}>
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+            {selectedProperty ? "All Properties" : "All Clients"}
+          </Button>
+          <span className="text-background/60">Admin View</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => setShowAdminPanel(!showAdminPanel)}>
+            <Settings className="w-3.5 h-3.5 mr-1" />Manage
+          </Button>
+          {masterLink && (
+            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token)}>
+              <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Portal header */}
+      <div className="bg-card border-b px-4 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+            <div>
+              <h1 className="text-lg font-bold">Client Portal</h1>
+              <p className="text-sm text-muted-foreground">
+                {selectedProperty
+                  ? selectedProperty.name
+                  : (selectedClient.company || selectedClient.name)}
+              </p>
+            </div>
+          </div>
+          {!selectedProperty && <Badge variant="outline" className="text-xs">Master View</Badge>}
+        </div>
+      </div>
+
+      {/* Admin management panel (toggle) */}
+      {showAdminPanel && (
+        <div className="bg-muted/50 border-b">
+          <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
+            {/* Client info */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{selectedClient.name} {selectedClient.company && <span className="text-muted-foreground">— {selectedClient.company}</span>}</p>
+                <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+                  {selectedClient.email && <span>{selectedClient.email}</span>}
+                  {selectedClient.phone && <span>{selectedClient.phone}</span>}
+                </div>
               </div>
             </div>
-          </TabsContent>
 
-          {/* ====== PREP SHEETS TAB ====== */}
-          <TabsContent value="prep-sheets">
+            {/* Access Links */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base">Prep Sheets</CardTitle>
-                <Dialog open={showAddPrepSheet} onOpenChange={setShowAddPrepSheet}>
-                  <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Add</Button></DialogTrigger>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 py-3">
+                <CardTitle className="text-sm flex items-center gap-1"><Link2 className="w-4 h-4" />Access Links</CardTitle>
+                <Dialog open={showAddLink} onOpenChange={setShowAddLink}>
+                  <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Link</Button></DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Add Prep Sheet</DialogTitle></DialogHeader>
+                    <DialogHeader><DialogTitle>Create Access Link</DialogTitle></DialogHeader>
                     <div className="space-y-3">
-                      <div><Label>Title *</Label><Input value={newPrepSheet.title} onChange={e => setNewPrepSheet({ ...newPrepSheet, title: e.target.value })} /></div>
-                      <div><Label>Treatment Type *</Label><Input placeholder="e.g. Bed Bug, Roach, General Pest" value={newPrepSheet.treatment_type} onChange={e => setNewPrepSheet({ ...newPrepSheet, treatment_type: e.target.value })} /></div>
-                      <div><Label>Description</Label><Textarea value={newPrepSheet.description} onChange={e => setNewPrepSheet({ ...newPrepSheet, description: e.target.value })} /></div>
-                      <div><Label>File URL</Label><Input placeholder="https://..." value={newPrepSheet.file_url} onChange={e => setNewPrepSheet({ ...newPrepSheet, file_url: e.target.value })} /></div>
-                      <Button onClick={addPrepSheet} disabled={!newPrepSheet.title || !newPrepSheet.treatment_type} className="w-full">Add Prep Sheet</Button>
+                      <div>
+                        <Label>Type</Label>
+                        <Select value={newLink.link_type} onValueChange={v => setNewLink({ ...newLink, link_type: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="master">Master (all properties)</SelectItem>
+                            <SelectItem value="sub">Sub (specific properties)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div><Label>Label</Label><Input placeholder="e.g. Building A Manager" value={newLink.label} onChange={e => setNewLink({ ...newLink, label: e.target.value })} /></div>
+                      {newLink.link_type === "sub" && properties.length > 0 && (
+                        <div>
+                          <Label>Assigned Properties</Label>
+                          <div className="space-y-1 mt-1">
+                            {properties.map(p => (
+                              <label key={p.id} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={newLink.assigned_property_ids.includes(p.id)}
+                                  onChange={e => {
+                                    if (e.target.checked) setNewLink({ ...newLink, assigned_property_ids: [...newLink.assigned_property_ids, p.id] });
+                                    else setNewLink({ ...newLink, assigned_property_ids: newLink.assigned_property_ids.filter(id => id !== p.id) });
+                                  }}
+                                />
+                                {p.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <Button onClick={addLink} className="w-full">Create Link</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
               </CardHeader>
-              <CardContent>
-                {prepSheets.length === 0 ? <p className="text-sm text-muted-foreground">No prep sheets</p> : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Treatment Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {prepSheets.map(ps => (
-                        <TableRow key={ps.id}>
-                          <TableCell className="font-medium text-sm">{ps.title}</TableCell>
-                          <TableCell><Badge variant="outline">{ps.treatment_type}</Badge></TableCell>
-                          <TableCell className="text-xs text-muted-foreground max-w-xs truncate">{ps.description || "—"}</TableCell>
-                          <TableCell><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePrepSheet(ps.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button></TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ====== MESSAGES TAB ====== */}
-          <TabsContent value="messages">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Client Messages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages</p> : (
-                  <div className="space-y-3">
-                    {messages.map(m => (
-                      <div key={m.id} className={`border rounded-lg p-3 ${!m.is_read ? "border-primary/50 bg-primary/5" : ""}`}>
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-medium text-sm">{m.subject}</p>
-                          {!m.is_read && <Badge className="text-xs">New</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-2">From: {m.sender_name} {m.sender_email && `(${m.sender_email})`} {m.property_name && `• ${m.property_name}`}</p>
-                        <p className="text-sm">{m.message}</p>
-                        <p className="text-xs text-muted-foreground mt-2">{new Date(m.created_at).toLocaleString()}</p>
+              <CardContent className="pt-0">
+                {links.length === 0 ? <p className="text-xs text-muted-foreground">No links created</p> : (
+                  <div className="space-y-2">
+                    {links.map(l => (
+                      <div key={l.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
+                        <Badge variant={l.link_type === "master" ? "default" : "secondary"}>{l.link_type}</Badge>
+                        <span className="flex-1 truncate">{l.label || "Unnamed"}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(l.token)}><Copy className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPortal(l.token)}><ExternalLink className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteLink(l.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                       </div>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Add Property / Add Service quick actions */}
+            <div className="flex gap-2 flex-wrap">
+              <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
+                <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Property</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div><Label>Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
+                    <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
+                    <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
+                    <Button onClick={addProperty} disabled={!newProperty.name} className="w-full">Add Property</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={showAddService} onOpenChange={setShowAddService}>
+                <DialogTrigger asChild><Button size="sm" variant="outline" disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Service</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add Service</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Property *</Label>
+                      <Select value={newService.property_id || (selectedProperty?.id || "")} onValueChange={v => setNewService({ ...newService, property_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
+                        <SelectContent>
+                          {properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Service Date</Label><Input type="date" value={newService.service_date} onChange={e => setNewService({ ...newService, service_date: e.target.value })} /></div>
+                    <div><Label>Service Type *</Label><Input placeholder="e.g. General Pest Control" value={newService.service_type} onChange={e => setNewService({ ...newService, service_type: e.target.value })} /></div>
+                    <div><Label>Technician</Label><Input value={newService.technician} onChange={e => setNewService({ ...newService, technician: e.target.value })} /></div>
+                    <div>
+                      <Label>Status</Label>
+                      <Select value={newService.status} onValueChange={v => setNewService({ ...newService, status: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Summary</Label><Textarea value={newService.summary} onChange={e => setNewService({ ...newService, summary: e.target.value })} /></div>
+                    <div><Label>Findings</Label><Textarea value={newService.findings} onChange={e => setNewService({ ...newService, findings: e.target.value })} /></div>
+                    <div><Label>Notes</Label><Textarea value={newService.notes} onChange={e => setNewService({ ...newService, notes: e.target.value })} /></div>
+                    <Button onClick={addService} disabled={!(newService.property_id || selectedProperty?.id) || !newService.service_type} className="w-full">Add Service</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Portal content */}
+      <div className="max-w-5xl mx-auto px-4 py-4">
+        {/* Quick summary */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          <Card>
+            <CardContent className="p-3 text-center">
+              <p className="text-2xl font-bold">{pastServices.length}</p>
+              <p className="text-xs text-muted-foreground">Past Services</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <p className="text-2xl font-bold">{futureServices.length}</p>
+              <p className="text-xs text-muted-foreground">Upcoming</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <p className="text-2xl font-bold text-sm leading-8">
+                {futureServices.length > 0 && futureServices[0]?.service_date
+                  ? new Date(futureServices[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                  : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">Next Service</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Properties list (when not drilled into a property) */}
+        {!selectedProperty && properties.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold mb-2 flex items-center gap-1"><MapPin className="w-4 h-4" />Properties</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {properties.map(p => (
+                <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setSelectedProperty(p)}>
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{p.name}</p>
+                      {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {services.filter(s => s.property_id === p.id).length} services
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {showAdminPanel && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}>
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      )}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Service Tabs */}
+        <Tabs value={portalTab} onValueChange={setPortalTab}>
+          <TabsList className="w-full grid grid-cols-4 mb-4">
+            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
+            <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
+            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep Sheets</TabsTrigger>
+            <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Message</TabsTrigger>
+          </TabsList>
+
+          {/* Past Services */}
+          <TabsContent value="past">
+            {pastServices.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No past services on record</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {pastServices.map(s => (
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-sm">{s.service_type}</p>
+                          <Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">{s.status}</Badge>
+                          {s.follow_up_recommended && <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">Follow-up</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "No date"}</span>
+                          {!selectedProperty && <span>{getPropertyName(s.property_id)}</span>}
+                          {s.technician && <span>Tech: {s.technician}</span>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {showAdminPanel && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Future Services */}
+          <TabsContent value="future">
+            {futureServices.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No upcoming services scheduled</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {futureServices.map(s => (
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-sm">{s.service_type}</p>
+                          <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "TBD"}</span>
+                          {!selectedProperty && <span>{getPropertyName(s.property_id)}</span>}
+                          {s.prep_required && <Badge variant="outline" className="text-xs">Prep Required</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {showAdminPanel && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteService(s.id); }}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        )}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Prep Sheets */}
+          <TabsContent value="prep">
+            {prepSheets.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-muted-foreground">No prep sheets available</CardContent></Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {prepSheets.map(ps => (
+                  <Card key={ps.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{ps.title}</p>
+                          <Badge variant="outline" className="text-xs mt-1">{ps.treatment_type}</Badge>
+                          {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
+                        </div>
+                        {ps.file_url && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a>
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Message */}
+          <TabsContent value="message">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Contact Crest Pest Control</CardTitle></CardHeader>
+              <CardContent className="text-center text-sm text-muted-foreground">
+                <p>Messages from clients appear in the Messages tab on the main admin view.</p>
+                <div className="flex items-center justify-center gap-6 mt-4">
+                  <div className="flex items-center gap-2"><Phone className="w-4 h-4" /><span>949-424-5000</span></div>
+                  <div className="flex items-center gap-2"><Mail className="w-4 h-4" /><span>office@crestpestco.com</span></div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
+      </div>
+
+      {/* Service Detail Modal */}
+      <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedService && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-base">{selectedService.service_type}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div><p className="text-xs text-muted-foreground">Property</p><p className="font-medium">{getPropertyName(selectedService.property_id)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Date</p><p>{selectedService.service_date ? new Date(selectedService.service_date + "T00:00:00").toLocaleDateString() : "—"}</p></div>
+                  {selectedService.service_time && <div><p className="text-xs text-muted-foreground">Time</p><p>{selectedService.service_time}</p></div>}
+                  {selectedService.technician && <div><p className="text-xs text-muted-foreground">Technician</p><p>{selectedService.technician}</p></div>}
+                  <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={selectedService.status === "completed" ? "default" : "secondary"}>{selectedService.status}</Badge></div>
+                </div>
+
+                {selectedService.summary && <div><p className="text-xs text-muted-foreground mb-1">Summary</p><p>{selectedService.summary}</p></div>}
+                {selectedService.findings && <div><p className="text-xs text-muted-foreground mb-1">Findings</p><p>{selectedService.findings}</p></div>}
+                {selectedService.notes && <div><p className="text-xs text-muted-foreground mb-1">Notes</p><p>{selectedService.notes}</p></div>}
+
+                {selectedService.products_used && Array.isArray(selectedService.products_used) && selectedService.products_used.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Products Used</p>
+                    <div className="flex flex-wrap gap-1">{(selectedService.products_used as string[]).map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}</div>
+                  </div>
+                )}
+
+                {selectedService.follow_up_recommended && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
+                    <p className="text-xs font-medium text-orange-700">Follow-up Recommended</p>
+                    {selectedService.follow_up_notes && <p className="text-xs text-orange-600 mt-1">{selectedService.follow_up_notes}</p>}
+                  </div>
+                )}
+
+                {selectedService.prep_required && selectedService.prep_notes && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
+                    <p className="text-xs font-medium text-blue-700">Prep Required</p>
+                    <p className="text-xs text-blue-600 mt-1">{selectedService.prep_notes}</p>
+                  </div>
+                )}
+
+                {selectedService.special_notes && <div><p className="text-xs text-muted-foreground mb-1">Special Notes</p><p>{selectedService.special_notes}</p></div>}
+
+                {selectedService.unit_details && Array.isArray(selectedService.unit_details) && (selectedService.unit_details as any[]).length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Unit Details</p>
+                    <Accordion type="multiple">
+                      {(selectedService.unit_details as any[]).map((unit: any, i: number) => (
+                        <AccordionItem key={i} value={`unit-${i}`}>
+                          <AccordionTrigger className="text-sm py-2">
+                            Unit {unit.unit_number || i + 1}
+                            {unit.status && <Badge variant="outline" className="ml-2 text-xs">{unit.status}</Badge>}
+                          </AccordionTrigger>
+                          <AccordionContent className="text-xs space-y-1">
+                            {unit.findings && <p><span className="text-muted-foreground">Findings:</span> {unit.findings}</p>}
+                            {unit.notes && <p><span className="text-muted-foreground">Notes:</span> {unit.notes}</p>}
+                            {unit.pest_activity && <p><span className="text-muted-foreground">Pest Activity:</span> {unit.pest_activity}</p>}
+                            {unit.products_used && <p><span className="text-muted-foreground">Products:</span> {unit.products_used}</p>}
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+                )}
+
+                {showAdminPanel && (
+                  <Button variant="destructive" size="sm" className="w-full" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>
+                    Delete Service
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Footer */}
+      <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
+        <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestco.com</p>
       </div>
     </div>
   );
