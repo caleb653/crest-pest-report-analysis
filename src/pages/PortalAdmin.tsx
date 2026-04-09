@@ -185,6 +185,11 @@ const PortalAdmin = () => {
     setSendingChat(false);
   };
 
+  const deleteMessage = async (msgId: string) => {
+    const { error } = await supabase.from("portal_messages").delete().eq("id", msgId);
+    if (!error && selectedClient) loadClientChat(selectedClient.id);
+  };
+
   const addClient = async () => {
     const { error } = await supabase.from("portal_clients").insert({ name: newClient.name, company: newClient.company || null, email: newClient.email || null, phone: newClient.phone || null, notes: newClient.notes || null });
     if (!error) { toast({ title: "Client added" }); setShowAddClient(false); setNewClient({ name: "", company: "", email: "", phone: "", notes: "" }); loadClients(); }
@@ -870,7 +875,12 @@ const PortalAdmin = () => {
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
                 {chatMessages.length === 0 && <div className="text-center text-sm text-muted-foreground py-8"><p>No messages yet.</p></div>}
                 {chatMessages.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                  <div key={msg.id} className={`group flex items-start gap-1 ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                    {msg.sender_type === "admin" && (
+                      <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </button>
+                    )}
                     <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${msg.sender_type === "admin" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                       {msg.sender_type === "client" && <p className="text-xs font-medium mb-1 opacity-70">{msg.sender_name}</p>}
                       <p className="whitespace-pre-wrap">{msg.message}</p>
@@ -878,6 +888,11 @@ const PortalAdmin = () => {
                         {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                       </p>
                     </div>
+                    {msg.sender_type !== "admin" && (
+                      <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </button>
+                    )}
                   </div>
                 ))}
                 <div ref={adminChatEndRef} />
