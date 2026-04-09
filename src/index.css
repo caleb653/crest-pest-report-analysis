@@ -947,29 +947,28 @@
   /* Print tags styling with brand colors */
   .print-tags {
     padding: 2mm 3mm 2mm 3mm !important;
-    gap: 1.5mm !important;
-    align-items: stretch !important;
+    gap: 2mm !important;
+    align-items: flex-start !important;
     align-content: flex-start !important;
     justify-content: flex-start !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
   }
 
   .print-tag {
-    font-size: 14px !important;
-    padding: 1mm 2.5mm 0.8mm 2.5mm !important;
+    font-size: 12px !important;
+    padding: 1.2mm 3mm 1mm 3mm !important;
     border-radius: 3mm !important;
     line-height: 1.2 !important;
     display: inline-flex !important;
     align-items: center !important;
     vertical-align: middle !important;
     transform: none !important;
-    background: hsl(130 14% 79%) !important;
+    background: hsl(130 14% 90%) !important;
     color: hsl(0 0% 16%) !important;
-    border: 1px solid hsl(130 7% 61%) !important;
-    width: 100% !important;
-    white-space: normal !important;
-    word-break: break-word !important;
-    overflow-wrap: anywhere !important;
+    border: 1px solid hsl(130 10% 72%) !important;
+    width: auto !important;
+    white-space: nowrap !important;
   }
 
   /* Allow selected sections to flow across pages (override global avoid-break) */
