@@ -2683,7 +2683,7 @@ Crest Pest Control`;
                     value={additionalDetailsHeader}
                     onChange={(e) => setAdditionalDetailsHeader(e.target.value)}
                     className="text-xs font-bold border-none outline-none w-full bg-transparent no-print"
-                    style={{ color: "#ffffff", caretColor: "#ffffff" }}
+                    style={{ color: "#2A2A2A", caretColor: "#2A2A2A" }}
                   />
                   <span className="print-only-text hidden">{additionalDetailsHeader}</span>
                 </div>

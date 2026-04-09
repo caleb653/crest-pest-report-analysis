@@ -95,18 +95,18 @@ function remakePricingTable(root: HTMLElement) {
   sp(table, "width", "100%");
   sp(table, "border", `1px solid ${BRAND.border}`);
 
-  // ── Thead: every level forced dark ──────────────────────────────────────────
+  // ── Thead: sage green header ──────────────────────────────────────────
   const thead = table.querySelector<HTMLElement>("thead");
   if (thead) {
-    sp(thead, "background-color", BRAND.black);
-    sp(thead, "color", BRAND.offWhite);
+    sp(thead, "background-color", BRAND.sage);
+    sp(thead, "color", BRAND.black);
     thead.querySelectorAll<HTMLElement>("tr").forEach((tr) => {
-      sp(tr, "background-color", BRAND.black);
-      sp(tr, "color", BRAND.offWhite);
+      sp(tr, "background-color", BRAND.sage);
+      sp(tr, "color", BRAND.black);
     });
     thead.querySelectorAll<HTMLElement>("th, td").forEach((th) => {
-      sp(th, "background-color", BRAND.black);
-      sp(th, "color", BRAND.offWhite);
+      sp(th, "background-color", BRAND.sage);
+      sp(th, "color", BRAND.black);
       sp(th, "font-size", "10px");
       sp(th, "font-weight", "700");
       sp(th, "letter-spacing", "0.1em");
@@ -116,7 +116,7 @@ function remakePricingTable(root: HTMLElement) {
       sp(th, "white-space", "nowrap");
       sp(th, "vertical-align", "middle");
       th.querySelectorAll<HTMLElement>("*").forEach((c) => {
-        sp(c, "color", BRAND.offWhite);
+        sp(c, "color", BRAND.black);
         sp(c, "background-color", "transparent");
         sp(c, "letter-spacing", "0.1em");
       });
@@ -365,13 +365,14 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ═══════════════════════════════════════════════════════════
              DARK SECTION HEADERS  (pre-marked with data-crest-dark)
+             Now rendered in sage green for a cleaner look.
              ═══════════════════════════════════════════════════════════ */
           [data-crest-dark="1"] {
-            background-color: ${BRAND.black} !important;
-            color:            ${BRAND.offWhite} !important;
+            background-color: ${BRAND.sage} !important;
+            color:            ${BRAND.black} !important;
           }
           [data-crest-dark="1"] * {
-            color:          ${BRAND.offWhite} !important;
+            color:          ${BRAND.black} !important;
             letter-spacing: 0.07em !important;
           }
 
@@ -393,13 +394,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root thead tr,
           .pdf-export-root thead th,
           .pdf-export-root thead td {
-            background-color: ${BRAND.black} !important;
-            color:            ${BRAND.offWhite} !important;
+            background-color: ${BRAND.sage} !important;
+            color:            ${BRAND.black} !important;
             font-size:        10px !important; font-weight: 700 !important;
             letter-spacing:   0.1em !important; text-transform: uppercase !important;
             border: none !important;
           }
-          .pdf-export-root thead * { color: ${BRAND.offWhite} !important; }
+          .pdf-export-root thead * { color: ${BRAND.black} !important; }
           .pdf-export-root tbody td {
             padding: 10px 14px !important; vertical-align: middle !important;
             font-size: 13px !important; border-bottom: 1px solid ${BRAND.border} !important;
@@ -418,6 +419,36 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="rounded-md"] { border-radius: 5px !important; }
           .pdf-export-root [class*="border-t"]   {
             border-top-color: ${BRAND.darkSage} !important; border-top-width: 2px !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PAGE 2 — Larger text in right column
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .additional-details-body,
+          .pdf-export-root .additional-details-body *,
+          .pdf-export-root .additional-details-body .print-content-formatted,
+          .pdf-export-root .additional-details-body .print-content-formatted * {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PEST TAGS — inline pills
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-tag {
+            display: inline-flex !important;
+            width: auto !important;
+            white-space: nowrap !important;
+            font-size: 12px !important;
+            padding: 3px 10px !important;
+            border-radius: 12px !important;
+            background-color: hsl(130, 14%, 90%) !important;
+            color: ${BRAND.black} !important;
+            border: 1px solid hsl(130, 10%, 72%) !important;
+            margin: 2px !important;
+          }
+          .pdf-export-root .print-tag * {
+            color: ${BRAND.black} !important;
           }
         `;
         clonedDoc.head.appendChild(style);
@@ -501,8 +532,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const detailsBody = clonedPage.querySelector<HTMLElement>(".additional-details-body .print-content-formatted");
         const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
         if (detailsBody && detailsCard) {
-          let fontSize = parseFloat(detailsBody.style.fontSize) || 11;
-          const minFont = 7;
+          let fontSize = parseFloat(detailsBody.style.fontSize) || 13;
+          const minFont = 9;
           while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
             fontSize -= 0.5;
             detailsBody.style.fontSize = `${fontSize}px`;
