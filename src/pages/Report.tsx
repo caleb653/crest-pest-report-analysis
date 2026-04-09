@@ -2123,8 +2123,7 @@ Crest Pest Control`;
 
                           if (isHighFreq) {
                             // Show weekly/bi-weekly visits for ~1 year (perpetuity style, as many as fit)
-                            const totalDays = 365;
-                            const count = Math.floor(totalDays / service.frequency);
+                            const count = 12;
                             return Array.from({ length: count }, (_, i) => {
                               const scheduleDate = new Date(today);
                               scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
