@@ -359,6 +359,14 @@ const AppointmentReport = () => {
                   <Label>Service Date</Label>
                   <Input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} />
                 </div>
+                <div>
+                  <Label>Time In</Label>
+                  <Input type="time" value={timeIn} onChange={e => setTimeIn(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Time Out</Label>
+                  <Input type="time" value={timeOut} onChange={e => setTimeOut(e.target.value)} />
+                </div>
               </div>
             </Card>
 
