@@ -947,7 +947,7 @@ const PortalAdmin = () => {
                           />
                         </div>
                       )}
-                      {!viewMode === "admin" && r.response_notes && (
+                      {viewMode !== "admin" && r.response_notes && (
                         <div className="bg-muted rounded-md p-2 mt-2">
                           <p className="text-xs text-muted-foreground">Response: {r.response_notes}</p>
                         </div>
