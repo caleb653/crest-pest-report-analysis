@@ -156,8 +156,19 @@ const PortalAdmin = () => {
     const { data } = await supabase.from("portal_messages").select("*").eq("client_id", clientId).order("created_at", { ascending: true });
     if (data) setChatMessages(data);
   };
+  const loadTenantRequests = async (clientId: string) => {
+    // Load requests for all links belonging to this client
+    const { data: clientLinks } = await supabase.from("portal_links").select("id").eq("client_id", clientId).eq("link_type", "tenant");
+    if (clientLinks && clientLinks.length > 0) {
+      const linkIds = clientLinks.map(l => l.id);
+      const { data } = await supabase.from("portal_requests").select("*").in("link_id", linkIds).order("created_at", { ascending: false });
+      if (data) setTenantRequests(data);
+      else setTenantRequests([]);
+    } else {
+      setTenantRequests([]);
+    }
+  };
 
-  const sendAdminChat = async () => {
     if (!adminChatInput.trim() || !selectedClient) return;
     setSendingChat(true);
     const { error: err } = await supabase.from("portal_messages").insert({
