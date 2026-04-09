@@ -542,7 +542,40 @@ const AppointmentReport = () => {
               <div className="border-t pt-3 space-y-2">
                 <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-xs">Target Pests</Label><Input value={commonAreaPests} onChange={e => setCommonAreaPests(e.target.value)} className="h-7 text-xs" placeholder="e.g. Ants, Spiders" /></div>
+                  <div>
+                    <Label className="text-xs">Target Pests</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between font-normal h-7 text-xs">
+                          <span className="truncate flex-1 text-left">{commonAreaPests || "Select pests..."}</span>
+                          <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search pests..." />
+                          <CommandList className="max-h-48">
+                            <CommandGroup>
+                              {UNIT_PEST_OPTIONS.map(pest => {
+                                const selected = (commonAreaPests || "").split(", ").filter(Boolean);
+                                const isSelected = selected.includes(pest);
+                                return (
+                                  <CommandItem key={pest} value={pest} onSelect={() => {
+                                    const current = (commonAreaPests || "").split(", ").filter(Boolean);
+                                    const next = isSelected ? current.filter(p => p !== pest) : [...current, pest];
+                                    setCommonAreaPests(next.join(", "));
+                                  }}>
+                                    <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                    {pest}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div><Label className="text-xs">Notes</Label><Input value={commonAreaNotes} onChange={e => setCommonAreaNotes(e.target.value)} className="h-7 text-xs" /></div>
                 </div>
               </div>
