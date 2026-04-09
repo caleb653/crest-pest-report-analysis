@@ -354,9 +354,8 @@ const TeamDocs = () => {
             <p className="text-base font-semibold text-foreground mt-1">
               California Meal Period Waiver Agreement
             </p>
-            <p className="text-sm text-muted-foreground">(Voluntary and Revocable)</p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-5">
             {/* Employee Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -371,148 +370,40 @@ const TeamDocs = () => {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Job Title</Label>
-                <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. Pest Control Technician" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Work Location</Label>
-                <Input value={workLocation} onChange={(e) => setWorkLocation(e.target.value)} placeholder="e.g. Orange County, CA" />
-              </div>
-              <div className="space-y-1.5">
                 <Label>Date</Label>
                 <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
               </div>
             </div>
 
             {/* Agreement text */}
-            <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-4">
-              <p className="font-semibold">Voluntary Meal Period Waiver</p>
-              <p>Under California law, non-exempt employees who work more than five (5) hours in a workday are generally entitled to an unpaid, duty-free meal period of at least thirty (30) minutes. California law permits a meal period waiver only in limited circumstances.</p>
-              <p>By signing below, I acknowledge and agree as follows:</p>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground space-y-3">
+              <p>California law generally requires a 30-minute unpaid, duty-free meal period for non-exempt employees who work more than five (5) hours in a workday.</p>
 
-              <div className="space-y-3 pl-2">
-                <div>
-                  <p className="font-semibold">First Meal Period Waiver (Shifts of 6 Hours or Less):</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>If my total workday is more than 5 hours but no more than 6 hours, I may voluntarily waive my first 30-minute unpaid meal period.</li>
-                    <li>I understand Crest Pest Control will still make meal periods available when legally required.</li>
-                  </ul>
-                </div>
+              <p className="font-semibold">I understand and agree:</p>
+              <ul className="list-disc pl-5 space-y-2">
+                <li>If I work more than 5 hours but no more than 6 hours, I may voluntarily waive my first meal period.</li>
+                <li>If I work more than 10 hours but no more than 12 hours, I may voluntarily waive my second meal period only if I took my first meal period.</li>
+                <li>I understand meal period waivers are not allowed beyond these limits.</li>
+                <li>I understand this waiver is completely voluntary.</li>
+                <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
+                <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
+              </ul>
 
-                <div>
-                  <p className="font-semibold">Second Meal Period Waiver (Shifts of 12 Hours or Less):</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>If my total workday is more than 10 hours but no more than 12 hours, I may voluntarily waive my second 30-minute unpaid meal period only if I took my first meal period and did not waive it.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-semibold">No Waiver for Longer Shifts:</p>
-                  <p>I understand this waiver does not apply to:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>any first meal period on shifts over 6 hours; or</li>
-                    <li>any second meal period on shifts over 12 hours.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-semibold">Voluntary Agreement / No Retaliation:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>I understand signing this form is completely voluntary.</li>
-                    <li>I understand I may choose not to sign this form and will not be disciplined, retaliated against, or treated differently for declining.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-semibold">Revocation:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>I may revoke this waiver at any time by providing written notice to Crest Pest Control.</li>
-                    <li>Revocation will become effective no later than the next scheduled workday after notice is received, unless otherwise agreed.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-semibold">Timekeeping Requirement:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>I understand I must accurately record all hours worked and all meal periods taken.</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <p className="font-semibold">Questions:</p>
-                  <ul className="list-disc pl-5">
-                    <li>I have had the opportunity to ask questions before signing.</li>
-                  </ul>
-                </div>
-              </div>
+              <p className="font-medium pt-1">By signing below, I voluntarily agree to waive my meal period only when legally permitted under California law.</p>
             </div>
 
-            {/* Employee Acknowledgment */}
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="font-semibold text-foreground">Employee Acknowledgment</h3>
-              <p className="text-sm text-muted-foreground">I voluntarily agree to this Meal Period Waiver Agreement under the conditions described above.</p>
-
-              <div className="space-y-1.5">
-                <Label>Employee Signature</Label>
-                {employeeSignature ? (
-                  <div className="flex items-center gap-3">
-                    <img src={employeeSignature} alt="Signature" className="h-14 border rounded p-1" />
-                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog("employee")}>Redo</Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" onClick={() => openSignatureDialog("employee")}>Sign Here</Button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Printed Name</Label>
-                  <Input value={employeePrintedName} onChange={(e) => setEmployeePrintedName(e.target.value)} />
+            {/* Employee Signature */}
+            <div className="space-y-3 border-t pt-4">
+              <Label>Employee Signature</Label>
+              {employeeSignature ? (
+                <div className="flex items-center gap-3">
+                  <img src={employeeSignature} alt="Signature" className="h-14 border rounded p-1" />
+                  <Button variant="outline" size="sm" onClick={() => openSignatureDialog("employee")}>Redo</Button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Date</Label>
-                  <Input type="date" value={employeeSignedDate} onChange={(e) => setEmployeeSignedDate(e.target.value)} />
-                </div>
-              </div>
+              ) : (
+                <Button variant="outline" onClick={() => openSignatureDialog("employee")}>Sign Here</Button>
+              )}
             </div>
-
-            {/* Employer Acknowledgment */}
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="font-semibold text-foreground">Employer Acknowledgment</h3>
-              <p className="text-sm text-muted-foreground">Crest Pest Control confirms this waiver is voluntary and that meal periods will be provided in accordance with California law.</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Authorized Company Representative</Label>
-                  <Input value={repName} onChange={(e) => setRepName(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Title</Label>
-                  <Input value={repTitle} onChange={(e) => setRepTitle(e.target.value)} />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Signature</Label>
-                {repSignature ? (
-                  <div className="flex items-center gap-3">
-                    <img src={repSignature} alt="Rep Signature" className="h-14 border rounded p-1" />
-                    <Button variant="outline" size="sm" onClick={() => openSignatureDialog("rep")}>Redo</Button>
-                  </div>
-                ) : (
-                  <Button variant="outline" onClick={() => openSignatureDialog("rep")}>Sign Here</Button>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Date</Label>
-                <Input type="date" value={repSignedDate} onChange={(e) => setRepSignedDate(e.target.value)} />
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground italic">
-              This form is intended for non-exempt California employees and should be retained in the employee's personnel file.
-            </p>
 
             <Button
               className="w-full"
@@ -530,7 +421,7 @@ const TeamDocs = () => {
       <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{sigTarget === "employee" ? "Employee" : "Representative"} Signature</DialogTitle>
+            <DialogTitle>Employee Signature</DialogTitle>
           </DialogHeader>
           <SignatureCanvas onSave={handleSignatureSave} />
         </DialogContent>
