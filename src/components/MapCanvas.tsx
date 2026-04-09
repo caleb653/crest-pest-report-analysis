@@ -268,10 +268,19 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       } else if (currentTool === 'icon') {
         const svgPath = iconData?.svgPath || bugIcon;
         
-        // Increment count for this icon type
+        // Find next available number for this icon type (reuse gaps from deleted icons)
         const counts = iconCountsRef.current;
-        counts[currentIcon] = (counts[currentIcon] || 0) + 1;
-        const iconNumber = counts[currentIcon];
+        const existingNumbers = new Set<number>();
+        canvas.getObjects().forEach((canvasObj: any) => {
+          if (canvasObj.data?.iconType === currentIcon && canvasObj.data?.iconNumber) {
+            existingNumbers.add(canvasObj.data.iconNumber);
+          }
+        });
+        let iconNumber = 1;
+        while (existingNumbers.has(iconNumber)) {
+          iconNumber++;
+        }
+        counts[currentIcon] = Math.max(counts[currentIcon] || 0, iconNumber);
         
         // Load and add SVG icon with number badge
         FabricImage.fromURL(svgPath).then((img) => {
@@ -845,6 +854,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
       // Ensure data is preserved for groups
       if (obj.data) {
         objJSON.data = obj.data;
+      }
+      // Normalize line endpoints to reference coordinates
+      if (String(obj.type || '').toLowerCase() === 'line') {
+        objJSON.x1 = ((obj.x1 || 0) / currW) * REFERENCE_WIDTH;
+        objJSON.y1 = ((obj.y1 || 0) / currH) * REFERENCE_HEIGHT;
+        objJSON.x2 = ((obj.x2 || 0) / currW) * REFERENCE_WIDTH;
+        objJSON.y2 = ((obj.y2 || 0) / currH) * REFERENCE_HEIGHT;
       }
       return objJSON;
     });

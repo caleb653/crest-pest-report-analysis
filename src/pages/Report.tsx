@@ -1818,8 +1818,6 @@ Crest Pest Control`;
               </div>
 
               <div className="flex items-center gap-2 no-print ml-auto shrink-0">
-                {!isReadOnly && (
-                <>
                 <Button onClick={handleOpenCompose} variant="secondary" size="sm">
                   <Mail className="w-3 h-3 mr-1" />
                   <span className="hidden sm:inline">Email</span>
@@ -1828,8 +1826,6 @@ Crest Pest Control`;
                   {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
                   <span className="hidden sm:inline">Save</span>
                 </Button>
-                </>
-                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm">

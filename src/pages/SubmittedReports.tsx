@@ -18,6 +18,7 @@ import {
 import {
   Calendar,
   CheckCircle,
+  Copy,
   FileText,
   LogOut,
   Trash2,
@@ -25,6 +26,7 @@ import {
   Search,
   Mail,
   PenLine,
+  Loader2,
 } from "lucide-react";
 import {
   Select,
@@ -104,6 +106,7 @@ const SubmittedReports = () => {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -182,6 +185,36 @@ const SubmittedReports = () => {
   const viewReport = (report: ReportListItem) => {
     const path = report.report_type === "initial" ? `/initial-pest-report/${report.id}` : `/report/${report.id}`;
     navigate(path);
+  };
+  const duplicateReport = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDuplicating(reportId);
+    try {
+      const { data: original, error: fetchError } = await supabase
+        .from("reports")
+        .select("*")
+        .eq("id", reportId)
+        .maybeSingle();
+
+      if (fetchError || !original) throw fetchError || new Error("Report not found");
+
+      const newId = crypto.randomUUID();
+      const { id, created_at, updated_at, customer_signature, sent_to_customer_at, customer_email, ...rest } = original as any;
+
+      const { error: insertError } = await supabase
+        .from("reports")
+        .insert([{ id: newId, ...rest, report_title: (rest.report_title || "Report") + " (Copy)" }]);
+
+      if (insertError) throw insertError;
+
+      toast.success("Report duplicated!");
+      await loadReports();
+    } catch (error: any) {
+      console.error("Duplicate error:", error);
+      toast.error("Failed to duplicate report");
+    } finally {
+      setDuplicating(null);
+    }
   };
 
   const handleSignOut = () => {
@@ -426,6 +459,21 @@ const SubmittedReports = () => {
                             <Badge variant={report.report_type === "initial" ? "secondary" : "default"}>
                               {report.report_type === "initial" ? "Initial" : "Sales"}
                             </Badge>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => duplicateReport(report.id, e)}
+                              disabled={duplicating === report.id}
+                              className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                              title="Duplicate report"
+                            >
+                              {duplicating === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </Button>
 
                             <Button
                               variant="ghost"
