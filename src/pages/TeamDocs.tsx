@@ -260,31 +260,15 @@ const TeamDocs = () => {
               <CardContent className="p-6 space-y-4 text-sm">
                 <div className="grid grid-cols-2 gap-4">
                   <div><span className="font-medium">Employee:</span> {viewingDoc.employee_name}</div>
-                  <div><span className="font-medium">Job Title:</span> {viewingDoc.job_title || "—"}</div>
-                  <div><span className="font-medium">Work Location:</span> {viewingDoc.work_location || "—"}</div>
-                  <div><span className="font-medium">Form Date:</span> {viewingDoc.form_date || "—"}</div>
+                  <div><span className="font-medium">Date:</span> {viewingDoc.form_date || "—"}</div>
                 </div>
                 <hr />
-                <h3 className="font-semibold">Employee Acknowledgment</h3>
                 {viewingDoc.employee_signature && (
                   <div>
                     <span className="font-medium">Signature:</span>
                     <img src={viewingDoc.employee_signature} alt="Employee signature" className="h-16 mt-1 border rounded p-1" />
                   </div>
                 )}
-                <div><span className="font-medium">Printed Name:</span> {viewingDoc.employee_printed_name || "—"}</div>
-                <div><span className="font-medium">Date:</span> {viewingDoc.employee_signed_date || "—"}</div>
-                <hr />
-                <h3 className="font-semibold">Employer Acknowledgment</h3>
-                <div><span className="font-medium">Representative:</span> {viewingDoc.representative_name || "—"}</div>
-                <div><span className="font-medium">Title:</span> {viewingDoc.representative_title || "—"}</div>
-                {viewingDoc.representative_signature && (
-                  <div>
-                    <span className="font-medium">Signature:</span>
-                    <img src={viewingDoc.representative_signature} alt="Rep signature" className="h-16 mt-1 border rounded p-1" />
-                  </div>
-                )}
-                <div><span className="font-medium">Date:</span> {viewingDoc.representative_signed_date || "—"}</div>
                 <p className="text-xs text-muted-foreground pt-2">
                   Submitted: {new Date(viewingDoc.created_at).toLocaleString()}
                 </p>
