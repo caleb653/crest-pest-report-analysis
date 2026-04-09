@@ -206,8 +206,8 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             obj,
             left: (obj.left || 0) * scaleX,
             top: (obj.top || 0) * scaleY,
-            scaleX: (obj.scaleX || 1) * iconTargetScale,
-            scaleY: (obj.scaleY || 1) * iconTargetScale,
+            scaleX: (obj.scaleX || 1) * Math.min(scaleX, scaleY),
+            scaleY: (obj.scaleY || 1) * Math.min(scaleX, scaleY),
             selectable: false,
             evented: false,
           });
