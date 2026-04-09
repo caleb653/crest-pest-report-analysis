@@ -1084,7 +1084,19 @@ const PortalAdmin = () => {
                 {showAdminPanel && (
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
-                    <Button variant="destructive" size="sm" className="flex-1" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
+                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
+                      navigate(`/appointment-report/${selectedService.id}`, {
+                        state: {
+                          serviceData: selectedService,
+                          propertyName: getPropertyName(selectedService.property_id),
+                          clientName: selectedClient?.company || selectedClient?.name,
+                          returnTo: "/portal-admin",
+                        }
+                      });
+                    }}>
+                      <FileText className="w-3.5 h-3.5 mr-1" />Appointment Report
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
                   </div>
                 )}
               </div>
