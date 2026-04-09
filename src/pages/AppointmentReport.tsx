@@ -76,7 +76,7 @@ const AppointmentReport = () => {
     return {};
   };
   const initialState = getInitialState();
-  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress } = initialState;
+  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress, propertyEquipment, customerPreference: initPref, customerPreferenceNotes: initPrefNotes } = initialState;
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -91,12 +91,12 @@ const AppointmentReport = () => {
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
   );
-  const [equipment, setEquipment] = useState<string[]>([]);
+  const [equipment, setEquipment] = useState<string[]>(Array.isArray(propertyEquipment) ? propertyEquipment : []);
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
   const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState("");
   const [todaysFindings, setTodaysFindings] = useState(serviceData?.findings || "");
-  const [customerPreference, setCustomerPreference] = useState("");
-  const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState("");
+  const [customerPreference, setCustomerPreference] = useState(initPref || "");
+  const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState(initPrefNotes || "");
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);

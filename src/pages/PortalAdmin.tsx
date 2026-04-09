@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox } from "lucide-react";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -22,6 +22,7 @@ interface PortalClient {
 }
 interface PortalProperty {
   id: string; client_id: string; name: string; address: string | null; notes: string | null; image_url: string | null;
+  equipment: any; customer_preferences: any;
 }
 interface PortalLink {
   id: string; client_id: string; token: string; link_type: string; label: string | null; assigned_property_ids: any; is_active: boolean;
@@ -57,6 +58,16 @@ const PRODUCTS = [
   "PT Alpine Flea & Bed Bug", "Advion Ant Gel Bait", "Maxforce FC Ant Gel",
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust", "In2Care Mix",
   "OneGuard", "Advion Microflow", "Optigard", "Bifen LP", "MasterLine B MaxxPro",
+];
+
+const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
+
+const PREFERENCE_OPTIONS = [
+  "Green / Eco-Friendly Products",
+  "Standard Products",
+  "No Preference",
+  "Interior Treatment Only",
+  "Exterior Treatment Only",
 ];
 
 const PortalAdmin = () => {
@@ -378,6 +389,9 @@ const PortalAdmin = () => {
       propertyId: propId,
       clientName: selectedClient?.company || selectedClient?.name,
       returnTo: "/portal-admin",
+      propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
+      customerPreference: (prop?.customer_preferences as any)?.preference || "",
+      customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
     };
     sessionStorage.setItem(`appointment-report-${data.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${data.id}`, "_blank");
@@ -393,6 +407,9 @@ const PortalAdmin = () => {
       propertyId: s.property_id,
       clientName: selectedClient?.company || selectedClient?.name,
       returnTo: "/portal-admin",
+      propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
+      customerPreference: (prop?.customer_preferences as any)?.preference || "",
+      customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
     };
     sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${s.id}`, "_blank");
@@ -892,17 +909,115 @@ const PortalAdmin = () => {
         {/* ======= PROPERTY LEVEL: Summary + Tabs ======= */}
         {selectedProperty && (
           <>
-            {selectedProperty.image_url && (
-              <div className="mb-4 rounded-lg overflow-hidden relative">
+            {/* Property Image — front and center */}
+            <div className="mb-4 rounded-lg overflow-hidden relative bg-muted min-h-[180px]">
+              {selectedProperty.image_url ? (
                 <img src={selectedProperty.image_url} alt={selectedProperty.name} className="w-full h-48 object-cover" />
-                {viewMode === "admin" && (
-                  <label className="absolute bottom-2 right-2 bg-background/80 rounded p-1.5 cursor-pointer hover:bg-background">
-                    <Image className="w-4 h-4" />
-                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
-                  </label>
-                )}
-              </div>
-            )}
+              ) : (
+                <div className="w-full h-48 flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Image className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">No property image</p>
+                  </div>
+                </div>
+              )}
+              {viewMode === "admin" && (
+                <label className="absolute bottom-2 right-2 bg-background/80 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1">
+                  <Image className="w-3.5 h-3.5" />
+                  {selectedProperty.image_url ? "Change" : "Upload"}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && selectedProperty) updatePropertyImage(selectedProperty.id, f); }} />
+                </label>
+              )}
+            </div>
+
+            {/* Equipment & Customer Preferences */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <Card>
+                <CardHeader className="pb-2 py-3">
+                  <CardTitle className="text-sm">Equipment</CardTitle>
+                  <p className="text-xs text-muted-foreground">Auto-populates for every service at this property</p>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {viewMode === "admin" ? (
+                    <div className="space-y-1.5">
+                      {EQUIPMENT_OPTIONS.map(eq => {
+                        const propEquip = Array.isArray(selectedProperty.equipment) ? selectedProperty.equipment as string[] : [];
+                        const isChecked = propEquip.includes(eq);
+                        return (
+                          <label key={eq} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input type="checkbox" checked={isChecked} onChange={async () => {
+                              const updated = isChecked ? propEquip.filter(e => e !== eq) : [...propEquip, eq];
+                              await supabase.from("portal_properties").update({ equipment: updated }).eq("id", selectedProperty.id);
+                              setProperties(prev => prev.map(p => p.id === selectedProperty.id ? { ...p, equipment: updated } : p));
+                              setSelectedProperty(prev => prev ? { ...prev, equipment: updated } : prev);
+                            }} />
+                            {eq}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {Array.isArray(selectedProperty.equipment) && (selectedProperty.equipment as string[]).length > 0
+                        ? (selectedProperty.equipment as string[]).map(eq => <Badge key={eq} variant="secondary" className="text-xs">{eq}</Badge>)
+                        : <p className="text-xs text-muted-foreground">No equipment set</p>
+                      }
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2 py-3">
+                  <CardTitle className="text-sm">Customer Preference</CardTitle>
+                  <p className="text-xs text-muted-foreground">Auto-populates for every service at this property</p>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {viewMode === "admin" ? (
+                    <div className="space-y-2">
+                      <Select
+                        value={(selectedProperty.customer_preferences as any)?.preference || ""}
+                        onValueChange={async (val) => {
+                          const updated = { ...(selectedProperty.customer_preferences || {}), preference: val };
+                          await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", selectedProperty.id);
+                          setProperties(prev => prev.map(p => p.id === selectedProperty.id ? { ...p, customer_preferences: updated } : p));
+                          setSelectedProperty(prev => prev ? { ...prev, customer_preferences: updated } : prev);
+                        }}
+                      >
+                        <SelectTrigger className="text-sm"><SelectValue placeholder="Select preference" /></SelectTrigger>
+                        <SelectContent>
+                          {PREFERENCE_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Textarea
+                        placeholder="Additional notes..."
+                        className="text-sm min-h-[60px]"
+                        value={(selectedProperty.customer_preferences as any)?.notes || ""}
+                        onChange={async (e) => {
+                          const updated = { ...(selectedProperty.customer_preferences || {}), notes: e.target.value };
+                          // Debounce-save on blur instead
+                          setProperties(prev => prev.map(p => p.id === selectedProperty.id ? { ...p, customer_preferences: updated } : p));
+                          setSelectedProperty(prev => prev ? { ...prev, customer_preferences: updated } : prev);
+                        }}
+                        onBlur={async () => {
+                          await supabase.from("portal_properties").update({ customer_preferences: selectedProperty.customer_preferences }).eq("id", selectedProperty.id);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      {(selectedProperty.customer_preferences as any)?.preference
+                        ? <p className="text-sm font-medium">🌱 {(selectedProperty.customer_preferences as any).preference}</p>
+                        : <p className="text-xs text-muted-foreground">No preference set</p>
+                      }
+                      {(selectedProperty.customer_preferences as any)?.notes && (
+                        <p className="text-sm text-muted-foreground mt-1">{(selectedProperty.customer_preferences as any).notes}</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
             <div className="grid grid-cols-3 gap-3 mb-4">
               <Card><CardContent className="p-3 text-center"><p className="text-2xl font-bold">{pastServices.length}</p><p className="text-xs text-muted-foreground">Past Services</p></CardContent></Card>
