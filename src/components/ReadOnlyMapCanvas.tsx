@@ -8,7 +8,7 @@ import treeIcon from '@/assets/icons/tree-icon.svg';
 import circleIcon from '@/assets/icons/circle-icon.svg';
 import entryPointIcon from '@/assets/icons/entry-point-icon.svg';
 import waterSourceIcon from '@/assets/icons/water-source-icon.svg';
-import { createSavedLineObject, getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject } from '@/lib/mapCanvasLoader';
+import { createSavedImageObject, createSavedLineObject, getSavedMapObjects, getSavedMapVersion, isSavedTextObject, reviveSavedFabricObject, safeDisposeFabricCanvas } from '@/lib/mapCanvasLoader';
 
 interface ReadOnlyMapCanvasProps {
   mapUrl: string;
@@ -69,8 +69,8 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
     setCanvasReady(true);
 
     return () => {
-      canvas.dispose();
       fabricCanvasRef.current = null;
+      void safeDisposeFabricCanvas(canvas);
       setCanvasReady(false);
     };
   }, []);
@@ -164,28 +164,21 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
             });
             loadPromises.push(promise);
           }
-        } else if (objType === 'image' && obj.data?.iconType) {
-          const iconType = obj.data.iconType;
-          const iconInfo = AVAILABLE_ICONS.find(i => i.icon === iconType);
-          
-          if (iconInfo) {
-            foundIcons.add(iconType);
-            const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
-              img.set({
-                left: (obj.left || 0) * scaleX,
-                top: (obj.top || 0) * scaleY,
-                scaleX: iconTargetScale * (obj.scaleX || 1),
-                scaleY: iconTargetScale * (obj.scaleY || 1),
-                angle: obj.angle || 0,
-                selectable: false,
-                evented: false,
-              });
-              canvas.add(img);
-            }).catch((err) => {
-              console.error('Error loading icon:', iconType, err);
-            });
-            loadPromises.push(promise);
-          }
+        } else if (objType === 'image' && obj.src) {
+          const imagePromise = createSavedImageObject({
+            obj,
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            scaleX: (obj.scaleX || 1) * iconTargetScale,
+            scaleY: (obj.scaleY || 1) * iconTargetScale,
+            selectable: false,
+            evented: false,
+          }).then((image) => {
+            canvas.add(image);
+          }).catch((err) => {
+            console.error('Error loading legacy image object:', err, obj);
+          });
+          loadPromises.push(imagePromise);
         } else if (objType === 'rect') {
           const rect = new Rect({
             left: (obj.left || 0) * scaleX,
@@ -229,29 +222,18 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           });
           canvas.add(text);
         } else if (objType === 'path') {
-          // Freehand drawing paths - reconstruct via loadFromJSON for this single object
-          const pathPromise = new Promise<void>((resolveP) => {
-            const tempCanvas = new FabricCanvas(document.createElement('canvas'), {
-              width: canvas.getWidth(),
-              height: canvas.getHeight(),
-            });
-            tempCanvas.loadFromJSON({ objects: [obj], version: savedVersion }, () => {
-              const pathObj = tempCanvas.getObjects()[0];
-              if (pathObj) {
-                pathObj.set({
-                  left: (obj.left || 0) * scaleX,
-                  top: (obj.top || 0) * scaleY,
-                  scaleX: (obj.scaleX || 1) * Math.min(scaleX, scaleY),
-                  scaleY: (obj.scaleY || 1) * Math.min(scaleX, scaleY),
-                  selectable: false,
-                  evented: false,
-                });
-                pathObj.setCoords();
-                canvas.add(pathObj);
-              }
-              tempCanvas.dispose();
-              resolveP();
-            });
+          const pathPromise = reviveSavedFabricObject({
+            canvas,
+            obj,
+            version: savedVersion,
+            left: (obj.left || 0) * scaleX,
+            top: (obj.top || 0) * scaleY,
+            scaleX: (obj.scaleX || 1) * Math.min(scaleX, scaleY),
+            scaleY: (obj.scaleY || 1) * Math.min(scaleX, scaleY),
+            selectable: false,
+            evented: false,
+          }).then(() => undefined).catch((err) => {
+            console.error('Error reviving path object:', err, obj);
           });
           loadPromises.push(pathPromise);
         }
