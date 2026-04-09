@@ -4,10 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home } from "lucide-react";
+import { Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import crestLogo from "@/assets/crest-logo.png";
@@ -15,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import RichTextEditor from "@/components/RichTextEditor";
+
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { MapCanvas } from "@/components/MapCanvas";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
@@ -81,13 +80,13 @@ const AppointmentReport = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
-  const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
-  const pestsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [technicianName, setTechnicianName] = useState(serviceData?.technician || "");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [serviceDate, setServiceDate] = useState(serviceData?.service_date || new Date().toISOString().split("T")[0]);
+  const [timeIn, setTimeIn] = useState("");
+  const [timeOut, setTimeOut] = useState("");
   const [targetPests, setTargetPests] = useState<string[]>([PEST_OPTIONS[0]]);
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
@@ -96,13 +95,7 @@ const AppointmentReport = () => {
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
   const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState("");
   const [todaysFindings, setTodaysFindings] = useState(serviceData?.findings || "");
-  const [findings, setFindings] = useState<string[]>([]);
-  const [expectations, setExpectations] = useState<string[]>([]);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
   const [customerPreference, setCustomerPreference] = useState("");
-  const [findingsFontSize, setFindingsFontSize] = useState(14);
-  const [expectationsFontSize, setExpectationsFontSize] = useState(14);
-  const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
   const [customerPreferenceNotes, setCustomerPreferenceNotes] = useState("");
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +111,6 @@ const AppointmentReport = () => {
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
-  const [pmName, setPmName] = useState(initialState.propertyManager || "");
 
   // Property map - persistent per property
   const [propertyId, setPropertyId] = useState<string | null>(initPropertyId || null);
@@ -180,58 +172,6 @@ const AppointmentReport = () => {
     setTechDropdownOpen(false);
   };
 
-  // Generate findings from pest selections
-  const generateContentFromSelections = (pests: string[], equip: string[], products: string[]) => {
-    const lines: string[] = [];
-    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
-    const usesOrganic = products.some(p => p.toLowerCase().includes("essentria"));
-    if (isGeneralPests) {
-      lines.push("• Inspected interior and exterior for general pest activity and entry points");
-      lines.push(usesOrganic
-        ? "• Applied targeted general pest treatments, including organic solutions, to ensure a protective barrier around the home"
-        : "• Applied targeted general pest treatments to ensure a protective barrier around the home");
-      lines.push("• De-webbed the entire home");
-    }
-    if (pests.includes("Ants")) lines.push("• Inspected for ant activity and treated ant trails and entry points");
-    if (pests.includes("Spiders")) lines.push("• Inspected for spider activity, removed webs, and applied spider-targeted treatments");
-    if (pests.includes("Roaches") || pests.includes("American Roaches")) lines.push("• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas");
-    if (pests.includes("Wasps")) lines.push("• Inspected for wasp nests and treated active wasp activity areas");
-    if (pests.includes("Rodents")) {
-      lines.push("• Inspected for rodent activity and strategically placed traps in areas of highest activity");
-      lines.push("• Will monitor and adjust trap placement as needed to ensure effective rodent control");
-    }
-    if (pests.includes("Mosquitoes")) lines.push("• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations");
-    if (pests.includes("Bed Bugs")) {
-      lines.push("• Inspected sleeping areas, furniture, and baseboards for bed bug activity");
-      lines.push("• Applied targeted bed bug treatments to affected areas");
-    }
-    if (equip.includes("Rodent Bait Stations")) lines.push("• Installed rodent bait stations around the property perimeter");
-    if (equip.includes("Rodent Traps")) lines.push("• Placed rodent traps for population control");
-    if (equip.includes("Mosquito Buckets")) lines.push("• Installed mosquito stations around the property");
-    return lines.join("\n");
-  };
-
-  const generateRecommendations = (pests: string[]) => {
-    const lines: string[] = [];
-    const isGeneralPests = pests.some(p => p.startsWith("General Pests"));
-    if (isGeneralPests || pests.includes("Ants")) lines.push("<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering");
-    if (isGeneralPests || pests.includes("Spiders")) lines.push("<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting");
-    if (pests.includes("Rodents")) lines.push("<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free");
-    if (pests.includes("Bed Bugs")) lines.push("<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements");
-    if (pests.includes("Mosquitoes")) lines.push("<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation");
-    if (lines.length === 0) lines.push("<strong>General:</strong> (1) Keep food in airtight containers (2) Seal cracks around doors & windows");
-    return lines.join("<br>");
-  };
-
-  useEffect(() => {
-    if (targetPests.length > 0 || equipment.length > 0) {
-      const content = generateContentFromSelections(targetPests, equipment, productsUsed);
-      setFindings([content]);
-      setExpectations(["• Initial Period: You may notice increased pest activity in the first 24-48 hours as pests are flushed from hiding spots.\n• Treatment Effect: Pest populations will decrease significantly over the next 7-10 days.\n• Long-term Results: With continued service, pests will become less of an issue. Contact us if activity persists beyond 2 weeks."]);
-      setRecommendations([generateRecommendations(targetPests)]);
-    }
-  }, [targetPests, equipment, productsUsed]);
-
   const togglePest = (pest: string) => setTargetPests(prev => prev.includes(pest) ? prev.filter(p => p !== pest) : [...prev, pest]);
   const toggleProduct = (product: string) => setProductsUsed(prev => prev.includes(product) ? prev.filter(p => p !== product) : [...prev, product]);
   const toggleEquipment = (item: string) => setEquipment(prev => prev.includes(item) ? prev.filter(e => e !== item) : [...prev, item]);
@@ -251,17 +191,18 @@ const AppointmentReport = () => {
     setIsSaving(true);
     const reportData = {
       technician_name: technicianName, license_number: licenseNumber, service_date: serviceDate,
+      time_in: timeIn, time_out: timeOut,
       target_pests: targetPests, products_used: productsUsed, equipment,
       customer_key_areas: { areas: customerKeyAreas, notes: customerKeyAreasNotes },
-      todays_findings: todaysFindings, findings, expectations, recommendations,
+      todays_findings: todaysFindings,
       customer_preference: customerPreference, customer_preference_notes: customerPreferenceNotes,
       property_images: propertyImages, unit_rows: unitRows,
       common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
-      tech_observations: techObservations, pm_name: pmName,
+      tech_observations: techObservations,
     };
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
-      products_used: productsUsed, findings: todaysFindings || (findings.length > 0 ? findings[0] : null),
+      products_used: productsUsed, findings: todaysFindings || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
     else toast.success("Appointment Report saved!");
@@ -288,9 +229,6 @@ const AppointmentReport = () => {
           setCustomerKeyAreasNotes(rd.customer_key_areas.notes || "");
         }
         if (rd.todays_findings) setTodaysFindings(rd.todays_findings);
-        if (rd.findings) setFindings(rd.findings);
-        if (rd.expectations) setExpectations(rd.expectations);
-        if (rd.recommendations) setRecommendations(rd.recommendations);
         if (rd.customer_preference) setCustomerPreference(rd.customer_preference);
         if (rd.customer_preference_notes) setCustomerPreferenceNotes(rd.customer_preference_notes);
         if (rd.property_images) setPropertyImages(rd.property_images);
@@ -298,7 +236,8 @@ const AppointmentReport = () => {
         if (rd.common_area_pests) setCommonAreaPests(rd.common_area_pests);
         if (rd.common_area_notes) setCommonAreaNotes(rd.common_area_notes);
         if (rd.tech_observations) setTechObservations(rd.tech_observations);
-        if (rd.pm_name) setPmName(rd.pm_name);
+        if (rd.time_in) setTimeIn(rd.time_in);
+        if (rd.time_out) setTimeOut(rd.time_out);
       } else {
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
@@ -383,7 +322,7 @@ const AppointmentReport = () => {
           <div className="max-w-3xl px-4 py-4 space-y-4">
             {/* Technician & Date */}
             <Card className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div>
                   <Label>Technician</Label>
                   <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
@@ -419,6 +358,14 @@ const AppointmentReport = () => {
                   <Label>Service Date</Label>
                   <Input type="date" value={serviceDate} onChange={e => setServiceDate(e.target.value)} />
                 </div>
+                <div>
+                  <Label>Time In</Label>
+                  <Input type="time" value={timeIn} onChange={e => setTimeIn(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Time Out</Label>
+                  <Input type="time" value={timeOut} onChange={e => setTimeOut(e.target.value)} />
+                </div>
               </div>
             </Card>
 
@@ -429,7 +376,6 @@ const AppointmentReport = () => {
                 <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
                 <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
                 <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
-                <div><span className="text-muted-foreground">Property Manager:</span> <Input value={pmName} onChange={e => setPmName(e.target.value)} placeholder="PM name" className="h-7 text-xs inline-block w-40 ml-1" /></div>
               </div>
 
               {/* Unit Table */}
@@ -540,7 +486,7 @@ const AppointmentReport = () => {
 
               {/* Common Area */}
               <div className="border-t pt-3 space-y-2">
-                <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
+                <p className="text-sm font-medium">Common Area Pest</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Target Pests</Label>
@@ -744,23 +690,6 @@ const AppointmentReport = () => {
               <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
             </Card>
 
-            {/* Service Performed */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Service Performed</Label>
-              <RichTextEditor value={findings[0] || ""} onChange={v => setFindings([v])} fontSize={findingsFontSize} onFontSizeChange={setFindingsFontSize} />
-            </Card>
-
-            {/* Expectations */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">What to Expect</Label>
-              <RichTextEditor value={expectations[0] || ""} onChange={v => setExpectations([v])} fontSize={expectationsFontSize} onFontSizeChange={setExpectationsFontSize} />
-            </Card>
-
-            {/* Recommendations */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Recommendations</Label>
-              <RichTextEditor value={recommendations[0] || ""} onChange={v => setRecommendations([v])} fontSize={recommendationsFontSize} onFontSizeChange={setRecommendationsFontSize} />
-            </Card>
 
             {/* Property Images */}
             <Card className="p-4 space-y-3">
@@ -782,6 +711,12 @@ const AppointmentReport = () => {
                 </div>
               )}
             </Card>
+
+            {/* Pesticide Notice */}
+            <div className="text-[8px] leading-[11px] text-muted-foreground space-y-1.5 px-1">
+              <p>Crest Pest Control is committed to the safety of our customers and our environment. All materials used by Crest Pest Control have been registered by the Environmental Protection Agency. Please avoid unnecessary contact with materials and comply with all instructions and recommendations from our technicians. Thanks for your patronage! National Emergency Poison Control: (800)222-1222</p>
+              <p>"State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized." "If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately." (This statement shall be modified to include any other symptoms of overexposure which are not typical of influenza.) "For further information, contact any of the following: Crest Pest Control (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
+            </div>
 
             {/* Save */}
             <Button className="w-full" size="lg" onClick={saveReport} disabled={isSaving}>
