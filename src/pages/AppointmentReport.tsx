@@ -76,7 +76,7 @@ const AppointmentReport = () => {
     return {};
   };
   const initialState = getInitialState();
-  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress } = initialState;
+  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress, propertyEquipment, customerPreference: initPref, customerPreferenceNotes: initPrefNotes } = initialState;
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
