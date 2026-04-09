@@ -102,14 +102,14 @@
   }
 
   .print-section-header {
-    background: hsl(var(--brand-black)) !important;
-    color: hsl(0 0% 100%) !important;
+    background: hsl(130 14% 79%) !important;
+    color: hsl(0 0% 16%) !important;
     padding: 0.2rem 0.75rem !important;
     font-size: 0.7rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    border-bottom: 2px solid hsl(var(--sage)) !important;
+    border-bottom: none !important;
     display: flex;
     align-items: center;
     gap: 0.35rem;
@@ -119,9 +119,9 @@
 
   .print-section-header input {
     background: transparent !important;
-    color: #ffffff !important;
+    color: hsl(0 0% 16%) !important;
     border: none !important;
-    caret-color: #ffffff !important;
+    caret-color: hsl(0 0% 16%) !important;
   }
 
   .print-section-content {
@@ -653,19 +653,19 @@
   }
 
   .print-section-header {
-    background: hsl(0 0% 16%) !important;
+    background: hsl(130 14% 79%) !important;
     padding: 1.2mm 3mm 1mm 3mm !important;
     font-size: 12px !important;
     font-weight: 800 !important;
     line-height: 1.15 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    border-bottom: 2px solid hsl(130 14% 79%) !important;
+    border-bottom: none !important;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     border-radius: 1.5mm 1.5mm 0 0 !important;
-    color: hsl(0 0% 100%) !important;
+    color: hsl(0 0% 16%) !important;
     min-height: 6.5mm !important;
     overflow: visible !important;
   }
@@ -679,7 +679,7 @@
   .print-section-header input {
     font-size: 14px !important;
     font-weight: 800 !important;
-    color: hsl(0 0% 100%) !important;
+    color: hsl(0 0% 16%) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
     line-height: 1.05 !important;
