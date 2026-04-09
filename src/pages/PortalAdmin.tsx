@@ -1056,6 +1056,7 @@ const PortalAdmin = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        )}
       </div>
 
       {/* Service Detail Modal */}
