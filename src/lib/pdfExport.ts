@@ -638,7 +638,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          const PAGE2_META_FONT = 15;
+          const PAGE2_META_FONT = 13;
           ['scheduling', 'setup-materials'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
@@ -647,6 +647,12 @@ async function captureElement(el: HTMLElement): Promise<string> {
               sp(node, 'font-size', `${PAGE2_META_FONT}px`);
               sp(node, 'line-height', '1.35');
             });
+          });
+
+          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold, [data-pdf-section="setup-materials"] p').forEach((node) => {
+            if (node.closest('.print-section-header')) return;
+            sp(node, 'font-size', '13px');
+            sp(node, 'line-height', '1.3');
           });
 
           const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
