@@ -84,6 +84,28 @@ const AppointmentReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
+  // Unit overview table
+  interface UnitRow {
+    unit: string;
+    targetPests: string;
+    notes: string;
+    areasTreated: string;
+    productsUsed: string;
+    followUp: string;
+    followUpNotes: string;
+  }
+  const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
+  const [unitRows, setUnitRows] = useState<UnitRow[]>([{ ...emptyUnit }]);
+  const [commonAreaPests, setCommonAreaPests] = useState("");
+  const [commonAreaNotes, setCommonAreaNotes] = useState("");
+  const [techObservations, setTechObservations] = useState("");
+  const [pmName, setPmName] = useState(propertyManager || "");
+
+  // Property map
+  const [propertyMapData, setPropertyMapData] = useState<string | null>(null);
+  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
+  const mapFileInputRef = useRef<HTMLInputElement>(null);
+
   // Auto-set license when technician changes
   const handleTechnicianChange = (name: string) => {
     setTechnicianName(name);
