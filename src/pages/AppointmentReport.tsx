@@ -487,7 +487,7 @@ const AppointmentReport = () => {
 
               {/* Common Area */}
               <div className="border-t pt-3 space-y-2">
-                <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
+                <p className="text-sm font-medium">Common Area Pest</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Target Pests</Label>
