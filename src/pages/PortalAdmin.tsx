@@ -909,7 +909,7 @@ const PortalAdmin = () => {
             ) : (
               <div className="space-y-2">
                 {pastServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
                     <CardContent className="p-3 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -956,7 +956,7 @@ const PortalAdmin = () => {
             ) : (
               <div className="space-y-2">
                 {futureServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
                     <CardContent className="p-3 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
