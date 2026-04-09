@@ -49,6 +49,12 @@ const PRODUCT_OPTIONS = [
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
 
+const UNIT_PEST_OPTIONS = [
+  "General Pests", "Ants", "Spiders", "Rodents", "Roaches", "American Roaches", "Wasps",
+  "Bed Bugs", "Fleas", "Ticks", "Mosquitoes", "Silverfish", "Earwigs",
+  "Crickets", "Centipedes", "Millipedes", "Drain Flies", "Other",
+];
+
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
 const AppointmentReport = () => {
@@ -447,10 +453,72 @@ const AppointmentReport = () => {
                       <tr key={i}>
                         <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
                         <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
-                        <td className="border p-0.5"><Input value={row.targetPests} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                                {row.targetPests || <span className="text-muted-foreground">Select...</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search pests..." />
+                                <CommandList className="max-h-48">
+                                  <CommandGroup>
+                                    {UNIT_PEST_OPTIONS.map(pest => {
+                                      const selected = (row.targetPests || "").split(", ").filter(Boolean);
+                                      const isSelected = selected.includes(pest);
+                                      return (
+                                        <CommandItem key={pest} value={pest} onSelect={() => {
+                                          const current = (row.targetPests || "").split(", ").filter(Boolean);
+                                          const next = isSelected ? current.filter(p => p !== pest) : [...current, pest];
+                                          setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, targetPests: next.join(", ") } : r));
+                                        }}>
+                                          <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                          {pest}
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </td>
                         <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
                         <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                        <td className="border p-0.5"><Input value={row.productsUsed} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                                {row.productsUsed || <span className="text-muted-foreground">Select...</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search products..." />
+                                <CommandList className="max-h-48">
+                                  <CommandGroup>
+                                    {PRODUCT_OPTIONS.map(prod => {
+                                      const selected = (row.productsUsed || "").split(", ").filter(Boolean);
+                                      const isSelected = selected.includes(prod);
+                                      return (
+                                        <CommandItem key={prod} value={prod} onSelect={() => {
+                                          const current = (row.productsUsed || "").split(", ").filter(Boolean);
+                                          const next = isSelected ? current.filter(p => p !== prod) : [...current, prod];
+                                          setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, productsUsed: next.join(", ") } : r));
+                                        }}>
+                                          <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                          {prod}
+                                        </CommandItem>
+                                      );
+                                    })}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </td>
                         <td className="border p-0.5">
                           <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
                             <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
@@ -474,7 +542,40 @@ const AppointmentReport = () => {
               <div className="border-t pt-3 space-y-2">
                 <p className="text-sm font-medium">Property Manager: Common Area Pest</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-xs">Target Pests</Label><Input value={commonAreaPests} onChange={e => setCommonAreaPests(e.target.value)} className="h-7 text-xs" placeholder="e.g. Ants, Spiders" /></div>
+                  <div>
+                    <Label className="text-xs">Target Pests</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between font-normal h-7 text-xs">
+                          <span className="truncate flex-1 text-left">{commonAreaPests || "Select pests..."}</span>
+                          <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search pests..." />
+                          <CommandList className="max-h-48">
+                            <CommandGroup>
+                              {UNIT_PEST_OPTIONS.map(pest => {
+                                const selected = (commonAreaPests || "").split(", ").filter(Boolean);
+                                const isSelected = selected.includes(pest);
+                                return (
+                                  <CommandItem key={pest} value={pest} onSelect={() => {
+                                    const current = (commonAreaPests || "").split(", ").filter(Boolean);
+                                    const next = isSelected ? current.filter(p => p !== pest) : [...current, pest];
+                                    setCommonAreaPests(next.join(", "));
+                                  }}>
+                                    <Check className={cn("mr-2 h-3 w-3", isSelected ? "opacity-100" : "opacity-0")} />
+                                    {pest}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div><Label className="text-xs">Notes</Label><Input value={commonAreaNotes} onChange={e => setCommonAreaNotes(e.target.value)} className="h-7 text-xs" /></div>
                 </div>
               </div>
