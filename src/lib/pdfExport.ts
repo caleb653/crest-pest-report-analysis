@@ -95,18 +95,18 @@ function remakePricingTable(root: HTMLElement) {
   sp(table, "width", "100%");
   sp(table, "border", `1px solid ${BRAND.border}`);
 
-  // ── Thead: every level forced dark ──────────────────────────────────────────
+  // ── Thead: sage green header ──────────────────────────────────────────
   const thead = table.querySelector<HTMLElement>("thead");
   if (thead) {
-    sp(thead, "background-color", BRAND.black);
-    sp(thead, "color", BRAND.offWhite);
+    sp(thead, "background-color", BRAND.sage);
+    sp(thead, "color", BRAND.black);
     thead.querySelectorAll<HTMLElement>("tr").forEach((tr) => {
-      sp(tr, "background-color", BRAND.black);
-      sp(tr, "color", BRAND.offWhite);
+      sp(tr, "background-color", BRAND.sage);
+      sp(tr, "color", BRAND.black);
     });
     thead.querySelectorAll<HTMLElement>("th, td").forEach((th) => {
-      sp(th, "background-color", BRAND.black);
-      sp(th, "color", BRAND.offWhite);
+      sp(th, "background-color", BRAND.sage);
+      sp(th, "color", BRAND.black);
       sp(th, "font-size", "10px");
       sp(th, "font-weight", "700");
       sp(th, "letter-spacing", "0.1em");
@@ -116,7 +116,7 @@ function remakePricingTable(root: HTMLElement) {
       sp(th, "white-space", "nowrap");
       sp(th, "vertical-align", "middle");
       th.querySelectorAll<HTMLElement>("*").forEach((c) => {
-        sp(c, "color", BRAND.offWhite);
+        sp(c, "color", BRAND.black);
         sp(c, "background-color", "transparent");
         sp(c, "letter-spacing", "0.1em");
       });
