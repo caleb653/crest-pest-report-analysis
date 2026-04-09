@@ -86,11 +86,16 @@ const TeamDocs = () => {
     setRepTitle("");
     setRepSignature("");
     setRepSignedDate(format(new Date(), "yyyy-MM-dd"));
+    setWaiverConfirmed(false);
   };
 
   const handleSubmitWaiver = async () => {
     if (!employeeName) {
       toast.error("Please select an employee");
+      return;
+    }
+    if (!waiverConfirmed) {
+      toast.error("Please confirm the waiver checkbox");
       return;
     }
     if (!employeeSignature) {
