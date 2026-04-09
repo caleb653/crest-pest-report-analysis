@@ -78,6 +78,7 @@ interface ChatMessage {
 
 const ClientPortal = () => {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [linkData, setLinkData] = useState<LinkData | null>(null);
