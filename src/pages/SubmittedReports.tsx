@@ -217,7 +217,7 @@ const SubmittedReports = () => {
     }
   };
 
-
+  const handleSignOut = () => {
     sessionStorage.removeItem("app_authenticated");
     sessionStorage.removeItem("app_logged_in_user");
     toast.success("Signed out");
