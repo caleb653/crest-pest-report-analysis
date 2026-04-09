@@ -314,6 +314,50 @@ const PortalAdmin = () => {
     window.open(`/${prefix}/${token}`, "_blank");
   };
   const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
+
+  // Create a new service and open Appointment Report in new tab
+  const createAndOpenReport = async (status: string) => {
+    const propId = selectedProperty?.id || (properties.length === 1 ? properties[0].id : "");
+    if (!propId) {
+      toast({ title: "Select a property first", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.from("portal_services").insert({
+      property_id: propId,
+      service_type: "General Pest Control",
+      status,
+      service_date: status === "scheduled" ? null : new Date().toISOString().split("T")[0],
+    }).select("id").single();
+    if (error || !data) {
+      toast({ title: "Failed to create service", variant: "destructive" });
+      return;
+    }
+    const prop = properties.find(p => p.id === propId);
+    const stateData = {
+      propertyName: prop?.name || "",
+      propertyAddress: prop?.address || "",
+      propertyId: propId,
+      clientName: selectedClient?.company || selectedClient?.name,
+      returnTo: "/portal-admin",
+    };
+    sessionStorage.setItem(`appointment-report-${data.id}`, JSON.stringify(stateData));
+    window.open(`/appointment-report/${data.id}`, "_blank");
+    if (selectedClient) loadProperties(selectedClient.id);
+  };
+
+  const openServiceReport = (s: PortalService) => {
+    const prop = properties.find(p => p.id === s.property_id);
+    const stateData = {
+      serviceData: s,
+      propertyName: prop?.name || "",
+      propertyAddress: prop?.address || "",
+      propertyId: s.property_id,
+      clientName: selectedClient?.company || selectedClient?.name,
+      returnTo: "/portal-admin",
+    };
+    sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
+    window.open(`/appointment-report/${s.id}`, "_blank");
+  };
   const today = new Date().toISOString().split("T")[0];
 
   const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
@@ -857,7 +901,7 @@ const PortalAdmin = () => {
           <TabsContent value="past">
             {viewMode === "admin" && (
               <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => openServiceDialog()} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
+                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("completed")} disabled={properties.length === 0}><Plus className="w-3 h-3 mr-1" />Add Past Service</Button>
               </div>
             )}
             {pastServices.length === 0 ? (
@@ -865,7 +909,7 @@ const PortalAdmin = () => {
             ) : (
               <div className="space-y-2">
                 {pastServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
                     <CardContent className="p-3 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -902,7 +946,7 @@ const PortalAdmin = () => {
           <TabsContent value="future">
             {(viewMode === "admin" || viewMode === "pm") && (
               <div className="mb-3">
-                <Button size="sm" variant="outline" onClick={() => { setServiceForm({ ...emptyServiceForm, property_id: selectedProperty?.id || "", status: "scheduled" }); setEditingService(null); setShowAddService(true); }} disabled={properties.length === 0}>
+                <Button size="sm" variant="outline" onClick={() => createAndOpenReport("scheduled")} disabled={properties.length === 0}>
                   <Plus className="w-3 h-3 mr-1" />Add Upcoming Service
                 </Button>
               </div>
@@ -912,7 +956,7 @@ const PortalAdmin = () => {
             ) : (
               <div className="space-y-2">
                 {futureServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
+                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => openServiceReport(s)}>
                     <CardContent className="p-3 flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
