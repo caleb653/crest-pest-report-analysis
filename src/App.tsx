@@ -32,6 +32,7 @@ const App = () => (
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/tenant/:token" element={<TenantPortal />} />
           <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
+          <Route path="/portal-admin" element={<PortalAdmin />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
