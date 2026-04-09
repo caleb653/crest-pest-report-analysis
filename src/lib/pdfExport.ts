@@ -230,7 +230,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root {
             background: #ffffff !important; box-sizing: border-box !important;
             overflow: visible !important;
-            font-size: 13px !important; line-height: 1.55 !important;
+            font-size: 11px !important; line-height: 1.55 !important;
             color: ${BRAND.black} !important;
           }
 
