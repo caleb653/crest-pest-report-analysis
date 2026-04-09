@@ -702,6 +702,18 @@ export default function CustomerReportView() {
                   </Card>
                 )}
 
+                {/* Limitations */}
+                {limitationsTextVal && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Limitations</span>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-xs leading-relaxed whitespace-pre-wrap">{limitationsTextVal}</p>
+                    </div>
+                  </Card>
+                )}
+
                 {/* Scheduling & Communication */}
                 {hasSchedulingData && (
                   <Card className="overflow-hidden">
@@ -772,6 +784,18 @@ export default function CustomerReportView() {
                       className="text-xs leading-relaxed prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ __html: additionalDetailsHtml }}
                     />
+                  </div>
+                </Card>
+              )}
+
+              {/* Limitations */}
+              {limitationsTextVal && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Limitations</span>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-xs leading-relaxed whitespace-pre-wrap">{limitationsTextVal}</p>
                   </div>
                 </Card>
               )}
