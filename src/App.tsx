@@ -8,6 +8,7 @@ import SelectTechnician from "./pages/SelectTechnician";
 import DataEntry from "./pages/DataEntry";
 import Report from "./pages/Report";
 import InitialPestReport from "./pages/InitialPestReport";
+import MultiProposalReport from "./pages/MultiProposalReport";
 import TeamDocs from "./pages/TeamDocs";
 import SubmittedReports from "./pages/SubmittedReports";
 import CustomerReportView from "./pages/CustomerReportView";

@@ -86,8 +86,8 @@ const reportTypes = [
   },
 ];
 
-// Layout order: row1 = [0,1,2], row2 = [3,4,5]
-const gridOrder = [0, 1, 2, 3, 4, 5];
+// Layout order: row1 = [0,1,2], row2 = [3,4,5], row3 = [6]
+const gridOrder = [0, 1, 2, 3, 4, 5, 6];
 
 const Index = () => {
   const navigate = useNavigate();
