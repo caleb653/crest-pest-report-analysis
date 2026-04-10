@@ -1936,20 +1936,33 @@ Crest Pest Control`;
                       />
                     )}
                     {!isReadOnly && (
-                      <div className="no-print absolute top-4 right-4 z-20">
-                        <div className="relative inline-flex">
-                          <Button size="sm" variant="secondary" type="button">
-                            <FileDown className="w-4 h-4 mr-2" /> Upload Map
+                      <>
+                        <div className="no-print absolute top-4 left-4 z-20">
+                          <Button size="sm" variant="secondary" type="button" onClick={() => {
+                            const mapContainer = document.querySelector(`[data-pdf-page="${isDuplicate ? `2-dupe-${dupeIndex}` : "2"}"] canvas`);
+                            if (mapContainer) {
+                              mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              (mapContainer as HTMLElement).click();
+                            }
+                          }}>
+                            <Pencil className="w-4 h-4 mr-2" /> Edit Map
                           </Button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
-                            onChange={(e) => handleMapUploadForPage(e, isDuplicate, dupeIndex)}
-                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                          />
                         </div>
-                      </div>
+                        <div className="no-print absolute top-4 right-4 z-20">
+                          <div className="relative inline-flex">
+                            <Button size="sm" variant="secondary" type="button">
+                              <FileDown className="w-4 h-4 mr-2" /> Upload Map
+                            </Button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                              onChange={(e) => handleMapUploadForPage(e, isDuplicate, dupeIndex)}
+                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                            />
+                          </div>
+                        </div>
+                      </>
                     )}
                     {coordinates && !pageMapImage && !isDuplicate && (
                       <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
