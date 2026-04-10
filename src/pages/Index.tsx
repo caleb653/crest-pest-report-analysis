@@ -18,14 +18,25 @@ const reportTypes = [
   },
   {
     id: "sales",
-    title: "Sales Report",
-    description: "Create a new sales consultation report",
+    title: "Single Sales Report",
+    description: "Create a single-service sales report",
     icon: FileText,
     path: "/report",
     color: "text-blue-600",
     bg: "bg-blue-50",
     hoverBg: "hover:bg-blue-100",
     border: "hover:border-blue-300",
+  },
+  {
+    id: "multi-sales",
+    title: "Multi-Proposal Report",
+    description: "Create a multi-service sales proposal",
+    icon: FileText,
+    path: "/multi-proposal-report",
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+    hoverBg: "hover:bg-indigo-100",
+    border: "hover:border-indigo-300",
   },
   {
     id: "client-portal",
@@ -75,8 +86,8 @@ const reportTypes = [
   },
 ];
 
-// Layout order: row1 = [0,1,2], row2 = [3,4,5]
-const gridOrder = [0, 1, 2, 3, 4, 5];
+// Layout order: row1 = [0,1,2], row2 = [3,4,5], row3 = [6]
+const gridOrder = [0, 1, 2, 3, 4, 5, 6];
 
 const Index = () => {
   const navigate = useNavigate();
