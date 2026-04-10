@@ -521,13 +521,14 @@ async function captureElement(el: HTMLElement): Promise<string> {
             align-items: center !important;
             min-height: 34px !important;
             padding: 6px 12px !important;
-            border: 1px solid ${BRAND.border} !important;
-            background-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            background-color: #3a3a3a !important;
           }
           .pdf-export-root .proposal-name-text,
           .pdf-export-root .proposal-name-print {
             display: block !important;
-            color: ${BRAND.black} !important;
+            color: #ffffff !important;
             font-size: 17px !important;
             font-weight: 700 !important;
             line-height: 1.2 !important;

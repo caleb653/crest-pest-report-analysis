@@ -49,6 +49,7 @@ interface StructuredNotes {
   duplicatedPages?: number[];
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
+  proposalFindings?: Record<string, string>;
 }
 
 interface ReportData {
@@ -316,6 +317,7 @@ export default function CustomerReportView() {
   const videoUrl = structuredNotes?.videoUrl || null;
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
+  const proposalFindingsMap = structuredNotes?.proposalFindings || {};
 
   const isMultiProposal =
     report.services &&
@@ -356,11 +358,14 @@ export default function CustomerReportView() {
   );
 
   const renderProposalServicesContent = (proposal: Proposal, proposalIndex: number) => {
-    if (proposalIndex === 0 && findingsHtml) {
+    // Use per-proposal findings if available, fall back to main findings for index 0
+    const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
+    const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+    if (contentHtml) {
       return (
         <div
           className="text-sm leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: findingsHtml }}
+          dangerouslySetInnerHTML={{ __html: contentHtml }}
         />
       );
     }
