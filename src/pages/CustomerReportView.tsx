@@ -28,10 +28,25 @@ interface PropertyImage {
   caption?: string;
 }
 
+const getRecurringLabel = (services: ServiceItem[]) => {
+  const recurringServices = services.filter(s => {
+    const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
+    return freq > 0 && s.serviceType;
+  });
+  if (recurringServices.length > 0 && recurringServices.every(s => {
+    const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
+    return freq <= 30;
+  })) {
+    return "Monthly";
+  }
+  return "Recurring";
+};
+
 interface SetupMaterial {
   name: string;
   quantity: string;
 }
+
 
 interface StructuredNotes {
   _structuredNotes?: boolean;
@@ -520,7 +535,7 @@ export default function CustomerReportView() {
                       <tr>
                         <th className="text-left px-3 py-1.5 font-medium text-xs">Service</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Initial</th>
-                        <th className="text-center px-3 py-1.5 font-medium text-xs">Recurring</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">{getRecurringLabel(proposal.services)}</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Frequency</th>
                       </tr>
                     </thead>
@@ -922,7 +937,7 @@ export default function CustomerReportView() {
                         <tr>
                           <th className="text-left px-4 py-2 font-medium">Service Type</th>
                           <th className="text-center px-4 py-2 font-medium">Initial</th>
-                          <th className="text-center px-4 py-2 font-medium">Recurring</th>
+                          <th className="text-center px-4 py-2 font-medium">{getRecurringLabel(proposal.services)}</th>
                           <th className="text-center px-4 py-2 font-medium">Frequency</th>
                         </tr>
                       </thead>

@@ -420,6 +420,14 @@ const Report = () => {
     });
   };
 
+  const getRecurringLabel = (services: ServiceItem[]) => {
+    const recurringServices = services.filter(s => s.frequency > 0 && s.serviceType);
+    if (recurringServices.length > 0 && recurringServices.every(s => s.frequency <= 30)) {
+      return "Monthly";
+    }
+    return "Recurring";
+  };
+
   const removeServiceFromProposal = (proposalIndex: number, serviceIndex: number) => {
     setProposals((prev) => {
       const updated = [...prev];
@@ -1637,7 +1645,7 @@ Crest Pest Control`;
           <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
-            <span className="text-center">Recurring</span>
+            <span className="text-center">{getRecurringLabel(proposal.services)}</span>
             <span className="text-center">Frequency</span>
             <span className="text-center">Schedule</span>
             <span></span>
@@ -1751,7 +1759,7 @@ Crest Pest Control`;
             <tr>
               <th className="text-left">Service Type</th>
               <th className="text-center">Initial</th>
-              <th className="text-center">Recurring</th>
+              <th className="text-center">{getRecurringLabel(proposal.services)}</th>
               <th className="text-center">Frequency</th>
               <th className="text-center">Schedule</th>
             </tr>
@@ -1990,7 +1998,7 @@ Crest Pest Control`;
                       <tr className="border-b border-border text-xs font-bold uppercase">
                         <th className="text-left px-2 py-1">Service</th>
                         <th className="text-center px-2 py-1">Initial</th>
-                        <th className="text-center px-2 py-1">Recurring</th>
+                        <th className="text-center px-2 py-1">{getRecurringLabel(proposals[proposalIndex].services)}</th>
                         <th className="text-center px-2 py-1">Frequency</th>
                       </tr>
                     </thead>
