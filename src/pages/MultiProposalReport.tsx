@@ -1593,7 +1593,7 @@ Crest Pest Control`;
         </div>
         <div className="space-y-1 print:space-y-0">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-sm print:text-[12px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
@@ -2448,7 +2448,7 @@ Crest Pest Control`;
                 <span className="text-base print:text-sm font-bold uppercase">Products</span>
               </div>
               <div className="p-2.5 print:p-1.5">
-                <div className="text-[9px] leading-tight text-foreground columns-2 gap-2">
+                <div className="text-[11px] leading-snug text-foreground columns-2 gap-2">
                   {displayedProducts.map((product, index) => (
                     <div key={index} className="flex items-center gap-1 group">
                       <p className="flex-1">
