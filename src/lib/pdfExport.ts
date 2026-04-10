@@ -508,51 +508,25 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
            /* ═══════════════════════════════════════════════════════════
-              MULTI-PROPOSAL GRID PRICING TABLES
+              MULTI-PROPOSAL PRICING — Option header + table
               ═══════════════════════════════════════════════════════════ */
-           .pdf-export-root .print-pricing-table {
-             border: none !important;
-             border-radius: 12px !important;
-             overflow: hidden !important;
-             margin-bottom: 16px !important;
-             padding: 0 !important;
-             background-color: #ffffff !important;
-             box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+           .pdf-export-root .print-pricing-wrapper {
+             margin-bottom: 14px !important;
            }
-           .pdf-export-root .print-pricing-table[data-recommended="true"] {
-             border: 2px solid ${BRAND.black} !important;
-             box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-           }
-           .pdf-export-root .proposal-recommended-banner {
+           .pdf-export-root .proposal-option-header {
              display: flex !important;
              align-items: center !important;
-             justify-content: center !important;
-             gap: 8px !important;
-             background-color: ${BRAND.black} !important;
-             color: #ffffff !important;
-             padding: 7px 16px !important;
-             margin: 0 !important;
-             border-radius: 0 !important;
-             font-size: 13px !important;
-             font-weight: 800 !important;
-             letter-spacing: 0.2em !important;
-             text-transform: uppercase !important;
-           }
-           .pdf-export-root .proposal-recommended-banner svg {
-             width: 14px !important; height: 14px !important;
-             fill: #ffffff !important; color: #ffffff !important;
+             gap: 10px !important;
+             margin-bottom: 4px !important;
            }
            .pdf-export-root .proposal-name-shell {
              display: flex !important;
              align-items: center !important;
-             min-height: 36px !important;
-             padding: 8px 16px !important;
+             min-height: 34px !important;
+             padding: 7px 16px !important;
              border: none !important;
-             border-radius: 0 !important;
+             border-radius: 8px !important;
              background-color: #404040 !important;
-             margin: 0 !important;
-             width: 100% !important;
-             max-width: none !important;
              flex: 1 !important;
            }
            .pdf-export-root .proposal-name-text,
@@ -563,6 +537,31 @@ async function captureElement(el: HTMLElement): Promise<string> {
              font-weight: 700 !important;
              line-height: 1.2 !important;
              letter-spacing: 0.04em !important;
+           }
+           .pdf-export-root .proposal-recommended-tag {
+             display: inline-flex !important;
+             align-items: center !important;
+             background-color: ${BRAND.black} !important;
+             color: #ffffff !important;
+             padding: 6px 14px !important;
+             border-radius: 8px !important;
+             font-size: 12px !important;
+             font-weight: 800 !important;
+             letter-spacing: 0.15em !important;
+             text-transform: uppercase !important;
+             white-space: nowrap !important;
+           }
+           .pdf-export-root .print-pricing-table {
+             border: 1px solid ${BRAND.border} !important;
+             border-radius: 10px !important;
+             overflow: hidden !important;
+             margin-bottom: 0 !important;
+             padding: 0 !important;
+             background-color: #ffffff !important;
+             box-shadow: none !important;
+           }
+           .pdf-export-root .print-pricing-table[data-recommended="true"] {
+             border: 2px solid ${BRAND.darkSage} !important;
            }
            .pdf-export-root .proposal-recommended-badge { display: none !important; }
 
