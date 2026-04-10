@@ -947,15 +947,41 @@ const Report = () => {
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
     // Capture all map canvases (main + duplicates) by triggering their exportMapAsImage
-    const allCanvases = document.querySelectorAll<HTMLCanvasElement>('canvas');
-    // The main map export function
+    // Each MapCanvas registers its own export function on the canvas element
+    const mapContainers = document.querySelectorAll<HTMLElement>('[data-pdf-page^="2"]');
+    
+    // Capture the main map first
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
-    if (!exportFn) return renderedMapImage;
-    const freshRender = await exportFn();
-    if (!freshRender) return renderedMapImage;
-    setRenderedMapImage(freshRender);
+    let mainResult: string | null = renderedMapImage;
+    if (exportFn) {
+      const freshRender = await exportFn();
+      if (freshRender) {
+        mainResult = freshRender;
+        setRenderedMapImage(freshRender);
+      }
+    }
+    
+    // For duplicate maps, we need to capture each canvas individually
+    // The MapCanvas components for duplicates have keys like "dupe-0-...", "dupe-1-..."
+    // We iterate through duplicate canvases and capture them
+    for (let i = 0; i < duplicatedPages.length; i++) {
+      const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
+      if (!dupeContainer) continue;
+      const dupeCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas');
+      if (dupeCanvas) {
+        try {
+          const dupeDataUrl = dupeCanvas.toDataURL('image/png');
+          if (dupeDataUrl && dupeDataUrl !== 'data:,') {
+            setDuplicateRenderedMapImages(prev => ({ ...prev, [i]: dupeDataUrl }));
+          }
+        } catch (e) {
+          console.warn(`Failed to capture duplicate map ${i}:`, e);
+        }
+      }
+    }
+    
     await waitForPdfMapRender();
-    return freshRender;
+    return mainResult;
   };
 
   const buildBaseReportPayload = (
