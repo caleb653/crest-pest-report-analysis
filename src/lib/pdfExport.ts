@@ -628,7 +628,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
           const proposedHeader = clonedPage.querySelector<HTMLElement>('[data-pdf-section="proposed-services"] .print-section-header');
           if (proposedServices) {
-            const targetSize = proposedHeader ? 11.5 : 11;
+            const targetSize = proposedHeader ? 12.5 : 12;
             sp(proposedServices, "font-size", `${targetSize}px`);
             sp(proposedServices, "line-height", "1.42");
             proposedServices.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
@@ -637,10 +637,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           }
           if (proposedHeader) {
-            sp(proposedHeader, "font-size", "11px");
+            sp(proposedHeader, "font-size", "12px");
             sp(proposedHeader, "line-height", "1.2");
             proposedHeader.querySelectorAll<HTMLElement>("span, div").forEach((node) => {
-              sp(node, "font-size", "11px");
+              sp(node, "font-size", "12px");
               sp(node, "line-height", "1.2");
             });
           }
