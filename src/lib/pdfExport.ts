@@ -418,17 +418,18 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
           /* ═══════════════════════════════════════════════════════════
-             PAGE 2 — Larger text everywhere
+             PAGE 2+ MAP PAGES — consistent styling
              ═══════════════════════════════════════════════════════════ */
+          /* Additional Details body text */
           .pdf-export-root .additional-details-body,
           .pdf-export-root .additional-details-body *,
           .pdf-export-root .additional-details-body .print-content-formatted,
           .pdf-export-root .additional-details-body .print-content-formatted * {
-            font-size: 15px !important;
-            line-height: 1.55 !important;
+            font-size: 12px !important;
+            line-height: 1.45 !important;
           }
 
-          /* Page 2 header bar */
+          /* Page 2+ header bar */
           .pdf-export-root .page2-header {
             background-color: ${BRAND.sage} !important;
             padding: 8px 16px !important;
@@ -437,25 +438,56 @@ async function captureElement(el: HTMLElement): Promise<string> {
             margin-bottom: 12px !important;
           }
           .pdf-export-root .page2-header h1 {
-            font-size: 22px !important;
+            font-size: 20px !important;
             font-weight: 700 !important;
             color: ${BRAND.black} !important;
           }
           .pdf-export-root .page2-header span {
-            font-size: 15px !important;
+            font-size: 13px !important;
             color: ${BRAND.black} !important;
           }
 
-          /* Page 2+ section headers — applies to all map pages */
+          /* Section headers (Proposed Services, Additional Details, Setup Materials) */
           .pdf-export-root .print-section-header {
-            font-size: 13px !important;
+            background-color: ${BRAND.sage} !important;
+            padding: 5px 10px !important;
+            border-radius: 4px 4px 0 0 !important;
+          }
+          .pdf-export-root .print-section-header span {
+            font-size: 11px !important;
             font-weight: 700 !important;
+            letter-spacing: 0.08em !important;
+            color: ${BRAND.black} !important;
+          }
+
+          /* Proposed Services content — both original (print-content-formatted) and duplicate (pdf-services-content) */
+          .pdf-export-root .print-content-formatted,
+          .pdf-export-root .print-content-formatted *,
+          .pdf-export-root .pdf-services-content,
+          .pdf-export-root .pdf-services-content * {
+            font-size: 11px !important;
+            line-height: 1.4 !important;
+            color: ${BRAND.black} !important;
+          }
+          .pdf-export-root .print-content-formatted b,
+          .pdf-export-root .print-content-formatted strong,
+          .pdf-export-root .pdf-services-content b,
+          .pdf-export-root .pdf-services-content strong {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+          }
+
+          /* Print sections — clean borders */
+          .pdf-export-root .print-section {
+            border: 1px solid ${BRAND.border} !important;
+            border-radius: 5px !important;
+            overflow: visible !important;
           }
 
           /* Page 2+ section content */
           .pdf-export-root .print-section-content,
           .pdf-export-root .print-section-content * {
-            line-height: 1.55 !important;
+            line-height: 1.45 !important;
           }
 
           /* Page 1 proposed services — leave layout alone, sizing handled inline */
