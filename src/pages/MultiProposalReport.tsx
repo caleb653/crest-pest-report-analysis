@@ -938,18 +938,16 @@ const Report = () => {
 
   const buildServicesPayload = () => proposals;
 
-  const waitForPdfMapRender = () =>
+  const waitForPdfMapRender = (ms = 300) =>
     new Promise<void>((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => resolve());
-      });
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      }, ms);
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
-    // Capture all map canvases (main + duplicates) by triggering their exportMapAsImage
-    // Each MapCanvas registers its own export function on the canvas element
-    const mapContainers = document.querySelectorAll<HTMLElement>('[data-pdf-page^="2"]');
-    
     // Capture the main map first
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     let mainResult: string | null = renderedMapImage;
@@ -961,26 +959,45 @@ const Report = () => {
       }
     }
     
-    // For duplicate maps, we need to capture each canvas individually
-    // The MapCanvas components for duplicates have keys like "dupe-0-...", "dupe-1-..."
-    // We iterate through duplicate canvases and capture them
+    // Capture each duplicate map canvas individually
+    const dupeImages: Record<number, string | null> = {};
     for (let i = 0; i < duplicatedPages.length; i++) {
       const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
       if (!dupeContainer) continue;
-      const dupeCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas');
+      // Try fabric canvas first (upper-canvas), then fall back to any canvas
+      const dupeCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas.upper-canvas') 
+        || dupeContainer.querySelector<HTMLCanvasElement>('canvas');
       if (dupeCanvas) {
         try {
           const dupeDataUrl = dupeCanvas.toDataURL('image/png');
           if (dupeDataUrl && dupeDataUrl !== 'data:,') {
-            setDuplicateRenderedMapImages(prev => ({ ...prev, [i]: dupeDataUrl }));
+            dupeImages[i] = dupeDataUrl;
           }
         } catch (e) {
           console.warn(`Failed to capture duplicate map ${i}:`, e);
         }
       }
+      // If canvas capture failed, try to get the map image from the lower canvas
+      if (!dupeImages[i]) {
+        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas.lower-canvas');
+        if (lowerCanvas) {
+          try {
+            const lowerDataUrl = lowerCanvas.toDataURL('image/png');
+            if (lowerDataUrl && lowerDataUrl !== 'data:,') {
+              dupeImages[i] = lowerDataUrl;
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
     }
     
-    await waitForPdfMapRender();
+    // Batch-set all duplicate images at once to trigger a single re-render
+    if (Object.keys(dupeImages).length > 0) {
+      setDuplicateRenderedMapImages(prev => ({ ...prev, ...dupeImages }));
+    }
+    
+    // Wait for React re-render to show <img> tags with captured data
+    await waitForPdfMapRender(500);
     return mainResult;
   };
 

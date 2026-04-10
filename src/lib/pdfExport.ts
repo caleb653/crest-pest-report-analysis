@@ -559,9 +559,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.classList.add("pdf-export-root");
         clonedPage.style.width = `${A4_LANDSCAPE_WIDTH_PX}px`;
         clonedPage.style.minWidth = `${A4_LANDSCAPE_WIDTH_PX}px`;
+        clonedPage.style.maxWidth = `${A4_LANDSCAPE_WIDTH_PX}px`;
         clonedPage.style.background = "#ffffff";
         clonedPage.style.boxSizing = "border-box";
         clonedPage.style.overflow = "visible";
+        clonedPage.style.padding = "0 8px";
 
         if (isPestReport) {
           clonedPage.setAttribute("data-report-type", "pest-report");
