@@ -796,12 +796,27 @@ export async function buildMergedPDF(options: {
       const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
-      const finalH = Math.min(img.height * (pageW / img.width), Math.max(headerDrawY, 0));
-      page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
+      const availH = Math.max(headerDrawY, 0);
+      const scaleW = pageW / img.width;
+      const scaleH = availH / img.height;
+      const scale = Math.min(scaleW, scaleH);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = (pageW - drawW) / 2;
+      page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH, 0), width: drawW, height: drawH });
       pendingHeaderImg = null;
     } else {
-      const drawH = Math.min(img.height * (pageW / img.width), pageH);
-      page.drawImage(img, { x: 0, y: pageH - drawH, width: pageW, height: drawH });
+      const margin = 12;
+      const contentW = pageW - margin * 2;
+      const contentH = pageH - margin * 2;
+      const scaleW = contentW / img.width;
+      const scaleH = contentH / img.height;
+      const scale = Math.min(scaleW, scaleH);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = (pageW - drawW) / 2;
+      const drawY = pageH - margin - drawH;
+      page.drawImage(img, { x: drawX, y: Math.max(drawY, margin), width: drawW, height: drawH });
     }
   }
 
@@ -820,6 +835,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
+  const MARGIN = 12;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
@@ -837,15 +853,31 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
     const page = outDoc.addPage([pageW, pageH]);
 
     if (captureId === "1" && pendingHeaderImg) {
+      // Header + Page 1 combined
       const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
-      const finalH = Math.min(img.height * (pageW / img.width), Math.max(headerDrawY, 0));
-      page.drawImage(img, { x: 0, y: Math.max(headerDrawY - finalH, 0), width: pageW, height: finalH });
+      const availH = Math.max(headerDrawY, 0);
+      const scaleW = pageW / img.width;
+      const scaleH = availH / img.height;
+      const scale = Math.min(scaleW, scaleH);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = (pageW - drawW) / 2;
+      page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH, 0), width: drawW, height: drawH });
       pendingHeaderImg = null;
     } else {
-      const drawH = Math.min(img.height * (pageW / img.width), pageH);
-      page.drawImage(img, { x: 0, y: pageH - drawH, width: pageW, height: drawH });
+      // Scale to fit page while preserving aspect ratio
+      const contentW = pageW - MARGIN * 2;
+      const contentH = pageH - MARGIN * 2;
+      const scaleW = contentW / img.width;
+      const scaleH = contentH / img.height;
+      const scale = Math.min(scaleW, scaleH);
+      const drawW = img.width * scale;
+      const drawH = img.height * scale;
+      const drawX = (pageW - drawW) / 2;
+      const drawY = pageH - MARGIN - drawH; // top-aligned with margin
+      page.drawImage(img, { x: drawX, y: Math.max(drawY, MARGIN), width: drawW, height: drawH });
     }
   }
 

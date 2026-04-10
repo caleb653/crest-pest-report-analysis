@@ -947,15 +947,41 @@ const Report = () => {
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
     // Capture all map canvases (main + duplicates) by triggering their exportMapAsImage
-    const allCanvases = document.querySelectorAll<HTMLCanvasElement>('canvas');
-    // The main map export function
+    // Each MapCanvas registers its own export function on the canvas element
+    const mapContainers = document.querySelectorAll<HTMLElement>('[data-pdf-page^="2"]');
+    
+    // Capture the main map first
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
-    if (!exportFn) return renderedMapImage;
-    const freshRender = await exportFn();
-    if (!freshRender) return renderedMapImage;
-    setRenderedMapImage(freshRender);
+    let mainResult: string | null = renderedMapImage;
+    if (exportFn) {
+      const freshRender = await exportFn();
+      if (freshRender) {
+        mainResult = freshRender;
+        setRenderedMapImage(freshRender);
+      }
+    }
+    
+    // For duplicate maps, we need to capture each canvas individually
+    // The MapCanvas components for duplicates have keys like "dupe-0-...", "dupe-1-..."
+    // We iterate through duplicate canvases and capture them
+    for (let i = 0; i < duplicatedPages.length; i++) {
+      const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
+      if (!dupeContainer) continue;
+      const dupeCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas');
+      if (dupeCanvas) {
+        try {
+          const dupeDataUrl = dupeCanvas.toDataURL('image/png');
+          if (dupeDataUrl && dupeDataUrl !== 'data:,') {
+            setDuplicateRenderedMapImages(prev => ({ ...prev, [i]: dupeDataUrl }));
+          }
+        } catch (e) {
+          console.warn(`Failed to capture duplicate map ${i}:`, e);
+        }
+      }
+    }
+    
     await waitForPdfMapRender();
-    return freshRender;
+    return mainResult;
   };
 
   const buildBaseReportPayload = (
@@ -1649,7 +1675,7 @@ Crest Pest Control`;
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
             <h1 className="text-xl print:text-lg font-bold text-foreground">
-              Property Map & Details {isDuplicate ? `— ${proposalName}` : ""}
+              Property Map & Details — {proposalName}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -2129,7 +2155,18 @@ Crest Pest Control`;
       <div data-pdf-page="1" data-pdf-capture={videoUrl ? "2" : "1"} className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
         <div className="space-y-2 print:space-y-1">
           {/* Multiple Proposal Tables */}
-          {proposals.map((proposal, index) => renderProposalTable(proposal, index))}
+          {proposals.map((proposal, index) => (
+            <div key={index}>
+              {index > 0 && (
+                <div className="flex items-center gap-3 my-3 no-print">
+                  <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-primary/30" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{proposal.name}</span>
+                  <div className="flex-1 h-[2px] bg-gradient-to-l from-transparent via-primary/20 to-primary/30" />
+                </div>
+              )}
+              {renderProposalTable(proposal, index)}
+            </div>
+          ))}
 
           {/* Add Proposal Button */}
           {proposals.length < 4 && !isReadOnly && (
@@ -2352,7 +2389,7 @@ Crest Pest Control`;
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
           <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
             <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — Property Map & Details</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — {proposals[0]?.name || "Option A"}</span>
           </div>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
         </div>
