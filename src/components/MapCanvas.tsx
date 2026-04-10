@@ -20,6 +20,7 @@ interface MapCanvasProps {
   onExportImage?: (imageDataUrl: string) => void;
   initialData?: string | null;
   exportId?: string;
+  showToolbar?: boolean;
 }
 
 type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser' | 'draw';
