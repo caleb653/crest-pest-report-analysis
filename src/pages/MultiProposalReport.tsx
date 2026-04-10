@@ -601,6 +601,9 @@ const Report = () => {
   const [savedCustomerEmail, setSavedCustomerEmail] = useState<string | null>(null);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const isReadOnly = !!signatureWasSaved;
+  const hasSchedulingInfo = [preferredServiceDay, preferredServiceTime, mainPointOfContact, contactPhone]
+    .some((value) => value.trim().length > 0);
+  const showSchedulingSection = !isReadOnly || hasSchedulingInfo;
   
   const handleSignatureSave = async (signatureData: string | null) => {
     setCustomerSignature(signatureData);
@@ -1512,152 +1515,176 @@ Crest Pest Control`;
   };
 
   // Render a proposal pricing table
-  const renderProposalTable = (proposal: Proposal, proposalIndex: number) => (
-    <Card key={proposalIndex} className={`print-section print-pricing-table p-2 print:p-0.5 print:py-1 ${recommendedProposal === proposalIndex ? 'ring-2 ring-primary' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          {recommendedProposal === proposalIndex && (
-            <Star className="w-4 h-4 text-primary fill-primary" />
-          )}
-          {isReadOnly ? (
-            <h3 className="text-sm font-bold text-foreground">{proposal.name}</h3>
-          ) : (
-            <Input
-              value={proposal.name}
-              onChange={(e) => {
-                setProposals(prev => {
-                  const updated = [...prev];
-                  updated[proposalIndex] = { ...updated[proposalIndex], name: e.target.value };
-                  return updated;
-                });
-              }}
-              className="h-7 text-sm font-bold border-b border-border bg-transparent w-40 focus-visible:ring-0"
-            />
-          )}
-        </div>
-        {!isReadOnly && proposals.length > 1 && (
-          <Button variant="ghost" size="icon" className="h-6 w-6 no-print" onClick={() => removeProposal(proposalIndex)}>
-            <X className="w-3 h-3" />
-          </Button>
-        )}
-      </div>
-      <div className="space-y-1 print:space-y-0">
-        {/* Header Row */}
-        <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
-          <span className="pl-1">Service Type</span>
-          <span className="text-center">Initial</span>
-          <span className="text-center">Recurring</span>
-          <span className="text-center">Frequency</span>
-          <span></span>
-        </div>
+  const renderProposalTable = (proposal: Proposal, proposalIndex: number) => {
+    const isRecommended = recommendedProposal === proposalIndex;
+    const proposalLabel = proposal.name.trim() || PROPOSAL_NAMES[proposalIndex] || `Option ${proposalIndex + 1}`;
 
-        {/* Service Rows */}
-        {proposal.services.map((service, serviceIndex) => (
-          <div
-            key={serviceIndex}
-            className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center print:py-0"
-          >
-            <div className="bg-white/80 rounded px-1">
-              <Select
-                value={service.serviceType}
-                onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "serviceType", val)}
-              >
-                <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
-                  <SelectValue placeholder="Select service..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {SERVICE_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option} className="text-xs">{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="hidden print:flex print-pricing-display print-pricing-display--left text-xs font-medium">
-                {service.serviceType || "-"}
+    return (
+      <Card
+        key={proposalIndex}
+        data-recommended={isRecommended ? "true" : "false"}
+        className={cn(
+          "print-section print-pricing-table p-2 print:p-0.5 print:py-1",
+          isRecommended && "ring-2 ring-primary border-primary/60 bg-primary/5",
+        )}
+      >
+        <div className="mb-1.5 flex items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-start gap-2">
+            {isRecommended && (
+              <Star className="mt-1 h-4 w-4 shrink-0 text-primary fill-primary" />
+            )}
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+              <div className="proposal-name-shell min-w-[220px] flex-1 rounded-md border border-border bg-muted/40 px-2 py-1">
+                {isReadOnly ? (
+                  <h3 className="proposal-name-text break-words text-sm font-bold leading-tight text-foreground">{proposalLabel}</h3>
+                ) : (
+                  <>
+                    <Input
+                      value={proposal.name}
+                      onChange={(e) => {
+                        setProposals(prev => {
+                          const updated = [...prev];
+                          updated[proposalIndex] = { ...updated[proposalIndex], name: e.target.value };
+                          return updated;
+                        });
+                      }}
+                      className="proposal-name-input no-print h-8 w-full border-0 bg-transparent px-0 py-0 text-sm font-bold shadow-none focus-visible:ring-0"
+                    />
+                    <div className="proposal-name-print hidden break-words text-sm font-bold leading-tight text-foreground print:block">{proposalLabel}</div>
+                  </>
+                )}
               </div>
-            </div>
-            <div className="relative bg-white/80 rounded">
-              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
-              <Input
-                type="text"
-                inputMode="numeric"
-                value={service.initialPrice}
-                onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "initialPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                placeholder="0"
-                className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
-              />
-              <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
-                <span className="text-muted-foreground">$</span>
-                <span>{(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</span>
-              </div>
-            </div>
-            <div className="relative bg-white/80 rounded">
-              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
-              <Input
-                type="text"
-                inputMode="numeric"
-                value={service.recurringPrice}
-                onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "recurringPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                placeholder="0"
-                className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
-              />
-              <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
-                <span className="text-muted-foreground">$</span>
-                <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
-              </div>
-            </div>
-            <div className="bg-white/80 rounded px-1">
-              <Select
-                value={service.frequency.toString()}
-                onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "frequency", parseInt(val))}
-              >
-                <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent className="bg-white z-50">
-                  {FREQUENCY_OPTIONS.map((option) => (
-                    <SelectItem key={option.days} value={option.days.toString()} className="text-xs">{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="hidden print:flex print-pricing-display text-xs">
-                {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
-              </div>
-            </div>
-            <div>
-              {proposal.services.length > 1 && (
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 no-print"
-                  onClick={() => removeServiceFromProposal(proposalIndex, serviceIndex)}>
-                  <X className="w-3 h-3" />
-                </Button>
+              {isRecommended && (
+                <span className="proposal-recommended-badge inline-flex shrink-0 items-center rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary-foreground">
+                  Recommended
+                </span>
               )}
             </div>
           </div>
-        ))}
-
-        {/* Totals Row */}
-        <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
-          <div className="text-xs font-bold text-right">Total:</div>
-          <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
-            <span className="text-muted-foreground">$</span>
-            <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
-          </div>
-          <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
-            <span className="text-muted-foreground">$</span>
-            <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
-          </div>
-          <div></div>
-          <div></div>
+          {!isReadOnly && proposals.length > 1 && (
+            <Button variant="ghost" size="icon" className="h-6 w-6 no-print" onClick={() => removeProposal(proposalIndex)}>
+              <X className="w-3 h-3" />
+            </Button>
+          )}
         </div>
+        <div className="space-y-1 print:space-y-0">
+          {/* Header Row */}
+          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+            <span className="pl-1">Service Type</span>
+            <span className="text-center">Initial</span>
+            <span className="text-center">Recurring</span>
+            <span className="text-center">Frequency</span>
+            <span></span>
+          </div>
 
-        {proposal.services.length < 5 && !isReadOnly && (
-          <Button type="button" variant="outline" size="sm" onClick={() => addServiceToProposal(proposalIndex)}
-            className="no-print h-6 text-[10px] mt-1">
-            <Plus className="w-3 h-3 mr-1" /> Add Service
-          </Button>
-        )}
-      </div>
-    </Card>
-  );
+          {/* Service Rows */}
+          {proposal.services.map((service, serviceIndex) => (
+            <div
+              key={serviceIndex}
+              className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center print:py-0"
+            >
+              <div className="bg-white/80 rounded px-1">
+                <Select
+                  value={service.serviceType}
+                  onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "serviceType", val)}
+                >
+                  <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                    <SelectValue placeholder="Select service..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {SERVICE_TYPE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option} className="text-xs">{option}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="hidden print:flex print-pricing-display print-pricing-display--left text-xs font-medium">
+                  {service.serviceType || "-"}
+                </div>
+              </div>
+              <div className="relative bg-white/80 rounded">
+                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={service.initialPrice}
+                  onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "initialPrice", e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="0"
+                  className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
+                />
+                <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
+                  <span className="text-muted-foreground">$</span>
+                  <span>{(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="relative bg-white/80 rounded">
+                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={service.recurringPrice}
+                  onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "recurringPrice", e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="0"
+                  className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
+                />
+                <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
+                  <span className="text-muted-foreground">$</span>
+                  <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="bg-white/80 rounded px-1">
+                <Select
+                  value={service.frequency.toString()}
+                  onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "frequency", parseInt(val))}
+                >
+                  <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white z-50">
+                    {FREQUENCY_OPTIONS.map((option) => (
+                      <SelectItem key={option.days} value={option.days.toString()} className="text-xs">{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="hidden print:flex print-pricing-display text-xs">
+                  {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
+                </div>
+              </div>
+              <div>
+                {proposal.services.length > 1 && (
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 no-print"
+                    onClick={() => removeServiceFromProposal(proposalIndex, serviceIndex)}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Totals Row */}
+          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
+            <div className="text-xs font-bold text-right">Total:</div>
+            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+              <span className="text-muted-foreground">$</span>
+              <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
+            </div>
+            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+              <span className="text-muted-foreground">$</span>
+              <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
+            </div>
+            <div></div>
+            <div></div>
+          </div>
+
+          {proposal.services.length < 5 && !isReadOnly && (
+            <Button type="button" variant="outline" size="sm" onClick={() => addServiceToProposal(proposalIndex)}
+              className="no-print h-6 text-[10px] mt-1">
+              <Plus className="w-3 h-3 mr-1" /> Add Service
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
+  };
 
   // Get the proposed services text for a specific proposal index
   const getProposalServicesText = (proposalIndex: number): string => {
@@ -2212,20 +2239,27 @@ Crest Pest Control`;
 
           {/* Recommended Proposal Selector */}
           {proposals.length > 1 && (
-            <Card className="print-section p-2 print:p-1">
-              <div className="flex items-center gap-3">
-                <Star className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold uppercase">Recommended Proposal:</span>
-                {isReadOnly ? (
-                  <span className="text-sm font-semibold text-primary">{proposals[recommendedProposal]?.name || "—"}</span>
-                ) : (
+            <Card className="recommended-proposal-card print-section border-primary/40 bg-primary/5 p-2 print:p-1">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80">Recommended Proposal</span>
+                    <span className="recommended-proposal-pill mt-1 inline-flex max-w-full items-center rounded-full border border-primary/30 bg-background px-3 py-1 text-sm font-semibold text-foreground">
+                      {proposals[recommendedProposal]?.name?.trim() || PROPOSAL_NAMES[recommendedProposal] || "—"}
+                    </span>
+                  </div>
+                </div>
+                {!isReadOnly && (
                   <Select value={recommendedProposal.toString()} onValueChange={(v) => setRecommendedProposal(parseInt(v))}>
-                    <SelectTrigger className="h-7 text-xs w-48 bg-transparent border-b border-border focus:ring-0">
+                    <SelectTrigger className="no-print h-8 w-full bg-background text-xs sm:w-56">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {proposals.map((p, i) => (
-                        <SelectItem key={i} value={i.toString()} className="text-xs">{p.name}</SelectItem>
+                        <SelectItem key={i} value={i.toString()} className="text-xs">{p.name?.trim() || PROPOSAL_NAMES[i]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -2292,51 +2326,59 @@ Crest Pest Control`;
           </div>
 
           {/* Scheduling & Signature side by side */}
-          <div className="grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5">
+          <div
+            className={cn(
+              "grid gap-1.5 print:gap-0.5",
+              showSchedulingSection ? "grid-cols-[2fr_3fr]" : "grid-cols-1",
+              showSchedulingSection ? "print:grid-cols-[2fr_3fr]" : "print:grid-cols-1",
+            )}
+          >
             {/* Scheduling & Communication */}
-            <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
-              </div>
-              <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
-                  ) : (
-                    <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="e.g. Monday"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
+            {showSchedulingSection && (
+              <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
-                  ) : (
-                    <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="e.g. Morning"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
+                <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                    ) : (
+                      <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="e.g. Monday"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                    ) : (
+                      <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="e.g. Morning"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                    ) : (
+                      <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="Name"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                    ) : (
+                      <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="(xxx) xxx-xxxx"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
-                  ) : (
-                    <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="Name"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{contactPhone || "—"}</span>
-                  ) : (
-                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="(xxx) xxx-xxxx"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-              </div>
-            </Card>
+              </Card>
+            )}
 
             {/* Customer Signature */}
             <div className={`p-0 overflow-hidden print:overflow-visible rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>

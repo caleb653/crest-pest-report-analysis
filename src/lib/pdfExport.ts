@@ -490,6 +490,55 @@ async function captureElement(el: HTMLElement): Promise<string> {
             margin-bottom: 6px !important;
             padding: 8px !important;
           }
+          .pdf-export-root .print-pricing-table[data-recommended="true"] {
+            border: 2px solid ${BRAND.darkSage} !important;
+            background-color: ${BRAND.sageTint} !important;
+          }
+          .pdf-export-root .proposal-name-shell {
+            display: flex !important;
+            align-items: center !important;
+            min-height: 34px !important;
+            padding: 6px 12px !important;
+            border: 1px solid ${BRAND.border} !important;
+            background-color: #ffffff !important;
+          }
+          .pdf-export-root .proposal-name-text,
+          .pdf-export-root .proposal-name-print {
+            display: block !important;
+            color: ${BRAND.black} !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            line-height: 1.2 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+          }
+          .pdf-export-root .proposal-recommended-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            border-radius: 9999px !important;
+            background-color: ${BRAND.darkSage} !important;
+            color: #ffffff !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.16em !important;
+            text-transform: uppercase !important;
+            padding: 6px 12px !important;
+          }
+          .pdf-export-root .recommended-proposal-card {
+            border: 2px solid ${BRAND.darkSage} !important;
+            background-color: ${BRAND.sageTint} !important;
+          }
+          .pdf-export-root .recommended-proposal-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            border-radius: 9999px !important;
+            border: 1px solid ${BRAND.darkSage} !important;
+            background-color: #ffffff !important;
+            color: ${BRAND.black} !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            padding: 6px 14px !important;
+          }
           .pdf-export-root .print-pricing-display {
             display: flex !important;
             align-items: center !important;
