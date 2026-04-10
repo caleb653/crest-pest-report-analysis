@@ -2155,7 +2155,18 @@ Crest Pest Control`;
       <div data-pdf-page="1" data-pdf-capture={videoUrl ? "2" : "1"} className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
         <div className="space-y-2 print:space-y-1">
           {/* Multiple Proposal Tables */}
-          {proposals.map((proposal, index) => renderProposalTable(proposal, index))}
+          {proposals.map((proposal, index) => (
+            <div key={index}>
+              {index > 0 && (
+                <div className="flex items-center gap-3 my-3 no-print">
+                  <div className="flex-1 h-[2px] bg-gradient-to-r from-transparent via-primary/20 to-primary/30" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{proposal.name}</span>
+                  <div className="flex-1 h-[2px] bg-gradient-to-l from-transparent via-primary/20 to-primary/30" />
+                </div>
+              )}
+              {renderProposalTable(proposal, index)}
+            </div>
+          ))}
 
           {/* Add Proposal Button */}
           {proposals.length < 4 && !isReadOnly && (
