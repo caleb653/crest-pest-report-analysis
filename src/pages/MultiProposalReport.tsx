@@ -1525,7 +1525,7 @@ Crest Pest Control`;
         data-recommended={isRecommended ? "true" : "false"}
         className={cn(
           "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
-          "border-2 border-foreground/80 rounded-lg",
+          "border-2 border-foreground/80 rounded-xl",
           isRecommended && "ring-2 ring-primary border-primary bg-primary/5 shadow-md",
         )}
       >
@@ -1574,11 +1574,12 @@ Crest Pest Control`;
         </div>
         <div className="space-y-1 print:space-y-0">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
             <span className="text-center">Frequency</span>
+            <span className="text-center">Schedule</span>
             <span></span>
           </div>
 
@@ -1586,7 +1587,7 @@ Crest Pest Control`;
           {proposal.services.map((service, serviceIndex) => (
             <div
               key={serviceIndex}
-              className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center print:py-0"
+              className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center print:py-0"
             >
               <div className="bg-white/80 rounded px-1">
                 <Select
@@ -1654,6 +1655,37 @@ Crest Pest Control`;
                   {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                 </div>
               </div>
+              {/* Schedule column */}
+              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5 print:py-0">
+                {service.frequency > 0 ? (
+                  <div className="flex flex-wrap gap-0.5 print:gap-0">
+                    {(() => {
+                      const isHighFreq = service.frequency === 7 || service.frequency === 14;
+                      const today = new Date();
+                      const count = isHighFreq ? 8 : 6;
+                      return Array.from({ length: count }, (_, i) => {
+                        const scheduleDate = new Date(today);
+                        scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
+                        const isFirst = i === 0;
+                        return (
+                          <span
+                            key={i}
+                            className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap print:text-[7px] print:px-0.5 ${
+                              isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {isHighFreq
+                              ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                              : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">One-time</span>
+                )}
+              </div>
               <div>
                 {proposal.services.length > 1 && (
                   <Button type="button" variant="ghost" size="icon" className="h-6 w-6 no-print"
@@ -1666,16 +1698,17 @@ Crest Pest Control`;
           ))}
 
           {/* Totals Row */}
-          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
             <div className="text-xs font-bold text-right">Total:</div>
-            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
             </div>
-            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
             </div>
+            <div></div>
             <div></div>
             <div></div>
           </div>
@@ -1848,8 +1881,8 @@ Crest Pest Control`;
           {/* Right Column - Proposed Services + Additional Details + Setup Materials */}
           <div className="flex flex-col gap-3 print:gap-2">
             {/* Proposed Services */}
-            <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+            <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">
                   Proposed Services — {proposalName}
                 </span>
@@ -1906,8 +1939,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Additional Details */}
-            <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex flex-col">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+            <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-2 flex-1 flex flex-col">
@@ -1930,8 +1963,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Setup Materials */}
-            <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+            <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-2.5 print:p-1.5">
@@ -1980,8 +2013,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Customer Signature — on each proposal page */}
-            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
                 <span className="text-xs print:text-[10px] font-bold uppercase">
                   Customer Signature — {proposalName}
                 </span>

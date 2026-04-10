@@ -101,7 +101,7 @@ function remakePricingTable(root: HTMLElement) {
     thead.querySelectorAll<HTMLElement>("th, td").forEach((th) => {
       sp(th, "background-color", BRAND.sage);
       sp(th, "color", BRAND.black);
-      sp(th, "font-size", "10px");
+      sp(th, "font-size", "11px");
       sp(th, "font-weight", "700");
       sp(th, "letter-spacing", "0.1em");
       sp(th, "text-transform", "uppercase");
@@ -130,15 +130,15 @@ function remakePricingTable(root: HTMLElement) {
       sp(cell, "background-color", isEven ? BRAND.sageTint : "#ffffff");
 
       if (colIdx === 0) {
-        sp(cell, "font-size", "13px");
+        sp(cell, "font-size", "14px");
         sp(cell, "font-weight", "500");
         sp(cell, "color", BRAND.black);
       } else if (colIdx === 1 || colIdx === 2) {
-        sp(cell, "font-size", "15px");
+        sp(cell, "font-size", "16px");
         sp(cell, "font-weight", "700");
         sp(cell, "color", BRAND.black);
       } else if (colIdx === 3) {
-        sp(cell, "font-size", "12px");
+        sp(cell, "font-size", "13px");
         sp(cell, "color", "#555");
       }
     });
@@ -156,7 +156,7 @@ function remakePricingTable(root: HTMLElement) {
       sp(cell, "border-bottom", "none");
       sp(cell, "padding", "11px 14px");
       sp(cell, "font-weight", "700");
-      sp(cell, "font-size", colIdx >= 1 && colIdx <= 2 ? "16px" : "14px");
+      sp(cell, "font-size", colIdx >= 1 && colIdx <= 2 ? "17px" : "15px");
     });
   }
 }
@@ -245,22 +245,22 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ── Proposal text scale ────────────────────────────────── */
           .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.45 !important; }
-          .pdf-export-root [class*="text-xs"]                { font-size: 10px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-sm"]                { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-base"]              { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-lg"]                { font-size: 12px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-xl"]                { font-size: 14px !important; line-height: 1.4 !important; }
-          .pdf-export-root [class*="text-2xl"]               { font-size: 18px !important; line-height: 1.3 !important; }
-          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 8px  !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 10px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="columns-2"] *            { font-size: 9.5px !important; line-height: 1.65 !important; }
+          .pdf-export-root [class*="text-xs"]                { font-size: 11px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-sm"]                { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-base"]              { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-lg"]                { font-size: 13px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-xl"]                { font-size: 15px !important; line-height: 1.4 !important; }
+          .pdf-export-root [class*="text-2xl"]               { font-size: 19px !important; line-height: 1.3 !important; }
+          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 10px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="columns-2"] *            { font-size: 10.5px !important; line-height: 1.65 !important; }
           .pdf-export-root [class*="columns-2"] p,
           .pdf-export-root [class*="columns-2"] li           { margin: 1px 0 !important; }
-          .pdf-export-root h1 { font-size: 20px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h2 { font-size: 16px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h3 { font-size: 13px !important; font-weight: 600 !important; overflow: visible !important; }
+          .pdf-export-root h1 { font-size: 21px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h2 { font-size: 17px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h3 { font-size: 14px !important; font-weight: 600 !important; overflow: visible !important; }
           .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
 
           /* ═══════════════════════════════════════════════════════════
@@ -374,19 +374,19 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root thead td {
             background-color: ${BRAND.sage} !important;
             color:            ${BRAND.black} !important;
-            font-size:        10px !important; font-weight: 700 !important;
+            font-size:        11px !important; font-weight: 700 !important;
             letter-spacing:   0.1em !important; text-transform: uppercase !important;
             border: none !important;
           }
           .pdf-export-root thead * { color: ${BRAND.black} !important; }
           .pdf-export-root tbody td {
             padding: 10px 14px !important; vertical-align: middle !important;
-            font-size: 13px !important; border-bottom: 1px solid ${BRAND.border} !important;
+            font-size: 14px !important; border-bottom: 1px solid ${BRAND.border} !important;
           }
           .pdf-export-root tbody tr:nth-child(even) td { background-color: ${BRAND.sageTint} !important; }
           .pdf-export-root tfoot td, .pdf-export-root tfoot th {
             border-top: 2px solid ${BRAND.black} !important;
-            font-weight: 700 !important; font-size: 14px !important; padding: 11px 14px !important;
+            font-weight: 700 !important; font-size: 15px !important; padding: 11px 14px !important;
           }
 
           /* ═══════════════════════════════════════════════════════════
@@ -394,7 +394,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root [class*="border"]     { border-color: ${BRAND.border} !important; }
           .pdf-export-root [class*="rounded-lg"],
-          .pdf-export-root [class*="rounded-md"] { border-radius: 5px !important; }
+          .pdf-export-root [class*="rounded-xl"],
+          .pdf-export-root [class*="rounded-md"] { border-radius: 8px !important; }
           .pdf-export-root [class*="border-t"]   {
             border-top-color: ${BRAND.darkSage} !important; border-top-width: 2px !important;
           }
@@ -415,7 +416,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .page2-header {
             background-color: ${BRAND.sage} !important;
             padding: 8px 16px !important;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             border-bottom: 2px solid ${BRAND.darkSage} !important;
             margin-bottom: 12px !important;
           }
@@ -433,13 +434,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-section-header {
             background-color: ${BRAND.sage} !important;
             padding: 6px 12px !important;
-            border-radius: 4px 4px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             display: flex !important;
             align-items: center !important;
             min-height: 28px !important;
           }
           .pdf-export-root .print-section-header span {
-            font-size: 11px !important;
+            font-size: 12px !important;
             font-weight: 700 !important;
             letter-spacing: 0.08em !important;
             color: ${BRAND.black} !important;
@@ -450,7 +451,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-content-formatted *,
           .pdf-export-root .pdf-services-content,
           .pdf-export-root .pdf-services-content * {
-            font-size: 11px !important;
+            font-size: 12px !important;
             line-height: 1.42 !important;
             color: ${BRAND.black} !important;
           }
@@ -458,13 +459,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-content-formatted strong,
           .pdf-export-root .pdf-services-content b,
           .pdf-export-root .pdf-services-content strong {
-            font-size: 12px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
           }
 
           .pdf-export-root .print-section {
             border: 1px solid ${BRAND.border} !important;
-            border-radius: 5px !important;
+            border-radius: 8px !important;
             overflow: visible !important;
           }
 
@@ -485,7 +486,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root .print-pricing-table {
             border: 2px solid ${BRAND.black} !important;
-            border-radius: 6px !important;
+            border-radius: 10px !important;
             overflow: visible !important;
             margin-bottom: 8px !important;
             padding: 10px !important;
@@ -503,8 +504,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: #ffffff !important;
             padding: 8px 16px !important;
             margin: -10px -10px 8px -10px !important;
-            border-radius: 4px 4px 0 0 !important;
-            font-size: 13px !important;
+            border-radius: 8px 8px 0 0 !important;
+            font-size: 14px !important;
             font-weight: 800 !important;
             letter-spacing: 0.2em !important;
             text-transform: uppercase !important;
@@ -527,7 +528,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .proposal-name-print {
             display: block !important;
             color: ${BRAND.black} !important;
-            font-size: 16px !important;
+            font-size: 17px !important;
             font-weight: 700 !important;
             line-height: 1.2 !important;
             white-space: normal !important;
@@ -540,7 +541,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             min-height: 28px !important;
             height: auto !important;
             line-height: 1.15 !important;
@@ -553,13 +554,13 @@ async function captureElement(el: HTMLElement): Promise<string> {
             gap: 1px !important;
           }
           .pdf-export-root .print-pricing-money span {
-            font-size: 13px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
           }
           /* Force grid layout in proposal rows */
           .pdf-export-root .print-pricing-table [class*="grid-cols-[minmax"] {
             display: grid !important;
-            grid-template-columns: minmax(120px, 1fr) 60px 60px 120px 24px !important;
+            grid-template-columns: minmax(90px, 1fr) 55px 55px 100px minmax(120px, 1.5fr) 24px !important;
             gap: 4px !important;
           }
 
@@ -570,7 +571,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             display: inline-flex !important;
             width: auto !important;
             white-space: nowrap !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             padding: 3px 10px !important;
             border-radius: 12px !important;
             background-color: hsl(130, 14%, 90%) !important;
@@ -627,7 +628,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
           const proposedHeader = clonedPage.querySelector<HTMLElement>('[data-pdf-section="proposed-services"] .print-section-header');
           if (proposedServices) {
-            const targetSize = proposedHeader ? 11.5 : 11;
+            const targetSize = proposedHeader ? 12.5 : 12;
             sp(proposedServices, "font-size", `${targetSize}px`);
             sp(proposedServices, "line-height", "1.42");
             proposedServices.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
@@ -636,10 +637,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           }
           if (proposedHeader) {
-            sp(proposedHeader, "font-size", "11px");
+            sp(proposedHeader, "font-size", "12px");
             sp(proposedHeader, "line-height", "1.2");
             proposedHeader.querySelectorAll<HTMLElement>("span, div").forEach((node) => {
-              sp(node, "font-size", "11px");
+              sp(node, "font-size", "12px");
               sp(node, "line-height", "1.2");
             });
           }
@@ -648,11 +649,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const isMapPage = !!clonedPage.querySelector('.page2-header');
         if (isMapPage) {
           clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
-            sp(node, 'font-size', '20px');
+            sp(node, 'font-size', '21px');
             sp(node, 'line-height', '1.1');
           });
           clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
-            sp(node, 'font-size', '13px');
+            sp(node, 'font-size', '14px');
             sp(node, 'line-height', '1.15');
           });
 
@@ -662,7 +663,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             sp(node, 'display', 'flex');
             sp(node, 'align-items', 'center');
             node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
-              sp(child, 'font-size', '11px');
+              sp(child, 'font-size', '12px');
               sp(child, 'font-weight', '700');
               sp(child, 'letter-spacing', '0.08em');
               sp(child, 'line-height', '1.1');
@@ -671,21 +672,21 @@ async function captureElement(el: HTMLElement): Promise<string> {
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
-            sp(node, 'font-size', '11px');
+            sp(node, 'font-size', '12px');
             sp(node, 'line-height', '1.32');
             node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
-              sp(child, 'font-size', '11px');
+              sp(child, 'font-size', '12px');
               sp(child, 'line-height', '1.32');
               sp(child, 'margin-top', '0');
               sp(child, 'vertical-align', 'top');
             });
             node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
-              sp(child, 'font-size', '12px');
+              sp(child, 'font-size', '13px');
               sp(child, 'font-weight', '700');
             });
           });
 
-          const DETAIL_FONT = 12;
+          const DETAIL_FONT = 13;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
@@ -698,7 +699,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          const PAGE2_META_FONT = 13;
+          const PAGE2_META_FONT = 14;
           ['scheduling', 'setup-materials'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
