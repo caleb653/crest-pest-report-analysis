@@ -1887,7 +1887,7 @@ Crest Pest Control`;
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-[14px] leading-relaxed prose prose-sm max-w-none pdf-services-content" 
+                      <div className="text-[15px] leading-relaxed prose prose-base max-w-none pdf-services-content" 
                         dangerouslySetInnerHTML={{ __html: servicesContent || "<em>No services defined for this proposal</em>" }} 
                       />
                     )}
@@ -2266,7 +2266,7 @@ Crest Pest Control`;
 
       {/* PAGE 1 - Proposals + Products + Scheduling + Guarantee */}
       <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
-        <div className="space-y-2 print:space-y-1">
+        <div className="space-y-3 print:space-y-1.5">
           {/* Multiple Proposal Tables */}
           {proposals.map((proposal, index) => (
             <div key={index}>
@@ -2306,8 +2306,59 @@ Crest Pest Control`;
             </div>
           )}
 
-          {/* Products & Pesticide Notice side by side */}
-          <div className="grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5">
+          {/* Scheduling + Products + Pesticide Notice in a row */}
+          <div className={cn(
+            "grid gap-1.5 print:gap-0.5",
+            showSchedulingSection ? "grid-cols-[1fr_1fr_2fr]" : "grid-cols-[2fr_3fr]",
+            showSchedulingSection ? "print:grid-cols-[1fr_1fr_2fr]" : "print:grid-cols-[2fr_3fr]",
+          )}>
+            {/* Scheduling & Communication */}
+            {showSchedulingSection && (
+              <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
+                </div>
+                <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                    ) : (
+                      <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="—"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                    ) : (
+                      <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="—"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                    ) : (
+                      <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="—"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                    {isReadOnly ? (
+                      <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                    ) : (
+                      <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="—"
+                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Products */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
@@ -2362,53 +2413,6 @@ Crest Pest Control`;
               </div>
             </Card>
           </div>
-
-          {/* Scheduling & Communication — only if any field has real content */}
-          {showSchedulingSection && (
-            <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
-              </div>
-              <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
-                  ) : (
-                    <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="—"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
-                  ) : (
-                    <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="—"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
-                  ) : (
-                    <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="—"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
-                  {isReadOnly ? (
-                    <span className="text-xs text-foreground">{contactPhone || "—"}</span>
-                  ) : (
-                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="—"
-                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                  )}
-                </div>
-              </div>
-            </Card>
-          )}
 
           {/* Crest Guarantee */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 flex items-center justify-center gap-3">
