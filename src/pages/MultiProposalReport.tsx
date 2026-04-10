@@ -377,6 +377,7 @@ const Report = () => {
   // Separate map data per duplicated page
   const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
+  const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -671,6 +672,10 @@ const Report = () => {
   }, [mapData]);
 
   useEffect(() => {
+    duplicateRenderedMapImagesRef.current = duplicateRenderedMapImages;
+  }, [duplicateRenderedMapImages]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pestsDropdownRef.current && !pestsDropdownRef.current.contains(event.target as Node)) {
         setPestsDropdownOpen(false);
@@ -798,6 +803,7 @@ const Report = () => {
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
+              if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -934,6 +940,7 @@ const Report = () => {
       videoUrl,
       duplicatedPages,
       duplicateMapData,
+      duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
     });
 
   const buildServicesPayload = () => proposals;
@@ -1001,6 +1008,7 @@ const Report = () => {
     }
 
     if (Object.keys(dupeImages).length > 0) {
+      duplicateRenderedMapImagesRef.current = { ...duplicateRenderedMapImagesRef.current, ...dupeImages };
       setDuplicateRenderedMapImages((prev) => ({ ...prev, ...dupeImages }));
     }
 
@@ -1686,6 +1694,7 @@ Crest Pest Control`;
     
     const handleDupeMapExport = (img: string | null) => {
       if (isDuplicate && dupeIndex !== undefined) {
+        duplicateRenderedMapImagesRef.current = { ...duplicateRenderedMapImagesRef.current, [dupeIndex]: img };
         setDuplicateRenderedMapImages(prev => ({ ...prev, [dupeIndex]: img }));
       } else {
         setRenderedMapImage(img);
