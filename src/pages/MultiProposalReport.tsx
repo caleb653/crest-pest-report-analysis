@@ -1881,8 +1881,8 @@ Crest Pest Control`;
           {/* Right Column - Proposed Services + Additional Details + Setup Materials */}
           <div className="flex flex-col gap-3 print:gap-2">
             {/* Proposed Services */}
-            <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+            <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">
                   Proposed Services — {proposalName}
                 </span>
@@ -1939,8 +1939,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Additional Details */}
-            <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex flex-col">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+            <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-2 flex-1 flex flex-col">
@@ -1963,8 +1963,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Setup Materials */}
-            <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+            <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
                 <span className="text-sm print:text-[12px] font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-2.5 print:p-1.5">
