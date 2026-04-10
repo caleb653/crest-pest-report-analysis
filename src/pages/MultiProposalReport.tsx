@@ -2210,8 +2210,8 @@ Crest Pest Control`;
           <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
             {/* Column 1: Customer Details */}
             <div>
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Customer Details:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Customer Details:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Name:</span>
                   {isReadOnly ? (
@@ -2251,8 +2251,8 @@ Crest Pest Control`;
 
             {/* Column 2: Property Info (print only) */}
             <div className="hidden print:block">
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Property Info:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Property Info:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Date:</span>
                   <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
@@ -2315,8 +2315,8 @@ Crest Pest Control`;
 
             {/* Column 3: Technician Info */}
             <div>
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Technician Information:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Technician Information:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Name:</span>
                   {isReadOnly ? (
@@ -2482,10 +2482,10 @@ Crest Pest Control`;
             {/* Pesticide Notice */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-sm print:text-xs font-bold uppercase">Pesticide Notice</span>
+                <span className="text-base print:text-sm font-bold uppercase">Pesticide Notice</span>
               </div>
               <div className="p-1.5 print:p-1">
-                <div className="text-[9px] leading-[1.2] text-foreground">
+                <div className="text-[11px] leading-[1.35] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized." "If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately." This statement shall be modified to include any other symptoms of overexposure which are not typical of influenza.
                   </p>
