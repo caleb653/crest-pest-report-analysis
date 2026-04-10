@@ -948,9 +948,9 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
-    // Capture the main map first
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     let mainResult: string | null = renderedMapImage;
+
     if (exportFn) {
       const freshRender = await exportFn();
       if (freshRender) {
@@ -958,45 +958,52 @@ const Report = () => {
         setRenderedMapImage(freshRender);
       }
     }
-    
-    // Capture each duplicate map canvas individually
+
     const dupeImages: Record<number, string | null> = {};
-    for (let i = 0; i < duplicatedPages.length; i++) {
-      const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
-      if (!dupeContainer) continue;
-      // Try fabric canvas first (upper-canvas), then fall back to any canvas
-      const dupeCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas.upper-canvas') 
-        || dupeContainer.querySelector<HTMLCanvasElement>('canvas');
+    const duplicatePageEls = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-pdf-page^="2-dupe-"]')
+    );
+
+    for (const dupeContainer of duplicatePageEls) {
+      const pageKey = dupeContainer.dataset.pdfPage ?? "";
+      const match = pageKey.match(/^2-dupe-(\d+)$/);
+      if (!match) continue;
+      const i = Number(match[1]);
+
+      const dupeCanvas =
+        dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
+        dupeContainer.querySelector<HTMLCanvasElement>("canvas");
+
       if (dupeCanvas) {
         try {
-          const dupeDataUrl = dupeCanvas.toDataURL('image/png');
-          if (dupeDataUrl && dupeDataUrl !== 'data:,') {
+          const dupeDataUrl = dupeCanvas.toDataURL("image/png");
+          if (dupeDataUrl && dupeDataUrl !== "data:,") {
             dupeImages[i] = dupeDataUrl;
           }
         } catch (e) {
           console.warn(`Failed to capture duplicate map ${i}:`, e);
         }
       }
-      // If canvas capture failed, try to get the map image from the lower canvas
+
       if (!dupeImages[i]) {
-        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>('canvas.lower-canvas');
+        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.lower-canvas");
         if (lowerCanvas) {
           try {
-            const lowerDataUrl = lowerCanvas.toDataURL('image/png');
-            if (lowerDataUrl && lowerDataUrl !== 'data:,') {
+            const lowerDataUrl = lowerCanvas.toDataURL("image/png");
+            if (lowerDataUrl && lowerDataUrl !== "data:,") {
               dupeImages[i] = lowerDataUrl;
             }
-          } catch (e) { /* ignore */ }
+          } catch {
+            // ignore lower-canvas failures
+          }
         }
       }
     }
-    
-    // Batch-set all duplicate images at once to trigger a single re-render
+
     if (Object.keys(dupeImages).length > 0) {
-      setDuplicateRenderedMapImages(prev => ({ ...prev, ...dupeImages }));
+      setDuplicateRenderedMapImages((prev) => ({ ...prev, ...dupeImages }));
     }
-    
-    // Wait for React re-render to show <img> tags with captured data
+
     await waitForPdfMapRender(500);
     return mainResult;
   };
@@ -1687,9 +1694,9 @@ Crest Pest Control`;
     
     return (
     <div data-pdf-page={isDuplicate ? `2-dupe-${dupeIndex}` : "2"} className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
-      <div data-pdf-capture={captureIndex.toString()} className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
+      <div data-pdf-capture={captureIndex.toString()} className="w-full p-4 print:px-2 print:py-3 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
         {/* Page Header */}
-        <div className="page2-header flex items-center justify-between mb-4 print:mb-3 pb-2 print:pb-2 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
+        <div className="page2-header flex items-center justify-between mb-4 print:mb-2.5 pb-2 print:pb-1.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2 print:px-3 print:py-1.5">
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
             <h1 className="text-xl print:text-lg font-bold text-foreground">
@@ -1697,23 +1704,23 @@ Crest Pest Control`;
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            {isDuplicate && !isReadOnly && (
-              <Button variant="destructive" size="sm" className="no-print" onClick={() => removeDuplicatedPage(dupeIndex ?? 0)}>
+            {isDuplicate && !isReadOnly && dupeIndex !== undefined && dupeIndex < duplicatedPages.length && (
+              <Button variant="destructive" size="sm" className="no-print" onClick={() => removeDuplicatedPage(dupeIndex)}>
                 <X className="w-3 h-3 mr-1" /> Remove
               </Button>
             )}
             {!isDuplicate && !isReadOnly && (
               <Button variant="outline" size="sm" className="no-print" onClick={handleDuplicatePage2}>
-                <Copy className="w-3 h-3 mr-1" /> Duplicate Page
+                <Copy className="w-3 h-3 mr-1" /> Add Extra Map Page
               </Button>
             )}
           </div>
         </div>
 
         {/* Map and Right Panel Side by Side */}
-        <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[48%_52%] print:gap-5 print:px-4 print:items-start print:justify-center print:mt-2 print:flex-1">
+        <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[47%_53%] print:gap-3 print:px-0 print:items-start print:justify-center print:mt-1 print:flex-1">
           {/* Map Section - EXACT same position and size */}
-          <div className="flex flex-col min-h-0 print:mt-1">
+          <div className="flex flex-col min-h-0 print:mt-0">
             <div 
               className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
               onPaste={handleMapPaste}
@@ -1935,8 +1942,7 @@ Crest Pest Control`;
     );
   };
 
-  // Determine PDF capture index offset
-  let nextCaptureIndex = 3; // 0=header, 1=page1, 2=page2
+  const duplicateMapPageCount = Math.max(duplicatedPages.length, Math.max(proposals.length - 1, 0));
 
   return (
     <div className="min-h-screen bg-background">
@@ -2416,10 +2422,9 @@ Crest Pest Control`;
       {/* PAGE 2 - Map + Services/Details/Materials */}
       {renderMapSection(videoUrl ? 3 : 2)}
 
-      {/* Duplicated Page 2s */}
-      {duplicatedPages.map((_, dupeIndex) => (
+      {/* Proposal map pages after Option A */}
+      {Array.from({ length: duplicateMapPageCount }, (_, dupeIndex) => (
         <div key={dupeIndex}>
-          {/* Page Separator for duplicate */}
           <div className="no-print max-w-[1800px] mx-auto px-4">
             <div className="flex items-center gap-4 py-6">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
@@ -2455,7 +2460,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div data-pdf-capture={(videoUrl ? 4 + duplicatedPages.length : 3 + duplicatedPages.length).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
+        <div data-pdf-capture={(videoUrl ? 4 + duplicateMapPageCount : 3 + duplicateMapPageCount).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
           {/* Page Header */}
           <div className="page2-header flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">

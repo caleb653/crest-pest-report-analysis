@@ -2,7 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
-const A4_LANDSCAPE_WIDTH_PX = 1123;
+const A4_LANDSCAPE_WIDTH_PX = 1180;
 
 const BRAND = {
   black: "#2A2A2A",
@@ -450,23 +450,26 @@ async function captureElement(el: HTMLElement): Promise<string> {
           /* Section headers (Proposed Services, Additional Details, Setup Materials) */
           .pdf-export-root .print-section-header {
             background-color: ${BRAND.sage} !important;
-            padding: 5px 10px !important;
+            padding: 4px 10px !important;
             border-radius: 4px 4px 0 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            min-height: 24px !important;
           }
           .pdf-export-root .print-section-header span {
             font-size: 11px !important;
             font-weight: 700 !important;
             letter-spacing: 0.08em !important;
             color: ${BRAND.black} !important;
+            line-height: 1.1 !important;
           }
 
-          /* Proposed Services content — both original (print-content-formatted) and duplicate (pdf-services-content) */
           .pdf-export-root .print-content-formatted,
           .pdf-export-root .print-content-formatted *,
           .pdf-export-root .pdf-services-content,
           .pdf-export-root .pdf-services-content * {
             font-size: 11px !important;
-            line-height: 1.4 !important;
+            line-height: 1.32 !important;
             color: ${BRAND.black} !important;
           }
           .pdf-export-root .print-content-formatted b,
@@ -477,17 +480,16 @@ async function captureElement(el: HTMLElement): Promise<string> {
             font-weight: 700 !important;
           }
 
-          /* Print sections — clean borders */
           .pdf-export-root .print-section {
             border: 1px solid ${BRAND.border} !important;
             border-radius: 5px !important;
             overflow: visible !important;
           }
 
-          /* Page 2+ section content */
           .pdf-export-root .print-section-content,
           .pdf-export-root .print-section-content * {
-            line-height: 1.45 !important;
+            line-height: 1.32 !important;
+            vertical-align: top !important;
           }
 
           /* Page 1 proposed services — leave layout alone, sizing handled inline */
@@ -563,7 +565,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.style.background = "#ffffff";
         clonedPage.style.boxSizing = "border-box";
         clonedPage.style.overflow = "visible";
-        clonedPage.style.padding = "0 8px";
+        clonedPage.style.padding = "0 4px";
 
         if (isPestReport) {
           clonedPage.setAttribute("data-report-type", "pest-report");
@@ -584,10 +586,10 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
         if (gridContainer) {
           gridContainer.style.display = "grid";
-          gridContainer.style.gridTemplateColumns = "42% 58%";
-          gridContainer.style.gap = "20px";
-          gridContainer.style.alignItems = "stretch";
-          gridContainer.style.padding = "0 16px";
+          gridContainer.style.gridTemplateColumns = "47% 53%";
+          gridContainer.style.gap = "14px";
+          gridContainer.style.alignItems = "start";
+          gridContainer.style.padding = "0 4px";
           gridContainer.style.flex = "1";
         }
 
@@ -597,8 +599,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
         if (mapContainer) {
           mapContainer.style.width = "100%";
-          mapContainer.style.height = "100%";
+          mapContainer.style.height = "auto";
           mapContainer.style.maxHeight = "100%";
+          mapContainer.style.margin = "0";
           const mapImg = mapContainer.querySelector<HTMLImageElement>("img");
           mapContainer.style.aspectRatio =
             mapImg?.naturalWidth && mapImg?.naturalHeight
@@ -607,7 +610,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           mapContainer.style.display = "flex";
           mapContainer.style.alignItems = "stretch";
           if (mapImg) {
-            mapImg.style.objectFit = "contain";
+            mapImg.style.objectFit = "cover";
             mapImg.style.objectPosition = "center";
             mapImg.style.width = "100%";
             mapImg.style.height = "100%";
@@ -619,7 +622,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           mapParent.style.flex = "1";
           mapParent.style.display = "flex";
           mapParent.style.flexDirection = "column";
-          mapParent.style.justifyContent = "center";
+          mapParent.style.justifyContent = "flex-start";
+          mapParent.style.alignItems = "stretch";
         }
 
         if (captureKey === "1") {
@@ -668,32 +672,35 @@ async function captureElement(el: HTMLElement): Promise<string> {
         if (isMapPage) {
           clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
             sp(node, 'font-size', '20px');
-            sp(node, 'line-height', '1.15');
+            sp(node, 'line-height', '1.1');
           });
           clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
             sp(node, 'font-size', '13px');
-            sp(node, 'line-height', '1.25');
+            sp(node, 'line-height', '1.15');
           });
 
-          // Section headers — consistent 11px bold
           clonedPage.querySelectorAll<HTMLElement>('.print-section-header').forEach((node) => {
             sp(node, 'background-color', BRAND.sage);
-            sp(node, 'padding', '5px 10px');
+            sp(node, 'padding', '4px 10px');
+            sp(node, 'display', 'flex');
+            sp(node, 'align-items', 'center');
             node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
               sp(child, 'font-size', '11px');
               sp(child, 'font-weight', '700');
               sp(child, 'letter-spacing', '0.08em');
+              sp(child, 'line-height', '1.1');
               sp(child, 'color', BRAND.black);
             });
           });
 
-          // Proposed services content — 11px body, 12px bold headers
           clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
             sp(node, 'font-size', '11px');
-            sp(node, 'line-height', '1.4');
+            sp(node, 'line-height', '1.32');
             node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
               sp(child, 'font-size', '11px');
-              sp(child, 'line-height', '1.4');
+              sp(child, 'line-height', '1.32');
+              sp(child, 'margin-top', '0');
+              sp(child, 'vertical-align', 'top');
             });
             node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
               sp(child, 'font-size', '12px');
@@ -701,7 +708,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          // Additional details & limitations — 12px
           const DETAIL_FONT = 12;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
@@ -709,7 +715,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
               sp(node, 'font-size', `${DETAIL_FONT}px`);
-              sp(node, 'line-height', '1.4');
+              sp(node, 'line-height', '1.25');
+              sp(node, 'margin-top', '0');
+              sp(node, 'vertical-align', 'top');
             });
           });
 
@@ -720,29 +728,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
               sp(node, 'font-size', `${PAGE2_META_FONT}px`);
-              sp(node, 'line-height', '1.35');
+              sp(node, 'line-height', '1.2');
+              sp(node, 'margin-top', '0');
+              sp(node, 'vertical-align', 'top');
             });
           });
-
-          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold, [data-pdf-section="setup-materials"] p').forEach((node) => {
-            if (node.closest('.print-section-header')) return;
-            sp(node, 'font-size', '13px');
-            sp(node, 'line-height', '1.3');
-          });
-
-          const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
-          const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
-          if (detailsBody && detailsCard) {
-            let fontSize = 13;
-            const minFont = 12;
-            while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
-              fontSize -= 0.25;
-              sp(detailsBody, 'font-size', `${fontSize}px`);
-              detailsBody.querySelectorAll<HTMLElement>('p, li, span, div, strong, b').forEach((node) => {
-                sp(node, 'font-size', `${fontSize}px`);
-              });
-            }
-          }
         }
       },
     });
@@ -808,13 +798,12 @@ export async function buildMergedPDF(options: {
       page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH, 0), width: drawW, height: drawH });
       pendingHeaderImg = null;
     } else {
-      const margin = 6;
+      const margin = 4;
       const contentW = pageW - margin * 2;
       const contentH = pageH - margin * 2;
       const scaleW = contentW / img.width;
       const scaleH = contentH / img.height;
-      // Use a blend: mostly fill width, but cap at height
-      const scale = Math.min(scaleW, scaleH * 1.0);
+      const scale = Math.min(scaleW, scaleH);
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const drawX = (pageW - drawW) / 2;
@@ -838,7 +827,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
-  const MARGIN = 6;
+  const MARGIN = 4;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
