@@ -664,43 +664,49 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
         const isMapPage = !!clonedPage.querySelector('.page2-header');
         if (isMapPage) {
-          const applySectionFont = (selector: string, size: number, lineHeight = 1.45) => {
-            clonedPage.querySelectorAll<HTMLElement>(selector).forEach((section) => {
-              sp(section, "font-size", `${size}px`);
-              sp(section, "line-height", `${lineHeight}`);
-              section.querySelectorAll<HTMLElement>("p, li, span, div, strong, b, label").forEach((node) => {
-                sp(node, "font-size", `${size}px`);
-                sp(node, "line-height", `${lineHeight}`);
-              });
-            });
-          };
-
           clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
-            sp(node, 'font-size', '22px');
+            sp(node, 'font-size', '20px');
             sp(node, 'line-height', '1.15');
           });
           clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
-            sp(node, 'font-size', '15px');
+            sp(node, 'font-size', '13px');
             sp(node, 'line-height', '1.25');
           });
 
-          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="additional-details"] .print-section-header, [data-pdf-section="limitations"] .print-section-header, [data-pdf-section="scheduling"] .print-section-header, [data-pdf-section="setup-materials"] .print-section-header').forEach((node) => {
-            sp(node, 'font-size', '13px');
-            sp(node, 'line-height', '1.2');
+          // Section headers — consistent 11px bold
+          clonedPage.querySelectorAll<HTMLElement>('.print-section-header').forEach((node) => {
+            sp(node, 'background-color', BRAND.sage);
+            sp(node, 'padding', '5px 10px');
             node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
-              sp(child, 'font-size', '13px');
-              sp(child, 'line-height', '1.2');
+              sp(child, 'font-size', '11px');
+              sp(child, 'font-weight', '700');
+              sp(child, 'letter-spacing', '0.08em');
+              sp(child, 'color', BRAND.black);
             });
           });
 
-          // Blanket apply to ALL text nodes inside each page-2 section
-          const PAGE2_FONT = 14;
+          // Proposed services content — 11px body, 12px bold headers
+          clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
+            sp(node, 'font-size', '11px');
+            sp(node, 'line-height', '1.4');
+            node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
+              sp(child, 'font-size', '11px');
+              sp(child, 'line-height', '1.4');
+            });
+            node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
+              sp(child, 'font-size', '12px');
+              sp(child, 'font-weight', '700');
+            });
+          });
+
+          // Additional details & limitations — 12px
+          const DETAIL_FONT = 12;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
-              sp(node, 'font-size', `${PAGE2_FONT}px`);
+              sp(node, 'font-size', `${DETAIL_FONT}px`);
               sp(node, 'line-height', '1.4');
             });
           });
