@@ -630,7 +630,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
         }
 
-        if (captureKey === "2") {
+        const isMapPage = !!clonedPage.querySelector('.page2-header');
+        if (isMapPage) {
           const applySectionFont = (selector: string, size: number, lineHeight = 1.45) => {
             clonedPage.querySelectorAll<HTMLElement>(selector).forEach((section) => {
               sp(section, "font-size", `${size}px`);
