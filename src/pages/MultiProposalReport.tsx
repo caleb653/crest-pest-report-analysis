@@ -343,16 +343,7 @@ const Report = () => {
 
   const [editableTitle, setEditableTitle] = useState("Proposal");
 
-  // Update title when customer/company name changes (only if title matches a generated pattern)
-  useEffect(() => {
-    setEditableTitle(prev => {
-      // Only auto-update if the title looks auto-generated
-      if (prev === "Multi-Proposal Report" || prev === "Proposal" || prev.startsWith("Proposal: ")) {
-        return getDefaultTitle();
-      }
-      return prev;
-    });
-  }, [editableCustomer, companyName]);
+  // (title auto-update moved below companyName declaration)
 
   const handleTechnicianChange = (techName: string) => {
     setEditableTech(techName);
