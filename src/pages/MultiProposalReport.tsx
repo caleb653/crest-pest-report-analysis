@@ -1791,10 +1791,10 @@ Crest Pest Control`;
     <div data-pdf-page={isDuplicate ? `2-dupe-${dupeIndex}` : "2"} className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
       <div data-pdf-capture={captureIndex.toString()} className="w-full p-4 print:px-2 print:py-3 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
         {/* Page Header */}
-        <div className="page2-header flex items-center justify-between mb-4 print:mb-2.5 pb-2 print:pb-1.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2 print:px-3 print:py-1.5">
+        <div className="page2-header flex items-center justify-between mb-4 print:mb-2.5 pb-2 print:pb-1.5 border-b-2 border-border bg-primary/30 rounded-md px-5 py-3 print:px-3 print:py-2">
           <div className="flex items-center gap-3 print:gap-2">
-            <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-            <h1 className="text-2xl print:text-xl font-bold text-foreground">
+            <img src={crestLogo} alt="Crest Pest Control" className="h-14 print:h-10" />
+            <h1 className="text-3xl print:text-2xl font-bold text-foreground">
               Property Map & Details — {proposalName}
             </h1>
           </div>
@@ -1916,15 +1916,15 @@ Crest Pest Control`;
           </div>
 
           {/* Right Column - Proposed Services + Additional Details + Setup Materials */}
-          <div className="flex flex-col gap-3 print:gap-2">
+          <div className="flex flex-col gap-4 print:gap-3">
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-base print:text-sm font-bold uppercase">
+              <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
+                <span className="text-lg print:text-base font-bold uppercase">
                   Proposed Services — {proposalName}
                 </span>
               </div>
-              <div className="p-3 print:p-1.5 flex-1 flex flex-col">
+              <div className="p-4 print:p-2.5 flex-1 flex flex-col">
                 {isAnalyzing ? (
                   <div className="text-center py-2">
                     <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mb-1" />
@@ -1986,10 +1986,10 @@ Crest Pest Control`;
 
             {/* Additional Details */}
             <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-base print:text-sm font-bold uppercase">Additional Details</span>
+              <div className="print-section-header py-2.5 px-3.5 rounded-t-xl">
+                <span className="text-lg print:text-base font-bold uppercase">Additional Details</span>
               </div>
-              <div className="additional-details-body p-2 flex-1 flex flex-col">
+              <div className="additional-details-body p-4 print:p-2.5 flex-1 flex flex-col">
                 <div className="no-print flex-1 flex flex-col">
                   <RichTextEditor
                     value={additionalDetails}
@@ -2010,14 +2010,14 @@ Crest Pest Control`;
 
             {/* Setup Materials */}
             <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
-              <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-base print:text-sm font-bold uppercase">Setup Materials</span>
+              <div className="print-section-header py-2.5 px-3.5 rounded-t-xl">
+                <span className="text-lg print:text-base font-bold uppercase">Setup Materials</span>
               </div>
-              <div className="p-2.5 print:p-1.5">
+              <div className="p-4 print:p-2.5">
                 {setupMaterials.length > 0 && (
                   <div className="space-y-1 mb-2">
                     {setupMaterials.map((mat, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm group">
+                      <div key={index} className="flex items-center justify-between text-base group">
                         <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
                         {!isReadOnly && (
                           <button type="button" onClick={() => removeSetupMaterial(index)}
@@ -2060,12 +2060,12 @@ Crest Pest Control`;
 
             {/* Customer Signature — on each proposal page */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-sm print:text-xs font-bold uppercase">
+              <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
+                <span className="text-base print:text-sm font-bold uppercase">
                   Customer Signature — {proposalName}
                 </span>
               </div>
-              <div className="p-1.5 print:p-1 flex items-center gap-1.5 print:gap-2">
+              <div className="p-3 print:p-2 flex items-center gap-2.5 print:gap-2">
                 <img src={crestBugBlack} alt="" className="h-10 print:h-12 w-auto shrink-0" />
                 <div className="flex-1 flex flex-col">
                   <div className="h-[38px] print:h-[42px] relative">
@@ -2105,10 +2105,10 @@ Crest Pest Control`;
                       </>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
+                  <div className="flex items-center gap-2 text-xs print:text-[10px] pt-1 border-t border-border">
                     <div className="flex-1 flex items-center gap-1">
                       <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
-                      <span className="text-muted-foreground text-[8px]">{editableCustomer || "—"}</span>
+                      <span className="text-muted-foreground text-xs">{editableCustomer || "—"}</span>
                     </div>
                     <div className="text-muted-foreground whitespace-nowrap">
                       <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
