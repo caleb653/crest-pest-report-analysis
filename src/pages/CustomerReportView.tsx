@@ -637,6 +637,72 @@ export default function CustomerReportView() {
                   )}
                 </div>
               )}
+
+              {/* Per-Proposal Signature Box */}
+              {isMultiProposal && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">
+                      Sign for {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    {(() => {
+                      const perSigs = getPerProposalSignatures();
+                      const existingSig = perSigs[String(proposalIndex)];
+                      if (existingSig) {
+                        return (
+                          <div className="space-y-3">
+                            <div className="border rounded p-3 bg-muted/30">
+                              <img src={existingSig} alt={`Signature for ${proposal.name}`} className="max-h-16 mx-auto" />
+                            </div>
+                            <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
+                              <Check className="w-4 h-4" />
+                              <span className="font-medium">{proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`} — Signed</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+                              <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
+                              <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            Sign below to approve <strong>{proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</strong>.
+                          </p>
+                          <div className="border rounded overflow-hidden">
+                            <SignatureCanvas
+                              ref={(el) => { proposalSignatureRefs.current[proposalIndex] = el; }}
+                              onSave={() => {}}
+                              label={`Sign for ${proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}`}
+                            />
+                          </div>
+                          <Button
+                            onClick={() => handleSubmitProposalSignature(proposalIndex)}
+                            disabled={isSaving && savingProposalIndex === proposalIndex}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {isSaving && savingProposalIndex === proposalIndex ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-4 h-4 mr-2" />
+                                Submit Signature for {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </Card>
+              )}
             </div>
           </div>
         </main>
