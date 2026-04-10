@@ -673,21 +673,21 @@ async function captureElement(el: HTMLElement): Promise<string> {
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
-            sp(node, 'font-size', '12px');
-            sp(node, 'line-height', '1.32');
+            sp(node, 'font-size', '14px');
+            sp(node, 'line-height', '1.38');
             node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
-              sp(child, 'font-size', '12px');
-              sp(child, 'line-height', '1.32');
+              sp(child, 'font-size', '14px');
+              sp(child, 'line-height', '1.38');
               sp(child, 'margin-top', '0');
               sp(child, 'vertical-align', 'top');
             });
             node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
-              sp(child, 'font-size', '13px');
+              sp(child, 'font-size', '15px');
               sp(child, 'font-weight', '700');
             });
           });
 
-          const DETAIL_FONT = 13;
+          const DETAIL_FONT = 15;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
@@ -700,7 +700,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          const PAGE2_META_FONT = 14;
+          const PAGE2_META_FONT = 16;
           ['scheduling', 'setup-materials'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;

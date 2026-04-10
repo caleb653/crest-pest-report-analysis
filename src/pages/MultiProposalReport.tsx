@@ -2073,10 +2073,24 @@ Crest Pest Control`;
                         <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
                           <img src={customerSignature} alt="Customer signature" className="max-h-[34px] print:max-h-[38px] w-auto object-contain" />
                         </div>
-                        {!signatureWasSaved && !isDuplicate && proposalIndex === 0 && (
-                          <Button variant="outline" size="sm" onClick={() => setCustomerSignature(null)} className="h-7 text-xs no-print shrink-0">
-                            Re-sign
-                          </Button>
+                        {!isReadOnly && (
+                          <div className="flex gap-1 no-print shrink-0">
+                            <Button variant="outline" size="sm" onClick={() => {
+                              if (isDuplicate) {
+                                // For duplicate pages, clear their per-proposal signature state if needed
+                              }
+                              setCustomerSignature(null);
+                              pendingAutoSaveRef.current = true;
+                            }} className="h-7 text-xs">
+                              Re-sign
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => {
+                              setCustomerSignature(null);
+                              pendingAutoSaveRef.current = true;
+                            }} className="h-7 text-xs text-destructive hover:text-destructive">
+                              <X className="w-3 h-3 mr-1" /> Delete
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ) : (
