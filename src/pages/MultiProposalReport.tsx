@@ -1770,7 +1770,7 @@ Crest Pest Control`;
                           className="shadow-lg"
                           onClick={() => setEditingMapPages(prev => new Set(prev).add(thisPageIndex))}
                         >
-                          <Pencil className="w-3 h-3 mr-1" /> Edit Map
+                          <Edit className="w-3 h-3 mr-1" /> Edit Map
                         </Button>
                       </div>
                     </div>
