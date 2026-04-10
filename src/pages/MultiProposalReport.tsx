@@ -2391,40 +2391,40 @@ Crest Pest Control`;
             {showSchedulingSection && (
               <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
+                  <span className="text-sm print:text-xs font-bold uppercase">Scheduling & Communication</span>
                 </div>
                 <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
+                    <span className="text-sm text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
                     {isReadOnly ? (
-                      <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                      <span className="text-sm text-foreground">{preferredServiceDay || "—"}</span>
                     ) : (
                       <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="—"
                         className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
+                    <span className="text-sm text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
                     {isReadOnly ? (
-                      <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                      <span className="text-sm text-foreground">{preferredServiceTime || "—"}</span>
                     ) : (
                       <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="—"
                         className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                    <span className="text-sm text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
                     {isReadOnly ? (
-                      <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                      <span className="text-sm text-foreground">{mainPointOfContact || "—"}</span>
                     ) : (
                       <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="—"
                         className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                    <span className="text-sm text-muted-foreground w-[110px] shrink-0">Phone #:</span>
                     {isReadOnly ? (
-                      <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                      <span className="text-sm text-foreground">{contactPhone || "—"}</span>
                     ) : (
                       <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="—"
                         className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
@@ -2437,10 +2437,10 @@ Crest Pest Control`;
             {/* Products */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Products</span>
+                <span className="text-sm print:text-xs font-bold uppercase">Products</span>
               </div>
               <div className="p-2.5 print:p-1.5">
-                <div className="text-[7px] leading-tight text-foreground columns-2 gap-2">
+                <div className="text-[9px] leading-tight text-foreground columns-2 gap-2">
                   {displayedProducts.map((product, index) => (
                     <div key={index} className="flex items-center gap-1 group">
                       <p className="flex-1">
@@ -2474,10 +2474,10 @@ Crest Pest Control`;
             {/* Pesticide Notice */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Pesticide Notice</span>
+                <span className="text-sm print:text-xs font-bold uppercase">Pesticide Notice</span>
               </div>
               <div className="p-1.5 print:p-1">
-                <div className="text-[7px] leading-[1.2] text-foreground">
+                <div className="text-[9px] leading-[1.2] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized." "If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately." This statement shall be modified to include any other symptoms of overexposure which are not typical of influenza.
                   </p>
@@ -2492,7 +2492,7 @@ Crest Pest Control`;
           {/* Crest Guarantee */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 flex items-center justify-center gap-3">
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
-            <p className="text-xs print:text-[13px] text-foreground leading-snug">
+            <p className="text-sm print:text-[13px] text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
             </p>
