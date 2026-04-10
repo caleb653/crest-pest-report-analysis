@@ -811,6 +811,7 @@ const Report = () => {
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
               if (parsed.duplicateCustomMapImages) setDuplicateCustomMapImages(parsed.duplicateCustomMapImages);
+              if (parsed.proposalFindings) setProposalFindings(parsed.proposalFindings);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -949,6 +950,7 @@ const Report = () => {
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
       duplicateCustomMapImages,
+      proposalFindings,
     });
 
   const buildServicesPayload = () => proposals;
