@@ -1793,16 +1793,19 @@ Crest Pest Control`;
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-sm leading-relaxed prose prose-sm max-w-none" 
+                      <div className="text-sm leading-relaxed prose prose-sm max-w-none pdf-services-content" 
                         dangerouslySetInnerHTML={{ __html: servicesContent || "<em>No services defined for this proposal</em>" }} 
                       />
                     )}
-                    <div
-                      data-pdf-content="proposed-services"
-                      className="hidden print-content-formatted"
-                      style={{ fontSize: `${proposedServicesFontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
-                    />
+                    {/* Only show print-content-formatted for the original page (not duplicates, which already have visible content) */}
+                    {!isDuplicate && (
+                      <div
+                        data-pdf-content="proposed-services"
+                        className="hidden print-content-formatted"
+                        style={{ fontSize: `${proposedServicesFontSize}px` }}
+                        dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
+                      />
+                    )}
                   </>
                 )}
               </div>
