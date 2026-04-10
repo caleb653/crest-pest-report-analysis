@@ -1687,6 +1687,12 @@ Crest Pest Control`;
     // For the original page, use editableFindings; for duplicates, use auto-generated text
     const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
     
+    // Determine if this map page is the most recent (always editable) or older (needs Edit button)
+    const totalMapPages = 1 + duplicateMapPageCount; // main + duplicates
+    const thisPageIndex = isDuplicate ? (dupeIndex ?? 0) + 1 : 0;
+    const isNewestPage = thisPageIndex === totalMapPages - 1;
+    const isMapEditing = isNewestPage || editingMapPages.has(thisPageIndex);
+    
     // Each page gets its own map data
     const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
     const currentRenderedMap = isDuplicate ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? renderedMapImage) : renderedMapImage;
