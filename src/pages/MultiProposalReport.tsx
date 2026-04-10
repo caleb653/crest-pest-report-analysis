@@ -808,6 +808,7 @@ const Report = () => {
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
+              if (parsed.duplicateCustomMapImages) setDuplicateCustomMapImages(parsed.duplicateCustomMapImages);
             } else {
               setAdditionalDetails(row.notes);
             }
