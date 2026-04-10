@@ -471,8 +471,8 @@ const SubmittedReports = () => {
                               {status}
                             </Badge>
 
-                            <Badge variant={report.report_type === "initial" ? "secondary" : "default"}>
-                              {report.report_type === "initial" ? "Initial" : "Sales"}
+                            <Badge variant={report.report_type === "initial" ? "secondary" : report.report_type === "multi-proposal" ? "outline" : "default"}>
+                              {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Multi-Proposal" : "Sales"}
                             </Badge>
 
                             <Button
