@@ -1867,9 +1867,30 @@ Crest Pest Control`;
           </div>
           <div className="flex items-center gap-3">
             {isDuplicate && !isReadOnly && dupeIndex !== undefined && dupeIndex < duplicatedPages.length && (
-              <Button variant="destructive" size="sm" className="no-print" onClick={() => removeDuplicatedPage(dupeIndex)}>
-                <X className="w-3 h-3 mr-1" /> Remove
-              </Button>
+              <div className="flex items-center gap-2">
+                {(customMapImage || mapUrl) && (
+                  <Button variant="outline" size="sm" className="no-print" onClick={() => {
+                    if (dupeIndex === undefined) return;
+                    // Copy Option A's map data into this duplicate page
+                    if (customMapImage) {
+                      setDuplicateCustomMapImages(prev => ({ ...prev, [dupeIndex]: customMapImage }));
+                    }
+                    if (mapData) {
+                      setDuplicateMapData(prev => ({ ...prev, [dupeIndex]: mapData }));
+                    }
+                    if (renderedMapImage) {
+                      setDuplicateRenderedMapImages(prev => ({ ...prev, [dupeIndex]: renderedMapImage }));
+                      duplicateRenderedMapImagesRef.current = { ...duplicateRenderedMapImagesRef.current, [dupeIndex]: renderedMapImage };
+                    }
+                    toast.success(`Option A map copied to ${proposalName}`);
+                  }}>
+                    <Copy className="w-3 h-3 mr-1" /> Duplicate Option A Map
+                  </Button>
+                )}
+                <Button variant="destructive" size="sm" className="no-print" onClick={() => removeDuplicatedPage(dupeIndex)}>
+                  <X className="w-3 h-3 mr-1" /> Remove
+                </Button>
+              </div>
             )}
             {!isDuplicate && !isReadOnly && (
               <Button variant="outline" size="sm" className="no-print" onClick={handleDuplicatePage2}>
