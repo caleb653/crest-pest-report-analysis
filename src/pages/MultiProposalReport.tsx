@@ -1121,7 +1121,8 @@ const Report = () => {
       toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
       await captureFreshRenderedMap();
       setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 200));
+      // Wait for all rendered map images to appear in DOM
+      await new Promise((r) => setTimeout(r, 600));
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
@@ -1201,7 +1202,7 @@ Crest Pest Control`;
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
           setPdfExportMode(true);
-          await new Promise((r) => setTimeout(r, 200));
+          await new Promise((r) => setTimeout(r, 600));
           const pageEls = Array.from(
             document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
           ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
