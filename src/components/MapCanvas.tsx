@@ -1306,10 +1306,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         >
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
-      </div>
+      </div>}
 
       {/* Icon Picker */}
-      {showIconPicker && (
+      {showToolbar && showIconPicker && (
         <div className="no-print fixed bottom-12 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border z-50">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-xs">Select Icon</h3>
