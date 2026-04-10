@@ -1545,8 +1545,8 @@ Crest Pest Control`;
         data-recommended={isRecommended ? "true" : "false"}
         className={cn(
           "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
-          "border-2 border-foreground/80 rounded-xl",
-          isRecommended && "ring-2 ring-foreground border-foreground bg-muted/30 shadow-md",
+          "border-2 border-foreground/80 rounded-xl bg-muted/30 shadow-md",
+          isRecommended && "ring-2 ring-foreground border-foreground",
         )}
       >
         {/* Recommended banner */}
