@@ -2135,7 +2135,12 @@ Crest Pest Control`;
               )}
             </div>
             <div className="max-w-3xl mx-auto">
-              <video src={videoUrl} controls className="w-full rounded-lg border-2 border-border" />
+              <video
+                src={videoUrl}
+                controls
+                className="w-full rounded-lg border-2 border-border"
+                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/><text x='960' y='500' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='80' font-weight='bold' fill='#2A2A2A'>Crest Video Report</text><text x='960' y='580' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='30' fill='#2A2A2A'>Click to play</text></svg>`)}`}
+              />
             </div>
           </div>
         </div>
