@@ -1983,7 +1983,6 @@ Crest Pest Control`;
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
                     />
-                    )}
                   </>
                 )}
               </div>
