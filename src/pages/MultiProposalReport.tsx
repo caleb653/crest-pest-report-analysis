@@ -378,6 +378,9 @@ const Report = () => {
   const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
+  
+  // Track which map pages are in edit mode (most recent is always editable)
+  const [editingMapPages, setEditingMapPages] = useState<Set<number>>(new Set());
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -923,8 +926,19 @@ const Report = () => {
     }
   };
 
-  const buildStructuredNotes = () =>
-    JSON.stringify({
+  const buildStructuredNotes = () => {
+    // Pre-generate per-proposal services text so CustomerReportView can display it
+    const proposalServicesTexts: Record<number, string> = {};
+    proposals.forEach((proposal, idx) => {
+      if (idx === 0) return; // Option A uses editableFindings
+      const descriptions = proposal.services
+        .filter(s => s.serviceType)
+        .map(s => SERVICE_CONFIG[s.serviceType]?.proposedServices)
+        .filter(Boolean) as string[];
+      proposalServicesTexts[idx] = descriptions.join("<br><br>");
+    });
+
+    return JSON.stringify({
       _structuredNotes: true,
       _reportFormat: "multi-proposal",
       additionalDetails: additionalDetails || notes || "",
@@ -937,11 +951,13 @@ const Report = () => {
       setupMaterials,
       limitationsText,
       recommendedProposal,
-      videoUrl,
+      videoUrl: videoUrl && !videoUrl.startsWith("blob:") ? videoUrl : null,
       duplicatedPages,
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
+      proposalServicesTexts,
     });
+  };
 
   const buildServicesPayload = () => proposals;
 
@@ -955,7 +971,8 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
-    const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+    const registry = (window as any).mapExportRegistry as Record<string, () => Promise<string | null>> | undefined;
+    const exportFn = registry?.main ?? (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     let mainResult: string | null = renderedMapImage;
 
     if (exportFn) {
@@ -966,42 +983,32 @@ const Report = () => {
       }
     }
 
+    // Capture duplicate maps using registry-based export functions
     const dupeImages: Record<number, string | null> = {};
-    const duplicatePageEls = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-pdf-page^="2-dupe-"]')
-    );
-
-    for (const dupeContainer of duplicatePageEls) {
-      const pageKey = dupeContainer.dataset.pdfPage ?? "";
-      const match = pageKey.match(/^2-dupe-(\d+)$/);
-      if (!match) continue;
-      const i = Number(match[1]);
-
-      const dupeCanvas =
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas");
-
-      if (dupeCanvas) {
+    for (let i = 0; i < duplicateMapPageCount; i++) {
+      const dupeExportFn = registry?.[`dupe-${i}`];
+      if (dupeExportFn) {
         try {
-          const dupeDataUrl = dupeCanvas.toDataURL("image/png");
-          if (dupeDataUrl && dupeDataUrl !== "data:,") {
-            dupeImages[i] = dupeDataUrl;
+          const dupeResult = await dupeExportFn();
+          if (dupeResult) {
+            dupeImages[i] = dupeResult;
           }
         } catch (e) {
           console.warn(`Failed to capture duplicate map ${i}:`, e);
         }
       }
 
+      // Fallback: try DOM canvas scraping
       if (!dupeImages[i]) {
-        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.lower-canvas");
-        if (lowerCanvas) {
-          try {
-            const lowerDataUrl = lowerCanvas.toDataURL("image/png");
-            if (lowerDataUrl && lowerDataUrl !== "data:,") {
-              dupeImages[i] = lowerDataUrl;
-            }
-          } catch {
-            // ignore lower-canvas failures
+        const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
+        if (dupeContainer) {
+          const canvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
+            dupeContainer.querySelector<HTMLCanvasElement>("canvas");
+          if (canvas) {
+            try {
+              const dataUrl = canvas.toDataURL("image/png");
+              if (dataUrl && dataUrl !== "data:,") dupeImages[i] = dataUrl;
+            } catch { /* ignore */ }
           }
         }
       }
@@ -1680,6 +1687,12 @@ Crest Pest Control`;
     // For the original page, use editableFindings; for duplicates, use auto-generated text
     const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
     
+    // Determine if this map page is the most recent (always editable) or older (needs Edit button)
+    const totalMapPages = 1 + duplicateMapPageCount; // main + duplicates
+    const thisPageIndex = isDuplicate ? (dupeIndex ?? 0) + 1 : 0;
+    const isNewestPage = thisPageIndex === totalMapPages - 1;
+    const isMapEditing = isNewestPage || editingMapPages.has(thisPageIndex);
+    
     // Each page gets its own map data
     const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
     const currentRenderedMap = isDuplicate ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? renderedMapImage) : renderedMapImage;
@@ -1747,6 +1760,20 @@ Crest Pest Control`;
                 <div className="relative h-full w-full">
                   {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
                     <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
+                  ) : !isMapEditing && currentRenderedMap && !isReadOnly ? (
+                    <div className="relative h-full w-full">
+                      <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
+                      <div className="no-print absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="shadow-lg"
+                          onClick={() => setEditingMapPages(prev => new Set(prev).add(thisPageIndex))}
+                        >
+                          <Edit className="w-3 h-3 mr-1" /> Edit Map
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <MapCanvas
                       key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
@@ -1754,6 +1781,7 @@ Crest Pest Control`;
                       onSave={handleDupeMapSave}
                       onExportImage={handleDupeMapExport}
                       initialData={currentMapData}
+                      exportId={isDuplicate ? `dupe-${dupeIndex}` : 'main'}
                     />
                   )}
                   {!isDuplicate && (
