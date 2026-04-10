@@ -546,8 +546,10 @@ const Report = () => {
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "jake@crestpestco.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
+  const [perProposalSignatures, setPerProposalSignatures] = useState<Record<number, string | null>>({});
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12);
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11);
   const [showSignature, setShowSignature] = useState(true);
@@ -762,6 +764,18 @@ const Report = () => {
       if (row.customer_signature) {
         setCustomerSignature(row.customer_signature);
         setSignatureWasSaved(true);
+        // Load per-proposal signatures if stored as JSON
+        try {
+          const parsed = JSON.parse(row.customer_signature);
+          if (parsed && parsed._perProposal && parsed.signatures) {
+            const sigs: Record<number, string | null> = {};
+            Object.entries(parsed.signatures).forEach(([k, v]) => { sigs[parseInt(k)] = v as string; });
+            setPerProposalSignatures(sigs);
+          }
+        } catch {
+          // Legacy single signature — apply to proposal 0
+          setPerProposalSignatures({ 0: row.customer_signature });
+        }
       }
       
       // Load proposals from services field
@@ -1102,11 +1116,27 @@ const Report = () => {
     return newId;
   };
 
+  const getSerializedSignature = (): string | null => {
+    // Collect per-proposal signatures
+    const sigs: Record<string, string | null> = {};
+    let hasSig = false;
+    Object.entries(perProposalSignatures).forEach(([k, v]) => {
+      if (v) { sigs[k] = v; hasSig = true; }
+    });
+    // Also force-save from refs
+    Object.entries(proposalSignatureRefs.current).forEach(([k, ref]) => {
+      const data = ref?.forceSave();
+      if (data) { sigs[k] = data; hasSig = true; }
+    });
+    if (!hasSig) return customerSignature;
+    return JSON.stringify({ _perProposal: true, signatures: sigs });
+  };
+
   const handleSubmit = async () => {
     if (!editableTech) { toast.error("Please enter technician name"); return; }
     setIsSaving(true);
     try {
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const finalSignature = getSerializedSignature();
       const rawMap = latestMapDataRef.current ?? mapData;
       let mapPayload: any = null;
       if (rawMap) {
@@ -2128,65 +2158,76 @@ Crest Pest Control`;
               </div>
             </Card>
 
-            {/* Customer Signature — on each proposal page */}
-            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
-              <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
-                <span className="text-base print:text-sm font-bold uppercase">
-                  Customer Signature — {proposalName}
-                </span>
-              </div>
-              <div className="p-3 print:p-2 flex items-center gap-2.5 print:gap-2">
-                <img src={crestBugBlack} alt="" className="h-10 print:h-12 w-auto shrink-0" />
-                <div className="flex-1 flex flex-col">
-                  <div className="h-[38px] print:h-[42px] relative">
-                    {customerSignature ? (
-                      <div className="h-full flex items-center gap-2">
-                        <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
-                          <img src={customerSignature} alt="Customer signature" className="max-h-[34px] print:max-h-[38px] w-auto object-contain" />
-                        </div>
-                        {!isReadOnly && (
-                          <div className="flex gap-1 no-print shrink-0">
-                            <Button variant="outline" size="sm" onClick={() => {
-                              if (isDuplicate) {
-                                // For duplicate pages, clear their per-proposal signature state if needed
-                              }
-                              setCustomerSignature(null);
-                              pendingAutoSaveRef.current = true;
-                            }} className="h-7 text-xs">
-                              Re-sign
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => {
-                              setCustomerSignature(null);
-                              pendingAutoSaveRef.current = true;
-                            }} className="h-7 text-xs text-destructive hover:text-destructive">
-                              <X className="w-3 h-3 mr-1" /> Delete
-                            </Button>
+            {/* Customer Signature — per-proposal */}
+            {(() => {
+              const sigData = perProposalSignatures[proposalIndex] ?? null;
+              const optionLetter = String.fromCharCode(65 + proposalIndex);
+              const sigLabel = proposals[proposalIndex]?.name?.trim() || `Option ${optionLetter}`;
+              return (
+                <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+                  <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
+                    <span className="text-base print:text-sm font-bold uppercase">
+                      Sign for {sigLabel}
+                    </span>
+                  </div>
+                  <div className="p-3 print:p-2 flex items-center gap-2.5 print:gap-2">
+                    <img src={crestBugBlack} alt="" className="h-10 print:h-12 w-auto shrink-0" />
+                    <div className="flex-1 flex flex-col">
+                      <div className="h-[38px] print:h-[42px] relative">
+                        {sigData ? (
+                          <div className="h-full flex items-center gap-2">
+                            <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
+                              <img src={sigData} alt={`Signature for ${sigLabel}`} className="max-h-[34px] print:max-h-[38px] w-auto object-contain" />
+                            </div>
+                            {!isReadOnly && (
+                              <div className="flex gap-1 no-print shrink-0">
+                                <Button variant="outline" size="sm" onClick={() => {
+                                  setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
+                                  pendingAutoSaveRef.current = true;
+                                }} className="h-7 text-xs">Re-sign</Button>
+                                <Button variant="outline" size="sm" onClick={() => {
+                                  setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
+                                  pendingAutoSaveRef.current = true;
+                                }} className="h-7 text-xs text-destructive hover:text-destructive">
+                                  <X className="w-3 h-3 mr-1" /> Delete
+                                </Button>
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <>
+                            <SignatureCanvas
+                              ref={(ref) => { proposalSignatureRefs.current[proposalIndex] = ref; }}
+                              onSave={(data) => {
+                                setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: data }));
+                                // Also set legacy signature for persistence
+                                if (data) setCustomerSignature(data);
+                              }}
+                              initialData={null}
+                              label=""
+                            />
+                            {isSavingSignature && (
+                              <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
+                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
-                    ) : (
-                      <>
-                        <SignatureCanvas ref={proposalIndex === 0 && !isDuplicate ? signatureRef : undefined} onSave={handleSignatureSave} initialData={customerSignature} label="" />
-                        {isSavingSignature && (
-                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs print:text-[10px] pt-1 border-t border-border">
-                    <div className="flex-1 flex items-center gap-1">
-                      <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
-                      <span className="text-muted-foreground text-xs">{editableCustomer || "—"}</span>
-                    </div>
-                    <div className="text-muted-foreground whitespace-nowrap">
-                      <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                      <div className="flex items-center gap-2 text-xs print:text-[10px] pt-1 border-t border-border">
+                        <div className="flex-1 flex items-center gap-1">
+                          <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
+                          <span className="text-muted-foreground text-xs">{editableCustomer || "—"}</span>
+                        </div>
+                        <div className="text-muted-foreground whitespace-nowrap">
+                          <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              );
+            })()}
           </div>
         </div>
       </div>
