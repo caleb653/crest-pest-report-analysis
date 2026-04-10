@@ -2378,7 +2378,7 @@ Crest Pest Control`;
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
           <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
             <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — Property Map & Details</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — {proposals[0]?.name || "Option A"}</span>
           </div>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
         </div>
