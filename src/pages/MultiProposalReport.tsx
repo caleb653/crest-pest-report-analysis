@@ -1759,7 +1759,7 @@ Crest Pest Control`;
             <tr>
               <th className="text-left">Service Type</th>
               <th className="text-center">Initial</th>
-              <th className="text-center">Recurring</th>
+              <th className="text-center">{getRecurringLabel(proposal.services)}</th>
               <th className="text-center">Frequency</th>
               <th className="text-center">Schedule</th>
             </tr>
