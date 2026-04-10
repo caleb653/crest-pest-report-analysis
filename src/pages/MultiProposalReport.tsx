@@ -2167,9 +2167,8 @@ Crest Pest Control`;
                 onPause={(e) => { const overlay = (e.target as HTMLElement).nextElementSibling as HTMLElement; if (overlay) overlay.style.display = ''; }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-0" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto mb-4" />
-                <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
-                <p className="text-sm text-muted-foreground mt-1">Click to play</p>
+                <p className="text-3xl font-bold text-foreground tracking-wide">Crest Video Report</p>
+                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
               </div>
             </div>
           </div>
