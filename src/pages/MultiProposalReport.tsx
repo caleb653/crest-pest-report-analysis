@@ -797,6 +797,7 @@ const Report = () => {
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
+              if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -932,6 +933,7 @@ const Report = () => {
       recommendedProposal,
       videoUrl,
       duplicatedPages,
+      duplicateMapData,
     });
 
   const buildServicesPayload = () => proposals;
