@@ -507,90 +507,146 @@ async function captureElement(el: HTMLElement): Promise<string> {
             line-height: 1.4 !important;
           }
 
-          /* ═══════════════════════════════════════════════════════════
-             MULTI-PROPOSAL GRID PRICING TABLES
-             ═══════════════════════════════════════════════════════════ */
-          .pdf-export-root .print-pricing-table {
-            border: 2px solid ${BRAND.black} !important;
-            border-radius: 10px !important;
-            overflow: visible !important;
-            margin-bottom: 14px !important;
-            padding: 10px !important;
-            background-color: #ffffff !important;
-          }
-          .pdf-export-root .print-pricing-table[data-recommended="true"] {
-            border: 3px solid ${BRAND.black} !important;
-            background-color: #f5f5f5 !important;
-          }
-          .pdf-export-root .proposal-recommended-banner {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 8px !important;
-            background-color: ${BRAND.black} !important;
-            color: #ffffff !important;
-            padding: 8px 16px !important;
-            margin: -10px -10px 8px -10px !important;
-            border-radius: 8px 8px 0 0 !important;
-            font-size: 14px !important;
-            font-weight: 800 !important;
-            letter-spacing: 0.2em !important;
-            text-transform: uppercase !important;
-          }
-          .pdf-export-root .proposal-recommended-banner svg {
-            width: 16px !important;
-            height: 16px !important;
-            fill: #ffffff !important;
-            color: #ffffff !important;
-          }
-          .pdf-export-root .proposal-name-shell {
-            display: flex !important;
-            align-items: center !important;
-            min-height: 34px !important;
-            padding: 6px 12px !important;
-            border: none !important;
-            border-radius: 6px !important;
-            background-color: #3a3a3a !important;
-          }
-          .pdf-export-root .proposal-name-text,
-          .pdf-export-root .proposal-name-print {
-            display: block !important;
-            color: #ffffff !important;
-            font-size: 17px !important;
-            font-weight: 700 !important;
-            line-height: 1.2 !important;
-            white-space: normal !important;
-            word-break: break-word !important;
-          }
-          .pdf-export-root .proposal-recommended-badge {
-            display: none !important;
-          }
-          .pdf-export-root .print-pricing-display {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            font-size: 13px !important;
-            min-height: 28px !important;
-            height: auto !important;
-            line-height: 1.15 !important;
-            padding: 4px 0 !important;
-          }
-          .pdf-export-root .print-pricing-display--left {
-            justify-content: flex-start !important;
-          }
-          .pdf-export-root .print-pricing-money {
-            gap: 1px !important;
-          }
-          .pdf-export-root .print-pricing-money span {
-            font-size: 14px !important;
-            font-weight: 600 !important;
-          }
-          /* Force grid layout in proposal rows */
-          .pdf-export-root .print-pricing-table [class*="grid-cols-[minmax"] {
-            display: grid !important;
-            grid-template-columns: minmax(90px, 1fr) 55px 55px 100px minmax(120px, 1.5fr) 24px !important;
-            gap: 4px !important;
-          }
+           /* ═══════════════════════════════════════════════════════════
+              MULTI-PROPOSAL GRID PRICING TABLES
+              ═══════════════════════════════════════════════════════════ */
+           .pdf-export-root .print-pricing-table {
+             border: none !important;
+             border-radius: 12px !important;
+             overflow: hidden !important;
+             margin-bottom: 16px !important;
+             padding: 0 !important;
+             background-color: #ffffff !important;
+             box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+           }
+           .pdf-export-root .print-pricing-table[data-recommended="true"] {
+             border: 2px solid ${BRAND.black} !important;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+           }
+           .pdf-export-root .proposal-recommended-banner {
+             display: flex !important;
+             align-items: center !important;
+             justify-content: center !important;
+             gap: 8px !important;
+             background-color: ${BRAND.black} !important;
+             color: #ffffff !important;
+             padding: 7px 16px !important;
+             margin: 0 !important;
+             border-radius: 0 !important;
+             font-size: 13px !important;
+             font-weight: 800 !important;
+             letter-spacing: 0.2em !important;
+             text-transform: uppercase !important;
+           }
+           .pdf-export-root .proposal-recommended-banner svg {
+             width: 14px !important; height: 14px !important;
+             fill: #ffffff !important; color: #ffffff !important;
+           }
+           .pdf-export-root .proposal-name-shell {
+             display: flex !important;
+             align-items: center !important;
+             min-height: 36px !important;
+             padding: 8px 16px !important;
+             border: none !important;
+             border-radius: 0 !important;
+             background-color: #404040 !important;
+             margin: 0 !important;
+             width: 100% !important;
+             max-width: none !important;
+             flex: 1 !important;
+           }
+           .pdf-export-root .proposal-name-text,
+           .pdf-export-root .proposal-name-print {
+             display: block !important;
+             color: #ffffff !important;
+             font-size: 16px !important;
+             font-weight: 700 !important;
+             line-height: 1.2 !important;
+             letter-spacing: 0.04em !important;
+           }
+           .pdf-export-root .proposal-recommended-badge { display: none !important; }
+
+           /* ── Print-only proposal table ── */
+           .pdf-export-root .proposal-print-table {
+             display: table !important;
+             width: 100% !important;
+             border-collapse: separate !important;
+             border-spacing: 0 !important;
+             border: none !important;
+             margin: 0 !important;
+             font-family: inherit !important;
+           }
+           .pdf-export-root .proposal-print-table thead th {
+             background-color: ${BRAND.sage} !important;
+             color: ${BRAND.black} !important;
+             font-size: 11px !important;
+             font-weight: 700 !important;
+             letter-spacing: 0.1em !important;
+             text-transform: uppercase !important;
+             padding: 10px 16px !important;
+             border: none !important;
+             border-bottom: 2px solid ${BRAND.darkSage} !important;
+             white-space: nowrap !important;
+           }
+           .pdf-export-root .proposal-print-table tbody td {
+             padding: 10px 16px !important;
+             font-size: 13px !important;
+             color: ${BRAND.black} !important;
+             border-bottom: 1px solid #e8ebe8 !important;
+             border-top: none !important;
+             border-left: none !important;
+             border-right: none !important;
+             background-color: #ffffff !important;
+             vertical-align: middle !important;
+           }
+           .pdf-export-root .proposal-print-table tbody tr:nth-child(even) td {
+             background-color: ${BRAND.sageTint} !important;
+           }
+           .pdf-export-root .proposal-print-table tbody td:first-child {
+             font-weight: 500 !important;
+           }
+           .pdf-export-root .proposal-print-table tfoot td {
+             padding: 10px 16px !important;
+             font-size: 14px !important;
+             border-top: 2px solid ${BRAND.black} !important;
+             border-bottom: none !important;
+             border-left: none !important;
+             border-right: none !important;
+             background-color: #ffffff !important;
+             color: ${BRAND.black} !important;
+           }
+
+           /* Schedule pills inside print table */
+           .pdf-export-root .proposal-schedule-pills {
+             display: inline-flex !important;
+             flex-wrap: wrap !important;
+             gap: 3px !important;
+           }
+           .pdf-export-root .schedule-pill {
+             display: inline-block !important;
+             padding: 2px 6px !important;
+             border-radius: 4px !important;
+             font-size: 10px !important;
+             background-color: #eef1ee !important;
+             color: #666 !important;
+             white-space: nowrap !important;
+           }
+           .pdf-export-root .schedule-pill--first {
+             background-color: ${BRAND.darkSage} !important;
+             color: #ffffff !important;
+             font-weight: 600 !important;
+           }
+
+           /* Hide the interactive grid in PDF */
+           .pdf-export-root .print-pricing-table > .space-y-1 { display: none !important; }
+           /* Ensure the name row doesn't add extra spacing */
+           .pdf-export-root .print-pricing-table > .mb-1\\.5 {
+             margin: 0 !important;
+             padding: 0 !important;
+           }
+           .pdf-export-root .print-pricing-table > .mb-1\\.5 > div > div {
+             gap: 0 !important;
+           }
 
           /* ═══════════════════════════════════════════════════════════
              PEST TAGS — inline pills
