@@ -341,11 +341,7 @@ const Report = () => {
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
 
-  const getDefaultTitle = () => {
-    const label = companyName?.trim() || editableCustomer?.trim() || "";
-    return label ? `Proposal: ${label}` : "Proposal";
-  };
-  const [editableTitle, setEditableTitle] = useState(getDefaultTitle());
+  const [editableTitle, setEditableTitle] = useState("Proposal");
 
   // Update title when customer/company name changes (only if title matches a generated pattern)
   useEffect(() => {
