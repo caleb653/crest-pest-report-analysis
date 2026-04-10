@@ -373,6 +373,10 @@ const Report = () => {
   
   // Page 2 duplicates
   const [duplicatedPages, setDuplicatedPages] = useState<number[]>([]);
+  
+  // Separate map data per duplicated page
+  const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
+  const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -1612,6 +1616,26 @@ Crest Pest Control`;
     // For the original page, use editableFindings; for duplicates, use auto-generated text
     const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
     
+    // Each page gets its own map data
+    const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
+    const currentRenderedMap = isDuplicate ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? renderedMapImage) : renderedMapImage;
+    
+    const handleDupeMapSave = (data: string | null) => {
+      if (isDuplicate && dupeIndex !== undefined) {
+        setDuplicateMapData(prev => ({ ...prev, [dupeIndex]: data }));
+      } else {
+        setMapData(data);
+      }
+    };
+    
+    const handleDupeMapExport = (img: string | null) => {
+      if (isDuplicate && dupeIndex !== undefined) {
+        setDuplicateRenderedMapImages(prev => ({ ...prev, [dupeIndex]: img }));
+      } else {
+        setRenderedMapImage(img);
+      }
+    };
+    
     return (
     <div data-pdf-page={isDuplicate ? `2-dupe-${dupeIndex}` : "2"} className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
       <div data-pdf-capture={captureIndex.toString()} className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
@@ -1656,15 +1680,15 @@ Crest Pest Control`;
               )}
               {mapUrl || customMapImage ? (
                 <div className="relative h-full w-full">
-                  {pdfExportMode && renderedMapImage ? (
-                    <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-cover" />
+                  {pdfExportMode && currentRenderedMap ? (
+                    <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
                   ) : (
                     <MapCanvas
-                      key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                      key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
                       mapUrl={customMapImage || mapUrl}
-                      onSave={setMapData}
-                      onExportImage={setRenderedMapImage}
-                      initialData={mapData}
+                      onSave={handleDupeMapSave}
+                      onExportImage={handleDupeMapExport}
+                      initialData={currentMapData}
                     />
                   )}
                   {!isDuplicate && (
