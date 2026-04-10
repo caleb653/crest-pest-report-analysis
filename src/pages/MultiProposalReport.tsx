@@ -1760,6 +1760,20 @@ Crest Pest Control`;
                 <div className="relative h-full w-full">
                   {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
                     <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
+                  ) : !isMapEditing && currentRenderedMap && !isReadOnly ? (
+                    <div className="relative h-full w-full">
+                      <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
+                      <div className="no-print absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="shadow-lg"
+                          onClick={() => setEditingMapPages(prev => new Set(prev).add(thisPageIndex))}
+                        >
+                          <Pencil className="w-3 h-3 mr-1" /> Edit Map
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
                     <MapCanvas
                       key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
