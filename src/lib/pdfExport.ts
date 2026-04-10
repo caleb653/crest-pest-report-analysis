@@ -560,7 +560,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           /* Force grid layout in proposal rows */
           .pdf-export-root .print-pricing-table [class*="grid-cols-[minmax"] {
             display: grid !important;
-            grid-template-columns: minmax(120px, 1fr) 60px 60px 120px 24px !important;
+            grid-template-columns: minmax(90px, 1fr) 55px 55px 100px minmax(120px, 1.5fr) 24px !important;
             gap: 4px !important;
           }
 
