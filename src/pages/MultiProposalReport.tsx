@@ -1313,31 +1313,6 @@ Crest Pest Control`;
     });
   };
 
-  const handleCustomMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.type && !file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
-    if (file.size === 0) { toast.error("That photo isn't downloaded to this iPad yet (iCloud). Open Photos, download it, then try again."); return; }
-    try {
-      const { compressImage } = await import("@/lib/imageUpload");
-      const { blob: compressedBlob, localUrl } = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
-      setCustomMapImage(localUrl);
-      const fileName = `${Math.random()}.jpg`;
-      const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("report-images")
-        .upload(filePath, compressedBlob, { upsert: true, contentType: "image/jpeg" });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
-      setCustomMapImage(publicUrl);
-      URL.revokeObjectURL(localUrl);
-      pendingAutoSaveRef.current = true;
-      toast.success("Map uploaded");
-    } catch (error) {
-      console.error("Error uploading map:", error);
-      toast.error("Failed to upload map image");
-    }
-  };
 
   const handlePropertyImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
