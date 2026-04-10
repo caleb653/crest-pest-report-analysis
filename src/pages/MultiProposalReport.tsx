@@ -1937,17 +1937,19 @@ Crest Pest Control`;
                     )}
                     {!isReadOnly && (
                       <>
-                        <div className="no-print absolute top-4 left-4 z-20">
-                          <Button size="sm" variant="secondary" type="button" onClick={() => {
-                            const mapContainer = document.querySelector(`[data-pdf-page="${isDuplicate ? `2-dupe-${dupeIndex}` : "2"}"] canvas`);
-                            if (mapContainer) {
-                              mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              (mapContainer as HTMLElement).click();
-                            }
-                          }}>
-                            <Edit className="w-4 h-4 mr-2" /> Edit Map
-                          </Button>
-                        </div>
+                        {(isDuplicate || duplicateMapPageCount > 0) && (
+                          <div className="no-print absolute top-4 left-4 z-20">
+                            <Button size="sm" variant="secondary" type="button" onClick={() => {
+                              const mapContainer = document.querySelector(`[data-pdf-page="${isDuplicate ? `2-dupe-${dupeIndex}` : "2"}"] canvas`);
+                              if (mapContainer) {
+                                mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                (mapContainer as HTMLElement).click();
+                              }
+                            }}>
+                              <Edit className="w-4 h-4 mr-2" /> Edit Map
+                            </Button>
+                          </div>
+                        )}
                         <div className="no-print absolute top-4 right-4 z-20">
                           <div className="relative inline-flex">
                             <Button size="sm" variant="secondary" type="button">
