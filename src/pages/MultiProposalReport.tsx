@@ -379,6 +379,8 @@ const Report = () => {
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
   const [duplicateCustomMapImages, setDuplicateCustomMapImages] = useState<Record<number, string | null>>({});
+  // Per-proposal editable findings (keyed by proposalIndex)
+  const [proposalFindings, setProposalFindings] = useState<Record<number, string>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -809,6 +811,7 @@ const Report = () => {
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
               if (parsed.duplicateCustomMapImages) setDuplicateCustomMapImages(parsed.duplicateCustomMapImages);
+              if (parsed.proposalFindings) setProposalFindings(parsed.proposalFindings);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -947,6 +950,7 @@ const Report = () => {
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
       duplicateCustomMapImages,
+      proposalFindings,
     });
 
   const buildServicesPayload = () => proposals;
@@ -1546,19 +1550,14 @@ Crest Pest Control`;
         className={cn(
           "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
           "border-2 border-foreground/80 rounded-xl bg-muted/30 shadow-md",
-          isRecommended && "ring-2 ring-foreground border-foreground",
         )}
       >
-        {/* Recommended banner */}
+        {/* Recommended label */}
         {isRecommended && (
-          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-2 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
-            <div className="flex items-center justify-center gap-2">
-              <Star className="h-4 w-4 shrink-0 text-background fill-background" />
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-background print:text-xs">
-                ★ Recommended ★
-              </span>
-              <Star className="h-4 w-4 shrink-0 text-background fill-background" />
-            </div>
+          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-1.5 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-background text-center print:text-xs">
+              Recommended
+            </p>
           </div>
         )}
         <div className="mb-1.5 flex items-start justify-between gap-2">
@@ -1762,9 +1761,9 @@ Crest Pest Control`;
     const proposalIndex = isDuplicate ? (dupeIndex ?? 0) + 1 : 0;
     const proposalServicesText = getProposalServicesText(proposalIndex);
     const proposalName = proposals[proposalIndex]?.name || `Option ${String.fromCharCode(65 + proposalIndex)}`;
-    
-    // For the original page, use editableFindings; for duplicates, use auto-generated text
-    const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
+    // Use per-proposal editable findings; fall back to auto-generated text
+    const proposalFindingsValue = proposalFindings[proposalIndex] ?? "";
+    const servicesContent = proposalFindingsValue || (isDuplicate ? proposalServicesText : (editableFindings[0] || ""));
     
     // Each page gets its own map data
     const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
@@ -1794,7 +1793,7 @@ Crest Pest Control`;
         <div className="page2-header flex items-center justify-between mb-4 print:mb-2.5 pb-2 print:pb-1.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2 print:px-3 print:py-1.5">
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-            <h1 className="text-xl print:text-lg font-bold text-foreground">
+            <h1 className="text-2xl print:text-xl font-bold text-foreground">
               Property Map & Details — {proposalName}
             </h1>
           </div>
@@ -1920,7 +1919,7 @@ Crest Pest Control`;
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">
+                <span className="text-base print:text-sm font-bold uppercase">
                   Proposed Services — {proposalName}
                 </span>
               </div>
@@ -1932,44 +1931,53 @@ Crest Pest Control`;
                   </div>
                 ) : (
                   <>
-                    {!isDuplicate ? (
-                      <div className="no-print flex-1 flex flex-col space-y-1">
-                        <RichTextEditor
-                          value={editableFindings[0] || ""}
-                          onChange={(newValue) => {
+                    <div className="no-print flex-1 flex flex-col space-y-1">
+                      <RichTextEditor
+                        value={isDuplicate ? (proposalFindings[proposalIndex] ?? servicesContent) : (editableFindings[0] || "")}
+                        onChange={(newValue) => {
+                          if (isDuplicate) {
+                            setProposalFindings(prev => ({ ...prev, [proposalIndex]: newValue }));
+                          } else {
                             findingsEditedRef.current = true;
                             setUserEditedFindings(true);
                             updateItem(0, newValue, setEditableFindings);
-                          }}
-                          placeholder="• Enter proposed services..."
-                          fontSize={proposedServicesFontSize}
-                          onFontSizeChange={setProposedServicesFontSize}
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button" variant="outline" size="sm"
-                          onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                          disabled={isExpandingFindings}
-                          className="no-print h-6 text-xs"
-                        >
-                          {isExpandingFindings ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                          Expand with AI
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-[15px] leading-relaxed prose prose-base max-w-none pdf-services-content" 
-                        dangerouslySetInnerHTML={{ __html: servicesContent || "<em>No services defined for this proposal</em>" }} 
+                            setProposalFindings(prev => ({ ...prev, [0]: newValue }));
+                          }
+                          pendingAutoSaveRef.current = true;
+                        }}
+                        placeholder="• Enter proposed services..."
+                        fontSize={proposedServicesFontSize}
+                        onFontSizeChange={setProposedServicesFontSize}
+                        className="flex-1"
                       />
-                    )}
-                    {/* Only show print-content-formatted for the original page (not duplicates, which already have visible content) */}
-                    {!isDuplicate && (
-                      <div
-                        data-pdf-content="proposed-services"
-                        className="hidden print-content-formatted"
-                        style={{ fontSize: `${proposedServicesFontSize}px` }}
-                        dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
-                      />
-                    )}
+                      <Button
+                        type="button" variant="outline" size="sm"
+                        onClick={() => {
+                          const currentVal = isDuplicate ? (proposalFindings[proposalIndex] ?? servicesContent) : (editableFindings[0] || "");
+                          expandWithAI(currentVal, "findings", (updater) => {
+                            const updated = typeof updater === 'function' ? updater([currentVal]) : updater;
+                            const newVal = updated[0] || "";
+                            if (isDuplicate) {
+                              setProposalFindings(prev => ({ ...prev, [proposalIndex]: newVal }));
+                            } else {
+                              setEditableFindings(updated);
+                              setProposalFindings(prev => ({ ...prev, [0]: newVal }));
+                            }
+                          });
+                        }}
+                        disabled={isExpandingFindings}
+                        className="no-print h-6 text-xs"
+                      >
+                        {isExpandingFindings ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                        Expand with AI
+                      </Button>
+                    </div>
+                    <div
+                      data-pdf-content="proposed-services"
+                      className="hidden print-content-formatted"
+                      style={{ fontSize: `${proposedServicesFontSize}px` }}
+                      dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
+                    />
                   </>
                 )}
               </div>
@@ -1978,7 +1986,7 @@ Crest Pest Control`;
             {/* Additional Details */}
             <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">Additional Details</span>
+                <span className="text-base print:text-sm font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-2 flex-1 flex flex-col">
                 <div className="no-print flex-1 flex flex-col">
@@ -2002,13 +2010,13 @@ Crest Pest Control`;
             {/* Setup Materials */}
             <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">Setup Materials</span>
+                <span className="text-base print:text-sm font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-2.5 print:p-1.5">
                 {setupMaterials.length > 0 && (
                   <div className="space-y-1 mb-2">
                     {setupMaterials.map((mat, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs group">
+                      <div key={index} className="flex items-center justify-between text-sm group">
                         <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
                         {!isReadOnly && (
                           <button type="button" onClick={() => removeSetupMaterial(index)}
@@ -2052,7 +2060,7 @@ Crest Pest Control`;
             {/* Customer Signature — on each proposal page */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-xs print:text-[10px] font-bold uppercase">
+                <span className="text-sm print:text-xs font-bold uppercase">
                   Customer Signature — {proposalName}
                 </span>
               </div>
@@ -2559,7 +2567,7 @@ Crest Pest Control`;
           <div className="page2-header flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">
               <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-              <h1 className="text-xl print:text-lg font-bold text-foreground">Property Images & Media</h1>
+              <h1 className="text-2xl print:text-xl font-bold text-foreground">Property Images & Media</h1>
             </div>
           </div>
 
