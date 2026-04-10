@@ -289,6 +289,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root h2 { font-size: 17px !important; font-weight: 700 !important; overflow: visible !important; }
           .pdf-export-root h3 { font-size: 14px !important; font-weight: 600 !important; overflow: visible !important; }
           .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
+          /* Crest Guarantee — bigger */
+          .pdf-export-root .crest-guarantee-text { font-size: 16px !important; line-height: 1.45 !important; }
+          .pdf-export-root .crest-guarantee-text * { font-size: 16px !important; }
 
           /* ═══════════════════════════════════════════════════════════
              INITIAL PEST REPORT — compact scale
