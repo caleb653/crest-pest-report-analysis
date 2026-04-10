@@ -361,13 +361,14 @@ const SubmittedReports = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | ReportType)}>
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilterValue)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Report Type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
+                  <SelectItem value="sales-all">Sales (All)</SelectItem>
+                  <SelectItem value="sales">Single Sales</SelectItem>
                   <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                 </SelectContent>
