@@ -528,7 +528,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .proposal-name-print {
             display: block !important;
             color: ${BRAND.black} !important;
-            font-size: 16px !important;
+            font-size: 17px !important;
             font-weight: 700 !important;
             line-height: 1.2 !important;
             white-space: normal !important;
@@ -571,7 +571,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             display: inline-flex !important;
             width: auto !important;
             white-space: nowrap !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             padding: 3px 10px !important;
             border-radius: 12px !important;
             background-color: hsl(130, 14%, 90%) !important;
