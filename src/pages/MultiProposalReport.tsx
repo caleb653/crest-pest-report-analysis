@@ -1998,7 +1998,7 @@ Crest Pest Control`;
                       <tr className="border-b border-border text-xs font-bold uppercase">
                         <th className="text-left px-2 py-1">Service</th>
                         <th className="text-center px-2 py-1">Initial</th>
-                        <th className="text-center px-2 py-1">Recurring</th>
+                        <th className="text-center px-2 py-1">{getRecurringLabel(proposals[proposalIndex].services)}</th>
                         <th className="text-center px-2 py-1">Frequency</th>
                       </tr>
                     </thead>
