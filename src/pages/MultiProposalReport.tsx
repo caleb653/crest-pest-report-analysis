@@ -1855,7 +1855,8 @@ Crest Pest Control`;
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   // Determine PDF capture index offset
   let nextCaptureIndex = 3; // 0=header, 1=page1, 2=page2
