@@ -535,7 +535,7 @@ export default function CustomerReportView() {
                       <tr>
                         <th className="text-left px-3 py-1.5 font-medium text-xs">Service</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Initial</th>
-                        <th className="text-center px-3 py-1.5 font-medium text-xs">Recurring</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">{getRecurringLabel(proposal.services)}</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Frequency</th>
                       </tr>
                     </thead>
@@ -937,7 +937,7 @@ export default function CustomerReportView() {
                         <tr>
                           <th className="text-left px-4 py-2 font-medium">Service Type</th>
                           <th className="text-center px-4 py-2 font-medium">Initial</th>
-                          <th className="text-center px-4 py-2 font-medium">Recurring</th>
+                          <th className="text-center px-4 py-2 font-medium">{getRecurringLabel(proposal.services)}</th>
                           <th className="text-center px-4 py-2 font-medium">Frequency</th>
                         </tr>
                       </thead>
