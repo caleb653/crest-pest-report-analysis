@@ -649,11 +649,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const isMapPage = !!clonedPage.querySelector('.page2-header');
         if (isMapPage) {
           clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
-            sp(node, 'font-size', '20px');
+            sp(node, 'font-size', '21px');
             sp(node, 'line-height', '1.1');
           });
           clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
-            sp(node, 'font-size', '13px');
+            sp(node, 'font-size', '14px');
             sp(node, 'line-height', '1.15');
           });
 
@@ -663,7 +663,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             sp(node, 'display', 'flex');
             sp(node, 'align-items', 'center');
             node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
-              sp(child, 'font-size', '11px');
+              sp(child, 'font-size', '12px');
               sp(child, 'font-weight', '700');
               sp(child, 'letter-spacing', '0.08em');
               sp(child, 'line-height', '1.1');
@@ -672,21 +672,21 @@ async function captureElement(el: HTMLElement): Promise<string> {
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
-            sp(node, 'font-size', '11px');
+            sp(node, 'font-size', '12px');
             sp(node, 'line-height', '1.32');
             node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
-              sp(child, 'font-size', '11px');
+              sp(child, 'font-size', '12px');
               sp(child, 'line-height', '1.32');
               sp(child, 'margin-top', '0');
               sp(child, 'vertical-align', 'top');
             });
             node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
-              sp(child, 'font-size', '12px');
+              sp(child, 'font-size', '13px');
               sp(child, 'font-weight', '700');
             });
           });
 
-          const DETAIL_FONT = 12;
+          const DETAIL_FONT = 13;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
@@ -699,7 +699,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             });
           });
 
-          const PAGE2_META_FONT = 13;
+          const PAGE2_META_FONT = 14;
           ['scheduling', 'setup-materials'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
