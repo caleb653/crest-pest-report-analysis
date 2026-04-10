@@ -808,12 +808,13 @@ export async function buildMergedPDF(options: {
       page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH, 0), width: drawW, height: drawH });
       pendingHeaderImg = null;
     } else {
-      const margin = 12;
+      const margin = 6;
       const contentW = pageW - margin * 2;
       const contentH = pageH - margin * 2;
       const scaleW = contentW / img.width;
       const scaleH = contentH / img.height;
-      const scale = Math.min(scaleW, scaleH);
+      // Use a blend: mostly fill width, but cap at height
+      const scale = Math.min(scaleW, scaleH * 1.0);
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const drawX = (pageW - drawW) / 2;
@@ -837,7 +838,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
-  const MARGIN = 12;
+  const MARGIN = 6;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
