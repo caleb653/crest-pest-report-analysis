@@ -1945,7 +1945,7 @@ Crest Pest Control`;
                               (mapContainer as HTMLElement).click();
                             }
                           }}>
-                            <Pencil className="w-4 h-4 mr-2" /> Edit Map
+                            <Edit className="w-4 h-4 mr-2" /> Edit Map
                           </Button>
                         </div>
                         <div className="no-print absolute top-4 right-4 z-20">
