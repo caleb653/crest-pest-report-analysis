@@ -945,6 +945,7 @@ const Report = () => {
       duplicatedPages,
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
+      duplicateCustomMapImages,
     });
 
   const buildServicesPayload = () => proposals;
