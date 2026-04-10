@@ -38,6 +38,7 @@ import {
 import crestLogo from "@/assets/crest-logo-black.png";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
+type TypeFilterValue = "all" | ReportType | "sales-all";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
