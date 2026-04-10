@@ -38,6 +38,7 @@ import {
 import crestLogo from "@/assets/crest-logo-black.png";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
+type TypeFilterValue = "all" | ReportType | "sales-all";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
@@ -103,8 +104,8 @@ const SubmittedReports = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 
   const locationFilter = (location.state as any)?.filter;
-  const [typeFilter, setTypeFilter] = useState<"all" | ReportType>(
-    locationFilter === "initial" || locationFilter === "sales" ? locationFilter : "all"
+  const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
+    locationFilter === "initial" ? "initial" : locationFilter === "sales" ? "sales-all" : "all"
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -266,7 +267,9 @@ const SubmittedReports = () => {
     }
 
     // Type
-    if (typeFilter !== "all") {
+    if (typeFilter === "sales-all") {
+      filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
+    } else if (typeFilter !== "all") {
       filtered = filtered.filter((r) => r.report_type === typeFilter);
     }
 
@@ -358,13 +361,14 @@ const SubmittedReports = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | ReportType)}>
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilterValue)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Report Type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="sales">Sales</SelectItem>
+                  <SelectItem value="sales-all">Sales (All)</SelectItem>
+                  <SelectItem value="sales">Single Sales</SelectItem>
                   <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                 </SelectContent>
