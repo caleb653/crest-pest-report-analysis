@@ -1524,19 +1524,29 @@ Crest Pest Control`;
         key={proposalIndex}
         data-recommended={isRecommended ? "true" : "false"}
         className={cn(
-          "print-section print-pricing-table p-2 print:p-0.5 print:py-1",
-          isRecommended && "ring-2 ring-primary border-primary/60 bg-primary/5",
+          "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
+          "border-2 border-foreground/80 rounded-lg",
+          isRecommended && "ring-2 ring-primary border-primary bg-primary/5 shadow-md",
         )}
       >
+        {/* Recommended banner */}
+        {isRecommended && (
+          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-primary px-4 py-2 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
+            <div className="flex items-center justify-center gap-2">
+              <Star className="h-4 w-4 shrink-0 text-primary-foreground fill-primary-foreground" />
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-primary-foreground print:text-xs">
+                ★ Recommended ★
+              </span>
+              <Star className="h-4 w-4 shrink-0 text-primary-foreground fill-primary-foreground" />
+            </div>
+          </div>
+        )}
         <div className="mb-1.5 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-start gap-2">
-            {isRecommended && (
-              <Star className="mt-1 h-4 w-4 shrink-0 text-primary fill-primary" />
-            )}
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
               <div className="proposal-name-shell min-w-[220px] flex-1 rounded-md border border-border bg-muted/40 px-2 py-1">
                 {isReadOnly ? (
-                  <h3 className="proposal-name-text break-words text-sm font-bold leading-tight text-foreground">{proposalLabel}</h3>
+                  <h3 className="proposal-name-text break-words text-base font-bold leading-tight text-foreground">{proposalLabel}</h3>
                 ) : (
                   <>
                     <Input
@@ -1548,17 +1558,12 @@ Crest Pest Control`;
                           return updated;
                         });
                       }}
-                      className="proposal-name-input no-print h-8 w-full border-0 bg-transparent px-0 py-0 text-sm font-bold shadow-none focus-visible:ring-0"
+                      className="proposal-name-input no-print h-8 w-full border-0 bg-transparent px-0 py-0 text-base font-bold shadow-none focus-visible:ring-0"
                     />
-                    <div className="proposal-name-print hidden break-words text-sm font-bold leading-tight text-foreground print:block">{proposalLabel}</div>
+                    <div className="proposal-name-print hidden break-words text-base font-bold leading-tight text-foreground print:block">{proposalLabel}</div>
                   </>
                 )}
               </div>
-              {isRecommended && (
-                <span className="proposal-recommended-badge inline-flex shrink-0 items-center rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary-foreground">
-                  Recommended
-                </span>
-              )}
             </div>
           </div>
           {!isReadOnly && proposals.length > 1 && (
@@ -1569,7 +1574,7 @@ Crest Pest Control`;
         </div>
         <div className="space-y-1 print:space-y-0">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
@@ -1845,8 +1850,8 @@ Crest Pest Control`;
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">
-                  Proposed Services {isDuplicate && proposals[proposalIndex] ? `— ${proposalName}` : ""}
+                <span className="text-sm print:text-[12px] font-bold uppercase">
+                  Proposed Services — {proposalName}
                 </span>
               </div>
               <div className="p-3 print:p-1.5 flex-1 flex flex-col">
@@ -1971,6 +1976,52 @@ Crest Pest Control`;
                 {setupMaterials.length === 0 && isReadOnly && (
                   <p className="text-xs text-muted-foreground italic">No setup materials listed</p>
                 )}
+              </div>
+            </Card>
+
+            {/* Customer Signature — on each proposal page */}
+            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase">
+                  Customer Signature — {proposalName}
+                </span>
+              </div>
+              <div className="p-1.5 print:p-1 flex items-center gap-1.5 print:gap-2">
+                <img src={crestBugBlack} alt="" className="h-10 print:h-12 w-auto shrink-0" />
+                <div className="flex-1 flex flex-col">
+                  <div className="h-[38px] print:h-[42px] relative">
+                    {customerSignature ? (
+                      <div className="h-full flex items-center gap-2">
+                        <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
+                          <img src={customerSignature} alt="Customer signature" className="max-h-[34px] print:max-h-[38px] w-auto object-contain" />
+                        </div>
+                        {!signatureWasSaved && !isDuplicate && proposalIndex === 0 && (
+                          <Button variant="outline" size="sm" onClick={() => setCustomerSignature(null)} className="h-7 text-xs no-print shrink-0">
+                            Re-sign
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <SignatureCanvas ref={proposalIndex === 0 && !isDuplicate ? signatureRef : undefined} onSave={handleSignatureSave} initialData={customerSignature} label="" />
+                        {isSavingSignature && (
+                          <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
+                    <div className="flex-1 flex items-center gap-1">
+                      <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
+                      <span className="text-muted-foreground text-[8px]">{editableCustomer || "—"}</span>
+                    </div>
+                    <div className="text-muted-foreground whitespace-nowrap">
+                      <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
@@ -2237,35 +2288,22 @@ Crest Pest Control`;
             </Button>
           )}
 
-          {/* Recommended Proposal Selector */}
-          {proposals.length > 1 && (
-            <Card className="recommended-proposal-card print-section border-primary/40 bg-primary/5 p-2 print:p-1">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Star className="h-4 w-4 fill-current" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80">Recommended Proposal</span>
-                    <span className="recommended-proposal-pill mt-1 inline-flex max-w-full items-center rounded-full border border-primary/30 bg-background px-3 py-1 text-sm font-semibold text-foreground">
-                      {proposals[recommendedProposal]?.name?.trim() || PROPOSAL_NAMES[recommendedProposal] || "—"}
-                    </span>
-                  </div>
-                </div>
-                {!isReadOnly && (
-                  <Select value={recommendedProposal.toString()} onValueChange={(v) => setRecommendedProposal(parseInt(v))}>
-                    <SelectTrigger className="no-print h-8 w-full bg-background text-xs sm:w-56">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {proposals.map((p, i) => (
-                        <SelectItem key={i} value={i.toString()} className="text-xs">{p.name?.trim() || PROPOSAL_NAMES[i]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </Card>
+          {/* Recommended Proposal Selector — editor only */}
+          {proposals.length > 1 && !isReadOnly && (
+            <div className="no-print flex items-center gap-3 p-2 bg-muted/50 rounded-lg border border-border">
+              <Star className="h-5 w-5 text-primary fill-primary shrink-0" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Set Recommended:</span>
+              <Select value={recommendedProposal.toString()} onValueChange={(v) => setRecommendedProposal(parseInt(v))}>
+                <SelectTrigger className="h-8 w-56 bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {proposals.map((p, i) => (
+                    <SelectItem key={i} value={i.toString()} className="text-xs">{p.name?.trim() || PROPOSAL_NAMES[i]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           {/* Products & Pesticide Notice side by side */}
@@ -2325,128 +2363,52 @@ Crest Pest Control`;
             </Card>
           </div>
 
-          {/* Scheduling & Signature side by side */}
-          <div
-            className={cn(
-              "grid gap-1.5 print:gap-0.5",
-              showSchedulingSection ? "grid-cols-[2fr_3fr]" : "grid-cols-1",
-              showSchedulingSection ? "print:grid-cols-[2fr_3fr]" : "print:grid-cols-1",
-            )}
-          >
-            {/* Scheduling & Communication */}
-            {showSchedulingSection && (
-              <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-                <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
+          {/* Scheduling & Communication — only if any field has real content */}
+          {showSchedulingSection && (
+            <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
+              <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
+                <span className="text-xs print:text-[10px] font-bold uppercase">Scheduling & Communication</span>
+              </div>
+              <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
+                  {isReadOnly ? (
+                    <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
+                  ) : (
+                    <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="—"
+                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                  )}
                 </div>
-                <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Day:</span>
-                    {isReadOnly ? (
-                      <span className="text-xs text-foreground">{preferredServiceDay || "—"}</span>
-                    ) : (
-                      <Input value={preferredServiceDay} onChange={(e) => setPreferredServiceDay(e.target.value)} placeholder="e.g. Monday"
-                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
-                    {isReadOnly ? (
-                      <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
-                    ) : (
-                      <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="e.g. Morning"
-                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
-                    {isReadOnly ? (
-                      <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
-                    ) : (
-                      <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="Name"
-                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
-                    {isReadOnly ? (
-                      <span className="text-xs text-foreground">{contactPhone || "—"}</span>
-                    ) : (
-                      <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="(xxx) xxx-xxxx"
-                        className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
-                    )}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Preferred Time:</span>
+                  {isReadOnly ? (
+                    <span className="text-xs text-foreground">{preferredServiceTime || "—"}</span>
+                  ) : (
+                    <Input value={preferredServiceTime} onChange={(e) => setPreferredServiceTime(e.target.value)} placeholder="—"
+                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                  )}
                 </div>
-              </Card>
-            )}
-
-            {/* Customer Signature */}
-            <div className={`p-0 overflow-hidden print:overflow-visible rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
-              {showSignature ? (
-                <>
-                  <Button variant="secondary" size="sm"
-                    className="absolute top-0.5 right-0.5 h-5 px-1.5 text-[9px] no-print z-10"
-                    onClick={() => setShowSignature(false)}>
-                    Hide
-                  </Button>
-                  <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                    <span className="text-xs print:text-[10px] font-bold uppercase">Customer Signature</span>
-                  </div>
-                  <div className="p-1 print:p-1 flex items-center gap-1.5 print:gap-2">
-                    <img src={crestBugBlack} alt="" className="h-11 print:h-14 w-auto shrink-0" />
-                    <div className="flex-1 flex flex-col">
-                      <div className="h-[38px] print:h-[42px] relative">
-                        {customerSignature ? (
-                          <div className="h-full flex items-center gap-2">
-                            <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
-                              <img src={customerSignature} alt="Customer signature" className="max-h-[34px] print:max-h-[38px] w-auto object-contain" />
-                            </div>
-                            {!signatureWasSaved && (
-                              <Button variant="outline" size="sm" onClick={() => setCustomerSignature(null)} className="h-7 text-xs no-print shrink-0">
-                                Re-sign
-                              </Button>
-                            )}
-                          </div>
-                        ) : (
-                          <>
-                            <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
-                            {isSavingSignature && (
-                              <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
-                                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-[8px] print:text-[9px] pt-0.5 border-t border-border">
-                        <div className="flex-1 flex items-center gap-1">
-                          <span className="font-medium text-foreground whitespace-nowrap">Print:</span>
-                          <Input value={editableCustomer} onChange={(e) => setEditableCustomer(e.target.value)} placeholder="Customer name"
-                            className="bg-transparent border-none text-muted-foreground placeholder:text-muted-foreground px-0.5 h-3 text-[8px] flex-1 focus-visible:ring-0 no-print" />
-                          <span className="hidden print:inline text-muted-foreground text-[8px]">{editableCustomer}</span>
-                        </div>
-                        <div className="text-muted-foreground whitespace-nowrap">
-                          <span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="invisible">
-                    <div className="py-0.5 px-2.5 rounded-t-lg"><span className="text-xs font-bold uppercase leading-none">&nbsp;</span></div>
-                    <div className="p-1.5"><div className="h-[40px]"></div></div>
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center no-print">
-                    <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowSignature(true)}>
-                      Show Signature Box
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Point of Contact:</span>
+                  {isReadOnly ? (
+                    <span className="text-xs text-foreground">{mainPointOfContact || "—"}</span>
+                  ) : (
+                    <Input value={mainPointOfContact} onChange={(e) => setMainPointOfContact(e.target.value)} placeholder="—"
+                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-[110px] shrink-0">Phone #:</span>
+                  {isReadOnly ? (
+                    <span className="text-xs text-foreground">{contactPhone || "—"}</span>
+                  ) : (
+                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="—"
+                      className="h-6 text-xs flex-1 bg-transparent border-b border-border shadow-none focus-visible:ring-0" />
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Crest Guarantee */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 flex items-center justify-center gap-3">
