@@ -2157,14 +2157,16 @@ Crest Pest Control`;
                 </Button>
               )}
             </div>
-            <div className="max-w-3xl mx-auto relative">
+            <div className="max-w-3xl mx-auto relative group">
               <video
                 src={videoUrl}
                 controls
-                className="w-full rounded-lg border-2 border-border"
+                className="w-full rounded-lg border-2 border-border relative z-10"
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                onPlay={(e) => { const overlay = (e.target as HTMLElement).nextElementSibling as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                onPause={(e) => { const overlay = (e.target as HTMLElement).nextElementSibling as HTMLElement; if (overlay) overlay.style.display = ''; }}
               />
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
                 <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto mb-4" />
                 <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
                 <p className="text-sm text-muted-foreground mt-1">Click to play</p>
