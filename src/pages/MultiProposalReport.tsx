@@ -946,6 +946,9 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
+    // Capture all map canvases (main + duplicates) by triggering their exportMapAsImage
+    const allCanvases = document.querySelectorAll<HTMLCanvasElement>('canvas');
+    // The main map export function
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     if (!exportFn) return renderedMapImage;
     const freshRender = await exportFn();
