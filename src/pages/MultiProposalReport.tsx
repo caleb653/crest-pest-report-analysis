@@ -379,6 +379,8 @@ const Report = () => {
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
   const [duplicateCustomMapImages, setDuplicateCustomMapImages] = useState<Record<number, string | null>>({});
+  // Per-proposal editable findings (keyed by proposalIndex)
+  const [proposalFindings, setProposalFindings] = useState<Record<number, string>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
