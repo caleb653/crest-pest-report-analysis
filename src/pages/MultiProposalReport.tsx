@@ -2013,8 +2013,8 @@ Crest Pest Control`;
             </Card>
 
             {/* Customer Signature — on each proposal page */}
-            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
-              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+            <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
                 <span className="text-xs print:text-[10px] font-bold uppercase">
                   Customer Signature — {proposalName}
                 </span>
