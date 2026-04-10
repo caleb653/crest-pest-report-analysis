@@ -2500,7 +2500,7 @@ Crest Pest Control`;
           {/* Crest Guarantee */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 flex items-center justify-center gap-3">
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
-            <p className="text-sm print:text-[13px] text-foreground leading-snug">
+            <p className="text-base print:text-sm text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
             </p>
