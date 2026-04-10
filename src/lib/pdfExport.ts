@@ -416,7 +416,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .page2-header {
             background-color: ${BRAND.sage} !important;
             padding: 8px 16px !important;
-            border-radius: 4px !important;
+            border-radius: 8px !important;
             border-bottom: 2px solid ${BRAND.darkSage} !important;
             margin-bottom: 12px !important;
           }
