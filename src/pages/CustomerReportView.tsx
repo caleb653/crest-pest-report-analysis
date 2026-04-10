@@ -445,12 +445,52 @@ export default function CustomerReportView() {
             </div>
 
             <div className="space-y-4">
+              {/* Mini Pricing Table */}
               <Card className="overflow-hidden">
-                <div className="bg-brand-black text-white px-4 py-3 flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold uppercase">Proposed Services — {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</span>
+                <div className="bg-brand-black text-white px-4 py-2 flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold uppercase">Pricing — {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</span>
                   {showRecommended && (
                     <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">★ Recommended</span>
                   )}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left px-3 py-1.5 font-medium text-xs">Service</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">Initial</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">Recurring</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">Frequency</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proposal.services.filter(s => s.serviceType).map((service, idx) => (
+                        <tr key={idx} className="border-t border-border">
+                          <td className="px-3 py-1.5 text-xs font-medium">{service.serviceType}</td>
+                          <td className="px-3 py-1.5 text-xs text-center">${service.initialPrice || "0"}</td>
+                          <td className="px-3 py-1.5 text-xs text-center">${service.recurringPrice || "0"}</td>
+                          <td className="px-3 py-1.5 text-xs text-center">{formatFrequency(service.frequency)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-border bg-muted/30">
+                        <td className="px-3 py-1.5 text-xs font-bold text-right">Total:</td>
+                        <td className="px-3 py-1.5 text-xs text-center font-bold">
+                          ${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-1.5 text-xs text-center font-bold">
+                          ${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+
+              {/* Proposed Services */}
+              <Card className="overflow-hidden">
+                <div className="bg-brand-black text-white px-4 py-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold uppercase">Proposed Services — {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</span>
                 </div>
                 <div className="p-4">{renderProposalServicesContent(proposal, proposalIndex)}</div>
               </Card>
