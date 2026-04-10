@@ -271,16 +271,17 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ── Proposal text scale ────────────────────────────────── */
           .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.45 !important; }
-          .pdf-export-root [class*="text-xs"]                { font-size: 11px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-sm"]                { font-size: 12px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-base"]              { font-size: 12px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-lg"]                { font-size: 13px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-xl"]                { font-size: 15px !important; line-height: 1.4 !important; }
-          .pdf-export-root [class*="text-2xl"]               { font-size: 19px !important; line-height: 1.3 !important; }
-          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 10px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-xs"]                { font-size: 12px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-sm"]                { font-size: 13px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-base"]              { font-size: 13px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-lg"]                { font-size: 14px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-xl"]                { font-size: 16px !important; line-height: 1.4 !important; }
+          .pdf-export-root [class*="text-2xl"]               { font-size: 20px !important; line-height: 1.3 !important; }
+          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 10px  !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 11px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 13px !important; line-height: 1.55 !important; }
+          /* Products & Pesticide Notice — keep small */
           .pdf-export-root [class*="columns-2"] *            { font-size: 10.5px !important; line-height: 1.65 !important; }
           .pdf-export-root [class*="columns-2"] p,
           .pdf-export-root [class*="columns-2"] li           { margin: 1px 0 !important; }
