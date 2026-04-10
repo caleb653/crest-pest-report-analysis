@@ -2096,7 +2096,7 @@ Crest Pest Control`;
                   </div>
                   <div className="bg-white/80 rounded px-1">
                     <Select
-                      value={service.frequency.toString()}
+                      value={(service.frequency ?? 30).toString()}
                       onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
                     >
                       <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
