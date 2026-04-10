@@ -374,19 +374,19 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root thead td {
             background-color: ${BRAND.sage} !important;
             color:            ${BRAND.black} !important;
-            font-size:        10px !important; font-weight: 700 !important;
+            font-size:        11px !important; font-weight: 700 !important;
             letter-spacing:   0.1em !important; text-transform: uppercase !important;
             border: none !important;
           }
           .pdf-export-root thead * { color: ${BRAND.black} !important; }
           .pdf-export-root tbody td {
             padding: 10px 14px !important; vertical-align: middle !important;
-            font-size: 13px !important; border-bottom: 1px solid ${BRAND.border} !important;
+            font-size: 14px !important; border-bottom: 1px solid ${BRAND.border} !important;
           }
           .pdf-export-root tbody tr:nth-child(even) td { background-color: ${BRAND.sageTint} !important; }
           .pdf-export-root tfoot td, .pdf-export-root tfoot th {
             border-top: 2px solid ${BRAND.black} !important;
-            font-weight: 700 !important; font-size: 14px !important; padding: 11px 14px !important;
+            font-weight: 700 !important; font-size: 15px !important; padding: 11px 14px !important;
           }
 
           /* ═══════════════════════════════════════════════════════════
