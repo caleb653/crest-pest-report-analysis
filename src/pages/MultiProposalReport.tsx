@@ -1729,8 +1729,8 @@ Crest Pest Control`;
               )}
               {mapUrl || customMapImage ? (
                 <div className="relative h-full w-full">
-                  {pdfExportMode && currentRenderedMap ? (
-                    <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
+                  {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
+                    <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
                   ) : (
                     <MapCanvas
                       key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
