@@ -541,7 +541,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
             min-height: 28px !important;
             height: auto !important;
             line-height: 1.15 !important;
@@ -554,7 +554,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             gap: 1px !important;
           }
           .pdf-export-root .print-pricing-money span {
-            font-size: 13px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
           }
           /* Force grid layout in proposal rows */
