@@ -602,7 +602,7 @@ const Report = () => {
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const isReadOnly = !!signatureWasSaved;
   const hasSchedulingInfo = [preferredServiceDay, preferredServiceTime, mainPointOfContact, contactPhone]
-    .some((value) => value.trim().length > 0);
+    .some((value) => value.trim().length > 0 && value.trim() !== "-");
   const showSchedulingSection = !isReadOnly || hasSchedulingInfo;
   
   const handleSignatureSave = async (signatureData: string | null) => {
