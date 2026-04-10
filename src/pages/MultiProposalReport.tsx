@@ -2445,7 +2445,7 @@ Crest Pest Control`;
             {/* Products */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-sm print:text-xs font-bold uppercase">Products</span>
+                <span className="text-base print:text-sm font-bold uppercase">Products</span>
               </div>
               <div className="p-2.5 print:p-1.5">
                 <div className="text-[9px] leading-tight text-foreground columns-2 gap-2">
