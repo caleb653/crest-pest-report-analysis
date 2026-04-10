@@ -47,7 +47,7 @@ const AVAILABLE_ICONS = [
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
 
-export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId }: MapCanvasProps) => {
+export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId, showToolbar = true }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
