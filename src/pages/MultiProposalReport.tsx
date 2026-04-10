@@ -1793,6 +1793,7 @@ Crest Pest Control`;
           </tfoot>
         </table>
       </Card>
+      </div>
     );
   };
 
