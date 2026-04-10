@@ -394,7 +394,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root [class*="border"]     { border-color: ${BRAND.border} !important; }
           .pdf-export-root [class*="rounded-lg"],
-          .pdf-export-root [class*="rounded-md"] { border-radius: 5px !important; }
+          .pdf-export-root [class*="rounded-xl"],
+          .pdf-export-root [class*="rounded-md"] { border-radius: 8px !important; }
           .pdf-export-root [class*="border-t"]   {
             border-top-color: ${BRAND.darkSage} !important; border-top-width: 2px !important;
           }
@@ -433,7 +434,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-section-header {
             background-color: ${BRAND.sage} !important;
             padding: 6px 12px !important;
-            border-radius: 4px 4px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             display: flex !important;
             align-items: center !important;
             min-height: 28px !important;
@@ -464,7 +465,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           .pdf-export-root .print-section {
             border: 1px solid ${BRAND.border} !important;
-            border-radius: 5px !important;
+            border-radius: 8px !important;
             overflow: visible !important;
           }
 
@@ -485,7 +486,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root .print-pricing-table {
             border: 2px solid ${BRAND.black} !important;
-            border-radius: 6px !important;
+            border-radius: 10px !important;
             overflow: visible !important;
             margin-bottom: 8px !important;
             padding: 10px !important;
@@ -503,7 +504,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: #ffffff !important;
             padding: 8px 16px !important;
             margin: -10px -10px 8px -10px !important;
-            border-radius: 4px 4px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             font-size: 13px !important;
             font-weight: 800 !important;
             letter-spacing: 0.2em !important;
