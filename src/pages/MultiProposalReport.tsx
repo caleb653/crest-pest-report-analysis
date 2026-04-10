@@ -1574,11 +1574,12 @@ Crest Pest Control`;
         </div>
         <div className="space-y-1 print:space-y-0">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
             <span className="text-center">Frequency</span>
+            <span className="text-center">Schedule</span>
             <span></span>
           </div>
 
@@ -1586,7 +1587,7 @@ Crest Pest Control`;
           {proposal.services.map((service, serviceIndex) => (
             <div
               key={serviceIndex}
-              className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center print:py-0"
+              className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center print:py-0"
             >
               <div className="bg-white/80 rounded px-1">
                 <Select
