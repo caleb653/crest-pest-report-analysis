@@ -378,6 +378,7 @@ const Report = () => {
   const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
+  const [duplicateCustomMapImages, setDuplicateCustomMapImages] = useState<Record<number, string | null>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
