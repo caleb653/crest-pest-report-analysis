@@ -716,7 +716,17 @@ export default function CustomerReportView() {
         <div className="bg-sage/50 border-b border-sage py-3 px-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
             <FileCheck className="w-5 h-5 text-dark-sage" />
-            <span className="text-foreground font-medium">This proposal has been signed and approved. Thank you!</span>
+            <span className="text-foreground font-medium">
+              {isMultiProposal
+                ? (() => {
+                    const sigs = getPerProposalSignatures();
+                    const signedOptions = Object.keys(sigs).map(k => `Option ${String.fromCharCode(65 + parseInt(k))}`);
+                    return signedOptions.length > 0
+                      ? `Signed: ${signedOptions.join(", ")}. Thank you!`
+                      : "This proposal has been signed and approved. Thank you!";
+                  })()
+                : "This proposal has been signed and approved. Thank you!"}
+            </span>
           </div>
         </div>
       )}
