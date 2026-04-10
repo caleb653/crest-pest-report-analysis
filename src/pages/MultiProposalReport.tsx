@@ -1675,7 +1675,7 @@ Crest Pest Control`;
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
             <h1 className="text-xl print:text-lg font-bold text-foreground">
-              Property Map & Details {isDuplicate ? `— ${proposalName}` : ""}
+              Property Map & Details — {proposalName}
             </h1>
           </div>
           <div className="flex items-center gap-3">
