@@ -104,8 +104,8 @@ const SubmittedReports = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 
   const locationFilter = (location.state as any)?.filter;
-  const [typeFilter, setTypeFilter] = useState<"all" | ReportType>(
-    locationFilter === "initial" || locationFilter === "sales" ? locationFilter : "all"
+  const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
+    locationFilter === "initial" ? "initial" : locationFilter === "sales" ? "sales-all" : "all"
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
