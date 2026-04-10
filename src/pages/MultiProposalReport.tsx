@@ -915,6 +915,7 @@ const Report = () => {
   const buildStructuredNotes = () =>
     JSON.stringify({
       _structuredNotes: true,
+      _reportFormat: "multi-proposal",
       additionalDetails: additionalDetails || notes || "",
       propertyType,
       companyName,
