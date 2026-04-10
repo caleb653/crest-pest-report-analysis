@@ -471,8 +471,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
             border: 1px solid ${BRAND.border} !important;
             border-radius: 5px !important;
             overflow: visible !important;
-            margin-bottom: 6px !important;
-            padding: 6px !important;
+            margin-bottom: 8px !important;
+            padding: 8px 10px !important;
           }
           .pdf-export-root .print-pricing-display {
             display: flex !important;
@@ -496,6 +496,107 @@ async function captureElement(el: HTMLElement): Promise<string> {
             display: grid !important;
             grid-template-columns: minmax(120px, 1fr) 60px 60px 120px 24px !important;
             gap: 4px !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PROPOSAL CARD — name label above table
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-pricing-table > div:first-child {
+            margin-bottom: 6px !important;
+            padding-bottom: 5px !important;
+            border-bottom: 1.5px solid ${BRAND.darkSage} !important;
+          }
+
+          /* Proposal name rendered as print:block span */
+          .pdf-export-root .print-proposal-name {
+            display: block !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: ${BRAND.black} !important;
+            letter-spacing: 0.02em !important;
+            line-height: 1.3 !important;
+          }
+
+          /* Recommended star badge next to proposal name */
+          .pdf-export-root .print-proposal-recommended-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            color: ${BRAND.darkSage} !important;
+            background-color: ${BRAND.sageTint} !important;
+            border: 1px solid ${BRAND.darkSage} !important;
+            border-radius: 10px !important;
+            padding: 1px 8px !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PROPOSAL TABLE COLUMN HEADERS (the grid header row)
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-proposals-header {
+            background-color: ${BRAND.sage} !important;
+            color: ${BRAND.black} !important;
+            border-radius: 3px !important;
+            padding: 5px 8px !important;
+            margin-bottom: 3px !important;
+            border: none !important;
+            border-bottom: none !important;
+          }
+          .pdf-export-root .print-proposals-header span {
+            color: ${BRAND.black} !important;
+            font-size: 9px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.1em !important;
+            text-transform: uppercase !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PROPOSAL SERVICE ROWS — alternating zebra
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-service-row {
+            padding: 3px 0 !important;
+            border-bottom: 1px solid ${BRAND.border} !important;
+          }
+          .pdf-export-root .print-service-row:nth-child(even) {
+            background-color: ${BRAND.sageTint} !important;
+            border-radius: 2px !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             PROPOSAL TOTAL ROW
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-pricing-table .border-t {
+            border-top: 2px solid ${BRAND.black} !important;
+            margin-top: 4px !important;
+            padding-top: 5px !important;
+          }
+          .pdf-export-root .print-pricing-table .border-t .font-bold {
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            color: ${BRAND.black} !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
+             RECOMMENDED PROPOSAL BAR
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-recommended-bar {
+            background-color: ${BRAND.sageTint} !important;
+            border: 1.5px solid ${BRAND.darkSage} !important;
+            border-radius: 5px !important;
+            padding: 6px 12px !important;
+            margin-bottom: 8px !important;
+          }
+          .pdf-export-root .print-recommended-bar span {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: ${BRAND.black} !important;
+            letter-spacing: 0.04em !important;
+          }
+          .pdf-export-root .print-recommended-bar .print-recommended-value {
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            color: ${BRAND.darkSage} !important;
           }
 
           /* ═══════════════════════════════════════════════════════════
@@ -536,6 +637,25 @@ async function captureElement(el: HTMLElement): Promise<string> {
         }
 
         remakePricingTable(clonedPage);
+
+        // ── Force proposal name spans to be visible ──────────────────
+        clonedPage.querySelectorAll<HTMLElement>(".print-proposal-name").forEach((el) => {
+          sp(el, "display", "block");
+          sp(el, "font-size", "14px");
+          sp(el, "font-weight", "700");
+          sp(el, "color", BRAND.black);
+          sp(el, "margin-bottom", "2px");
+        });
+
+        // ── Stamp zebra backgrounds on service rows ───────────────────
+        clonedPage.querySelectorAll<HTMLElement>(".print-pricing-table").forEach((card) => {
+          const rows = Array.from(card.querySelectorAll<HTMLElement>(".print-service-row"));
+          rows.forEach((row, i) => {
+            sp(row, "background-color", i % 2 === 1 ? BRAND.sageTint : "#ffffff");
+            sp(row, "padding", "4px 6px");
+            sp(row, "border-radius", "2px");
+          });
+        });
 
         clonedPage.querySelectorAll<HTMLElement>('[class*="truncate"], [class*="overflow-hidden"]').forEach((e) => {
           if (e.closest('[class*="w-[400px]"]') || e.closest('[class*="h-[533px]"]')) return;
@@ -588,7 +708,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           mapParent.style.justifyContent = "center";
         }
 
-        if (captureKey === "1") {
+        if (captureKey === "1" || captureKey === "2") {
           const headerRoot = document.querySelector<HTMLElement>('[data-pdf-capture="0"]');
           if (headerRoot) {
             sp(headerRoot, "background-color", BRAND.sage);
@@ -610,7 +730,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
           const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
-          const proposedHeader = clonedPage.querySelector<HTMLElement>('[data-pdf-section="proposed-services"] .print-section-header');
+          const proposedHeader = clonedPage.querySelector<HTMLElement>(
+            '[data-pdf-section="proposed-services"] .print-section-header',
+          );
           if (proposedServices) {
             const targetSize = proposedHeader ? 13 : 12.5;
             sp(proposedServices, "font-size", `${targetSize}px`);
@@ -630,76 +752,76 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
         }
 
-        const isMapPage = !!clonedPage.querySelector('.page2-header');
+        const isMapPage = !!clonedPage.querySelector(".page2-header");
         if (isMapPage) {
-          const applySectionFont = (selector: string, size: number, lineHeight = 1.45) => {
-            clonedPage.querySelectorAll<HTMLElement>(selector).forEach((section) => {
-              sp(section, "font-size", `${size}px`);
-              sp(section, "line-height", `${lineHeight}`);
-              section.querySelectorAll<HTMLElement>("p, li, span, div, strong, b, label").forEach((node) => {
-                sp(node, "font-size", `${size}px`);
-                sp(node, "line-height", `${lineHeight}`);
+          clonedPage.querySelectorAll<HTMLElement>(".page2-header h1").forEach((node) => {
+            sp(node, "font-size", "22px");
+            sp(node, "line-height", "1.15");
+          });
+          clonedPage
+            .querySelectorAll<HTMLElement>(".page2-header span, .page2-header p, .page2-header div")
+            .forEach((node) => {
+              sp(node, "font-size", "15px");
+              sp(node, "line-height", "1.25");
+            });
+
+          clonedPage
+            .querySelectorAll<HTMLElement>(
+              '[data-pdf-section="additional-details"] .print-section-header, [data-pdf-section="limitations"] .print-section-header, [data-pdf-section="scheduling"] .print-section-header, [data-pdf-section="setup-materials"] .print-section-header',
+            )
+            .forEach((node) => {
+              sp(node, "font-size", "13px");
+              sp(node, "line-height", "1.2");
+              node.querySelectorAll<HTMLElement>("span, div").forEach((child) => {
+                sp(child, "font-size", "13px");
+                sp(child, "line-height", "1.2");
               });
             });
-          };
 
-          clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
-            sp(node, 'font-size', '22px');
-            sp(node, 'line-height', '1.15');
-          });
-          clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
-            sp(node, 'font-size', '15px');
-            sp(node, 'line-height', '1.25');
-          });
-
-          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="additional-details"] .print-section-header, [data-pdf-section="limitations"] .print-section-header, [data-pdf-section="scheduling"] .print-section-header, [data-pdf-section="setup-materials"] .print-section-header').forEach((node) => {
-            sp(node, 'font-size', '13px');
-            sp(node, 'line-height', '1.2');
-            node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
-              sp(child, 'font-size', '13px');
-              sp(child, 'line-height', '1.2');
-            });
-          });
-
-          // Blanket apply to ALL text nodes inside each page-2 section
           const PAGE2_FONT = 14;
-          ['additional-details', 'limitations'].forEach((section) => {
+          ["additional-details", "limitations"].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
-            card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
-              if (node.closest('.print-section-header')) return;
-              sp(node, 'font-size', `${PAGE2_FONT}px`);
-              sp(node, 'line-height', '1.4');
+            card.querySelectorAll<HTMLElement>("p, span, div, li, strong, b, label, textarea").forEach((node) => {
+              if (node.closest(".print-section-header")) return;
+              sp(node, "font-size", `${PAGE2_FONT}px`);
+              sp(node, "line-height", "1.4");
             });
           });
 
           const PAGE2_META_FONT = 13;
-          ['scheduling', 'setup-materials'].forEach((section) => {
+          ["scheduling", "setup-materials"].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
-            card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
-              if (node.closest('.print-section-header')) return;
-              sp(node, 'font-size', `${PAGE2_META_FONT}px`);
-              sp(node, 'line-height', '1.35');
+            card.querySelectorAll<HTMLElement>("p, span, div, li, strong, b, label, textarea").forEach((node) => {
+              if (node.closest(".print-section-header")) return;
+              sp(node, "font-size", `${PAGE2_META_FONT}px`);
+              sp(node, "line-height", "1.35");
             });
           });
 
-          clonedPage.querySelectorAll<HTMLElement>('[data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold, [data-pdf-section="setup-materials"] p').forEach((node) => {
-            if (node.closest('.print-section-header')) return;
-            sp(node, 'font-size', '13px');
-            sp(node, 'line-height', '1.3');
-          });
+          clonedPage
+            .querySelectorAll<HTMLElement>(
+              '[data-pdf-section="scheduling"] .text-foreground, [data-pdf-section="scheduling"] .text-muted-foreground, [data-pdf-section="setup-materials"] .text-foreground, [data-pdf-section="setup-materials"] .font-semibold, [data-pdf-section="setup-materials"] p',
+            )
+            .forEach((node) => {
+              if (node.closest(".print-section-header")) return;
+              sp(node, "font-size", "13px");
+              sp(node, "line-height", "1.3");
+            });
 
-          const detailsBody = clonedPage.querySelector<HTMLElement>('.additional-details-body .print-content-formatted');
-          const detailsCard = clonedPage.querySelector<HTMLElement>('.additional-details-card');
+          const detailsBody = clonedPage.querySelector<HTMLElement>(
+            ".additional-details-body .print-content-formatted",
+          );
+          const detailsCard = clonedPage.querySelector<HTMLElement>(".additional-details-card");
           if (detailsBody && detailsCard) {
             let fontSize = 13;
             const minFont = 12;
             while (fontSize > minFont && detailsBody.scrollHeight > detailsCard.clientHeight + 2) {
               fontSize -= 0.25;
-              sp(detailsBody, 'font-size', `${fontSize}px`);
-              detailsBody.querySelectorAll<HTMLElement>('p, li, span, div, strong, b').forEach((node) => {
-                sp(node, 'font-size', `${fontSize}px`);
+              sp(detailsBody, "font-size", `${fontSize}px`);
+              detailsBody.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
+                sp(node, "font-size", `${fontSize}px`);
               });
             }
           }
