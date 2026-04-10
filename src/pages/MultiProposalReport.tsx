@@ -764,6 +764,18 @@ const Report = () => {
       if (row.customer_signature) {
         setCustomerSignature(row.customer_signature);
         setSignatureWasSaved(true);
+        // Load per-proposal signatures if stored as JSON
+        try {
+          const parsed = JSON.parse(row.customer_signature);
+          if (parsed && parsed._perProposal && parsed.signatures) {
+            const sigs: Record<number, string | null> = {};
+            Object.entries(parsed.signatures).forEach(([k, v]) => { sigs[parseInt(k)] = v as string; });
+            setPerProposalSignatures(sigs);
+          }
+        } catch {
+          // Legacy single signature — apply to proposal 0
+          setPerProposalSignatures({ 0: row.customer_signature });
+        }
       }
       
       // Load proposals from services field
