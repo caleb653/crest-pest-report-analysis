@@ -1598,9 +1598,10 @@ Crest Pest Control`;
             </Button>
           )}
         </div>
-        <div className="space-y-1 print:space-y-0">
+        {/* ── Interactive grid (screen only) ── */}
+        <div className="space-y-1 print:hidden">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-sm print:text-[12px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
@@ -1613,14 +1614,14 @@ Crest Pest Control`;
           {proposal.services.map((service, serviceIndex) => (
             <div
               key={serviceIndex}
-              className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center print:py-0"
+              className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center"
             >
               <div className="bg-white/80 rounded px-1">
                 <Select
                   value={service.serviceType}
                   onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "serviceType", val)}
                 >
-                  <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                  <SelectTrigger className="h-6 text-xs w-full bg-transparent border-0 shadow-none">
                     <SelectValue placeholder="Select service..." />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
@@ -1629,46 +1630,23 @@ Crest Pest Control`;
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="hidden print:flex print-pricing-display print-pricing-display--left text-xs font-medium">
-                  {service.serviceType || "-"}
-                </div>
               </div>
               <div className="relative bg-white/80 rounded">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  value={service.initialPrice}
+                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input type="text" inputMode="numeric" value={service.initialPrice}
                   onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "initialPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder="0"
-                  className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
-                />
-                <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
-                  <span className="text-muted-foreground">$</span>
-                  <span>{(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</span>
-                </div>
+                  placeholder="0" className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
               </div>
               <div className="relative bg-white/80 rounded">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none no-print">$</span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  value={service.recurringPrice}
+                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                <Input type="text" inputMode="numeric" value={service.recurringPrice}
                   onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "recurringPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder="0"
-                  className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none no-print"
-                />
-                <div className="hidden print:flex print-pricing-display print-pricing-money text-xs">
-                  <span className="text-muted-foreground">$</span>
-                  <span>{(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</span>
-                </div>
+                  placeholder="0" className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
               </div>
               <div className="bg-white/80 rounded px-1">
-                <Select
-                  value={service.frequency.toString()}
-                  onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "frequency", parseInt(val))}
-                >
-                  <SelectTrigger className="h-6 text-xs w-full no-print bg-transparent border-0 shadow-none">
+                <Select value={service.frequency.toString()}
+                  onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "frequency", parseInt(val))}>
+                  <SelectTrigger className="h-6 text-xs w-full bg-transparent border-0 shadow-none">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
@@ -1677,14 +1655,10 @@ Crest Pest Control`;
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="hidden print:flex print-pricing-display text-xs">
-                  {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
-                </div>
               </div>
-              {/* Schedule column */}
-              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5 print:py-0">
+              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5">
                 {service.frequency > 0 ? (
-                  <div className="flex flex-wrap gap-0.5 print:gap-0">
+                  <div className="flex flex-wrap gap-0.5">
                     {(() => {
                       const isHighFreq = service.frequency === 7 || service.frequency === 14;
                       const today = new Date();
@@ -1694,15 +1668,8 @@ Crest Pest Control`;
                         scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
                         const isFirst = i === 0;
                         return (
-                          <span
-                            key={i}
-                            className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap print:text-[7px] print:px-0.5 ${
-                              isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {isHighFreq
-                              ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                              : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                          <span key={i} className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"}`}>
+                            {isHighFreq ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
                           </span>
                         );
                       });
@@ -1714,7 +1681,7 @@ Crest Pest Control`;
               </div>
               <div>
                 {proposal.services.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 no-print"
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6"
                     onClick={() => removeServiceFromProposal(proposalIndex, serviceIndex)}>
                     <X className="w-3 h-3" />
                   </Button>
@@ -1724,7 +1691,7 @@ Crest Pest Control`;
           ))}
 
           {/* Totals Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center pt-1 border-t border-border">
             <div className="text-xs font-bold text-right">Total:</div>
             <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
               <span className="text-muted-foreground">$</span>
@@ -1734,18 +1701,70 @@ Crest Pest Control`;
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
             </div>
-            <div></div>
-            <div></div>
-            <div></div>
+            <div></div><div></div><div></div>
           </div>
 
           {proposal.services.length < 5 && !isReadOnly && (
             <Button type="button" variant="outline" size="sm" onClick={() => addServiceToProposal(proposalIndex)}
-              className="no-print h-6 text-[10px] mt-1">
+              className="h-6 text-[10px] mt-1">
               <Plus className="w-3 h-3 mr-1" /> Add Service
             </Button>
           )}
         </div>
+
+        {/* ── Print-only HTML table (for PDF capture) ── */}
+        <table className="proposal-print-table hidden print:table w-full">
+          <thead>
+            <tr>
+              <th className="text-left">Service Type</th>
+              <th className="text-center">Initial</th>
+              <th className="text-center">Recurring</th>
+              <th className="text-center">Frequency</th>
+              <th className="text-center">Schedule</th>
+            </tr>
+          </thead>
+          <tbody>
+            {proposal.services.map((service, serviceIndex) => (
+              <tr key={serviceIndex}>
+                <td>{service.serviceType || "—"}</td>
+                <td className="text-center font-semibold">${(parseInt(service.initialPrice || "0") || 0).toLocaleString()}</td>
+                <td className="text-center font-semibold">${(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</td>
+                <td className="text-center">{FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "—"}</td>
+                <td>
+                  {service.frequency > 0 ? (
+                    <span className="proposal-schedule-pills">
+                      {(() => {
+                        const isHighFreq = service.frequency === 7 || service.frequency === 14;
+                        const today = new Date();
+                        const count = isHighFreq ? 8 : 6;
+                        return Array.from({ length: count }, (_, i) => {
+                          const d = new Date(today);
+                          d.setDate(d.getDate() + i * service.frequency);
+                          return (
+                            <span key={i} className={`schedule-pill ${i === 0 ? "schedule-pill--first" : ""}`}>
+                              {isHighFreq ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : d.toLocaleDateString("en-US", { month: "short" })}
+                            </span>
+                          );
+                        });
+                      })()}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">One-time</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="text-right font-bold">Total:</td>
+              <td className="text-center font-bold">${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</td>
+              <td className="text-center font-bold">${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
       </Card>
     );
   };
