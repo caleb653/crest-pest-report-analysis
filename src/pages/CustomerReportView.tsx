@@ -736,14 +736,21 @@ export default function CustomerReportView() {
         <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
           {renderHeader("Property Video")}
           <main className="p-4">
-            <div className="rounded-lg overflow-hidden border border-border bg-black">
+            <div className="rounded-lg overflow-hidden border border-border relative group">
               <video
                 src={videoUrl}
                 controls
-                className="w-full h-auto max-h-[70vh]"
+                className="w-full h-auto max-h-[70vh] relative"
                 playsInline
-                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/><text x='960' y='500' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='80' font-weight='bold' fill='#2A2A2A'>Crest Video Report</text><text x='960' y='580' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-size='30' fill='#2A2A2A'>Click to play</text></svg>`)}`}
+                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
               />
+              <div data-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+                <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
+                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
+              </div>
             </div>
           </main>
         </div>
