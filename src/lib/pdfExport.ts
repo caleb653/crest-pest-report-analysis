@@ -659,7 +659,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.print-section-header').forEach((node) => {
-            sp(node, 'background-color', BRAND.sage);
+            sp(node, 'background-color', '#FFFFFF');
             sp(node, 'padding', '4px 10px');
             sp(node, 'display', 'flex');
             sp(node, 'align-items', 'center');

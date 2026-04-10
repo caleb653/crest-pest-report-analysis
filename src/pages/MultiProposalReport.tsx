@@ -1555,9 +1555,9 @@ Crest Pest Control`;
       >
         {/* Recommended label */}
         {isRecommended && (
-          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-1.5 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-background text-center print:text-xs">
-              Recommended
+          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-2.5 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
+            <p className="text-base font-bold uppercase tracking-[0.2em] text-background text-center print:text-xs">
+              ★ Recommended ★
             </p>
           </div>
         )}
