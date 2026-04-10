@@ -451,7 +451,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-content-formatted *,
           .pdf-export-root .pdf-services-content,
           .pdf-export-root .pdf-services-content * {
-            font-size: 11px !important;
+            font-size: 12px !important;
             line-height: 1.42 !important;
             color: ${BRAND.black} !important;
           }
@@ -459,7 +459,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .print-content-formatted strong,
           .pdf-export-root .pdf-services-content b,
           .pdf-export-root .pdf-services-content strong {
-            font-size: 12px !important;
+            font-size: 13px !important;
             font-weight: 700 !important;
           }
 
