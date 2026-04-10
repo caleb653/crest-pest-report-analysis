@@ -1758,6 +1758,7 @@ Crest Pest Control`;
                       onSave={handleDupeMapSave}
                       onExportImage={handleDupeMapExport}
                       initialData={currentMapData}
+                      exportId={isDuplicate ? `dupe-${dupeIndex}` : 'main'}
                     />
                   )}
                   {!isDuplicate && (
