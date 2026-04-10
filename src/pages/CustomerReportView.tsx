@@ -16,6 +16,11 @@ interface ServiceItem {
   frequency: string | number;
 }
 
+interface Proposal {
+  name: string;
+  services: ServiceItem[];
+}
+
 interface PropertyImage {
   url?: string;
   image?: string;
@@ -30,7 +35,7 @@ interface ReportData {
   service_date: string | null;
   findings: string | string[] | null;
   notes: string | null;
-  services: ServiceItem[] | null;
+  services: ServiceItem[] | Proposal[] | null;
   target_pests: string[] | null;
   products_used: string[] | null;
   equipment: string[] | null;
