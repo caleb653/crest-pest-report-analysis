@@ -2460,7 +2460,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div data-pdf-capture={(videoUrl ? 4 + duplicatedPages.length : 3 + duplicatedPages.length).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
+        <div data-pdf-capture={(videoUrl ? 4 + duplicateMapPageCount : 3 + duplicateMapPageCount).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
           {/* Page Header */}
           <div className="page2-header flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">
