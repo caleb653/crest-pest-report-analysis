@@ -245,22 +245,22 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* ── Proposal text scale ────────────────────────────────── */
           .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.45 !important; }
-          .pdf-export-root [class*="text-xs"]                { font-size: 10px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-sm"]                { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-base"]              { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-lg"]                { font-size: 12px !important; line-height: 1.5 !important; }
-          .pdf-export-root [class*="text-xl"]                { font-size: 14px !important; line-height: 1.4 !important; }
-          .pdf-export-root [class*="text-2xl"]               { font-size: 18px !important; line-height: 1.3 !important; }
-          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 8px  !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 10px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
-          .pdf-export-root [class*="columns-2"] *            { font-size: 9.5px !important; line-height: 1.65 !important; }
+          .pdf-export-root [class*="text-xs"]                { font-size: 11px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-sm"]                { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-base"]              { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-lg"]                { font-size: 13px !important; line-height: 1.5 !important; }
+          .pdf-export-root [class*="text-xl"]                { font-size: 15px !important; line-height: 1.4 !important; }
+          .pdf-export-root [class*="text-2xl"]               { font-size: 19px !important; line-height: 1.3 !important; }
+          .pdf-export-root [class*="text-\\[8px\\]"]         { font-size: 9px  !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[9px\\]"]         { font-size: 10px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[10px\\]"]        { font-size: 11px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="text-\\[11px\\]"]        { font-size: 12px !important; line-height: 1.55 !important; }
+          .pdf-export-root [class*="columns-2"] *            { font-size: 10.5px !important; line-height: 1.65 !important; }
           .pdf-export-root [class*="columns-2"] p,
           .pdf-export-root [class*="columns-2"] li           { margin: 1px 0 !important; }
-          .pdf-export-root h1 { font-size: 20px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h2 { font-size: 16px !important; font-weight: 700 !important; overflow: visible !important; }
-          .pdf-export-root h3 { font-size: 13px !important; font-weight: 600 !important; overflow: visible !important; }
+          .pdf-export-root h1 { font-size: 21px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h2 { font-size: 17px !important; font-weight: 700 !important; overflow: visible !important; }
+          .pdf-export-root h3 { font-size: 14px !important; font-weight: 600 !important; overflow: visible !important; }
           .pdf-export-root ul li, .pdf-export-root ol li { margin-bottom: 3px !important; }
 
           /* ═══════════════════════════════════════════════════════════
