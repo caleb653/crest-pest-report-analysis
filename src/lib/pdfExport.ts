@@ -505,7 +505,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             padding: 8px 16px !important;
             margin: -10px -10px 8px -10px !important;
             border-radius: 8px 8px 0 0 !important;
-            font-size: 13px !important;
+            font-size: 14px !important;
             font-weight: 800 !important;
             letter-spacing: 0.2em !important;
             text-transform: uppercase !important;
