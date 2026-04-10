@@ -733,6 +733,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
               sp(node, 'vertical-align', 'top');
             });
           });
+        }
       },
     });
 
