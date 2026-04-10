@@ -1192,19 +1192,12 @@ const Report = () => {
   };
 
   const handleOpenCompose = () => {
-    const allActiveServices = proposals.flatMap(p => p.services).filter(s => s.serviceType);
-    const serviceLines = allActiveServices.map(s => s.serviceType).filter(Boolean);
     const firstName = (editableCustomer || "").split(" ")[0] || "there";
-    const serviceBullets = serviceLines.length > 0
-      ? serviceLines.map((s) => `- ${s}`).join("\n\n")
-      : "- General Pest Control";
     const defaultMessage = `Hi ${firstName},
 
 Thank you for the opportunity to prepare a proposal for your property.
 
-Based on our assessment, we've put together a plan designed to effectively address your pest control needs. This proposal includes:
-
-${serviceBullets}
+Based on our assessment, we've put together a plan designed to effectively address your pest control needs.
 
 Our goal is to provide reliable, proactive protection so you can have peace of mind knowing your property is covered.
 
