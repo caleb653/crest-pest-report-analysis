@@ -47,8 +47,6 @@ interface SetupMaterial {
   quantity: string;
 }
 
-  quantity: string;
-}
 
 interface StructuredNotes {
   _structuredNotes?: boolean;
