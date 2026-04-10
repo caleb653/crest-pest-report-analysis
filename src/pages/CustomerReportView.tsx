@@ -446,10 +446,10 @@ export default function CustomerReportView() {
 
             <div className="space-y-4">
               <Card className="overflow-hidden">
-                <div className="bg-brand-black text-white px-4 py-2 flex items-center justify-between gap-3">
-                  <span className="text-xs font-bold uppercase">Proposed Services — {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</span>
+                <div className="bg-brand-black text-white px-4 py-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-bold uppercase">Proposed Services — {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</span>
                   {showRecommended && (
-                    <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">★ Recommended</span>
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">★ Recommended</span>
                   )}
                 </div>
                 <div className="p-4">{renderProposalServicesContent(proposal, proposalIndex)}</div>
