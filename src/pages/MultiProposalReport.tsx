@@ -1766,9 +1766,9 @@ Crest Pest Control`;
     const proposalIndex = isDuplicate ? (dupeIndex ?? 0) + 1 : 0;
     const proposalServicesText = getProposalServicesText(proposalIndex);
     const proposalName = proposals[proposalIndex]?.name || `Option ${String.fromCharCode(65 + proposalIndex)}`;
-    
-    // For the original page, use editableFindings; for duplicates, use auto-generated text
-    const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
+    // Use per-proposal editable findings; fall back to auto-generated text
+    const proposalFindingsValue = proposalFindings[proposalIndex] ?? "";
+    const servicesContent = proposalFindingsValue || (isDuplicate ? proposalServicesText : (editableFindings[0] || ""));
     
     // Each page gets its own map data
     const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
