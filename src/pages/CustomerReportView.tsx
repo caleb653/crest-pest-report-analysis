@@ -142,7 +142,33 @@ export default function CustomerReportView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
+
+  // Parse per-proposal signatures from the stored customer_signature field
+  const getPerProposalSignatures = (): Record<string, string> => {
+    if (!report?.customer_signature) return {};
+    try {
+      const parsed = JSON.parse(report.customer_signature);
+      if (parsed && parsed._perProposal) {
+        return parsed.signatures || {};
+      }
+    } catch {
+      // Legacy single signature — not per-proposal
+    }
+    return {};
+  };
+
+  const isLegacySingleSignature = (): boolean => {
+    if (!report?.customer_signature) return false;
+    try {
+      JSON.parse(report.customer_signature);
+      return false;
+    } catch {
+      return true; // It's a raw data: URI
+    }
+  };
 
   useEffect(() => {
     if (reportId) {
@@ -228,16 +254,18 @@ export default function CustomerReportView() {
     }
   };
 
-  const handleSignatureSave = async (signatureData: string) => {
+  const handleSignatureSave = async (signatureData: string, proposalIndex?: number) => {
     if (!reportId || !signatureData) return;
 
     setIsSaving(true);
+    if (proposalIndex !== undefined) setSavingProposalIndex(proposalIndex);
     try {
       const { data, error: invokeError } = await supabase.functions.invoke("save-customer-signature", {
         body: {
           reportId,
           signatureData,
           notifyOffice: true,
+          ...(proposalIndex !== undefined ? { proposalIndex } : {}),
         },
       });
 
@@ -246,20 +274,52 @@ export default function CustomerReportView() {
         throw new Error((data as { error?: string } | null)?.error || "Failed to save signature");
       }
 
-      setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
-      toast.success("Signature saved! Thank you for approving the proposal.");
+      if (proposalIndex !== undefined) {
+        // Update local state with per-proposal signature
+        setReport((prev) => {
+          if (!prev) return prev;
+          const existingSignatures = getPerProposalSignaturesFromValue(prev.customer_signature);
+          existingSignatures[String(proposalIndex)] = signatureData;
+          return { ...prev, customer_signature: JSON.stringify({ _perProposal: true, signatures: existingSignatures }) };
+        });
+        const optionLabel = `Option ${String.fromCharCode(65 + proposalIndex)}`;
+        toast.success(`Signature saved for ${optionLabel}! Thank you.`);
+      } else {
+        setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
+        toast.success("Signature saved! Thank you for approving the proposal.");
+      }
     } catch (err) {
       console.error("Error saving signature:", err);
       toast.error("Failed to save signature. Please try again.");
     } finally {
       setIsSaving(false);
+      setSavingProposalIndex(null);
     }
+  };
+
+  const getPerProposalSignaturesFromValue = (value: string | null): Record<string, string> => {
+    if (!value) return {};
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed._perProposal) return parsed.signatures || {};
+    } catch { /* legacy */ }
+    return {};
   };
 
   const handleSubmitSignature = () => {
     const sig = signatureRef.current?.forceSave();
     if (sig) {
       handleSignatureSave(sig);
+    } else {
+      toast.error("Please sign above before submitting");
+    }
+  };
+
+  const handleSubmitProposalSignature = (proposalIndex: number) => {
+    const ref = proposalSignatureRefs.current[proposalIndex];
+    const sig = ref?.forceSave();
+    if (sig) {
+      handleSignatureSave(sig, proposalIndex);
     } else {
       toast.error("Please sign above before submitting");
     }
@@ -577,6 +637,72 @@ export default function CustomerReportView() {
                   )}
                 </div>
               )}
+
+              {/* Per-Proposal Signature Box */}
+              {isMultiProposal && (
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">
+                      Sign for {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    {(() => {
+                      const perSigs = getPerProposalSignatures();
+                      const existingSig = perSigs[String(proposalIndex)];
+                      if (existingSig) {
+                        return (
+                          <div className="space-y-3">
+                            <div className="border rounded p-3 bg-muted/30">
+                              <img src={existingSig} alt={`Signature for ${proposal.name}`} className="max-h-16 mx-auto" />
+                            </div>
+                            <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
+                              <Check className="w-4 h-4" />
+                              <span className="font-medium">{proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`} — Signed</span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+                              <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
+                              <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            Sign below to approve <strong>{proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}</strong>.
+                          </p>
+                          <div className="border rounded overflow-hidden">
+                            <SignatureCanvas
+                              ref={(el) => { proposalSignatureRefs.current[proposalIndex] = el; }}
+                              onSave={() => {}}
+                              label={`Sign for ${proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}`}
+                            />
+                          </div>
+                          <Button
+                            onClick={() => handleSubmitProposalSignature(proposalIndex)}
+                            disabled={isSaving && savingProposalIndex === proposalIndex}
+                            className="w-full"
+                            size="sm"
+                          >
+                            {isSaving && savingProposalIndex === proposalIndex ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-4 h-4 mr-2" />
+                                Submit Signature for {proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </Card>
+              )}
             </div>
           </div>
         </main>
@@ -590,7 +716,17 @@ export default function CustomerReportView() {
         <div className="bg-sage/50 border-b border-sage py-3 px-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
             <FileCheck className="w-5 h-5 text-dark-sage" />
-            <span className="text-foreground font-medium">This proposal has been signed and approved. Thank you!</span>
+            <span className="text-foreground font-medium">
+              {isMultiProposal
+                ? (() => {
+                    const sigs = getPerProposalSignatures();
+                    const signedOptions = Object.keys(sigs).map(k => `Option ${String.fromCharCode(65 + parseInt(k))}`);
+                    return signedOptions.length > 0
+                      ? `Signed: ${signedOptions.join(", ")}. Thank you!`
+                      : "This proposal has been signed and approved. Thank you!";
+                  })()
+                : "This proposal has been signed and approved. Thank you!"}
+            </span>
           </div>
         </div>
       )}
@@ -850,65 +986,68 @@ export default function CustomerReportView() {
                 )}
               </div>
 
-              <div className="grid grid-cols-[2fr_3fr] gap-4">
-                <Card className="overflow-hidden">
-                  <div className="bg-brand-black text-white px-4 py-2">
-                    <span className="text-xs font-bold uppercase">Customer Signature</span>
-                  </div>
-                  <div className="p-4">
-                    {report.customer_signature ? (
-                      <div className="space-y-3">
-                        <div className="border rounded p-3 bg-muted/30">
-                          <img src={report.customer_signature} alt="Customer signature" className="max-h-16 mx-auto" />
+              {/* Single signature for non-multi-proposal; multi-proposal has per-option signatures on map pages */}
+              {!isMultiProposal && (
+                <div className="grid grid-cols-[2fr_3fr] gap-4">
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Customer Signature</span>
+                    </div>
+                    <div className="p-4">
+                      {report.customer_signature && isLegacySingleSignature() ? (
+                        <div className="space-y-3">
+                          <div className="border rounded p-3 bg-muted/30">
+                            <img src={report.customer_signature} alt="Customer signature" className="max-h-16 mx-auto" />
+                          </div>
+                          <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
+                            <Check className="w-4 h-4" />
+                            <span className="font-medium">Proposal Approved</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
+                            <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
+                            <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center mt-2">This proposal has already been signed.</p>
                         </div>
-                        <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
-                          <Check className="w-4 h-4" />
-                          <span className="font-medium">Proposal Approved</span>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground">Please sign below to approve this proposal.</p>
+                          <div className="border rounded overflow-hidden">
+                            <SignatureCanvas ref={signatureRef} onSave={() => {}} label="Sign here" />
+                          </div>
+                          <Button onClick={handleSubmitSignature} disabled={isSaving} className="w-full" size="sm">
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="w-4 h-4 mr-2" />
+                                Submit Signature
+                              </>
+                            )}
+                          </Button>
                         </div>
-                        <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
-                          <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
-                          <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center mt-2">This proposal has already been signed.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <p className="text-xs text-muted-foreground">Please sign below to approve this proposal.</p>
-                        <div className="border rounded overflow-hidden">
-                          <SignatureCanvas ref={signatureRef} onSave={() => {}} label="Sign here" />
-                        </div>
-                        <Button onClick={handleSubmitSignature} disabled={isSaving} className="w-full" size="sm">
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Saving...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="w-4 h-4 mr-2" />
-                              Submit Signature
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </Card>
+                      )}
+                    </div>
+                  </Card>
 
-                <Card className="overflow-hidden">
-                  <div className="bg-brand-black text-white px-4 py-2">
-                    <span className="text-xs font-bold uppercase">Pesticide Notice</span>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[9px] leading-[1.3] text-foreground">
-                      State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
-                    </p>
-                    <p className="text-[9px] leading-[1.3] text-foreground font-medium mt-1">
-                      For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
-                    </p>
-                  </div>
-                </Card>
-              </div>
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Pesticide Notice</span>
+                    </div>
+                    <div className="p-3">
+                      <p className="text-[9px] leading-[1.3] text-foreground">
+                        State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized. If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately.
+                      </p>
+                      <p className="text-[9px] leading-[1.3] text-foreground font-medium mt-1">
+                        For further information, contact any of the following: Your Pest Control Company (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).
+                      </p>
+                    </div>
+                  </Card>
+                </div>
+              )}
             </>
           )}
         </main>
