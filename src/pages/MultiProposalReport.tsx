@@ -1581,46 +1581,35 @@ Crest Pest Control`;
     const proposalLabel = proposal.name.trim() || PROPOSAL_NAMES[proposalIndex] || `Option ${proposalIndex + 1}`;
 
     return (
-      <Card
-        key={proposalIndex}
-        data-recommended={isRecommended ? "true" : "false"}
-        className={cn(
-          "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
-          "border-2 border-foreground/80 rounded-xl bg-background shadow-md",
-        )}
-      >
-        {/* Recommended label */}
-        {isRecommended && (
-          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-2.5 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
-            <p className="text-base font-bold uppercase tracking-[0.2em] text-background text-center print:text-xs">
-              ★ Recommended ★
-            </p>
-          </div>
-        )}
-        <div className="mb-1.5 flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-1 items-start gap-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-              <div className="proposal-name-shell min-w-[220px] flex-1 rounded-md border border-border bg-muted/40 px-2 py-1">
-                {isReadOnly ? (
-                  <h3 className="proposal-name-text break-words text-base font-bold leading-tight text-foreground">{proposalLabel}</h3>
-                ) : (
-                  <>
-                    <Input
-                      value={proposal.name}
-                      onChange={(e) => {
-                        setProposals(prev => {
-                          const updated = [...prev];
-                          updated[proposalIndex] = { ...updated[proposalIndex], name: e.target.value };
-                          return updated;
-                        });
-                      }}
-                      className="proposal-name-input no-print h-8 w-full border-0 bg-transparent px-0 py-0 text-base font-bold shadow-none focus-visible:ring-0"
-                    />
-                    <div className="proposal-name-print hidden break-words text-base font-bold leading-tight text-foreground print:block">{proposalLabel}</div>
-                  </>
-                )}
-              </div>
+      <div key={proposalIndex} className="print-pricing-wrapper">
+        {/* Option name header — sits ABOVE the pricing card */}
+        <div className="proposal-option-header flex items-center justify-between gap-2 mb-1">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="proposal-name-shell min-w-[220px] flex-1 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
+              {isReadOnly ? (
+                <h3 className="proposal-name-text break-words text-base font-bold leading-tight text-foreground">{proposalLabel}</h3>
+              ) : (
+                <>
+                  <Input
+                    value={proposal.name}
+                    onChange={(e) => {
+                      setProposals(prev => {
+                        const updated = [...prev];
+                        updated[proposalIndex] = { ...updated[proposalIndex], name: e.target.value };
+                        return updated;
+                      });
+                    }}
+                    className="proposal-name-input no-print h-8 w-full border-0 bg-transparent px-0 py-0 text-base font-bold shadow-none focus-visible:ring-0"
+                  />
+                  <div className="proposal-name-print hidden break-words text-base font-bold leading-tight text-foreground print:block">{proposalLabel}</div>
+                </>
+              )}
             </div>
+            {isRecommended && (
+              <span className="proposal-recommended-tag shrink-0 rounded-md bg-foreground px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-background">
+                ★ Recommended
+              </span>
+            )}
           </div>
           {!isReadOnly && proposals.length > 1 && (
             <Button variant="ghost" size="icon" className="h-6 w-6 no-print" onClick={() => removeProposal(proposalIndex)}>
@@ -1628,6 +1617,14 @@ Crest Pest Control`;
             </Button>
           )}
         </div>
+        {/* Pricing table card */}
+        <Card
+          data-recommended={isRecommended ? "true" : "false"}
+          className={cn(
+            "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
+            "border border-border rounded-xl bg-background",
+          )}
+        >
         {/* ── Interactive grid (screen only) ── */}
         <div className="space-y-1 print:hidden">
           {/* Header Row */}
@@ -1796,6 +1793,7 @@ Crest Pest Control`;
           </tfoot>
         </table>
       </Card>
+      </div>
     );
   };
 
