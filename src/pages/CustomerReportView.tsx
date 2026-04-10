@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
+import crestLogoVideo from "@/assets/crest-logo-video.png";
 
 interface ServiceItem {
   serviceType: string;
