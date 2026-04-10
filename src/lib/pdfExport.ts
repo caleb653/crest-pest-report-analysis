@@ -134,11 +134,11 @@ function remakePricingTable(root: HTMLElement) {
         sp(cell, "font-weight", "500");
         sp(cell, "color", BRAND.black);
       } else if (colIdx === 1 || colIdx === 2) {
-        sp(cell, "font-size", "15px");
+        sp(cell, "font-size", "16px");
         sp(cell, "font-weight", "700");
         sp(cell, "color", BRAND.black);
       } else if (colIdx === 3) {
-        sp(cell, "font-size", "12px");
+        sp(cell, "font-size", "13px");
         sp(cell, "color", "#555");
       }
     });
@@ -156,7 +156,7 @@ function remakePricingTable(root: HTMLElement) {
       sp(cell, "border-bottom", "none");
       sp(cell, "padding", "11px 14px");
       sp(cell, "font-weight", "700");
-      sp(cell, "font-size", colIdx >= 1 && colIdx <= 2 ? "16px" : "14px");
+      sp(cell, "font-size", colIdx >= 1 && colIdx <= 2 ? "17px" : "15px");
     });
   }
 }
