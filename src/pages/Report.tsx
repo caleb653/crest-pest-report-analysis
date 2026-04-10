@@ -818,7 +818,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
-        setServices(row.services as ServiceItem[]);
+        setServices((row.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })) as ServiceItem[]);
         // Prevent the service auto-population effect from re-appending descriptions already saved
         addedServiceTypesRef.current = new Set(
           (row.services as ServiceItem[])
@@ -1129,7 +1129,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
           if (!invokeError && data?.ok) {
             savedViaAdmin = true;
             if (data.report?.services) {
-              setServices(data.report.services);
+              setServices((data.report.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })));
             }
             console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
           } else {
@@ -2096,7 +2096,7 @@ Crest Pest Control`;
                   </div>
                   <div className="bg-white/80 rounded px-1">
                     <Select
-                      value={service.frequency.toString()}
+                      value={(service.frequency ?? 30).toString()}
                       onValueChange={(val) => handleServiceChange(index, "frequency", parseInt(val))}
                     >
                       <SelectTrigger className="h-6 text-sm w-full no-print bg-transparent border-0 shadow-none">
