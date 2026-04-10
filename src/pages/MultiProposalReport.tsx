@@ -1589,8 +1589,29 @@ Crest Pest Control`;
     </Card>
   );
 
+  // Get the proposed services text for a specific proposal index
+  const getProposalServicesText = (proposalIndex: number): string => {
+    const proposal = proposals[proposalIndex];
+    if (!proposal) return "";
+    const descriptions = proposal.services
+      .filter(s => s.serviceType)
+      .map(s => SERVICE_CONFIG[s.serviceType]?.proposedServices)
+      .filter(Boolean) as string[];
+    return descriptions.join("<br><br>");
+  };
+
   // Render the map section (reused for original and duplicates)
-  const renderMapSection = (captureIndex: number, isDuplicate: boolean = false, dupeIndex?: number) => (
+  // proposalIndex determines which proposal's services to auto-populate
+  const renderMapSection = (captureIndex: number, isDuplicate: boolean = false, dupeIndex?: number) => {
+    // Page 2 (original) = proposal 0, first dupe = proposal 1, etc.
+    const proposalIndex = isDuplicate ? (dupeIndex ?? 0) + 1 : 0;
+    const proposalServicesText = getProposalServicesText(proposalIndex);
+    const proposalName = proposals[proposalIndex]?.name || `Option ${String.fromCharCode(65 + proposalIndex)}`;
+    
+    // For the original page, use editableFindings; for duplicates, use auto-generated text
+    const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
+    
+    return (
     <div data-pdf-page={isDuplicate ? `2-dupe-${dupeIndex}` : "2"} className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
       <div data-pdf-capture={captureIndex.toString()} className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
         {/* Page Header */}
@@ -1598,7 +1619,7 @@ Crest Pest Control`;
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
             <h1 className="text-xl print:text-lg font-bold text-foreground">
-              Property Map & Details {isDuplicate ? `(Page ${(dupeIndex ?? 0) + 2})` : ""}
+              Property Map & Details {isDuplicate ? `— ${proposalName}` : ""}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -1705,7 +1726,9 @@ Crest Pest Control`;
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Proposed Services</span>
+                <span className="text-xs print:text-[10px] font-bold uppercase">
+                  Proposed Services {isDuplicate && proposals[proposalIndex] ? `— ${proposalName}` : ""}
+                </span>
               </div>
               <div className="p-3 print:p-1.5 flex-1 flex flex-col">
                 {isAnalyzing ? (
@@ -1715,34 +1738,40 @@ Crest Pest Control`;
                   </div>
                 ) : (
                   <>
-                    <div className="no-print flex-1 flex flex-col space-y-1">
-                      <RichTextEditor
-                        value={editableFindings[0] || ""}
-                        onChange={(newValue) => {
-                          findingsEditedRef.current = true;
-                          setUserEditedFindings(true);
-                          updateItem(0, newValue, setEditableFindings);
-                        }}
-                        placeholder="• Enter proposed services..."
-                        fontSize={proposedServicesFontSize}
-                        onFontSizeChange={setProposedServicesFontSize}
-                        className="flex-1"
+                    {!isDuplicate ? (
+                      <div className="no-print flex-1 flex flex-col space-y-1">
+                        <RichTextEditor
+                          value={editableFindings[0] || ""}
+                          onChange={(newValue) => {
+                            findingsEditedRef.current = true;
+                            setUserEditedFindings(true);
+                            updateItem(0, newValue, setEditableFindings);
+                          }}
+                          placeholder="• Enter proposed services..."
+                          fontSize={proposedServicesFontSize}
+                          onFontSizeChange={setProposedServicesFontSize}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button" variant="outline" size="sm"
+                          onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
+                          disabled={isExpandingFindings}
+                          className="no-print h-6 text-xs"
+                        >
+                          {isExpandingFindings ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                          Expand with AI
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-sm leading-relaxed prose prose-sm max-w-none" 
+                        dangerouslySetInnerHTML={{ __html: servicesContent || "<em>No services defined for this proposal</em>" }} 
                       />
-                      <Button
-                        type="button" variant="outline" size="sm"
-                        onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                        disabled={isExpandingFindings}
-                        className="no-print h-6 text-xs"
-                      >
-                        {isExpandingFindings ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                        Expand with AI
-                      </Button>
-                    </div>
+                    )}
                     <div
                       data-pdf-content="proposed-services"
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: formatProposedServices(editableFindings[0] || "") }}
+                      dangerouslySetInnerHTML={{ __html: formatProposedServices(servicesContent) }}
                     />
                   </>
                 )}
