@@ -267,7 +267,9 @@ const SubmittedReports = () => {
     }
 
     // Type
-    if (typeFilter !== "all") {
+    if (typeFilter === "sales-all") {
+      filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
+    } else if (typeFilter !== "all") {
       filtered = filtered.filter((r) => r.report_type === typeFilter);
     }
 
