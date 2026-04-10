@@ -2,7 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
-const A4_LANDSCAPE_WIDTH_PX = 1180;
+const A4_LANDSCAPE_WIDTH_PX = 1600;
 
 const BRAND = {
   black: "#2A2A2A",
@@ -163,7 +163,6 @@ function remakePricingTable(root: HTMLElement) {
 
 async function captureElement(el: HTMLElement): Promise<string> {
   const captureKey = el.dataset.pdfCapture;
-  const printCss = getPrintCssText();
   const isPestReport = isInitialPestReport(el);
 
   const marked: Array<[HTMLElement, string]> = [];
@@ -196,8 +195,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
       onclone: (clonedDoc) => {
         const style = clonedDoc.createElement("style");
         style.textContent = `
-          ${printCss}
-
           html, body {
             margin: 0 !important; padding: 0 !important;
             background: #ffffff !important; overflow: visible !important;
@@ -212,7 +209,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root {
             background: #ffffff !important; box-sizing: border-box !important;
             overflow: visible !important;
-            font-size: 11px !important; line-height: 1.55 !important;
             color: ${BRAND.black} !important;
           }
 
@@ -254,11 +250,15 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .sonner,
           .pdf-export-root [data-sonner-toaster]             { display: none !important; }
           .pdf-export-root .print-only-text                  { display: inline !important; }
+          .pdf-export-root .hidden.print\\:flex,
+          .pdf-export-root [class*="hidden"][class*="print\\:flex"] { display: flex !important; }
+          .pdf-export-root .hidden.print\\:grid,
+          .pdf-export-root [class*="hidden"][class*="print\\:grid"] { display: grid !important; }
           .pdf-export-root .hidden.print\\:block,
           .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
           .pdf-export-root [class*="print\\:hidden"],
           .pdf-export-root .print\\:hidden                   { display: none !important; }
-          .pdf-export-root .print-content-formatted          { display: block !important; }
+          .pdf-export-root .print-content-formatted          { display: none !important; }
           .pdf-export-root [class*="print\\:grid-cols-3"]    { grid-template-columns: 1fr 1fr 1fr !important; }
 
           /* ── Proposal text scale ────────────────────────────────── */
@@ -565,7 +565,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.style.background = "#ffffff";
         clonedPage.style.boxSizing = "border-box";
         clonedPage.style.overflow = "visible";
-        clonedPage.style.padding = "0 4px";
+        clonedPage.style.padding = "0";
 
         if (isPestReport) {
           clonedPage.setAttribute("data-report-type", "pest-report");
@@ -583,48 +583,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           e.style.transform = "none";
         });
 
-        const gridContainer = clonedPage.querySelector<HTMLElement>('[class*="lg:grid-cols-"]');
-        if (gridContainer) {
-          gridContainer.style.display = "grid";
-          gridContainer.style.gridTemplateColumns = "47% 53%";
-          gridContainer.style.gap = "14px";
-          gridContainer.style.alignItems = "start";
-          gridContainer.style.padding = "0 4px";
-          gridContainer.style.flex = "1";
-        }
-
         clonedPage.style.display = "flex";
         clonedPage.style.flexDirection = "column";
-
-        const mapContainer = clonedPage.querySelector<HTMLElement>('[class*="w-[400px]"][class*="h-[533px]"]');
-        if (mapContainer) {
-          mapContainer.style.width = "100%";
-          mapContainer.style.height = "auto";
-          mapContainer.style.maxHeight = "100%";
-          mapContainer.style.margin = "0";
-          const mapImg = mapContainer.querySelector<HTMLImageElement>("img");
-          mapContainer.style.aspectRatio =
-            mapImg?.naturalWidth && mapImg?.naturalHeight
-              ? `${mapImg.naturalWidth} / ${mapImg.naturalHeight}`
-              : "3 / 4";
-          mapContainer.style.display = "flex";
-          mapContainer.style.alignItems = "stretch";
-          if (mapImg) {
-            mapImg.style.objectFit = "cover";
-            mapImg.style.objectPosition = "center";
-            mapImg.style.width = "100%";
-            mapImg.style.height = "100%";
-          }
-        }
-
-        const mapParent = clonedPage.querySelector<HTMLElement>(".flex.flex-col.min-h-0");
-        if (mapParent) {
-          mapParent.style.flex = "1";
-          mapParent.style.display = "flex";
-          mapParent.style.flexDirection = "column";
-          mapParent.style.justifyContent = "flex-start";
-          mapParent.style.alignItems = "stretch";
-        }
 
         if (captureKey === "1") {
           const headerRoot = document.querySelector<HTMLElement>('[data-pdf-capture="0"]');

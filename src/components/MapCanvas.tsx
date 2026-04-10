@@ -19,6 +19,7 @@ interface MapCanvasProps {
   onSave?: (canvasData: string) => void;
   onExportImage?: (imageDataUrl: string) => void;
   initialData?: string | null;
+  exportId?: string;
 }
 
 type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser' | 'draw';
@@ -45,7 +46,7 @@ const AVAILABLE_ICONS = [
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
 
-export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCanvasProps) => {
+export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -974,11 +975,29 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData }: MapCan
   
   // Expose export function via window for external access
   useEffect(() => {
-    (window as any).exportMapAsImage = exportAsImage;
+    const globalWindow = window as any;
+    const registry = (globalWindow.mapExportRegistry ??= {});
+
+    if (exportId) {
+      registry[exportId] = exportAsImage;
+      if (exportId === 'main') {
+        globalWindow.exportMapAsImage = exportAsImage;
+      }
+    } else {
+      globalWindow.exportMapAsImage = exportAsImage;
+    }
+
     return () => {
-      delete (window as any).exportMapAsImage;
+      if (exportId) {
+        delete registry[exportId];
+        if (exportId === 'main' && globalWindow.exportMapAsImage === exportAsImage) {
+          delete globalWindow.exportMapAsImage;
+        }
+      } else if (globalWindow.exportMapAsImage === exportAsImage) {
+        delete globalWindow.exportMapAsImage;
+      }
     };
-  }, [mapUrl, legendItems]);
+  }, [mapUrl, legendItems, exportId]);
 
   // Auto-save canvas data whenever it changes
   useEffect(() => {
