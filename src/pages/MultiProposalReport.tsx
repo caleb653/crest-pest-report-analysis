@@ -34,6 +34,7 @@ import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanva
 import RichTextEditor from "@/components/RichTextEditor";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
+import crestLogoVideo from "@/assets/crest-logo-video.png";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
