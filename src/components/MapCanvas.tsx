@@ -1173,7 +1173,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       />
 
       {/* Drawing tools */}
-      <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
+      {showToolbar && <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
