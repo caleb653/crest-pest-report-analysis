@@ -341,14 +341,9 @@ const Report = () => {
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
 
-  const getDefaultTitle = (type: string | undefined) => {
-    return "Multi-Proposal Report";
-  };
-  const [editableTitle, setEditableTitle] = useState(getDefaultTitle(reportType));
+  const [editableTitle, setEditableTitle] = useState("Proposal");
 
-  useEffect(() => {
-    setEditableTitle(getDefaultTitle(reportType));
-  }, [reportType]);
+  // (title auto-update moved below companyName declaration)
 
   const handleTechnicianChange = (techName: string) => {
     setEditableTech(techName);
@@ -574,6 +569,17 @@ const Report = () => {
   const [propertyType, setPropertyType] = useState<string>("Residential");
   const [companyName, setCompanyName] = useState<string>("");
   
+  // Auto-update title when customer/company name changes
+  useEffect(() => {
+    setEditableTitle(prev => {
+      if (prev === "Multi-Proposal Report" || prev === "Proposal" || prev.startsWith("Proposal: ")) {
+        const label = companyName?.trim() || editableCustomer?.trim() || "";
+        return label ? `Proposal: ${label}` : "Proposal";
+      }
+      return prev;
+    });
+  }, [editableCustomer, companyName]);
+
   const [preferredServiceDay, setPreferredServiceDay] = useState("");
   const [preferredServiceTime, setPreferredServiceTime] = useState("");
   const [mainPointOfContact, setMainPointOfContact] = useState("");
