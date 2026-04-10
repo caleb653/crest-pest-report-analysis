@@ -1887,7 +1887,7 @@ Crest Pest Control`;
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-sm leading-relaxed prose prose-sm max-w-none pdf-services-content" 
+                      <div className="text-[14px] leading-relaxed prose prose-sm max-w-none pdf-services-content" 
                         dangerouslySetInnerHTML={{ __html: servicesContent || "<em>No services defined for this proposal</em>" }} 
                       />
                     )}
