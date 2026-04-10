@@ -16,6 +16,11 @@ interface ServiceItem {
   frequency: string | number;
 }
 
+interface Proposal {
+  name: string;
+  services: ServiceItem[];
+}
+
 interface PropertyImage {
   url?: string;
   image?: string;
@@ -30,7 +35,7 @@ interface ReportData {
   service_date: string | null;
   findings: string | string[] | null;
   notes: string | null;
-  services: ServiceItem[] | null;
+  services: ServiceItem[] | Proposal[] | null;
   target_pests: string[] | null;
   products_used: string[] | null;
   equipment: string[] | null;
@@ -254,6 +259,28 @@ export default function CustomerReportView() {
     } catch { /* not JSON */ }
   }
 
+  // Parse multi-proposal or flat services format
+  const isMultiProposal = report.services && Array.isArray(report.services) && report.services.length > 0 
+    && typeof report.services[0] === 'object' && report.services[0] !== null 
+    && 'name' in report.services[0] && 'services' in report.services[0];
+  
+  const parsedProposals: Proposal[] = isMultiProposal
+    ? (report.services as Proposal[])
+    : report.services && (report.services as ServiceItem[]).length > 0
+      ? [{ name: "Services", services: report.services as ServiceItem[] }]
+      : [];
+
+  // Extract recommended proposal from notes
+  let recommendedProposalIndex = 0;
+  if (report.notes) {
+    try {
+      const parsed = JSON.parse(report.notes);
+      if (parsed?._structuredNotes && parsed.recommendedProposal !== undefined) {
+        recommendedProposalIndex = parsed.recommendedProposal;
+      }
+    } catch { /* not JSON */ }
+  }
+
   // Format findings for display
   const findingsHtml = Array.isArray(report.findings)
     ? report.findings.join('<br/>')
@@ -449,11 +476,16 @@ export default function CustomerReportView() {
           ) : (
             <>
               {/* === SALES REPORT LAYOUT (existing) === */}
-              {/* Services Table */}
-              {report.services && report.services.length > 0 && (
-                <Card className="overflow-hidden">
-                  <div className="bg-brand-black text-white px-4 py-2">
-                    <span className="text-xs font-bold uppercase">Services</span>
+              {/* Multi-Proposal / Services Tables */}
+              {parsedProposals.length > 0 && parsedProposals.map((proposal, pIdx) => (
+                <Card key={pIdx} className={`overflow-hidden ${isMultiProposal && recommendedProposalIndex === pIdx ? 'ring-2 ring-primary' : ''}`}>
+                  <div className="bg-brand-black text-white px-4 py-2 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase">
+                      {isMultiProposal ? proposal.name : 'Services'}
+                      {isMultiProposal && recommendedProposalIndex === pIdx && (
+                        <span className="ml-2 text-[10px] bg-white/20 px-2 py-0.5 rounded-full">★ Recommended</span>
+                      )}
+                    </span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -466,21 +498,21 @@ export default function CustomerReportView() {
                         </tr>
                       </thead>
                       <tbody>
-                        {report.services.map((service, idx) => (
+                        {proposal.services.map((service, idx) => (
                           <tr key={idx} className="border-t border-border">
-                            <td className="px-4 py-2 font-medium">{service.serviceType}</td>
-                            <td className="px-4 py-2 text-center">${service.initialPrice}</td>
-                            <td className="px-4 py-2 text-center">${service.recurringPrice}</td>
+                            <td className="px-4 py-2 font-medium">{service.serviceType || "—"}</td>
+                            <td className="px-4 py-2 text-center">${service.initialPrice || "0"}</td>
+                            <td className="px-4 py-2 text-center">${service.recurringPrice || "0"}</td>
                             <td className="px-4 py-2 text-center">{formatFrequency(service.frequency)}</td>
                           </tr>
                         ))}
                         <tr className="border-t-2 border-border bg-muted/30">
                           <td className="px-4 py-2 font-bold text-right">Total:</td>
                           <td className="px-4 py-2 text-center font-bold">
-                            ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
+                            ${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
                           </td>
                           <td className="px-4 py-2 text-center font-bold">
-                            ${Math.round(report.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
+                            ${Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
                           </td>
                           <td></td>
                         </tr>
@@ -488,7 +520,7 @@ export default function CustomerReportView() {
                     </table>
                   </div>
                 </Card>
-              )}
+              ))}
 
               {/* Target Pests + Proposed Services Row */}
               <div className="grid grid-cols-[2fr_3fr] gap-4">

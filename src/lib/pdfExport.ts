@@ -465,6 +465,40 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
 
           /* ═══════════════════════════════════════════════════════════
+             MULTI-PROPOSAL GRID PRICING TABLES
+             ═══════════════════════════════════════════════════════════ */
+          .pdf-export-root .print-pricing-table {
+            border: 1px solid ${BRAND.border} !important;
+            border-radius: 5px !important;
+            overflow: visible !important;
+            margin-bottom: 6px !important;
+            padding: 6px !important;
+          }
+          .pdf-export-root .print-pricing-display {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 12px !important;
+            height: 24px !important;
+          }
+          .pdf-export-root .print-pricing-display--left {
+            justify-content: flex-start !important;
+          }
+          .pdf-export-root .print-pricing-money {
+            gap: 1px !important;
+          }
+          .pdf-export-root .print-pricing-money span {
+            font-size: 13px !important;
+            font-weight: 600 !important;
+          }
+          /* Force grid layout in proposal rows */
+          .pdf-export-root .print-pricing-table [class*="grid-cols-[minmax"] {
+            display: grid !important;
+            grid-template-columns: minmax(120px, 1fr) 60px 60px 120px 24px !important;
+            gap: 4px !important;
+          }
+
+          /* ═══════════════════════════════════════════════════════════
              PEST TAGS — inline pills
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root .print-tag {
@@ -596,7 +630,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
           }
         }
 
-        if (captureKey === "2") {
+        const isMapPage = !!clonedPage.querySelector('.page2-header');
+        if (isMapPage) {
           const applySectionFont = (selector: string, size: number, lineHeight = 1.45) => {
             clonedPage.querySelectorAll<HTMLElement>(selector).forEach((section) => {
               sp(section, "font-size", `${size}px`);
