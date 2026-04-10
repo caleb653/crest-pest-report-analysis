@@ -440,7 +440,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             min-height: 28px !important;
           }
           .pdf-export-root .print-section-header span {
-            font-size: 11px !important;
+            font-size: 12px !important;
             font-weight: 700 !important;
             letter-spacing: 0.08em !important;
             color: ${BRAND.black} !important;
