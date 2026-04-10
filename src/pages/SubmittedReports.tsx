@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
 
-type ReportType = "sales" | "initial";
+type ReportType = "sales" | "initial" | "multi-proposal";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
