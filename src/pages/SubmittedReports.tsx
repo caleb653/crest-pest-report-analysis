@@ -121,20 +121,27 @@ const SubmittedReports = () => {
     try {
       const { data, error } = await supabase
         .from("reports")
-        .select("id, technician_name, customer_name, address, created_at, next_steps, customer_signature, sent_to_customer_at")
+        .select("id, technician_name, customer_name, address, created_at, next_steps, customer_signature, sent_to_customer_at, notes")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
         const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
+        let isMultiProposal = false;
+        if (r.notes && typeof r.notes === 'string') {
+          try {
+            const parsed = JSON.parse(r.notes);
+            if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
+          } catch {}
+        }
         return {
           id: r.id,
           technician_name: r.technician_name,
           customer_name: r.customer_name,
           address: r.address,
           created_at: r.created_at,
-          report_type: isInitial ? "initial" : "sales",
+          report_type: isMultiProposal ? "multi-proposal" : isInitial ? "initial" : "sales",
           is_signed: !!r.customer_signature,
           is_sent: !!r.sent_to_customer_at,
         };
