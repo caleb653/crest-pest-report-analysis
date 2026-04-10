@@ -194,7 +194,11 @@ const SubmittedReports = () => {
   };
 
   const viewReport = (report: ReportListItem) => {
-    const path = report.report_type === "initial" ? `/initial-pest-report/${report.id}` : `/report/${report.id}`;
+    const path = report.report_type === "initial" 
+      ? `/initial-pest-report/${report.id}` 
+      : report.report_type === "multi-proposal"
+      ? `/multi-proposal-report/${report.id}`
+      : `/report/${report.id}`;
     navigate(path);
   };
   const duplicateReport = async (reportId: string, e: React.MouseEvent) => {
