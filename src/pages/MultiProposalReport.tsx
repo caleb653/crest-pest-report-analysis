@@ -1546,18 +1546,18 @@ Crest Pest Control`;
         className={cn(
           "print-section print-pricing-table p-2.5 print:p-1 print:py-1.5",
           "border-2 border-foreground/80 rounded-xl",
-          isRecommended && "ring-2 ring-primary border-primary bg-primary/5 shadow-md",
+          isRecommended && "ring-2 ring-foreground border-foreground bg-muted/30 shadow-md",
         )}
       >
         {/* Recommended banner */}
         {isRecommended && (
-          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-primary px-4 py-2 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
+          <div className="proposal-recommended-banner -mx-2.5 -mt-2.5 mb-2 rounded-t-lg bg-foreground px-4 py-2 print:-mx-1 print:-mt-1.5 print:mb-1 print:px-2 print:py-1">
             <div className="flex items-center justify-center gap-2">
-              <Star className="h-4 w-4 shrink-0 text-primary-foreground fill-primary-foreground" />
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-primary-foreground print:text-xs">
+              <Star className="h-4 w-4 shrink-0 text-background fill-background" />
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-background print:text-xs">
                 ★ Recommended ★
               </span>
-              <Star className="h-4 w-4 shrink-0 text-primary-foreground fill-primary-foreground" />
+              <Star className="h-4 w-4 shrink-0 text-background fill-background" />
             </div>
           </div>
         )}

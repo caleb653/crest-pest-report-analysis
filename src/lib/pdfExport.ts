@@ -492,15 +492,15 @@ async function captureElement(el: HTMLElement): Promise<string> {
             padding: 10px !important;
           }
           .pdf-export-root .print-pricing-table[data-recommended="true"] {
-            border: 3px solid ${BRAND.darkSage} !important;
-            background-color: ${BRAND.sageTint} !important;
+            border: 3px solid ${BRAND.black} !important;
+            background-color: #f5f5f5 !important;
           }
           .pdf-export-root .proposal-recommended-banner {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 8px !important;
-            background-color: ${BRAND.darkSage} !important;
+            background-color: ${BRAND.black} !important;
             color: #ffffff !important;
             padding: 8px 16px !important;
             margin: -10px -10px 8px -10px !important;
