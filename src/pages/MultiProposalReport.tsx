@@ -2340,15 +2340,52 @@ Crest Pest Control`;
         </div>
       </div>
 
+      {/* Page Separator */}
+      <div className="no-print max-w-[1800px] mx-auto px-4">
+        <div className="flex items-center gap-4 py-6">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+            <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — Property Map & Details</span>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+        </div>
+      </div>
+
       {/* PAGE 2 - Map + Services/Details/Materials */}
       {renderMapSection(videoUrl ? 3 : 2)}
 
       {/* Duplicated Page 2s */}
       {duplicatedPages.map((_, dupeIndex) => (
         <div key={dupeIndex}>
+          {/* Page Separator for duplicate */}
+          <div className="no-print max-w-[1800px] mx-auto px-4">
+            <div className="flex items-center gap-4 py-6">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+                <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Page {3 + dupeIndex} — {proposals[dupeIndex + 1]?.name || `Option ${String.fromCharCode(66 + dupeIndex)}`}
+                </span>
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+            </div>
+          </div>
           {renderMapSection(videoUrl ? 4 + dupeIndex : 3 + dupeIndex, true, dupeIndex)}
         </div>
       ))}
+
+      {/* Page Separator for Media */}
+      <div className="no-print max-w-[1800px] mx-auto px-4">
+        <div className="flex items-center gap-4 py-6">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+            <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Property Images & Media</span>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+        </div>
+      </div>
 
       {/* Image/Video Upload Page */}
       <div 
