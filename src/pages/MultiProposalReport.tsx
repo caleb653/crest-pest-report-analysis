@@ -2399,7 +2399,7 @@ Crest Pest Control`;
             {showSchedulingSection && (
               <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-sm print:text-xs font-bold uppercase">Scheduling & Communication</span>
+                  <span className="text-base print:text-sm font-bold uppercase">Scheduling & Communication</span>
                 </div>
                 <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
                   <div className="flex items-center gap-2">
