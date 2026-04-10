@@ -42,7 +42,11 @@ const getRecurringLabel = (services: ServiceItem[]) => {
   return "Recurring";
 };
 
+interface SetupMaterial {
   name: string;
+  quantity: string;
+}
+
   quantity: string;
 }
 
