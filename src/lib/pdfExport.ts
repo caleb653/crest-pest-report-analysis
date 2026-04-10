@@ -488,8 +488,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
             border: 2px solid ${BRAND.black} !important;
             border-radius: 10px !important;
             overflow: visible !important;
-            margin-bottom: 8px !important;
+            margin-bottom: 14px !important;
             padding: 10px !important;
+            background-color: #ffffff !important;
           }
           .pdf-export-root .print-pricing-table[data-recommended="true"] {
             border: 3px solid ${BRAND.black} !important;
@@ -650,21 +651,21 @@ async function captureElement(el: HTMLElement): Promise<string> {
         const isMapPage = !!clonedPage.querySelector('.page2-header');
         if (isMapPage) {
           clonedPage.querySelectorAll<HTMLElement>('.page2-header h1').forEach((node) => {
-            sp(node, 'font-size', '21px');
+            sp(node, 'font-size', '24px');
             sp(node, 'line-height', '1.1');
           });
           clonedPage.querySelectorAll<HTMLElement>('.page2-header span, .page2-header p, .page2-header div').forEach((node) => {
-            sp(node, 'font-size', '14px');
+            sp(node, 'font-size', '16px');
             sp(node, 'line-height', '1.15');
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.print-section-header').forEach((node) => {
             sp(node, 'background-color', '#FFFFFF');
-            sp(node, 'padding', '4px 10px');
+            sp(node, 'padding', '6px 12px');
             sp(node, 'display', 'flex');
             sp(node, 'align-items', 'center');
             node.querySelectorAll<HTMLElement>('span, div').forEach((child) => {
-              sp(child, 'font-size', '12px');
+              sp(child, 'font-size', '14px');
               sp(child, 'font-weight', '700');
               sp(child, 'letter-spacing', '0.08em');
               sp(child, 'line-height', '1.1');
@@ -673,41 +674,41 @@ async function captureElement(el: HTMLElement): Promise<string> {
           });
 
           clonedPage.querySelectorAll<HTMLElement>('.pdf-services-content, .print-content-formatted, [data-pdf-content="proposed-services"]').forEach((node) => {
-            sp(node, 'font-size', '14px');
-            sp(node, 'line-height', '1.38');
+            sp(node, 'font-size', '16px');
+            sp(node, 'line-height', '1.4');
             node.querySelectorAll<HTMLElement>('p, li, span, div').forEach((child) => {
-              sp(child, 'font-size', '14px');
-              sp(child, 'line-height', '1.38');
+              sp(child, 'font-size', '16px');
+              sp(child, 'line-height', '1.4');
               sp(child, 'margin-top', '0');
               sp(child, 'vertical-align', 'top');
             });
             node.querySelectorAll<HTMLElement>('b, strong').forEach((child) => {
-              sp(child, 'font-size', '15px');
+              sp(child, 'font-size', '17px');
               sp(child, 'font-weight', '700');
             });
           });
 
-          const DETAIL_FONT = 15;
+          const DETAIL_FONT = 16;
           ['additional-details', 'limitations'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
               sp(node, 'font-size', `${DETAIL_FONT}px`);
-              sp(node, 'line-height', '1.25');
+              sp(node, 'line-height', '1.3');
               sp(node, 'margin-top', '0');
               sp(node, 'vertical-align', 'top');
             });
           });
 
-          const PAGE2_META_FONT = 16;
+          const PAGE2_META_FONT = 17;
           ['scheduling', 'setup-materials'].forEach((section) => {
             const card = clonedPage.querySelector<HTMLElement>(`[data-pdf-section="${section}"]`);
             if (!card) return;
             card.querySelectorAll<HTMLElement>('p, span, div, li, strong, b, label, textarea').forEach((node) => {
               if (node.closest('.print-section-header')) return;
               sp(node, 'font-size', `${PAGE2_META_FONT}px`);
-              sp(node, 'line-height', '1.2');
+              sp(node, 'line-height', '1.25');
               sp(node, 'margin-top', '0');
               sp(node, 'vertical-align', 'top');
             });

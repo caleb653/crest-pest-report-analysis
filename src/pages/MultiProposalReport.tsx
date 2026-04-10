@@ -2370,7 +2370,7 @@ Crest Pest Control`;
 
       {/* PAGE 1 - Proposals + Products + Scheduling + Guarantee */}
       <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
-        <div className="space-y-3 print:space-y-1.5">
+        <div className="space-y-4 print:space-y-2">
           {/* Multiple Proposal Tables */}
           {proposals.map((proposal, index) => (
             <div key={index}>
