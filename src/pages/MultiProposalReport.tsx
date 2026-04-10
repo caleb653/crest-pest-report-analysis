@@ -1839,88 +1839,105 @@ Crest Pest Control`;
 
         {/* Map and Right Panel Side by Side */}
         <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[40%_60%] print:gap-4 print:px-0 print:items-start print:justify-center print:mt-1 print:flex-1">
-          {/* Map Section - EXACT same position and size */}
+          {/* Map Section */}
           <div className="flex flex-col min-h-0 print:mt-0">
-            <div 
-              className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
-              onPaste={handleMapPaste}
-              tabIndex={0}
-            >
-              {isProcessing && (
-                <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
-                  <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-                    <p className="text-foreground font-semibold">Processing Map...</p>
-                  </div>
-                </div>
-              )}
-              {mapUrl || customMapImage ? (
-                <div className="relative h-full w-full">
-                  {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
-                    <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
-                  ) : (
-                    <MapCanvas
-                      key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
-                      mapUrl={customMapImage || mapUrl}
-                      onSave={handleDupeMapSave}
-                      onExportImage={handleDupeMapExport}
-                      initialData={currentMapData}
-                      exportId={isDuplicate ? `duplicate-${dupeIndex}` : "main"}
-                    />
-                  )}
-                  {!isDuplicate && (
-                    <div className="no-print absolute top-4 right-4 z-20">
-                      <div className="relative inline-flex">
-                        <Button size="sm" variant="secondary" type="button">
-                          <FileDown className="w-4 h-4 mr-2" /> Upload Map
-                        </Button>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
-                          onChange={handleCustomMapUpload}
-                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                      </div>
+            {(() => {
+              const pageMapImage = isDuplicate ? (duplicateCustomMapImages[dupeIndex ?? 0] || customMapImage) : customMapImage;
+              const hasMap = mapUrl || pageMapImage;
+              return (
+              <div 
+                className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-xl overflow-hidden border-2 border-border print:max-h-none"
+                onPaste={(e) => handleMapPasteForPage(e, isDuplicate, dupeIndex)}
+                tabIndex={0}
+              >
+                {isProcessing && !isDuplicate && (
+                  <div className="no-print absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                      <p className="text-foreground font-semibold">Processing Map...</p>
                     </div>
-                  )}
-                  {coordinates && !customMapImage && !isDuplicate && (
-                    <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
-                      <div className="flex flex-col gap-2">
-                        <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
-                          <ArrowUp className="w-4 h-4" />
-                        </Button>
-                        <div className="flex gap-2">
-                          <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
-                            <ArrowLeft className="w-4 h-4" />
+                  </div>
+                )}
+                {hasMap ? (
+                  <div className="relative h-full w-full">
+                    {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
+                      <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
+                    ) : (
+                      <MapCanvas
+                        key={isDuplicate ? `dupe-${dupeIndex}-${pageMapImage || mapUrl}` : (pageMapImage ? `custom-${pageMapImage}` : `map-${mapUrl}`)}
+                        mapUrl={pageMapImage || mapUrl}
+                        onSave={handleDupeMapSave}
+                        onExportImage={handleDupeMapExport}
+                        initialData={currentMapData}
+                        exportId={isDuplicate ? `duplicate-${dupeIndex}` : "main"}
+                      />
+                    )}
+                    {!isReadOnly && (
+                      <div className="no-print absolute top-4 right-4 z-20">
+                        <div className="relative inline-flex">
+                          <Button size="sm" variant="secondary" type="button">
+                            <FileDown className="w-4 h-4 mr-2" /> Upload Map
                           </Button>
-                          <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
-                            <ArrowRight className="w-4 h-4" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                            onChange={(e) => handleMapUploadForPage(e, isDuplicate, dupeIndex)}
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {coordinates && !pageMapImage && !isDuplicate && (
+                      <div className="no-print absolute bottom-4 left-4 flex gap-3 z-20">
+                        <div className="flex flex-col gap-2">
+                          <Button size="icon" variant="secondary" onClick={() => panBy(0, -100)} title="Pan up">
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <div className="flex gap-2">
+                            <Button size="icon" variant="secondary" onClick={() => panBy(-100, 0)} title="Pan left">
+                              <ArrowLeft className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="secondary" onClick={() => panBy(100, 0)} title="Pan right">
+                              <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
+                            <ArrowDown className="w-4 h-4" />
                           </Button>
                         </div>
-                        <Button size="icon" variant="secondary" onClick={() => panBy(0, 100)} title="Pan down">
-                          <ArrowDown className="w-4 h-4" />
-                        </Button>
+                        <div className="flex flex-col gap-2 justify-center">
+                          <Button size="icon" variant="secondary" onClick={handleZoomIn} title="Zoom in">
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="secondary" onClick={handleZoomOut} title="Zoom out">
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-2 justify-center">
-                        <Button size="icon" variant="secondary" onClick={handleZoomIn} title="Zoom in">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="secondary" onClick={handleZoomOut} title="Zoom out">
-                          <Minus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center bg-muted/30">
-                  <p className="text-muted-foreground text-sm text-center px-4">
-                    Enter an address above or upload a custom map image
-                  </p>
-                </div>
-              )}
-            </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center bg-muted/30 cursor-pointer" onClick={() => {
+                    if (isReadOnly) return;
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (ev) => handleMapUploadForPage(ev as any, isDuplicate, dupeIndex);
+                    input.click();
+                  }}>
+                    <FileDown className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground font-medium text-sm text-center px-4">
+                      Click to upload or paste a map image
+                    </p>
+                    <p className="text-muted-foreground/60 text-xs mt-1">
+                      Copy an image and click here, then Ctrl+V
+                    </p>
+                  </div>
+                )}
+              </div>
+              );
+            })()}
           </div>
 
           {/* Right Column - Proposed Services + Additional Details + Setup Materials */}
