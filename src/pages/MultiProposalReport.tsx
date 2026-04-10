@@ -341,14 +341,22 @@ const Report = () => {
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
 
-  const getDefaultTitle = (type: string | undefined) => {
-    return "Multi-Proposal Report";
+  const getDefaultTitle = () => {
+    const label = companyName?.trim() || editableCustomer?.trim() || "";
+    return label ? `Proposal: ${label}` : "Proposal";
   };
-  const [editableTitle, setEditableTitle] = useState(getDefaultTitle(reportType));
+  const [editableTitle, setEditableTitle] = useState(getDefaultTitle());
 
+  // Update title when customer/company name changes (only if title matches a generated pattern)
   useEffect(() => {
-    setEditableTitle(getDefaultTitle(reportType));
-  }, [reportType]);
+    setEditableTitle(prev => {
+      // Only auto-update if the title looks auto-generated
+      if (prev === "Multi-Proposal Report" || prev === "Proposal" || prev.startsWith("Proposal: ")) {
+        return getDefaultTitle();
+      }
+      return prev;
+    });
+  }, [editableCustomer, companyName]);
 
   const handleTechnicianChange = (techName: string) => {
     setEditableTech(techName);
