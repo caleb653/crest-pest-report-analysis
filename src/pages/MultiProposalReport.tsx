@@ -932,8 +932,20 @@ const Report = () => {
     }
   };
 
-  const buildStructuredNotes = () =>
-    JSON.stringify({
+  const buildStructuredNotes = () => {
+    // Ensure all proposals have findings text populated for the customer view
+    const completeFindings: Record<number, string> = { ...proposalFindings };
+    proposals.forEach((proposal, index) => {
+      if (!completeFindings[index] || !completeFindings[index].trim()) {
+        if (index === 0) {
+          completeFindings[index] = editableFindings[0] || getProposalServicesText(index);
+        } else {
+          completeFindings[index] = getProposalServicesText(index);
+        }
+      }
+    });
+
+    return JSON.stringify({
       _structuredNotes: true,
       _reportFormat: "multi-proposal",
       additionalDetails: additionalDetails || notes || "",
@@ -951,8 +963,9 @@ const Report = () => {
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
       duplicateCustomMapImages,
-      proposalFindings,
+      proposalFindings: completeFindings,
     });
+  };
 
   const buildServicesPayload = () => proposals;
 
