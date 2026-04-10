@@ -224,6 +224,32 @@ async function captureElement(el: HTMLElement): Promise<string> {
             border-bottom: 2px solid ${BRAND.darkSage} !important;
           }
 
+          /* Header info grid — bigger text */
+          .pdf-export-root.print-header .print-title,
+          .pdf-export-root [class*="print-header"] .print-title {
+            font-size: 28px !important;
+            font-weight: 700 !important;
+          }
+          .pdf-export-root.print-header [class*="font-semibold"],
+          .pdf-export-root [class*="print-header"] [class*="font-semibold"] {
+            font-size: 16px !important;
+          }
+          .pdf-export-root.print-header [class*="text-base"],
+          .pdf-export-root [class*="print-header"] [class*="text-base"],
+          .pdf-export-root.print-header [class*="text-sm"],
+          .pdf-export-root [class*="print-header"] [class*="text-sm"] {
+            font-size: 15px !important;
+            line-height: 1.5 !important;
+          }
+          .pdf-export-root.print-header [class*="text-muted-foreground"],
+          .pdf-export-root [class*="print-header"] [class*="text-muted-foreground"] {
+            font-size: 15px !important;
+          }
+          .pdf-export-root.print-header [class*="font-medium"],
+          .pdf-export-root [class*="print-header"] [class*="font-medium"] {
+            font-size: 15px !important;
+          }
+
           /* Hide noise */
           .pdf-export-root .no-print,
           .pdf-export-root button:not(.print-keep),
