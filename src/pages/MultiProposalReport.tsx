@@ -923,8 +923,19 @@ const Report = () => {
     }
   };
 
-  const buildStructuredNotes = () =>
-    JSON.stringify({
+  const buildStructuredNotes = () => {
+    // Pre-generate per-proposal services text so CustomerReportView can display it
+    const proposalServicesTexts: Record<number, string> = {};
+    proposals.forEach((proposal, idx) => {
+      if (idx === 0) return; // Option A uses editableFindings
+      const descriptions = proposal.services
+        .filter(s => s.serviceType)
+        .map(s => SERVICE_CONFIG[s.serviceType]?.proposedServices)
+        .filter(Boolean) as string[];
+      proposalServicesTexts[idx] = descriptions.join("<br><br>");
+    });
+
+    return JSON.stringify({
       _structuredNotes: true,
       _reportFormat: "multi-proposal",
       additionalDetails: additionalDetails || notes || "",
@@ -937,11 +948,13 @@ const Report = () => {
       setupMaterials,
       limitationsText,
       recommendedProposal,
-      videoUrl,
+      videoUrl: videoUrl && !videoUrl.startsWith("blob:") ? videoUrl : null,
       duplicatedPages,
       duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
+      proposalServicesTexts,
     });
+  };
 
   const buildServicesPayload = () => proposals;
 
@@ -955,7 +968,8 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
-    const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+    const registry = (window as any).mapExportRegistry as Record<string, () => Promise<string | null>> | undefined;
+    const exportFn = registry?.main ?? (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     let mainResult: string | null = renderedMapImage;
 
     if (exportFn) {
@@ -966,42 +980,32 @@ const Report = () => {
       }
     }
 
+    // Capture duplicate maps using registry-based export functions
     const dupeImages: Record<number, string | null> = {};
-    const duplicatePageEls = Array.from(
-      document.querySelectorAll<HTMLElement>('[data-pdf-page^="2-dupe-"]')
-    );
-
-    for (const dupeContainer of duplicatePageEls) {
-      const pageKey = dupeContainer.dataset.pdfPage ?? "";
-      const match = pageKey.match(/^2-dupe-(\d+)$/);
-      if (!match) continue;
-      const i = Number(match[1]);
-
-      const dupeCanvas =
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas");
-
-      if (dupeCanvas) {
+    for (let i = 0; i < duplicateMapPageCount; i++) {
+      const dupeExportFn = registry?.[`dupe-${i}`];
+      if (dupeExportFn) {
         try {
-          const dupeDataUrl = dupeCanvas.toDataURL("image/png");
-          if (dupeDataUrl && dupeDataUrl !== "data:,") {
-            dupeImages[i] = dupeDataUrl;
+          const dupeResult = await dupeExportFn();
+          if (dupeResult) {
+            dupeImages[i] = dupeResult;
           }
         } catch (e) {
           console.warn(`Failed to capture duplicate map ${i}:`, e);
         }
       }
 
+      // Fallback: try DOM canvas scraping
       if (!dupeImages[i]) {
-        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.lower-canvas");
-        if (lowerCanvas) {
-          try {
-            const lowerDataUrl = lowerCanvas.toDataURL("image/png");
-            if (lowerDataUrl && lowerDataUrl !== "data:,") {
-              dupeImages[i] = lowerDataUrl;
-            }
-          } catch {
-            // ignore lower-canvas failures
+        const dupeContainer = document.querySelector<HTMLElement>(`[data-pdf-page="2-dupe-${i}"]`);
+        if (dupeContainer) {
+          const canvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
+            dupeContainer.querySelector<HTMLCanvasElement>("canvas");
+          if (canvas) {
+            try {
+              const dataUrl = canvas.toDataURL("image/png");
+              if (dataUrl && dataUrl !== "data:,") dupeImages[i] = dataUrl;
+            } catch { /* ignore */ }
           }
         }
       }
