@@ -1593,7 +1593,7 @@ Crest Pest Control`;
         </div>
         <div className="space-y-1 print:space-y-0">
           {/* Header Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-[13px] print:text-[11px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center text-sm print:text-[12px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">Recurring</span>
@@ -2210,8 +2210,8 @@ Crest Pest Control`;
           <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
             {/* Column 1: Customer Details */}
             <div>
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Customer Details:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Customer Details:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Name:</span>
                   {isReadOnly ? (
@@ -2251,8 +2251,8 @@ Crest Pest Control`;
 
             {/* Column 2: Property Info (print only) */}
             <div className="hidden print:block">
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Property Info:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Property Info:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Date:</span>
                   <span className="text-foreground font-medium">{editableServiceDate || "—"}</span>
@@ -2315,8 +2315,8 @@ Crest Pest Control`;
 
             {/* Column 3: Technician Info */}
             <div>
-              <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Technician Information:</p>
-              <div className="space-y-0.5 text-sm">
+              <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Technician Information:</p>
+              <div className="space-y-0.5 text-base">
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground w-16">Name:</span>
                   {isReadOnly ? (
@@ -2399,7 +2399,7 @@ Crest Pest Control`;
             {showSchedulingSection && (
               <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-sm print:text-xs font-bold uppercase">Scheduling & Communication</span>
+                  <span className="text-base print:text-sm font-bold uppercase">Scheduling & Communication</span>
                 </div>
                 <div className="p-2.5 print:p-1.5 space-y-1.5 print:space-y-1">
                   <div className="flex items-center gap-2">
@@ -2445,10 +2445,10 @@ Crest Pest Control`;
             {/* Products */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-sm print:text-xs font-bold uppercase">Products</span>
+                <span className="text-base print:text-sm font-bold uppercase">Products</span>
               </div>
               <div className="p-2.5 print:p-1.5">
-                <div className="text-[9px] leading-tight text-foreground columns-2 gap-2">
+                <div className="text-[11px] leading-snug text-foreground columns-2 gap-2">
                   {displayedProducts.map((product, index) => (
                     <div key={index} className="flex items-center gap-1 group">
                       <p className="flex-1">
@@ -2482,10 +2482,10 @@ Crest Pest Control`;
             {/* Pesticide Notice */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                <span className="text-sm print:text-xs font-bold uppercase">Pesticide Notice</span>
+                <span className="text-base print:text-sm font-bold uppercase">Pesticide Notice</span>
               </div>
               <div className="p-1.5 print:p-1">
-                <div className="text-[9px] leading-[1.2] text-foreground">
+                <div className="text-[11px] leading-[1.35] text-foreground">
                   <p>
                     State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized." "If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately." This statement shall be modified to include any other symptoms of overexposure which are not typical of influenza.
                   </p>
@@ -2500,7 +2500,7 @@ Crest Pest Control`;
           {/* Crest Guarantee */}
           <div className="border border-border rounded-md px-4 py-3 text-center bg-muted/30 flex items-center justify-center gap-3">
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
-            <p className="text-sm print:text-[13px] text-foreground leading-snug">
+            <p className="text-base print:text-sm text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
               If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
             </p>
