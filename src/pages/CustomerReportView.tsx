@@ -49,7 +49,6 @@ interface StructuredNotes {
   duplicatedPages?: number[];
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
-  proposalServicesTexts?: Record<string, string>;
 }
 
 interface ReportData {
@@ -317,7 +316,6 @@ export default function CustomerReportView() {
   const videoUrl = structuredNotes?.videoUrl || null;
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
-  const proposalServicesTexts = structuredNotes?.proposalServicesTexts || {};
 
   const isMultiProposal =
     report.services &&
@@ -358,7 +356,6 @@ export default function CustomerReportView() {
   );
 
   const renderProposalServicesContent = (proposal: Proposal, proposalIndex: number) => {
-    // Option A uses the main findings text
     if (proposalIndex === 0 && findingsHtml) {
       return (
         <div
@@ -368,18 +365,6 @@ export default function CustomerReportView() {
       );
     }
 
-    // Options B/C/D use stored per-proposal services text if available
-    const storedText = proposalServicesTexts[String(proposalIndex)];
-    if (storedText) {
-      return (
-        <div
-          className="text-sm leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: storedText }}
-        />
-      );
-    }
-
-    // Fallback: show service cards
     const filledServices = proposal.services.filter(
       (service) => service.serviceType || service.initialPrice || service.recurringPrice,
     );
