@@ -1655,6 +1655,37 @@ Crest Pest Control`;
                   {FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "-"}
                 </div>
               </div>
+              {/* Schedule column */}
+              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5 print:py-0">
+                {service.frequency > 0 ? (
+                  <div className="flex flex-wrap gap-0.5 print:gap-0">
+                    {(() => {
+                      const isHighFreq = service.frequency === 7 || service.frequency === 14;
+                      const today = new Date();
+                      const count = isHighFreq ? 8 : 6;
+                      return Array.from({ length: count }, (_, i) => {
+                        const scheduleDate = new Date(today);
+                        scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
+                        const isFirst = i === 0;
+                        return (
+                          <span
+                            key={i}
+                            className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap print:text-[7px] print:px-0.5 ${
+                              isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {isHighFreq
+                              ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                              : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">One-time</span>
+                )}
+              </div>
               <div>
                 {proposal.services.length > 1 && (
                   <Button type="button" variant="ghost" size="icon" className="h-6 w-6 no-print"
@@ -1667,16 +1698,17 @@ Crest Pest Control`;
           ))}
 
           {/* Totals Row */}
-          <div className="grid grid-cols-[minmax(120px,1fr)_70px_70px_140px_24px] print:grid-cols-[minmax(120px,1fr)_60px_60px_120px_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
+          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] print:grid-cols-[minmax(90px,1fr)_55px_55px_100px_minmax(120px,1.5fr)_24px] gap-1.5 print:gap-1 items-center pt-1 print:pt-0.5 border-t border-border">
             <div className="text-xs font-bold text-right">Total:</div>
-            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
             </div>
-            <div className="text-xs bg-white/80 rounded py-0.5 px-1 flex items-center justify-center h-6">
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
             </div>
+            <div></div>
             <div></div>
             <div></div>
           </div>
