@@ -955,7 +955,9 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
-    const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
+    const globalWindow = window as any;
+    const exportFn = globalWindow.exportMapAsImage as undefined | (() => Promise<string | null>);
+    const exportRegistry = (globalWindow.mapExportRegistry ?? {}) as Record<string, (() => Promise<string | null>) | undefined>;
     let mainResult: string | null = renderedMapImage;
 
     if (exportFn) {
@@ -977,13 +979,10 @@ const Report = () => {
       if (!match) continue;
       const i = Number(match[1]);
 
-      const dupeCanvas =
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
-        dupeContainer.querySelector<HTMLCanvasElement>("canvas");
-
-      if (dupeCanvas) {
+      const registryExport = exportRegistry[`duplicate-${i}`];
+      if (registryExport) {
         try {
-          const dupeDataUrl = dupeCanvas.toDataURL("image/png");
+          const dupeDataUrl = await registryExport();
           if (dupeDataUrl && dupeDataUrl !== "data:,") {
             dupeImages[i] = dupeDataUrl;
           }
@@ -993,15 +992,17 @@ const Report = () => {
       }
 
       if (!dupeImages[i]) {
-        const lowerCanvas = dupeContainer.querySelector<HTMLCanvasElement>("canvas.lower-canvas");
-        if (lowerCanvas) {
+        const dupeCanvas =
+          dupeContainer.querySelector<HTMLCanvasElement>("canvas.upper-canvas") ||
+          dupeContainer.querySelector<HTMLCanvasElement>("canvas");
+        if (dupeCanvas) {
           try {
-            const lowerDataUrl = lowerCanvas.toDataURL("image/png");
-            if (lowerDataUrl && lowerDataUrl !== "data:,") {
-              dupeImages[i] = lowerDataUrl;
+            const dupeDataUrl = dupeCanvas.toDataURL("image/png");
+            if (dupeDataUrl && dupeDataUrl !== "data:,") {
+              dupeImages[i] = dupeDataUrl;
             }
           } catch {
-            // ignore lower-canvas failures
+            // ignore canvas fallback failures
           }
         }
       }
@@ -1727,7 +1728,7 @@ Crest Pest Control`;
         </div>
 
         {/* Map and Right Panel Side by Side */}
-        <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[47%_53%] print:gap-3 print:px-0 print:items-start print:justify-center print:mt-1 print:flex-1">
+        <div className="flex flex-col lg:grid lg:grid-cols-[40%_60%] gap-4 print:grid print:grid-cols-[40%_60%] print:gap-4 print:px-0 print:items-start print:justify-center print:mt-1 print:flex-1">
           {/* Map Section - EXACT same position and size */}
           <div className="flex flex-col min-h-0 print:mt-0">
             <div 
@@ -1754,6 +1755,7 @@ Crest Pest Control`;
                       onSave={handleDupeMapSave}
                       onExportImage={handleDupeMapExport}
                       initialData={currentMapData}
+                      exportId={isDuplicate ? `duplicate-${dupeIndex}` : "main"}
                     />
                   )}
                   {!isDuplicate && (

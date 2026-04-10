@@ -2,7 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
-const A4_LANDSCAPE_WIDTH_PX = 1600;
+const A4_LANDSCAPE_WIDTH_PX = 1800;
 
 const BRAND = {
   black: "#2A2A2A",
@@ -194,7 +194,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
       logging: false,
       onclone: (clonedDoc) => {
         const style = clonedDoc.createElement("style");
-        style.textContent = `
+        style.textContent = `${getPrintCssText()}\n
           html, body {
             margin: 0 !important; padding: 0 !important;
             background: #ffffff !important; overflow: visible !important;
@@ -216,31 +216,12 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="bg-background"] { background: #ffffff !important; }
 
           /* ═══════════════════════════════════════════════════════════
-             PAGE 1 HEADER — boosted font sizes
+             PAGE 1 HEADER — preserve live sizing, only normalize colors
              ═══════════════════════════════════════════════════════════ */
           .pdf-export-root [class*="print-header"],
           .pdf-export-root.print-header {
             background-color: ${BRAND.sage} !important;
             border-bottom: 2px solid ${BRAND.darkSage} !important;
-          }
-          .pdf-export-root [class*="print-header"] h1,
-          .pdf-export-root [class*="print-header"] h2 {
-            font-size: 24px !important;
-            font-weight: 700 !important;
-          }
-          .pdf-export-root [class*="print-header"] h3 {
-            font-size: 17px !important;
-            font-weight: 600 !important;
-          }
-          /* All non-heading text inside the page 1 header */
-          .pdf-export-root [class*="print-header"] p,
-          .pdf-export-root [class*="print-header"] span,
-          .pdf-export-root [class*="print-header"] div,
-          .pdf-export-root [class*="print-header"] li,
-          .pdf-export-root [class*="print-header"] td,
-          .pdf-export-root [class*="print-header"] th {
-            font-size: 15px !important;
-            line-height: 1.45 !important;
           }
 
           /* Hide noise */
@@ -258,11 +239,12 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root [class*="hidden"][class*="print\\:block"] { display: block !important; }
           .pdf-export-root [class*="print\\:hidden"],
           .pdf-export-root .print\\:hidden                   { display: none !important; }
-          .pdf-export-root .print-content-formatted          { display: none !important; }
+          .pdf-export-root .print-content-formatted,
+          .pdf-export-root [data-pdf-content]                { display: block !important; }
           .pdf-export-root [class*="print\\:grid-cols-3"]    { grid-template-columns: 1fr 1fr 1fr !important; }
 
           /* ── Proposal text scale ────────────────────────────────── */
-          .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.55 !important; }
+          .pdf-export-root p, .pdf-export-root li            { font-size: inherit !important; line-height: 1.45 !important; }
           .pdf-export-root [class*="text-xs"]                { font-size: 10px !important; line-height: 1.5 !important; }
           .pdf-export-root [class*="text-sm"]                { font-size: 11px !important; line-height: 1.55 !important; }
           .pdf-export-root [class*="text-base"]              { font-size: 11px !important; line-height: 1.55 !important; }
@@ -450,11 +432,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
           /* Section headers (Proposed Services, Additional Details, Setup Materials) */
           .pdf-export-root .print-section-header {
             background-color: ${BRAND.sage} !important;
-            padding: 4px 10px !important;
+            padding: 6px 12px !important;
             border-radius: 4px 4px 0 0 !important;
             display: flex !important;
             align-items: center !important;
-            min-height: 24px !important;
+            min-height: 28px !important;
           }
           .pdf-export-root .print-section-header span {
             font-size: 11px !important;
@@ -469,7 +451,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .pdf-services-content,
           .pdf-export-root .pdf-services-content * {
             font-size: 11px !important;
-            line-height: 1.32 !important;
+            line-height: 1.42 !important;
             color: ${BRAND.black} !important;
           }
           .pdf-export-root .print-content-formatted b,
@@ -488,11 +470,11 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           .pdf-export-root .print-section-content,
           .pdf-export-root .print-section-content * {
-            line-height: 1.32 !important;
+            line-height: 1.4 !important;
             vertical-align: top !important;
           }
 
-          /* Page 1 proposed services — leave layout alone, sizing handled inline */
+          /* Page 1 proposed services — keep visible and close to desktop sizing */
           .pdf-export-root[data-pdf-capture="1"] .print-section-content,
           .pdf-export-root[data-pdf-capture="1"] .print-section-content * {
             line-height: 1.4 !important;
@@ -506,14 +488,17 @@ async function captureElement(el: HTMLElement): Promise<string> {
             border-radius: 5px !important;
             overflow: visible !important;
             margin-bottom: 6px !important;
-            padding: 6px !important;
+            padding: 8px !important;
           }
           .pdf-export-root .print-pricing-display {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             font-size: 12px !important;
-            height: 24px !important;
+            min-height: 28px !important;
+            height: auto !important;
+            line-height: 1.15 !important;
+            padding: 4px 0 !important;
           }
           .pdf-export-root .print-pricing-display--left {
             justify-content: flex-start !important;
@@ -587,42 +572,28 @@ async function captureElement(el: HTMLElement): Promise<string> {
         clonedPage.style.flexDirection = "column";
 
         if (captureKey === "1") {
-          const headerRoot = document.querySelector<HTMLElement>('[data-pdf-capture="0"]');
+          const headerRoot = clonedDoc.querySelector<HTMLElement>('[data-pdf-capture="0"]');
           if (headerRoot) {
             sp(headerRoot, "background-color", BRAND.sage);
             sp(headerRoot, "border-bottom", `2px solid ${BRAND.darkSage}`);
-            const title = headerRoot.querySelector<HTMLElement>(".print-title, h1");
-            if (title) {
-              sp(title, "font-size", "24px");
-              sp(title, "line-height", "1.15");
-            }
-            headerRoot.querySelectorAll<HTMLElement>("h2, h3").forEach((node) => {
-              sp(node, "font-size", "16px");
-              sp(node, "line-height", "1.2");
-            });
-            headerRoot.querySelectorAll<HTMLElement>("p, span, div").forEach((node) => {
-              if (node.closest(".no-print")) return;
-              sp(node, "font-size", "14px");
-              sp(node, "line-height", "1.35");
-            });
           }
 
           const proposedServices = clonedPage.querySelector<HTMLElement>('[data-pdf-content="proposed-services"]');
           const proposedHeader = clonedPage.querySelector<HTMLElement>('[data-pdf-section="proposed-services"] .print-section-header');
           if (proposedServices) {
-            const targetSize = proposedHeader ? 13 : 12.5;
+            const targetSize = proposedHeader ? 11.5 : 11;
             sp(proposedServices, "font-size", `${targetSize}px`);
-            sp(proposedServices, "line-height", "1.38");
+            sp(proposedServices, "line-height", "1.42");
             proposedServices.querySelectorAll<HTMLElement>("p, li, span, div, strong, b").forEach((node) => {
               sp(node, "font-size", `${targetSize}px`);
-              sp(node, "line-height", "1.38");
+              sp(node, "line-height", "1.42");
             });
           }
           if (proposedHeader) {
-            sp(proposedHeader, "font-size", "13px");
+            sp(proposedHeader, "font-size", "11px");
             sp(proposedHeader, "line-height", "1.2");
             proposedHeader.querySelectorAll<HTMLElement>("span, div").forEach((node) => {
-              sp(node, "font-size", "13px");
+              sp(node, "font-size", "11px");
               sp(node, "line-height", "1.2");
             });
           }
@@ -787,7 +758,7 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
-  const MARGIN = 4;
+      const MARGIN = 12;
 
   let pendingHeaderImg: Awaited<ReturnType<typeof outDoc.embedJpg>> | null = null;
 
@@ -809,14 +780,15 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
       const headerDrawH = pendingHeaderImg.height * (pageW / pendingHeaderImg.width);
       const headerDrawY = pageH - headerDrawH;
       page.drawImage(pendingHeaderImg, { x: 0, y: headerDrawY, width: pageW, height: headerDrawH });
-      const availH = Math.max(headerDrawY, 0);
-      const scaleW = pageW / img.width;
+      const availH = Math.max(headerDrawY - MARGIN, 0);
+      const contentW = pageW - MARGIN * 2;
+      const scaleW = contentW / img.width;
       const scaleH = availH / img.height;
       const scale = Math.min(scaleW, scaleH);
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const drawX = (pageW - drawW) / 2;
-      page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH, 0), width: drawW, height: drawH });
+      page.drawImage(img, { x: drawX, y: Math.max(headerDrawY - drawH - MARGIN / 2, MARGIN), width: drawW, height: drawH });
       pendingHeaderImg = null;
     } else {
       // Scale to fit page while preserving aspect ratio
