@@ -432,7 +432,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* Section headers (Proposed Services, Additional Details, Setup Materials) */
           .pdf-export-root .print-section-header {
-            background-color: ${BRAND.sage} !important;
+            background-color: ${BRAND.black} !important;
             padding: 6px 12px !important;
             border-radius: 8px 8px 0 0 !important;
             display: flex !important;
@@ -443,7 +443,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
             font-size: 12px !important;
             font-weight: 700 !important;
             letter-spacing: 0.08em !important;
-            color: ${BRAND.black} !important;
+            color: #ffffff !important;
             line-height: 1.1 !important;
           }
 
@@ -492,15 +492,15 @@ async function captureElement(el: HTMLElement): Promise<string> {
             padding: 10px !important;
           }
           .pdf-export-root .print-pricing-table[data-recommended="true"] {
-            border: 3px solid ${BRAND.darkSage} !important;
-            background-color: ${BRAND.sageTint} !important;
+            border: 3px solid ${BRAND.black} !important;
+            background-color: #f5f5f5 !important;
           }
           .pdf-export-root .proposal-recommended-banner {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             gap: 8px !important;
-            background-color: ${BRAND.darkSage} !important;
+            background-color: ${BRAND.black} !important;
             color: #ffffff !important;
             padding: 8px 16px !important;
             margin: -10px -10px 8px -10px !important;
