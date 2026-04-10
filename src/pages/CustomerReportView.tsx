@@ -28,7 +28,20 @@ interface PropertyImage {
   caption?: string;
 }
 
-interface SetupMaterial {
+const getRecurringLabel = (services: ServiceItem[]) => {
+  const recurringServices = services.filter(s => {
+    const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
+    return freq > 0 && s.serviceType;
+  });
+  if (recurringServices.length > 0 && recurringServices.every(s => {
+    const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
+    return freq <= 30;
+  })) {
+    return "Monthly";
+  }
+  return "Recurring";
+};
+
   name: string;
   quantity: string;
 }
