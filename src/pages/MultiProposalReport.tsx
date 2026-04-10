@@ -373,6 +373,10 @@ const Report = () => {
   
   // Page 2 duplicates
   const [duplicatedPages, setDuplicatedPages] = useState<number[]>([]);
+  
+  // Separate map data per duplicated page
+  const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
+  const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -793,6 +797,7 @@ const Report = () => {
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
+              if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -928,6 +933,7 @@ const Report = () => {
       recommendedProposal,
       videoUrl,
       duplicatedPages,
+      duplicateMapData,
     });
 
   const buildServicesPayload = () => proposals;
@@ -940,6 +946,9 @@ const Report = () => {
     });
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
+    // Capture all map canvases (main + duplicates) by triggering their exportMapAsImage
+    const allCanvases = document.querySelectorAll<HTMLCanvasElement>('canvas');
+    // The main map export function
     const exportFn = (window as any).exportMapAsImage as undefined | (() => Promise<string | null>);
     if (!exportFn) return renderedMapImage;
     const freshRender = await exportFn();
@@ -1612,6 +1621,26 @@ Crest Pest Control`;
     // For the original page, use editableFindings; for duplicates, use auto-generated text
     const servicesContent = isDuplicate ? proposalServicesText : (editableFindings[0] || "");
     
+    // Each page gets its own map data
+    const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
+    const currentRenderedMap = isDuplicate ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? renderedMapImage) : renderedMapImage;
+    
+    const handleDupeMapSave = (data: string | null) => {
+      if (isDuplicate && dupeIndex !== undefined) {
+        setDuplicateMapData(prev => ({ ...prev, [dupeIndex]: data }));
+      } else {
+        setMapData(data);
+      }
+    };
+    
+    const handleDupeMapExport = (img: string | null) => {
+      if (isDuplicate && dupeIndex !== undefined) {
+        setDuplicateRenderedMapImages(prev => ({ ...prev, [dupeIndex]: img }));
+      } else {
+        setRenderedMapImage(img);
+      }
+    };
+    
     return (
     <div data-pdf-page={isDuplicate ? `2-dupe-${dupeIndex}` : "2"} className="print-page-break bg-background print:flex print:flex-col print:min-h-[100vh]">
       <div data-pdf-capture={captureIndex.toString()} className="p-4 print:p-4 print:pt-4 max-w-[1800px] mx-auto print:min-h-[100vh] print:flex print:flex-col">
@@ -1656,15 +1685,15 @@ Crest Pest Control`;
               )}
               {mapUrl || customMapImage ? (
                 <div className="relative h-full w-full">
-                  {pdfExportMode && renderedMapImage ? (
-                    <img src={renderedMapImage} alt="Property map with annotations" className="w-full h-full object-cover" />
+                  {pdfExportMode && currentRenderedMap ? (
+                    <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
                   ) : (
                     <MapCanvas
-                      key={customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`}
+                      key={isDuplicate ? `dupe-${dupeIndex}-${customMapImage || mapUrl}` : (customMapImage ? `custom-${customMapImage}` : `map-${mapUrl}`)}
                       mapUrl={customMapImage || mapUrl}
-                      onSave={setMapData}
-                      onExportImage={setRenderedMapImage}
-                      initialData={mapData}
+                      onSave={handleDupeMapSave}
+                      onExportImage={handleDupeMapExport}
+                      initialData={currentMapData}
                     />
                   )}
                   {!isDuplicate && (
@@ -2314,15 +2343,52 @@ Crest Pest Control`;
         </div>
       </div>
 
+      {/* Page Separator */}
+      <div className="no-print max-w-[1800px] mx-auto px-4">
+        <div className="flex items-center gap-4 py-6">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+            <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Page 2 — Property Map & Details</span>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+        </div>
+      </div>
+
       {/* PAGE 2 - Map + Services/Details/Materials */}
       {renderMapSection(videoUrl ? 3 : 2)}
 
       {/* Duplicated Page 2s */}
       {duplicatedPages.map((_, dupeIndex) => (
         <div key={dupeIndex}>
+          {/* Page Separator for duplicate */}
+          <div className="no-print max-w-[1800px] mx-auto px-4">
+            <div className="flex items-center gap-4 py-6">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+              <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+                <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Page {3 + dupeIndex} — {proposals[dupeIndex + 1]?.name || `Option ${String.fromCharCode(66 + dupeIndex)}`}
+                </span>
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+            </div>
+          </div>
           {renderMapSection(videoUrl ? 4 + dupeIndex : 3 + dupeIndex, true, dupeIndex)}
         </div>
       ))}
+
+      {/* Page Separator for Media */}
+      <div className="no-print max-w-[1800px] mx-auto px-4">
+        <div className="flex items-center gap-4 py-6">
+          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-border" />
+          <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-full px-4 py-1.5">
+            <img src={crestBugBlack} alt="" className="w-4 h-4 opacity-40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Property Images & Media</span>
+          </div>
+          <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
+        </div>
+      </div>
 
       {/* Image/Video Upload Page */}
       <div 

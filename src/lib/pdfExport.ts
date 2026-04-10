@@ -446,15 +446,15 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: ${BRAND.black} !important;
           }
 
-          /* Page 2 section headers */
-          .pdf-export-root[data-pdf-capture="2"] .print-section-header {
+          /* Page 2+ section headers — applies to all map pages */
+          .pdf-export-root .print-section-header {
             font-size: 13px !important;
             font-weight: 700 !important;
           }
 
-          /* Page 2 section content — modest bump */
-          .pdf-export-root[data-pdf-capture="2"] .print-section-content,
-          .pdf-export-root[data-pdf-capture="2"] .print-section-content * {
+          /* Page 2+ section content */
+          .pdf-export-root .print-section-content,
+          .pdf-export-root .print-section-content * {
             line-height: 1.55 !important;
           }
 
