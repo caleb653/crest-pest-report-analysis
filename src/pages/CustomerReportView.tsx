@@ -142,7 +142,33 @@ export default function CustomerReportView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
+
+  // Parse per-proposal signatures from the stored customer_signature field
+  const getPerProposalSignatures = (): Record<string, string> => {
+    if (!report?.customer_signature) return {};
+    try {
+      const parsed = JSON.parse(report.customer_signature);
+      if (parsed && parsed._perProposal) {
+        return parsed.signatures || {};
+      }
+    } catch {
+      // Legacy single signature — not per-proposal
+    }
+    return {};
+  };
+
+  const isLegacySingleSignature = (): boolean => {
+    if (!report?.customer_signature) return false;
+    try {
+      JSON.parse(report.customer_signature);
+      return false;
+    } catch {
+      return true; // It's a raw data: URI
+    }
+  };
 
   useEffect(() => {
     if (reportId) {
@@ -228,16 +254,18 @@ export default function CustomerReportView() {
     }
   };
 
-  const handleSignatureSave = async (signatureData: string) => {
+  const handleSignatureSave = async (signatureData: string, proposalIndex?: number) => {
     if (!reportId || !signatureData) return;
 
     setIsSaving(true);
+    if (proposalIndex !== undefined) setSavingProposalIndex(proposalIndex);
     try {
       const { data, error: invokeError } = await supabase.functions.invoke("save-customer-signature", {
         body: {
           reportId,
           signatureData,
           notifyOffice: true,
+          ...(proposalIndex !== undefined ? { proposalIndex } : {}),
         },
       });
 
@@ -246,20 +274,52 @@ export default function CustomerReportView() {
         throw new Error((data as { error?: string } | null)?.error || "Failed to save signature");
       }
 
-      setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
-      toast.success("Signature saved! Thank you for approving the proposal.");
+      if (proposalIndex !== undefined) {
+        // Update local state with per-proposal signature
+        setReport((prev) => {
+          if (!prev) return prev;
+          const existingSignatures = getPerProposalSignaturesFromValue(prev.customer_signature);
+          existingSignatures[String(proposalIndex)] = signatureData;
+          return { ...prev, customer_signature: JSON.stringify({ _perProposal: true, signatures: existingSignatures }) };
+        });
+        const optionLabel = `Option ${String.fromCharCode(65 + proposalIndex)}`;
+        toast.success(`Signature saved for ${optionLabel}! Thank you.`);
+      } else {
+        setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
+        toast.success("Signature saved! Thank you for approving the proposal.");
+      }
     } catch (err) {
       console.error("Error saving signature:", err);
       toast.error("Failed to save signature. Please try again.");
     } finally {
       setIsSaving(false);
+      setSavingProposalIndex(null);
     }
+  };
+
+  const getPerProposalSignaturesFromValue = (value: string | null): Record<string, string> => {
+    if (!value) return {};
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed._perProposal) return parsed.signatures || {};
+    } catch { /* legacy */ }
+    return {};
   };
 
   const handleSubmitSignature = () => {
     const sig = signatureRef.current?.forceSave();
     if (sig) {
       handleSignatureSave(sig);
+    } else {
+      toast.error("Please sign above before submitting");
+    }
+  };
+
+  const handleSubmitProposalSignature = (proposalIndex: number) => {
+    const ref = proposalSignatureRefs.current[proposalIndex];
+    const sig = ref?.forceSave();
+    if (sig) {
+      handleSignatureSave(sig, proposalIndex);
     } else {
       toast.error("Please sign above before submitting");
     }
