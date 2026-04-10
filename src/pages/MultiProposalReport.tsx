@@ -546,8 +546,10 @@ const Report = () => {
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "jake@crestpestco.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
+  const [perProposalSignatures, setPerProposalSignatures] = useState<Record<number, string | null>>({});
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12);
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11);
   const [showSignature, setShowSignature] = useState(true);
