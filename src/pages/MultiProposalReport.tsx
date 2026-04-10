@@ -378,6 +378,9 @@ const Report = () => {
   const [duplicateMapData, setDuplicateMapData] = useState<Record<number, string | null>>({});
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
+  
+  // Track which map pages are in edit mode (most recent is always editable)
+  const [editingMapPages, setEditingMapPages] = useState<Set<number>>(new Set());
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
