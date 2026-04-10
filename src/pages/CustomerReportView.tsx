@@ -259,6 +259,28 @@ export default function CustomerReportView() {
     } catch { /* not JSON */ }
   }
 
+  // Parse multi-proposal or flat services format
+  const isMultiProposal = report.services && Array.isArray(report.services) && report.services.length > 0 
+    && typeof report.services[0] === 'object' && report.services[0] !== null 
+    && 'name' in report.services[0] && 'services' in report.services[0];
+  
+  const parsedProposals: Proposal[] = isMultiProposal
+    ? (report.services as Proposal[])
+    : report.services && (report.services as ServiceItem[]).length > 0
+      ? [{ name: "Services", services: report.services as ServiceItem[] }]
+      : [];
+
+  // Extract recommended proposal from notes
+  let recommendedProposalIndex = 0;
+  if (report.notes) {
+    try {
+      const parsed = JSON.parse(report.notes);
+      if (parsed?._structuredNotes && parsed.recommendedProposal !== undefined) {
+        recommendedProposalIndex = parsed.recommendedProposal;
+      }
+    } catch { /* not JSON */ }
+  }
+
   // Format findings for display
   const findingsHtml = Array.isArray(report.findings)
     ? report.findings.join('<br/>')
