@@ -420,7 +420,7 @@ const Report = () => {
     });
   };
 
-  const getRecurringLabel = (services: ServiceEntry[]) => {
+  const getRecurringLabel = (services: ServiceItem[]) => {
     const recurringServices = services.filter(s => s.frequency > 0 && s.serviceType);
     if (recurringServices.length > 0 && recurringServices.every(s => s.frequency <= 30)) {
       return "Monthly";
