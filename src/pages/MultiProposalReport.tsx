@@ -1962,8 +1962,8 @@ Crest Pest Control`;
 
       {/* Video Page - FIRST if video exists */}
       {videoUrl && (
-        <div data-pdf-page="video" className="print-page-break bg-background">
-          <div data-pdf-capture="0" className="p-4 max-w-[1800px] mx-auto">
+        <div data-pdf-page="video" className="print-page-break bg-background no-pdf-export">
+          <div className="p-4 max-w-[1800px] mx-auto">
             <div className="page2-header flex items-center justify-between mb-4 pb-2 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
               <div className="flex items-center gap-3">
                 <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
@@ -1983,7 +1983,7 @@ Crest Pest Control`;
       )}
 
       {/* Header */}
-      <div data-pdf-capture={videoUrl ? "1" : "0"} className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
+      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
         <div className="max-w-[1800px] mx-auto">
           {/* Top row: Logo + Title + Action buttons */}
           <div className="flex items-center gap-3 mb-2 print:mb-1">
@@ -2176,7 +2176,7 @@ Crest Pest Control`;
       </div>
 
       {/* PAGE 1 - Proposals + Products + Scheduling + Guarantee */}
-      <div data-pdf-page="1" data-pdf-capture={videoUrl ? "2" : "1"} className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
+      <div data-pdf-page="1" data-pdf-capture="1" className="p-2 pt-1.5 print:p-1 print:pt-0 max-w-[1800px] mx-auto">
         <div className="space-y-2 print:space-y-1">
           {/* Multiple Proposal Tables */}
           {proposals.map((proposal, index) => (
@@ -2420,7 +2420,7 @@ Crest Pest Control`;
       </div>
 
       {/* PAGE 2 - Map + Services/Details/Materials */}
-      {renderMapSection(videoUrl ? 3 : 2)}
+      {renderMapSection(2)}
 
       {/* Proposal map pages after Option A */}
       {Array.from({ length: duplicateMapPageCount }, (_, dupeIndex) => (
@@ -2437,7 +2437,7 @@ Crest Pest Control`;
               <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-border" />
             </div>
           </div>
-          {renderMapSection(videoUrl ? 4 + dupeIndex : 3 + dupeIndex, true, dupeIndex)}
+          {renderMapSection(3 + dupeIndex, true, dupeIndex)}
         </div>
       ))}
 
@@ -2460,7 +2460,7 @@ Crest Pest Control`;
         onPaste={handlePropertyImagesPaste}
         tabIndex={0}
       >
-        <div data-pdf-capture={(videoUrl ? 4 + duplicateMapPageCount : 3 + duplicateMapPageCount).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
+        <div data-pdf-capture={(3 + duplicateMapPageCount).toString()} className="p-4 print:px-6 print:pb-6 print:pt-5 max-w-[1800px] mx-auto">
           {/* Page Header */}
           <div className="page2-header flex items-center justify-between mb-6 print:mb-5 pb-2 print:pb-2.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2">
             <div className="flex items-center gap-3 print:gap-2">
