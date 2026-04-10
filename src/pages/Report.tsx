@@ -818,7 +818,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
-        setServices(row.services as ServiceItem[]);
+        setServices((row.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })) as ServiceItem[]);
         // Prevent the service auto-population effect from re-appending descriptions already saved
         addedServiceTypesRef.current = new Set(
           (row.services as ServiceItem[])
