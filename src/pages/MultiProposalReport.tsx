@@ -1908,7 +1908,7 @@ Crest Pest Control`;
             {/* Additional Details */}
             <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex flex-col">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Additional Details</span>
+                <span className="text-sm print:text-[12px] font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-2 flex-1 flex flex-col">
                 <div className="no-print flex-1 flex flex-col">
@@ -1932,7 +1932,7 @@ Crest Pest Control`;
             {/* Setup Materials */}
             <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                <span className="text-xs print:text-[10px] font-bold uppercase">Setup Materials</span>
+                <span className="text-sm print:text-[12px] font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-2.5 print:p-1.5">
                 {setupMaterials.length > 0 && (
