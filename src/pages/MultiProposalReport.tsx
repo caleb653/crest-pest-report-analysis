@@ -2327,7 +2327,7 @@ Crest Pest Control`;
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Short PDF</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToPDF("short")}>Normal PDF</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -2894,7 +2894,7 @@ Crest Pest Control`;
             <RadioGroup value={pdfAttachOption} onValueChange={(v) => setPdfAttachOption(v as "short" | "full" | "none")} className="flex flex-col gap-2">
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="short" id="pdf-short" />
-                <Label htmlFor="pdf-short" className="text-sm cursor-pointer">Short PDF (app pages only)</Label>
+                <Label htmlFor="pdf-short" className="text-sm cursor-pointer">Normal PDF (app pages only)</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="full" id="pdf-full" />
