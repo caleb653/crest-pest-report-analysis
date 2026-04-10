@@ -1645,7 +1645,7 @@ Crest Pest Control`;
           <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
-            <span className="text-center">Recurring</span>
+            <span className="text-center">{getRecurringLabel(proposal.services)}</span>
             <span className="text-center">Frequency</span>
             <span className="text-center">Schedule</span>
             <span></span>
