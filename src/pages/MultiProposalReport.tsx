@@ -1116,11 +1116,27 @@ const Report = () => {
     return newId;
   };
 
+  const getSerializedSignature = (): string | null => {
+    // Collect per-proposal signatures
+    const sigs: Record<string, string | null> = {};
+    let hasSig = false;
+    Object.entries(perProposalSignatures).forEach(([k, v]) => {
+      if (v) { sigs[k] = v; hasSig = true; }
+    });
+    // Also force-save from refs
+    Object.entries(proposalSignatureRefs.current).forEach(([k, ref]) => {
+      const data = ref?.forceSave();
+      if (data) { sigs[k] = data; hasSig = true; }
+    });
+    if (!hasSig) return customerSignature;
+    return JSON.stringify({ _perProposal: true, signatures: sigs });
+  };
+
   const handleSubmit = async () => {
     if (!editableTech) { toast.error("Please enter technician name"); return; }
     setIsSaving(true);
     try {
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const finalSignature = getSerializedSignature();
       const rawMap = latestMapDataRef.current ?? mapData;
       let mapPayload: any = null;
       if (rawMap) {
