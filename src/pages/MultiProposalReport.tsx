@@ -1921,8 +1921,53 @@ Crest Pest Control`;
             })()}
           </div>
 
-          {/* Right Column - Proposed Services + Additional Details + Setup Materials */}
+          {/* Right Column - Pricing + Proposed Services + Additional Details + Setup Materials */}
           <div className="flex flex-col gap-4 print:gap-3">
+            {/* Mini Pricing Table for this proposal */}
+            {proposals[proposalIndex] && (
+              <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl border-2 border-foreground/60">
+                <div className="print-section-header py-2 px-3.5 print:px-3 rounded-t-xl">
+                  <span className="text-base print:text-sm font-bold uppercase">
+                    Pricing — {proposalName}
+                  </span>
+                </div>
+                <div className="p-2 print:p-1.5">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs font-bold uppercase">
+                        <th className="text-left px-2 py-1">Service</th>
+                        <th className="text-center px-2 py-1">Initial</th>
+                        <th className="text-center px-2 py-1">Recurring</th>
+                        <th className="text-center px-2 py-1">Frequency</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proposals[proposalIndex].services.filter(s => s.serviceType).map((service, idx) => (
+                        <tr key={idx} className="border-b border-border/50">
+                          <td className="px-2 py-1 text-xs font-medium">{service.serviceType}</td>
+                          <td className="px-2 py-1 text-xs text-center">${service.initialPrice || "0"}</td>
+                          <td className="px-2 py-1 text-xs text-center">${service.recurringPrice || "0"}</td>
+                          <td className="px-2 py-1 text-xs text-center">
+                            {FREQUENCY_OPTIONS.find(o => o.days === service.frequency)?.label || "One-time"}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-foreground/30">
+                        <td className="px-2 py-1 text-xs font-bold text-right">Total:</td>
+                        <td className="px-2 py-1 text-xs text-center font-bold">
+                          ${Math.round(proposals[proposalIndex].services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}
+                        </td>
+                        <td className="px-2 py-1 text-xs text-center font-bold">
+                          ${Math.round(proposals[proposalIndex].services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
