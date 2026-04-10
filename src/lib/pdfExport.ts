@@ -536,7 +536,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
           .pdf-export-root .proposal-recommended-badge {
             display: none !important;
           }
-          }
           .pdf-export-root .print-pricing-display {
             display: flex !important;
             align-items: center !important;
