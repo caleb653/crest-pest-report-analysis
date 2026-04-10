@@ -1426,7 +1426,7 @@ Crest Pest Control`;
   };
   const handleImageDragEnd = () => { setDraggedImageIndex(null); };
 
-  const handleMapPaste = async (e: React.ClipboardEvent) => {
+  const handleMapPasteForPage = async (e: React.ClipboardEvent, isDupe: boolean, dupeIdx?: number) => {
     const items = e.clipboardData?.items;
     if (!items) return;
     for (const item of items) {
@@ -1437,7 +1437,11 @@ Crest Pest Control`;
         try {
           const { compressImage } = await import("@/lib/imageUpload");
           const { blob: compressedBlob, localUrl } = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
-          setCustomMapImage(localUrl);
+          if (isDupe && dupeIdx !== undefined) {
+            setDuplicateCustomMapImages(prev => ({ ...prev, [dupeIdx]: localUrl }));
+          } else {
+            setCustomMapImage(localUrl);
+          }
           const fileName = `${Math.random()}.jpg`;
           const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
           const { error: uploadError } = await supabase.storage
@@ -1445,7 +1449,11 @@ Crest Pest Control`;
             .upload(filePath, compressedBlob, { upsert: true, contentType: "image/jpeg" });
           if (uploadError) throw uploadError;
           const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
-          setCustomMapImage(publicUrl);
+          if (isDupe && dupeIdx !== undefined) {
+            setDuplicateCustomMapImages(prev => ({ ...prev, [dupeIdx]: publicUrl }));
+          } else {
+            setCustomMapImage(publicUrl);
+          }
           URL.revokeObjectURL(localUrl);
           pendingAutoSaveRef.current = true;
           toast.success("Map pasted successfully");
@@ -1455,6 +1463,40 @@ Crest Pest Control`;
         }
         break;
       }
+    }
+  };
+
+  const handleMapUploadForPage = async (e: React.ChangeEvent<HTMLInputElement>, isDupe: boolean, dupeIdx?: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type && !file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size === 0) { toast.error("That photo isn't downloaded to this iPad yet (iCloud). Open Photos, download it, then try again."); return; }
+    try {
+      const { compressImage } = await import("@/lib/imageUpload");
+      const { blob: compressedBlob, localUrl } = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
+      if (isDupe && dupeIdx !== undefined) {
+        setDuplicateCustomMapImages(prev => ({ ...prev, [dupeIdx]: localUrl }));
+      } else {
+        setCustomMapImage(localUrl);
+      }
+      const fileName = `${Math.random()}.jpg`;
+      const filePath = `${reportId || "temp"}/custom-map/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("report-images")
+        .upload(filePath, compressedBlob, { upsert: true, contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+      if (isDupe && dupeIdx !== undefined) {
+        setDuplicateCustomMapImages(prev => ({ ...prev, [dupeIdx]: publicUrl }));
+      } else {
+        setCustomMapImage(publicUrl);
+      }
+      URL.revokeObjectURL(localUrl);
+      pendingAutoSaveRef.current = true;
+      toast.success("Map uploaded");
+    } catch (error) {
+      console.error("Error uploading map:", error);
+      toast.error("Failed to upload map image");
     }
   };
 
