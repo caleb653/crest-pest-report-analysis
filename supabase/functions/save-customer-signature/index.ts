@@ -13,6 +13,7 @@ interface SaveSignatureRequest {
   reportId: string;
   signatureData: string;
   notifyOffice?: boolean;
+  proposalIndex?: number; // For per-proposal signatures
 }
 
 serve(async (req) => {
@@ -22,13 +23,14 @@ serve(async (req) => {
 
   try {
     const body = (await req.json().catch(() => ({}))) as SaveSignatureRequest;
-    const { reportId, signatureData, notifyOffice } = body;
+    const { reportId, signatureData, notifyOffice, proposalIndex } = body;
 
     console.log("save-customer-signature request:", { 
       reportId, 
       hasSignature: !!signatureData, 
       signatureLength: signatureData?.length,
-      notifyOffice 
+      notifyOffice,
+      proposalIndex,
     });
 
     if (!reportId) {
@@ -49,10 +51,38 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Build the signature value to store
+    let signatureValue: string;
+
+    if (proposalIndex !== undefined && proposalIndex !== null) {
+      // Per-proposal signature: read existing, merge, save as JSON
+      const { data: existing } = await supabase
+        .from("reports")
+        .select("customer_signature")
+        .eq("id", reportId)
+        .single();
+
+      let sigMap: Record<string, string> = {};
+      if (existing?.customer_signature) {
+        try {
+          const parsed = JSON.parse(existing.customer_signature);
+          if (parsed && parsed._perProposal) {
+            sigMap = parsed.signatures || {};
+          }
+        } catch {
+          // Legacy single signature — keep it as index 0 if needed
+        }
+      }
+      sigMap[String(proposalIndex)] = signatureData;
+      signatureValue = JSON.stringify({ _perProposal: true, signatures: sigMap });
+    } else {
+      signatureValue = signatureData;
+    }
+
     // Save the signature to the database
     const { data: updatedReport, error: updateError } = await supabase
       .from("reports")
-      .update({ customer_signature: signatureData })
+      .update({ customer_signature: signatureValue })
       .eq("id", reportId)
       .select("id, customer_name, address, technician_name, report_title")
       .single();
@@ -65,7 +95,10 @@ serve(async (req) => {
       );
     }
 
-    console.log("Signature saved to database:", { reportId, customerName: updatedReport?.customer_name });
+    console.log("Signature saved to database:", { reportId, customerName: updatedReport?.customer_name, proposalIndex });
+
+    // Determine option label for notification
+    const optionLabel = proposalIndex !== undefined ? `Option ${String.fromCharCode(65 + proposalIndex)}` : null;
 
     // Send notification email to office if requested
     if (notifyOffice && RESEND_API_KEY) {
@@ -81,10 +114,10 @@ serve(async (req) => {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5;">
   <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
     <div style="background-color: #1a1a1a; padding: 24px; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 20px;">🎉 New Proposal Signed!</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 20px;">🎉 New Proposal Signed!${optionLabel ? ` (${optionLabel})` : ''}</h1>
     </div>
     <div style="padding: 24px;">
-      <p style="margin: 0 0 16px; color: #333;">A customer has signed their proposal:</p>
+      <p style="margin: 0 0 16px; color: #333;">A customer has signed their proposal${optionLabel ? ` for <strong>${optionLabel}</strong>` : ''}:</p>
       
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
         <tr>
@@ -106,7 +139,7 @@ serve(async (req) => {
       </table>
       
       <div style="margin-top: 16px; padding: 16px; background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #22c55e;">
-        <p style="margin: 0 0 8px; font-weight: 600; color: #333;">Customer Signature:</p>
+        <p style="margin: 0 0 8px; font-weight: 600; color: #333;">Customer Signature${optionLabel ? ` (${optionLabel})` : ''}:</p>
         <img src="${signatureData}" alt="Customer signature" style="max-height: 60px; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;" />
       </div>
       
@@ -131,7 +164,7 @@ serve(async (req) => {
           body: JSON.stringify({
             from: "Crest Pest Control <reports@crestpestco.com>",
             to: [OFFICE_EMAIL],
-            subject: `✅ Proposal Signed: ${updatedReport?.customer_name || "Customer"} - ${updatedReport?.address || ""}`,
+            subject: `✅ Proposal Signed${optionLabel ? ` (${optionLabel})` : ''}: ${updatedReport?.customer_name || "Customer"} - ${updatedReport?.address || ""}`,
             html: emailHtml,
           }),
         });
@@ -144,7 +177,6 @@ serve(async (req) => {
         }
       } catch (emailErr) {
         console.error("Error sending office notification:", emailErr);
-        // Don't fail the whole request if email fails
       }
     }
 
