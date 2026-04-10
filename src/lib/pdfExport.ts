@@ -101,7 +101,7 @@ function remakePricingTable(root: HTMLElement) {
     thead.querySelectorAll<HTMLElement>("th, td").forEach((th) => {
       sp(th, "background-color", BRAND.sage);
       sp(th, "color", BRAND.black);
-      sp(th, "font-size", "10px");
+      sp(th, "font-size", "11px");
       sp(th, "font-weight", "700");
       sp(th, "letter-spacing", "0.1em");
       sp(th, "text-transform", "uppercase");
@@ -130,7 +130,7 @@ function remakePricingTable(root: HTMLElement) {
       sp(cell, "background-color", isEven ? BRAND.sageTint : "#ffffff");
 
       if (colIdx === 0) {
-        sp(cell, "font-size", "13px");
+        sp(cell, "font-size", "14px");
         sp(cell, "font-weight", "500");
         sp(cell, "color", BRAND.black);
       } else if (colIdx === 1 || colIdx === 2) {
