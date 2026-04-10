@@ -1793,7 +1793,7 @@ Crest Pest Control`;
         <div className="page2-header flex items-center justify-between mb-4 print:mb-2.5 pb-2 print:pb-1.5 border-b-2 border-border bg-primary/30 rounded-md px-4 py-2 print:px-3 print:py-1.5">
           <div className="flex items-center gap-3 print:gap-2">
             <img src={crestLogo} alt="Crest Pest Control" className="h-12 print:h-8" />
-            <h1 className="text-xl print:text-lg font-bold text-foreground">
+            <h1 className="text-2xl print:text-xl font-bold text-foreground">
               Property Map & Details — {proposalName}
             </h1>
           </div>
@@ -1919,7 +1919,7 @@ Crest Pest Control`;
             {/* Proposed Services */}
             <Card data-pdf-section="proposed-services" className="print-section p-0 flex flex-col overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">
+                <span className="text-base print:text-sm font-bold uppercase">
                   Proposed Services — {proposalName}
                 </span>
               </div>
@@ -1986,7 +1986,7 @@ Crest Pest Control`;
             {/* Additional Details */}
             <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">Additional Details</span>
+                <span className="text-base print:text-sm font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-2 flex-1 flex flex-col">
                 <div className="no-print flex-1 flex flex-col">
@@ -2010,13 +2010,13 @@ Crest Pest Control`;
             {/* Setup Materials */}
             <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 rounded-t-xl">
-                <span className="text-sm print:text-[12px] font-bold uppercase">Setup Materials</span>
+                <span className="text-base print:text-sm font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-2.5 print:p-1.5">
                 {setupMaterials.length > 0 && (
                   <div className="space-y-1 mb-2">
                     {setupMaterials.map((mat, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs group">
+                      <div key={index} className="flex items-center justify-between text-sm group">
                         <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
                         {!isReadOnly && (
                           <button type="button" onClick={() => removeSetupMaterial(index)}
@@ -2060,7 +2060,7 @@ Crest Pest Control`;
             {/* Customer Signature — on each proposal page */}
             <Card className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-xl">
-                <span className="text-xs print:text-[10px] font-bold uppercase">
+                <span className="text-sm print:text-xs font-bold uppercase">
                   Customer Signature — {proposalName}
                 </span>
               </div>
