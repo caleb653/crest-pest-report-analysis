@@ -375,6 +375,10 @@ const Report = () => {
   const [duplicateRenderedMapImages, setDuplicateRenderedMapImages] = useState<Record<number, string | null>>({});
   const duplicateRenderedMapImagesRef = useRef<Record<number, string | null>>({});
   const [duplicateCustomMapImages, setDuplicateCustomMapImages] = useState<Record<number, string | null>>({});
+  // Track which map is actively being edited (its toolbar is visible)
+  // "main" = Option A map, "dupe-0" = Option B, "dupe-1" = Option C, etc.
+  // When only one map exists, default to "main"
+  const [activeMapId, setActiveMapId] = useState<string>("main");
   // Per-proposal editable findings (keyed by proposalIndex)
   const [proposalFindings, setProposalFindings] = useState<Record<number, string>>({});
 
