@@ -1937,21 +1937,29 @@ Crest Pest Control`;
                         onExportImage={handleDupeMapExport}
                         initialData={currentMapData}
                         exportId={isDuplicate ? `duplicate-${dupeIndex}` : "main"}
+                        showToolbar={activeMapId === (isDuplicate ? `dupe-${dupeIndex}` : "main")}
                       />
                     )}
                     {!isReadOnly && (
                       <>
                         {(isDuplicate || duplicateMapPageCount > 0) && (
                           <div className="no-print absolute top-4 left-4 z-20">
-                            <Button size="sm" variant="secondary" type="button" onClick={() => {
-                              const mapContainer = document.querySelector(`[data-pdf-page="${isDuplicate ? `2-dupe-${dupeIndex}` : "2"}"] canvas`);
-                              if (mapContainer) {
-                                mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                (mapContainer as HTMLElement).click();
-                              }
-                            }}>
-                              <Edit className="w-4 h-4 mr-2" /> Edit Map
-                            </Button>
+                            {activeMapId === (isDuplicate ? `dupe-${dupeIndex}` : "main") ? (
+                              <Button size="sm" variant="default" type="button" className="bg-green-600 hover:bg-green-700">
+                                <Check className="w-4 h-4 mr-2" /> Editing This Map
+                              </Button>
+                            ) : (
+                              <Button size="sm" variant="secondary" type="button" onClick={() => {
+                                const mapId = isDuplicate ? `dupe-${dupeIndex}` : "main";
+                                setActiveMapId(mapId);
+                                const mapContainer = document.querySelector(`[data-pdf-page="${isDuplicate ? `2-dupe-${dupeIndex}` : "2"}"] canvas`);
+                                if (mapContainer) {
+                                  mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                              }}>
+                                <Edit className="w-4 h-4 mr-2" /> Edit Map
+                              </Button>
+                            )}
                           </div>
                         )}
                         <div className="no-print absolute top-4 right-4 z-20">
