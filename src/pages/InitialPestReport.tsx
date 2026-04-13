@@ -1097,6 +1097,7 @@ Crest Pest Control
           reportUrl: `${window.location.origin}/view-report/${finalReportId}`,
           emailSubject,
           emailMessage,
+          buttonText: "View Your Report",
           baseUrl: window.location.origin,
           ...(pdfBase64 ? {
             pdfBase64,
