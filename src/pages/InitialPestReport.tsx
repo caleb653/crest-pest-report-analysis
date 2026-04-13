@@ -210,7 +210,7 @@ const Report = () => {
   const [includePdf, setIncludePdf] = useState(false);
   const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
   const [emailMessage, setEmailMessage] = useState("");
-  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "jake@crestpestco.com", "caleb@crestpestco.com"]);
+  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
   const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
