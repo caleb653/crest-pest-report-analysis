@@ -22,6 +22,7 @@ interface SendReportRequest {
   baseUrl?: string;
   pdfBase64?: string;
   pdfFilename?: string;
+  buttonText?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -42,6 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
       baseUrl,
       pdfBase64,
       pdfFilename,
+      buttonText,
     }: SendReportRequest = await req.json();
 
     if (!customerEmail) {
@@ -95,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
                   <tr>
                     <td style="text-align: center;">
-                      <a href="${reportUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">View Your Proposal</a>
+                      <a href="${reportUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">${buttonText || "View Your Proposal"}</a>
                     </td>
                   </tr>
                   <tr>

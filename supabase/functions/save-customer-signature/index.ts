@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const OFFICE_EMAIL = "office@crestpestcontrol.com";
+const SALES_EMAIL = "sales@crestpestco.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -163,7 +164,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             from: "Crest Pest Control <reports@crestpestco.com>",
-            to: [OFFICE_EMAIL],
+            to: [OFFICE_EMAIL, SALES_EMAIL],
             subject: `✅ Proposal Signed${optionLabel ? ` (${optionLabel})` : ''}: ${updatedReport?.customer_name || "Customer"} - ${updatedReport?.address || ""}`,
             html: emailHtml,
           }),
