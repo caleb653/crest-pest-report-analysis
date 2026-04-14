@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, ClipboardList, FileText, MessageSquare, Phone, Mail, ChevronRight, Download, Send } from "lucide-react";
+import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, ChevronDown, Send, ArrowLeft, X, MapPin, Shield, Wrench } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 
 interface LinkData {
@@ -34,6 +33,10 @@ interface PropertyData {
   name: string;
   address: string | null;
   image_url: string | null;
+  map_data: any;
+  map_image_url: string | null;
+  equipment: any;
+  customer_preferences: any;
 }
 
 interface ServiceData {
@@ -59,14 +62,6 @@ interface ServiceData {
   special_notes: string | null;
 }
 
-interface PrepSheet {
-  id: string;
-  title: string;
-  description: string | null;
-  treatment_type: string;
-  file_url: string | null;
-}
-
 interface ChatMessage {
   id: string;
   sender_name: string;
@@ -76,6 +71,142 @@ interface ChatMessage {
   created_at: string;
 }
 
+// ─── Service Snapshot Component ───
+const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
+  service: ServiceData;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onViewFull: () => void;
+}) => (
+  <Card className={`transition-all ${isExpanded ? "border-primary/40 shadow-md" : "hover:border-primary/20"}`}>
+    <CardContent className="p-0">
+      <button className="w-full text-left p-4 flex items-center justify-between" onClick={onToggle}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <p className="font-semibold text-sm">{service.service_type}</p>
+            <Badge variant={service.status === "completed" ? "default" : "secondary"} className="text-xs">{service.status}</Badge>
+            {service.follow_up_recommended && <Badge className="text-xs bg-orange-500 hover:bg-orange-600">Follow-up Needed</Badge>}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>{service.service_date ? new Date(service.service_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "No date"}</span>
+            {service.technician && <span>• {service.technician}</span>}
+          </div>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+      </button>
+      {isExpanded && (
+        <div className="px-4 pb-4 space-y-3 border-t pt-3">
+          {service.summary && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Summary</p><p className="text-sm">{service.summary}</p></div>}
+          {service.findings && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Findings</p><p className="text-sm">{service.findings}</p></div>}
+          {service.notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notes</p><p className="text-sm">{service.notes}</p></div>}
+          {service.products_used && Array.isArray(service.products_used) && service.products_used.length > 0 && (
+            <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Products Used</p>
+              <div className="flex flex-wrap gap-1">{(service.products_used as string[]).map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}</div>
+            </div>
+          )}
+          {service.follow_up_recommended && service.follow_up_notes && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-orange-700 mb-1">Follow-up Recommended</p>
+              <p className="text-sm text-orange-600">{service.follow_up_notes}</p>
+            </div>
+          )}
+          {service.unit_details && Array.isArray(service.unit_details) && (service.unit_details as any[]).length > 0 && (
+            <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Unit Details</p>
+              <div className="space-y-2">
+                {(service.unit_details as any[]).map((unit: any, i: number) => (
+                  <div key={i} className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-sm font-medium mb-1">Unit {unit.unit_number || i + 1} {unit.status && <Badge variant="outline" className="text-xs ml-1">{unit.status}</Badge>}</p>
+                    {unit.findings && <p className="text-xs text-muted-foreground">{unit.findings}</p>}
+                    {unit.notes && <p className="text-xs text-muted-foreground">{unit.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {service.special_notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Special Notes</p><p className="text-sm">{service.special_notes}</p></div>}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+);
+
+// ─── Floating Chat Widget ───
+const FloatingChat = ({ messages, input, setInput, onSend, sending }: {
+  messages: ChatMessage[];
+  input: string;
+  setInput: (v: string) => void;
+  onSend: () => void;
+  sending: boolean;
+}) => {
+  const [open, setOpen] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, open]);
+
+  return (
+    <>
+      {/* Floating bubble */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center hover:scale-105"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Chat panel */}
+      {open && (
+        <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 h-[420px] bg-card border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b bg-primary/5">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm">Chat with Crest</span>
+            </div>
+            <button onClick={() => setOpen(false)} className="p-1 rounded-full hover:bg-muted transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {messages.length === 0 && (
+              <div className="text-center text-xs text-muted-foreground py-6">
+                <p className="mb-2">Send us a message anytime!</p>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" />949-424-5000</span>
+                  <span className="flex items-center gap-1"><Mail className="w-3 h-3" />office@crestpestco.com</span>
+                </div>
+              </div>
+            )}
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.sender_type === "client" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${msg.sender_type === "client" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted rounded-bl-md"}`}>
+                  {msg.sender_type === "admin" && <p className="text-xs font-medium mb-0.5 opacity-70">Crest</p>}
+                  <p className="whitespace-pre-wrap text-[13px]">{msg.message}</p>
+                  <p className={`text-[10px] mt-1 ${msg.sender_type === "client" ? "opacity-60" : "text-muted-foreground"}`}>
+                    {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
+          <div className="border-t p-2">
+            <form onSubmit={e => { e.preventDefault(); onSend(); }} className="flex gap-2">
+              <Input placeholder="Type a message..." value={input} onChange={e => setInput(e.target.value)} disabled={sending} className="flex-1 h-9 text-sm rounded-full" />
+              <Button type="submit" size="icon" disabled={!input.trim() || sending} className="h-9 w-9 rounded-full shrink-0">
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// ─── Main Component ───
 const ClientPortal = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -85,26 +216,19 @@ const ClientPortal = () => {
   const [client, setClient] = useState<ClientData | null>(null);
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [services, setServices] = useState<ServiceData[]>([]);
-  const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<PropertyData | null>(null);
+  const [serviceView, setServiceView] = useState<"past" | "upcoming" | null>(null);
+  const [serviceSortBy, setServiceSortBy] = useState<"date" | "unit">("date");
+  const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
-  const [activeTab, setActiveTab] = useState("past");
-  const [selectedProperty, setSelectedProperty] = useState<string>("all");
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (token) loadPortal();
-  }, [token]);
+  useEffect(() => { if (token) loadPortal(); }, [token]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  // Poll for new messages every 10 seconds
   useEffect(() => {
     if (!linkData) return;
     const interval = setInterval(() => loadMessages(), 10000);
@@ -115,7 +239,6 @@ const ClientPortal = () => {
     setLoading(true);
     const { data: link } = await supabase.from("portal_links").select("*").eq("token", token).eq("is_active", true).single();
     if (!link) { setError("Invalid or expired link"); setLoading(false); return; }
-    // Redirect tenant links to TenantPortal
     if (link.link_type === "tenant") { navigate(`/tenant/${token}`, { replace: true }); return; }
     setLinkData(link);
 
@@ -135,10 +258,6 @@ const ClientPortal = () => {
       }
     }
 
-    const { data: ps } = await supabase.from("portal_prep_sheets").select("*").order("title");
-    if (ps) setPrepSheets(ps);
-
-    // Load messages for this client
     const { data: msgs } = await supabase
       .from("portal_messages")
       .select("id, sender_name, sender_type, message, subject, created_at")
@@ -162,34 +281,18 @@ const ClientPortal = () => {
   const sendChatMessage = async () => {
     if (!chatInput.trim() || !linkData || !client) return;
     setSending(true);
-
     const senderName = client.company || client.name;
-
-    // Save message to DB
     const { error: err } = await supabase.from("portal_messages").insert({
-      link_id: linkData.id,
-      client_id: linkData.client_id,
-      sender_name: senderName,
-      sender_type: "client",
-      subject: "Portal Chat",
-      message: chatInput.trim(),
+      link_id: linkData.id, client_id: linkData.client_id,
+      sender_name: senderName, sender_type: "client",
+      subject: "Portal Chat", message: chatInput.trim(),
     });
-
     if (!err) {
-      // Email the office
       try {
         await supabase.functions.invoke("send-portal-message", {
-          body: {
-            senderName,
-            propertyName: client.company || null,
-            subject: `Chat from ${senderName}`,
-            message: chatInput.trim(),
-          },
+          body: { senderName, propertyName: client.company || null, subject: `Chat from ${senderName}`, message: chatInput.trim() },
         });
-      } catch (e) {
-        console.error("Email send failed:", e);
-      }
-
+      } catch (e) { console.error("Email send failed:", e); }
       setChatInput("");
       loadMessages();
     } else {
@@ -199,20 +302,51 @@ const ClientPortal = () => {
   };
 
   const today = new Date().toISOString().split("T")[0];
-  const filteredServices = services.filter(s => {
-    if (selectedProperty !== "all" && s.property_id !== selectedProperty) return false;
-    return true;
-  });
-  const pastServices = filteredServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-  const futureServices = filteredServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
 
-  const getPropertyName = (id: string) => properties.find(p => p.id === id)?.name || "";
+  const getPropertyServices = (propertyId: string) => services.filter(s => s.property_id === propertyId);
+  const getPastServices = (propertyId: string) => getPropertyServices(propertyId).filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const getFutureServices = (propertyId: string) => {
+    const future = getPropertyServices(propertyId).filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+    // Auto-populate follow-up notes from past services
+    if (future.length > 0) {
+      const past = getPastServices(propertyId);
+      const followUps = past.filter(s => s.follow_up_recommended && s.follow_up_notes);
+      if (followUps.length > 0) {
+        // Attach follow-up context to the next service
+        const nextService = future[0];
+        if (!nextService.special_notes?.includes("Follow-up from previous")) {
+          // We don't mutate, but we'll show it in the UI
+        }
+      }
+    }
+    return future;
+  };
 
+  const sortServices = (svcs: ServiceData[]) => {
+    if (serviceSortBy === "unit") {
+      return [...svcs].sort((a, b) => {
+        const aUnits = Array.isArray(a.unit_details) ? (a.unit_details as any[]).map(u => u.unit_number).join(",") : "";
+        const bUnits = Array.isArray(b.unit_details) ? (b.unit_details as any[]).map(u => u.unit_number).join(",") : "";
+        return aUnits.localeCompare(bUnits) || ((b.service_date || "").localeCompare(a.service_date || ""));
+      });
+    }
+    return [...svcs].sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+  };
+
+  // Get unique service types for scope of work
+  const getScopeOfWork = (propertyId: string) => {
+    const propServices = getPropertyServices(propertyId);
+    const types = new Set<string>();
+    propServices.forEach(s => types.add(s.service_type));
+    return Array.from(types);
+  };
+
+  // ─── Loading / Error states ───
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <img src={crestLogo} alt="Crest Pest Control" className="h-16 mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading portal...</p>
+        <img src={crestLogo} alt="Crest Pest Control" className="h-16 mx-auto mb-4 animate-pulse" />
+        <p className="text-muted-foreground text-sm">Loading your portal...</p>
       </div>
     </div>
   );
@@ -229,299 +363,309 @@ const ClientPortal = () => {
     </div>
   );
 
+  // ─── Property Detail View ───
+  if (selectedProperty) {
+    const pastSvcs = sortServices(getPastServices(selectedProperty.id));
+    const futureSvcs = getFutureServices(selectedProperty.id);
+    const equipment = Array.isArray(selectedProperty.equipment) ? selectedProperty.equipment as string[] : [];
+    const scope = getScopeOfWork(selectedProperty.id);
+    const mapUrl = selectedProperty.map_image_url || selectedProperty.image_url;
+    const followUpItems = pastSvcs.filter(s => s.follow_up_recommended && s.follow_up_notes);
+
+    // Auto-expand most recent past service
+    const autoExpandId = pastSvcs.length > 0 && !expandedServiceId ? pastSvcs[0].id : expandedServiceId;
+
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="bg-card border-b px-4 py-3 sticky top-0 z-20">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            <button onClick={() => { setSelectedProperty(null); setServiceView(null); setExpandedServiceId(null); }} className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <img src={crestLogo} alt="Crest" className="h-8" />
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-base truncate">{selectedProperty.name}</h1>
+              {selectedProperty.address && <p className="text-xs text-muted-foreground truncate">{selectedProperty.address}</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
+          {/* Map */}
+          {mapUrl && (
+            <div className="rounded-xl overflow-hidden border shadow-sm bg-muted">
+              <div className="aspect-[3/4] relative max-w-md mx-auto">
+                {selectedProperty.map_data ? (
+                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={selectedProperty.map_data} />
+                ) : (
+                  <img src={mapUrl} alt={selectedProperty.name} className="w-full h-full object-cover" />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Scope of Work */}
+          {scope.length > 0 && (
+            <Card className="border-primary/20">
+              <CardHeader className="pb-2 py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  Scope of Work
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-1.5">
+                  {scope.map((type, i) => (
+                    <div key={type} className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                      <span className="text-sm font-medium">{type}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Equipment (numbered) */}
+          {equipment.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2 py-4">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-muted-foreground" />
+                  Equipment on Site
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-1.5">
+                  {equipment.map((eq, i) => (
+                    <div key={eq} className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                      <span className="text-sm">{eq}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Customer Preferences */}
+          {(selectedProperty.customer_preferences as any)?.preference && (
+            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Customer Preference</p>
+              <p className="text-sm font-medium">🌱 {(selectedProperty.customer_preferences as any).preference}</p>
+              {(selectedProperty.customer_preferences as any)?.notes && (
+                <p className="text-xs text-muted-foreground mt-1">{(selectedProperty.customer_preferences as any).notes}</p>
+              )}
+            </div>
+          )}
+
+          {/* Follow-up alerts from past services */}
+          {followUpItems.length > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-2">
+              <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">⚠️ Follow-up Items</p>
+              {followUpItems.map(s => (
+                <div key={s.id} className="text-sm text-orange-700">
+                  <span className="font-medium">{s.service_type}</span>
+                  {s.service_date && <span className="text-orange-500 ml-1">({new Date(s.service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
+                  <span className="mx-1">—</span>
+                  <span>{s.follow_up_notes}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ═══ Two Big Buttons ═══ */}
+          {!serviceView && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setServiceView("past")}
+                className="relative overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-card to-primary/5 p-6 text-center transition-all hover:border-primary hover:shadow-lg active:scale-[0.98] group"
+              >
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-primary group-hover:scale-110 transition-transform" />
+                <p className="text-2xl font-bold">{pastSvcs.length}</p>
+                <p className="text-sm font-semibold text-muted-foreground mt-0.5">Past Services</p>
+              </button>
+              <button
+                onClick={() => setServiceView("upcoming")}
+                className="relative overflow-hidden rounded-2xl border-2 border-secondary/30 bg-gradient-to-br from-card to-secondary/5 p-6 text-center transition-all hover:border-secondary hover:shadow-lg active:scale-[0.98] group"
+              >
+                <ClipboardList className="w-8 h-8 mx-auto mb-2 text-secondary group-hover:scale-110 transition-transform" />
+                <p className="text-2xl font-bold">{futureSvcs.length}</p>
+                <p className="text-sm font-semibold text-muted-foreground mt-0.5">Upcoming</p>
+                {futureSvcs.length > 0 && futureSvcs[0].service_date && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Next: {new Date(futureSvcs[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* ═══ Service List View ═══ */}
+          {serviceView && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <button onClick={() => { setServiceView(null); setExpandedServiceId(null); }} className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+                <h2 className="font-bold text-base">{serviceView === "past" ? "Past Services" : "Upcoming Services"}</h2>
+                {serviceView === "past" && (
+                  <Select value={serviceSortBy} onValueChange={(v: "date" | "unit") => setServiceSortBy(v)}>
+                    <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">By Date</SelectItem>
+                      <SelectItem value="unit">By Unit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                {serviceView !== "past" && <div />}
+              </div>
+
+              {serviceView === "past" ? (
+                pastSvcs.length === 0 ? (
+                  <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services on record</CardContent></Card>
+                ) : (
+                  <div className="space-y-2">
+                    {pastSvcs.map((s, i) => (
+                      <ServiceSnapshot
+                        key={s.id}
+                        service={s}
+                        isExpanded={(autoExpandId === s.id && i === 0 && !expandedServiceId) || expandedServiceId === s.id}
+                        onToggle={() => setExpandedServiceId(expandedServiceId === s.id ? null : s.id)}
+                        onViewFull={() => setSelectedService(s)}
+                      />
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div className="space-y-2">
+                  {/* Show follow-up notes on next service */}
+                  {futureSvcs.length > 0 && followUpItems.length > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-2">
+                      <p className="text-xs font-bold text-orange-700 mb-1">Carrying forward from previous visits:</p>
+                      {followUpItems.map(s => (
+                        <p key={s.id} className="text-xs text-orange-600">• {s.follow_up_notes}</p>
+                      ))}
+                    </div>
+                  )}
+                  {futureSvcs.length === 0 ? (
+                    <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">No upcoming services scheduled</CardContent></Card>
+                  ) : futureSvcs.map(s => (
+                    <ServiceSnapshot
+                      key={s.id}
+                      service={s}
+                      isExpanded={expandedServiceId === s.id}
+                      onToggle={() => setExpandedServiceId(expandedServiceId === s.id ? null : s.id)}
+                      onViewFull={() => setSelectedService(s)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000</p>
+        </div>
+
+        {/* Floating Chat */}
+        <FloatingChat messages={chatMessages} input={chatInput} setInput={setChatInput} onSend={sendChatMessage} sending={sending} />
+      </div>
+    );
+  }
+
+  // ─── All Properties View ───
+  const allPast = services.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const allFuture = services.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b px-4 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
-            <div>
-              <h1 className="text-lg font-bold">Client Portal</h1>
-              {client && <p className="text-sm text-muted-foreground">{client.company || client.name}</p>}
-            </div>
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
+          <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+          <div>
+            <h1 className="text-lg font-bold">Client Portal</h1>
+            {client && <p className="text-sm text-muted-foreground">{client.company || client.name}</p>}
           </div>
-          {linkData?.link_type === "master" && (
-            <Badge variant="outline" className="text-xs">Master View</Badge>
-          )}
         </div>
       </div>
 
-      {/* Quick summary */}
-      <div className="max-w-5xl mx-auto px-4 py-4">
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold">{pastServices.length}</p>
-              <p className="text-xs text-muted-foreground">Past Services</p>
+      <div className="max-w-2xl mx-auto px-4 py-5 space-y-5">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <Card className="border-primary/15">
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold">{properties.length}</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Properties</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold">{futureServices.length}</p>
-              <p className="text-xs text-muted-foreground">Upcoming</p>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold">{allPast.length}</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Services Done</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold text-sm leading-8">
-                {futureServices.length > 0 && futureServices[0].service_date
-                  ? new Date(futureServices[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                  : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">Next Service</p>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold">{allFuture.length}</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">Upcoming</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Properties */}
-        {properties.length > 0 && (
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold mb-2">Properties</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-              {(selectedProperty === "all" ? properties : properties.filter(p => p.id === selectedProperty)).map(p => (
-                <Card key={p.id} className={`overflow-hidden cursor-pointer transition-colors ${selectedProperty === p.id ? "border-primary" : "hover:border-primary/30"}`}
-                  onClick={() => setSelectedProperty(selectedProperty === p.id ? "all" : p.id)}>
-                  {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-28 object-cover" />}
-                  <CardContent className="p-3">
-                    <p className="font-medium text-sm">{p.name}</p>
-                    {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
-                    <p className="text-xs text-muted-foreground mt-1">{services.filter(s => s.property_id === p.id).length} services</p>
+        <div>
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-primary" /> Your Properties
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {properties.map(p => {
+              const propPast = getPastServices(p.id);
+              const propFuture = getFutureServices(p.id);
+              const nextDate = propFuture.length > 0 && propFuture[0].service_date
+                ? new Date(propFuture[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : null;
+              return (
+                <Card key={p.id} className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all overflow-hidden group active:scale-[0.99]"
+                  onClick={() => setSelectedProperty(p)}>
+                  {p.image_url && (
+                    <div className="h-36 w-full overflow-hidden">
+                      <img src={p.image_url} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate">{p.name}</p>
+                        {p.address && <p className="text-xs text-muted-foreground truncate mt-0.5">{p.address}</p>}
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span>{propPast.length} completed</span>
+                      <span>•</span>
+                      <span>{propFuture.length} upcoming</span>
+                      {nextDate && <><span>•</span><span className="text-primary font-medium">Next: {nextDate}</span></>}
+                    </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-            {selectedProperty !== "all" && (
-              <Button variant="ghost" size="sm" onClick={() => setSelectedProperty("all")} className="text-xs">← All Properties</Button>
-            )}
+              );
+            })}
           </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-4 mb-4">
-            <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
-            <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
-            <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep Sheets</TabsTrigger>
-            <TabsTrigger value="message"><MessageSquare className="w-4 h-4 mr-1 hidden sm:inline" />Chat</TabsTrigger>
-          </TabsList>
-
-          {/* Past Services */}
-          <TabsContent value="past">
-            {pastServices.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No past services on record</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {pastServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{s.service_type}</p>
-                          <Badge variant={s.status === "completed" ? "default" : "secondary"} className="text-xs">{s.status}</Badge>
-                          {s.follow_up_recommended && <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">Follow-up</Badge>}
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "No date"}</span>
-                          <span>{getPropertyName(s.property_id)}</span>
-                          {s.technician && <span>Tech: {s.technician}</span>}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Future Services */}
-          <TabsContent value="future">
-            {futureServices.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No upcoming services scheduled</CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {futureServices.map(s => (
-                  <Card key={s.id} className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedService(s)}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-sm">{s.service_type}</p>
-                          <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>{s.service_date ? new Date(s.service_date + "T00:00:00").toLocaleDateString() : "TBD"}</span>
-                          <span>{getPropertyName(s.property_id)}</span>
-                          {s.prep_required && <Badge variant="outline" className="text-xs">Prep Required</Badge>}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Prep Sheets */}
-          <TabsContent value="prep">
-            {prepSheets.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No prep sheets available</CardContent></Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {prepSheets.map(ps => (
-                  <Card key={ps.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium text-sm">{ps.title}</p>
-                          <Badge variant="outline" className="text-xs mt-1">{ps.treatment_type}</Badge>
-                          {ps.description && <p className="text-xs text-muted-foreground mt-2">{ps.description}</p>}
-                        </div>
-                        {ps.file_url && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={ps.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3 h-3 mr-1" />Download</a>
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Chat */}
-          <TabsContent value="message">
-            <Card className="flex flex-col" style={{ height: "480px" }}>
-              <CardHeader className="pb-2 border-b shrink-0">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4" /> Chat with Crest Pest Control
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.length === 0 && (
-                  <div className="text-center text-sm text-muted-foreground py-8">
-                    <p>No messages yet. Send a message below to get started.</p>
-                    <div className="flex items-center justify-center gap-4 mt-3 text-xs">
-                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" />949-424-5000</span>
-                      <span className="flex items-center gap-1"><Mail className="w-3 h-3" />office@crestpestco.com</span>
-                    </div>
-                  </div>
-                )}
-                {chatMessages.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.sender_type === "client" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${
-                      msg.sender_type === "client"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}>
-                      {msg.sender_type === "admin" && (
-                        <p className="text-xs font-medium mb-1 opacity-70">Crest Pest Control</p>
-                      )}
-                      <p className="whitespace-pre-wrap">{msg.message}</p>
-                      <p className={`text-xs mt-1 ${msg.sender_type === "client" ? "opacity-70" : "text-muted-foreground"}`}>
-                        {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </CardContent>
-              <div className="border-t p-3 shrink-0">
-                <form onSubmit={e => { e.preventDefault(); sendChatMessage(); }} className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    disabled={sending}
-                    className="flex-1"
-                  />
-                  <Button type="submit" size="icon" disabled={!chatInput.trim() || sending}>
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </form>
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
-
-      {/* Service Detail Modal */}
-      <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          {selectedService && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-base">{selectedService.service_type}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3 text-sm">
-                <div className="grid grid-cols-2 gap-2">
-                  <div><p className="text-xs text-muted-foreground">Property</p><p className="font-medium">{getPropertyName(selectedService.property_id)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Date</p><p>{selectedService.service_date ? new Date(selectedService.service_date + "T00:00:00").toLocaleDateString() : "—"}</p></div>
-                  {selectedService.service_time && <div><p className="text-xs text-muted-foreground">Time</p><p>{selectedService.service_time}</p></div>}
-                  {selectedService.technician && <div><p className="text-xs text-muted-foreground">Technician</p><p>{selectedService.technician}</p></div>}
-                  <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={selectedService.status === "completed" ? "default" : "secondary"}>{selectedService.status}</Badge></div>
-                  {selectedService.scheduling_status && <div><p className="text-xs text-muted-foreground">Scheduling</p><p>{selectedService.scheduling_status}</p></div>}
-                </div>
-
-                {selectedService.summary && <div><p className="text-xs text-muted-foreground mb-1">Summary</p><p>{selectedService.summary}</p></div>}
-                {selectedService.findings && <div><p className="text-xs text-muted-foreground mb-1">Findings</p><p>{selectedService.findings}</p></div>}
-                {selectedService.notes && <div><p className="text-xs text-muted-foreground mb-1">Notes</p><p>{selectedService.notes}</p></div>}
-
-                {selectedService.products_used && Array.isArray(selectedService.products_used) && selectedService.products_used.length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Products Used</p>
-                    <div className="flex flex-wrap gap-1">{(selectedService.products_used as string[]).map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}</div>
-                  </div>
-                )}
-
-                {selectedService.follow_up_recommended && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
-                    <p className="text-xs font-medium text-orange-700">Follow-up Recommended</p>
-                    {selectedService.follow_up_notes && <p className="text-xs text-orange-600 mt-1">{selectedService.follow_up_notes}</p>}
-                  </div>
-                )}
-
-                {selectedService.prep_required && selectedService.prep_notes && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
-                    <p className="text-xs font-medium text-blue-700">Prep Required</p>
-                    <p className="text-xs text-blue-600 mt-1">{selectedService.prep_notes}</p>
-                  </div>
-                )}
-
-                {selectedService.special_notes && <div><p className="text-xs text-muted-foreground mb-1">Special Notes</p><p>{selectedService.special_notes}</p></div>}
-
-                {selectedService.unit_details && Array.isArray(selectedService.unit_details) && (selectedService.unit_details as any[]).length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Unit Details</p>
-                    <Accordion type="multiple">
-                      {(selectedService.unit_details as any[]).map((unit: any, i: number) => (
-                        <AccordionItem key={i} value={`unit-${i}`}>
-                          <AccordionTrigger className="text-sm py-2">
-                            Unit {unit.unit_number || i + 1}
-                            {unit.status && <Badge variant="outline" className="ml-2 text-xs">{unit.status}</Badge>}
-                          </AccordionTrigger>
-                          <AccordionContent className="text-xs space-y-1">
-                            {unit.findings && <p><span className="text-muted-foreground">Findings:</span> {unit.findings}</p>}
-                            {unit.notes && <p><span className="text-muted-foreground">Notes:</span> {unit.notes}</p>}
-                            {unit.pest_activity && <p><span className="text-muted-foreground">Pest Activity:</span> {unit.pest_activity}</p>}
-                            {unit.products_used && <p><span className="text-muted-foreground">Products:</span> {unit.products_used}</p>}
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Footer */}
       <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestco.com</p>
       </div>
+
+      {/* Floating Chat */}
+      <FloatingChat messages={chatMessages} input={chatInput} setInput={setChatInput} onSend={sendChatMessage} sending={sending} />
     </div>
   );
 };
