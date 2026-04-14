@@ -892,43 +892,46 @@ const PortalAdmin = () => {
               </div>
             )}
 
-            {/* Client-level chat */}
-            <Card className="flex flex-col" style={{ height: "400px" }}>
-              <CardHeader className="pb-2 border-b shrink-0">
-                <CardTitle className="text-sm flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.length === 0 && <div className="text-center text-sm text-muted-foreground py-8"><p>No messages yet.</p></div>}
-                {chatMessages.map(msg => (
-                  <div key={msg.id} className={`group flex items-start gap-1 ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                    {msg.sender_type === "admin" && (
-                      <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </button>
-                    )}
-                    <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${msg.sender_type === "admin" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                      {msg.sender_type === "client" && <p className="text-xs font-medium mb-1 opacity-70">{msg.sender_name}</p>}
-                      <p className="whitespace-pre-wrap">{msg.message}</p>
-                      <p className={`text-xs mt-1 ${msg.sender_type === "admin" ? "opacity-70" : "text-muted-foreground"}`}>
-                        {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                      </p>
+            {/* Client-level chat — compact collapsible */}
+            <details className="border rounded-lg bg-card">
+              <summary className="cursor-pointer px-4 py-3 flex items-center gap-2 text-sm font-medium hover:bg-muted/50 transition-colors">
+                <MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}
+                {chatMessages.length > 0 && <Badge variant="secondary" className="text-xs ml-auto">{chatMessages.length}</Badge>}
+              </summary>
+              <div className="flex flex-col" style={{ height: "280px" }}>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 border-t">
+                  {chatMessages.length === 0 && <div className="text-center text-xs text-muted-foreground py-4"><p>No messages yet.</p></div>}
+                  {chatMessages.map(msg => (
+                    <div key={msg.id} className={`group flex items-start gap-1 ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
+                      {msg.sender_type === "admin" && (
+                        <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </button>
+                      )}
+                      <div className={`max-w-[75%] rounded-lg px-3 py-1.5 text-sm ${msg.sender_type === "admin" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                        {msg.sender_type === "client" && <p className="text-xs font-medium mb-0.5 opacity-70">{msg.sender_name}</p>}
+                        <p className="whitespace-pre-wrap text-[13px]">{msg.message}</p>
+                        <p className={`text-[10px] mt-0.5 ${msg.sender_type === "admin" ? "opacity-70" : "text-muted-foreground"}`}>
+                          {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </p>
+                      </div>
+                      {msg.sender_type !== "admin" && (
+                        <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </button>
+                      )}
                     </div>
-                    {msg.sender_type !== "admin" && (
-                      <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
-                        <Trash2 className="w-3 h-3 text-destructive" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <div ref={adminChatEndRef} />
-              </CardContent>
-              <div className="border-t p-3 shrink-0">
-                <form onSubmit={e => { e.preventDefault(); sendAdminChat(); }} className="flex gap-2">
-                  <Input placeholder="Type a message..." value={adminChatInput} onChange={e => setAdminChatInput(e.target.value)} disabled={sendingChat} className="flex-1" />
-                  <Button type="submit" size="icon" disabled={!adminChatInput.trim() || sendingChat}><Send className="w-4 h-4" /></Button>
-                </form>
+                  ))}
+                  <div ref={adminChatEndRef} />
+                </div>
+                <div className="border-t p-2 shrink-0">
+                  <form onSubmit={e => { e.preventDefault(); sendAdminChat(); }} className="flex gap-2">
+                    <Input placeholder="Type a message..." value={adminChatInput} onChange={e => setAdminChatInput(e.target.value)} disabled={sendingChat} className="flex-1 h-8 text-sm" />
+                    <Button type="submit" size="icon" className="h-8 w-8" disabled={!adminChatInput.trim() || sendingChat}><Send className="w-3.5 h-3.5" /></Button>
+                  </form>
+                </div>
               </div>
-            </Card>
+            </details>
           </>
         )}
 
