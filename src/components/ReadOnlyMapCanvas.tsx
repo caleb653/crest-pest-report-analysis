@@ -269,7 +269,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       <img
         src={mapUrl}
         alt="Property map"
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
           console.error('Failed to load map image:', mapUrl);
         }}
