@@ -142,8 +142,8 @@ const Index = () => {
                   <div className={`w-20 h-20 rounded-full ${report.bg} flex items-center justify-center mb-4 ${report.hoverBg} transition-colors`}>
                     <Icon className={`w-10 h-10 ${report.color}`} />
                   </div>
-                  <h2 className="text-lg font-semibold text-foreground mb-1">{report.title}</h2>
-                  <p className="text-sm text-muted-foreground leading-tight">{report.description}</p>
+                  <h2 className="text-xl font-semibold text-foreground mb-1">{report.title}</h2>
+                  <p className="text-base text-muted-foreground leading-tight">{report.description}</p>
                 </CardContent>
               </Card>
             </>
