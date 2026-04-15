@@ -10,7 +10,6 @@ const USER_KEY = "app_logged_in_user";
 
 const USERS: Record<string, { password: string; fullName: string }> = {
   dtanner: { password: "2709", fullName: "Darrell Tanner" },
-  jangulo: { password: "2026", fullName: "Jesse Angulo" },
   jake: { password: "2709", fullName: "Jake Shubin" },
   caleb: { password: "2709", fullName: "Caleb Whalen" },
   jlatham: { password: "2709", fullName: "Jackson Latham" },
