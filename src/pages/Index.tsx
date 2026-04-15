@@ -18,7 +18,7 @@ const reportTypes = [
   },
   {
     id: "sales",
-    title: "Single Sales Report",
+    title: "Sales Report (Old Version)",
     description: "Create a single-service sales report",
     icon: FileText,
     path: "/report",
