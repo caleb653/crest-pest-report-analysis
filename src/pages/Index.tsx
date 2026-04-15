@@ -119,7 +119,7 @@ const Index = () => {
         <p className="text-muted-foreground">Select an option to get started</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 max-w-4xl w-full">
+      <div className="grid grid-cols-3 gap-4 max-w-4xl w-full">
         {gridOrder.map((idx) => {
           const report = reportTypes[idx];
           const Icon = report.icon;
