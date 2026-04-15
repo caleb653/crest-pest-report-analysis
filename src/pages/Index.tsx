@@ -18,7 +18,7 @@ const reportTypes = [
   },
   {
     id: "sales",
-    title: "Single Sales Report",
+    title: "Sales Report (Old Version)",
     description: "Create a single-service sales report",
     icon: FileText,
     path: "/report",
@@ -29,7 +29,7 @@ const reportTypes = [
   },
   {
     id: "multi-sales",
-    title: "Multi-Proposal Report",
+    title: "Sales Report",
     description: "Create a multi-service sales proposal",
     icon: FileText,
     path: "/multi-proposal-report",
