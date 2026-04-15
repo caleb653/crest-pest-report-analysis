@@ -9,14 +9,14 @@ const STORAGE_KEY = "app_user_verified";
 const USER_KEY = "app_logged_in_user";
 
 const USERS: Record<string, { password: string; fullName: string }> = {
-  dtanner: { password: "2709", fullName: "Darrell Tanner" },
-  jake: { password: "2709", fullName: "Jake Shubin" },
-  caleb: { password: "2709", fullName: "Caleb Whalen" },
-  jlatham: { password: "2709", fullName: "Jackson Latham" },
-  dgallegos: { password: "2709", fullName: "Dylan Gallegos" },
-  mmuniz: { password: "2709", fullName: "Michael Muniz" },
-  clopez: { password: "2709", fullName: "Carmen Lopez" },
-  dlongoria: { password: "2709", fullName: "David Longoria" },
+  dtanner: { password: "crest23", fullName: "Darrell Tanner" },
+  jake: { password: "crest99", fullName: "Jake Shubin" },
+  caleb: { password: "crest55", fullName: "Caleb Whalen" },
+  jlatham: { password: "crest44", fullName: "Jackson Latham" },
+  dgallegos: { password: "crest50", fullName: "Dylan Gallegos" },
+  mmuniz: { password: "crest11", fullName: "Michael Muniz" },
+  clopez: { password: "crest15", fullName: "Carmen Lopez" },
+  dlongoria: { password: "crest02", fullName: "David Longoria" },
 };
 
 const PinGate = ({ children }: { children: React.ReactNode }) => {
