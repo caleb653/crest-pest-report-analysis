@@ -1161,11 +1161,9 @@ const PortalAdmin = () => {
               </div>
             ) : (
             <Tabs value={portalTab} onValueChange={setPortalTab}>
-              <TabsList className={`w-full grid mb-4 ${viewMode === "admin" ? "grid-cols-4" : "grid-cols-3"}`}>
+              <TabsList className="w-full grid mb-4 grid-cols-2">
                 <TabsTrigger value="past"><Calendar className="w-4 h-4 mr-1 hidden sm:inline" />Past</TabsTrigger>
                 <TabsTrigger value="future"><ClipboardList className="w-4 h-4 mr-1 hidden sm:inline" />Upcoming</TabsTrigger>
-                <TabsTrigger value="requests"><Inbox className="w-4 h-4 mr-1 hidden sm:inline" />Requests{tenantRequests.length > 0 ? ` (${tenantRequests.length})` : ""}</TabsTrigger>
-                {viewMode === "admin" && <TabsTrigger value="prep"><FileText className="w-4 h-4 mr-1 hidden sm:inline" />Prep</TabsTrigger>}
               </TabsList>
 
               <TabsContent value="past">
