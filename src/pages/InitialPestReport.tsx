@@ -1022,7 +1022,7 @@ Crest Pest Control
         map_data: mapPayload,
         custom_map_url: customMapImage,
         rendered_map_url: renderedMapUrl,
-        property_images: propertyImages,
+        property_images: filterPersistableImages(propertyImages),
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
         target_pests: editableTargetPests,
