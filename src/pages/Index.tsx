@@ -86,9 +86,10 @@ const reportTypes = [
   },
 ];
 
-// Layout: row1 = initial, created-initial, single-sales, created-sales
-//         row2 = team-docs, multi-sales, client-portal
-const gridOrder = [0, 4, 1, 5, 6, 2, 3];
+// Layout: row1 = initial-pest, team-docs, multi-sales (Sales Report)
+//         row2 = created-initial, client-portal, sales (Old Version)
+//         row3 = created-sales (centered)
+const gridOrder = [0, 6, 2, 4, 3, 1, 5];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ const Index = () => {
         <p className="text-muted-foreground">Select an option to get started</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 max-w-4xl w-full">
+      <div className="grid grid-cols-3 gap-4 max-w-4xl w-full">
         {gridOrder.map((idx) => {
           const report = reportTypes[idx];
           const Icon = report.icon;
