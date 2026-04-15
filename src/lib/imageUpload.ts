@@ -1,13 +1,3 @@
-/**
- * Filter out temporary blob: URLs from property images before persisting.
- * Blob URLs are only valid in the current browser session and must not be saved to the database.
- */
-export function filterPersistableImages(
-  images: Array<{ image: string; caption?: string }>
-): Array<{ image: string; caption?: string }> {
-  return images.filter((img) => img.image && !img.image.startsWith("blob:"));
-}
-
 export type InferredImageUploadMeta = {
   ext: string;
   contentType: string;

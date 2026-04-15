@@ -32,7 +32,7 @@ import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { inferImageUploadMeta, compressImage, filterPersistableImages } from "@/lib/imageUpload";
+import { inferImageUploadMeta, compressImage } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -797,7 +797,7 @@ const Report = () => {
         map_data: mapPayload,
         custom_map_url: customMapImage,
         rendered_map_url: renderedMapUrl,
-        property_images: filterPersistableImages(propertyImages),
+        property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
         target_pests: editableTargetPests,
@@ -857,7 +857,7 @@ const Report = () => {
         map_data: mapPayload,
         custom_map_url: customMapImage,
         rendered_map_url: renderedMapUrl,
-        property_images: filterPersistableImages(propertyImages),
+        property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
         target_pests: editableTargetPests,
@@ -1022,7 +1022,7 @@ Crest Pest Control
         map_data: mapPayload,
         custom_map_url: customMapImage,
         rendered_map_url: renderedMapUrl,
-        property_images: filterPersistableImages(propertyImages),
+        property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
         target_pests: editableTargetPests,

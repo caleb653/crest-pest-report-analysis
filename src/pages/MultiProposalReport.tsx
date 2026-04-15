@@ -40,7 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { inferImageUploadMeta, filterPersistableImages } from "@/lib/imageUpload";
+import { inferImageUploadMeta } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -1091,7 +1091,7 @@ const Report = () => {
     map_data: mapPayload,
     custom_map_url: customMapImage,
     rendered_map_url: renderedMapUrl ?? renderedMapImage,
-    property_images: filterPersistableImages(propertyImages),
+    property_images: propertyImages,
     customer_signature: finalSignature,
     services: buildServicesPayload() as unknown as any[],
     service_date: editableServiceDate,
