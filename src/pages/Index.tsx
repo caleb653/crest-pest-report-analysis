@@ -29,7 +29,7 @@ const reportTypes = [
   },
   {
     id: "multi-sales",
-    title: "Multi-Proposal Report",
+    title: "Sales Report",
     description: "Create a multi-service sales proposal",
     icon: FileText,
     path: "/multi-proposal-report",
