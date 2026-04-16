@@ -107,7 +107,28 @@ const PortalAdmin = () => {
   const [serviceForm, setServiceForm] = useState(emptyServiceForm);
   const [uploadingPropertyImage, setUploadingPropertyImage] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  // Restore selected property from sessionStorage on mount
+  useEffect(() => {
+    loadAll().then(() => {
+      const savedPropId = sessionStorage.getItem("portal-admin-selected-property");
+      if (savedPropId) {
+        sessionStorage.removeItem("portal-admin-selected-property");
+      }
+    });
+  }, []);
+
+  // Deferred property restore after data is loaded
+  useEffect(() => {
+    const savedPropId = sessionStorage.getItem("portal-admin-selected-property");
+    if (savedPropId && allProperties.length > 0 && !selectedProperty) {
+      const prop = allProperties.find(p => p.id === savedPropId);
+      if (prop) {
+        setSelectedProperty(prop);
+        ensurePropertyLink(prop);
+        sessionStorage.removeItem("portal-admin-selected-property");
+      }
+    }
+  }, [allProperties]);
 
   const loadAll = async () => {
     const [{ data: c }, { data: p }, { data: s }, { data: l }, { data: ps }, { data: m }] = await Promise.all([
