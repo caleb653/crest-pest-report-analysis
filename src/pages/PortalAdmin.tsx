@@ -75,39 +75,27 @@ const PREFERENCE_OPTIONS = [
 const PortalAdmin = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<PortalClient[]>([]);
-  const [selectedClient, setSelectedClient] = useState<PortalClient | null>(null);
-  const [properties, setProperties] = useState<PortalProperty[]>([]);
-  const [links, setLinks] = useState<PortalLink[]>([]);
-  const [services, setServices] = useState<PortalService[]>([]);
+  const [allProperties, setAllProperties] = useState<PortalProperty[]>([]);
+  const [allServices, setAllServices] = useState<PortalService[]>([]);
+  const [allLinks, setAllLinks] = useState<PortalLink[]>([]);
   const [prepSheets, setPrepSheets] = useState<PortalPrepSheet[]>([]);
   const [messages, setMessages] = useState<PortalMessage[]>([]);
-  const [tenantRequests, setTenantRequests] = useState<any[]>([]);
 
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
-  const [portalTab, setPortalTab] = useState("past");
-  const [viewMode, setViewMode] = useState<"admin" | "pm" | "tenant">("admin");
-  const [globalTab, setGlobalTab] = useState("clients");
-
-  const [chatMessages, setChatMessages] = useState<PortalMessage[]>([]);
-  const [adminChatInput, setAdminChatInput] = useState("");
-  const [sendingChat, setSendingChat] = useState(false);
-  const adminChatEndRef = useRef<HTMLDivElement>(null);
+  const [globalTab, setGlobalTab] = useState("properties");
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
-  const [showAddLink, setShowAddLink] = useState(false);
   const [showAddService, setShowAddService] = useState(false);
   const [showAddPrepSheet, setShowAddPrepSheet] = useState(false);
   const [editingService, setEditingService] = useState<PortalService | null>(null);
   const [editingPrepSheet, setEditingPrepSheet] = useState<PortalPrepSheet | null>(null);
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
-  const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "" });
-  const [newLink, setNewLink] = useState({ link_type: "sub", label: "", assigned_property_ids: [] as string[], unit_number: "" });
+  const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "", client_id: "" });
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
 
-  // Rich service form
   const emptyServiceForm = {
     property_id: "", service_date: "", service_time: "", service_type: "", technician: "",
     status: "completed", summary: "", findings: "", notes: "", scheduling_status: "confirmed",
@@ -118,149 +106,67 @@ const PortalAdmin = () => {
   const [serviceForm, setServiceForm] = useState(emptyServiceForm);
   const [uploadingPropertyImage, setUploadingPropertyImage] = useState(false);
 
-  useEffect(() => { loadClients(); loadPrepSheets(); loadMessages(); }, []);
+  useEffect(() => { loadAll(); }, []);
 
-  useEffect(() => {
-    if (selectedClient) {
-      loadProperties(selectedClient.id);
-      loadLinks(selectedClient.id);
-      loadClientChat(selectedClient.id);
-      loadTenantRequests(selectedClient.id);
-      setSelectedProperty(null); setSelectedService(null); setPortalTab("past");
-    }
-  }, [selectedClient]);
-
-  useEffect(() => {
-    if (!selectedClient) return;
-    const interval = setInterval(() => loadClientChat(selectedClient.id), 10000);
-    return () => clearInterval(interval);
-  }, [selectedClient]);
-
-  useEffect(() => { adminChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
-
-  // Reset tab when view mode changes
-  useEffect(() => {
-    if (viewMode === "tenant") setPortalTab("requests");
-    else setPortalTab("past");
-  }, [viewMode]);
-
-  // Auto-create PM link when entering a property
-  useEffect(() => {
-    if (selectedProperty && selectedClient) {
-      ensurePropertyLink(selectedProperty.id, selectedProperty.name);
-    }
-  }, [selectedProperty]);
-
-  const loadClients = async () => {
-    const { data } = await supabase.from("portal_clients").select("*").order("created_at", { ascending: false });
-    if (data) setClients(data);
-  };
-  const loadProperties = async (clientId: string) => {
-    const { data } = await supabase.from("portal_properties").select("*").eq("client_id", clientId);
-    if (data) {
-      setProperties(data);
-      const ids = data.map(p => p.id);
-      if (ids.length > 0) {
-        const { data: svcData } = await supabase.from("portal_services").select("*").in("property_id", ids).order("service_date", { ascending: false });
-        if (svcData) setServices(svcData);
-      } else setServices([]);
-    }
-  };
-  const loadLinks = async (clientId: string) => {
-    const { data } = await supabase.from("portal_links").select("*").eq("client_id", clientId);
-    if (data) {
-      setLinks(data);
-      // Auto-create master link if none exists
-      const hasMaster = data.some(l => l.link_type === "master");
-      if (!hasMaster) {
-        const client = clients.find(c => c.id === clientId);
-        await supabase.from("portal_links").insert({
-          client_id: clientId, link_type: "master",
-          label: `${client?.company || client?.name || "Client"} Portal`,
-        });
-        const { data: refreshed } = await supabase.from("portal_links").select("*").eq("client_id", clientId);
-        if (refreshed) setLinks(refreshed);
-      }
-    }
+  const loadAll = async () => {
+    const [{ data: c }, { data: p }, { data: s }, { data: l }, { data: ps }, { data: m }] = await Promise.all([
+      supabase.from("portal_clients").select("*").order("created_at", { ascending: false }),
+      supabase.from("portal_properties").select("*").order("name"),
+      supabase.from("portal_services").select("*").order("service_date", { ascending: false }),
+      supabase.from("portal_links").select("*"),
+      supabase.from("portal_prep_sheets").select("*").order("title"),
+      supabase.from("portal_messages").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (c) setClients(c);
+    if (p) setAllProperties(p);
+    if (s) setAllServices(s);
+    if (l) setAllLinks(l);
+    if (ps) setPrepSheets(ps);
+    if (m) setMessages(m);
   };
 
-  // Auto-create a PM link for a property if none exists
-  const ensurePropertyLink = async (propertyId: string, propertyName: string) => {
-    const existing = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(propertyId));
-    if (!existing && selectedClient) {
+  const getClientName = (clientId: string) => {
+    const c = clients.find(cl => cl.id === clientId);
+    return c?.company || c?.name || "Unknown";
+  };
+  const getClient = (clientId: string) => clients.find(c => c.id === clientId);
+
+  // Ensure a PM link exists for a property
+  const ensurePropertyLink = async (property: PortalProperty) => {
+    const existing = allLinks.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
+    if (!existing) {
       await supabase.from("portal_links").insert({
-        client_id: selectedClient.id, link_type: "sub",
-        label: `${propertyName} — PM Link`,
-        assigned_property_ids: [propertyId],
+        client_id: property.client_id, link_type: "sub",
+        label: `${property.name} — PM Link`,
+        assigned_property_ids: [property.id],
       });
-      const { data: refreshed } = await supabase.from("portal_links").select("*").eq("client_id", selectedClient.id);
-      if (refreshed) setLinks(refreshed);
+      const { data } = await supabase.from("portal_links").select("*");
+      if (data) setAllLinks(data);
     }
   };
+
   const loadPrepSheets = async () => {
     const { data } = await supabase.from("portal_prep_sheets").select("*").order("title");
     if (data) setPrepSheets(data);
   };
-  const loadMessages = async () => {
-    const { data } = await supabase.from("portal_messages").select("*").order("created_at", { ascending: false });
-    if (data) setMessages(data);
-  };
-  const loadClientChat = async (clientId: string) => {
-    const { data } = await supabase.from("portal_messages").select("*").eq("client_id", clientId).order("created_at", { ascending: true });
-    if (data) setChatMessages(data);
-  };
-  const loadTenantRequests = async (clientId: string) => {
-    // Load requests for all links belonging to this client
-    const { data: clientLinks } = await supabase.from("portal_links").select("id").eq("client_id", clientId).eq("link_type", "tenant");
-    if (clientLinks && clientLinks.length > 0) {
-      const linkIds = clientLinks.map(l => l.id);
-      const { data } = await supabase.from("portal_requests").select("*").in("link_id", linkIds).order("created_at", { ascending: false });
-      if (data) setTenantRequests(data);
-      else setTenantRequests([]);
-    } else {
-      setTenantRequests([]);
-    }
-  };
-
-  const sendAdminChat = async () => {
-    if (!adminChatInput.trim() || !selectedClient) return;
-    setSendingChat(true);
-    const { error: err } = await supabase.from("portal_messages").insert({
-      client_id: selectedClient.id, sender_name: "Crest Pest Control", sender_type: "admin", subject: "Portal Chat", message: adminChatInput.trim(),
-    });
-    if (!err) { setAdminChatInput(""); loadClientChat(selectedClient.id); }
-    setSendingChat(false);
-  };
-
-  const deleteMessage = async (msgId: string) => {
-    const { error } = await supabase.from("portal_messages").delete().eq("id", msgId);
-    if (!error && selectedClient) loadClientChat(selectedClient.id);
-  };
 
   const addClient = async () => {
     const { error } = await supabase.from("portal_clients").insert({ name: newClient.name, company: newClient.company || null, email: newClient.email || null, phone: newClient.phone || null, notes: newClient.notes || null });
-    if (!error) { toast({ title: "Client added" }); setShowAddClient(false); setNewClient({ name: "", company: "", email: "", phone: "", notes: "" }); loadClients(); }
+    if (!error) { toast({ title: "Client added" }); setShowAddClient(false); setNewClient({ name: "", company: "", email: "", phone: "", notes: "" }); loadAll(); }
   };
 
   const uploadPropertyImage = async (file: File): Promise<string | null> => {
     setUploadingPropertyImage(true);
     try {
-      // Compress image before upload
       const compressed = await new Promise<Blob>((resolve) => {
         const img = new window.Image();
         img.onload = () => {
           const canvas = document.createElement("canvas");
           const maxW = 1600, maxH = 1600;
           let w = img.width, h = img.height;
-          if (w > maxW || h > maxH) {
-            const ratio = Math.min(maxW / w, maxH / h);
-            w = Math.round(w * ratio);
-            h = Math.round(h * ratio);
-          }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d")!;
-          ctx.drawImage(img, 0, 0, w, h);
+          if (w > maxW || h > maxH) { const ratio = Math.min(maxW / w, maxH / h); w = Math.round(w * ratio); h = Math.round(h * ratio); }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
           canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.8);
         };
         img.src = URL.createObjectURL(file);
@@ -272,39 +178,26 @@ const PortalAdmin = () => {
       return pub.publicUrl;
     } catch (err) {
       console.error("Upload error:", err);
-      toast({ title: "Upload failed", variant: "destructive" });
-      return null;
-    } finally {
-      setUploadingPropertyImage(false);
-    }
+      toast({ title: "Upload failed", variant: "destructive" }); return null;
+    } finally { setUploadingPropertyImage(false); }
   };
 
   const addProperty = async () => {
-    if (!selectedClient) return;
+    if (!newProperty.client_id) return;
     const { error } = await supabase.from("portal_properties").insert({
-      client_id: selectedClient.id, name: newProperty.name, address: newProperty.address || null,
+      client_id: newProperty.client_id, name: newProperty.name, address: newProperty.address || null,
       notes: newProperty.notes || null, image_url: newProperty.image_url || null,
     });
-    if (!error) { toast({ title: "Property added" }); setShowAddProperty(false); setNewProperty({ name: "", address: "", notes: "", image_url: "" }); loadProperties(selectedClient.id); }
+    if (!error) { toast({ title: "Property added" }); setShowAddProperty(false); setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "" }); loadAll(); }
   };
 
   const updatePropertyImage = async (propId: string, file: File) => {
     const url = await uploadPropertyImage(file);
     if (url) {
       await supabase.from("portal_properties").update({ image_url: url }).eq("id", propId);
-      if (selectedClient) loadProperties(selectedClient.id);
+      loadAll();
       toast({ title: "Property image updated" });
     }
-  };
-
-  const addLink = async () => {
-    if (!selectedClient) return;
-    const { error } = await supabase.from("portal_links").insert({
-      client_id: selectedClient.id, link_type: newLink.link_type, label: newLink.label || null,
-      assigned_property_ids: newLink.assigned_property_ids.length > 0 ? newLink.assigned_property_ids : null,
-      unit_number: newLink.unit_number || null,
-    });
-    if (!error) { toast({ title: "Link created" }); setShowAddLink(false); setNewLink({ link_type: "sub", label: "", assigned_property_ids: [], unit_number: "" }); loadLinks(selectedClient.id); }
   };
 
   const openServiceDialog = (forEdit?: PortalService) => {
@@ -351,7 +244,7 @@ const PortalAdmin = () => {
     if (!error) {
       toast({ title: editingService ? "Service updated" : "Service added" });
       setShowAddService(false); setEditingService(null); setServiceForm(emptyServiceForm);
-      if (selectedClient) loadProperties(selectedClient.id);
+      loadAll();
     }
   };
 
@@ -377,11 +270,11 @@ const PortalAdmin = () => {
     setShowAddPrepSheet(true);
   };
 
-  const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); if (selectedClient?.id === id) setSelectedClient(null); loadClients(); toast({ title: "Client deleted" }); };
-  const deleteProperty = async (id: string) => { await supabase.from("portal_properties").delete().eq("id", id); if (selectedProperty?.id === id) setSelectedProperty(null); if (selectedClient) loadProperties(selectedClient.id); toast({ title: "Property deleted" }); };
-  const deleteLink = async (id: string) => { await supabase.from("portal_links").delete().eq("id", id); if (selectedClient) loadLinks(selectedClient.id); toast({ title: "Link deleted" }); };
-  const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); if (selectedClient) loadProperties(selectedClient.id); toast({ title: "Service deleted" }); };
+  const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
+  const deleteProperty = async (id: string) => { await supabase.from("portal_properties").delete().eq("id", id); if (selectedProperty?.id === id) setSelectedProperty(null); loadAll(); toast({ title: "Property deleted" }); };
+  const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); loadAll(); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
+  
   const copyLink = (token: string, linkType?: string) => {
     const prefix = linkType === "tenant" ? "tenant" : "portal";
     navigator.clipboard.writeText(`${window.location.origin}/${prefix}/${token}`);
@@ -391,49 +284,41 @@ const PortalAdmin = () => {
     const prefix = linkType === "tenant" ? "tenant" : "portal";
     window.open(`/${prefix}/${token}`, "_blank");
   };
-  const getPropertyName = (propertyId: string) => properties.find(p => p.id === propertyId)?.name || "Unknown";
 
-  // Create a new service and open Appointment Report in new tab
   const createAndOpenReport = async (status: string) => {
-    const propId = selectedProperty?.id || (properties.length === 1 ? properties[0].id : "");
-    if (!propId) {
-      toast({ title: "Select a property first", variant: "destructive" });
-      return;
-    }
+    if (!selectedProperty) return;
     const { data, error } = await supabase.from("portal_services").insert({
-      property_id: propId,
+      property_id: selectedProperty.id,
       service_type: "General Pest Control",
       status,
       service_date: status === "scheduled" ? null : new Date().toISOString().split("T")[0],
     }).select("id").single();
-    if (error || !data) {
-      toast({ title: "Failed to create service", variant: "destructive" });
-      return;
-    }
-    const prop = properties.find(p => p.id === propId);
+    if (error || !data) { toast({ title: "Failed to create service", variant: "destructive" }); return; }
+    const client = getClient(selectedProperty.client_id);
     const stateData = {
-      propertyName: prop?.name || "",
-      propertyAddress: prop?.address || "",
-      propertyId: propId,
-      clientName: selectedClient?.company || selectedClient?.name,
+      propertyName: selectedProperty.name,
+      propertyAddress: selectedProperty.address || "",
+      propertyId: selectedProperty.id,
+      clientName: client?.company || client?.name,
       returnTo: "/portal-admin",
-      propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
-      customerPreference: (prop?.customer_preferences as any)?.preference || "",
-      customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
+      propertyEquipment: Array.isArray(selectedProperty.equipment) ? selectedProperty.equipment : [],
+      customerPreference: (selectedProperty.customer_preferences as any)?.preference || "",
+      customerPreferenceNotes: (selectedProperty.customer_preferences as any)?.notes || "",
     };
     sessionStorage.setItem(`appointment-report-${data.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${data.id}`, "_blank");
-    if (selectedClient) loadProperties(selectedClient.id);
+    loadAll();
   };
 
   const openServiceReport = (s: PortalService) => {
-    const prop = properties.find(p => p.id === s.property_id);
+    const prop = allProperties.find(p => p.id === s.property_id);
+    const client = prop ? getClient(prop.client_id) : null;
     const stateData = {
       serviceData: s,
       propertyName: prop?.name || "",
       propertyAddress: prop?.address || "",
       propertyId: s.property_id,
-      clientName: selectedClient?.company || selectedClient?.name,
+      clientName: client?.company || client?.name,
       returnTo: "/portal-admin",
       propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
       customerPreference: (prop?.customer_preferences as any)?.preference || "",
@@ -442,14 +327,9 @@ const PortalAdmin = () => {
     sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${s.id}`, "_blank");
   };
+
   const today = new Date().toISOString().split("T")[0];
 
-  const visibleServices = selectedProperty ? services.filter(s => s.property_id === selectedProperty.id) : services;
-  const pastServices = visibleServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-  const futureServices = visibleServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
-  const masterLink = links.find(l => l.link_type === "master");
-
-  // ---- Unit detail helpers ----
   const addUnit = () => setServiceForm(f => ({ ...f, unit_details: [...f.unit_details, { unit_number: "", findings: "", notes: "", pest_activity: "", products_used: "", status: "treated" }] }));
   const updateUnit = (i: number, field: string, val: string) => setServiceForm(f => ({ ...f, unit_details: f.unit_details.map((u, j) => j === i ? { ...u, [field]: val } : u) }));
   const removeUnit = (i: number) => setServiceForm(f => ({ ...f, unit_details: f.unit_details.filter((_, j) => j !== i) }));
@@ -466,7 +346,7 @@ const PortalAdmin = () => {
               <Label>Property *</Label>
               <Select value={serviceForm.property_id} onValueChange={v => setServiceForm(f => ({ ...f, property_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger>
-                <SelectContent>{properties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{allProperties.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
@@ -491,25 +371,18 @@ const PortalAdmin = () => {
               </Select>
             </div>
           </div>
-
-          <div><Label>Summary</Label><Textarea placeholder="Brief overview of what was done..." value={serviceForm.summary} onChange={e => setServiceForm(f => ({ ...f, summary: e.target.value }))} /></div>
-          <div><Label>Findings</Label><Textarea placeholder="What was found during the service..." value={serviceForm.findings} onChange={e => setServiceForm(f => ({ ...f, findings: e.target.value }))} /></div>
-          <div><Label>Notes</Label><Textarea placeholder="Additional notes for the client..." value={serviceForm.notes} onChange={e => setServiceForm(f => ({ ...f, notes: e.target.value }))} /></div>
-
-          {/* Products Used */}
+          <div><Label>Summary</Label><Textarea placeholder="Brief overview..." value={serviceForm.summary} onChange={e => setServiceForm(f => ({ ...f, summary: e.target.value }))} /></div>
+          <div><Label>Findings</Label><Textarea placeholder="What was found..." value={serviceForm.findings} onChange={e => setServiceForm(f => ({ ...f, findings: e.target.value }))} /></div>
+          <div><Label>Notes</Label><Textarea placeholder="Additional notes..." value={serviceForm.notes} onChange={e => setServiceForm(f => ({ ...f, notes: e.target.value }))} /></div>
           <div>
             <Label className="mb-2 block">Products Used</Label>
             <div className="flex flex-wrap gap-1.5">
               {PRODUCTS.map(p => (
                 <Badge key={p} variant={serviceForm.products_used.includes(p) ? "default" : "outline"}
-                  className="cursor-pointer text-xs" onClick={() => toggleProduct(p)}>
-                  {p}
-                </Badge>
+                  className="cursor-pointer text-xs" onClick={() => toggleProduct(p)}>{p}</Badge>
               ))}
             </div>
           </div>
-
-          {/* Unit Details */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label>Units Treated</Label>
@@ -519,40 +392,30 @@ const PortalAdmin = () => {
               <Card key={i} className="mb-2">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <Input placeholder="Unit # or name" value={unit.unit_number} onChange={e => updateUnit(i, "unit_number", e.target.value)} className="w-40" />
+                    <Input placeholder="Unit #" value={unit.unit_number} onChange={e => updateUnit(i, "unit_number", e.target.value)} className="w-40" />
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeUnit(i)}><X className="w-3.5 h-3.5" /></Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <Input placeholder="Findings" value={unit.findings} onChange={e => updateUnit(i, "findings", e.target.value)} />
                     <Input placeholder="Pest activity" value={unit.pest_activity} onChange={e => updateUnit(i, "pest_activity", e.target.value)} />
                   </div>
-                  <Input placeholder="Products used in this unit" value={unit.products_used} onChange={e => updateUnit(i, "products_used", e.target.value)} />
+                  <Input placeholder="Products used" value={unit.products_used} onChange={e => updateUnit(i, "products_used", e.target.value)} />
                   <Input placeholder="Notes" value={unit.notes} onChange={e => updateUnit(i, "notes", e.target.value)} />
                 </CardContent>
               </Card>
             ))}
           </div>
-
-          {/* Follow-up */}
           <div className="flex items-center gap-3">
             <Switch checked={serviceForm.follow_up_recommended} onCheckedChange={v => setServiceForm(f => ({ ...f, follow_up_recommended: v }))} />
             <Label>Follow-up Recommended</Label>
           </div>
-          {serviceForm.follow_up_recommended && (
-            <Textarea placeholder="Follow-up details..." value={serviceForm.follow_up_notes} onChange={e => setServiceForm(f => ({ ...f, follow_up_notes: e.target.value }))} />
-          )}
-
-          {/* Prep */}
+          {serviceForm.follow_up_recommended && <Textarea placeholder="Follow-up details..." value={serviceForm.follow_up_notes} onChange={e => setServiceForm(f => ({ ...f, follow_up_notes: e.target.value }))} />}
           <div className="flex items-center gap-3">
             <Switch checked={serviceForm.prep_required} onCheckedChange={v => setServiceForm(f => ({ ...f, prep_required: v }))} />
-            <Label>Prep Required for Next Visit</Label>
+            <Label>Prep Required</Label>
           </div>
-          {serviceForm.prep_required && (
-            <Textarea placeholder="Prep instructions for the client..." value={serviceForm.prep_notes} onChange={e => setServiceForm(f => ({ ...f, prep_notes: e.target.value }))} />
-          )}
-
+          {serviceForm.prep_required && <Textarea placeholder="Prep instructions..." value={serviceForm.prep_notes} onChange={e => setServiceForm(f => ({ ...f, prep_notes: e.target.value }))} />}
           <div><Label>Special Notes</Label><Textarea placeholder="Any special notes..." value={serviceForm.special_notes} onChange={e => setServiceForm(f => ({ ...f, special_notes: e.target.value }))} /></div>
-
           <Button onClick={saveService} disabled={!serviceForm.service_type || !(serviceForm.property_id || selectedProperty?.id)} className="w-full">
             {editingService ? "Update Service" : "Add Service"}
           </Button>
@@ -561,8 +424,8 @@ const PortalAdmin = () => {
     </Dialog>
   );
 
-  // ============ CLIENT LIST VIEW ============
-  if (!selectedClient) {
+  // ============ PROPERTY LIST VIEW ============
+  if (!selectedProperty) {
     return (
       <div className="min-h-screen bg-background">
         <div className="bg-card border-b px-4 py-3 flex items-center gap-4">
@@ -574,47 +437,93 @@ const PortalAdmin = () => {
         <div className="p-4 max-w-5xl mx-auto">
           <Tabs value={globalTab} onValueChange={setGlobalTab}>
             <TabsList className="mb-4">
-              <TabsTrigger value="clients"><Building2 className="w-4 h-4 mr-1" />Clients</TabsTrigger>
+              <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
               <TabsTrigger value="prep-sheets"><FileText className="w-4 h-4 mr-1" />Prep Sheets</TabsTrigger>
               <TabsTrigger value="messages"><MessageSquare className="w-4 h-4 mr-1" />Messages</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="clients">
+            <TabsContent value="properties">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-base">Clients</CardTitle>
-                  <Dialog open={showAddClient} onOpenChange={setShowAddClient}>
-                    <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Client</Button></DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Add Client</DialogTitle></DialogHeader>
-                      <div className="space-y-3">
-                        <div><Label>Name *</Label><Input value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} /></div>
-                        <div><Label>Company</Label><Input value={newClient.company} onChange={e => setNewClient({ ...newClient, company: e.target.value })} /></div>
-                        <div><Label>Email</Label><Input value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} /></div>
-                        <div><Label>Phone</Label><Input value={newClient.phone} onChange={e => setNewClient({ ...newClient, phone: e.target.value })} /></div>
-                        <div><Label>Notes</Label><Textarea value={newClient.notes} onChange={e => setNewClient({ ...newClient, notes: e.target.value })} /></div>
-                        <Button onClick={addClient} disabled={!newClient.name} className="w-full">Add Client</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <CardTitle className="text-base">Properties</CardTitle>
+                  <div className="flex gap-2">
+                    <Dialog open={showAddClient} onOpenChange={setShowAddClient}>
+                      <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-4 h-4 mr-1" />Add Client</Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Add Client</DialogTitle></DialogHeader>
+                        <div className="space-y-3">
+                          <div><Label>Name *</Label><Input value={newClient.name} onChange={e => setNewClient({ ...newClient, name: e.target.value })} /></div>
+                          <div><Label>Company</Label><Input value={newClient.company} onChange={e => setNewClient({ ...newClient, company: e.target.value })} /></div>
+                          <div><Label>Email</Label><Input value={newClient.email} onChange={e => setNewClient({ ...newClient, email: e.target.value })} /></div>
+                          <div><Label>Phone</Label><Input value={newClient.phone} onChange={e => setNewClient({ ...newClient, phone: e.target.value })} /></div>
+                          <div><Label>Notes</Label><Textarea value={newClient.notes} onChange={e => setNewClient({ ...newClient, notes: e.target.value })} /></div>
+                          <Button onClick={addClient} disabled={!newClient.name} className="w-full">Add Client</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
+                      <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Property</Button></DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
+                        <div className="space-y-3">
+                          <div>
+                            <Label>Client / Owner *</Label>
+                            <Select value={newProperty.client_id} onValueChange={v => setNewProperty(p => ({ ...p, client_id: v }))}>
+                              <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                              <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.company || c.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div><Label>Property Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
+                          <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
+                          <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
+                          <div>
+                            <Label>Property Image</Label>
+                            <Input type="file" accept="image/*" onChange={async e => {
+                              const f = e.target.files?.[0];
+                              if (f) { const url = await uploadPropertyImage(f); if (url) setNewProperty(p => ({ ...p, image_url: url })); }
+                            }} />
+                            {newProperty.image_url && <img src={newProperty.image_url} alt="" className="mt-2 rounded h-24 object-cover" />}
+                          </div>
+                          <Button onClick={addProperty} disabled={!newProperty.name || !newProperty.client_id} className="w-full">Add Property</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  {clients.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No clients yet. Add your first client above.</p>
+                  {allProperties.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      <p className="font-medium">No properties yet</p>
+                      <p className="text-xs mt-1">Add a client first, then add a property</p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
-                      {clients.map(c => (
-                        <div key={c.id} className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors" onClick={() => setSelectedClient(c)}>
-                          <div>
-                            <p className="font-medium">{c.name}</p>
-                            {c.company && <p className="text-sm text-muted-foreground">{c.company}</p>}
+                      {allProperties.map(p => {
+                        const propServices = allServices.filter(s => s.property_id === p.id);
+                        const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+                        const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+                        return (
+                          <div key={p.id} className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors group"
+                            onClick={() => { setSelectedProperty(p); ensurePropertyLink(p); }}>
+                            <div className="flex items-center gap-3">
+                              {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
+                              <div>
+                                <p className="font-medium">{p.name}</p>
+                                <p className="text-sm text-muted-foreground">{getClientName(p.client_id)}</p>
+                                {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right text-xs text-muted-foreground">
+                                <p>{propPast.length} past · {propFuture.length} upcoming</p>
+                              </div>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={e => { e.stopPropagation(); deleteClient(c.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -670,7 +579,7 @@ const PortalAdmin = () => {
                         {Array.from(clientMap.entries()).map(([key, data]) => {
                           const mc = clients.find(c => c.id === key);
                           return (
-                            <div key={key} className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => { if (mc) setSelectedClient(mc); }}>
+                            <div key={key} className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors">
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="font-medium text-sm">{mc?.name || data.clientName}</p>
@@ -678,7 +587,6 @@ const PortalAdmin = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {data.unread > 0 && <Badge className="text-xs">{data.unread}</Badge>}
-                                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                 </div>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">{new Date(data.lastMessage.created_at).toLocaleString()}</p>
@@ -713,242 +621,67 @@ const PortalAdmin = () => {
     );
   }
 
-  // ============ CLIENT PORTAL VIEW (Admin impersonation) ============
+  // ============ PROPERTY DETAIL VIEW ============
+  const propServices = allServices.filter(s => s.property_id === selectedProperty.id);
+  const propLinks = allLinks.filter(l => l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(selectedProperty.id));
+  const client = getClient(selectedProperty.client_id);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Admin bar */}
       <div className="bg-foreground text-background px-4 py-2 flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => {
-            if (selectedProperty) { setSelectedProperty(null); }
-            else setSelectedClient(null);
-          }}>
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            {selectedProperty ? "All Properties" : "All Clients"}
+          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => setSelectedProperty(null)}>
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" />All Properties
           </Button>
           <span className="text-background/60">Crest Admin View</span>
         </div>
         <div className="flex items-center gap-2">
-          {masterLink && (
-            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
-              <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
+          {propLinks[0] && (
+            <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(propLinks[0].token, "sub")}>
+              <Copy className="w-3.5 h-3.5 mr-1" />Copy Share Link
             </Button>
           )}
         </div>
       </div>
 
-      {/* Page header with breadcrumb */}
+      {/* Page header */}
       <div className="bg-card border-b px-4 py-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3">
             <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
             <div className="flex-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
-                <span className="cursor-pointer hover:text-foreground" onClick={() => { setSelectedProperty(null); setSelectedClient(null); }}>Clients</span>
+                <span className="cursor-pointer hover:text-foreground" onClick={() => setSelectedProperty(null)}>Properties</span>
                 <ChevronRight className="w-3 h-3" />
-                <span className={`${!selectedProperty ? "text-foreground font-medium" : "cursor-pointer hover:text-foreground"}`} onClick={() => setSelectedProperty(null)}>
-                  {selectedClient.company || selectedClient.name}
-                </span>
-                {selectedProperty && (
-                  <>
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-foreground font-medium">{selectedProperty.name}</span>
-                  </>
-                )}
+                <span className="text-foreground font-medium">{selectedProperty.name}</span>
               </div>
-              <h1 className="text-xl font-bold">
-                {selectedProperty ? selectedProperty.name : (selectedClient.company || selectedClient.name)}
-              </h1>
-              {selectedProperty?.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
-              {!selectedProperty && (
-                <p className="text-sm text-muted-foreground">
-                  {properties.length} {properties.length === 1 ? "property" : "properties"} · {services.length} total services
-                </p>
-              )}
+              <h1 className="text-xl font-bold">{selectedProperty.name}</h1>
+              {selectedProperty.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
+              <p className="text-xs text-muted-foreground">Owner: {getClientName(selectedProperty.client_id)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Admin management panel — client level only */}
-      {!selectedProperty && (
-        <div className="bg-muted/50 border-b">
-          <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              {selectedClient.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{selectedClient.email}</span>}
-              {selectedClient.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{selectedClient.phone}</span>}
-            </div>
-
-            {/* Client Portal Link — single master link */}
-            {(() => {
-              const masterLink = links.find(l => l.link_type === "master");
-              return masterLink ? (
-                <div className="flex items-center gap-2 text-sm border rounded-md p-3 bg-background">
-                  <Link2 className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium">{masterLink.label || `${selectedClient.company || selectedClient.name} Portal`}</span>
-                    <p className="text-xs text-muted-foreground">Client portal link — share this with {selectedClient.company || selectedClient.name}</p>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => copyLink(masterLink.token, "master")}><Copy className="w-3.5 h-3.5 mr-1" />Copy</Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openPortal(masterLink.token, "master")}><ExternalLink className="w-3.5 h-3.5" /></Button>
-                </div>
-              ) : null;
-            })()}
-
-            <div className="flex gap-2 flex-wrap">
-              <Dialog open={showAddProperty} onOpenChange={setShowAddProperty}>
-                <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-3 h-3 mr-1" />Add Property</Button></DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Add Property</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div><Label>Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
-                    <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
-                    <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
-                    <div>
-                      <Label>Property Image</Label>
-                      <Input type="file" accept="image/*" onChange={async e => {
-                        const f = e.target.files?.[0];
-                        if (f) { const url = await uploadPropertyImage(f); if (url) setNewProperty(p => ({ ...p, image_url: url })); }
-                      }} />
-                      {newProperty.image_url && <img src={newProperty.image_url} alt="" className="mt-2 rounded h-24 object-cover" />}
-                    </div>
-                    <Button onClick={addProperty} disabled={!newProperty.name} className="w-full">Add Property</Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main content */}
-      <div className={`${selectedProperty ? 'max-w-7xl' : 'max-w-5xl'} mx-auto px-4 py-4`}>
-
-        {/* ======= CLIENT LEVEL: Properties Grid ======= */}
-        {!selectedProperty && (
-          <>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" />Properties
-              <span className="text-muted-foreground font-normal">({properties.length})</span>
-            </h3>
-            {properties.length === 0 ? (
-              <Card><CardContent className="p-8 text-center text-muted-foreground">
-                <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                <p className="font-medium">No properties yet</p>
-                <p className="text-xs mt-1">Add a property to start tracking services</p>
-              </CardContent></Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                {properties.map(p => {
-                  const propServices = services.filter(s => s.property_id === p.id);
-                  const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-                  const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
-                  return (
-                    <Card key={p.id} className="cursor-pointer hover:border-primary/40 transition-colors overflow-hidden group" onClick={() => setSelectedProperty(p)}>
-                      {p.image_url && (
-                        <div className="relative h-32 w-full">
-                          <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                          {(
-                            <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Image className="w-4 h-4" />
-                              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
-                            </label>
-                          )}
-                        </div>
-                      )}
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-semibold">{p.name}</p>
-                            {p.address && <p className="text-xs text-muted-foreground mt-0.5">{p.address}</p>}
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                          <span>{propPast.length} past</span>
-                          <span>·</span>
-                          <span>{propFuture.length} upcoming</span>
-                        </div>
-                        {(
-                          <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {!p.image_url && (
-                              <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 pointer-events-none"><Image className="w-3.5 h-3.5" /></Button>
-                                <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) updatePropertyImage(p.id, f); }} />
-                              </label>
-                            )}
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Client-level chat — compact collapsible */}
-            <details className="border rounded-lg bg-card">
-              <summary className="cursor-pointer px-4 py-3 flex items-center gap-2 text-sm font-medium hover:bg-muted/50 transition-colors">
-                <MessageSquare className="w-4 h-4" /> Chat with {selectedClient.company || selectedClient.name}
-                {chatMessages.length > 0 && <Badge variant="secondary" className="text-xs ml-auto">{chatMessages.length}</Badge>}
-              </summary>
-              <div className="flex flex-col" style={{ height: "280px" }}>
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 border-t">
-                  {chatMessages.length === 0 && <div className="text-center text-xs text-muted-foreground py-4"><p>No messages yet.</p></div>}
-                  {chatMessages.map(msg => (
-                    <div key={msg.id} className={`group flex items-start gap-1 ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}>
-                      {msg.sender_type === "admin" && (
-                        <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
-                          <Trash2 className="w-3 h-3 text-destructive" />
-                        </button>
-                      )}
-                      <div className={`max-w-[75%] rounded-lg px-3 py-1.5 text-sm ${msg.sender_type === "admin" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                        {msg.sender_type === "client" && <p className="text-xs font-medium mb-0.5 opacity-70">{msg.sender_name}</p>}
-                        <p className="whitespace-pre-wrap text-[13px]">{msg.message}</p>
-                        <p className={`text-[10px] mt-0.5 ${msg.sender_type === "admin" ? "opacity-70" : "text-muted-foreground"}`}>
-                          {new Date(msg.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                        </p>
-                      </div>
-                      {msg.sender_type !== "admin" && (
-                        <button onClick={() => deleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 p-1 rounded hover:bg-destructive/10" title="Delete message">
-                          <Trash2 className="w-3 h-3 text-destructive" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <div ref={adminChatEndRef} />
-                </div>
-                <div className="border-t p-2 shrink-0">
-                  <form onSubmit={e => { e.preventDefault(); sendAdminChat(); }} className="flex gap-2">
-                    <Input placeholder="Type a message..." value={adminChatInput} onChange={e => setAdminChatInput(e.target.value)} disabled={sendingChat} className="flex-1 h-8 text-sm" />
-                    <Button type="submit" size="icon" className="h-8 w-8" disabled={!adminChatInput.trim() || sendingChat}><Send className="w-3.5 h-3.5" /></Button>
-                  </form>
-                </div>
-              </div>
-            </details>
-          </>
-        )}
-
-        {/* ======= PROPERTY LEVEL: Summary + Tabs ======= */}
-        {selectedProperty && (
-          <PropertyDashboard
-            property={selectedProperty}
-            services={services}
-            links={links}
-            clientName={selectedClient.company || selectedClient.name}
-            clientId={selectedClient.id}
-            onRefresh={() => { if (selectedClient) loadProperties(selectedClient.id); }}
-            onOpenServiceReport={openServiceReport}
-            onEditService={(s) => openServiceDialog(s)}
-            onDeleteService={deleteService}
-            onUpdatePropertyImage={updatePropertyImage}
-            uploadingPropertyImage={uploadingPropertyImage}
-            onCopyLink={copyLink}
-            onOpenPortal={openPortal}
-            onAddUpcomingService={() => createAndOpenReport("scheduled")}
-          />
-        )}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <PropertyDashboard
+          property={selectedProperty}
+          services={propServices}
+          links={propLinks}
+          clientName={client?.company || client?.name || ""}
+          clientId={selectedProperty.client_id}
+          onRefresh={loadAll}
+          onOpenServiceReport={openServiceReport}
+          onEditService={(s) => openServiceDialog(s)}
+          onDeleteService={deleteService}
+          onUpdatePropertyImage={updatePropertyImage}
+          uploadingPropertyImage={uploadingPropertyImage}
+          onCopyLink={copyLink}
+          onOpenPortal={openPortal}
+          onAddUpcomingService={() => createAndOpenReport("scheduled")}
+        />
       </div>
 
       {/* Service Detail Modal */}
@@ -959,82 +692,24 @@ const PortalAdmin = () => {
               <DialogHeader><DialogTitle className="text-base">{selectedService.service_type}</DialogTitle></DialogHeader>
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-2">
-                  <div><p className="text-xs text-muted-foreground">Property</p><p className="font-medium">{getPropertyName(selectedService.property_id)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Date</p><p>{selectedService.service_date ? new Date(selectedService.service_date + "T00:00:00").toLocaleDateString() : "—"}</p></div>
                   {selectedService.service_time && <div><p className="text-xs text-muted-foreground">Time</p><p>{selectedService.service_time}</p></div>}
                   {selectedService.technician && <div><p className="text-xs text-muted-foreground">Technician</p><p>{selectedService.technician}</p></div>}
                   <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={selectedService.status === "completed" ? "default" : "secondary"}>{selectedService.status}</Badge></div>
                 </div>
-
                 {selectedService.summary && <div><p className="text-xs text-muted-foreground mb-1">Summary</p><p>{selectedService.summary}</p></div>}
                 {selectedService.findings && <div><p className="text-xs text-muted-foreground mb-1">Findings</p><p>{selectedService.findings}</p></div>}
                 {selectedService.notes && <div><p className="text-xs text-muted-foreground mb-1">Notes</p><p>{selectedService.notes}</p></div>}
-
                 {selectedService.products_used && Array.isArray(selectedService.products_used) && selectedService.products_used.length > 0 && (
                   <div><p className="text-xs text-muted-foreground mb-1">Products Used</p><div className="flex flex-wrap gap-1">{(selectedService.products_used as string[]).map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}</div></div>
                 )}
-
-                {selectedService.follow_up_recommended && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
-                    <p className="text-xs font-medium text-orange-700">Follow-up Recommended</p>
-                    {selectedService.follow_up_notes && <p className="text-xs text-orange-600 mt-1">{selectedService.follow_up_notes}</p>}
-                  </div>
-                )}
-
-                {selectedService.prep_required && selectedService.prep_notes && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
-                    <p className="text-xs font-medium text-blue-700">Prep Required</p>
-                    <p className="text-xs text-blue-600 mt-1">{selectedService.prep_notes}</p>
-                  </div>
-                )}
-
-                {selectedService.special_notes && <div><p className="text-xs text-muted-foreground mb-1">Special Notes</p><p>{selectedService.special_notes}</p></div>}
-
-                {selectedService.unit_details && Array.isArray(selectedService.unit_details) && (selectedService.unit_details as any[]).length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Units Treated ({(selectedService.unit_details as any[]).length})</p>
-                    <Accordion type="multiple">
-                      {(selectedService.unit_details as any[]).map((unit: any, i: number) => (
-                        <AccordionItem key={i} value={`unit-${i}`}>
-                          <AccordionTrigger className="text-sm py-2">
-                            Unit {unit.unit_number || i + 1}
-                            {unit.status && <Badge variant="outline" className="ml-2 text-xs">{unit.status}</Badge>}
-                          </AccordionTrigger>
-                          <AccordionContent className="text-xs space-y-1">
-                            {unit.findings && <p><span className="text-muted-foreground">Findings:</span> {unit.findings}</p>}
-                            {unit.notes && <p><span className="text-muted-foreground">Notes:</span> {unit.notes}</p>}
-                            {unit.pest_activity && <p><span className="text-muted-foreground">Pest Activity:</span> {unit.pest_activity}</p>}
-                            {unit.products_used && <p><span className="text-muted-foreground">Products:</span> {unit.products_used}</p>}
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
-                  </div>
-                )}
-
-                {(
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
-                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
-                      const prop = properties.find(p => p.id === selectedService.property_id);
-                      const url = `/appointment-report/${selectedService.id}`;
-                      // Store state in sessionStorage for new tab access
-                      const stateData = {
-                        serviceData: selectedService,
-                        propertyName: prop?.name || "",
-                        propertyAddress: prop?.address || "",
-                        propertyId: selectedService.property_id,
-                        clientName: selectedClient?.company || selectedClient?.name,
-                        returnTo: "/portal-admin",
-                      };
-                      sessionStorage.setItem(`appointment-report-${selectedService.id}`, JSON.stringify(stateData));
-                      window.open(url, "_blank");
-                    }}>
-                      <FileText className="w-3.5 h-3.5 mr-1" />Appointment Report
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
+                  <Button variant="secondary" size="sm" className="flex-1" onClick={() => { openServiceReport(selectedService); }}>
+                    <FileText className="w-3.5 h-3.5 mr-1" />Appointment Report
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => { deleteService(selectedService.id); setSelectedService(null); }}>Delete</Button>
+                </div>
               </div>
             </>
           )}
