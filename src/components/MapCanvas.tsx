@@ -888,6 +888,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     };
   };
 
+  const exportCanvasState = () => {
+    if (isLoadingDataRef.current) return null;
+
+    const canvasState = buildNormalizedCanvasState();
+    return canvasState ? JSON.stringify(canvasState) : null;
+  };
+
   // Export canvas with background as a single image
   const exportAsImage = async (
   ): Promise<string | null> => {
@@ -978,24 +985,35 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   useEffect(() => {
     const globalWindow = window as any;
     const registry = (globalWindow.mapExportRegistry ??= {});
+    const stateRegistry = (globalWindow.mapStateRegistry ??= {});
 
     if (exportId) {
       registry[exportId] = exportAsImage;
+      stateRegistry[exportId] = exportCanvasState;
       if (exportId === 'main') {
         globalWindow.exportMapAsImage = exportAsImage;
+        globalWindow.exportMapState = exportCanvasState;
       }
     } else {
       globalWindow.exportMapAsImage = exportAsImage;
+      globalWindow.exportMapState = exportCanvasState;
     }
 
     return () => {
       if (exportId) {
         delete registry[exportId];
+        delete stateRegistry[exportId];
         if (exportId === 'main' && globalWindow.exportMapAsImage === exportAsImage) {
           delete globalWindow.exportMapAsImage;
         }
+        if (exportId === 'main' && globalWindow.exportMapState === exportCanvasState) {
+          delete globalWindow.exportMapState;
+        }
       } else if (globalWindow.exportMapAsImage === exportAsImage) {
         delete globalWindow.exportMapAsImage;
+        if (globalWindow.exportMapState === exportCanvasState) {
+          delete globalWindow.exportMapState;
+        }
       }
     };
   }, [mapUrl, legendItems, exportId]);

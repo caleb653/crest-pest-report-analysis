@@ -33,9 +33,21 @@ const getRecurringLabel = (services: ServiceItem[]) => {
     const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
     return freq > 0 && s.serviceType;
   });
-  if (recurringServices.length > 0 && recurringServices.every(s => {
+
+  if (recurringServices.length === 0) {
+    return "Recurring";
+  }
+
+  if (recurringServices.every(s => {
     const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
-    return freq <= 30;
+    return freq === 7 || freq === 14;
+  })) {
+    return "Every 4 Weeks";
+  }
+
+  if (recurringServices.every(s => {
+    const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
+    return freq === 30;
   })) {
     return "Monthly";
   }
