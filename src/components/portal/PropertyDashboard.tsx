@@ -908,19 +908,21 @@ const PropertyDashboard = ({
                   <label className="flex items-center gap-2.5 cursor-pointer flex-1">
                     <input type="checkbox" checked onChange={async () => {
                       const updated = equipmentItems.filter(e => e.name !== custom.name);
-                      await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
-                      onRefresh();
+                      await saveEquipment(updated);
                       toast({ title: `Removed ${custom.name}`, duration: 1500 });
                     }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
                     {custom.name}
                   </label>
                   <Input type="number" min={1} className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
-                    defaultValue={custom.count || 1}
+                    value={custom.count || 1}
+                    onChange={(e) => {
+                      const count = parseInt(e.target.value) || 1;
+                      setEquipmentItems(prev => prev.map(ei => ei.name === custom.name ? { ...ei, count } : ei));
+                    }}
                     onBlur={async (e) => {
                       const count = parseInt(e.target.value) || 1;
                       const updated = equipmentItems.map(ei => ei.name === custom.name ? { ...ei, count } : ei);
-                      await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
-                      onRefresh();
+                      await saveEquipment(updated);
                     }}
                   />
                 </div>
@@ -935,9 +937,8 @@ const PropertyDashboard = ({
                       const val = (e.target as HTMLInputElement).value.trim();
                       if (val && !equipmentItems.some(ei => ei.name === val)) {
                         const updated = [...equipmentItems, { name: val, count: 1 }];
-                        await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                        await saveEquipment(updated);
                         (e.target as HTMLInputElement).value = "";
-                        onRefresh();
                         toast({ title: `Added ${val}`, duration: 1500 });
                       }
                     }
