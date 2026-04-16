@@ -9,15 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ChevronDown, ChevronRight, Calendar, MapPin, Plus, Edit, Trash2,
+  ChevronDown, Calendar, MapPin, Plus, Edit, Trash2,
   CheckCircle, AlertTriangle, Clock, Wrench, Image, ExternalLink,
-  Copy, Users, FileText, Send, X, Flag, ClipboardList
+  Copy, Users, FileText, Send, X, Flag, ClipboardList, CalendarPlus
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
-import { MapCanvas } from "@/components/MapCanvas";
 
 // ─── Types ───
 interface PortalProperty {
@@ -43,6 +41,11 @@ interface PortalLink {
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
 const PREFERENCE_OPTIONS = ["Green / Eco-Friendly Products", "Standard Products", "No Preference", "Interior Treatment Only", "Exterior Treatment Only"];
 const PEST_TYPES = ["Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets", "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps", "Silverfish", "Other"];
+const SERVICE_TYPES = [
+  "Commercial General Pest Control", "General Pest Control", "Rodent Trapping",
+  "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
+  "Mosquito Service", "Attic Services", "Dewebbing",
+];
 
 const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Commercial General Pest Control": 30,
@@ -74,7 +77,6 @@ interface Props {
 
 const today = new Date().toISOString().split("T")[0];
 
-// ─── Helper: Generate upcoming dates from last service ───
 const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
   const dates: string[] = [];
   let d = new Date(lastDate + "T00:00:00");
@@ -97,8 +99,10 @@ const PropertyDashboard = ({
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
-  const [showWorkOrder, setShowWorkOrder] = useState(false);
-  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "" });
+  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+  const [addingServiceDate, setAddingServiceDate] = useState("");
+  const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
@@ -108,9 +112,9 @@ const PropertyDashboard = ({
     .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
-  // Auto-populate upcoming: find most recent recurring service, generate future dates
+  // Auto-populate upcoming from frequency
   const projectedUpcoming = (() => {
-    if (scheduledServices.length > 0) return []; // already have scheduled services
+    if (scheduledServices.length > 0) return [];
     const lastRecurring = pastServices.find(s => {
       const freq = (s as any).frequency_days || SERVICE_FREQUENCY_MAP[s.service_type];
       return freq && freq > 0;
@@ -137,20 +141,17 @@ const PropertyDashboard = ({
 
   // Auto-expand first items
   useEffect(() => {
-    if (pastServices.length > 0 && !expandedPastId) setExpandedPastId(pastServices[0].id);
-    if (allUpcoming.length > 0 && !expandedUpcomingId) setExpandedUpcomingId(allUpcoming[0].id);
+    if (pastServices.length > 0) setExpandedPastId(pastServices[0].id);
+    if (allUpcoming.length > 0) setExpandedUpcomingId(allUpcoming[0].id);
   }, [property.id]);
 
-  // Get all unit numbers from past services
+  // Get all unit numbers from services
   const allUnits = (() => {
     const units = new Set<string>();
-    pastServices.forEach(s => {
+    propServices.forEach(s => {
       if (Array.isArray(s.unit_details)) {
         (s.unit_details as any[]).forEach(u => { if (u.unit_number) units.add(u.unit_number); });
       }
-    });
-    // Also from units_planned
-    propServices.forEach(s => {
       if (Array.isArray(s.units_planned)) {
         (s.units_planned as string[]).forEach(u => units.add(u));
       }
@@ -170,7 +171,6 @@ const PropertyDashboard = ({
         });
       }
     });
-    // Add services without unit details under "General"
     pastServices.filter(s => !s.unit_details || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length === 0)).forEach(s => {
       if (!map.has("General")) map.set("General", []);
       map.get("General")!.push({ service: s, unitDetail: null });
@@ -185,7 +185,6 @@ const PropertyDashboard = ({
       service_date: today,
     }).eq("id", serviceId);
 
-    // If follow-up units are flagged, add them to the next upcoming service
     if (followUpUnits.length > 0) {
       const nextService = allUpcoming.find(s => s.id !== serviceId && !s.isProjected);
       if (nextService) {
@@ -193,7 +192,6 @@ const PropertyDashboard = ({
         const merged = Array.from(new Set([...existing, ...followUpUnits]));
         await supabase.from("portal_services").update({ units_planned: merged }).eq("id", nextService.id);
       } else {
-        // Create next service with follow-up units
         const freq = SERVICE_FREQUENCY_MAP[propServices.find(s => s.id === serviceId)?.service_type || ""] || 30;
         const nextDate = new Date(Date.now() + freq * 86400000).toISOString().split("T")[0];
         const svc = propServices.find(s => s.id === serviceId);
@@ -215,24 +213,38 @@ const PropertyDashboard = ({
   };
 
   const submitWorkOrder = async () => {
-    if (!workOrder.unit_number || !workOrder.pest_type) return;
-
-    // Find the tenant link for this property to use as link_id
+    if (!workOrder.unit_number && !workOrder.comments) return;
     const tenantLink = links.find(l => l.link_type === "tenant" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
 
     await supabase.from("portal_requests").insert({
       property_id: property.id,
       link_id: tenantLink?.id || null,
-      unit_number: workOrder.unit_number,
+      unit_number: workOrder.unit_number || "Facility",
       request_type: "Service Request",
-      description: `${workOrder.pest_type} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
-      pest_type: workOrder.pest_type,
+      description: `${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type,
+      preferred_date: workOrder.preferred_date || null,
     } as any);
 
     toast({ title: "Work order submitted" });
-    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "" });
-    setShowWorkOrder(false);
+    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+    onRefresh();
+  };
+
+  const quickAddService = async () => {
+    if (!addingServiceDate) return;
+    await supabase.from("portal_services").insert({
+      property_id: property.id,
+      service_type: addingServiceType,
+      service_date: addingServiceDate,
+      status: "scheduled",
+      units_planned: allUnits,
+      frequency_days: SERVICE_FREQUENCY_MAP[addingServiceType] || 30,
+    });
+    toast({ title: "Service added" });
+    setShowQuickAdd(false);
+    setAddingServiceDate("");
     onRefresh();
   };
 
@@ -241,6 +253,187 @@ const PropertyDashboard = ({
 
   const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD";
   const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD";
+
+  // ─── Render a service card (shared between past and upcoming) ───
+  const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean) => {
+    const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+    const products = s.products_used && Array.isArray(s.products_used) ? s.products_used as string[] : [];
+
+    return (
+      <div className="px-3 pb-3 space-y-3 border-t pt-3">
+        {/* Units table for past services */}
+        {!isUpcoming && unitDetails.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5">Units Treated ({unitDetails.length})</p>
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/60">
+                  <tr>
+                    <th className="text-left px-2 py-1.5 font-medium">Unit</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Findings</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Activity</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Products</th>
+                    <th className="text-left px-2 py-1.5 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unitDetails.map((unit: any, j: number) => (
+                    <tr key={j} className="border-t">
+                      <td className="px-2 py-1.5 font-medium">{unit.unit_number || j + 1}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{unit.findings || "—"}</td>
+                      <td className="px-2 py-1.5">
+                        {unit.pest_activity === "High" && <Badge className="text-[9px] bg-red-500">High</Badge>}
+                        {unit.pest_activity === "Moderate" && <Badge className="text-[9px] bg-orange-500">Moderate</Badge>}
+                        {unit.pest_activity === "Low" && <Badge className="text-[9px] bg-yellow-500 text-yellow-900">Low</Badge>}
+                        {(unit.pest_activity === "None" || !unit.pest_activity) && <span className="text-muted-foreground">None</span>}
+                      </td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{unit.products_used || "—"}</td>
+                      <td className="px-2 py-1.5">
+                        {unit.status === "Needs Follow-up" && <Badge className="text-[9px] bg-orange-500">Follow-up</Badge>}
+                        {unit.status === "Treated" && <Badge variant="secondary" className="text-[9px]">Treated</Badge>}
+                        {unit.status === "Clear" && <Badge variant="outline" className="text-[9px]">Clear</Badge>}
+                        {!unit.status && "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {unitDetails.some((u: any) => u.notes) && (
+              <div className="mt-1.5 space-y-1">
+                {unitDetails.filter((u: any) => u.notes).map((u: any, j: number) => (
+                  <p key={j} className="text-[11px] text-muted-foreground"><span className="font-medium">Unit {u.unit_number}:</span> {u.notes}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Units planned for upcoming */}
+        {isUpcoming && unitsPlanned.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1">Units to be Treated</p>
+            <div className="flex flex-wrap gap-1">
+              {unitsPlanned.map(u => <Badge key={u} variant="secondary" className="text-[10px]">Unit {u}</Badge>)}
+            </div>
+          </div>
+        )}
+
+        {/* General details */}
+        {s.summary && <div><p className="text-xs font-semibold text-muted-foreground">Summary</p><p className="text-xs">{s.summary}</p></div>}
+        {s.findings && <div><p className="text-xs font-semibold text-muted-foreground">Findings</p><p className="text-xs">{s.findings}</p></div>}
+        {s.notes && <div><p className="text-xs font-semibold text-muted-foreground">Notes</p><p className="text-xs">{s.notes}</p></div>}
+
+        {products.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1">Products Used</p>
+            <div className="flex flex-wrap gap-1">
+              {products.map((p, j) => <Badge key={j} variant="outline" className="text-[10px]">{p}</Badge>)}
+            </div>
+          </div>
+        )}
+
+        {s.follow_up_recommended && s.follow_up_notes && (
+          <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
+            <p className="text-xs font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
+          </div>
+        )}
+
+        {s.special_notes && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+            <p className="text-xs text-amber-700">{s.special_notes}</p>
+          </div>
+        )}
+
+        {s.prep_required && s.prep_notes && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
+            <p className="text-xs font-medium text-blue-700">Prep Required</p>
+            <p className="text-xs text-blue-600 mt-0.5">{s.prep_notes}</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        {!isProjected && (
+          <div className="flex gap-1.5 pt-1">
+            <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
+              <FileText className="w-3 h-3 mr-1" />Full Report
+            </Button>
+            {viewMode === "admin" && (
+              <>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onEditService(s)}><Edit className="w-3 h-3" /></Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Complete service flow for upcoming */}
+        {isUpcoming && !isProjected && (viewMode === "admin" || viewMode === "pm") && (
+          <div className="space-y-2 pt-1">
+            {completingServiceId === s.id ? (
+              <div className="bg-muted rounded-lg p-3 space-y-2">
+                <p className="text-xs font-semibold">Flag units needing follow-up:</p>
+                {allUnits.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {allUnits.map(u => (
+                      <button key={u}
+                        className={`px-2 py-1 rounded text-xs border transition-colors ${followUpUnits.includes(u) ? "bg-orange-100 border-orange-300 text-orange-700 font-medium" : "bg-background border-border hover:border-orange-300"}`}
+                        onClick={() => setFollowUpUnits(prev => prev.includes(u) ? prev.filter(x => x !== u) : [...prev, u])}
+                      >
+                        <Flag className="w-3 h-3 inline mr-1" />Unit {u}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No unit history — skip follow-up flagging</p>
+                )}
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-7 text-xs flex-1" onClick={() => completeService(s.id)}>
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    {followUpUnits.length > 0 ? `Complete & Flag ${followUpUnits.length} Units` : "Complete Service"}
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setCompletingServiceId(null); setFollowUpUnits([]); }}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-1.5">
+                <Button size="sm" className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700" onClick={() => setCompletingServiceId(s.id)}>
+                  <CheckCircle className="w-3 h-3 mr-1" />Complete Service
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onOpenServiceReport(s as any)}>
+                  <FileText className="w-3 h-3 mr-1" />Details
+                </Button>
+                {viewMode === "admin" && (
+                  <>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEditService(s as any)}><Edit className="w-3 h-3" /></Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Schedule projected service */}
+        {isProjected && viewMode === "admin" && (
+          <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={async () => {
+            await supabase.from("portal_services").insert({
+              property_id: property.id,
+              service_type: s.service_type,
+              service_date: s.service_date,
+              status: "scheduled",
+              units_planned: s.units_planned,
+            });
+            toast({ title: "Service scheduled" });
+            onRefresh();
+          }}>
+            <Plus className="w-3 h-3 mr-1" />Schedule This Service
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -287,7 +480,7 @@ const PropertyDashboard = ({
                   return (
                     <label key={eq} className="flex items-center gap-2 text-xs cursor-pointer">
                       <input type="checkbox" checked={isChecked} onChange={async () => {
-                        const updated = isChecked ? equipment.filter(e => e !== eq) : [...equipment, eq];
+                        const updated = isChecked ? equipment.filter((e: string) => e !== eq) : [...equipment, eq];
                         await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
                         onRefresh();
                       }} className="rounded" />
@@ -299,7 +492,7 @@ const PropertyDashboard = ({
             ) : (
               <div className="flex flex-wrap gap-1">
                 {equipment.length > 0
-                  ? equipment.map(eq => <Badge key={eq} variant="secondary" className="text-xs">{eq}</Badge>)
+                  ? equipment.map((eq: string) => <Badge key={eq} variant="secondary" className="text-xs">{eq}</Badge>)
                   : <p className="text-xs text-muted-foreground">No equipment set</p>
                 }
               </div>
@@ -356,7 +549,6 @@ const PropertyDashboard = ({
               <CardTitle className="text-sm flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Links</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {/* PM Link */}
               {(() => {
                 const pmLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
                 return pmLink ? (
@@ -368,7 +560,6 @@ const PropertyDashboard = ({
                   </div>
                 ) : null;
               })()}
-              {/* Tenant Links */}
               {(() => {
                 const tenantLinks = links.filter(l => l.link_type === "tenant" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
                 return tenantLinks.length > 0 ? (
@@ -414,13 +605,12 @@ const PropertyDashboard = ({
         </div>
 
         {pastViewMode === "date" ? (
-          /* ─── Date View ─── */
           pastServices.length === 0 ? (
             <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">No past services</CardContent></Card>
           ) : (
             <div className="space-y-2">
               {pastServices.map((s, i) => {
-                const isExpanded = expandedPastId === s.id || (i === 0 && !expandedPastId);
+                const isExpanded = expandedPastId === s.id;
                 const isFirst = i === 0;
                 return (
                   <Card key={s.id} className={`transition-all ${isExpanded ? "border-primary/30 shadow-md" : "hover:border-muted-foreground/20"}`}>
@@ -434,64 +624,14 @@ const PropertyDashboard = ({
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span>{formatDate(s.service_date)}</span>
                           {s.technician && <span>• {s.technician}</span>}
+                          {Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && (
+                            <span>• {(s.unit_details as any[]).length} units</span>
+                          )}
                         </div>
                       </div>
                       <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                     </button>
-
-                    {isExpanded && (
-                      <div className={`px-3 pb-3 space-y-2 border-t pt-2 ${isFirst ? "" : ""}`}>
-                        {/* Unit Details */}
-                        {s.unit_details && Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && (
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Units Treated ({(s.unit_details as any[]).length})</p>
-                            <div className="space-y-1.5">
-                              {(s.unit_details as any[]).map((unit: any, j: number) => (
-                                <div key={j} className="bg-muted/50 rounded-md p-2 text-xs">
-                                  <p className="font-medium">Unit {unit.unit_number || j + 1}
-                                    {unit.status && <Badge variant="outline" className="text-[10px] ml-1">{unit.status}</Badge>}
-                                  </p>
-                                  {unit.findings && <p className="text-muted-foreground mt-0.5">Findings: {unit.findings}</p>}
-                                  {unit.pest_activity && <p className="text-muted-foreground">Activity: {unit.pest_activity}</p>}
-                                  {unit.products_used && <p className="text-muted-foreground">Products: {unit.products_used}</p>}
-                                  {unit.notes && <p className="text-muted-foreground">Notes: {unit.notes}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* General Treatment Details */}
-                        {s.summary && <div><p className="text-xs font-medium text-muted-foreground">Summary</p><p className="text-xs">{s.summary}</p></div>}
-                        {s.findings && <div><p className="text-xs font-medium text-muted-foreground">Findings</p><p className="text-xs">{s.findings}</p></div>}
-                        {s.notes && <div><p className="text-xs font-medium text-muted-foreground">Notes</p><p className="text-xs">{s.notes}</p></div>}
-
-                        {s.products_used && Array.isArray(s.products_used) && s.products_used.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {(s.products_used as string[]).map((p, j) => <Badge key={j} variant="outline" className="text-[10px]">{p}</Badge>)}
-                          </div>
-                        )}
-
-                        {s.follow_up_recommended && s.follow_up_notes && (
-                          <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
-                            <p className="text-xs font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
-                          </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex gap-1.5 pt-1">
-                          <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
-                            <FileText className="w-3 h-3 mr-1" />Full Report
-                          </Button>
-                          {viewMode === "admin" && (
-                            <>
-                              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onEditService(s)}><Edit className="w-3 h-3" /></Button>
-                              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    {isExpanded && renderServiceDetails(s, false, false)}
                   </Card>
                 );
               })}
@@ -525,6 +665,7 @@ const PropertyDashboard = ({
                             <div className="mt-1 text-muted-foreground space-y-0.5">
                               {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
                               {unitDetail.pest_activity && <p>Activity: {unitDetail.pest_activity}</p>}
+                              {unitDetail.products_used && <p>Products: {unitDetail.products_used}</p>}
                               {unitDetail.notes && <p>Notes: {unitDetail.notes}</p>}
                             </div>
                           )}
@@ -539,181 +680,41 @@ const PropertyDashboard = ({
         )}
       </div>
 
-      {/* ══════════ RIGHT COLUMN: Upcoming + Work Orders ══════════ */}
+      {/* ══════════ RIGHT COLUMN: Work Order → Next Service → Future Services ══════════ */}
       <div className="lg:col-span-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold flex items-center gap-1.5">
-            <ClipboardList className="w-4 h-4" />Upcoming Services
-            <span className="text-muted-foreground font-normal">({allUpcoming.length})</span>
-          </h3>
-          {(viewMode === "admin" || viewMode === "pm") && (
-            <div className="flex gap-1">
-              {onAddUpcomingService && (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onAddUpcomingService}>
-                  <Plus className="w-3 h-3 mr-1" />Add
-                </Button>
-              )}
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowWorkOrder(true)}>
-                <ClipboardList className="w-3 h-3 mr-1" />Work Order
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {allUpcoming.length === 0 ? (
-          <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">No upcoming services</CardContent></Card>
-        ) : (
-          <div className="space-y-2">
-            {allUpcoming.map((s, i) => {
-              const isExpanded = expandedUpcomingId === s.id || (i === 0 && !expandedUpcomingId);
-              const isProjected = (s as any).isProjected;
-              const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-
-              return (
-                <Card key={s.id} className={`transition-all ${isExpanded ? "border-primary/30 shadow-md" : "hover:border-muted-foreground/20"} ${isProjected ? "border-dashed" : ""}`}>
-                  <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedUpcomingId(isExpanded ? null : s.id)}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-xs">{s.service_type}</p>
-                        {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
-                        {!isProjected && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatDate(s.service_date)}
-                        {(s as any).technician && ` • ${(s as any).technician}`}
-                      </p>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                  </button>
-
-                  {isExpanded && (
-                    <div className="px-3 pb-3 space-y-2 border-t pt-2">
-                      {/* Units planned */}
-                      {unitsPlanned.length > 0 && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Units to be Treated</p>
-                          <div className="flex flex-wrap gap-1">
-                            {unitsPlanned.map(u => <Badge key={u} variant="secondary" className="text-[10px]">Unit {u}</Badge>)}
-                          </div>
-                        </div>
-                      )}
-
-                      {(s as any).special_notes && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
-                          <p className="text-xs text-amber-700">{(s as any).special_notes}</p>
-                        </div>
-                      )}
-
-                      {(s as any).prep_required && (s as any).prep_notes && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
-                          <p className="text-xs font-medium text-blue-700">Prep Required</p>
-                          <p className="text-xs text-blue-600 mt-0.5">{(s as any).prep_notes}</p>
-                        </div>
-                      )}
-
-                      {/* Actions for real scheduled services */}
-                      {!isProjected && (viewMode === "admin" || viewMode === "pm") && (
-                        <div className="space-y-2 pt-1">
-                          {/* Complete Service Flow */}
-                          {completingServiceId === s.id ? (
-                            <div className="bg-muted rounded-lg p-3 space-y-2">
-                              <p className="text-xs font-semibold">Flag units needing follow-up:</p>
-                              {allUnits.length > 0 ? (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {allUnits.map(u => (
-                                    <button key={u}
-                                      className={`px-2 py-1 rounded text-xs border transition-colors ${followUpUnits.includes(u) ? "bg-orange-100 border-orange-300 text-orange-700 font-medium" : "bg-background border-border hover:border-orange-300"}`}
-                                      onClick={() => setFollowUpUnits(prev => prev.includes(u) ? prev.filter(x => x !== u) : [...prev, u])}
-                                    >
-                                      <Flag className="w-3 h-3 inline mr-1" />Unit {u}
-                                    </button>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">No unit history — skip follow-up flagging</p>
-                              )}
-                              <div className="flex gap-2">
-                                <Button size="sm" className="h-7 text-xs flex-1" onClick={() => completeService(s.id)}>
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  {followUpUnits.length > 0 ? `Complete & Flag ${followUpUnits.length} Units` : "Complete Service"}
-                                </Button>
-                                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setCompletingServiceId(null); setFollowUpUnits([]); }}>Cancel</Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex gap-1.5">
-                              <Button size="sm" className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700" onClick={() => setCompletingServiceId(s.id)}>
-                                <CheckCircle className="w-3 h-3 mr-1" />Complete Service
-                              </Button>
-                              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onOpenServiceReport(s as any)}>
-                                <FileText className="w-3 h-3 mr-1" />Details
-                              </Button>
-                              {viewMode === "admin" && (
-                                <>
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEditService(s as any)}><Edit className="w-3 h-3" /></Button>
-                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Click into projected to create a real service */}
-                      {isProjected && viewMode === "admin" && (
-                        <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={async () => {
-                          const { error } = await supabase.from("portal_services").insert({
-                            property_id: property.id,
-                            service_type: s.service_type,
-                            service_date: s.service_date,
-                            status: "scheduled",
-                            units_planned: s.units_planned,
-                          });
-                          if (!error) { toast({ title: "Service scheduled" }); onRefresh(); }
-                        }}>
-                          <Plus className="w-3 h-3 mr-1" />Schedule This Service
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ─── Work Order Form ─── */}
-        {showWorkOrder && (
-          <Card className="border-primary/30">
+        {/* ─── Work Order Form (always visible) ─── */}
+        {(viewMode === "admin" || viewMode === "pm") && (
+          <Card className="border-primary/40 shadow-md bg-primary/[0.02]">
             <CardHeader className="pb-2 py-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Submit Work Order</CardTitle>
-                <button onClick={() => setShowWorkOrder(false)}><X className="w-4 h-4 text-muted-foreground" /></button>
-              </div>
+              <CardTitle className="text-sm flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-primary" />
+                Request Work Order
+              </CardTitle>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Submit a service request for a specific unit or the entire facility. This creates a work order for the next available service date.
+              </p>
             </CardHeader>
             <CardContent className="space-y-2 pt-0">
               <div>
-                <Label className="text-xs">Unit Number *</Label>
-                {allUnits.length > 0 ? (
-                  <Select value={workOrder.unit_number} onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v }))}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select unit" /></SelectTrigger>
-                    <SelectContent>
-                      {allUnits.map(u => <SelectItem key={u} value={u}>Unit {u}</SelectItem>)}
-                      <SelectItem value="__other">Other...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input className="h-8 text-xs" placeholder="Unit number" value={workOrder.unit_number}
-                    onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))} />
-                )}
-                {workOrder.unit_number === "__other" && (
-                  <Input className="h-8 text-xs mt-1" placeholder="Enter unit number" onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))} />
+                <Label className="text-xs">Unit or Area *</Label>
+                <Select value={workOrder.unit_number} onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v }))}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select unit or facility" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Facility">🏢 Entire Facility</SelectItem>
+                    <SelectItem value="Common Areas">🚪 Common Areas</SelectItem>
+                    <SelectItem value="Exterior">🌳 Exterior Only</SelectItem>
+                    {allUnits.map(u => <SelectItem key={u} value={u}>Unit {u}</SelectItem>)}
+                    <SelectItem value="__custom">Other...</SelectItem>
+                  </SelectContent>
+                </Select>
+                {workOrder.unit_number === "__custom" && (
+                  <Input className="h-8 text-xs mt-1" placeholder="Enter unit/area" onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))} />
                 )}
               </div>
               <div>
-                <Label className="text-xs">Pest Type *</Label>
+                <Label className="text-xs">Pest Type</Label>
                 <Select value={workOrder.pest_type} onValueChange={v => setWorkOrder(wo => ({ ...wo, pest_type: v }))}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select pest" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select pest type" /></SelectTrigger>
                   <SelectContent>
                     {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                   </SelectContent>
@@ -722,30 +723,105 @@ const PropertyDashboard = ({
               <div>
                 <Label className="text-xs">Location</Label>
                 <div className="flex gap-1 mt-1">
-                  <button
-                    className={`px-3 py-1.5 rounded text-xs border transition-colors ${workOrder.location_type === "Interior" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                    onClick={() => setWorkOrder(wo => ({ ...wo, location_type: "Interior" }))}
-                  >Interior</button>
-                  <button
-                    className={`px-3 py-1.5 rounded text-xs border transition-colors ${workOrder.location_type === "Exterior" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                    onClick={() => setWorkOrder(wo => ({ ...wo, location_type: "Exterior" }))}
-                  >Exterior</button>
-                  <button
-                    className={`px-3 py-1.5 rounded text-xs border transition-colors ${workOrder.location_type === "Both" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                    onClick={() => setWorkOrder(wo => ({ ...wo, location_type: "Both" }))}
-                  >Both</button>
+                  {["Interior", "Exterior", "Both"].map(loc => (
+                    <button key={loc}
+                      className={`px-3 py-1.5 rounded text-xs border transition-colors ${workOrder.location_type === loc ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                      onClick={() => setWorkOrder(wo => ({ ...wo, location_type: loc }))}
+                    >{loc}</button>
+                  ))}
                 </div>
               </div>
               <div>
+                <Label className="text-xs">Preferred Date (optional)</Label>
+                <Input type="date" className="h-8 text-xs" value={workOrder.preferred_date}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value }))} />
+              </div>
+              <div>
                 <Label className="text-xs">Comments</Label>
-                <Textarea className="text-xs min-h-[50px]" placeholder="Additional details..." value={workOrder.comments}
+                <Textarea className="text-xs min-h-[40px]" placeholder="Describe the issue..." value={workOrder.comments}
                   onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} />
               </div>
-              <Button size="sm" className="w-full h-8 text-xs" onClick={submitWorkOrder} disabled={!workOrder.unit_number || !workOrder.pest_type}>
+              <Button size="sm" className="w-full h-8 text-xs" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
                 <Send className="w-3 h-3 mr-1" />Submit Work Order
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* ─── Quick Add Service ─── */}
+        {(viewMode === "admin" || viewMode === "pm") && (
+          <div className="flex gap-1">
+            {!showQuickAdd ? (
+              <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setShowQuickAdd(true)}>
+                <CalendarPlus className="w-3.5 h-3.5 mr-1" />Add Service to Date
+              </Button>
+            ) : (
+              <Card className="w-full">
+                <CardContent className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold">Quick Add Service</p>
+                    <button onClick={() => setShowQuickAdd(false)}><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+                  </div>
+                  <Select value={addingServiceType} onValueChange={setAddingServiceType}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input type="date" className="h-8 text-xs" value={addingServiceDate} onChange={e => setAddingServiceDate(e.target.value)} />
+                  <Button size="sm" className="w-full h-7 text-xs" onClick={quickAddService} disabled={!addingServiceDate}>
+                    <Plus className="w-3 h-3 mr-1" />Add
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+            {onAddUpcomingService && !showQuickAdd && (
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onAddUpcomingService}>
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* ─── Upcoming Services Header ─── */}
+        <h3 className="text-sm font-semibold flex items-center gap-1.5">
+          <ClipboardList className="w-4 h-4" />Upcoming Services
+          <span className="text-muted-foreground font-normal">({allUpcoming.length})</span>
+        </h3>
+
+        {allUpcoming.length === 0 ? (
+          <Card><CardContent className="p-6 text-center text-muted-foreground text-sm">No upcoming services</CardContent></Card>
+        ) : (
+          <div className="space-y-2">
+            {allUpcoming.map((s, i) => {
+              const isFirst = i === 0;
+              const isExpanded = isFirst || expandedUpcomingId === s.id;
+              const isProjected = (s as any).isProjected;
+              const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+
+              return (
+                <Card key={s.id} className={`transition-all ${isFirst ? "border-primary/40 shadow-md" : isExpanded ? "border-primary/20 shadow-sm" : "hover:border-muted-foreground/20"} ${isProjected ? "border-dashed" : ""}`}>
+                  <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {isFirst && <Badge className="text-[10px] bg-green-600">Next Service</Badge>}
+                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                        {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
+                        {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(s.service_date)}
+                        {(s as any).technician && ` • ${(s as any).technician}`}
+                        {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
+                      </p>
+                    </div>
+                    {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                  </button>
+                  {isExpanded && renderServiceDetails(s, true, isProjected)}
+                </Card>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
