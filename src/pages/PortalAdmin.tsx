@@ -726,16 +726,9 @@ const PortalAdmin = () => {
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             {selectedProperty ? "All Properties" : "All Clients"}
           </Button>
-          <span className="text-background/60">
-            {viewMode === "admin" ? "Crest Admin" : viewMode === "pm" ? "Property Manager" : "Tenant"} View
-          </span>
+          <span className="text-background/60">Crest Admin View</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md overflow-hidden border border-background/20">
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "admin" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("admin")}>Crest</button>
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "pm" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("pm")}>PM</button>
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "tenant" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("tenant")}>Tenant</button>
-          </div>
           {masterLink && (
             <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
               <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
@@ -778,7 +771,7 @@ const PortalAdmin = () => {
       </div>
 
       {/* Admin management panel — client level only */}
-      {viewMode === "admin" && !selectedProperty && (
+      {!selectedProperty && (
         <div className="bg-muted/50 border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
             <div className="flex gap-4 text-xs text-muted-foreground">
@@ -855,7 +848,7 @@ const PortalAdmin = () => {
                       {p.image_url && (
                         <div className="relative h-32 w-full">
                           <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                          {viewMode === "admin" && (
+                          {(
                             <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity">
                               <Image className="w-4 h-4" />
                               <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
@@ -876,7 +869,7 @@ const PortalAdmin = () => {
                           <span>·</span>
                           <span>{propFuture.length} upcoming</span>
                         </div>
-                        {viewMode === "admin" && (
+                        {(
                           <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {!p.image_url && (
                               <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
@@ -943,7 +936,6 @@ const PortalAdmin = () => {
             property={selectedProperty}
             services={services}
             links={links}
-            viewMode={viewMode}
             clientName={selectedClient.company || selectedClient.name}
             clientId={selectedClient.id}
             onRefresh={() => { if (selectedClient) loadProperties(selectedClient.id); }}
@@ -954,9 +946,7 @@ const PortalAdmin = () => {
             uploadingPropertyImage={uploadingPropertyImage}
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
-            onDeleteLink={deleteLink}
             onAddUpcomingService={() => createAndOpenReport("scheduled")}
-            onCreateTenantLink={() => setShowAddLink(true)}
           />
         )}
       </div>
@@ -1022,7 +1012,7 @@ const PortalAdmin = () => {
                   </div>
                 )}
 
-                {viewMode === "admin" && (
+                {(
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
