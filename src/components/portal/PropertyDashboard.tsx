@@ -352,6 +352,9 @@ const PropertyDashboard = ({
     } as any);
     toast({ title: "Work order submitted" });
     setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+    // Refresh requests
+    const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
+    if (reqs) setPendingRequests(reqs);
     onRefresh();
   };
 
