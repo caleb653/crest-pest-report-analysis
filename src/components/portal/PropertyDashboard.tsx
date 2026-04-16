@@ -38,7 +38,7 @@ interface PortalLink {
 
 // ─── Constants ───
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
-const PREFERENCE_OPTIONS = ["Green / Eco-Friendly Products", "Standard Products", "No Preference", "Interior Treatment Only", "Exterior Treatment Only"];
+const PREFERENCE_OPTIONS = ["Green / Eco-Friendly Products", "Standard Products", "No Preference", "Interior Treatment Only", "Exterior Treatment Only", "Other"];
 const PEST_TYPES = ["Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets", "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps", "Silverfish", "Other"];
 const SERVICE_TYPES = [
   "Commercial General Pest Control", "General Pest Control", "Rodent Trapping",
@@ -848,6 +848,7 @@ const PropertyDashboard = ({
               value={(property.customer_preferences as any)?.preference || ""}
               onValueChange={async (val) => {
                 const updated = { ...(property.customer_preferences || {}), preference: val };
+                if (val !== "Other") delete updated.otherText;
                 await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
                 onRefresh();
               }}
@@ -857,6 +858,17 @@ const PropertyDashboard = ({
                 {PREFERENCE_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
+            {(property.customer_preferences as any)?.preference === "Other" && (
+              <Input
+                placeholder="Specify preference..."
+                className="text-xs h-8"
+                defaultValue={(property.customer_preferences as any)?.otherText || ""}
+                onBlur={async (e) => {
+                  const updated = { ...(property.customer_preferences || {}), otherText: e.target.value };
+                  await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
+                }}
+              />
+            )}
             <Textarea
               placeholder="Additional notes..."
               className="text-xs min-h-[50px]"

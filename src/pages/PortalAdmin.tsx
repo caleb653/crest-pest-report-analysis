@@ -70,6 +70,7 @@ const PREFERENCE_OPTIONS = [
   "No Preference",
   "Interior Treatment Only",
   "Exterior Treatment Only",
+  "Other",
 ];
 
 const PortalAdmin = () => {
