@@ -119,33 +119,23 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 max-w-4xl w-full">
-        {gridOrder.map((idx, gridIdx) => {
+        {gridOrder.map((idx) => {
           const report = reportTypes[idx];
           const Icon = report.icon;
-          // Insert 2 empty spacers before the last item (old version) to push it to bottom-right
-          const isLast = gridIdx === gridOrder.length - 1;
           return (
-            <>
-              {isLast && (
-                <>
-                  <div key="spacer1" />
-                  <div key="spacer2" />
-                </>
-              )}
-              <Card
-                key={report.id}
-                className={`cursor-pointer ${report.border} hover:shadow-lg transition-all duration-200 group`}
-                onClick={() => handleCardClick(report)}
-              >
-                <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[220px]">
-                  <div className={`w-20 h-20 rounded-full ${report.bg} flex items-center justify-center mb-4 ${report.hoverBg} transition-colors`}>
-                    <Icon className={`w-10 h-10 ${report.color}`} />
-                  </div>
-                  <h2 className="text-xl font-semibold text-foreground mb-1">{report.title}</h2>
-                  <p className="text-base text-muted-foreground leading-tight">{report.description}</p>
-                </CardContent>
-              </Card>
-            </>
+            <Card
+              key={report.id}
+              className={`cursor-pointer ${report.border} hover:shadow-lg transition-all duration-200 group`}
+              onClick={() => handleCardClick(report)}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-8 text-center min-h-[220px]">
+                <div className={`w-20 h-20 rounded-full ${report.bg} flex items-center justify-center mb-4 ${report.hoverBg} transition-colors`}>
+                  <Icon className={`w-10 h-10 ${report.color}`} />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-1">{report.title}</h2>
+                <p className="text-base text-muted-foreground leading-tight">{report.description}</p>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
