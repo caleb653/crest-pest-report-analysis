@@ -943,7 +943,6 @@ const PortalAdmin = () => {
             property={selectedProperty}
             services={services}
             links={links}
-            viewMode={viewMode}
             clientName={selectedClient.company || selectedClient.name}
             clientId={selectedClient.id}
             onRefresh={() => { if (selectedClient) loadProperties(selectedClient.id); }}
@@ -954,9 +953,7 @@ const PortalAdmin = () => {
             uploadingPropertyImage={uploadingPropertyImage}
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
-            onDeleteLink={deleteLink}
             onAddUpcomingService={() => createAndOpenReport("scheduled")}
-            onCreateTenantLink={() => setShowAddLink(true)}
           />
         )}
       </div>
