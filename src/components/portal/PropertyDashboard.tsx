@@ -375,14 +375,20 @@ const PropertyDashboard = ({
   };
 
   const mapUrl = property.map_image_url || property.image_url;
-  // Equipment: support both legacy string[] and new {name, count}[] format
-  const equipmentItems: { name: string; count: number }[] = (() => {
-    if (!Array.isArray(property.equipment)) return [];
-    return (property.equipment as any[]).map(e =>
+  // Equipment: local state for optimistic updates
+  const parseEquipment = (eq: any): { name: string; count: number }[] => {
+    if (!Array.isArray(eq)) return [];
+    return (eq as any[]).map(e =>
       typeof e === "string" ? { name: e, count: 1 } : { name: e.name, count: e.count || 1 }
     );
-  })();
+  };
+  const [equipmentItems, setEquipmentItems] = useState<{ name: string; count: number }[]>(() => parseEquipment(property.equipment));
+  useEffect(() => { setEquipmentItems(parseEquipment(property.equipment)); }, [property.equipment]);
   const equipmentNames = equipmentItems.map(e => e.name);
+  const saveEquipment = async (updated: { name: string; count: number }[]) => {
+    setEquipmentItems(updated);
+    await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+  };
   const formatDate = (d: string | null) => {
     if (!d) return "TBD";
     const date = new Date(d + "T00:00:00");
