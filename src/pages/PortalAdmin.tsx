@@ -34,6 +34,7 @@ interface PortalService {
   products_used: any; follow_up_recommended: boolean | null; follow_up_notes: string | null;
   scheduling_status: string | null; prep_required: boolean | null; prep_notes: string | null;
   unit_details: any; special_notes: string | null; photos: any; units_planned: any;
+  frequency_days?: number | null;
 }
 interface PortalPrepSheet {
   id: string; title: string; description: string | null; treatment_type: string; file_url: string | null;
