@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home } from "lucide-react";
+import { Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import crestLogo from "@/assets/crest-logo.png";
