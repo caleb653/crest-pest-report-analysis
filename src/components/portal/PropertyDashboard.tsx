@@ -126,10 +126,10 @@ const PropertyDashboard = ({
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
-    .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
+    .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const scheduledServices = propServices
-    .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
+    .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Generate projected upcoming with dummy dates
