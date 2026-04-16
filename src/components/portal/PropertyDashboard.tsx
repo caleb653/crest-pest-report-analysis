@@ -1066,6 +1066,20 @@ const PropertyDashboard = ({
           </CardContent>
         </Card>
 
+        {/* Tenant Service Request Link */}
+        <Button variant="outline" size="sm" className="w-full h-9 text-xs border-primary/30 hover:bg-primary/10"
+          onClick={() => {
+            const link = propertyLink;
+            if (link) {
+              const url = `${window.location.origin}/tenant/${link.token}`;
+              window.open(url, "_blank");
+            } else {
+              toast({ title: "No portal link", description: "A share link will be auto-generated.", variant: "destructive" });
+            }
+          }}>
+          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />Tenant Service Request Form
+        </Button>
+
         {/* Quick Add Service */}
         {!showQuickAdd ? (
           <div className="flex gap-1.5">
