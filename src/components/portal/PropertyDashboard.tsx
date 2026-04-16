@@ -1102,17 +1102,18 @@ const PropertyDashboard = ({
         </Card>
 
         {/* Tenant Service Request Link */}
-        <Button variant="outline" size="sm" className="w-full h-9 text-xs border-primary/30 hover:bg-primary/10"
+        <Button className="w-full h-10 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
           onClick={() => {
             const link = propertyLink;
             if (link) {
               const url = `${window.location.origin}/tenant/${link.token}`;
-              window.open(url, "_blank");
+              navigator.clipboard.writeText(url);
+              toast({ title: "Link copied!", description: "Share this with the tenant so they can submit requests." });
             } else {
               toast({ title: "No portal link", description: "A share link will be auto-generated.", variant: "destructive" });
             }
           }}>
-          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />Tenant Service Request Form
+          <ExternalLink className="w-4 h-4 mr-1.5" />Copy Tenant Request Link
         </Button>
 
         {/* Quick Add Service */}
