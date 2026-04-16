@@ -270,6 +270,9 @@ export type Database = {
           description: string
           id: string
           link_id: string | null
+          location_type: string | null
+          pest_type: string | null
+          preferred_date: string | null
           property_id: string
           request_type: string
           response_notes: string | null
@@ -282,6 +285,9 @@ export type Database = {
           description: string
           id?: string
           link_id?: string | null
+          location_type?: string | null
+          pest_type?: string | null
+          preferred_date?: string | null
           property_id: string
           request_type?: string
           response_notes?: string | null
@@ -294,6 +300,9 @@ export type Database = {
           description?: string
           id?: string
           link_id?: string | null
+          location_type?: string | null
+          pest_type?: string | null
+          preferred_date?: string | null
           property_id?: string
           request_type?: string
           response_notes?: string | null
@@ -324,6 +333,7 @@ export type Database = {
           findings: string | null
           follow_up_notes: string | null
           follow_up_recommended: boolean | null
+          frequency_days: number | null
           id: string
           notes: string | null
           photos: Json | null
@@ -349,6 +359,7 @@ export type Database = {
           findings?: string | null
           follow_up_notes?: string | null
           follow_up_recommended?: boolean | null
+          frequency_days?: number | null
           id?: string
           notes?: string | null
           photos?: Json | null
@@ -374,6 +385,7 @@ export type Database = {
           findings?: string | null
           follow_up_notes?: string | null
           follow_up_recommended?: boolean | null
+          frequency_days?: number | null
           id?: string
           notes?: string | null
           photos?: Json | null
