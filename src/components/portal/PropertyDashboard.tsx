@@ -820,16 +820,17 @@ const PropertyDashboard = ({
             <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-secondary" />Equipment</CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {EQUIPMENT_OPTIONS.map(eq => {
                 const isChecked = equipment.includes(eq);
                 return (
-                  <label key={eq} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/30 rounded px-1 py-0.5 transition-colors">
+                  <label key={eq} className={`flex items-center gap-2.5 text-xs cursor-pointer rounded-md px-2 py-1.5 transition-all border ${isChecked ? "bg-primary/10 border-primary/30 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"}`}>
                     <input type="checkbox" checked={isChecked} onChange={async () => {
                       const updated = isChecked ? equipment.filter((e: string) => e !== eq) : [...equipment, eq];
                       await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
                       onRefresh();
-                    }} className="rounded" />
+                      toast({ title: isChecked ? `Removed ${eq}` : `Added ${eq}`, duration: 1500 });
+                    }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
                     {eq}
                   </label>
                 );
@@ -851,6 +852,7 @@ const PropertyDashboard = ({
                 if (val !== "Other") delete updated.otherText;
                 await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
                 onRefresh();
+                toast({ title: `Preference set to ${val}`, duration: 1500 });
               }}
             >
               <SelectTrigger className="text-xs h-8"><SelectValue placeholder="Select preference" /></SelectTrigger>
