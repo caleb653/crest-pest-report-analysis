@@ -375,7 +375,14 @@ const PropertyDashboard = ({
   };
 
   const mapUrl = property.map_image_url || property.image_url;
-  const equipment = Array.isArray(property.equipment) ? property.equipment as string[] : [];
+  // Equipment: support both legacy string[] and new {name, count}[] format
+  const equipmentItems: { name: string; count: number }[] = (() => {
+    if (!Array.isArray(property.equipment)) return [];
+    return (property.equipment as any[]).map(e =>
+      typeof e === "string" ? { name: e, count: 1 } : { name: e.name, count: e.count || 1 }
+    );
+  })();
+  const equipmentNames = equipmentItems.map(e => e.name);
   const formatDate = (d: string | null) => {
     if (!d) return "TBD";
     const date = new Date(d + "T00:00:00");
