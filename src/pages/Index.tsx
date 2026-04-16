@@ -87,9 +87,8 @@ const reportTypes = [
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales (Sales Report)
-//         row2 = created-initial, client-portal, sales (Old Version)
-//         row3 = created-sales (centered)
-const gridOrder = [0, 6, 2, 4, 3, 5];
+//         row2 = created-initial, created-sales, client-portal
+const gridOrder = [0, 6, 2, 4, 5, 3];
 
 const Index = () => {
   const navigate = useNavigate();
