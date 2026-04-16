@@ -76,14 +76,13 @@ interface Props {
 
 const today = new Date().toISOString().split("T")[0];
 
-// Generate dummy dates: start week of April 20, 2025, then every 2 weeks
+// Generate dummy dates: start April 16, 2025, then every week
 const generateDummyDates = (count: number): string[] => {
   const dates: string[] = [];
-  // Week of April 20 2025 — use April 21 (Monday)
-  let d = new Date("2025-04-21T00:00:00");
+  let d = new Date("2025-04-16T00:00:00");
   for (let i = 0; i < count; i++) {
     dates.push(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() + 14 * 86400000); // 2 weeks
+    d = new Date(d.getTime() + 7 * 86400000); // 1 week
   }
   return dates;
 };
@@ -92,7 +91,7 @@ const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: n
   const dates: string[] = [];
   let d = new Date(lastDate + "T00:00:00");
   for (let i = 0; i < count; i++) {
-    d = new Date(d.getTime() + frequencyDays * 86400000);
+    d = new Date(d.getTime() + 7 * 86400000); // weekly
     dates.push(d.toISOString().split("T")[0]);
   }
   return dates;
@@ -124,13 +123,27 @@ const PropertyDashboard = ({
     unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
     summary: string; findings: string; notes: string; technician: string;
   }>>({});
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+
+  // Load pending requests for this property
+  useEffect(() => {
+    const loadRequests = async () => {
+      const { data } = await supabase.from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .in("status", ["pending", "in_progress"])
+        .order("created_at", { ascending: false });
+      if (data) setPendingRequests(data);
+    };
+    loadRequests();
+  }, [property.id]);
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
-    .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
+    .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const scheduledServices = propServices
-    .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
+    .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Generate projected upcoming with dummy dates
@@ -339,6 +352,9 @@ const PropertyDashboard = ({
     } as any);
     toast({ title: "Work order submitted" });
     setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+    // Refresh requests
+    const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
+    if (reqs) setPendingRequests(reqs);
     onRefresh();
   };
 
@@ -368,7 +384,7 @@ const PropertyDashboard = ({
   const formatWeekOf = (d: string | null) => {
     if (!d) return "TBD";
     const date = new Date(d + "T00:00:00");
-    return `Week of ${date.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" });
   };
   const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD";
 
@@ -525,6 +541,23 @@ const PropertyDashboard = ({
                 <p className="text-[11px] font-medium text-orange-700">
                   ⚠️ {followUpFromPast.length} unit{followUpFromPast.length > 1 ? "s" : ""} flagged for follow-up from last service
                 </p>
+              </div>
+            )}
+            {isFirstUpcoming && pendingRequests.length > 0 && (
+              <div className="bg-primary/[0.06] border border-primary/20 rounded-lg p-2.5 mb-2 space-y-1.5">
+                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                  <ClipboardList className="w-3.5 h-3.5 text-secondary" />
+                  {pendingRequests.length} Pending Work Order{pendingRequests.length > 1 ? "s" : ""}
+                </p>
+                {pendingRequests.map(r => (
+                  <div key={r.id} className="bg-background rounded-md p-2 border border-border/50 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{r.unit_number ? `Unit ${r.unit_number}` : "Facility"} — {r.pest_type || "General"}</span>
+                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
+                    </div>
+                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
+                  </div>
+                ))}
               </div>
             )}
             {displayUnits.length > 0 && (
