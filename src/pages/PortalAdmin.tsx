@@ -335,6 +335,40 @@ const PortalAdmin = () => {
   const openServiceReport = (s: PortalService) => {
     const prop = allProperties.find(p => p.id === s.property_id);
     const client = prop ? getClient(prop.client_id) : null;
+
+    // Save selected property for back navigation
+    if (prop) sessionStorage.setItem("portal-admin-selected-property", prop.id);
+
+    // Gather units from units_planned, past services, and pending work orders
+    const propServices = allServices.filter(sv => sv.property_id === s.property_id);
+    const pastCompleted = propServices.filter(sv => sv.status === "completed").sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+    
+    // Collect planned units for this service
+    const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+    
+    // Collect units from most recent past service
+    const recentUnits: string[] = [];
+    const recentPestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
+    if (pastCompleted.length > 0) {
+      const recent = pastCompleted[0];
+      if (Array.isArray(recent.unit_details)) {
+        (recent.unit_details as any[]).forEach((u: any) => {
+          if (u.unit_number) {
+            recentUnits.push(u.unit_number);
+            recentPestData[u.unit_number] = {
+              findings: u.findings || "",
+              pest_activity: u.pest_activity || "",
+              products_used: u.products_used || "",
+            };
+          }
+        });
+      }
+    }
+
+    // Merge all units (planned + recent)
+    const allUnitNumbers = Array.from(new Set([...unitsPlanned, ...recentUnits]))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
     const stateData = {
       serviceData: s,
       propertyName: prop?.name || "",
@@ -345,6 +379,8 @@ const PortalAdmin = () => {
       propertyEquipment: Array.isArray(prop?.equipment) ? prop.equipment : [],
       customerPreference: (prop?.customer_preferences as any)?.preference || "",
       customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
+      prePopulatedUnits: allUnitNumbers,
+      recentPestData,
     };
     sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${s.id}`, "_blank");
