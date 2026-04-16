@@ -547,9 +547,16 @@ const PropertyDashboard = ({
             <span className="text-muted-foreground font-normal">({allUpcoming.length})</span>
           </h3>
           {(viewMode === "admin" || viewMode === "pm") && (
-            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowWorkOrder(true)}>
-              <Plus className="w-3 h-3 mr-1" />Work Order
-            </Button>
+            <div className="flex gap-1">
+              {onAddUpcomingService && (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onAddUpcomingService}>
+                  <Plus className="w-3 h-3 mr-1" />Add
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowWorkOrder(true)}>
+                <ClipboardList className="w-3 h-3 mr-1" />Work Order
+              </Button>
+            </div>
           )}
         </div>
 
