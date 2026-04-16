@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home } from "lucide-react";
+import { Save, Loader2, Check, ChevronsUpDown, Plus, FileDown, Home, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import crestLogo from "@/assets/crest-logo.png";
@@ -76,7 +76,7 @@ const AppointmentReport = () => {
     return {};
   };
   const initialState = getInitialState();
-  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress, propertyEquipment, customerPreference: initPref, customerPreferenceNotes: initPrefNotes } = initialState;
+  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress, propertyEquipment, customerPreference: initPref, customerPreferenceNotes: initPrefNotes, prePopulatedUnits, recentPestData } = initialState;
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -107,7 +107,24 @@ const AppointmentReport = () => {
     productsUsed: string; followUp: string; followUpNotes: string;
   }
   const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
-  const [unitRows, setUnitRows] = useState<UnitRow[]>([{ ...emptyUnit }]);
+  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => {
+    // Pre-populate from units if available
+    if (prePopulatedUnits && Array.isArray(prePopulatedUnits) && prePopulatedUnits.length > 0) {
+      return prePopulatedUnits.map((u: string) => {
+        const pestData = recentPestData?.[u] || {};
+        return {
+          unit: u,
+          targetPests: pestData.pest_activity && pestData.pest_activity !== "None" ? pestData.pest_activity : "",
+          notes: pestData.findings || "",
+          areasTreated: "",
+          productsUsed: pestData.products_used || "",
+          followUp: "No",
+          followUpNotes: "",
+        };
+      });
+    }
+    return [{ ...emptyUnit }];
+  });
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
@@ -268,8 +285,12 @@ const AppointmentReport = () => {
             <Button onClick={saveReport} disabled={isSaving} size="sm" className="h-7 px-2 text-xs">
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}Save
             </Button>
-            <Button onClick={() => navigate("/portal-admin")} variant="outline" size="icon" className="h-7 w-7">
-              <Home className="w-3 h-3" />
+            <Button onClick={() => {
+              // Store property ID so portal admin re-selects it
+              if (initPropertyId) sessionStorage.setItem("portal-admin-selected-property", initPropertyId);
+              navigate(returnTo || "/portal-admin");
+            }} variant="outline" size="sm" className="h-7 px-2 text-xs">
+              <ArrowLeft className="w-3 h-3 mr-1" />Back
             </Button>
           </div>
         </div>
