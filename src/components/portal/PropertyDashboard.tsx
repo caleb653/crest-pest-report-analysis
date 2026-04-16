@@ -165,6 +165,24 @@ const PropertyDashboard = ({
     }));
   })();
 
+  // Extract follow-up units from most recent past service
+  const followUpFromPast = (() => {
+    if (pastServices.length === 0) return [] as string[];
+    const mostRecent = pastServices[0];
+    const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+    return details
+      .filter((u: any) => u.status === "Needs Follow-up" && u.unit_number)
+      .map((u: any) => u.unit_number as string);
+  })();
+
+  // Also include all units from most recent service as default for next
+  const unitsFromMostRecent = (() => {
+    if (pastServices.length === 0) return [] as string[];
+    const mostRecent = pastServices[0];
+    const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+    return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
+  })();
+
   const allUpcoming = [
     ...scheduledServices.map(s => ({ ...s, isProjected: false })),
     ...projectedUpcoming,
@@ -431,10 +449,20 @@ const PropertyDashboard = ({
   };
 
   // ─── Render service details ───
-  const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean) => {
+  const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const products = s.products_used && Array.isArray(s.products_used) ? s.products_used as string[] : [];
+
+    // For the first upcoming service, merge in units from most recent past + follow-ups
+    const mergedUnitsForNext = (() => {
+      if (!isUpcoming || !isFirstUpcoming) return unitsPlanned;
+      const all = new Set(unitsPlanned);
+      unitsFromMostRecent.forEach(u => all.add(u));
+      followUpFromPast.forEach(u => all.add(u));
+      return Array.from(all).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    })();
+    const displayUnits = isUpcoming && isFirstUpcoming ? mergedUnitsForNext : unitsPlanned;
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3">
@@ -455,22 +483,35 @@ const PropertyDashboard = ({
                 </Button>
               )}
             </div>
-            {unitsPlanned.length > 0 && (
+            {isFirstUpcoming && followUpFromPast.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-2">
+                <p className="text-[11px] font-medium text-orange-700">
+                  ⚠️ {followUpFromPast.length} unit{followUpFromPast.length > 1 ? "s" : ""} flagged for follow-up from last service
+                </p>
+              </div>
+            )}
+            {displayUnits.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1.5">
-                {unitsPlanned.map(u => (
-                  <Badge key={u} variant="secondary" className="text-[10px] pr-1 flex items-center gap-0.5">
-                    Unit {u}
-                    {!isProjected && (
-                      <button className="ml-0.5 hover:text-destructive" onClick={async () => {
-                        const updated = unitsPlanned.filter(x => x !== u);
-                        await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
-                        onRefresh();
-                      }}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
+                {displayUnits.map(u => {
+                  const isFollowUp = followUpFromPast.includes(u) && isFirstUpcoming;
+                  return (
+                    <Badge key={u} variant={isFollowUp ? "default" : "secondary"}
+                      className={`text-[10px] pr-1 flex items-center gap-0.5 ${isFollowUp ? "bg-orange-500 text-white" : ""}`}>
+                      {isFollowUp && <Flag className="w-3 h-3 mr-0.5" />}
+                      Unit {u}
+                      {isFollowUp && <span className="ml-0.5 text-[9px] opacity-80">Follow-up</span>}
+                      {!isProjected && (
+                        <button className="ml-0.5 hover:text-destructive" onClick={async () => {
+                          const updated = unitsPlanned.filter(x => x !== u);
+                          await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
+                          onRefresh();
+                        }}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             )}
             {/* Inline add unit input */}
@@ -934,7 +975,7 @@ const PropertyDashboard = ({
                     </div>
                     {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                   </button>
-                  {isExpanded && renderServiceDetails(s, true, isProjected)}
+                  {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
               );
             })}
