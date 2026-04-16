@@ -285,8 +285,12 @@ const AppointmentReport = () => {
             <Button onClick={saveReport} disabled={isSaving} size="sm" className="h-7 px-2 text-xs">
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}Save
             </Button>
-            <Button onClick={() => navigate("/portal-admin")} variant="outline" size="icon" className="h-7 w-7">
-              <Home className="w-3 h-3" />
+            <Button onClick={() => {
+              // Store property ID so portal admin re-selects it
+              if (initPropertyId) sessionStorage.setItem("portal-admin-selected-property", initPropertyId);
+              navigate(returnTo || "/portal-admin");
+            }} variant="outline" size="sm" className="h-7 px-2 text-xs">
+              <ArrowLeft className="w-3 h-3 mr-1" />Back
             </Button>
           </div>
         </div>
