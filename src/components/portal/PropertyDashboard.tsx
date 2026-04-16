@@ -540,6 +540,23 @@ const PropertyDashboard = ({
                 </p>
               </div>
             )}
+            {isFirstUpcoming && pendingRequests.length > 0 && (
+              <div className="bg-primary/[0.06] border border-primary/20 rounded-lg p-2.5 mb-2 space-y-1.5">
+                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                  <ClipboardList className="w-3.5 h-3.5 text-secondary" />
+                  {pendingRequests.length} Pending Work Order{pendingRequests.length > 1 ? "s" : ""}
+                </p>
+                {pendingRequests.map(r => (
+                  <div key={r.id} className="bg-background rounded-md p-2 border border-border/50 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{r.unit_number ? `Unit ${r.unit_number}` : "Facility"} — {r.pest_type || "General"}</span>
+                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
+                    </div>
+                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
             {displayUnits.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1.5">
                 {displayUnits.map(u => {
