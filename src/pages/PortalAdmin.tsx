@@ -316,6 +316,8 @@ const PortalAdmin = () => {
       service_date: status === "scheduled" ? null : new Date().toISOString().split("T")[0],
     }).select("id").single();
     if (error || !data) { toast({ title: "Failed to create service", variant: "destructive" }); return; }
+    // Save selected property for back navigation
+    sessionStorage.setItem("portal-admin-selected-property", selectedProperty.id);
     const client = getClient(selectedProperty.client_id);
     const stateData = {
       propertyName: selectedProperty.name,
