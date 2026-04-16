@@ -829,7 +829,7 @@ const PortalAdmin = () => {
       )}
 
       {/* Main content */}
-      <div className="max-w-5xl mx-auto px-4 py-4">
+      <div className={`${selectedProperty ? 'max-w-7xl' : 'max-w-5xl'} mx-auto px-4 py-4`}>
 
         {/* ======= CLIENT LEVEL: Properties Grid ======= */}
         {!selectedProperty && (
