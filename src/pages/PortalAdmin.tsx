@@ -648,7 +648,7 @@ const PortalAdmin = () => {
 
       {/* Page header */}
       <div className="bg-card border-b px-4 py-4">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           <div className="flex items-center gap-3">
             <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
             <div className="flex-1">
@@ -666,7 +666,7 @@ const PortalAdmin = () => {
       </div>
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-[1600px] mx-auto px-4 py-4">
         <PropertyDashboard
           property={selectedProperty}
           services={propServices}
