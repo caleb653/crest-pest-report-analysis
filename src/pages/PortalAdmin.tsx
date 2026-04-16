@@ -952,6 +952,11 @@ const PortalAdmin = () => {
             onDeleteService={deleteService}
             onUpdatePropertyImage={updatePropertyImage}
             uploadingPropertyImage={uploadingPropertyImage}
+            onCopyLink={copyLink}
+            onOpenPortal={openPortal}
+            onDeleteLink={deleteLink}
+            onAddUpcomingService={() => createAndOpenReport("scheduled")}
+            onCreateTenantLink={() => setShowAddLink(true)}
           />
         )}
       </div>
