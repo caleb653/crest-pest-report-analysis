@@ -23,7 +23,7 @@ interface PortalClient {
 }
 interface PortalProperty {
   id: string; client_id: string; name: string; address: string | null; notes: string | null; image_url: string | null;
-  equipment: any; customer_preferences: any;
+  equipment: any; customer_preferences: any; map_data: any; map_image_url: string | null;
 }
 interface PortalLink {
   id: string; client_id: string; token: string; link_type: string; label: string | null; assigned_property_ids: any; is_active: boolean;
