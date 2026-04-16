@@ -123,6 +123,20 @@ const PropertyDashboard = ({
     unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
     summary: string; findings: string; notes: string; technician: string;
   }>>({});
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+
+  // Load pending requests for this property
+  useEffect(() => {
+    const loadRequests = async () => {
+      const { data } = await supabase.from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .in("status", ["pending", "in_progress"])
+        .order("created_at", { ascending: false });
+      if (data) setPendingRequests(data);
+    };
+    loadRequests();
+  }, [property.id]);
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
