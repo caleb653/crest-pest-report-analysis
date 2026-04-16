@@ -877,8 +877,7 @@ const PropertyDashboard = ({
                         const updated = isChecked
                           ? equipmentItems.filter(e => e.name !== eq)
                           : [...equipmentItems, { name: eq, count: 1 }];
-                        await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
-                        onRefresh();
+                        await saveEquipment(updated);
                         toast({ title: isChecked ? `Removed ${eq}` : `Added ${eq}`, duration: 1500 });
                       }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
                       {eq}
@@ -888,12 +887,15 @@ const PropertyDashboard = ({
                         type="number"
                         min={1}
                         className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
-                        defaultValue={item?.count || 1}
+                        value={item?.count || 1}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value) || 1;
+                          setEquipmentItems(prev => prev.map(ei => ei.name === eq ? { ...ei, count } : ei));
+                        }}
                         onBlur={async (e) => {
                           const count = parseInt(e.target.value) || 1;
                           const updated = equipmentItems.map(ei => ei.name === eq ? { ...ei, count } : ei);
-                          await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
-                          onRefresh();
+                          await saveEquipment(updated);
                         }}
                       />
                     )}
