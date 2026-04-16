@@ -894,6 +894,48 @@ const PropertyDashboard = ({
                   </div>
                 );
               })}
+              {/* Custom equipment items */}
+              {equipmentItems.filter(e => !EQUIPMENT_OPTIONS.includes(e.name)).map(custom => (
+                <div key={custom.name} className="flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border bg-primary/10 border-primary/30 font-medium">
+                  <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                    <input type="checkbox" checked onChange={async () => {
+                      const updated = equipmentItems.filter(e => e.name !== custom.name);
+                      await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                      onRefresh();
+                      toast({ title: `Removed ${custom.name}`, duration: 1500 });
+                    }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
+                    {custom.name}
+                  </label>
+                  <Input type="number" min={1} className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
+                    defaultValue={custom.count || 1}
+                    onBlur={async (e) => {
+                      const count = parseInt(e.target.value) || 1;
+                      const updated = equipmentItems.map(ei => ei.name === custom.name ? { ...ei, count } : ei);
+                      await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                      onRefresh();
+                    }}
+                  />
+                </div>
+              ))}
+              {/* Add custom equipment */}
+              <div className="flex items-center gap-1.5 mt-1">
+                <Input
+                  className="h-7 text-xs flex-1 border-dashed"
+                  placeholder="Other equipment..."
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const val = (e.target as HTMLInputElement).value.trim();
+                      if (val && !equipmentItems.some(ei => ei.name === val)) {
+                        const updated = [...equipmentItems, { name: val, count: 1 }];
+                        await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                        (e.target as HTMLInputElement).value = "";
+                        onRefresh();
+                        toast({ title: `Added ${val}`, duration: 1500 });
+                      }
+                    }
+                  }}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
