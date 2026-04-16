@@ -375,7 +375,14 @@ const PropertyDashboard = ({
   };
 
   const mapUrl = property.map_image_url || property.image_url;
-  const equipment = Array.isArray(property.equipment) ? property.equipment as string[] : [];
+  // Equipment: support both legacy string[] and new {name, count}[] format
+  const equipmentItems: { name: string; count: number }[] = (() => {
+    if (!Array.isArray(property.equipment)) return [];
+    return (property.equipment as any[]).map(e =>
+      typeof e === "string" ? { name: e, count: 1 } : { name: e.name, count: e.count || 1 }
+    );
+  })();
+  const equipmentNames = equipmentItems.map(e => e.name);
   const formatDate = (d: string | null) => {
     if (!d) return "TBD";
     const date = new Date(d + "T00:00:00");
@@ -855,17 +862,36 @@ const PropertyDashboard = ({
           <CardContent className="pt-3">
             <div className="space-y-1">
               {EQUIPMENT_OPTIONS.map(eq => {
-                const isChecked = equipment.includes(eq);
+                const item = equipmentItems.find(e => e.name === eq);
+                const isChecked = !!item;
                 return (
-                  <label key={eq} className={`flex items-center gap-2.5 text-xs cursor-pointer rounded-md px-2 py-1.5 transition-all border ${isChecked ? "bg-primary/10 border-primary/30 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"}`}>
-                    <input type="checkbox" checked={isChecked} onChange={async () => {
-                      const updated = isChecked ? equipment.filter((e: string) => e !== eq) : [...equipment, eq];
-                      await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
-                      onRefresh();
-                      toast({ title: isChecked ? `Removed ${eq}` : `Added ${eq}`, duration: 1500 });
-                    }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
-                    {eq}
-                  </label>
+                  <div key={eq} className={`flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border ${isChecked ? "bg-primary/10 border-primary/30 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"}`}>
+                    <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                      <input type="checkbox" checked={isChecked} onChange={async () => {
+                        const updated = isChecked
+                          ? equipmentItems.filter(e => e.name !== eq)
+                          : [...equipmentItems, { name: eq, count: 1 }];
+                        await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                        onRefresh();
+                        toast({ title: isChecked ? `Removed ${eq}` : `Added ${eq}`, duration: 1500 });
+                      }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
+                      {eq}
+                    </label>
+                    {isChecked && (
+                      <Input
+                        type="number"
+                        min={1}
+                        className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
+                        defaultValue={item?.count || 1}
+                        onBlur={async (e) => {
+                          const count = parseInt(e.target.value) || 1;
+                          const updated = equipmentItems.map(ei => ei.name === eq ? { ...ei, count } : ei);
+                          await supabase.from("portal_properties").update({ equipment: updated }).eq("id", property.id);
+                          onRefresh();
+                        }}
+                      />
+                    )}
+                  </div>
                 );
               })}
             </div>
