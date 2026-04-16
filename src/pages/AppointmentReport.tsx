@@ -107,7 +107,24 @@ const AppointmentReport = () => {
     productsUsed: string; followUp: string; followUpNotes: string;
   }
   const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
-  const [unitRows, setUnitRows] = useState<UnitRow[]>([{ ...emptyUnit }]);
+  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => {
+    // Pre-populate from units if available
+    if (prePopulatedUnits && Array.isArray(prePopulatedUnits) && prePopulatedUnits.length > 0) {
+      return prePopulatedUnits.map((u: string) => {
+        const pestData = recentPestData?.[u] || {};
+        return {
+          unit: u,
+          targetPests: pestData.pest_activity && pestData.pest_activity !== "None" ? pestData.pest_activity : "",
+          notes: pestData.findings || "",
+          areasTreated: "",
+          productsUsed: pestData.products_used || "",
+          followUp: "No",
+          followUpNotes: "",
+        };
+      });
+    }
+    return [{ ...emptyUnit }];
+  });
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
