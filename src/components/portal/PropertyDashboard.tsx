@@ -165,6 +165,24 @@ const PropertyDashboard = ({
     }));
   })();
 
+  // Extract follow-up units from most recent past service
+  const followUpFromPast = (() => {
+    if (pastServices.length === 0) return [] as string[];
+    const mostRecent = pastServices[0];
+    const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+    return details
+      .filter((u: any) => u.status === "Needs Follow-up" && u.unit_number)
+      .map((u: any) => u.unit_number as string);
+  })();
+
+  // Also include all units from most recent service as default for next
+  const unitsFromMostRecent = (() => {
+    if (pastServices.length === 0) return [] as string[];
+    const mostRecent = pastServices[0];
+    const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+    return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
+  })();
+
   const allUpcoming = [
     ...scheduledServices.map(s => ({ ...s, isProjected: false })),
     ...projectedUpcoming,
