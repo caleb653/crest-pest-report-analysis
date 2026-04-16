@@ -91,7 +91,7 @@ const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: n
   const dates: string[] = [];
   let d = new Date(lastDate + "T00:00:00");
   for (let i = 0; i < count; i++) {
-    d = new Date(d.getTime() + frequencyDays * 86400000);
+    d = new Date(d.getTime() + 7 * 86400000); // weekly
     dates.push(d.toISOString().split("T")[0]);
   }
   return dates;
