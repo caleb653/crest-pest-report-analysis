@@ -1278,6 +1278,70 @@ const PropertyDashboard = ({
             })}
           </div>
         )}
+
+        {/* Prep Sheets */}
+        {prepSheets.length > 0 && (
+          <div className="space-y-2 mt-4">
+            <div className="border-b-2 border-primary/40 pb-2.5">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <FileDown className="w-5 h-5 text-secondary" />Prep Sheets
+                <Badge variant="secondary" className="text-[11px] ml-1">{prepSheets.length}</Badge>
+              </h3>
+            </div>
+            {prepSheets.map(ps => (
+              <Card key={ps.id} className="shadow-sm hover:border-primary/30 transition-all">
+                <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPrepSheet(expandedPrepSheet === ps.id ? null : ps.id)}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">{ps.title}</p>
+                    <p className="text-xs text-muted-foreground">{ps.treatment_type}</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${expandedPrepSheet === ps.id ? "rotate-180" : ""}`} />
+                </button>
+                {expandedPrepSheet === ps.id && ps.description && (
+                  <div className="px-3 pb-3 border-t border-border/60 pt-3 space-y-3">
+                    <div className="bg-muted/30 rounded-lg p-3 max-h-[300px] overflow-y-auto">
+                      <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 text-xs"
+                        onClick={async () => {
+                          if (ps.description) {
+                            await navigator.clipboard.writeText(ps.description);
+                            setCopyingPrepSheet(ps.id);
+                            toast({ title: "Prep sheet copied!", description: "Paste it into a text or email to send to the customer." });
+                            setTimeout(() => setCopyingPrepSheet(null), 2000);
+                          }
+                        }}
+                      >
+                        {copyingPrepSheet === ps.id ? (
+                          <><CheckCircle className="w-3.5 h-3.5 mr-1" />Copied!</>
+                        ) : (
+                          <><Copy className="w-3.5 h-3.5 mr-1" />Copy to Clipboard</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          if (ps.description) {
+                            const subject = encodeURIComponent(ps.title);
+                            const body = encodeURIComponent(ps.description);
+                            window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+                          }
+                        }}
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1" />Email
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
