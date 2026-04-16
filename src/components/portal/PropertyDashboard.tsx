@@ -968,7 +968,7 @@ const PropertyDashboard = ({
                     </div>
                     {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                   </button>
-                  {isExpanded && renderServiceDetails(s, true, isProjected)}
+                  {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
               );
             })}
