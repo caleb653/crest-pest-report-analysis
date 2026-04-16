@@ -426,7 +426,13 @@ const Report = () => {
 
   const getRecurringLabel = (services: ServiceItem[]) => {
     const recurringServices = services.filter(s => s.frequency > 0 && s.serviceType);
-    if (recurringServices.length > 0 && recurringServices.every(s => s.frequency <= 30)) {
+    if (recurringServices.length === 0) {
+      return "Recurring";
+    }
+    if (recurringServices.every(s => s.frequency === 7 || s.frequency === 14)) {
+      return "Every 4 Weeks";
+    }
+    if (recurringServices.every(s => s.frequency === 30)) {
       return "Monthly";
     }
     return "Recurring";
@@ -964,7 +970,7 @@ const Report = () => {
     }
   };
 
-  const buildStructuredNotes = () => {
+  const buildStructuredNotes = (options?: { duplicateMapDataOverride?: Record<number, string | null> }) => {
     // Ensure all proposals have findings text populated for the customer view
     const completeFindings: Record<number, string> = { ...proposalFindings };
     proposals.forEach((proposal, index) => {
@@ -992,7 +998,7 @@ const Report = () => {
       recommendedProposal,
       videoUrl,
       duplicatedPages,
-      duplicateMapData,
+      duplicateMapData: options?.duplicateMapDataOverride ?? duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
       duplicateCustomMapImages,
       proposalFindings: completeFindings,
@@ -1009,6 +1015,71 @@ const Report = () => {
         });
       }, ms);
     });
+
+  const parseMapPayload = (rawMap: string | null) => {
+    if (!rawMap) return null;
+    try {
+      return JSON.parse(rawMap);
+    } catch {
+      return rawMap;
+    }
+  };
+
+  const captureFreshMapState = async () => {
+    const globalWindow = window as any;
+    const exportStateFn = globalWindow.exportMapState as undefined | (() => string | null | Promise<string | null>);
+    const stateRegistry = (globalWindow.mapStateRegistry ?? {}) as Record<string, (() => string | null | Promise<string | null>) | undefined>;
+
+    let mainMapState = latestMapDataRef.current ?? mapData;
+
+    if (exportStateFn) {
+      try {
+        const liveMainState = await exportStateFn();
+        if (liveMainState) {
+          mainMapState = liveMainState;
+          latestMapDataRef.current = liveMainState;
+          setMapData(liveMainState);
+        }
+      } catch (e) {
+        console.warn('Failed to capture live main map state:', e);
+      }
+    }
+
+    const duplicateStateUpdates: Record<number, string | null> = {};
+    const duplicatePageEls = Array.from(document.querySelectorAll<HTMLElement>('[data-pdf-page^="2-dupe-"]'));
+
+    for (const dupeContainer of duplicatePageEls) {
+      const pageKey = dupeContainer.dataset.pdfPage ?? "";
+      const match = pageKey.match(/^2-dupe-(\d+)$/);
+      if (!match) continue;
+
+      const dupeIndex = Number(match[1]);
+      const exportDuplicateState = stateRegistry[`duplicate-${dupeIndex}`];
+      if (!exportDuplicateState) continue;
+
+      try {
+        const liveDuplicateState = await exportDuplicateState();
+        if (liveDuplicateState) {
+          duplicateStateUpdates[dupeIndex] = liveDuplicateState;
+        }
+      } catch (e) {
+        console.warn(`Failed to capture live duplicate map state ${dupeIndex}:`, e);
+      }
+    }
+
+    const duplicateMapDataOverride = Object.keys(duplicateStateUpdates).length > 0
+      ? { ...duplicateMapData, ...duplicateStateUpdates }
+      : duplicateMapData;
+
+    if (Object.keys(duplicateStateUpdates).length > 0) {
+      setDuplicateMapData((prev) => ({ ...prev, ...duplicateStateUpdates }));
+    }
+
+    return {
+      mainMapPayload: parseMapPayload(mainMapState),
+      duplicateMapDataOverride,
+    };
+  };
 
   const captureFreshRenderedMap = async (): Promise<string | null> => {
     const globalWindow = window as any;
@@ -1077,11 +1148,12 @@ const Report = () => {
     mapPayload: any,
     finalSignature?: string | null,
     renderedMapUrl?: string | null,
+    options?: { duplicateMapDataOverride?: Record<number, string | null> },
   ) => ({
     technician_name: editableTech,
     customer_name: editableCustomer,
     address: editableAddress || extractedAddress || address,
-    notes: buildStructuredNotes(),
+    notes: buildStructuredNotes(options),
     findings: editableFindings,
     recommendations: [],
     next_steps: [],
@@ -1155,12 +1227,8 @@ const Report = () => {
     setIsSaving(true);
     try {
       const finalSignature = getSerializedSignature();
-      const rawMap = latestMapDataRef.current ?? mapData;
-      let mapPayload: any = null;
-      if (rawMap) {
-        try { mapPayload = JSON.parse(rawMap); } catch (e) { mapPayload = rawMap; }
-      }
-      await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
+      const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
+      await persistReport(buildBaseReportPayload(mainMapPayload, finalSignature, undefined, { duplicateMapDataOverride }));
       toast.success("Report saved successfully!");
     } catch (error: any) {
       toast.error("Failed to save report");
@@ -1175,11 +1243,9 @@ const Report = () => {
   const autoSave = async () => {
     if (!editableTech || !reportId) return;
     try {
-      const rawMap = latestMapDataRef.current ?? mapData;
-      let mapPayload: any = null;
-      if (rawMap) { try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; } }
+      const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
       const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
-      await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
+      await persistReport(buildBaseReportPayload(mainMapPayload, finalSignature, undefined, { duplicateMapDataOverride }));
     } catch (err) {
       console.error("[autosave] failed:", err);
     }
@@ -1267,13 +1333,11 @@ Crest Pest Control`;
     setIsSendingEmail(true);
     try {
       const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
-      const rawMap = latestMapDataRef.current ?? mapData;
-      let mapPayload: any = null;
-      if (rawMap) { try { mapPayload = JSON.parse(rawMap); } catch (e) { mapPayload = rawMap; } }
+      const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
       const freshRenderedMap = await captureFreshRenderedMap();
       const sentAt = new Date().toISOString();
       const finalReportId = await persistReport({
-        ...buildBaseReportPayload(mapPayload, finalSignature, freshRenderedMap),
+        ...buildBaseReportPayload(mainMapPayload, finalSignature, freshRenderedMap, { duplicateMapDataOverride }),
         customer_email: customerEmail,
         sent_to_customer_at: sentAt,
       });
