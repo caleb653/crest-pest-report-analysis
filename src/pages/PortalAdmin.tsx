@@ -1012,7 +1012,7 @@ const PortalAdmin = () => {
                   </div>
                 )}
 
-                {viewMode === "admin" && (
+                {(
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedService(null); openServiceDialog(selectedService); }}><Edit className="w-3.5 h-3.5 mr-1" />Edit</Button>
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => {
