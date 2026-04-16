@@ -119,6 +119,11 @@ const PropertyDashboard = ({
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
+  // Inline completion form data
+  const [completionData, setCompletionData] = useState<Record<string, {
+    unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
+    summary: string; findings: string; notes: string; technician: string;
+  }>>({});
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
