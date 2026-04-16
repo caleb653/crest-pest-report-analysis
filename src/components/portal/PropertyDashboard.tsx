@@ -449,10 +449,20 @@ const PropertyDashboard = ({
   };
 
   // ─── Render service details ───
-  const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean) => {
+  const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const products = s.products_used && Array.isArray(s.products_used) ? s.products_used as string[] : [];
+
+    // For the first upcoming service, merge in units from most recent past + follow-ups
+    const mergedUnitsForNext = (() => {
+      if (!isUpcoming || !isFirstUpcoming) return unitsPlanned;
+      const all = new Set(unitsPlanned);
+      unitsFromMostRecent.forEach(u => all.add(u));
+      followUpFromPast.forEach(u => all.add(u));
+      return Array.from(all).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    })();
+    const displayUnits = isUpcoming && isFirstUpcoming ? mergedUnitsForNext : unitsPlanned;
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3">
