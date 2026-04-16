@@ -726,16 +726,9 @@ const PortalAdmin = () => {
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />
             {selectedProperty ? "All Properties" : "All Clients"}
           </Button>
-          <span className="text-background/60">
-            {viewMode === "admin" ? "Crest Admin" : viewMode === "pm" ? "Property Manager" : "Tenant"} View
-          </span>
+          <span className="text-background/60">Crest Admin View</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md overflow-hidden border border-background/20">
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "admin" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("admin")}>Crest</button>
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "pm" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("pm")}>PM</button>
-            <button className={`px-3 py-1 text-xs font-medium transition-colors ${viewMode === "tenant" ? "bg-amber-500 text-white" : "bg-background/10 text-background/70 hover:bg-background/20"}`} onClick={() => setViewMode("tenant")}>Tenant</button>
-          </div>
           {masterLink && (
             <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => copyLink(masterLink.token, "master")}>
               <Copy className="w-3.5 h-3.5 mr-1" />Copy Master Link
