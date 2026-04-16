@@ -771,7 +771,7 @@ const PortalAdmin = () => {
       </div>
 
       {/* Admin management panel — client level only */}
-      {viewMode === "admin" && !selectedProperty && (
+      {!selectedProperty && (
         <div className="bg-muted/50 border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
             <div className="flex gap-4 text-xs text-muted-foreground">
@@ -848,7 +848,7 @@ const PortalAdmin = () => {
                       {p.image_url && (
                         <div className="relative h-32 w-full">
                           <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
-                          {viewMode === "admin" && (
+                          {(
                             <label className="absolute bottom-1 right-1 bg-background/80 rounded p-1 cursor-pointer hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity">
                               <Image className="w-4 h-4" />
                               <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { e.stopPropagation(); updatePropertyImage(p.id, f); } }} onClick={e => e.stopPropagation()} />
@@ -869,7 +869,7 @@ const PortalAdmin = () => {
                           <span>·</span>
                           <span>{propFuture.length} upcoming</span>
                         </div>
-                        {viewMode === "admin" && (
+                        {(
                           <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {!p.image_url && (
                               <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
