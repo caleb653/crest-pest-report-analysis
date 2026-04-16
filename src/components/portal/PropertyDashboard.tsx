@@ -852,6 +852,7 @@ const PropertyDashboard = ({
                 if (val !== "Other") delete updated.otherText;
                 await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
                 onRefresh();
+                toast({ title: `Preference set to ${val}`, duration: 1500 });
               }}
             >
               <SelectTrigger className="text-xs h-8"><SelectValue placeholder="Select preference" /></SelectTrigger>
