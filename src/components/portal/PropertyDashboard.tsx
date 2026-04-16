@@ -907,9 +907,9 @@ const PropertyDashboard = ({
 
       {/* ══════════ MIDDLE COLUMN: Past Services ══════════ */}
       <div className="lg:col-span-5 space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-border">
+        <div className="flex items-center justify-between pb-2 border-b-2 border-primary/30">
           <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <Calendar className="w-4 h-4" />Previous Services
+            <Calendar className="w-4 h-4 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-[10px] ml-1">{pastServices.length}</Badge>
           </h3>
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
@@ -1100,9 +1100,9 @@ const PropertyDashboard = ({
         )}
 
         {/* Upcoming Services */}
-        <div className="border-b border-border pb-1">
+        <div className="border-b-2 border-primary/30 pb-2">
           <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <ClipboardList className="w-4 h-4" />Upcoming Services
+            <ClipboardList className="w-4 h-4 text-secondary" />Upcoming Services
             <Badge variant="secondary" className="text-[10px] ml-1">{allUpcoming.length}</Badge>
           </h3>
         </div>
