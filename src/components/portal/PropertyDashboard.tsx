@@ -862,8 +862,8 @@ const PropertyDashboard = ({
 
         {/* Equipment */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
-            <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-secondary" />Equipment</CardTitle>
+          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
+            <CardTitle className="text-base font-bold flex items-center gap-2"><Wrench className="w-4.5 h-4.5 text-secondary" />Equipment</CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
             <div className="space-y-1">
@@ -951,8 +951,8 @@ const PropertyDashboard = ({
 
         {/* Customer Preference */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
-            <CardTitle className="text-sm">Customer Preference</CardTitle>
+          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
+            <CardTitle className="text-base font-bold">Customer Preference</CardTitle>
           </CardHeader>
           <CardContent className="pt-3 space-y-2">
             <Select
@@ -996,8 +996,8 @@ const PropertyDashboard = ({
         {/* Share Link */}
         {propertyLink && (
           <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
-            <CardTitle className="text-sm flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 text-secondary" />PM Share Link</CardTitle>
+          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
+            <CardTitle className="text-base font-bold flex items-center gap-2"><Link2 className="w-4.5 h-4.5 text-secondary" />PM Share Link</CardTitle>
             </CardHeader>
             <CardContent className="pt-3">
               <div className="flex items-center gap-1.5">
@@ -1019,10 +1019,10 @@ const PropertyDashboard = ({
 
       {/* ══════════ MIDDLE COLUMN: Past Services ══════════ */}
       <div className="lg:col-span-5 space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b-2 border-primary/30">
-          <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-secondary" />Previous Services
-            <Badge variant="secondary" className="text-[10px] ml-1">{pastServices.length}</Badge>
+        <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/40">
+          <h3 className="text-base font-bold flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-secondary" />Previous Services
+            <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
           </h3>
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
             <button
@@ -1116,9 +1116,9 @@ const PropertyDashboard = ({
       <div className="lg:col-span-4 space-y-4">
         {/* Work Order Form */}
         <Card className="shadow-md border-primary/30 bg-gradient-to-b from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-2 py-3 border-b border-primary/20">
-            <CardTitle className="text-sm flex items-center gap-1.5">
-              <ClipboardList className="w-4 h-4 text-primary" />
+          <CardHeader className="pb-2 py-3.5 border-b border-primary/20">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-primary" />
               Request Work Order
             </CardTitle>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -1227,10 +1227,10 @@ const PropertyDashboard = ({
         )}
 
         {/* Upcoming Services */}
-        <div className="border-b-2 border-primary/30 pb-2">
-          <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <ClipboardList className="w-4 h-4 text-secondary" />Upcoming Services
-            <Badge variant="secondary" className="text-[10px] ml-1">{allUpcoming.length}</Badge>
+        <div className="border-b-2 border-primary/40 pb-2.5">
+          <h3 className="text-base font-bold flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-secondary" />Upcoming Services
+            <Badge variant="secondary" className="text-[11px] ml-1">{allUpcoming.length}</Badge>
           </h3>
         </div>
 
