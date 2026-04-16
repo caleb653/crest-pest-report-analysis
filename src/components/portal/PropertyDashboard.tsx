@@ -933,11 +933,11 @@ const PropertyDashboard = ({
                 const isFirst = i === 0;
                 const isExpanded = isFirst || expandedPastId === s.id;
                 return (
-                  <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/40 shadow-md ring-1 ring-primary/10" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                  <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                     <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedPastId(isExpanded && !isFirst ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isFirst && <Badge className="text-[10px] bg-primary">Most Recent</Badge>}
+                          {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                           <Badge variant="default" className="text-[10px]">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
@@ -1118,11 +1118,11 @@ const PropertyDashboard = ({
               const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
 
               return (
-                <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-green-500/40 shadow-md ring-1 ring-green-500/10" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
+                <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
                   <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isFirst && <Badge className="text-[10px] bg-green-600 text-white">Next Service</Badge>}
+                        {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
