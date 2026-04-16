@@ -90,6 +90,7 @@ const PropertyDashboard = ({
   property, services, links, viewMode, clientName, clientId,
   onRefresh, onOpenServiceReport, onEditService, onDeleteService,
   onUpdatePropertyImage, uploadingPropertyImage,
+  onCopyLink, onOpenPortal, onDeleteLink, onAddUpcomingService, onCreateTenantLink,
 }: Props) => {
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
