@@ -483,6 +483,13 @@ const PropertyDashboard = ({
                 </Button>
               )}
             </div>
+            {isFirstUpcoming && followUpFromPast.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-2">
+                <p className="text-[11px] font-medium text-orange-700">
+                  ⚠️ {followUpFromPast.length} unit{followUpFromPast.length > 1 ? "s" : ""} flagged for follow-up from last service
+                </p>
+              </div>
+            )}
             {displayUnits.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1.5">
                 {displayUnits.map(u => {
