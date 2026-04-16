@@ -63,7 +63,7 @@ const TenantPortal = () => {
       .eq("is_active", true)
       .single();
 
-    if (!link || link.link_type !== "tenant") {
+    if (!link) {
       setError("Invalid or expired link");
       setLoading(false);
       return;

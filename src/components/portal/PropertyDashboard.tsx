@@ -76,14 +76,13 @@ interface Props {
 
 const today = new Date().toISOString().split("T")[0];
 
-// Generate dummy dates: start week of April 20, 2025, then every 2 weeks
+// Generate dummy dates: start April 16, 2025, then every week
 const generateDummyDates = (count: number): string[] => {
   const dates: string[] = [];
-  // Week of April 20 2025 — use April 21 (Monday)
-  let d = new Date("2025-04-21T00:00:00");
+  let d = new Date("2025-04-16T00:00:00");
   for (let i = 0; i < count; i++) {
     dates.push(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() + 14 * 86400000); // 2 weeks
+    d = new Date(d.getTime() + 7 * 86400000); // 1 week
   }
   return dates;
 };
