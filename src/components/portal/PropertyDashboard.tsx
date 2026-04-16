@@ -54,6 +54,9 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
+const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
+const STATUS_OPTIONS = ["Treated", "Clear", "Needs Follow-up"];
+
 interface Props {
   property: PortalProperty;
   services: PortalService[];
@@ -72,6 +75,18 @@ interface Props {
 }
 
 const today = new Date().toISOString().split("T")[0];
+
+// Generate dummy dates: start week of April 20, 2025, then every 2 weeks
+const generateDummyDates = (count: number): string[] => {
+  const dates: string[] = [];
+  // Week of April 20 2025 — use April 21 (Monday)
+  let d = new Date("2025-04-21T00:00:00");
+  for (let i = 0; i < count; i++) {
+    dates.push(d.toISOString().split("T")[0]);
+    d = new Date(d.getTime() + 14 * 86400000); // 2 weeks
+  }
+  return dates;
+};
 
 const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
   const dates: string[] = [];
@@ -98,6 +113,12 @@ const PropertyDashboard = ({
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Inline add-unit state
+  const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
+  const [newUnitData, setNewUnitData] = useState({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+  // Inline add-unit for upcoming
+  const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
+  const [newPlannedUnit, setNewPlannedUnit] = useState("");
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
@@ -107,15 +128,31 @@ const PropertyDashboard = ({
     .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
+  // Generate projected upcoming with dummy dates
   const projectedUpcoming = (() => {
     if (scheduledServices.length > 0) return [];
     const lastRecurring = pastServices.find(s => {
       const freq = (s as any).frequency_days || SERVICE_FREQUENCY_MAP[s.service_type];
       return freq && freq > 0;
     });
-    if (!lastRecurring || !lastRecurring.service_date) return [];
-    const freq = (lastRecurring as any).frequency_days || SERVICE_FREQUENCY_MAP[lastRecurring.service_type] || 30;
-    const dates = generateUpcomingDates(lastRecurring.service_date, freq, 5);
+    if (!lastRecurring) {
+      // No past recurring — generate dummy dates anyway
+      const dates = generateDummyDates(5);
+      return dates.map((d, i) => ({
+        id: `projected-${i}`,
+        isProjected: true,
+        service_date: d,
+        service_type: "General Pest Control",
+        technician: null,
+        status: "scheduled",
+        units_planned: null,
+        property_id: property.id,
+      }));
+    }
+    const freq = (lastRecurring as any).frequency_days || SERVICE_FREQUENCY_MAP[lastRecurring.service_type] || 14;
+    const dates = lastRecurring.service_date
+      ? generateUpcomingDates(lastRecurring.service_date, freq, 5)
+      : generateDummyDates(5);
     return dates.map((d, i) => ({
       id: `projected-${i}`,
       isProjected: true,
@@ -168,6 +205,43 @@ const PropertyDashboard = ({
     });
     return map;
   })();
+
+  // ─── Inline unit editing for past services ───
+  const updateUnitField = async (serviceId: string, unitIndex: number, field: string, value: string) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    if (!svc) return;
+    const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
+    if (!details[unitIndex]) return;
+    details[unitIndex] = { ...details[unitIndex], [field]: value };
+    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    onRefresh();
+  };
+
+  const addUnitToService = async (serviceId: string) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    if (!svc) return;
+    const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
+    details.push({ ...newUnitData });
+    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+    setAddingUnitToService(null);
+    toast({ title: "Unit added" });
+    onRefresh();
+  };
+
+  const addPlannedUnitToService = async (serviceId: string) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    if (!svc || !newPlannedUnit.trim()) return;
+    const planned = Array.isArray(svc.units_planned) ? [...(svc.units_planned as string[])] : [];
+    if (!planned.includes(newPlannedUnit.trim())) {
+      planned.push(newPlannedUnit.trim());
+    }
+    await supabase.from("portal_services").update({ units_planned: planned }).eq("id", serviceId);
+    setNewPlannedUnit("");
+    setAddingPlannedUnit(null);
+    toast({ title: "Unit added to plan" });
+    onRefresh();
+  };
 
   const completeService = async (serviceId: string) => {
     setCompletingServiceId(serviceId);
@@ -231,11 +305,130 @@ const PropertyDashboard = ({
 
   const mapUrl = property.map_image_url || property.image_url;
   const equipment = Array.isArray(property.equipment) ? property.equipment as string[] : [];
-  const formatDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD";
+  const formatDate = (d: string | null) => {
+    if (!d) return "TBD";
+    const date = new Date(d + "T00:00:00");
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+  const formatWeekOf = (d: string | null) => {
+    if (!d) return "TBD";
+    const date = new Date(d + "T00:00:00");
+    return `Week of ${date.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+  };
   const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD";
 
-  // ─── Property link for sharing ───
   const propertyLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
+
+  // ─── Render inline-editable unit table for past services ───
+  const renderEditableUnitTable = (s: PortalService) => {
+    const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold text-muted-foreground">Units Treated ({unitDetails.length})</p>
+          <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
+            setAddingUnitToService(s.id);
+            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+          }}>
+            <Plus className="w-3 h-3 mr-0.5" />Add Unit
+          </Button>
+        </div>
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[80px]">Activity</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Products</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[90px]">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unitDetails.map((unit: any, j: number) => (
+                <tr key={j} className={`border-t border-border/40 ${j % 2 === 1 ? "bg-muted/30" : ""}`}>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
+                      defaultValue={unit.unit_number || ""}
+                      onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
+                      defaultValue={unit.findings || ""}
+                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
+                      defaultValue={unit.pest_activity || "None"}
+                      onChange={e => updateUnitField(s.id, j, "pest_activity", e.target.value)}
+                    >
+                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
+                      defaultValue={unit.products_used || ""}
+                      onBlur={e => { if (e.target.value !== (unit.products_used || "")) updateUnitField(s.id, j, "products_used", e.target.value); }}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
+                      defaultValue={unit.status || "Treated"}
+                      onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
+                    >
+                      {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {/* Inline add row */}
+              {addingUnitToService === s.id && (
+                <tr className="border-t border-primary/30 bg-primary/5">
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full px-1" placeholder="#" value={newUnitData.unit_number}
+                      onChange={e => setNewUnitData(d => ({ ...d, unit_number: e.target.value }))} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
+                      onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <select className="h-6 text-[11px] w-full" value={newUnitData.pest_activity}
+                      onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}>
+                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Products" value={newUnitData.products_used}
+                      onChange={e => setNewUnitData(d => ({ ...d, products_used: e.target.value }))} />
+                  </td>
+                  <td className="px-2 py-1">
+                    <div className="flex gap-0.5">
+                      <Button size="sm" className="h-5 text-[9px] px-1.5" onClick={() => addUnitToService(s.id)} disabled={!newUnitData.unit_number}>✓</Button>
+                      <Button variant="ghost" size="sm" className="h-5 text-[9px] px-1" onClick={() => setAddingUnitToService(null)}>✕</Button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {/* Quick add row if not already adding */}
+        {addingUnitToService !== s.id && (
+          <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+            onClick={() => {
+              setAddingUnitToService(s.id);
+              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+            }}>
+            <Plus className="w-3 h-3" /> Add unit row
+          </button>
+        )}
+      </div>
+    );
+  };
 
   // ─── Render service details ───
   const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean) => {
@@ -245,60 +438,60 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3">
-        {!isUpcoming && unitDetails.length > 0 && (
+        {/* Past service: inline-editable unit table */}
+        {!isUpcoming && renderEditableUnitTable(s)}
+
+        {/* Upcoming service: editable planned units with inline add */}
+        {isUpcoming && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1.5">Units Treated ({unitDetails.length})</p>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-semibold text-foreground">Unit</th>
-                    <th className="text-left px-3 py-2 font-semibold text-foreground">Findings</th>
-                    <th className="text-left px-3 py-2 font-semibold text-foreground">Activity</th>
-                    <th className="text-left px-3 py-2 font-semibold text-foreground">Products</th>
-                    <th className="text-left px-3 py-2 font-semibold text-foreground">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unitDetails.map((unit: any, j: number) => (
-                    <tr key={j} className={`border-t border-border/40 ${j % 2 === 1 ? "bg-muted/30" : ""}`}>
-                      <td className="px-3 py-2 font-semibold">{unit.unit_number || j + 1}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{unit.findings || "—"}</td>
-                      <td className="px-3 py-2">
-                        {unit.pest_activity === "High" && <Badge className="text-[9px] bg-red-500 text-white">High</Badge>}
-                        {unit.pest_activity === "Moderate" && <Badge className="text-[9px] bg-orange-500 text-white">Moderate</Badge>}
-                        {unit.pest_activity === "Low" && <Badge className="text-[9px] bg-yellow-500 text-yellow-900">Low</Badge>}
-                        {(unit.pest_activity === "None" || !unit.pest_activity) && <span className="text-muted-foreground">None</span>}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground max-w-[140px] truncate">{unit.products_used || "—"}</td>
-                      <td className="px-3 py-2">
-                        {unit.status === "Needs Follow-up" && <Badge className="text-[9px] bg-orange-500 text-white">Follow-up</Badge>}
-                        {unit.status === "Treated" && <Badge variant="secondary" className="text-[9px]">Treated</Badge>}
-                        {unit.status === "Clear" && <Badge variant="outline" className="text-[9px]">Clear</Badge>}
-                        {!unit.status && "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-semibold text-muted-foreground">Units to be Treated</p>
+              {!isProjected && (
+                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
+                  setAddingPlannedUnit(s.id);
+                  setNewPlannedUnit("");
+                }}>
+                  <Plus className="w-3 h-3 mr-0.5" />Add Unit
+                </Button>
+              )}
             </div>
-            {unitDetails.some((u: any) => u.notes) && (
-              <div className="mt-2 bg-muted/40 rounded-lg p-2.5 space-y-0.5">
-                <p className="text-[11px] font-semibold text-muted-foreground mb-1">Unit Notes</p>
-                {unitDetails.filter((u: any) => u.notes).map((u: any, j: number) => (
-                  <p key={j} className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Unit {u.unit_number}:</span> {u.notes}</p>
+            {unitsPlanned.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-1.5">
+                {unitsPlanned.map(u => (
+                  <Badge key={u} variant="secondary" className="text-[10px] pr-1 flex items-center gap-0.5">
+                    Unit {u}
+                    {!isProjected && (
+                      <button className="ml-0.5 hover:text-destructive" onClick={async () => {
+                        const updated = unitsPlanned.filter(x => x !== u);
+                        await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
+                        onRefresh();
+                      }}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </Badge>
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {isUpcoming && unitsPlanned.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Units to be Treated</p>
-            <div className="flex flex-wrap gap-1">
-              {unitsPlanned.map(u => <Badge key={u} variant="secondary" className="text-[10px]">Unit {u}</Badge>)}
-            </div>
+            {/* Inline add unit input */}
+            {addingPlannedUnit === s.id ? (
+              <div className="flex gap-1 items-center">
+                <Input className="h-7 text-xs flex-1" placeholder="Unit # or name" value={newPlannedUnit}
+                  onChange={e => setNewPlannedUnit(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && newPlannedUnit.trim()) addPlannedUnitToService(s.id); }}
+                  autoFocus
+                />
+                <Button size="sm" className="h-7 text-xs px-2" onClick={() => addPlannedUnitToService(s.id)} disabled={!newPlannedUnit.trim()}>Add</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs px-1.5" onClick={() => setAddingPlannedUnit(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : !isProjected && (
+              <button className="w-full py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                onClick={() => { setAddingPlannedUnit(s.id); setNewPlannedUnit(""); }}>
+                <Plus className="w-3 h-3" /> Add unit
+              </button>
+            )}
           </div>
         )}
 
@@ -340,7 +533,6 @@ const PropertyDashboard = ({
             <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
               <FileText className="w-3 h-3 mr-1" />Full Report
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onEditService(s)}><Edit className="w-3 h-3" /></Button>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
           </div>
         )}
@@ -381,7 +573,6 @@ const PropertyDashboard = ({
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onOpenServiceReport(s as any)}>
                   <FileText className="w-3 h-3 mr-1" />Details
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onEditService(s as any)}><Edit className="w-3 h-3" /></Button>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
               </div>
             )}
@@ -736,7 +927,7 @@ const PropertyDashboard = ({
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatDate(s.service_date)}
+                        {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
                         {(s as any).technician && ` • ${(s as any).technician}`}
                         {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
                       </p>
