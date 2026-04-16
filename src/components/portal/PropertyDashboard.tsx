@@ -615,43 +615,154 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Complete service flow */}
+        {/* Inline completion form for upcoming services */}
         {isUpcoming && !isProjected && (
-          <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
-            {completingServiceId === s.id ? (
-              <div className="bg-muted rounded-lg p-3 space-y-2">
-                <p className="text-xs font-semibold">Flag units needing follow-up:</p>
-                {allUnits.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {allUnits.map(u => (
-                      <button key={u}
-                        className={`px-2 py-1 rounded text-xs border transition-colors ${followUpUnits.includes(u) ? "bg-orange-100 border-orange-300 text-orange-700 font-medium" : "bg-background border-border hover:border-orange-300"}`}
-                        onClick={() => setFollowUpUnits(prev => prev.includes(u) ? prev.filter(x => x !== u) : [...prev, u])}
-                      >
-                        <Flag className="w-3 h-3 inline mr-1" />Unit {u}
-                      </button>
-                    ))}
+          <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
+            {completingServiceId === s.id && completionData[s.id] ? (() => {
+              const cd = completionData[s.id];
+              const updateRow = (idx: number, field: string, value: string) => {
+                setCompletionData(prev => {
+                  const rows = [...prev[s.id].unitRows];
+                  rows[idx] = { ...rows[idx], [field]: value };
+                  return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+                });
+              };
+              const addRow = () => {
+                setCompletionData(prev => ({
+                  ...prev,
+                  [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }] },
+                }));
+              };
+              const removeRow = (idx: number) => {
+                setCompletionData(prev => ({
+                  ...prev,
+                  [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
+                }));
+              };
+              const flaggedCount = cd.unitRows.filter(r => r.status === "Needs Follow-up").length;
+
+              return (
+                <div className="bg-muted/30 rounded-lg p-3 space-y-3 border border-primary/20">
+                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    Complete Service Report
+                  </p>
+
+                  {/* Technician */}
+                  <div>
+                    <Label className="text-[11px] font-semibold">Technician</Label>
+                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No unit history — skip follow-up flagging</p>
-                )}
-                <div className="flex gap-2">
-                  <Button size="sm" className="h-7 text-xs flex-1" onClick={() => completeService(s.id)}>
-                    <CheckCircle className="w-3 h-3 mr-1" />
-                    {followUpUnits.length > 0 ? `Complete & Flag ${followUpUnits.length} Units` : "Complete Service"}
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setCompletingServiceId(null); setFollowUpUnits([]); }}>Cancel</Button>
+
+                  {/* Unit-by-unit table */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-[11px] font-semibold">Units Treated</Label>
+                      <Button variant="outline" size="sm" className="h-5 text-[10px] px-2" onClick={addRow}>
+                        <Plus className="w-3 h-3 mr-0.5" />Row
+                      </Button>
+                    </div>
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-[11px]">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="text-left px-2 py-1 font-semibold w-[55px]">Unit</th>
+                            <th className="text-left px-2 py-1 font-semibold">Findings</th>
+                            <th className="text-left px-2 py-1 font-semibold w-[70px]">Activity</th>
+                            <th className="text-left px-2 py-1 font-semibold">Products</th>
+                            <th className="text-left px-2 py-1 font-semibold w-[90px]">Status</th>
+                            <th className="w-[24px]"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cd.unitRows.map((row, idx) => (
+                            <tr key={idx} className={`border-t border-border/40 ${followUpFromPast.includes(row.unit_number) ? "bg-orange-50" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                              <td className="px-1 py-0.5">
+                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                  value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
+                              </td>
+                              <td className="px-1 py-0.5">
+                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                  value={row.findings} placeholder="Findings..." onChange={e => updateRow(idx, "findings", e.target.value)} />
+                              </td>
+                              <td className="px-1 py-0.5">
+                                <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none"
+                                  value={row.pest_activity} onChange={e => updateRow(idx, "pest_activity", e.target.value)}>
+                                  {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-1 py-0.5">
+                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                  value={row.products_used} placeholder="Products..." onChange={e => updateRow(idx, "products_used", e.target.value)} />
+                              </td>
+                              <td className="px-1 py-0.5">
+                                <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : ""}`}
+                                  value={row.status} onChange={e => updateRow(idx, "status", e.target.value)}>
+                                  {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-0.5 py-0.5">
+                                <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                      onClick={addRow}>
+                      <Plus className="w-3 h-3" /> Add unit row
+                    </button>
+                  </div>
+
+                  {/* Summary & Notes */}
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-[11px] font-semibold">Summary</Label>
+                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Service summary..." value={cd.summary}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Notes</Label>
+                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
+                    </div>
+                  </div>
+
+                  {/* Follow-up warning */}
+                  {flaggedCount > 0 && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                      <p className="text-[11px] font-medium text-orange-700">
+                        ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Needs Follow-up" — will auto-add to next service
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => completeService(s.id)}>
+                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                      {flaggedCount > 0 ? `Complete & Flag ${flaggedCount}` : "Complete Service"}
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
+                      setCompletingServiceId(null);
+                      setCompletionData(prev => { const n = { ...prev }; delete n[s.id]; return n; });
+                    }}>Cancel</Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
+              );
+            })() : (
               <div className="flex gap-1.5">
-                <Button size="sm" className="h-7 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => setCompletingServiceId(s.id)}>
-                  <CheckCircle className="w-3 h-3 mr-1" />Complete Service
+                <Button size="sm" className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => {
+                  setCompletingServiceId(s.id);
+                  initCompletionData(s.id, displayUnits);
+                }}>
+                  <CheckCircle className="w-3.5 h-3.5 mr-1" />Complete Service
                 </Button>
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onOpenServiceReport(s as any)}>
-                  <FileText className="w-3 h-3 mr-1" />Details
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
               </div>
             )}
           </div>
