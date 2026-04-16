@@ -816,8 +816,8 @@ const PropertyDashboard = ({
 
         {/* Equipment */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-muted/30">
-            <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5" />Equipment</CardTitle>
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-secondary" />Equipment</CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
             <div className="space-y-1.5">
@@ -840,7 +840,7 @@ const PropertyDashboard = ({
 
         {/* Customer Preference */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-muted/30">
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
             <CardTitle className="text-sm">Customer Preference</CardTitle>
           </CardHeader>
           <CardContent className="pt-3 space-y-2">
@@ -884,8 +884,8 @@ const PropertyDashboard = ({
         {/* Share Link */}
         {propertyLink && (
           <Card className="shadow-sm">
-            <CardHeader className="pb-2 py-3 border-b bg-muted/30">
-              <CardTitle className="text-sm flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5" />PM Share Link</CardTitle>
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 text-secondary" />PM Share Link</CardTitle>
             </CardHeader>
             <CardContent className="pt-3">
               <div className="flex items-center gap-1.5">
@@ -907,9 +907,9 @@ const PropertyDashboard = ({
 
       {/* ══════════ MIDDLE COLUMN: Past Services ══════════ */}
       <div className="lg:col-span-5 space-y-3">
-        <div className="flex items-center justify-between pb-1 border-b border-border">
+        <div className="flex items-center justify-between pb-2 border-b-2 border-primary/30">
           <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <Calendar className="w-4 h-4" />Previous Services
+            <Calendar className="w-4 h-4 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-[10px] ml-1">{pastServices.length}</Badge>
           </h3>
           <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
@@ -933,11 +933,11 @@ const PropertyDashboard = ({
                 const isFirst = i === 0;
                 const isExpanded = isFirst || expandedPastId === s.id;
                 return (
-                  <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/40 shadow-md ring-1 ring-primary/10" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                  <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                     <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedPastId(isExpanded && !isFirst ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isFirst && <Badge className="text-[10px] bg-primary">Most Recent</Badge>}
+                          {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                           <Badge variant="default" className="text-[10px]">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
@@ -1066,6 +1066,20 @@ const PropertyDashboard = ({
           </CardContent>
         </Card>
 
+        {/* Tenant Service Request Link */}
+        <Button variant="outline" size="sm" className="w-full h-9 text-xs border-primary/30 hover:bg-primary/10"
+          onClick={() => {
+            const link = propertyLink;
+            if (link) {
+              const url = `${window.location.origin}/tenant/${link.token}`;
+              window.open(url, "_blank");
+            } else {
+              toast({ title: "No portal link", description: "A share link will be auto-generated.", variant: "destructive" });
+            }
+          }}>
+          <ExternalLink className="w-3.5 h-3.5 mr-1.5" />Tenant Service Request Form
+        </Button>
+
         {/* Quick Add Service */}
         {!showQuickAdd ? (
           <div className="flex gap-1.5">
@@ -1100,9 +1114,9 @@ const PropertyDashboard = ({
         )}
 
         {/* Upcoming Services */}
-        <div className="border-b border-border pb-1">
+        <div className="border-b-2 border-primary/30 pb-2">
           <h3 className="text-sm font-bold flex items-center gap-1.5">
-            <ClipboardList className="w-4 h-4" />Upcoming Services
+            <ClipboardList className="w-4 h-4 text-secondary" />Upcoming Services
             <Badge variant="secondary" className="text-[10px] ml-1">{allUpcoming.length}</Badge>
           </h3>
         </div>
@@ -1118,11 +1132,11 @@ const PropertyDashboard = ({
               const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
 
               return (
-                <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-green-500/40 shadow-md ring-1 ring-green-500/10" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
+                <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
                   <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isFirst && <Badge className="text-[10px] bg-green-600 text-white">Next Service</Badge>}
+                        {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
