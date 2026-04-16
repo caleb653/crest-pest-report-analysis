@@ -483,22 +483,28 @@ const PropertyDashboard = ({
                 </Button>
               )}
             </div>
-            {unitsPlanned.length > 0 && (
+            {displayUnits.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1.5">
-                {unitsPlanned.map(u => (
-                  <Badge key={u} variant="secondary" className="text-[10px] pr-1 flex items-center gap-0.5">
-                    Unit {u}
-                    {!isProjected && (
-                      <button className="ml-0.5 hover:text-destructive" onClick={async () => {
-                        const updated = unitsPlanned.filter(x => x !== u);
-                        await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
-                        onRefresh();
-                      }}>
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
+                {displayUnits.map(u => {
+                  const isFollowUp = followUpFromPast.includes(u) && isFirstUpcoming;
+                  return (
+                    <Badge key={u} variant={isFollowUp ? "default" : "secondary"}
+                      className={`text-[10px] pr-1 flex items-center gap-0.5 ${isFollowUp ? "bg-orange-500 text-white" : ""}`}>
+                      {isFollowUp && <Flag className="w-3 h-3 mr-0.5" />}
+                      Unit {u}
+                      {isFollowUp && <span className="ml-0.5 text-[9px] opacity-80">Follow-up</span>}
+                      {!isProjected && (
+                        <button className="ml-0.5 hover:text-destructive" onClick={async () => {
+                          const updated = unitsPlanned.filter(x => x !== u);
+                          await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
+                          onRefresh();
+                        }}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             )}
             {/* Inline add unit input */}
