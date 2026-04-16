@@ -610,11 +610,11 @@ const PropertyDashboard = ({
           ) : (
             <div className="space-y-2">
               {pastServices.map((s, i) => {
-                const isExpanded = expandedPastId === s.id;
                 const isFirst = i === 0;
+                const isExpanded = isFirst || expandedPastId === s.id;
                 return (
                   <Card key={s.id} className={`transition-all ${isExpanded ? "border-primary/30 shadow-md" : "hover:border-muted-foreground/20"}`}>
-                    <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
+                    <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedPastId(isExpanded && !isFirst ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
