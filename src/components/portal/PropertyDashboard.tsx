@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink,
-  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2
+  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
