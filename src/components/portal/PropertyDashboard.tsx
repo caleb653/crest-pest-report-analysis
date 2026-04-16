@@ -348,6 +348,50 @@ const PropertyDashboard = ({
             )}
           </CardContent>
         </Card>
+
+        {/* Admin Links Section */}
+        {viewMode === "admin" && (
+          <Card>
+            <CardHeader className="pb-2 py-3">
+              <CardTitle className="text-sm flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />Links</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-2">
+              {/* PM Link */}
+              {(() => {
+                const pmLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
+                return pmLink ? (
+                  <div className="flex items-center gap-1.5 text-xs border rounded p-2">
+                    <Badge variant="secondary" className="text-[10px]">PM</Badge>
+                    <span className="flex-1 truncate">{pmLink.label || "PM Link"}</span>
+                    {onCopyLink && <button onClick={() => onCopyLink(pmLink.token, "sub")} className="text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>}
+                    {onOpenPortal && <button onClick={() => onOpenPortal(pmLink.token, "sub")} className="text-muted-foreground hover:text-foreground"><ExternalLink className="w-3 h-3" /></button>}
+                  </div>
+                ) : null;
+              })()}
+              {/* Tenant Links */}
+              {(() => {
+                const tenantLinks = links.filter(l => l.link_type === "tenant" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
+                return tenantLinks.length > 0 ? (
+                  <div className="space-y-1">
+                    {tenantLinks.map(l => (
+                      <div key={l.id} className="flex items-center gap-1.5 text-xs border rounded p-2">
+                        <Badge variant="outline" className="text-[10px]">Tenant</Badge>
+                        <span className="flex-1 truncate">{l.label || "Tenant"}{l.unit_number && ` (${l.unit_number})`}</span>
+                        {onCopyLink && <button onClick={() => onCopyLink(l.token, "tenant")} className="text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>}
+                        {onDeleteLink && <button onClick={() => onDeleteLink(l.id)} className="text-destructive/60 hover:text-destructive"><Trash2 className="w-3 h-3" /></button>}
+                      </div>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+              {onCreateTenantLink && (
+                <Button variant="outline" size="sm" className="w-full h-7 text-xs" onClick={onCreateTenantLink}>
+                  <Plus className="w-3 h-3 mr-1" />Add Tenant Link
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* ══════════ MIDDLE COLUMN: Past Services ══════════ */}
