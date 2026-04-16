@@ -65,6 +65,11 @@ interface Props {
   onDeleteService: (id: string) => void;
   onUpdatePropertyImage: (propId: string, file: File) => void;
   uploadingPropertyImage: boolean;
+  onCopyLink?: (token: string, type: string) => void;
+  onOpenPortal?: (token: string, type: string) => void;
+  onDeleteLink?: (id: string) => void;
+  onAddUpcomingService?: () => void;
+  onCreateTenantLink?: () => void;
 }
 
 const today = new Date().toISOString().split("T")[0];
