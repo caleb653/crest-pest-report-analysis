@@ -12,7 +12,7 @@ const USERS: Record<string, { password: string; fullName: string }> = {
   dtanner: { password: "crest23", fullName: "Darrell Tanner" },
   jake: { password: "crest99", fullName: "Jake Shubin" },
   caleb: { password: "crest55", fullName: "Caleb Whalen" },
-  jlatham: { password: "crest44", fullName: "Jackson Latham" },
+  jlatham: { password: "crest25", fullName: "Jackson Latham" },
   dgallegos: { password: "crest50", fullName: "Dylan Gallegos" },
   mmuniz: { password: "crest11", fullName: "Michael Muniz" },
   clopez: { password: "crest15", fullName: "Carmen Lopez" },
