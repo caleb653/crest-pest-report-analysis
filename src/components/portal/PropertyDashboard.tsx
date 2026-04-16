@@ -816,8 +816,8 @@ const PropertyDashboard = ({
 
         {/* Equipment */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-muted/30">
-            <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5" />Equipment</CardTitle>
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-secondary" />Equipment</CardTitle>
           </CardHeader>
           <CardContent className="pt-3">
             <div className="space-y-1.5">
@@ -840,7 +840,7 @@ const PropertyDashboard = ({
 
         {/* Customer Preference */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3 border-b bg-muted/30">
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
             <CardTitle className="text-sm">Customer Preference</CardTitle>
           </CardHeader>
           <CardContent className="pt-3 space-y-2">
@@ -884,8 +884,8 @@ const PropertyDashboard = ({
         {/* Share Link */}
         {propertyLink && (
           <Card className="shadow-sm">
-            <CardHeader className="pb-2 py-3 border-b bg-muted/30">
-              <CardTitle className="text-sm flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5" />PM Share Link</CardTitle>
+          <CardHeader className="pb-2 py-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 text-secondary" />PM Share Link</CardTitle>
             </CardHeader>
             <CardContent className="pt-3">
               <div className="flex items-center gap-1.5">
