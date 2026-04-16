@@ -266,14 +266,45 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  const initCompletionData = (serviceId: string, displayUnits: string[]) => {
+    if (completionData[serviceId]) return; // already initialized
+    const rows = displayUnits.length > 0
+      ? displayUnits.map(u => ({
+          unit_number: u,
+          findings: followUpFromPast.includes(u) ? "Follow-up service" : "",
+          pest_activity: "None",
+          products_used: "",
+          status: "Treated",
+          notes: "",
+        }))
+      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }];
+    setCompletionData(prev => ({
+      ...prev,
+      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "" },
+    }));
+  };
+
   const completeService = async (serviceId: string) => {
-    setCompletingServiceId(serviceId);
-    await supabase.from("portal_services").update({ status: "completed", service_date: today }).eq("id", serviceId);
-    if (followUpUnits.length > 0) {
+    const data = completionData[serviceId];
+    const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
+    const flagged = unitRows.filter(r => r.status === "Needs Follow-up").map(r => r.unit_number);
+
+    await supabase.from("portal_services").update({
+      status: "completed",
+      service_date: today,
+      unit_details: unitRows,
+      summary: data?.summary || null,
+      findings: data?.findings || null,
+      notes: data?.notes || null,
+      technician: data?.technician || null,
+    }).eq("id", serviceId);
+
+    // Auto-schedule follow-ups to next service
+    if (flagged.length > 0) {
       const nextService = allUpcoming.find(s => s.id !== serviceId && !s.isProjected);
       if (nextService) {
         const existing = Array.isArray(nextService.units_planned) ? nextService.units_planned as string[] : [];
-        const merged = Array.from(new Set([...existing, ...followUpUnits]));
+        const merged = Array.from(new Set([...existing, ...flagged]));
         await supabase.from("portal_services").update({ units_planned: merged }).eq("id", nextService.id);
       } else {
         const freq = SERVICE_FREQUENCY_MAP[propServices.find(s => s.id === serviceId)?.service_type || ""] || 30;
@@ -283,13 +314,14 @@ const PropertyDashboard = ({
           property_id: property.id,
           service_type: svc?.service_type || "General Pest Control",
           service_date: nextDate, status: "scheduled",
-          units_planned: followUpUnits,
-          special_notes: `Follow-up units from ${today}: ${followUpUnits.join(", ")}`,
+          units_planned: flagged,
+          special_notes: `Follow-up units from ${today}: ${flagged.join(", ")}`,
         });
       }
     }
-    setFollowUpUnits([]);
+    setCompletionData(prev => { const n = { ...prev }; delete n[serviceId]; return n; });
     setCompletingServiceId(null);
+    setFollowUpUnits([]);
     toast({ title: "Service completed" });
     onRefresh();
   };
