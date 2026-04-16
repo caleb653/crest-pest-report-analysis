@@ -124,8 +124,11 @@ const PropertyDashboard = ({
     summary: string; findings: string; notes: string; technician: string;
   }>>({});
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
+  const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
+  const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
 
-  // Load pending requests for this property
+  // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
       const { data } = await supabase.from("portal_requests")
@@ -135,7 +138,14 @@ const PropertyDashboard = ({
         .order("created_at", { ascending: false });
       if (data) setPendingRequests(data);
     };
+    const loadPrepSheets = async () => {
+      const { data } = await supabase.from("portal_prep_sheets")
+        .select("*")
+        .order("title");
+      if (data) setPrepSheets(data);
+    };
     loadRequests();
+    loadPrepSheets();
   }, [property.id]);
 
   const propServices = services.filter(s => s.property_id === property.id);
