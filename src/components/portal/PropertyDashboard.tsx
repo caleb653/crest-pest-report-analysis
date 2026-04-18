@@ -637,120 +637,32 @@ const PropertyDashboard = ({
         {/* Past service: inline-editable unit table */}
         {!isUpcoming && renderEditableUnitTable(s)}
 
-        {/* Upcoming service: editable planned units with inline add */}
-        {isUpcoming && (
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">Units to be Treated</p>
-              {!isProjected && (
-                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
-                  setAddingPlannedUnit(s.id);
-                  setNewPlannedUnit("");
-                }}>
-                  <Plus className="w-3 h-3 mr-0.5" />Add Unit
-                </Button>
-              )}
+        {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
+        {isUpcoming && isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
+          const uniqueInteriorUnits = new Set<string>();
+          followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
+          pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
+          const total = uniqueInteriorUnits.size;
+          const fuCount = followUpDetailsFromPast.length;
+          const woCount = pendingRequests.length;
+          return (
+            <div className="bg-primary text-primary-foreground rounded-lg p-3 flex items-center justify-between shadow-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
+                <p className="text-[11px] opacity-85 mt-0.5">
+                  {fuCount > 0 && <span>{fuCount} follow-up{fuCount === 1 ? "" : "s"}</span>}
+                  {fuCount > 0 && woCount > 0 && <span> + </span>}
+                  {woCount > 0 && <span>{woCount} work order{woCount === 1 ? "" : "s"}</span>}
+                  <span className="opacity-70"> · details in Service Report table below</span>
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold leading-none">{total}</p>
+                <p className="text-[10px] mt-1 opacity-80">unique unit{total === 1 ? "" : "s"}</p>
+              </div>
             </div>
-            {isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
-              // Unique interior unit count: combine follow-up units + work order units (with unit_number)
-              const uniqueInteriorUnits = new Set<string>();
-              followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
-              pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
-              const total = uniqueInteriorUnits.size;
-              return (
-                <div className="bg-primary text-primary-foreground rounded-lg p-3 mb-2 flex items-center justify-between shadow-sm">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
-                    <p className="text-[11px] opacity-80 mt-0.5">Unique units across follow-ups + work orders</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-bold leading-none">{total}</p>
-                    <p className="text-[10px] mt-1 opacity-80">unit{total === 1 ? "" : "s"}</p>
-                  </div>
-                </div>
-              );
-            })()}
-            {isFirstUpcoming && followUpDetailsFromPast.length > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5 mb-2 space-y-1.5">
-                <p className="text-[11px] font-semibold text-orange-700 flex items-center gap-1">
-                  <Flag className="w-3.5 h-3.5" />
-                  {followUpDetailsFromPast.length} Follow-up{followUpDetailsFromPast.length > 1 ? "s" : ""} from Last Service
-                </p>
-                {followUpDetailsFromPast.map(u => (
-                  <div key={u.unit_number} className="bg-background rounded-md p-2 border border-orange-200/70 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Unit {u.unit_number}{u.pest_activity ? ` — ${u.pest_activity}` : ""}</span>
-                      <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700">follow-up</Badge>
-                    </div>
-                    {(u.findings || u.notes) && (
-                      <p className="text-muted-foreground mt-0.5">{[u.findings, u.notes].filter(Boolean).join(" — ")}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {isFirstUpcoming && pendingRequests.length > 0 && (
-              <div className="bg-primary/[0.06] border border-primary/20 rounded-lg p-2.5 mb-2 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <ClipboardList className="w-3.5 h-3.5 text-secondary" />
-                  {pendingRequests.length} Pending Work Order{pendingRequests.length > 1 ? "s" : ""}
-                </p>
-                {pendingRequests.map(r => (
-                  <div key={r.id} className="bg-background rounded-md p-2 border border-border/50 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{r.unit_number ? `Unit ${r.unit_number}` : "Facility"} — {r.pest_type || "General"}</span>
-                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
-                    </div>
-                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {displayUnits.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-1.5">
-                {displayUnits.map(u => {
-                  const isFollowUp = followUpFromPast.includes(u) && isFirstUpcoming;
-                  return (
-                    <Badge key={u} variant={isFollowUp ? "default" : "secondary"}
-                      className={`text-[10px] pr-1 flex items-center gap-0.5 ${isFollowUp ? "bg-orange-500 text-white" : ""}`}>
-                      {isFollowUp && <Flag className="w-3 h-3 mr-0.5" />}
-                      Unit {u}
-                      {isFollowUp && <span className="ml-0.5 text-[9px] opacity-80">Follow-up</span>}
-                      {!isProjected && (
-                        <button className="ml-0.5 hover:text-destructive" onClick={async () => {
-                          const updated = unitsPlanned.filter(x => x !== u);
-                          await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
-                          onRefresh();
-                        }}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-            {/* Inline add unit input */}
-            {addingPlannedUnit === s.id ? (
-              <div className="flex gap-1 items-center">
-                <Input className="h-7 text-xs flex-1" placeholder="Unit # or name" value={newPlannedUnit}
-                  onChange={e => setNewPlannedUnit(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && newPlannedUnit.trim()) addPlannedUnitToService(s.id); }}
-                  autoFocus
-                />
-                <Button size="sm" className="h-7 text-xs px-2" onClick={() => addPlannedUnitToService(s.id)} disabled={!newPlannedUnit.trim()}>Add</Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs px-1.5" onClick={() => setAddingPlannedUnit(null)}>
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ) : !isProjected && (
-              <button className="w-full py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
-                onClick={() => { setAddingPlannedUnit(s.id); setNewPlannedUnit(""); }}>
-                <Plus className="w-3 h-3" /> Add unit
-              </button>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {s.summary && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Summary</p><p className="text-xs">{s.summary}</p></div>}
         {s.findings && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Findings</p><p className="text-xs">{s.findings}</p></div>}
