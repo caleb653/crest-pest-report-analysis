@@ -640,14 +640,17 @@ async function captureElement(el: HTMLElement): Promise<string> {
              font-weight: 600 !important;
            }
 
-           /* Hide the interactive grid in PDF */
-           .pdf-export-root .print-pricing-table > .space-y-1 { display: none !important; }
-           /* Ensure the name row doesn't add extra spacing */
-           .pdf-export-root .print-pricing-table > .mb-1\\.5 {
+           /* Hide the interactive grid in PDF — ONLY for multi-proposal cards
+              (which have a sibling/descendant <table class="proposal-print-table">).
+              The legacy single-sales pricing card has no inner <table> and must
+              keep its .space-y-1 grid visible so prices render in the PDF. */
+           .pdf-export-root .print-pricing-table:has(table.proposal-print-table) > .space-y-1 { display: none !important; }
+           /* Ensure the name row doesn't add extra spacing (multi-proposal only) */
+           .pdf-export-root .print-pricing-table:has(table.proposal-print-table) > .mb-1\\.5 {
              margin: 0 !important;
              padding: 0 !important;
            }
-           .pdf-export-root .print-pricing-table > .mb-1\\.5 > div > div {
+           .pdf-export-root .print-pricing-table:has(table.proposal-print-table) > .mb-1\\.5 > div > div {
              gap: 0 !important;
            }
 
