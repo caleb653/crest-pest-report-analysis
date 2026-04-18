@@ -952,7 +952,8 @@ const PropertyDashboard = ({
             </label>
           </div>
         </Card>
-
+          </div>
+          <div className="lg:col-span-1 space-y-4">
         {/* Equipment */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
