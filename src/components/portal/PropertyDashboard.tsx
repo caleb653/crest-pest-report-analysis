@@ -302,16 +302,42 @@ const PropertyDashboard = ({
 
   const initCompletionData = (serviceId: string, displayUnits: string[]) => {
     if (completionData[serviceId]) return; // already initialized
+    // Build lookup from follow-up + work order context (only for the first upcoming service)
+    const followUpMap = new Map<string, { pest_activity?: string; findings?: string; notes?: string }>();
+    followUpDetailsFromPast.forEach(u => {
+      followUpMap.set(String(u.unit_number), { pest_activity: u.pest_activity, findings: u.findings, notes: u.notes });
+    });
+    const workOrderMap = new Map<string, { pest_type?: string; description?: string; location_type?: string }>();
+    pendingRequests.forEach(r => {
+      if (r.unit_number) {
+        workOrderMap.set(String(r.unit_number), { pest_type: r.pest_type, description: r.description, location_type: r.location_type });
+      }
+    });
+
     const rows = displayUnits.length > 0
-      ? displayUnits.map(u => ({
-          unit_number: u,
-          findings: followUpFromPast.includes(u) ? "Follow-up service" : "",
-          pest_activity: "None",
-          products_used: "",
-          status: "Treated",
-          notes: "",
-        }))
-      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }];
+      ? displayUnits.map(u => {
+          const fu = followUpMap.get(u);
+          const wo = workOrderMap.get(u);
+          const sourceTags: string[] = [];
+          if (fu) sourceTags.push("follow-up");
+          if (wo) sourceTags.push("work-order");
+          // Pre-fill findings with combined context so technician sees the "why"
+          const findingsParts: string[] = [];
+          if (fu?.findings) findingsParts.push(`Last visit: ${fu.findings}`);
+          if (fu?.notes && fu.notes !== fu.findings) findingsParts.push(fu.notes);
+          if (wo?.description) findingsParts.push(`Request: ${wo.description}`);
+          return {
+            unit_number: u,
+            findings: findingsParts.join(" • "),
+            pest_activity: fu?.pest_activity || "None",
+            products_used: "",
+            status: "Treated",
+            notes: "",
+            source: sourceTags.join("+"), // "follow-up", "work-order", or "follow-up+work-order"
+            source_pest: wo?.pest_type || "",
+          };
+        })
+      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
@@ -611,120 +637,32 @@ const PropertyDashboard = ({
         {/* Past service: inline-editable unit table */}
         {!isUpcoming && renderEditableUnitTable(s)}
 
-        {/* Upcoming service: editable planned units with inline add */}
-        {isUpcoming && (
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-muted-foreground">Units to be Treated</p>
-              {!isProjected && (
-                <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
-                  setAddingPlannedUnit(s.id);
-                  setNewPlannedUnit("");
-                }}>
-                  <Plus className="w-3 h-3 mr-0.5" />Add Unit
-                </Button>
-              )}
+        {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
+        {isUpcoming && isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
+          const uniqueInteriorUnits = new Set<string>();
+          followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
+          pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
+          const total = uniqueInteriorUnits.size;
+          const fuCount = followUpDetailsFromPast.length;
+          const woCount = pendingRequests.length;
+          return (
+            <div className="bg-primary text-primary-foreground rounded-lg p-3 flex items-center justify-between shadow-sm">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
+                <p className="text-[11px] opacity-85 mt-0.5">
+                  {fuCount > 0 && <span>{fuCount} follow-up{fuCount === 1 ? "" : "s"}</span>}
+                  {fuCount > 0 && woCount > 0 && <span> + </span>}
+                  {woCount > 0 && <span>{woCount} work order{woCount === 1 ? "" : "s"}</span>}
+                  <span className="opacity-70"> · details in Service Report table below</span>
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold leading-none">{total}</p>
+                <p className="text-[10px] mt-1 opacity-80">unique unit{total === 1 ? "" : "s"}</p>
+              </div>
             </div>
-            {isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
-              // Unique interior unit count: combine follow-up units + work order units (with unit_number)
-              const uniqueInteriorUnits = new Set<string>();
-              followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
-              pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
-              const total = uniqueInteriorUnits.size;
-              return (
-                <div className="bg-primary text-primary-foreground rounded-lg p-3 mb-2 flex items-center justify-between shadow-sm">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
-                    <p className="text-[11px] opacity-80 mt-0.5">Unique units across follow-ups + work orders</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-bold leading-none">{total}</p>
-                    <p className="text-[10px] mt-1 opacity-80">unit{total === 1 ? "" : "s"}</p>
-                  </div>
-                </div>
-              );
-            })()}
-            {isFirstUpcoming && followUpDetailsFromPast.length > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5 mb-2 space-y-1.5">
-                <p className="text-[11px] font-semibold text-orange-700 flex items-center gap-1">
-                  <Flag className="w-3.5 h-3.5" />
-                  {followUpDetailsFromPast.length} Follow-up{followUpDetailsFromPast.length > 1 ? "s" : ""} from Last Service
-                </p>
-                {followUpDetailsFromPast.map(u => (
-                  <div key={u.unit_number} className="bg-background rounded-md p-2 border border-orange-200/70 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">Unit {u.unit_number}{u.pest_activity ? ` — ${u.pest_activity}` : ""}</span>
-                      <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700">follow-up</Badge>
-                    </div>
-                    {(u.findings || u.notes) && (
-                      <p className="text-muted-foreground mt-0.5">{[u.findings, u.notes].filter(Boolean).join(" — ")}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {isFirstUpcoming && pendingRequests.length > 0 && (
-              <div className="bg-primary/[0.06] border border-primary/20 rounded-lg p-2.5 mb-2 space-y-1.5">
-                <p className="text-[11px] font-semibold text-foreground flex items-center gap-1">
-                  <ClipboardList className="w-3.5 h-3.5 text-secondary" />
-                  {pendingRequests.length} Pending Work Order{pendingRequests.length > 1 ? "s" : ""}
-                </p>
-                {pendingRequests.map(r => (
-                  <div key={r.id} className="bg-background rounded-md p-2 border border-border/50 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{r.unit_number ? `Unit ${r.unit_number}` : "Facility"} — {r.pest_type || "General"}</span>
-                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
-                    </div>
-                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
-            {displayUnits.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-1.5">
-                {displayUnits.map(u => {
-                  const isFollowUp = followUpFromPast.includes(u) && isFirstUpcoming;
-                  return (
-                    <Badge key={u} variant={isFollowUp ? "default" : "secondary"}
-                      className={`text-[10px] pr-1 flex items-center gap-0.5 ${isFollowUp ? "bg-orange-500 text-white" : ""}`}>
-                      {isFollowUp && <Flag className="w-3 h-3 mr-0.5" />}
-                      Unit {u}
-                      {isFollowUp && <span className="ml-0.5 text-[9px] opacity-80">Follow-up</span>}
-                      {!isProjected && (
-                        <button className="ml-0.5 hover:text-destructive" onClick={async () => {
-                          const updated = unitsPlanned.filter(x => x !== u);
-                          await supabase.from("portal_services").update({ units_planned: updated }).eq("id", s.id);
-                          onRefresh();
-                        }}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-            {/* Inline add unit input */}
-            {addingPlannedUnit === s.id ? (
-              <div className="flex gap-1 items-center">
-                <Input className="h-7 text-xs flex-1" placeholder="Unit # or name" value={newPlannedUnit}
-                  onChange={e => setNewPlannedUnit(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && newPlannedUnit.trim()) addPlannedUnitToService(s.id); }}
-                  autoFocus
-                />
-                <Button size="sm" className="h-7 text-xs px-2" onClick={() => addPlannedUnitToService(s.id)} disabled={!newPlannedUnit.trim()}>Add</Button>
-                <Button variant="ghost" size="sm" className="h-7 text-xs px-1.5" onClick={() => setAddingPlannedUnit(null)}>
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ) : !isProjected && (
-              <button className="w-full py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
-                onClick={() => { setAddingPlannedUnit(s.id); setNewPlannedUnit(""); }}>
-                <Plus className="w-3 h-3" /> Add unit
-              </button>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {s.summary && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Summary</p><p className="text-xs">{s.summary}</p></div>}
         {s.findings && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Findings</p><p className="text-xs">{s.findings}</p></div>}
@@ -807,7 +745,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }] },
             }));
           };
           const removeRow = (idx: number) => {
@@ -857,20 +795,42 @@ const PropertyDashboard = ({
                     <table className="w-full text-[11px]">
                       <thead className="bg-muted">
                         <tr>
-                          <th className="text-left px-2 py-1 font-semibold w-[55px]">Unit</th>
-                          <th className="text-left px-2 py-1 font-semibold">Findings</th>
-                          <th className="text-left px-2 py-1 font-semibold w-[80px]">Activity</th>
-                          <th className="text-left px-2 py-1 font-semibold">Products</th>
-                          <th className="text-left px-2 py-1 font-semibold w-[100px]">Status</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[55px]">Unit</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Source</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[80px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Status</th>
                           <th className="w-[24px]"></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {cd.unitRows.map((row, idx) => (
-                          <tr key={idx} className={`border-t border-border/40 ${followUpFromPast.includes(row.unit_number) ? "bg-orange-50" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                        {cd.unitRows.map((row: any, idx: number) => {
+                          const isFollowUp = row.source?.includes("follow-up");
+                          const isWorkOrder = row.source?.includes("work-order");
+                          return (
+                          <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                            <td className="px-2 py-1.5">
+                              <Input className="h-7 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
                                 value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <div className="flex flex-col gap-0.5">
+                                {isFollowUp && (
+                                  <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700 bg-orange-50 px-1.5 w-fit">
+                                    <Flag className="w-2.5 h-2.5 mr-0.5" />Follow-up
+                                  </Badge>
+                                )}
+                                {isWorkOrder && (
+                                  <Badge variant="outline" className="text-[9px] h-4 border-primary/40 text-primary px-1.5 w-fit">
+                                    <ClipboardList className="w-2.5 h-2.5 mr-0.5" />
+                                    Work Order{row.source_pest ? ` · ${row.source_pest}` : ""}
+                                  </Badge>
+                                )}
+                                {!isFollowUp && !isWorkOrder && (
+                                  <span className="text-[10px] text-muted-foreground">Routine</span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-2 py-1">
                               <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
@@ -898,7 +858,8 @@ const PropertyDashboard = ({
                               </button>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
