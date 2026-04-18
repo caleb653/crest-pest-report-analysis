@@ -1317,7 +1317,12 @@ const PropertyDashboard = ({
           }}>
           <ExternalLink className="w-4 h-4 mr-1.5" />Copy Tenant Request Link
         </Button>
+        </div>
+      </TabsContent>
 
+      {/* ══════════ TAB 4: UPCOMING SERVICES ══════════ */}
+      <TabsContent value="upcoming" className="mt-0">
+        <div className="space-y-4 max-w-5xl mx-auto">
         {/* Quick Add Service */}
         {!showQuickAdd ? (
           <div className="flex gap-1.5">
