@@ -765,8 +765,17 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [], status: "To be Treated", notes: "", source: "" }] },
             }));
+          };
+          const toggleProduct = (idx: number, product: string) => {
+            setCompletionData(prev => {
+              const rows = [...prev[s.id].unitRows];
+              const current = Array.isArray(rows[idx].products_used) ? rows[idx].products_used : [];
+              const next = current.includes(product) ? current.filter(p => p !== product) : [...current, product];
+              rows[idx] = { ...rows[idx], products_used: next };
+              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+            });
           };
           const removeRow = (idx: number) => {
             setCompletionData(prev => ({
