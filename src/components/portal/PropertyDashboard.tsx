@@ -787,211 +787,205 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Inline completion form for upcoming services */}
-        {isUpcoming && !isProjected && (
-          <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
-            {completingServiceId === s.id && completionData[s.id] ? (() => {
-              const cd = completionData[s.id];
-              const updateRow = (idx: number, field: string, value: string) => {
-                setCompletionData(prev => {
-                  const rows = [...prev[s.id].unitRows];
-                  rows[idx] = { ...rows[idx], [field]: value };
-                  return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
-                });
-              };
-              const addRow = () => {
-                setCompletionData(prev => ({
-                  ...prev,
-                  [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }] },
-                }));
-              };
-              const removeRow = (idx: number) => {
-                setCompletionData(prev => ({
-                  ...prev,
-                  [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
-                }));
-              };
-              const flaggedCount = cd.unitRows.filter(r => r.status === "Needs Follow-up").length;
+        {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format) */}
+        {isUpcoming && !isProjected && (() => {
+          // Auto-init completion data on first render for this expanded upcoming service
+          if (!completionData[s.id]) {
+            setTimeout(() => initCompletionData(s.id, displayUnits), 0);
+            return (
+              <div className="text-xs text-muted-foreground py-2 text-center">Loading service report form…</div>
+            );
+          }
+          const cd = completionData[s.id];
+          const updateRow = (idx: number, field: string, value: string) => {
+            setCompletionData(prev => {
+              const rows = [...prev[s.id].unitRows];
+              rows[idx] = { ...rows[idx], [field]: value };
+              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+            });
+          };
+          const addRow = () => {
+            setCompletionData(prev => ({
+              ...prev,
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }] },
+            }));
+          };
+          const removeRow = (idx: number) => {
+            setCompletionData(prev => ({
+              ...prev,
+              [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
+            }));
+          };
+          const flaggedCount = cd.unitRows.filter(r => r.status === "Needs Follow-up").length;
 
-              return (
-                <div className="bg-muted/30 rounded-lg p-3 space-y-3 border border-primary/20">
-                  <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    Complete Service Report
-                  </p>
+          return (
+            <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
+              <div className="bg-gradient-to-br from-primary/[0.04] to-transparent rounded-lg p-3 space-y-3 border border-primary/20">
+                <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  Service Report — fill out as you work
+                </p>
 
-                  {/* Technician + Time In/Out */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <Label className="text-[11px] font-semibold">Technician</Label>
-                      <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Time In</Label>
-                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_in}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_in: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Time Out</Label>
-                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
-                    </div>
-                  </div>
-
-                  {/* Unit-by-unit table */}
+                {/* Technician + Time In/Out */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label className="text-[11px] font-semibold">Units Treated</Label>
-                      <Button variant="outline" size="sm" className="h-5 text-[10px] px-2" onClick={addRow}>
-                        <Plus className="w-3 h-3 mr-0.5" />Row
-                      </Button>
-                    </div>
-                    <div className="border rounded-lg overflow-hidden">
-                      <table className="w-full text-[11px]">
-                        <thead className="bg-muted">
-                          <tr>
-                            <th className="text-left px-2 py-1 font-semibold w-[55px]">Unit</th>
-                            <th className="text-left px-2 py-1 font-semibold">Findings</th>
-                            <th className="text-left px-2 py-1 font-semibold w-[70px]">Activity</th>
-                            <th className="text-left px-2 py-1 font-semibold">Products</th>
-                            <th className="text-left px-2 py-1 font-semibold w-[90px]">Status</th>
-                            <th className="w-[24px]"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {cd.unitRows.map((row, idx) => (
-                            <tr key={idx} className={`border-t border-border/40 ${followUpFromPast.includes(row.unit_number) ? "bg-orange-50" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                              <td className="px-1 py-0.5">
-                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                  value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
-                              </td>
-                              <td className="px-1 py-0.5">
-                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                  value={row.findings} placeholder="Findings..." onChange={e => updateRow(idx, "findings", e.target.value)} />
-                              </td>
-                              <td className="px-1 py-0.5">
-                                <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none"
-                                  value={row.pest_activity} onChange={e => updateRow(idx, "pest_activity", e.target.value)}>
-                                  {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                              </td>
-                              <td className="px-1 py-0.5">
-                                <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                  value={row.products_used} placeholder="Products..." onChange={e => updateRow(idx, "products_used", e.target.value)} />
-                              </td>
-                              <td className="px-1 py-0.5">
-                                <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : ""}`}
-                                  value={row.status} onChange={e => updateRow(idx, "status", e.target.value)}>
-                                  {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                              </td>
-                              <td className="px-0.5 py-0.5">
-                                <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
-                      onClick={addRow}>
-                      <Plus className="w-3 h-3" /> Add unit row
-                    </button>
+                    <Label className="text-[11px] font-semibold">Technician</Label>
+                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
                   </div>
-
-                  {/* Summary, Findings & Notes */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div>
-                      <Label className="text-[11px] font-semibold">Summary</Label>
-                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Service summary..." value={cd.summary}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
-                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Notes</Label>
-                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
-                    </div>
-                  </div>
-
-                  {/* Photos uploader */}
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label className="text-[11px] font-semibold flex items-center gap-1">
-                        <Image className="w-3.5 h-3.5" />
-                        Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
-                      </Label>
-                      <label className="cursor-pointer">
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
-                          <Plus className="w-3 h-3" />
-                          {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
-                        </span>
-                        <input type="file" accept="image/*" capture="environment" className="hidden"
-                          disabled={uploadingPhotoFor === s.id}
-                          onChange={e => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadCompletionPhoto(s.id, f);
-                            (e.target as HTMLInputElement).value = "";
-                          }} />
-                      </label>
-                    </div>
-                    {cd.photos.length > 0 && (
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {cd.photos.map((p, idx) => (
-                          <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
-                            <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => removeCompletionPhoto(s.id, idx)}
-                              className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <Label className="text-[11px] font-semibold">Time In</Label>
+                    <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_in}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_in: e.target.value } }))} />
                   </div>
-
-                  {/* Follow-up warning */}
-                  {flaggedCount > 0 && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
-                      <p className="text-[11px] font-medium text-orange-700">
-                        ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Needs Follow-up" — will auto-add to next service
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button size="sm" className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => completeService(s.id)}>
-                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      {flaggedCount > 0 ? `Complete & Flag ${flaggedCount}` : "Complete Service"}
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
-                      setCompletingServiceId(null);
-                      setCompletionData(prev => { const n = { ...prev }; delete n[s.id]; return n; });
-                    }}>Cancel</Button>
+                  <div>
+                    <Label className="text-[11px] font-semibold">Time Out</Label>
+                    <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
                   </div>
                 </div>
-              );
-            })() : (
-              <div className="flex gap-1.5">
-                <Button size="sm" className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => {
-                  setCompletingServiceId(s.id);
-                  initCompletionData(s.id, displayUnits);
-                }}>
-                  <CheckCircle className="w-3.5 h-3.5 mr-1" />Complete Service
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+
+                {/* Unit-by-unit table — same format as Previous Services */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] font-semibold">Units Treated ({cd.unitRows.length})</Label>
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={addRow}>
+                      <Plus className="w-3 h-3 mr-0.5" />Add Unit
+                    </Button>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-[11px]">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left px-2 py-1 font-semibold w-[55px]">Unit</th>
+                          <th className="text-left px-2 py-1 font-semibold">Findings</th>
+                          <th className="text-left px-2 py-1 font-semibold w-[80px]">Activity</th>
+                          <th className="text-left px-2 py-1 font-semibold">Products</th>
+                          <th className="text-left px-2 py-1 font-semibold w-[100px]">Status</th>
+                          <th className="w-[24px]"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cd.unitRows.map((row, idx) => (
+                          <tr key={idx} className={`border-t border-border/40 ${followUpFromPast.includes(row.unit_number) ? "bg-orange-50" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                            <td className="px-2 py-1">
+                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
+                            </td>
+                            <td className="px-2 py-1">
+                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                value={row.findings} placeholder="Findings..." onChange={e => updateRow(idx, "findings", e.target.value)} />
+                            </td>
+                            <td className="px-2 py-1">
+                              <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
+                                value={row.pest_activity} onChange={e => updateRow(idx, "pest_activity", e.target.value)}>
+                                {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-2 py-1">
+                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                value={row.products_used} placeholder="Products..." onChange={e => updateRow(idx, "products_used", e.target.value)} />
+                            </td>
+                            <td className="px-2 py-1">
+                              <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : ""}`}
+                                value={row.status} onChange={e => updateRow(idx, "status", e.target.value)}>
+                                {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-0.5 py-0.5">
+                              <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                    onClick={addRow}>
+                    <Plus className="w-3 h-3" /> Add unit row
+                  </button>
+                </div>
+
+                {/* Summary, Findings & Notes */}
+                <div className="grid grid-cols-1 gap-2">
+                  <div>
+                    <Label className="text-[11px] font-semibold">Summary</Label>
+                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Service summary..." value={cd.summary}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-semibold">Overall Findings</Label>
+                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-semibold">Notes</Label>
+                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
+                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
+                  </div>
+                </div>
+
+                {/* Photos uploader */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-[11px] font-semibold flex items-center gap-1">
+                      <Image className="w-3.5 h-3.5" />
+                      Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
+                    </Label>
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
+                        <Plus className="w-3 h-3" />
+                        {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
+                      </span>
+                      <input type="file" accept="image/*" capture="environment" className="hidden"
+                        disabled={uploadingPhotoFor === s.id}
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadCompletionPhoto(s.id, f);
+                          (e.target as HTMLInputElement).value = "";
+                        }} />
+                    </label>
+                  </div>
+                  {cd.photos.length > 0 && (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {cd.photos.map((p, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
+                          <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => removeCompletionPhoto(s.id, idx)}
+                            className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Follow-up warning */}
+                {flaggedCount > 0 && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
+                    <p className="text-[11px] font-medium text-orange-700">
+                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Needs Follow-up" — will auto-add to next service
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button size="sm" className="h-9 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold" onClick={() => completeService(s.id)}>
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    {flaggedCount > 0 ? `Complete & Flag ${flaggedCount} Follow-up${flaggedCount > 1 ? "s" : ""}` : "Complete Service"}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={() => onDeleteService(s.id)} title="Delete service">
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {isProjected && (
           <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={async () => {
