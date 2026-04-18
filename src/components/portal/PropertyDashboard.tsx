@@ -1398,10 +1398,23 @@ const PropertyDashboard = ({
             })}
           </div>
         )}
+        </div>
+      </TabsContent>
 
-        {/* Prep Sheets */}
-        {prepSheets.length > 0 && (
-          <div className="space-y-2 mt-4">
+      {/* ══════════ TAB 5: PREP SHEETS ══════════ */}
+      <TabsContent value="prep" className="mt-0">
+        <div className="space-y-2 max-w-4xl mx-auto">
+          <div className="border-b-2 border-primary/40 pb-3 mb-3">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
+              <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">Easy-to-send instructions for customers before treatment.</p>
+          </div>
+          {prepSheets.length === 0 ? (
+            <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
+          ) : (
+          <div className="space-y-2">
             <div className="border-b-2 border-primary/40 pb-2.5">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <FileDown className="w-5 h-5 text-secondary" />Prep Sheets
