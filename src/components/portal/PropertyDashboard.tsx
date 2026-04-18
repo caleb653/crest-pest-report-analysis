@@ -1109,7 +1109,6 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
         )}
-      </div>
           </div>
         </div>
       </TabsContent>
