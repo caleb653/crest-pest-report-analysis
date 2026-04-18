@@ -334,7 +334,7 @@ const PortalAdmin = () => {
     loadAll();
   };
 
-  const openServiceReport = (s: PortalService) => {
+  const openServiceReport = async (s: PortalService) => {
     const prop = allProperties.find(p => p.id === s.property_id);
     const client = prop ? getClient(prop.client_id) : null;
 
@@ -343,12 +343,27 @@ const PortalAdmin = () => {
 
     // Gather units from units_planned, past services, and pending work orders
     const propServices = allServices.filter(sv => sv.property_id === s.property_id);
-    const pastCompleted = propServices.filter(sv => sv.status === "completed").sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
-    
-    // Collect planned units for this service
+    const pastCompleted = propServices
+      .filter(sv => sv.status === "completed")
+      .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+
+    // Planned units stored on this service (already merged from past + follow-ups by dashboard)
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-    
-    // Collect units from most recent past service
+
+    // Units flagged for follow-up from most recent past service
+    const followUpUnits: string[] = [];
+    if (pastCompleted.length > 0) {
+      const recent = pastCompleted[0];
+      if (Array.isArray(recent.unit_details)) {
+        (recent.unit_details as any[]).forEach((u: any) => {
+          if (u.unit_number && (u.status === "Needs Follow-up" || u.follow_up_recommended)) {
+            followUpUnits.push(u.unit_number);
+          }
+        });
+      }
+    }
+
+    // Units + pest data from most recent past service (default carry-over)
     const recentUnits: string[] = [];
     const recentPestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
     if (pastCompleted.length > 0) {
@@ -367,9 +382,37 @@ const PortalAdmin = () => {
       }
     }
 
-    // Merge all units (planned + recent)
-    const allUnitNumbers = Array.from(new Set([...unitsPlanned, ...recentUnits]))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    // Pull pending work orders for this property — include those units + pest info
+    const { data: pendingReqs } = await supabase
+      .from("portal_requests")
+      .select("*")
+      .eq("property_id", s.property_id)
+      .in("status", ["pending", "in_progress"]);
+
+    const workOrderUnits: string[] = [];
+    if (Array.isArray(pendingReqs)) {
+      pendingReqs.forEach((r: any) => {
+        if (r.unit_number) {
+          workOrderUnits.push(r.unit_number);
+          // Merge work order pest info — prefer existing recent data, then add WO context
+          const existing = recentPestData[r.unit_number] || {};
+          const woFindings = [r.pest_type, r.location_type, r.description].filter(Boolean).join(" - ");
+          recentPestData[r.unit_number] = {
+            findings: existing.findings ? `${existing.findings}\nWork Order: ${woFindings}` : `Work Order: ${woFindings}`,
+            pest_activity: existing.pest_activity || r.pest_type || "",
+            products_used: existing.products_used || "",
+          };
+        }
+      });
+    }
+
+    // Merge all units (planned + recent + follow-ups + work orders), sort numerically
+    const allUnitNumbers = Array.from(new Set([
+      ...unitsPlanned,
+      ...recentUnits,
+      ...followUpUnits,
+      ...workOrderUnits,
+    ])).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
     const stateData = {
       serviceData: s,
@@ -382,7 +425,9 @@ const PortalAdmin = () => {
       customerPreference: (prop?.customer_preferences as any)?.preference || "",
       customerPreferenceNotes: (prop?.customer_preferences as any)?.notes || "",
       prePopulatedUnits: allUnitNumbers,
+      followUpUnits,
       recentPestData,
+      pendingWorkOrders: pendingReqs || [],
     };
     sessionStorage.setItem(`appointment-report-${s.id}`, JSON.stringify(stateData));
     window.open(`/appointment-report/${s.id}`, "_blank");
