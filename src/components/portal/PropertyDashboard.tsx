@@ -362,14 +362,14 @@ const PropertyDashboard = ({
     await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: workOrder.unit_number || "Facility",
-      request_type: "Service Request",
-      description: `${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
+      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type,
       preferred_date: workOrder.preferred_date || null,
     } as any);
-    toast({ title: "Work order submitted" });
-    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+    toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
+    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
