@@ -830,22 +830,6 @@ const PropertyDashboard = ({
                     <table className="w-full text-[11px]">
                       <thead className="bg-muted">
                         <tr>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[55px]">Unit</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Source</th>
-                          <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[80px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold">Products</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Status</th>
-                          <th className="w-[24px]"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cd.unitRows.map((row: any, idx: number) => {
-                          const isFollowUp = row.source?.includes("follow-up");
-                          const isWorkOrder = row.source?.includes("work-order");
-                          return (
-                      <thead className="bg-muted">
-                        <tr>
                           <th className="text-left px-2 py-1.5 font-semibold w-[60px]">Unit</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Source</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
