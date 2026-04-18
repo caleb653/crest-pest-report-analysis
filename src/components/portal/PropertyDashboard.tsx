@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
@@ -56,7 +57,27 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["Treated", "Clear", "Needs Follow-up"];
+const STATUS_OPTIONS = ["To be Treated", "Treated", "Clear", "Needs Follow-up"];
+
+const TECHNICIAN_OPTIONS = [
+  "Darrell Tanner",
+  "Jesse Angulo",
+  "Jake Shubin",
+  "Caleb Whalen",
+  "Jackson Latham",
+  "Dylan Gallegos",
+  "Michael Muniz",
+];
+
+const PRODUCT_OPTIONS_LIST = [
+  "Alpine WSG", "Bifen I/T", "Essentria IC Pro", "Temprid FX", "Termidor SC",
+  "Phantom", "ExciteR", "Gentrol IGR Concentrate", "Nyguard IGR Concentrate",
+  "PT Wasp Freeze", "PT Alpine Flea & Bed Bug", "PT Alpine Fly Bait",
+  "Gentrol Aerosol", "Bedlam", "Invade Hot Spot +", "Niban", "Bifen LP",
+  "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
+  "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
+  "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
+];
 
 interface Props {
   property: PortalProperty;
@@ -122,7 +143,7 @@ const PropertyDashboard = ({
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
   // Inline completion form data
   const [completionData, setCompletionData] = useState<Record<string, {
-    unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: string[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -318,26 +339,26 @@ const PropertyDashboard = ({
       ? displayUnits.map(u => {
           const fu = followUpMap.get(u);
           const wo = workOrderMap.get(u);
-          const sourceTags: string[] = [];
-          if (fu) sourceTags.push("follow-up");
-          if (wo) sourceTags.push("work-order");
-          // Pre-fill findings with combined context so technician sees the "why"
-          const findingsParts: string[] = [];
-          if (fu?.findings) findingsParts.push(`Last visit: ${fu.findings}`);
-          if (fu?.notes && fu.notes !== fu.findings) findingsParts.push(fu.notes);
-          if (wo?.description) findingsParts.push(`Request: ${wo.description}`);
+          // Source: prioritize work order if present, else follow-up, else routine
+          const source = wo ? "new-work-order" : fu ? "follow-up" : "";
+          // Findings/Context = the pest type / nature of the issue
+          const targetPest = wo?.pest_type || fu?.pest_activity || "";
+          const contextParts: string[] = [];
+          if (wo?.description) contextParts.push(wo.description);
+          else if (fu?.findings) contextParts.push(fu.findings);
+          if (fu?.notes && fu.notes !== fu.findings) contextParts.push(fu.notes);
           return {
             unit_number: u,
-            findings: findingsParts.join(" • "),
+            target_pest: targetPest,
+            findings: contextParts.join(" • "),
             pest_activity: fu?.pest_activity || "None",
-            products_used: "",
-            status: "Treated",
+            products_used: [] as string[],
+            status: "To be Treated",
             notes: "",
-            source: sourceTags.join("+"), // "follow-up", "work-order", or "follow-up+work-order"
-            source_pest: wo?.pest_type || "",
+            source,
           };
         })
-      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as string[], status: "To be Treated", notes: "", source: "" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
@@ -356,7 +377,7 @@ const PropertyDashboard = ({
 
     // Aggregate products_used from unit rows for the products array
     const aggregatedProducts = Array.from(new Set(
-      unitRows.flatMap(r => (r.products_used || "").split(",").map(p => p.trim()).filter(Boolean))
+      unitRows.flatMap(r => Array.isArray(r.products_used) ? r.products_used : [])
     ));
 
     // Persist photo URLs (strip uploading flags)
@@ -745,8 +766,17 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [], status: "To be Treated", notes: "", source: "" }] },
             }));
+          };
+          const toggleProduct = (idx: number, product: string) => {
+            setCompletionData(prev => {
+              const rows = [...prev[s.id].unitRows];
+              const current = Array.isArray(rows[idx].products_used) ? rows[idx].products_used : [];
+              const next = current.includes(product) ? current.filter(p => p !== product) : [...current, product];
+              rows[idx] = { ...rows[idx], products_used: next };
+              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+            });
           };
           const removeRow = (idx: number) => {
             setCompletionData(prev => ({
@@ -768,8 +798,13 @@ const PropertyDashboard = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <Label className="text-[11px] font-semibold">Technician</Label>
-                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                    <Select value={cd.technician || ""}
+                      onValueChange={(v) => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: v } }))}>
+                      <SelectTrigger className="h-9 text-xs mt-0.5"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                      <SelectContent>
+                        {TECHNICIAN_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label className="text-[11px] font-semibold">Time In</Label>
@@ -795,66 +830,113 @@ const PropertyDashboard = ({
                     <table className="w-full text-[11px]">
                       <thead className="bg-muted">
                         <tr>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[55px]">Unit</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Source</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[60px]">Unit</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Source</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[80px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold">Products</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Status</th>
-                          <th className="w-[24px]"></th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
+                          <th className="w-[28px]"></th>
                         </tr>
                       </thead>
                       <tbody>
                         {cd.unitRows.map((row: any, idx: number) => {
-                          const isFollowUp = row.source?.includes("follow-up");
-                          const isWorkOrder = row.source?.includes("work-order");
+                          const isFollowUp = row.source === "follow-up";
+                          const isWorkOrder = row.source === "new-work-order";
+                          const products: string[] = Array.isArray(row.products_used) ? row.products_used : [];
                           return (
                           <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                             <td className="px-2 py-1.5">
-                              <Input className="h-7 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
+                              <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
                                 value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
                             </td>
                             <td className="px-2 py-1.5">
-                              <div className="flex flex-col gap-0.5">
-                                {isFollowUp && (
-                                  <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700 bg-orange-50 px-1.5 w-fit">
-                                    <Flag className="w-2.5 h-2.5 mr-0.5" />Follow-up
-                                  </Badge>
-                                )}
-                                {isWorkOrder && (
-                                  <Badge variant="outline" className="text-[9px] h-4 border-primary/40 text-primary px-1.5 w-fit">
-                                    <ClipboardList className="w-2.5 h-2.5 mr-0.5" />
-                                    Work Order{row.source_pest ? ` · ${row.source_pest}` : ""}
-                                  </Badge>
-                                )}
-                                {!isFollowUp && !isWorkOrder && (
-                                  <span className="text-[10px] text-muted-foreground">Routine</span>
-                                )}
-                              </div>
+                              <Select value={row.source || "routine"}
+                                onValueChange={(v) => updateRow(idx, "source", v === "routine" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="routine">Routine</SelectItem>
+                                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                                  <SelectItem value="new-work-order">New Work Order</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                value={row.findings} placeholder="Findings..." onChange={e => updateRow(idx, "findings", e.target.value)} />
+                            <td className="px-2 py-1.5">
+                              <Select value={row.target_pest || "__none__"}
+                                onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue placeholder="Select pest" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">— None —</SelectItem>
+                                  {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
-                                value={row.pest_activity} onChange={e => updateRow(idx, "pest_activity", e.target.value)}>
-                                {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                              </select>
+                            <td className="px-2 py-1.5">
+                              <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                value={row.findings} placeholder="Notes about this unit..." onChange={e => updateRow(idx, "findings", e.target.value)} />
                             </td>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                value={row.products_used} placeholder="Products..." onChange={e => updateRow(idx, "products_used", e.target.value)} />
+                            <td className="px-2 py-1.5">
+                              <Select value={row.pest_activity}
+                                onValueChange={(v) => updateRow(idx, "pest_activity", v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ACTIVITY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : ""}`}
-                                value={row.status} onChange={e => updateRow(idx, "status", e.target.value)}>
-                                {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                              </select>
+                            <td className="px-2 py-1.5">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="h-8 w-full text-left text-[11px] px-2 rounded border border-transparent hover:border-border bg-transparent flex items-center justify-between gap-1">
+                                    <span className="truncate">
+                                      {products.length === 0 ? <span className="text-muted-foreground">Select products...</span> : `${products.length} selected`}
+                                    </span>
+                                    <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-2 max-h-72 overflow-y-auto" align="start">
+                                  <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">Select products used</div>
+                                  {PRODUCT_OPTIONS_LIST.map(p => {
+                                    const checked = products.includes(p);
+                                    return (
+                                      <label key={p} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer text-xs hover:bg-muted ${checked ? "bg-primary/10 font-medium" : ""}`}>
+                                        <input type="checkbox" checked={checked} onChange={() => toggleProduct(idx, p)} className="h-3.5 w-3.5" />
+                                        {p}
+                                      </label>
+                                    );
+                                  })}
+                                </PopoverContent>
+                              </Popover>
+                              {products.length > 0 && (
+                                <div className="flex flex-wrap gap-0.5 mt-1">
+                                  {products.slice(0, 3).map(p => (
+                                    <Badge key={p} variant="secondary" className="text-[9px] h-4 px-1">{p}</Badge>
+                                  ))}
+                                  {products.length > 3 && <Badge variant="outline" className="text-[9px] h-4 px-1">+{products.length - 3}</Badge>}
+                                </div>
+                              )}
                             </td>
-                            <td className="px-0.5 py-0.5">
+                            <td className="px-2 py-1.5">
+                              <Select value={row.status}
+                                onValueChange={(v) => updateRow(idx, "status", v)}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : row.status === "To be Treated" ? "text-muted-foreground" : ""}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-1 py-0.5">
                               <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
-                                <X className="w-3 h-3" />
+                                <X className="w-3.5 h-3.5" />
                               </button>
                             </td>
                           </tr>
@@ -863,9 +945,9 @@ const PropertyDashboard = ({
                       </tbody>
                     </table>
                   </div>
-                  <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                  <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
                     onClick={addRow}>
-                    <Plus className="w-3 h-3" /> Add unit row
+                    <Plus className="w-3.5 h-3.5" /> Add unit row
                   </button>
                 </div>
 
@@ -890,27 +972,36 @@ const PropertyDashboard = ({
 
                 {/* Photos uploader */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <Label className="text-[11px] font-semibold flex items-center gap-1">
-                      <Image className="w-3.5 h-3.5" />
-                      Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
-                    </Label>
-                    <label className="cursor-pointer">
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
-                        <Plus className="w-3 h-3" />
-                        {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
-                      </span>
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        disabled={uploadingPhotoFor === s.id}
-                        onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) uploadCompletionPhoto(s.id, f);
-                          (e.target as HTMLInputElement).value = "";
-                        }} />
-                    </label>
-                  </div>
+                  <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+                    <Image className="w-4 h-4" />
+                    Service Photos {cd.photos.length > 0 && <span className="text-muted-foreground font-normal">({cd.photos.length})</span>}
+                  </Label>
+                  <label className="cursor-pointer block">
+                    <div className={`w-full border-2 border-dashed rounded-xl py-6 px-4 flex flex-col items-center justify-center gap-2 transition-all ${uploadingPhotoFor === s.id ? "bg-muted border-primary/40" : "border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/50"}`}>
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        {uploadingPhotoFor === s.id ? (
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Plus className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-foreground">
+                          {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Tap to take a photo or upload from gallery</p>
+                      </div>
+                    </div>
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      disabled={uploadingPhotoFor === s.id}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadCompletionPhoto(s.id, f);
+                        (e.target as HTMLInputElement).value = "";
+                      }} />
+                  </label>
                   {cd.photos.length > 0 && (
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-4 gap-2 mt-2">
                       {cd.photos.map((p, idx) => (
                         <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
                           <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
@@ -1421,7 +1512,7 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 4: UPCOMING SERVICES ══════════ */}
       <TabsContent value="upcoming" className="mt-0">
-        <div className="space-y-4 max-w-5xl mx-auto">
+        <div className="space-y-4 max-w-7xl mx-auto">
         {/* Quick Add Service */}
         {!showQuickAdd ? (
           <div className="flex gap-1.5">
