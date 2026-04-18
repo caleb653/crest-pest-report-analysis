@@ -798,8 +798,13 @@ const PropertyDashboard = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
                     <Label className="text-[11px] font-semibold">Technician</Label>
-                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                    <Select value={cd.technician || ""}
+                      onValueChange={(v) => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: v } }))}>
+                      <SelectTrigger className="h-9 text-xs mt-0.5"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                      <SelectContent>
+                        {TECHNICIAN_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label className="text-[11px] font-semibold">Time In</Label>
