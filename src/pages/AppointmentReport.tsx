@@ -91,24 +91,64 @@ const AppointmentReport = () => {
     followUpUnits,
   } = initialState;
 
-  const buildPrefilledUnitRows = () => {
-    if (prePopulatedUnits && Array.isArray(prePopulatedUnits) && prePopulatedUnits.length > 0) {
-      return prePopulatedUnits.map((u: string) => {
-        const pestData = recentPestData?.[u] || {};
-        const isFollowUp = Array.isArray(followUpUnits) && followUpUnits.includes(u);
-        return {
-          unit: u,
-          targetPests: pestData.pest_activity && pestData.pest_activity !== "None" ? pestData.pest_activity : "",
-          notes: pestData.findings || "",
-          areasTreated: "",
-          productsUsed: pestData.products_used || "",
-          followUp: isFollowUp ? "Yes" : "No",
-          followUpNotes: isFollowUp ? "Follow-up from last service" : "",
-        };
-      });
-    }
-    return [{ ...emptyUnit }];
+  interface UnitRow {
+    unit: string;
+    targetPests: string;
+    notes: string;
+    areasTreated: string;
+    productsUsed: string;
+    followUp: string;
+    followUpNotes: string;
+  }
+
+  const emptyUnit: UnitRow = {
+    unit: "",
+    targetPests: "",
+    notes: "",
+    areasTreated: "",
+    productsUsed: "",
+    followUp: "No",
+    followUpNotes: "",
   };
+
+  const normalizeUnit = (value: unknown) => String(value ?? "").trim();
+
+  const buildPrefilledUnitRowsFromSource = ({
+    units,
+    pestData,
+    flaggedFollowUps,
+  }: {
+    units: string[];
+    pestData?: Record<string, { findings?: string; pest_activity?: string; products_used?: string }>;
+    flaggedFollowUps?: string[];
+  }) => {
+    if (!Array.isArray(units) || units.length === 0) {
+      return [{ ...emptyUnit }];
+    }
+
+    return units.map((unitNumber) => {
+      const unitKey = normalizeUnit(unitNumber);
+      const details = pestData?.[unitKey] || pestData?.[unitNumber] || {};
+      const isFollowUp = Array.isArray(flaggedFollowUps) && flaggedFollowUps.some((unit) => normalizeUnit(unit) === unitKey);
+
+      return {
+        unit: unitKey,
+        targetPests: details.pest_activity && details.pest_activity !== "None" ? details.pest_activity : "",
+        notes: details.findings || "",
+        areasTreated: "",
+        productsUsed: details.products_used || "",
+        followUp: isFollowUp ? "Yes" : "No",
+        followUpNotes: isFollowUp ? "Follow-up from last service" : "",
+      };
+    });
+  };
+
+  const buildInitialPrefilledUnitRows = () =>
+    buildPrefilledUnitRowsFromSource({
+      units: Array.isArray(prePopulatedUnits) ? prePopulatedUnits : [],
+      pestData: recentPestData,
+      flaggedFollowUps: Array.isArray(followUpUnits) ? followUpUnits : [],
+    });
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -134,12 +174,7 @@ const AppointmentReport = () => {
   const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
   // Unit overview table
-  interface UnitRow {
-    unit: string; targetPests: string; notes: string; areasTreated: string;
-    productsUsed: string; followUp: string; followUpNotes: string;
-  }
-  const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
-  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => buildPrefilledUnitRows());
+  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => buildInitialPrefilledUnitRows());
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
@@ -244,11 +279,82 @@ const AppointmentReport = () => {
   // Load existing report data
   useEffect(() => {
     if (!serviceId) return;
-    supabase.from("portal_services").select("*").eq("id", serviceId).single().then(({ data }) => {
+
+    const loadReport = async () => {
+      const { data } = await supabase.from("portal_services").select("*").eq("id", serviceId).single();
       if (!data) return;
+
       if (data.property_id && !propertyId) setPropertyId(data.property_id);
 
-      const prefilledRows = buildPrefilledUnitRows();
+      let prefilledRows = buildInitialPrefilledUnitRows();
+      const hasRealPrefill = prefilledRows.some((row) => normalizeUnit(row.unit));
+
+      if (!hasRealPrefill && data.property_id) {
+        const [{ data: recentCompleted }, { data: pendingReqs }] = await Promise.all([
+          supabase
+            .from("portal_services")
+            .select("unit_details")
+            .eq("property_id", data.property_id)
+            .eq("status", "completed")
+            .order("service_date", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("portal_requests")
+            .select("unit_number, pest_type, location_type, description")
+            .eq("property_id", data.property_id)
+            .in("status", ["pending", "in_progress"]),
+        ]);
+
+        const unitsPlanned = Array.isArray(data.units_planned) ? (data.units_planned as string[]) : [];
+        const followUps: string[] = [];
+        const recentUnits: string[] = [];
+        const pestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
+
+        const details = Array.isArray(recentCompleted?.unit_details) ? (recentCompleted.unit_details as any[]) : [];
+        details.forEach((unit: any) => {
+          const unitNumber = normalizeUnit(unit?.unit_number);
+          if (!unitNumber) return;
+
+          recentUnits.push(unitNumber);
+          pestData[unitNumber] = {
+            findings: unit.findings || "",
+            pest_activity: unit.pest_activity || "",
+            products_used: unit.products_used || "",
+          };
+
+          if (unit.status === "Needs Follow-up" || unit.follow_up_recommended) {
+            followUps.push(unitNumber);
+          }
+        });
+
+        (pendingReqs || []).forEach((request: any) => {
+          const unitNumber = normalizeUnit(request?.unit_number);
+          if (!unitNumber) return;
+
+          const existing = pestData[unitNumber] || {};
+          const workOrderContext = [request.pest_type, request.location_type, request.description].filter(Boolean).join(" - ");
+          pestData[unitNumber] = {
+            findings: existing.findings
+              ? `${existing.findings}\nWork Order: ${workOrderContext}`
+              : `Work Order: ${workOrderContext}`,
+            pest_activity: existing.pest_activity || request.pest_type || "",
+            products_used: existing.products_used || "",
+          };
+          recentUnits.push(unitNumber);
+        });
+
+        const mergedUnits = Array.from(new Set([...unitsPlanned, ...recentUnits, ...followUps]))
+          .map((unit) => normalizeUnit(unit))
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        prefilledRows = buildPrefilledUnitRowsFromSource({
+          units: mergedUnits,
+          pestData,
+          flaggedFollowUps: followUps,
+        });
+      }
 
       if (data.report_data && typeof data.report_data === "object") {
         const rd = data.report_data as any;
@@ -268,10 +374,10 @@ const AppointmentReport = () => {
         if (rd.property_images) setPropertyImages(rd.property_images);
         if (rd.unit_rows && Array.isArray(rd.unit_rows)) {
           const existingRows = rd.unit_rows as UnitRow[];
-          const existingUnits = new Set(existingRows.map((row) => String(row.unit || "").trim()).filter(Boolean));
+          const existingUnits = new Set(existingRows.map((row) => normalizeUnit(row.unit)).filter(Boolean));
           const mergedRows = [
             ...existingRows.map((row) => {
-              const matchingPrefill = prefilledRows.find((prefill) => String(prefill.unit).trim() === String(row.unit || "").trim());
+              const matchingPrefill = prefilledRows.find((prefill) => normalizeUnit(prefill.unit) === normalizeUnit(row.unit));
               return matchingPrefill
                 ? {
                     ...matchingPrefill,
@@ -284,7 +390,7 @@ const AppointmentReport = () => {
                   }
                 : row;
             }),
-            ...prefilledRows.filter((prefill) => !existingUnits.has(String(prefill.unit).trim())),
+            ...prefilledRows.filter((prefill) => !existingUnits.has(normalizeUnit(prefill.unit))),
           ];
           setUnitRows(mergedRows.length > 0 ? mergedRows : prefilledRows);
         } else {
@@ -302,7 +408,9 @@ const AppointmentReport = () => {
         if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
         if (data.findings) setTodaysFindings(data.findings);
       }
-    });
+    };
+
+    void loadReport();
   }, [serviceId]);
 
   const reportTitle = serviceDate
