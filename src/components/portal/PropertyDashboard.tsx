@@ -899,10 +899,35 @@ const PropertyDashboard = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      {/* ══════════ LEFT COLUMN ══════════ */}
-      <div className="lg:col-span-3 space-y-4">
-        {/* Property Map */}
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+        <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <MapPin className="w-5 h-5" />
+          <span>Map &amp; Preferences</span>
+        </TabsTrigger>
+        <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Calendar className="w-5 h-5" />
+          <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Bug className="w-5 h-5" />
+          <span>Request Work Order</span>
+        </TabsTrigger>
+        <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <ClipboardList className="w-5 h-5" />
+          <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{allUpcoming.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <FileDown className="w-5 h-5" />
+          <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+        </TabsTrigger>
+      </TabsList>
+
+      {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
+      <TabsContent value="map" className="mt-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-4">
+            {/* Property Map - bigger now */}
         <Card className="overflow-hidden shadow-sm">
           <div className="aspect-[3/4] relative bg-muted">
             {mapUrl ? (
