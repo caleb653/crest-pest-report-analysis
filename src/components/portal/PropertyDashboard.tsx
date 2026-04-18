@@ -844,52 +844,115 @@ const PropertyDashboard = ({
                           const isFollowUp = row.source?.includes("follow-up");
                           const isWorkOrder = row.source?.includes("work-order");
                           return (
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[60px]">Unit</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Source</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
+                          <th className="w-[28px]"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cd.unitRows.map((row: any, idx: number) => {
+                          const isFollowUp = row.source === "follow-up";
+                          const isWorkOrder = row.source === "new-work-order";
+                          const products: string[] = Array.isArray(row.products_used) ? row.products_used : [];
+                          return (
                           <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                             <td className="px-2 py-1.5">
-                              <Input className="h-7 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
+                              <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
                                 value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
                             </td>
                             <td className="px-2 py-1.5">
-                              <div className="flex flex-col gap-0.5">
-                                {isFollowUp && (
-                                  <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700 bg-orange-50 px-1.5 w-fit">
-                                    <Flag className="w-2.5 h-2.5 mr-0.5" />Follow-up
-                                  </Badge>
-                                )}
-                                {isWorkOrder && (
-                                  <Badge variant="outline" className="text-[9px] h-4 border-primary/40 text-primary px-1.5 w-fit">
-                                    <ClipboardList className="w-2.5 h-2.5 mr-0.5" />
-                                    Work Order{row.source_pest ? ` · ${row.source_pest}` : ""}
-                                  </Badge>
-                                )}
-                                {!isFollowUp && !isWorkOrder && (
-                                  <span className="text-[10px] text-muted-foreground">Routine</span>
-                                )}
-                              </div>
+                              <Select value={row.source || "routine"}
+                                onValueChange={(v) => updateRow(idx, "source", v === "routine" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="routine">Routine</SelectItem>
+                                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                                  <SelectItem value="new-work-order">New Work Order</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                value={row.findings} placeholder="Findings..." onChange={e => updateRow(idx, "findings", e.target.value)} />
+                            <td className="px-2 py-1.5">
+                              <Select value={row.target_pest || "__none__"}
+                                onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue placeholder="Select pest" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none__">— None —</SelectItem>
+                                  {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
-                                value={row.pest_activity} onChange={e => updateRow(idx, "pest_activity", e.target.value)}>
-                                {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                              </select>
+                            <td className="px-2 py-1.5">
+                              <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent"
+                                value={row.findings} placeholder="Notes about this unit..." onChange={e => updateRow(idx, "findings", e.target.value)} />
                             </td>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
-                                value={row.products_used} placeholder="Products..." onChange={e => updateRow(idx, "products_used", e.target.value)} />
+                            <td className="px-2 py-1.5">
+                              <Select value={row.pest_activity}
+                                onValueChange={(v) => updateRow(idx, "pest_activity", v)}>
+                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ACTIVITY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
                             </td>
-                            <td className="px-2 py-1">
-                              <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : ""}`}
-                                value={row.status} onChange={e => updateRow(idx, "status", e.target.value)}>
-                                {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                              </select>
+                            <td className="px-2 py-1.5">
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button className="h-8 w-full text-left text-[11px] px-2 rounded border border-transparent hover:border-border bg-transparent flex items-center justify-between gap-1">
+                                    <span className="truncate">
+                                      {products.length === 0 ? <span className="text-muted-foreground">Select products...</span> : `${products.length} selected`}
+                                    </span>
+                                    <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72 p-2 max-h-72 overflow-y-auto" align="start">
+                                  <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">Select products used</div>
+                                  {PRODUCT_OPTIONS_LIST.map(p => {
+                                    const checked = products.includes(p);
+                                    return (
+                                      <label key={p} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer text-xs hover:bg-muted ${checked ? "bg-primary/10 font-medium" : ""}`}>
+                                        <input type="checkbox" checked={checked} onChange={() => toggleProduct(idx, p)} className="h-3.5 w-3.5" />
+                                        {p}
+                                      </label>
+                                    );
+                                  })}
+                                </PopoverContent>
+                              </Popover>
+                              {products.length > 0 && (
+                                <div className="flex flex-wrap gap-0.5 mt-1">
+                                  {products.slice(0, 3).map(p => (
+                                    <Badge key={p} variant="secondary" className="text-[9px] h-4 px-1">{p}</Badge>
+                                  ))}
+                                  {products.length > 3 && <Badge variant="outline" className="text-[9px] h-4 px-1">+{products.length - 3}</Badge>}
+                                </div>
+                              )}
                             </td>
-                            <td className="px-0.5 py-0.5">
+                            <td className="px-2 py-1.5">
+                              <Select value={row.status}
+                                onValueChange={(v) => updateRow(idx, "status", v)}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : row.status === "To be Treated" ? "text-muted-foreground" : ""}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-1 py-0.5">
                               <button onClick={() => removeRow(idx)} className="text-muted-foreground hover:text-destructive">
-                                <X className="w-3 h-3" />
+                                <X className="w-3.5 h-3.5" />
                               </button>
                             </td>
                           </tr>
@@ -898,9 +961,9 @@ const PropertyDashboard = ({
                       </tbody>
                     </table>
                   </div>
-                  <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                  <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
                     onClick={addRow}>
-                    <Plus className="w-3 h-3" /> Add unit row
+                    <Plus className="w-3.5 h-3.5" /> Add unit row
                   </button>
                 </div>
 
