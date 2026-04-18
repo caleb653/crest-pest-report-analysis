@@ -700,13 +700,32 @@ const PropertyDashboard = ({
           </div>
         )}
 
+        {/* Photos */}
+        {Array.isArray(s.photos) && s.photos.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+              <Image className="w-3.5 h-3.5" />Photos ({s.photos.length})
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {(s.photos as any[]).map((photo, idx) => {
+                const url = typeof photo === "string" ? photo : photo?.url || photo?.src;
+                if (!url) return null;
+                return (
+                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border/60 hover:border-primary/50 transition-all hover:shadow-md">
+                    <img src={url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         {!isProjected && (
           <div className="flex gap-1.5 pt-1 border-t border-border/40 mt-2">
-            <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
-              <FileText className="w-3 h-3 mr-1" />Fill Out Full Report
+            <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
+              <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
           </div>
         )}
 
