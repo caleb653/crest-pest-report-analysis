@@ -620,13 +620,6 @@ const PropertyDashboard = ({
                 ))}
               </div>
             )}
-                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
-                    </div>
-                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
-                  </div>
-                ))}
-              </div>
-            )}
             {displayUnits.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-1.5">
                 {displayUnits.map(u => {
