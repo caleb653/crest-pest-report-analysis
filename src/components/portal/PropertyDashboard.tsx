@@ -565,11 +565,42 @@ const PropertyDashboard = ({
                 </Button>
               )}
             </div>
-            {isFirstUpcoming && followUpFromPast.length > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-2">
-                <p className="text-[11px] font-medium text-orange-700">
-                  ⚠️ {followUpFromPast.length} unit{followUpFromPast.length > 1 ? "s" : ""} flagged for follow-up from last service
+            {isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
+              // Unique interior unit count: combine follow-up units + work order units (with unit_number)
+              const uniqueInteriorUnits = new Set<string>();
+              followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
+              pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
+              const total = uniqueInteriorUnits.size;
+              return (
+                <div className="bg-primary text-primary-foreground rounded-lg p-3 mb-2 flex items-center justify-between shadow-sm">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
+                    <p className="text-[11px] opacity-80 mt-0.5">Unique units across follow-ups + work orders</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold leading-none">{total}</p>
+                    <p className="text-[10px] mt-1 opacity-80">unit{total === 1 ? "" : "s"}</p>
+                  </div>
+                </div>
+              );
+            })()}
+            {isFirstUpcoming && followUpDetailsFromPast.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5 mb-2 space-y-1.5">
+                <p className="text-[11px] font-semibold text-orange-700 flex items-center gap-1">
+                  <Flag className="w-3.5 h-3.5" />
+                  {followUpDetailsFromPast.length} Follow-up{followUpDetailsFromPast.length > 1 ? "s" : ""} from Last Service
                 </p>
+                {followUpDetailsFromPast.map(u => (
+                  <div key={u.unit_number} className="bg-background rounded-md p-2 border border-orange-200/70 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Unit {u.unit_number}{u.pest_activity ? ` — ${u.pest_activity}` : ""}</span>
+                      <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700">follow-up</Badge>
+                    </div>
+                    {(u.findings || u.notes) && (
+                      <p className="text-muted-foreground mt-0.5">{[u.findings, u.notes].filter(Boolean).join(" — ")}</p>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
             {isFirstUpcoming && pendingRequests.length > 0 && (
@@ -582,6 +613,13 @@ const PropertyDashboard = ({
                   <div key={r.id} className="bg-background rounded-md p-2 border border-border/50 text-[11px]">
                     <div className="flex items-center justify-between">
                       <span className="font-medium">{r.unit_number ? `Unit ${r.unit_number}` : "Facility"} — {r.pest_type || "General"}</span>
+                      <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
+                    </div>
+                    {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
                       <Badge variant="outline" className="text-[9px] h-4">{r.status}</Badge>
                     </div>
                     {r.description && <p className="text-muted-foreground mt-0.5">{r.description}</p>}
