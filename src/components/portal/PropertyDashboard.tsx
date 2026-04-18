@@ -314,7 +314,7 @@ const PropertyDashboard = ({
       : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }];
     setCompletionData(prev => ({
       ...prev,
-      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "" },
+      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
     }));
   };
 
