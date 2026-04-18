@@ -1297,8 +1297,8 @@ const PropertyDashboard = ({
               <Textarea className="text-xs min-h-[40px] mt-1" placeholder="Describe the issue..." value={workOrder.comments}
                 onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} />
             </div>
-            <Button size="sm" className="w-full h-9 text-xs font-semibold" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
-              <Send className="w-3.5 h-3.5 mr-1" />Submit Work Order
+            <Button size="lg" className="w-full h-11 text-sm font-semibold" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
+              <Send className="w-4 h-4 mr-1.5" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>
