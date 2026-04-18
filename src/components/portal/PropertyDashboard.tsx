@@ -1209,9 +1209,11 @@ const PropertyDashboard = ({
           )
         )}
       </div>
+      </TabsContent>
 
-      {/* ══════════ RIGHT COLUMN ══════════ */}
-      <div className="lg:col-span-4 space-y-4">
+      {/* ══════════ TAB 3: REQUEST WORK ORDER ══════════ */}
+      <TabsContent value="request" className="mt-0">
+        <div className="max-w-2xl mx-auto space-y-4">
         {/* Work Order Form */}
         <Card className="shadow-md border-primary/30 bg-gradient-to-b from-primary/[0.03] to-transparent">
           <CardHeader className="pb-2 py-3.5 border-b border-primary/20">
