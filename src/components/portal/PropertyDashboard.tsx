@@ -56,7 +56,27 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["Treated", "Clear", "Needs Follow-up"];
+const STATUS_OPTIONS = ["To be Treated", "Treated", "Clear", "Needs Follow-up"];
+
+const TECHNICIAN_OPTIONS = [
+  "Darrell Tanner",
+  "Jesse Angulo",
+  "Jake Shubin",
+  "Caleb Whalen",
+  "Jackson Latham",
+  "Dylan Gallegos",
+  "Michael Muniz",
+];
+
+const PRODUCT_OPTIONS_LIST = [
+  "Alpine WSG", "Bifen I/T", "Essentria IC Pro", "Temprid FX", "Termidor SC",
+  "Phantom", "ExciteR", "Gentrol IGR Concentrate", "Nyguard IGR Concentrate",
+  "PT Wasp Freeze", "PT Alpine Flea & Bed Bug", "PT Alpine Fly Bait",
+  "Gentrol Aerosol", "Bedlam", "Invade Hot Spot +", "Niban", "Bifen LP",
+  "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
+  "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
+  "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
+];
 
 interface Props {
   property: PortalProperty;
