@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
-  CheckCircle, Wrench, Image, ExternalLink,
+  CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
