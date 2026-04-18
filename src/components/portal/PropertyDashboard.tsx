@@ -902,7 +902,7 @@ const PropertyDashboard = ({
                     </button>
                   </div>
 
-                  {/* Summary & Notes */}
+                  {/* Summary, Findings & Notes */}
                   <div className="grid grid-cols-1 gap-2">
                     <div>
                       <Label className="text-[11px] font-semibold">Summary</Label>
@@ -910,10 +910,51 @@ const PropertyDashboard = ({
                         onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
                     </div>
                     <div>
+                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
+                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
+                    </div>
+                    <div>
                       <Label className="text-[11px] font-semibold">Notes</Label>
                       <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
                         onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
                     </div>
+                  </div>
+
+                  {/* Photos uploader */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-[11px] font-semibold flex items-center gap-1">
+                        <Image className="w-3.5 h-3.5" />
+                        Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
+                      </Label>
+                      <label className="cursor-pointer">
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
+                          <Plus className="w-3 h-3" />
+                          {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
+                        </span>
+                        <input type="file" accept="image/*" capture="environment" className="hidden"
+                          disabled={uploadingPhotoFor === s.id}
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadCompletionPhoto(s.id, f);
+                            (e.target as HTMLInputElement).value = "";
+                          }} />
+                      </label>
+                    </div>
+                    {cd.photos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {cd.photos.map((p, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
+                            <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removeCompletionPhoto(s.id, idx)}
+                              className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Follow-up warning */}
