@@ -76,7 +76,39 @@ const AppointmentReport = () => {
     return {};
   };
   const initialState = getInitialState();
-  const { serviceData, propertyName: initPropertyName, clientName, returnTo, propertyId: initPropertyId, propertyAddress, propertyEquipment, customerPreference: initPref, customerPreferenceNotes: initPrefNotes, prePopulatedUnits, recentPestData } = initialState;
+  const {
+    serviceData,
+    propertyName: initPropertyName,
+    clientName,
+    returnTo,
+    propertyId: initPropertyId,
+    propertyAddress,
+    propertyEquipment,
+    customerPreference: initPref,
+    customerPreferenceNotes: initPrefNotes,
+    prePopulatedUnits,
+    recentPestData,
+    followUpUnits,
+  } = initialState;
+
+  const buildPrefilledUnitRows = () => {
+    if (prePopulatedUnits && Array.isArray(prePopulatedUnits) && prePopulatedUnits.length > 0) {
+      return prePopulatedUnits.map((u: string) => {
+        const pestData = recentPestData?.[u] || {};
+        const isFollowUp = Array.isArray(followUpUnits) && followUpUnits.includes(u);
+        return {
+          unit: u,
+          targetPests: pestData.pest_activity && pestData.pest_activity !== "None" ? pestData.pest_activity : "",
+          notes: pestData.findings || "",
+          areasTreated: "",
+          productsUsed: pestData.products_used || "",
+          followUp: isFollowUp ? "Yes" : "No",
+          followUpNotes: isFollowUp ? "Follow-up from last service" : "",
+        };
+      });
+    }
+    return [{ ...emptyUnit }];
+  };
 
   const [isSaving, setIsSaving] = useState(false);
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -107,24 +139,7 @@ const AppointmentReport = () => {
     productsUsed: string; followUp: string; followUpNotes: string;
   }
   const emptyUnit: UnitRow = { unit: "", targetPests: "", notes: "", areasTreated: "", productsUsed: "", followUp: "No", followUpNotes: "" };
-  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => {
-    // Pre-populate from units if available
-    if (prePopulatedUnits && Array.isArray(prePopulatedUnits) && prePopulatedUnits.length > 0) {
-      return prePopulatedUnits.map((u: string) => {
-        const pestData = recentPestData?.[u] || {};
-        return {
-          unit: u,
-          targetPests: pestData.pest_activity && pestData.pest_activity !== "None" ? pestData.pest_activity : "",
-          notes: pestData.findings || "",
-          areasTreated: "",
-          productsUsed: pestData.products_used || "",
-          followUp: "No",
-          followUpNotes: "",
-        };
-      });
-    }
-    return [{ ...emptyUnit }];
-  });
+  const [unitRows, setUnitRows] = useState<UnitRow[]>(() => buildPrefilledUnitRows());
   const [commonAreaPests, setCommonAreaPests] = useState("");
   const [commonAreaNotes, setCommonAreaNotes] = useState("");
   const [techObservations, setTechObservations] = useState("");
@@ -231,8 +246,10 @@ const AppointmentReport = () => {
     if (!serviceId) return;
     supabase.from("portal_services").select("*").eq("id", serviceId).single().then(({ data }) => {
       if (!data) return;
-      // Set propertyId for map loading
       if (data.property_id && !propertyId) setPropertyId(data.property_id);
+
+      const prefilledRows = buildPrefilledUnitRows();
+
       if (data.report_data && typeof data.report_data === "object") {
         const rd = data.report_data as any;
         if (rd.technician_name) setTechnicianName(rd.technician_name);
@@ -249,13 +266,37 @@ const AppointmentReport = () => {
         if (rd.customer_preference) setCustomerPreference(rd.customer_preference);
         if (rd.customer_preference_notes) setCustomerPreferenceNotes(rd.customer_preference_notes);
         if (rd.property_images) setPropertyImages(rd.property_images);
-        if (rd.unit_rows) setUnitRows(rd.unit_rows);
+        if (rd.unit_rows && Array.isArray(rd.unit_rows)) {
+          const existingRows = rd.unit_rows as UnitRow[];
+          const existingUnits = new Set(existingRows.map((row) => String(row.unit || "").trim()).filter(Boolean));
+          const mergedRows = [
+            ...existingRows.map((row) => {
+              const matchingPrefill = prefilledRows.find((prefill) => String(prefill.unit).trim() === String(row.unit || "").trim());
+              return matchingPrefill
+                ? {
+                    ...matchingPrefill,
+                    ...row,
+                    targetPests: row.targetPests || matchingPrefill.targetPests,
+                    notes: row.notes || matchingPrefill.notes,
+                    productsUsed: row.productsUsed || matchingPrefill.productsUsed,
+                    followUp: matchingPrefill.followUp === "Yes" ? "Yes" : (row.followUp || "No"),
+                    followUpNotes: row.followUpNotes || matchingPrefill.followUpNotes,
+                  }
+                : row;
+            }),
+            ...prefilledRows.filter((prefill) => !existingUnits.has(String(prefill.unit).trim())),
+          ];
+          setUnitRows(mergedRows.length > 0 ? mergedRows : prefilledRows);
+        } else {
+          setUnitRows(prefilledRows);
+        }
         if (rd.common_area_pests) setCommonAreaPests(rd.common_area_pests);
         if (rd.common_area_notes) setCommonAreaNotes(rd.common_area_notes);
         if (rd.tech_observations) setTechObservations(rd.tech_observations);
         if (rd.time_in) setTimeIn(rd.time_in);
         if (rd.time_out) setTimeOut(rd.time_out);
       } else {
+        setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
         if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
