@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
-  CheckCircle, Wrench, Image, ExternalLink,
+  CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -108,7 +109,8 @@ const PropertyDashboard = ({
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
-  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" as "treatment" | "inspection" });
+  const [activeTab, setActiveTab] = useState<string>("map");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -360,14 +362,14 @@ const PropertyDashboard = ({
     await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: workOrder.unit_number || "Facility",
-      request_type: "Service Request",
-      description: `${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
+      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type,
       preferred_date: workOrder.preferred_date || null,
     } as any);
-    toast({ title: "Work order submitted" });
-    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "" });
+    toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
+    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
@@ -698,13 +700,32 @@ const PropertyDashboard = ({
           </div>
         )}
 
+        {/* Photos */}
+        {Array.isArray(s.photos) && s.photos.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+              <Image className="w-3.5 h-3.5" />Photos ({s.photos.length})
+            </p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {(s.photos as any[]).map((photo, idx) => {
+                const url = typeof photo === "string" ? photo : photo?.url || photo?.src;
+                if (!url) return null;
+                return (
+                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border/60 hover:border-primary/50 transition-all hover:shadow-md">
+                    <img src={url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         {!isProjected && (
           <div className="flex gap-1.5 pt-1 border-t border-border/40 mt-2">
-            <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
-              <FileText className="w-3 h-3 mr-1" />Fill Out Full Report
+            <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
+              <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
           </div>
         )}
 
@@ -878,10 +899,35 @@ const PropertyDashboard = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      {/* ══════════ LEFT COLUMN ══════════ */}
-      <div className="lg:col-span-3 space-y-4">
-        {/* Property Map */}
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+        <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <MapPin className="w-5 h-5" />
+          <span>Map &amp; Preferences</span>
+        </TabsTrigger>
+        <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Calendar className="w-5 h-5" />
+          <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Bug className="w-5 h-5" />
+          <span>Request Work Order</span>
+        </TabsTrigger>
+        <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <ClipboardList className="w-5 h-5" />
+          <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{allUpcoming.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <FileDown className="w-5 h-5" />
+          <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+        </TabsTrigger>
+      </TabsList>
+
+      {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
+      <TabsContent value="map" className="mt-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-4">
+            {/* Property Map - bigger now */}
         <Card className="overflow-hidden shadow-sm">
           <div className="aspect-[3/4] relative bg-muted">
             {mapUrl ? (
@@ -906,7 +952,8 @@ const PropertyDashboard = ({
             </label>
           </div>
         </Card>
-
+          </div>
+          <div className="lg:col-span-1 space-y-4">
         {/* Equipment */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
@@ -1062,10 +1109,13 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
         )}
-      </div>
+          </div>
+        </div>
+      </TabsContent>
 
-      {/* ══════════ MIDDLE COLUMN: Past Services ══════════ */}
-      <div className="lg:col-span-5 space-y-3">
+      {/* ══════════ TAB 2: PREVIOUS SERVICES ══════════ */}
+      <TabsContent value="past" className="mt-0">
+        <div className="space-y-3 max-w-5xl mx-auto">
         <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/40">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
@@ -1158,21 +1208,48 @@ const PropertyDashboard = ({
           )
         )}
       </div>
+      </TabsContent>
 
-      {/* ══════════ RIGHT COLUMN ══════════ */}
-      <div className="lg:col-span-4 space-y-4">
+      {/* ══════════ TAB 3: REQUEST WORK ORDER ══════════ */}
+      <TabsContent value="request" className="mt-0">
+        <div className="max-w-2xl mx-auto space-y-4">
         {/* Work Order Form */}
         <Card className="shadow-md border-primary/30 bg-gradient-to-b from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-2 py-3.5 border-b border-primary/20">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" />
+          <CardHeader className="pb-3 py-4 border-b border-primary/20">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <ClipboardList className="w-6 h-6 text-primary" />
               Request Work Order
             </CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-1">
               Submit a service request for a specific unit or the entire facility.
             </p>
           </CardHeader>
-          <CardContent className="space-y-2.5 pt-3">
+          <CardContent className="space-y-3.5 pt-4">
+            {/* Request type toggle */}
+            <div>
+              <Label className="text-sm font-semibold mb-1.5 block">Request Type *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
+                  { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
+                ] as const).map(opt => {
+                  const Icon = opt.icon;
+                  const active = workOrder.request_type === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setWorkOrder(wo => ({ ...wo, request_type: opt.v }))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]" : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"}`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-semibold">{opt.label}</span>
+                      <span className={`text-[10px] ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div>
               <Label className="text-xs font-semibold">Unit or Area *</Label>
               <Select value={workOrder.unit_number} onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v }))}>
@@ -1219,8 +1296,8 @@ const PropertyDashboard = ({
               <Textarea className="text-xs min-h-[40px] mt-1" placeholder="Describe the issue..." value={workOrder.comments}
                 onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} />
             </div>
-            <Button size="sm" className="w-full h-9 text-xs font-semibold" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
-              <Send className="w-3.5 h-3.5 mr-1" />Submit Work Order
+            <Button size="lg" className="w-full h-11 text-sm font-semibold" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
+              <Send className="w-4 h-4 mr-1.5" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>
@@ -1239,7 +1316,12 @@ const PropertyDashboard = ({
           }}>
           <ExternalLink className="w-4 h-4 mr-1.5" />Copy Tenant Request Link
         </Button>
+        </div>
+      </TabsContent>
 
+      {/* ══════════ TAB 4: UPCOMING SERVICES ══════════ */}
+      <TabsContent value="upcoming" className="mt-0">
+        <div className="space-y-4 max-w-5xl mx-auto">
         {/* Quick Add Service */}
         {!showQuickAdd ? (
           <div className="flex gap-1.5">
@@ -1315,16 +1397,23 @@ const PropertyDashboard = ({
             })}
           </div>
         )}
+        </div>
+      </TabsContent>
 
-        {/* Prep Sheets */}
-        {prepSheets.length > 0 && (
-          <div className="space-y-2 mt-4">
-            <div className="border-b-2 border-primary/40 pb-2.5">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <FileDown className="w-5 h-5 text-secondary" />Prep Sheets
-                <Badge variant="secondary" className="text-[11px] ml-1">{prepSheets.length}</Badge>
-              </h3>
-            </div>
+      {/* ══════════ TAB 5: PREP SHEETS ══════════ */}
+      <TabsContent value="prep" className="mt-0">
+        <div className="space-y-2 max-w-4xl mx-auto">
+          <div className="border-b-2 border-primary/40 pb-3 mb-3">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
+              <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">Easy-to-send instructions for customers before treatment.</p>
+          </div>
+          {prepSheets.length === 0 ? (
+            <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
+          ) : (
+          <div className="space-y-2">
             {prepSheets.map(ps => (
               <Card key={ps.id} className="shadow-sm hover:border-primary/30 transition-all">
                 <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPrepSheet(expandedPrepSheet === ps.id ? null : ps.id)}>
@@ -1336,13 +1425,13 @@ const PropertyDashboard = ({
                 </button>
                 {expandedPrepSheet === ps.id && ps.description && (
                   <div className="px-3 pb-3 border-t border-border/60 pt-3 space-y-3">
-                    <div className="bg-muted/30 rounded-lg p-3 max-h-[300px] overflow-y-auto">
+                    <div className="bg-muted/30 rounded-lg p-3 max-h-[400px] overflow-y-auto">
                       <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
                     </div>
                     <div className="flex gap-1.5">
                       <Button
                         size="sm"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-9 text-sm"
                         onClick={async () => {
                           if (ps.description) {
                             await navigator.clipboard.writeText(ps.description);
@@ -1361,7 +1450,7 @@ const PropertyDashboard = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-9 text-sm"
                         onClick={() => {
                           if (ps.description) {
                             const subject = encodeURIComponent(ps.title);
@@ -1378,9 +1467,10 @@ const PropertyDashboard = ({
               </Card>
             ))}
           </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 
