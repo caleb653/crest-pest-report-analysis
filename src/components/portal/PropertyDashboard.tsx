@@ -302,16 +302,42 @@ const PropertyDashboard = ({
 
   const initCompletionData = (serviceId: string, displayUnits: string[]) => {
     if (completionData[serviceId]) return; // already initialized
+    // Build lookup from follow-up + work order context (only for the first upcoming service)
+    const followUpMap = new Map<string, { pest_activity?: string; findings?: string; notes?: string }>();
+    followUpDetailsFromPast.forEach(u => {
+      followUpMap.set(String(u.unit_number), { pest_activity: u.pest_activity, findings: u.findings, notes: u.notes });
+    });
+    const workOrderMap = new Map<string, { pest_type?: string; description?: string; location_type?: string }>();
+    pendingRequests.forEach(r => {
+      if (r.unit_number) {
+        workOrderMap.set(String(r.unit_number), { pest_type: r.pest_type, description: r.description, location_type: r.location_type });
+      }
+    });
+
     const rows = displayUnits.length > 0
-      ? displayUnits.map(u => ({
-          unit_number: u,
-          findings: followUpFromPast.includes(u) ? "Follow-up service" : "",
-          pest_activity: "None",
-          products_used: "",
-          status: "Treated",
-          notes: "",
-        }))
-      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }];
+      ? displayUnits.map(u => {
+          const fu = followUpMap.get(u);
+          const wo = workOrderMap.get(u);
+          const sourceTags: string[] = [];
+          if (fu) sourceTags.push("follow-up");
+          if (wo) sourceTags.push("work-order");
+          // Pre-fill findings with combined context so technician sees the "why"
+          const findingsParts: string[] = [];
+          if (fu?.findings) findingsParts.push(`Last visit: ${fu.findings}`);
+          if (fu?.notes && fu.notes !== fu.findings) findingsParts.push(fu.notes);
+          if (wo?.description) findingsParts.push(`Request: ${wo.description}`);
+          return {
+            unit_number: u,
+            findings: findingsParts.join(" • "),
+            pest_activity: fu?.pest_activity || "None",
+            products_used: "",
+            status: "Treated",
+            notes: "",
+            source: sourceTags.join("+"), // "follow-up", "work-order", or "follow-up+work-order"
+            source_pest: wo?.pest_type || "",
+          };
+        })
+      : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
