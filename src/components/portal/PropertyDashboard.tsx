@@ -124,7 +124,10 @@ const PropertyDashboard = ({
   const [completionData, setCompletionData] = useState<Record<string, {
     unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
     summary: string; findings: string; notes: string; technician: string;
+    time_in: string; time_out: string;
+    photos: { url: string; uploading?: boolean }[];
   }>>({});
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
@@ -311,7 +314,7 @@ const PropertyDashboard = ({
       : [{ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }];
     setCompletionData(prev => ({
       ...prev,
-      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "" },
+      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
     }));
   };
 
@@ -320,14 +323,30 @@ const PropertyDashboard = ({
     const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
     const flagged = unitRows.filter(r => r.status === "Needs Follow-up").map(r => r.unit_number);
 
+    // Build service_time string from time_in / time_out if provided
+    const serviceTime = data?.time_in && data?.time_out
+      ? `${data.time_in} - ${data.time_out}`
+      : data?.time_in || data?.time_out || null;
+
+    // Aggregate products_used from unit rows for the products array
+    const aggregatedProducts = Array.from(new Set(
+      unitRows.flatMap(r => (r.products_used || "").split(",").map(p => p.trim()).filter(Boolean))
+    ));
+
+    // Persist photo URLs (strip uploading flags)
+    const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
+      service_time: serviceTime,
       unit_details: unitRows,
       summary: data?.summary || null,
       findings: data?.findings || null,
       notes: data?.notes || null,
       technician: data?.technician || null,
+      products_used: aggregatedProducts,
+      photos: photosToSave,
     }).eq("id", serviceId);
 
     // Auto-schedule follow-ups to next service
@@ -353,8 +372,47 @@ const PropertyDashboard = ({
     setCompletionData(prev => { const n = { ...prev }; delete n[serviceId]; return n; });
     setCompletingServiceId(null);
     setFollowUpUnits([]);
-    toast({ title: "Service completed" });
+    toast({ title: "Service completed", description: "Moved to Previous Services." });
+    setActiveTab("past");
     onRefresh();
+  };
+
+  // ─── Photo upload for completion form ───
+  const uploadCompletionPhoto = async (serviceId: string, file: File) => {
+    setUploadingPhotoFor(serviceId);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      setCompletionData(prev => ({
+        ...prev,
+        [serviceId]: {
+          ...prev[serviceId],
+          photos: [...(prev[serviceId]?.photos || []), { url: pub.publicUrl }],
+        },
+      }));
+      toast({ title: "Photo uploaded", duration: 1500 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingPhotoFor(null);
+    }
+  };
+
+  const removeCompletionPhoto = (serviceId: string, idx: number) => {
+    setCompletionData(prev => ({
+      ...prev,
+      [serviceId]: {
+        ...prev[serviceId],
+        photos: prev[serviceId].photos.filter((_, i) => i !== idx),
+      },
+    }));
   };
 
   const submitWorkOrder = async () => {
@@ -762,11 +820,23 @@ const PropertyDashboard = ({
                     Complete Service Report
                   </p>
 
-                  {/* Technician */}
-                  <div>
-                    <Label className="text-[11px] font-semibold">Technician</Label>
-                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                  {/* Technician + Time In/Out */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-[11px] font-semibold">Technician</Label>
+                      <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Time In</Label>
+                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_in}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_in: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Time Out</Label>
+                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
+                    </div>
                   </div>
 
                   {/* Unit-by-unit table */}
@@ -832,7 +902,7 @@ const PropertyDashboard = ({
                     </button>
                   </div>
 
-                  {/* Summary & Notes */}
+                  {/* Summary, Findings & Notes */}
                   <div className="grid grid-cols-1 gap-2">
                     <div>
                       <Label className="text-[11px] font-semibold">Summary</Label>
@@ -840,10 +910,51 @@ const PropertyDashboard = ({
                         onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
                     </div>
                     <div>
+                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
+                      <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
+                    </div>
+                    <div>
                       <Label className="text-[11px] font-semibold">Notes</Label>
                       <Textarea className="text-xs min-h-[35px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
                         onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
                     </div>
+                  </div>
+
+                  {/* Photos uploader */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <Label className="text-[11px] font-semibold flex items-center gap-1">
+                        <Image className="w-3.5 h-3.5" />
+                        Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
+                      </Label>
+                      <label className="cursor-pointer">
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
+                          <Plus className="w-3 h-3" />
+                          {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
+                        </span>
+                        <input type="file" accept="image/*" capture="environment" className="hidden"
+                          disabled={uploadingPhotoFor === s.id}
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadCompletionPhoto(s.id, f);
+                            (e.target as HTMLInputElement).value = "";
+                          }} />
+                      </label>
+                    </div>
+                    {cd.photos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {cd.photos.map((p, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
+                            <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => removeCompletionPhoto(s.id, idx)}
+                              className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Follow-up warning */}
@@ -903,7 +1014,7 @@ const PropertyDashboard = ({
       <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
-          <span>Map &amp; Preferences</span>
+          <span>Site Map and Plan</span>
         </TabsTrigger>
         <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Calendar className="w-5 h-5" />
