@@ -972,27 +972,36 @@ const PropertyDashboard = ({
 
                 {/* Photos uploader */}
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <Label className="text-[11px] font-semibold flex items-center gap-1">
-                      <Image className="w-3.5 h-3.5" />
-                      Photos {cd.photos.length > 0 && <span className="text-muted-foreground">({cd.photos.length})</span>}
-                    </Label>
-                    <label className="cursor-pointer">
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border border-border bg-background hover:bg-muted transition-colors">
-                        <Plus className="w-3 h-3" />
-                        {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
-                      </span>
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        disabled={uploadingPhotoFor === s.id}
-                        onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) uploadCompletionPhoto(s.id, f);
-                          (e.target as HTMLInputElement).value = "";
-                        }} />
-                    </label>
-                  </div>
+                  <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
+                    <Image className="w-4 h-4" />
+                    Service Photos {cd.photos.length > 0 && <span className="text-muted-foreground font-normal">({cd.photos.length})</span>}
+                  </Label>
+                  <label className="cursor-pointer block">
+                    <div className={`w-full border-2 border-dashed rounded-xl py-6 px-4 flex flex-col items-center justify-center gap-2 transition-all ${uploadingPhotoFor === s.id ? "bg-muted border-primary/40" : "border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/50"}`}>
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        {uploadingPhotoFor === s.id ? (
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Plus className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-foreground">
+                          {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Tap to take a photo or upload from gallery</p>
+                      </div>
+                    </div>
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      disabled={uploadingPhotoFor === s.id}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadCompletionPhoto(s.id, f);
+                        (e.target as HTMLInputElement).value = "";
+                      }} />
+                  </label>
                   {cd.photos.length > 0 && (
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-4 gap-2 mt-2">
                       {cd.photos.map((p, idx) => (
                         <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
                           <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
