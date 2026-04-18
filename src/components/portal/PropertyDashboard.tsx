@@ -665,7 +665,7 @@ const PropertyDashboard = ({
         {!isProjected && (
           <div className="flex gap-1.5 pt-1 border-t border-border/40 mt-2">
             <Button variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => onOpenServiceReport(s)}>
-              <FileText className="w-3 h-3 mr-1" />Full Report
+              <FileText className="w-3 h-3 mr-1" />Fill Out Full Report
             </Button>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onDeleteService(s.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
           </div>
