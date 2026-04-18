@@ -142,7 +142,7 @@ const PropertyDashboard = ({
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
   // Inline completion form data
   const [completionData, setCompletionData] = useState<Record<string, {
-    unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: string[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
