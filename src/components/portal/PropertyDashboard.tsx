@@ -323,14 +323,30 @@ const PropertyDashboard = ({
     const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
     const flagged = unitRows.filter(r => r.status === "Needs Follow-up").map(r => r.unit_number);
 
+    // Build service_time string from time_in / time_out if provided
+    const serviceTime = data?.time_in && data?.time_out
+      ? `${data.time_in} - ${data.time_out}`
+      : data?.time_in || data?.time_out || null;
+
+    // Aggregate products_used from unit rows for the products array
+    const aggregatedProducts = Array.from(new Set(
+      unitRows.flatMap(r => (r.products_used || "").split(",").map(p => p.trim()).filter(Boolean))
+    ));
+
+    // Persist photo URLs (strip uploading flags)
+    const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
+      service_time: serviceTime,
       unit_details: unitRows,
       summary: data?.summary || null,
       findings: data?.findings || null,
       notes: data?.notes || null,
       technician: data?.technician || null,
+      products_used: aggregatedProducts,
+      photos: photosToSave,
     }).eq("id", serviceId);
 
     // Auto-schedule follow-ups to next service
@@ -356,8 +372,47 @@ const PropertyDashboard = ({
     setCompletionData(prev => { const n = { ...prev }; delete n[serviceId]; return n; });
     setCompletingServiceId(null);
     setFollowUpUnits([]);
-    toast({ title: "Service completed" });
+    toast({ title: "Service completed", description: "Moved to Previous Services." });
+    setActiveTab("past");
     onRefresh();
+  };
+
+  // ─── Photo upload for completion form ───
+  const uploadCompletionPhoto = async (serviceId: string, file: File) => {
+    setUploadingPhotoFor(serviceId);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      setCompletionData(prev => ({
+        ...prev,
+        [serviceId]: {
+          ...prev[serviceId],
+          photos: [...(prev[serviceId]?.photos || []), { url: pub.publicUrl }],
+        },
+      }));
+      toast({ title: "Photo uploaded", duration: 1500 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingPhotoFor(null);
+    }
+  };
+
+  const removeCompletionPhoto = (serviceId: string, idx: number) => {
+    setCompletionData(prev => ({
+      ...prev,
+      [serviceId]: {
+        ...prev[serviceId],
+        photos: prev[serviceId].photos.filter((_, i) => i !== idx),
+      },
+    }));
   };
 
   const submitWorkOrder = async () => {
