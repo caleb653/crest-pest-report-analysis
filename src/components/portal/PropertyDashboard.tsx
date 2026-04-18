@@ -795,20 +795,42 @@ const PropertyDashboard = ({
                     <table className="w-full text-[11px]">
                       <thead className="bg-muted">
                         <tr>
-                          <th className="text-left px-2 py-1 font-semibold w-[55px]">Unit</th>
-                          <th className="text-left px-2 py-1 font-semibold">Findings</th>
-                          <th className="text-left px-2 py-1 font-semibold w-[80px]">Activity</th>
-                          <th className="text-left px-2 py-1 font-semibold">Products</th>
-                          <th className="text-left px-2 py-1 font-semibold w-[100px]">Status</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[55px]">Unit</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Source</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[80px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[110px]">Status</th>
                           <th className="w-[24px]"></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {cd.unitRows.map((row, idx) => (
-                          <tr key={idx} className={`border-t border-border/40 ${followUpFromPast.includes(row.unit_number) ? "bg-orange-50" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
-                            <td className="px-2 py-1">
-                              <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
+                        {cd.unitRows.map((row: any, idx: number) => {
+                          const isFollowUp = row.source?.includes("follow-up");
+                          const isWorkOrder = row.source?.includes("work-order");
+                          return (
+                          <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
+                            <td className="px-2 py-1.5">
+                              <Input className="h-7 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent font-semibold"
                                 value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <div className="flex flex-col gap-0.5">
+                                {isFollowUp && (
+                                  <Badge variant="outline" className="text-[9px] h-4 border-orange-300 text-orange-700 bg-orange-50 px-1.5 w-fit">
+                                    <Flag className="w-2.5 h-2.5 mr-0.5" />Follow-up
+                                  </Badge>
+                                )}
+                                {isWorkOrder && (
+                                  <Badge variant="outline" className="text-[9px] h-4 border-primary/40 text-primary px-1.5 w-fit">
+                                    <ClipboardList className="w-2.5 h-2.5 mr-0.5" />
+                                    Work Order{row.source_pest ? ` · ${row.source_pest}` : ""}
+                                  </Badge>
+                                )}
+                                {!isFollowUp && !isWorkOrder && (
+                                  <span className="text-[10px] text-muted-foreground">Routine</span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-2 py-1">
                               <Input className="h-6 text-[11px] px-1 border-transparent hover:border-border focus:border-primary bg-transparent"
