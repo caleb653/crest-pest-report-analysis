@@ -1036,11 +1036,43 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="lg:col-span-2 space-y-4">
-            {/* Property Map - bigger now */}
-        <Card className="overflow-hidden shadow-sm">
-          <div className="aspect-[3/4] relative bg-muted">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="space-y-4">
+            {/* Property Map - sized down with paste support */}
+        <Card
+          className="overflow-hidden shadow-sm"
+          onPaste={async (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of Array.from(items)) {
+              if (item.type.startsWith("image/")) {
+                const file = item.getAsFile();
+                if (file) {
+                  const renamed = new File([file], `pasted-map-${Date.now()}.png`, { type: file.type });
+                  onUpdatePropertyImage(property.id, renamed);
+                  toast({ title: "Pasted image uploading...", duration: 1500 });
+                  e.preventDefault();
+                  break;
+                }
+              }
+            }
+          }}
+          tabIndex={0}
+        >
+          <div
+            className="relative bg-muted max-w-[520px] mx-auto"
+            style={{ aspectRatio: "3 / 4" }}
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const file = e.dataTransfer?.files?.[0];
+              if (file && file.type.startsWith("image/")) {
+                onUpdatePropertyImage(property.id, file);
+                toast({ title: "Dropped image uploading...", duration: 1500 });
+              }
+            }}
+          >
             {mapUrl ? (
               property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
@@ -1048,23 +1080,25 @@ const PropertyDashboard = ({
                 <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
               )
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Image className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-xs">No property image</p>
-                </div>
+              <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 p-4 text-center">
+                <Image className="w-8 h-8 opacity-40" />
+                <p className="text-xs">No property image</p>
+                <p className="text-[10px] opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
               </div>
             )}
-            <label className="absolute bottom-2 right-2 bg-background/80 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1">
+            <label className="absolute bottom-2 right-2 bg-background/90 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1 shadow-sm border">
               <Image className="w-3.5 h-3.5" />
               {uploadingPropertyImage ? "Uploading..." : mapUrl ? "Change" : "Upload"}
               <input type="file" accept="image/*" className="hidden" disabled={uploadingPropertyImage}
                 onChange={e => { const f = e.target.files?.[0]; if (f) onUpdatePropertyImage(property.id, f); }} />
             </label>
           </div>
+          <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
+            Tip: paste a screenshot (⌘/Ctrl + V) or drag &amp; drop an image to replace the site map
+          </div>
         </Card>
           </div>
-          <div className="lg:col-span-1 space-y-4">
+          <div className="space-y-4">
         {/* Equipment */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
