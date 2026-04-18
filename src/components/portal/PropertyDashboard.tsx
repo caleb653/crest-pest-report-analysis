@@ -124,7 +124,10 @@ const PropertyDashboard = ({
   const [completionData, setCompletionData] = useState<Record<string, {
     unitRows: { unit_number: string; findings: string; pest_activity: string; products_used: string; status: string; notes: string }[];
     summary: string; findings: string; notes: string; technician: string;
+    time_in: string; time_out: string;
+    photos: { url: string; uploading?: boolean }[];
   }>>({});
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
