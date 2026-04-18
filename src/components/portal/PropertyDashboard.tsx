@@ -221,7 +221,7 @@ const PropertyDashboard = ({
 
   // Extract follow-up units (with pest details) from most recent past service
   const followUpDetailsFromPast = (() => {
-    if (pastServices.length === 0) return [] as Array<{ unit_number: string; pest_activity?: string; findings?: string; notes?: string }>;
+    if (pastServices.length === 0) return [] as Array<{ unit_number: string; pest_activity?: string; findings?: string; notes?: string; target_pest?: string }>;
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
@@ -231,6 +231,7 @@ const PropertyDashboard = ({
         pest_activity: u.pest_activity || "",
         findings: u.findings || "",
         notes: u.notes || "",
+        target_pest: u.target_pest || "",
       }));
   })();
   const followUpFromPast = followUpDetailsFromPast.map(u => u.unit_number);
@@ -324,9 +325,9 @@ const PropertyDashboard = ({
   const initCompletionData = (serviceId: string, displayUnits: string[]) => {
     if (completionData[serviceId]) return; // already initialized
     // Build lookup from follow-up + work order context (only for the first upcoming service)
-    const followUpMap = new Map<string, { pest_activity?: string; findings?: string; notes?: string }>();
+    const followUpMap = new Map<string, { pest_activity?: string; findings?: string; notes?: string; target_pest?: string }>();
     followUpDetailsFromPast.forEach(u => {
-      followUpMap.set(String(u.unit_number), { pest_activity: u.pest_activity, findings: u.findings, notes: u.notes });
+      followUpMap.set(String(u.unit_number), { pest_activity: u.pest_activity, findings: u.findings, notes: u.notes, target_pest: u.target_pest });
     });
     const workOrderMap = new Map<string, { pest_type?: string; description?: string; location_type?: string }>();
     pendingRequests.forEach(r => {
@@ -341,8 +342,9 @@ const PropertyDashboard = ({
           const wo = workOrderMap.get(u);
           // Source: follow-up wins if present, otherwise default to new work order
           const source = fu ? "follow-up" : "new-work-order";
-          // Findings/Context = the pest type / nature of the issue
-          const targetPest = wo?.pest_type || fu?.pest_activity || "";
+          // Target Pest: carry forward from prior service's recorded target_pest
+          // for follow-ups; for new work orders use the requested pest_type.
+          const targetPest = fu?.target_pest || wo?.pest_type || fu?.pest_activity || "";
           const contextParts: string[] = [];
           if (wo?.description) contextParts.push(wo.description);
           else if (fu?.findings) contextParts.push(fu.findings);

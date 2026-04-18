@@ -216,9 +216,18 @@ const PortalAdmin = () => {
   const updatePropertyImage = async (propId: string, file: File) => {
     const url = await uploadPropertyImage(file);
     if (url) {
-      await supabase.from("portal_properties").update({ image_url: url }).eq("id", propId);
+      // Site Map tab: write to map_image_url so it takes precedence over the
+      // property photo and shows immediately. Keep image_url as a fallback.
+      const { error } = await supabase.from("portal_properties")
+        .update({ map_image_url: url, image_url: url })
+        .eq("id", propId);
+      if (error) {
+        console.error("Update map image failed:", error);
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        return;
+      }
       loadAll();
-      toast({ title: "Property image updated" });
+      toast({ title: "Site map updated" });
     }
   };
 
