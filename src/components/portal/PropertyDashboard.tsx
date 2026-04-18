@@ -376,7 +376,7 @@ const PropertyDashboard = ({
 
     // Aggregate products_used from unit rows for the products array
     const aggregatedProducts = Array.from(new Set(
-      unitRows.flatMap(r => (r.products_used || "").split(",").map(p => p.trim()).filter(Boolean))
+      unitRows.flatMap(r => Array.isArray(r.products_used) ? r.products_used : [])
     ));
 
     // Persist photo URLs (strip uploading flags)
