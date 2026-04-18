@@ -1216,16 +1216,41 @@ const PropertyDashboard = ({
         <div className="max-w-2xl mx-auto space-y-4">
         {/* Work Order Form */}
         <Card className="shadow-md border-primary/30 bg-gradient-to-b from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-2 py-3.5 border-b border-primary/20">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" />
+          <CardHeader className="pb-3 py-4 border-b border-primary/20">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <ClipboardList className="w-6 h-6 text-primary" />
               Request Work Order
             </CardTitle>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-1">
               Submit a service request for a specific unit or the entire facility.
             </p>
           </CardHeader>
-          <CardContent className="space-y-2.5 pt-3">
+          <CardContent className="space-y-3.5 pt-4">
+            {/* Request type toggle */}
+            <div>
+              <Label className="text-sm font-semibold mb-1.5 block">Request Type *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
+                  { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
+                ] as const).map(opt => {
+                  const Icon = opt.icon;
+                  const active = workOrder.request_type === opt.v;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setWorkOrder(wo => ({ ...wo, request_type: opt.v }))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]" : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"}`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm font-semibold">{opt.label}</span>
+                      <span className={`text-[10px] ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div>
               <Label className="text-xs font-semibold">Unit or Area *</Label>
               <Select value={workOrder.unit_number} onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v }))}>
