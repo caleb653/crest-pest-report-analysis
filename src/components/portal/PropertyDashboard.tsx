@@ -745,7 +745,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "", source: "", source_pest: "" }] },
             }));
           };
           const removeRow = (idx: number) => {
