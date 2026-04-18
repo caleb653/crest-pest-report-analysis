@@ -1415,12 +1415,6 @@ const PropertyDashboard = ({
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
           ) : (
           <div className="space-y-2">
-            <div className="border-b-2 border-primary/40 pb-2.5">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <FileDown className="w-5 h-5 text-secondary" />Prep Sheets
-                <Badge variant="secondary" className="text-[11px] ml-1">{prepSheets.length}</Badge>
-              </h3>
-            </div>
             {prepSheets.map(ps => (
               <Card key={ps.id} className="shadow-sm hover:border-primary/30 transition-all">
                 <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPrepSheet(expandedPrepSheet === ps.id ? null : ps.id)}>
@@ -1432,13 +1426,13 @@ const PropertyDashboard = ({
                 </button>
                 {expandedPrepSheet === ps.id && ps.description && (
                   <div className="px-3 pb-3 border-t border-border/60 pt-3 space-y-3">
-                    <div className="bg-muted/30 rounded-lg p-3 max-h-[300px] overflow-y-auto">
+                    <div className="bg-muted/30 rounded-lg p-3 max-h-[400px] overflow-y-auto">
                       <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
                     </div>
                     <div className="flex gap-1.5">
                       <Button
                         size="sm"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-9 text-sm"
                         onClick={async () => {
                           if (ps.description) {
                             await navigator.clipboard.writeText(ps.description);
@@ -1457,7 +1451,7 @@ const PropertyDashboard = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-9 text-sm"
                         onClick={() => {
                           if (ps.description) {
                             const subject = encodeURIComponent(ps.title);
@@ -1474,9 +1468,10 @@ const PropertyDashboard = ({
               </Card>
             ))}
           </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 
