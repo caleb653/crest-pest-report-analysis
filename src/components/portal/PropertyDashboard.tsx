@@ -339,8 +339,8 @@ const PropertyDashboard = ({
       ? displayUnits.map(u => {
           const fu = followUpMap.get(u);
           const wo = workOrderMap.get(u);
-          // Source: prioritize work order if present, else follow-up, else routine
-          const source = wo ? "new-work-order" : fu ? "follow-up" : "";
+          // Source: follow-up wins if present, otherwise default to new work order
+          const source = fu ? "follow-up" : "new-work-order";
           // Findings/Context = the pest type / nature of the issue
           const targetPest = wo?.pest_type || fu?.pest_activity || "";
           const contextParts: string[] = [];
@@ -358,7 +358,7 @@ const PropertyDashboard = ({
             source,
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as string[], status: "To be Treated", notes: "", source: "" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as string[], status: "To be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
@@ -852,15 +852,16 @@ const PropertyDashboard = ({
                                 value={row.unit_number} onChange={e => updateRow(idx, "unit_number", e.target.value)} />
                             </td>
                             <td className="px-2 py-1.5">
-                              <Select value={row.source || "routine"}
-                                onValueChange={(v) => updateRow(idx, "source", v === "routine" ? "" : v)}>
+                              <Select value={row.source || "new-work-order"}
+                                onValueChange={(v) => updateRow(idx, "source", v)}>
                                 <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="routine">Routine</SelectItem>
-                                  <SelectItem value="follow-up">Follow-up</SelectItem>
                                   <SelectItem value="new-work-order">New Work Order</SelectItem>
+                                  <SelectItem value="follow-up">Follow-up</SelectItem>
+                                  <SelectItem value="routine">Routine</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
                             </td>
