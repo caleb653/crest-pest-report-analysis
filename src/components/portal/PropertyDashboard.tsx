@@ -820,11 +820,23 @@ const PropertyDashboard = ({
                     Complete Service Report
                   </p>
 
-                  {/* Technician */}
-                  <div>
-                    <Label className="text-[11px] font-semibold">Technician</Label>
-                    <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                  {/* Technician + Time In/Out */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-[11px] font-semibold">Technician</Label>
+                      <Input className="h-7 text-xs mt-0.5" placeholder="Technician name" value={cd.technician}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Time In</Label>
+                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_in}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_in: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Time Out</Label>
+                      <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
+                    </div>
                   </div>
 
                   {/* Unit-by-unit table */}
