@@ -193,15 +193,21 @@ const PropertyDashboard = ({
     }));
   })();
 
-  // Extract follow-up units from most recent past service
-  const followUpFromPast = (() => {
-    if (pastServices.length === 0) return [] as string[];
+  // Extract follow-up units (with pest details) from most recent past service
+  const followUpDetailsFromPast = (() => {
+    if (pastServices.length === 0) return [] as Array<{ unit_number: string; pest_activity?: string; findings?: string; notes?: string }>;
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
       .filter((u: any) => u.status === "Needs Follow-up" && u.unit_number)
-      .map((u: any) => u.unit_number as string);
+      .map((u: any) => ({
+        unit_number: String(u.unit_number),
+        pest_activity: u.pest_activity || "",
+        findings: u.findings || "",
+        notes: u.notes || "",
+      }));
   })();
+  const followUpFromPast = followUpDetailsFromPast.map(u => u.unit_number);
 
   // Also include all units from most recent service as default for next
   const unitsFromMostRecent = (() => {
