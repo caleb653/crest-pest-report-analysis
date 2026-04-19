@@ -841,6 +841,28 @@ const PropertyDashboard = ({
                   </div>
                 </div>
 
+                {/* Summary, Findings & Notes — grouped, above the units table */}
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Service Overview</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-[11px] font-semibold">Summary</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Service summary..." value={cd.summary}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Property-wide findings..." value={cd.findings}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Notes</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Additional notes..." value={cd.notes}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Unit-by-unit table — same format as Previous Services */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
