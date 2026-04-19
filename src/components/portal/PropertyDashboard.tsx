@@ -1483,19 +1483,19 @@ const PropertyDashboard = ({
             </div>
             <div>
               <Label className="text-xs font-semibold">Unit or Area *</Label>
-              <Select value={workOrder.unit_number} onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v }))}>
-                <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Select unit or facility" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Facility">🏢 Entire Facility</SelectItem>
-                  <SelectItem value="Common Areas">🚪 Common Areas</SelectItem>
-                  <SelectItem value="Exterior">🌳 Exterior Only</SelectItem>
-                  {allUnits.map(u => <SelectItem key={u} value={u}>Unit {u}</SelectItem>)}
-                  <SelectItem value="__custom">Other...</SelectItem>
-                </SelectContent>
-              </Select>
-              {workOrder.unit_number === "__custom" && (
-                <Input className="h-8 text-xs mt-1" placeholder="Enter unit/area" onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))} />
-              )}
+              <Input
+                className="h-8 text-xs mt-1"
+                placeholder="Type unit number or area (e.g. Unit 102, Lobby, Exterior)"
+                value={workOrder.unit_number}
+                onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
+                list="unit-suggestions"
+              />
+              <datalist id="unit-suggestions">
+                <option value="Entire Facility" />
+                <option value="Common Areas" />
+                <option value="Exterior" />
+                {allUnits.map(u => <option key={u} value={`Unit ${u}`} />)}
+              </datalist>
             </div>
             <div>
               <Label className="text-xs font-semibold">Pest Type</Label>
@@ -1519,8 +1519,32 @@ const PropertyDashboard = ({
             </div>
             <div>
               <Label className="text-xs font-semibold">Preferred Date</Label>
-              <Input type="date" className="h-8 text-xs mt-1" value={workOrder.preferred_date}
-                onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value }))} />
+              <Select
+                value={
+                  ["Next Service", "Next Few Weeks", "ASAP"].includes(workOrder.preferred_date)
+                    ? workOrder.preferred_date
+                    : workOrder.preferred_date
+                      ? "__custom"
+                      : ""
+                }
+                onValueChange={v => setWorkOrder(wo => ({ ...wo, preferred_date: v === "__custom" ? "" : v }))}
+              >
+                <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Select preferred timing" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Next Service">📅 Next Service</SelectItem>
+                  <SelectItem value="Next Few Weeks">🗓️ Next Few Weeks</SelectItem>
+                  <SelectItem value="ASAP">⚡ ASAP</SelectItem>
+                  <SelectItem value="__custom">Other (specify)...</SelectItem>
+                </SelectContent>
+              </Select>
+              {!["Next Service", "Next Few Weeks", "ASAP", ""].includes(workOrder.preferred_date) || (workOrder.preferred_date === "" && false) ? (
+                <Input
+                  className="h-8 text-xs mt-1"
+                  placeholder="Type a date or timing (e.g. Next Tuesday, Mid-May)"
+                  value={workOrder.preferred_date}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value }))}
+                />
+              ) : null}
             </div>
             <div>
               <Label className="text-xs font-semibold">Comments</Label>
