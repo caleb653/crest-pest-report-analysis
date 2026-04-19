@@ -1084,7 +1084,42 @@ const PropertyDashboard = ({
       </TabsList>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
-      <TabsContent value="map" className="mt-0">
+      <TabsContent value="map" className="mt-0 space-y-5">
+        {/* Property Plan Text Box */}
+        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-primary" />
+              Property Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <Textarea
+              placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
+              className="min-h-[120px] text-sm resize-y"
+              value={property.notes || ""}
+              onChange={async (e) => {
+                const newNotes = e.target.value;
+                // Optimistic update
+                onRefresh();
+                // Save to database
+                const { error } = await supabase
+                  .from("portal_properties")
+                  .update({ notes: newNotes })
+                  .eq("id", property.id);
+                if (error) {
+                  toast({ title: "Failed to save plan", variant: "destructive" });
+                } else {
+                  toast({ title: "Property plan saved", duration: 1500 });
+                }
+              }}
+            />
+            <p className="text-[11px] text-muted-foreground mt-2">
+              This plan will be visible to technicians and property managers
+            </p>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
             {/* Property Map - sized down with paste support */}
