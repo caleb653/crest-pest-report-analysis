@@ -689,9 +689,28 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {s.summary && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Summary</p><p className="text-xs">{s.summary}</p></div>}
-        {s.findings && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Findings</p><p className="text-xs">{s.findings}</p></div>}
-        {s.notes && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Notes</p><p className="text-xs">{s.notes}</p></div>}
+        {(s.summary || s.findings || s.notes) && (
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2.5 border border-border/40">
+            {s.summary && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
+                <p className="text-xs whitespace-pre-wrap">{s.summary}</p>
+              </div>
+            )}
+            {s.findings && (
+              <div className={s.summary ? "pt-2 border-t border-border/40" : ""}>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings</p>
+                <p className="text-xs whitespace-pre-wrap">{s.findings}</p>
+              </div>
+            )}
+            {s.notes && (
+              <div className={(s.summary || s.findings) ? "pt-2 border-t border-border/40" : ""}>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
+                <p className="text-xs whitespace-pre-wrap">{s.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {products.length > 0 && (
           <div>
@@ -819,6 +838,28 @@ const PropertyDashboard = ({
                     <Label className="text-[11px] font-semibold">Time Out</Label>
                     <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
                       onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
+                  </div>
+                </div>
+
+                {/* Summary, Findings & Notes — grouped, above the units table */}
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Service Overview</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div>
+                      <Label className="text-[11px] font-semibold">Summary</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Service summary..." value={cd.summary}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Property-wide findings..." value={cd.findings}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[11px] font-semibold">Notes</Label>
+                      <Textarea className="text-xs min-h-[40px] mt-0.5 bg-background" placeholder="Additional notes..." value={cd.notes}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
+                    </div>
                   </div>
                 </div>
 
@@ -956,24 +997,7 @@ const PropertyDashboard = ({
                   </button>
                 </div>
 
-                {/* Summary, Findings & Notes */}
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <Label className="text-[11px] font-semibold">Summary</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Service summary..." value={cd.summary}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold">Overall Findings</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold">Notes</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
-                  </div>
-                </div>
+
 
                 {/* Photos uploader */}
                 <div>
