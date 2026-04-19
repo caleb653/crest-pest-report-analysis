@@ -690,19 +690,9 @@ const PropertyDashboard = ({
         })()}
 
         {(s.summary || s.findings || s.notes) && (
-          <div className="bg-muted/30 rounded-lg p-3 space-y-2.5 border border-border/40">
-            {s.summary && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
-                <p className="text-xs whitespace-pre-wrap">{s.summary}</p>
-              </div>
-            )}
-            {(s.findings || s.notes) && (
-              <div className={s.summary ? "pt-2 border-t border-border/40" : ""}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings &amp; Notes</p>
-                <p className="text-xs whitespace-pre-wrap">{[s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
-              </div>
-            )}
+          <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
+            <p className="text-xs whitespace-pre-wrap">{[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
           </div>
         )}
 
@@ -835,21 +825,11 @@ const PropertyDashboard = ({
                   </div>
                 </div>
 
-                {/* Summary & Findings — combined into one box, above the units table */}
+                {/* Summary — single large box, above the units table */}
                 <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Service Overview</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-[11px] font-semibold">Summary</Label>
-                      <Textarea className="text-xs min-h-[80px] mt-0.5 bg-background resize-none" placeholder="Service summary..." value={cd.summary}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Findings &amp; Notes</Label>
-                      <Textarea className="text-xs min-h-[80px] mt-0.5 bg-background resize-none" placeholder="Property-wide findings & additional notes..." value={cd.findings}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value, notes: "" } }))} />
-                    </div>
-                  </div>
+                  <Label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Summary</Label>
+                  <Textarea className="text-xs min-h-[120px] mt-1.5 bg-background resize-y" placeholder="Service summary..." value={cd.summary}
+                    onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value, findings: "", notes: "" } }))} />
                 </div>
 
                 {/* Unit-by-unit table — same format as Previous Services */}
