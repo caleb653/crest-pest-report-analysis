@@ -250,7 +250,9 @@ const PropertyDashboard = ({
   ].sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   useEffect(() => {
-    if (pastServices.length > 0) setExpandedPastId(pastServices[0].id);
+    // Past services: all collapsed by default
+    setExpandedPastId(null);
+    // Upcoming services: expand first by default
     if (allUpcoming.length > 0) setExpandedUpcomingId(allUpcoming[0].id);
   }, [property.id]);
 
@@ -1369,10 +1371,10 @@ const PropertyDashboard = ({
             <div className="space-y-2">
               {pastServices.map((s, i) => {
                 const isFirst = i === 0;
-                const isExpanded = isFirst || expandedPastId === s.id;
+                const isExpanded = expandedPastId === s.id;
                 return (
-                  <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
-                    <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedPastId(isExpanded && !isFirst ? null : s.id)}>
+                  <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                    <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
@@ -1388,7 +1390,7 @@ const PropertyDashboard = ({
                           )}
                         </div>
                       </div>
-                      {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                     </button>
                     {isExpanded && renderServiceDetails(s, false, false)}
                   </Card>
