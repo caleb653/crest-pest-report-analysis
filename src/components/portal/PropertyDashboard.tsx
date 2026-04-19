@@ -250,7 +250,9 @@ const PropertyDashboard = ({
   ].sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   useEffect(() => {
-    if (pastServices.length > 0) setExpandedPastId(pastServices[0].id);
+    // Past services: all collapsed by default
+    setExpandedPastId(null);
+    // Upcoming services: expand first by default
     if (allUpcoming.length > 0) setExpandedUpcomingId(allUpcoming[0].id);
   }, [property.id]);
 
