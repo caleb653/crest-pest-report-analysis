@@ -703,12 +703,6 @@ const PropertyDashboard = ({
                 <p className="text-xs whitespace-pre-wrap">{[s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
               </div>
             )}
-            {s.notes && (
-              <div className={(s.summary || s.findings) ? "pt-2 border-t border-border/40" : ""}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
-                <p className="text-xs whitespace-pre-wrap">{s.notes}</p>
-              </div>
-            )}
           </div>
         )}
 
