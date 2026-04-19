@@ -997,24 +997,7 @@ const PropertyDashboard = ({
                   </button>
                 </div>
 
-                {/* Summary, Findings & Notes */}
-                <div className="grid grid-cols-1 gap-2">
-                  <div>
-                    <Label className="text-[11px] font-semibold">Summary</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Service summary..." value={cd.summary}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold">Overall Findings</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Property-wide findings..." value={cd.findings}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-semibold">Notes</Label>
-                    <Textarea className="text-xs min-h-[40px] mt-0.5" placeholder="Additional notes..." value={cd.notes}
-                      onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
-                  </div>
-                </div>
+
 
                 {/* Photos uploader */}
                 <div>
