@@ -1370,6 +1370,7 @@ const PropertyDashboard = ({
           ) : (
             <div className="space-y-2">
               {pastServices.map((s, i) => {
+                const isFirst = i === 0;
                 const isExpanded = expandedPastId === s.id;
                 return (
                   <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
@@ -1389,7 +1390,7 @@ const PropertyDashboard = ({
                           )}
                         </div>
                       </div>
-                      {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                     </button>
                     {isExpanded && renderServiceDetails(s, false, false)}
                   </Card>
