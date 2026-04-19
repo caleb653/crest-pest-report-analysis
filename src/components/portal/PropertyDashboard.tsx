@@ -689,9 +689,28 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {s.summary && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Summary</p><p className="text-xs">{s.summary}</p></div>}
-        {s.findings && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Findings</p><p className="text-xs">{s.findings}</p></div>}
-        {s.notes && <div className="bg-muted/30 rounded-lg p-2.5"><p className="text-xs font-semibold text-muted-foreground mb-0.5">Notes</p><p className="text-xs">{s.notes}</p></div>}
+        {(s.summary || s.findings || s.notes) && (
+          <div className="bg-muted/30 rounded-lg p-3 space-y-2.5 border border-border/40">
+            {s.summary && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
+                <p className="text-xs whitespace-pre-wrap">{s.summary}</p>
+              </div>
+            )}
+            {s.findings && (
+              <div className={s.summary ? "pt-2 border-t border-border/40" : ""}>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings</p>
+                <p className="text-xs whitespace-pre-wrap">{s.findings}</p>
+              </div>
+            )}
+            {s.notes && (
+              <div className={(s.summary || s.findings) ? "pt-2 border-t border-border/40" : ""}>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
+                <p className="text-xs whitespace-pre-wrap">{s.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {products.length > 0 && (
           <div>
