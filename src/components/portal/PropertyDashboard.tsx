@@ -690,19 +690,9 @@ const PropertyDashboard = ({
         })()}
 
         {(s.summary || s.findings || s.notes) && (
-          <div className="bg-muted/30 rounded-lg p-3 space-y-2.5 border border-border/40">
-            {s.summary && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
-                <p className="text-xs whitespace-pre-wrap">{s.summary}</p>
-              </div>
-            )}
-            {(s.findings || s.notes) && (
-              <div className={s.summary ? "pt-2 border-t border-border/40" : ""}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings &amp; Notes</p>
-                <p className="text-xs whitespace-pre-wrap">{[s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
-              </div>
-            )}
+          <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
+            <p className="text-xs whitespace-pre-wrap">{[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
           </div>
         )}
 
