@@ -697,16 +697,10 @@ const PropertyDashboard = ({
                 <p className="text-xs whitespace-pre-wrap">{s.summary}</p>
               </div>
             )}
-            {s.findings && (
+            {(s.findings || s.notes) && (
               <div className={s.summary ? "pt-2 border-t border-border/40" : ""}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings</p>
-                <p className="text-xs whitespace-pre-wrap">{s.findings}</p>
-              </div>
-            )}
-            {s.notes && (
-              <div className={(s.summary || s.findings) ? "pt-2 border-t border-border/40" : ""}>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
-                <p className="text-xs whitespace-pre-wrap">{s.notes}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings &amp; Notes</p>
+                <p className="text-xs whitespace-pre-wrap">{[s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
               </div>
             )}
           </div>
@@ -841,24 +835,19 @@ const PropertyDashboard = ({
                   </div>
                 </div>
 
-                {/* Summary, Findings & Notes — grouped side-by-side, above the units table */}
+                {/* Summary & Findings — combined into one box, above the units table */}
                 <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Service Overview</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div>
                       <Label className="text-[11px] font-semibold">Summary</Label>
-                      <Textarea className="text-xs min-h-[70px] mt-0.5 bg-background resize-none" placeholder="Service summary..." value={cd.summary}
+                      <Textarea className="text-xs min-h-[80px] mt-0.5 bg-background resize-none" placeholder="Service summary..." value={cd.summary}
                         onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value } }))} />
                     </div>
                     <div>
-                      <Label className="text-[11px] font-semibold">Overall Findings</Label>
-                      <Textarea className="text-xs min-h-[70px] mt-0.5 bg-background resize-none" placeholder="Property-wide findings..." value={cd.findings}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value } }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[11px] font-semibold">Notes</Label>
-                      <Textarea className="text-xs min-h-[70px] mt-0.5 bg-background resize-none" placeholder="Additional notes..." value={cd.notes}
-                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], notes: e.target.value } }))} />
+                      <Label className="text-[11px] font-semibold">Findings &amp; Notes</Label>
+                      <Textarea className="text-xs min-h-[80px] mt-0.5 bg-background resize-none" placeholder="Property-wide findings & additional notes..." value={cd.findings}
+                        onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], findings: e.target.value, notes: "" } }))} />
                     </div>
                   </div>
                 </div>
