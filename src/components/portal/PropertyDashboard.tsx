@@ -1521,7 +1521,7 @@ const PropertyDashboard = ({
               <Label className="text-xs font-semibold">Preferred Date</Label>
               <Select
                 value={
-                  ["Next Service", "Next Few Weeks", "ASAP"].includes(workOrder.preferred_date)
+                  ["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date)
                     ? workOrder.preferred_date
                     : workOrder.preferred_date
                       ? "__custom"
@@ -1533,11 +1533,10 @@ const PropertyDashboard = ({
                 <SelectContent>
                   <SelectItem value="Next Service">📅 Next Service</SelectItem>
                   <SelectItem value="Next Few Weeks">🗓️ Next Few Weeks</SelectItem>
-                  <SelectItem value="ASAP">⚡ ASAP</SelectItem>
                   <SelectItem value="__custom">Other (specify)...</SelectItem>
                 </SelectContent>
               </Select>
-              {!["Next Service", "Next Few Weeks", "ASAP", ""].includes(workOrder.preferred_date) || (workOrder.preferred_date === "" && false) ? (
+              {!["Next Service", "Next Few Weeks", ""].includes(workOrder.preferred_date) ? (
                 <Input
                   className="h-8 text-xs mt-1"
                   placeholder="Type a date or timing (e.g. Next Tuesday, Mid-May)"
