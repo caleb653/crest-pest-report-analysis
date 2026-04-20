@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
+import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
+import { normalizeUsageList } from "@/lib/productCatalog";
 import crestLogo from "@/assets/crest-logo.png";
 
 const PEST_TYPES = [
@@ -75,6 +77,7 @@ interface ServiceData {
   prep_notes: string | null;
   units_planned: any;
   unit_details: any;
+  products_used?: any;
   special_notes: string | null;
 }
 
