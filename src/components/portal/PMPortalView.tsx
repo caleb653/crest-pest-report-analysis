@@ -493,7 +493,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                     Service Frequency:
                   </span>
                   <Badge variant="secondary" className="text-xs">
-                    {propertyFrequency === "weekly" ? "Weekly" : "Bi-Weekly"}
+                    {FREQUENCY_LABELS[propertyFrequency]}
                   </Badge>
                 </div>
                 {property.notes ? (
