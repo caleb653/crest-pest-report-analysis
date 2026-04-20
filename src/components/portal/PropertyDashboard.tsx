@@ -408,42 +408,40 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
-  const initCompletionData = (serviceId: string, displayUnits: string[]) => {
+  const initCompletionData = (
+    serviceId: string,
+    displayUnits: string[],
+    unitContexts?: import("@/lib/upcomingUnits").UpcomingUnitContext[],
+  ) => {
     if (completionData[serviceId]) return; // already initialized
-    // Build lookup from follow-up + work order context (only for the first upcoming service)
-    const followUpMap = new Map<string, { pest_activity?: string; findings?: string; notes?: string; target_pest?: string }>();
-    followUpDetailsFromPast.forEach(u => {
-      followUpMap.set(String(u.unit_number), { pest_activity: u.pest_activity, findings: u.findings, notes: u.notes, target_pest: u.target_pest });
-    });
-    const workOrderMap = new Map<string, { pest_type?: string; description?: string; location_type?: string }>();
-    pendingRequests.forEach(r => {
-      if (r.unit_number) {
-        workOrderMap.set(String(r.unit_number), { pest_type: r.pest_type, description: r.description, location_type: r.location_type });
-      }
-    });
+
+    // Prefer the unified contexts from computeUpcomingUnits — guarantees the
+    // admin's pre-fill (source / target pest / findings) matches EXACTLY what
+    // the PM portal shows for the same upcoming service.
+    const ctxByUnit = new Map<string, import("@/lib/upcomingUnits").UpcomingUnitContext>();
+    (unitContexts || []).forEach(c => ctxByUnit.set(String(c.unit_number), c));
+
+    const sourceFromCtx = (s: string | undefined): string => {
+      if (s === "work_order") return "new-work-order";
+      if (s === "follow_up") return "follow-up";
+      if (s === "carried") return "follow-up";
+      return "new-work-order";
+    };
 
     const rows = displayUnits.length > 0
       ? displayUnits.map(u => {
-          const fu = followUpMap.get(u);
-          const wo = workOrderMap.get(u);
-          // Source: follow-up wins if present, otherwise default to new work order
-          const source = fu ? "follow-up" : "new-work-order";
-          // Target Pest: carry forward from prior service's recorded target_pest
-          // for follow-ups; for new work orders use the requested pest_type.
-          const targetPest = fu?.target_pest || wo?.pest_type || fu?.pest_activity || "";
-          const contextParts: string[] = [];
-          if (wo?.description) contextParts.push(wo.description);
-          else if (fu?.findings) contextParts.push(fu.findings);
-          if (fu?.notes && fu.notes !== fu.findings) contextParts.push(fu.notes);
+          const ctx = ctxByUnit.get(String(u));
+          const fu = ctx?.follow_up;
+          const lastDetail = ctx?.last_unit_detail;
           return {
             unit_number: u,
-            target_pest: targetPest,
-            findings: contextParts.join(" • "),
-            pest_activity: fu?.pest_activity || "None",
+            target_pest: ctx?.target_pest || "",
+            findings: ctx?.findings || "",
+            pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
             products_used: [] as ProductUsage[],
             status: "Treated",
-            notes: "",
-            source,
+            notes: ctx?.notes || "",
+            source: sourceFromCtx(ctx?.source),
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "new-work-order" }];
