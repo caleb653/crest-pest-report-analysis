@@ -468,6 +468,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 <div key={i} className="bg-muted/40 rounded-md p-2">
                   <p className="font-medium">Unit {u.unit_number || "—"}</p>
                   {u.findings && <p className="text-muted-foreground mt-0.5">Findings: {u.findings}</p>}
+                  {u.target_pest && <p className="text-muted-foreground">Target Pest: {u.target_pest}</p>}
                   {u.products_used && (
                     <p className="text-muted-foreground">
                       Products: {Array.isArray(u.products_used)
@@ -715,6 +716,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                               {unitDetail && (
                                 <div className="mt-1 text-muted-foreground space-y-0.5">
                                   {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
+                                  {unitDetail.target_pest && <p>Target Pest: {unitDetail.target_pest}</p>}
                                   {unitDetail.products_used && (
                                     <p>
                                       Products: {Array.isArray(unitDetail.products_used)
