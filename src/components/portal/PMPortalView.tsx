@@ -419,6 +419,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
       details.forEach(u => {
         if (u?.unit_number && (
+          u.status === "Treated - Follow Up" ||
           u.status === "Needs Follow-up" ||
           u.followUp === "Yes" ||
           (u.pest_activity && ["High", "Moderate"].includes(u.pest_activity))

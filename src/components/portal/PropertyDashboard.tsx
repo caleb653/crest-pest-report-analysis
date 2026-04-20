@@ -283,7 +283,7 @@ const PropertyDashboard = ({
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
-      .filter((u: any) => u.status === "Needs Follow-up" && u.unit_number)
+      .filter((u: any) => u.status === "Treated - Follow Up" && u.unit_number)
       .map((u: any) => ({
         unit_number: String(u.unit_number),
         pest_activity: u.pest_activity || "",
@@ -460,7 +460,7 @@ const PropertyDashboard = ({
   const completeService = async (serviceId: string) => {
     const data = completionData[serviceId];
     const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
-    const flagged = unitRows.filter(r => r.status === "Needs Follow-up").map(r => r.unit_number);
+    const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
@@ -910,7 +910,7 @@ const PropertyDashboard = ({
               [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
             }));
           };
-          const flaggedCount = cd.unitRows.filter(r => r.status === "Needs Follow-up").length;
+          const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
 
           return (
             <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
@@ -1027,7 +1027,7 @@ const PropertyDashboard = ({
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
-                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : row.status === "To be Treated" ? "text-muted-foreground" : ""}`}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1116,7 +1116,7 @@ const PropertyDashboard = ({
                 {flaggedCount > 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                     <p className="text-[11px] font-medium text-orange-700">
-                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Needs Follow-up" — will auto-add to next service
+                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Treated - Follow Up" — will auto-add to next service
                     </p>
                   </div>
                 )}

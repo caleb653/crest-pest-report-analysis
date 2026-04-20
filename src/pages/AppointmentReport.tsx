@@ -323,7 +323,7 @@ const AppointmentReport = () => {
             products_used: unit.products_used || "",
           };
 
-          if (unit.status === "Needs Follow-up" || unit.follow_up_recommended) {
+          if (unit.status === "Treated - Follow Up" || unit.status === "Needs Follow-up" || unit.follow_up_recommended) {
             followUps.push(unitNumber);
           }
         });

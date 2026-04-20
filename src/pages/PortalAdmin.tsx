@@ -367,7 +367,7 @@ const PortalAdmin = () => {
       const recent = pastCompleted[0];
       if (Array.isArray(recent.unit_details)) {
         (recent.unit_details as any[]).forEach((u: any) => {
-          if (u.unit_number && (u.status === "Needs Follow-up" || u.follow_up_recommended)) {
+          if (u.unit_number && (u.status === "Treated - Follow Up" || u.status === "Needs Follow-up" || u.follow_up_recommended)) {
             followUpUnits.push(u.unit_number);
           }
         });
