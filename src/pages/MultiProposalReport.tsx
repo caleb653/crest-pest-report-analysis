@@ -920,7 +920,29 @@ const Report = () => {
               setPreferredServiceTime(parsed.preferredServiceTime || "");
               setMainPointOfContact(parsed.mainPointOfContact || "");
               setContactPhone(parsed.contactPhone || "");
-              setSetupMaterials(parsed.setupMaterials || []);
+
+              // Per-option additional details (migrate legacy single value into Option A only)
+              if (parsed.proposalAdditionalDetails && typeof parsed.proposalAdditionalDetails === 'object') {
+                setProposalAdditionalDetails(parsed.proposalAdditionalDetails);
+              } else if (parsed.additionalDetails) {
+                setProposalAdditionalDetails({ 0: parsed.additionalDetails });
+              }
+
+              // Per-option setup materials (migrate legacy array into Option A only)
+              if (parsed.proposalSetupMaterials && typeof parsed.proposalSetupMaterials === 'object') {
+                setProposalSetupMaterials(parsed.proposalSetupMaterials);
+              } else if (Array.isArray(parsed.setupMaterials) && parsed.setupMaterials.length > 0) {
+                setProposalSetupMaterials({ 0: parsed.setupMaterials });
+              }
+
+              // Per-option target pests + edited flags
+              if (parsed.proposalTargetPests && typeof parsed.proposalTargetPests === 'object') {
+                setProposalTargetPests(parsed.proposalTargetPests);
+              }
+              if (parsed.proposalTargetPestsEdited && typeof parsed.proposalTargetPestsEdited === 'object') {
+                setProposalTargetPestsEdited(parsed.proposalTargetPestsEdited);
+              }
+
               setLimitationsText(parsed.limitationsText || "");
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
@@ -1064,14 +1086,20 @@ const Report = () => {
     return JSON.stringify({
       _structuredNotes: true,
       _reportFormat: "multi-proposal",
-      additionalDetails: additionalDetails || notes || "",
+      // Legacy fields kept in sync with Option A for backward compat
+      additionalDetails: (proposalAdditionalDetails[0] ?? additionalDetails) || notes || "",
+      setupMaterials: proposalSetupMaterials[0] ?? [],
+      // New per-option fields
+      proposalAdditionalDetails,
+      proposalSetupMaterials,
+      proposalTargetPests,
+      proposalTargetPestsEdited,
       propertyType,
       companyName,
       preferredServiceDay,
       preferredServiceTime,
       mainPointOfContact,
       contactPhone,
-      setupMaterials,
       limitationsText,
       recommendedProposal,
       videoUrl,
