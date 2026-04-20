@@ -1030,37 +1030,12 @@ const PropertyDashboard = ({
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="px-2 py-1.5">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="h-8 w-full text-left text-[11px] px-2 rounded border border-transparent hover:border-border bg-transparent flex items-center justify-between gap-1">
-                                    <span className="truncate">
-                                      {products.length === 0 ? <span className="text-muted-foreground">Select products...</span> : `${products.length} selected`}
-                                    </span>
-                                    <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-2 max-h-72 overflow-y-auto" align="start">
-                                  <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">Select products used</div>
-                                  {PRODUCT_OPTIONS_LIST.map(p => {
-                                    const checked = products.includes(p);
-                                    return (
-                                      <label key={p} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer text-xs hover:bg-muted ${checked ? "bg-primary/10 font-medium" : ""}`}>
-                                        <input type="checkbox" checked={checked} onChange={() => toggleProduct(idx, p)} className="h-3.5 w-3.5" />
-                                        {p}
-                                      </label>
-                                    );
-                                  })}
-                                </PopoverContent>
-                              </Popover>
-                              {products.length > 0 && (
-                                <div className="flex flex-wrap gap-0.5 mt-1">
-                                  {products.slice(0, 3).map(p => (
-                                    <Badge key={p} variant="secondary" className="text-[9px] h-4 px-1">{p}</Badge>
-                                  ))}
-                                  {products.length > 3 && <Badge variant="outline" className="text-[9px] h-4 px-1">+{products.length - 3}</Badge>}
-                                </div>
-                              )}
+                            <td className="px-2 py-1.5" colSpan={1}>
+                              <ProductUsageEditor
+                                value={products}
+                                onChange={(next) => setRowProducts(idx, next)}
+                                compact
+                              />
                             </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
