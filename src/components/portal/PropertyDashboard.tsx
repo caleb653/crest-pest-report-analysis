@@ -894,7 +894,7 @@ const PropertyDashboard = ({
         {isUpcoming && !isProjected && (() => {
           // Auto-init completion data on first render for this expanded upcoming service
           if (!completionData[s.id]) {
-            setTimeout(() => initCompletionData(s.id, displayUnits), 0);
+            setTimeout(() => initCompletionData(s.id, displayUnits, merged.unitContexts), 0);
             return (
               <div className="text-xs text-muted-foreground py-2 text-center">Loading service report form…</div>
             );
