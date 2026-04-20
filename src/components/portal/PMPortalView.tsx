@@ -885,7 +885,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                   const lastPastUnits = lastPast && Array.isArray(lastPast.units_planned)
                     ? lastPast.units_planned as string[]
                     : [];
-                  const unitsPlanned = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
+                  const baseUnits = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
+                  // For the next service, also merge in units from any open work orders
+                  const woUnits = isFirst
+                    ? Array.from(openRequestUnits).filter((u): u is string => Boolean(u))
+                    : [];
+                  const mergedSet = new Set<string>(baseUnits);
+                  woUnits.forEach(u => mergedSet.add(u));
+                  const unitsPlanned = Array.from(mergedSet)
+                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
                   const usingFallbackUnits = ownPlanned.length === 0 && lastPastUnits.length > 0;
 
                   // Carry-over notes from the most recent past service when this upcoming has none
