@@ -906,20 +906,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
           </div>
         </TabsContent>
 
-        {/* ════════ TAB 4: UPCOMING (read-only) ════════ */}
+        {/* ════════ TAB 4: UPCOMING (read-only) — bigger, richer per-unit detail ════════ */}
         <TabsContent value="upcoming" className="mt-0">
-          <div className="space-y-4 max-w-5xl mx-auto">
-            <div className="border-b-2 border-primary/40 pb-2.5">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-secondary" />Upcoming Services
-                <Badge variant="secondary" className="text-[11px] ml-1">{upcomingServices.length}</Badge>
+          <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="border-b-2 border-primary/40 pb-3">
+              <h3 className="text-xl font-bold flex items-center gap-2.5">
+                <ClipboardList className="w-7 h-7 text-secondary" />Upcoming Services
+                <Badge variant="secondary" className="text-sm ml-1">{upcomingServices.length}</Badge>
               </h3>
+              <p className="text-sm text-muted-foreground mt-1.5">
+                Detailed breakdown of every unit scheduled for the next visit — including new work orders and follow-ups carried over from last service.
+              </p>
             </div>
 
             {upcomingServices.length === 0 ? (
-              <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No upcoming services scheduled</CardContent></Card>
+              <Card className="shadow-sm"><CardContent className="p-10 text-center text-muted-foreground text-base">No upcoming services scheduled</CardContent></Card>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {upcomingServices.map((s, i) => {
                   const isFirst = i === 0;
                   const isExpanded = isFirst || expandedUpcomingId === s.id;
@@ -929,8 +932,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                     isFirstUpcoming: isFirst,
                     requests,
                     mostRecentPast: lastPast,
+                    allPastServices: pastServices,
                   });
                   const unitsPlanned = merged.units;
+                  const unitContexts = merged.unitContexts;
                   const usingFallbackUnits = merged.usingFallback;
 
                   // Carry-over notes from the most recent past service when this upcoming has none
@@ -942,25 +947,81 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                       ].filter(Boolean).join("\n\n")
                     : "";
 
-                  return (
-                    <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
-                      <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
-                            <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
-                            {!isFirst && <Badge variant="secondary" className="text-[10px]">{s.scheduling_status || "confirmed"}</Badge>}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatDate(s.service_date)}
-                            {s.technician && ` • ${s.technician}`}
-                            {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
-                          </p>
+                  // Unit breakdown counts for the header summary
+                  const woCount = unitContexts.filter(u => u.source === "work_order").length;
+                  const fuCount = unitContexts.filter(u => u.source === "follow_up").length;
+                  const carriedCount = unitContexts.filter(u => u.source === "carried" || u.source === "planned").length;
 
-                          {/* Units to be Treated — falls back to most recent past service */}
-                          {unitsPlanned.length > 0 && (
-                            <div className="mt-1.5">
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  return (
+                    <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                      <button className="w-full text-left p-5 flex items-center justify-between gap-4" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
+                            <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{s.service_type}</p>
+                            {!isFirst && <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2 flex-wrap">
+                            <Calendar className="w-4 h-4" />
+                            <span className="font-semibold text-foreground">{formatDate(s.service_date)}</span>
+                            {s.technician && <span>• {s.technician}</span>}
+                            {unitsPlanned.length > 0 && <span>• {unitsPlanned.length} unit{unitsPlanned.length === 1 ? "" : "s"}</span>}
+                          </p>
+                        </div>
+                        {!isFirst && <ChevronDown className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="px-5 pb-5 space-y-5">
+                          {/* Big summary chips */}
+                          {(woCount > 0 || fuCount > 0 || carriedCount > 0) && (
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-3 text-center">
+                                <p className="text-3xl font-bold text-orange-700 leading-none">{woCount}</p>
+                                <p className="text-xs font-semibold text-orange-900 mt-1.5 uppercase tracking-wide">New Work Order{woCount === 1 ? "" : "s"}</p>
+                              </div>
+                              <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-center">
+                                <p className="text-3xl font-bold text-amber-700 leading-none">{fuCount}</p>
+                                <p className="text-xs font-semibold text-amber-900 mt-1.5 uppercase tracking-wide">Follow-up{fuCount === 1 ? "" : "s"}</p>
+                              </div>
+                              <div className="rounded-xl border-2 border-border bg-muted/40 p-3 text-center">
+                                <p className="text-3xl font-bold text-foreground leading-none">{carriedCount}</p>
+                                <p className="text-xs font-semibold text-muted-foreground mt-1.5 uppercase tracking-wide">{usingFallbackUnits ? "Carried" : "Planned"}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* PM-editable note for the technician */}
+                          {isFirst && (
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <Label htmlFor={`pm-notes-${s.id}`} className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                                  <ClipboardList className="w-4 h-4" />
+                                  Notes for the Technician
+                                </Label>
+                                <span className="text-xs text-muted-foreground italic">
+                                  {pmNoteSaving
+                                    ? "Saving…"
+                                    : pmNoteSavedDate === s.service_date
+                                      ? "Saved"
+                                      : "Auto-saves"}
+                                </span>
+                              </div>
+                              <Textarea
+                                id={`pm-notes-${s.id}`}
+                                value={pmNoteDraft}
+                                onChange={(e) => setPmNoteDraft(e.target.value)}
+                                placeholder="Add notes for Crest about this upcoming visit (e.g., units to focus on, access codes, tenant concerns)…"
+                                className="text-sm min-h-[80px] bg-background"
+                              />
+                            </div>
+                          )}
+
+                          {/* Per-unit detailed breakdown — same data admin sees */}
+                          {unitContexts.length > 0 && (
+                            <div>
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
+                                <Bug className="w-4 h-4" />
                                 Units to be Treated
                                 {usingFallbackUnits && (
                                   <span className="ml-1 normal-case font-normal text-muted-foreground/80">
@@ -968,67 +1029,85 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                                   </span>
                                 )}
                               </p>
-                              <div className="flex flex-wrap gap-1">
-                                {unitsPlanned.map((u, idx) => {
-                                  const isWorkOrder = isFirst && openRequestUnits.has(u);
-                                  const isFollowUp = followUpUnits.has(u);
-                                  const flagged = isWorkOrder || isFollowUp;
-                                  const label = isWorkOrder ? `${u} · Work order` : isFollowUp ? `${u} · Follow-up` : u;
+                              <div className="space-y-2">
+                                {unitContexts.map((uc) => {
+                                  const isWO = uc.source === "work_order";
+                                  const isFU = uc.source === "follow_up";
+                                  const sourceBadge = isWO
+                                    ? { label: "New Work Order", cls: "bg-orange-100 text-orange-900 border-orange-300" }
+                                    : isFU
+                                      ? { label: "Follow-up", cls: "bg-amber-100 text-amber-900 border-amber-300" }
+                                      : uc.source === "carried"
+                                        ? { label: "Carried from last", cls: "bg-muted text-muted-foreground border-border" }
+                                        : { label: "Planned", cls: "bg-secondary/20 text-secondary-foreground border-secondary/40" };
+
                                   return (
-                                    <Badge
-                                      key={`${u}-${idx}`}
-                                      variant={flagged ? "default" : "outline"}
-                                      className={`text-[10px] py-0 px-1.5 font-medium ${flagged ? "bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100" : ""}`}
+                                    <div
+                                      key={uc.unit_number}
+                                      className={`rounded-lg border-2 p-3.5 ${
+                                        isWO
+                                          ? "border-orange-200 bg-orange-50/50"
+                                          : isFU
+                                            ? "border-amber-200 bg-amber-50/50"
+                                            : "border-border bg-muted/30"
+                                      }`}
                                     >
-                                      {label}
-                                    </Badge>
+                                      <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
+                                        <span className="text-base font-bold">Unit {uc.unit_number}</span>
+                                        <Badge variant="outline" className={`text-[10px] py-0.5 px-2 font-semibold ${sourceBadge.cls}`}>
+                                          {sourceBadge.label}
+                                        </Badge>
+                                        {uc.target_pest && (
+                                          <Badge variant="secondary" className="text-[10px] py-0.5 px-2">
+                                            <Bug className="w-3 h-3 mr-1" />{uc.target_pest}
+                                          </Badge>
+                                        )}
+                                        {isWO && uc.request?.location_type && (
+                                          <Badge variant="outline" className="text-[10px] py-0.5 px-2">
+                                            {uc.request.location_type}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      {uc.findings && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          <span className="font-semibold text-foreground/80">Findings:</span> {uc.findings}
+                                        </p>
+                                      )}
+                                      {isWO && uc.request?.preferred_date && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          <span className="font-semibold text-foreground/80">Preferred date:</span> {uc.request.preferred_date}
+                                        </p>
+                                      )}
+                                      {isFU && uc.follow_up?.pest_activity && uc.follow_up.pest_activity !== "None" && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          <span className="font-semibold text-foreground/80">Last activity level:</span> {uc.follow_up.pest_activity}
+                                        </p>
+                                      )}
+                                      {uc.notes && !isWO && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          <span className="font-semibold text-foreground/80">Notes:</span> {uc.notes}
+                                        </p>
+                                      )}
+                                    </div>
                                   );
                                 })}
                               </div>
                             </div>
                           )}
 
-                          {/* Carry-over notes from the previous service when this upcoming has none */}
+                          {/* Carry-over notes from previous service */}
                           {carryNotes && (
-                            <div className="mt-2 bg-muted/40 border border-border rounded-md p-2">
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                            <div className="bg-muted/40 border border-border rounded-lg p-3">
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
                                 Notes carried from last service ({formatShortDate(lastPast?.service_date || null)})
                               </p>
-                              <p className="text-xs whitespace-pre-wrap">{carryNotes}</p>
+                              <p className="text-sm whitespace-pre-wrap">{carryNotes}</p>
                             </div>
                           )}
-                        </div>
-                        {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
-                      </button>
 
-                      {/* PM-editable notes for the next service. Visible to admins/technicians. */}
-                      {isFirst && (
-                        <div className="px-3 pb-3 -mt-1">
-                          <div className="border-t border-border/60 pt-2.5">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <Label htmlFor={`pm-notes-${s.id}`} className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                                Notes / Comments for the Technician
-                              </Label>
-                              <span className="text-[10px] text-muted-foreground italic">
-                                {pmNoteSaving
-                                  ? "Saving…"
-                                  : pmNoteSavedDate === s.service_date
-                                    ? "Saved"
-                                    : "Auto-saves"}
-                              </span>
-                            </div>
-                            <Textarea
-                              id={`pm-notes-${s.id}`}
-                              value={pmNoteDraft}
-                              onChange={(e) => setPmNoteDraft(e.target.value)}
-                              placeholder="Add notes for Crest about this upcoming visit (e.g., units to focus on, access codes, tenant concerns)…"
-                              className="text-xs min-h-[70px] bg-background"
-                            />
-                          </div>
+                          {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
                         </div>
                       )}
-
-                      {isExpanded && (ownHasNotes || s.prep_required || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0)) && renderServiceDetailsRO(s)}
                     </Card>
                   );
                 })}
@@ -1037,25 +1116,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
 
             {/* Future projected visits — date only, no details */}
             {futureProjectedDates.length > 0 && (
-              <div className="mt-5">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
+              <div className="mt-6">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
                   Following {futureProjectedDates.length} visits ({FREQUENCY_LABELS[propertyFrequency]})
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {futureProjectedDates.map((d, idx) => (
                     <div
                       key={`future-${idx}`}
-                      className="flex items-center gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
+                      className="flex items-center gap-2.5 bg-muted/40 border border-border rounded-lg px-4 py-3"
                     >
-                      <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
+                      <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">
                         {idx + 2}
                       </span>
-                      <span className="text-xs">{formatDate(d)}</span>
+                      <span className="text-sm font-medium">{formatDate(d)}</span>
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-muted-foreground italic mt-2">
+                <p className="text-xs text-muted-foreground italic mt-2.5">
                   Projected dates only — service details are confirmed closer to each visit.
                 </p>
               </div>
