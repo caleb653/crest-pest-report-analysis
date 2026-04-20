@@ -262,13 +262,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const customerPref = (property.customer_preferences as any)?.preference;
   const customerPrefNotes = (property.customer_preferences as any)?.notes;
 
-  const today = new Date().toISOString().split("T")[0];
+  // Match admin portal logic exactly: past = completed, upcoming = everything else
   const pastServices = services
-    .filter(s => s.status === "completed" || (s.service_date && s.service_date < today))
+    .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcomingServices = services
-    .filter(s => s.status !== "completed" && s.service_date && s.service_date >= today)
+    .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+
+  // Units that need attention next visit: open work orders + follow-ups from most recent past service
+  const openRequestUnits = new Set(
+    requests
+      .filter(r => r.status === "pending" || r.status === "in_progress")
+      .map(r => r.unit_number)
+      .filter(Boolean) as string[]
+  );
+  const followUpUnits = (() => {
+    const set = new Set<string>();
+    if (pastServices.length > 0) {
+      const mostRecent = pastServices[0];
+      const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+      details.forEach(u => {
+        if (u?.unit_number && (
+          u.status === "Needs Follow-up" ||
+          u.followUp === "Yes" ||
+          (u.pest_activity && ["High", "Moderate"].includes(u.pest_activity))
+        )) {
+          set.add(String(u.unit_number));
+        }
+      });
+    }
+    return set;
+  })();
 
   const servicesByUnit = (() => {
     const map = new Map<string, { service: ServiceData; unitDetail: any }[]>();
@@ -712,6 +737,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                   const isFirst = i === 0;
                   const isExpanded = isFirst || expandedUpcomingId === s.id;
                   const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+                  // Only highlight units that actually need attention: open work orders or follow-ups (next service only)
+                  const flaggedUnits = isFirst
+                    ? unitsPlanned.filter(u => openRequestUnits.has(u) || followUpUnits.has(u))
+                    : [];
                   return (
                     <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                       <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
@@ -726,19 +755,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                             {s.technician && ` • ${s.technician}`}
                             {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
-                          {/* Inline preview of planned units (like admin) */}
-                          {unitsPlanned.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1.5">
-                              {unitsPlanned.slice(0, 8).map((u, idx) => (
-                                <Badge key={`${u}-${idx}`} variant="outline" className="text-[10px] py-0 px-1.5 font-medium">
-                                  {u}
-                                </Badge>
-                              ))}
-                              {unitsPlanned.length > 8 && (
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5">
-                                  +{unitsPlanned.length - 8} more
-                                </Badge>
-                              )}
+                          {/* Only show flagged units (work orders / follow-ups) on the next service card */}
+                          {flaggedUnits.length > 0 && (
+                            <div className="mt-1.5">
+                              <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-1">Units needing attention</p>
+                              <div className="flex flex-wrap gap-1">
+                                {flaggedUnits.map((u, idx) => {
+                                  const reason = openRequestUnits.has(u) ? "Work order" : "Follow-up";
+                                  return (
+                                    <Badge key={`${u}-${idx}`} className="text-[10px] py-0 px-1.5 font-medium bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100">
+                                      {u} · {reason}
+                                    </Badge>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>
