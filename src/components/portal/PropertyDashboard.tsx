@@ -479,12 +479,12 @@ const PropertyDashboard = ({
       status: "completed",
       service_date: today,
       service_time: serviceTime,
-      unit_details: unitRows,
+      unit_details: unitRows as any,
       summary: data?.summary || null,
       findings: data?.findings || null,
       notes: data?.notes || null,
       technician: data?.technician || null,
-      products_used: aggregatedProducts,
+      products_used: aggregatedProducts as any,
       photos: photosToSave,
     }).eq("id", serviceId);
 
@@ -899,14 +899,12 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [], status: "To be Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "" }] },
             }));
           };
-          const toggleProduct = (idx: number, product: string) => {
+          const setRowProducts = (idx: number, next: ProductUsage[]) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
-              const current = Array.isArray(rows[idx].products_used) ? rows[idx].products_used : [];
-              const next = current.includes(product) ? current.filter(p => p !== product) : [...current, product];
               rows[idx] = { ...rows[idx], products_used: next };
               return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
             });
@@ -984,7 +982,7 @@ const PropertyDashboard = ({
                         {cd.unitRows.map((row: any, idx: number) => {
                           const isFollowUp = row.source === "follow-up";
                           const isWorkOrder = row.source === "new-work-order";
-                          const products: string[] = Array.isArray(row.products_used) ? row.products_used : [];
+                          const products: ProductUsage[] = normalizeUsageList(row.products_used);
                           return (
                           <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                             <td className="px-2 py-1.5">
