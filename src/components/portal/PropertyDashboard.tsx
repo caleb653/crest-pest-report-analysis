@@ -1605,35 +1605,20 @@ const PropertyDashboard = ({
               </div>
             </div>
 
-            {/* Unit or Area */}
+            {/* Unit or Area — free-text with case-insensitive suggestion list */}
             <div>
               <Label className="text-sm">Unit or Area *</Label>
-              {allUnits.length > 0 ? (
-                <div className="space-y-1">
-                  <Select
-                    value={allUnits.includes(workOrder.unit_number) ? workOrder.unit_number : (workOrder.unit_number ? "__other" : "")}
-                    onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v === "__other" ? "" : v }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select or type unit / area" /></SelectTrigger>
-                    <SelectContent>
-                      {allUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                      <SelectItem value="__other">Other (type below)...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {(!allUnits.includes(workOrder.unit_number)) && (
-                    <Input
-                      placeholder="Type unit or area (e.g. Pool deck, Unit 204)"
-                      value={workOrder.unit_number}
-                      onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                    />
-                  )}
-                </div>
-              ) : (
-                <Input
-                  placeholder="Type unit or area (e.g. Unit 204, Lobby)"
-                  value={workOrder.unit_number}
-                  onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                />
+              <Input
+                list="admin-wo-known-units"
+                placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                value={workOrder.unit_number}
+                onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
+                autoComplete="off"
+              />
+              {allUnits.length > 0 && (
+                <datalist id="admin-wo-known-units">
+                  {allUnits.map(u => <option key={u} value={u} />)}
+                </datalist>
               )}
             </div>
 

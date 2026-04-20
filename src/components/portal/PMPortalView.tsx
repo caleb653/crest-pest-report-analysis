@@ -141,7 +141,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
-      supabase.from("portal_requests").select("*").eq("link_id", linkId).order("created_at", { ascending: false }),
+      supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
 
     if (prop) setProperty(prop as PropertyData);
@@ -205,7 +205,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
-        .eq("link_id", linkId)
+        .eq("property_id", propertyId)
         .order("created_at", { ascending: false });
       if (reqs) setRequests(reqs);
     } else {
@@ -735,21 +735,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
               <CardContent className="space-y-3">
                 <div>
                   <Label className="text-sm">Unit or Area *</Label>
-                  {knownUnits.length > 0 ? (
-                    <div className="space-y-1">
-                      <Select value={unitNumber} onValueChange={setUnitNumber}>
-                        <SelectTrigger><SelectValue placeholder="Select or type unit / area" /></SelectTrigger>
-                        <SelectContent>
-                          {knownUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                          <SelectItem value="__other">Other (type below)...</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {unitNumber === "__other" && (
-                        <Input placeholder="Type unit or area (e.g. Pool deck, Unit 204)" onChange={e => setUnitNumber(e.target.value)} />
-                      )}
-                    </div>
-                  ) : (
-                    <Input placeholder="Type unit or area (e.g. Unit 204, Lobby)" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} />
+                  <Input
+                    list="pm-known-units"
+                    placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                    value={unitNumber}
+                    onChange={e => setUnitNumber(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {knownUnits.length > 0 && (
+                    <datalist id="pm-known-units">
+                      {knownUnits.map(u => <option key={u} value={u} />)}
+                    </datalist>
                   )}
                 </div>
 

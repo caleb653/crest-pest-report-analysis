@@ -116,10 +116,14 @@ const TenantPortal = () => {
 
     const propertyId = linkData.assigned_property_ids?.[0] || null;
 
+    // Case-insensitive match: if the typed unit matches a known unit (any case), use the canonical version
+    const typed = unitNumber.trim();
+    const canonical = knownUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed;
+
     const { error: err } = await supabase.from("portal_requests").insert({
       link_id: linkData.id,
       property_id: propertyId,
-      unit_number: unitNumber.trim(),
+      unit_number: canonical,
       request_type: "Service Request",
       description: `${pestType} - ${locationType}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
