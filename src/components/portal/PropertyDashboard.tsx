@@ -423,9 +423,9 @@ const PropertyDashboard = ({
 
     const sourceFromCtx = (s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
-      if (s === "follow_up") return "follow-up";
-      if (s === "carried") return "routine";
-      return "routine";
+      // follow_up, carried, planned — all surface as Follow-up on the admin side
+      // (matches the PM portal which only shows Work Order vs. Follow-up).
+      return "follow-up";
     };
 
     const rows = displayUnits.length > 0
