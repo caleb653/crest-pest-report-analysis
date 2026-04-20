@@ -556,9 +556,14 @@ const PropertyDashboard = ({
 
   const submitWorkOrder = async () => {
     if (!workOrder.unit_number && !workOrder.comments) return;
+    // Case-insensitive normalization against existing units for this property
+    const typed = (workOrder.unit_number || "").trim();
+    const canonical = typed
+      ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
+      : "Facility";
     await supabase.from("portal_requests").insert({
       property_id: property.id,
-      unit_number: workOrder.unit_number || "Facility",
+      unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
       description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
@@ -1605,35 +1610,20 @@ const PropertyDashboard = ({
               </div>
             </div>
 
-            {/* Unit or Area */}
+            {/* Unit or Area — free-text with case-insensitive suggestion list */}
             <div>
               <Label className="text-sm">Unit or Area *</Label>
-              {allUnits.length > 0 ? (
-                <div className="space-y-1">
-                  <Select
-                    value={allUnits.includes(workOrder.unit_number) ? workOrder.unit_number : (workOrder.unit_number ? "__other" : "")}
-                    onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v === "__other" ? "" : v }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select or type unit / area" /></SelectTrigger>
-                    <SelectContent>
-                      {allUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                      <SelectItem value="__other">Other (type below)...</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {(!allUnits.includes(workOrder.unit_number)) && (
-                    <Input
-                      placeholder="Type unit or area (e.g. Pool deck, Unit 204)"
-                      value={workOrder.unit_number}
-                      onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                    />
-                  )}
-                </div>
-              ) : (
-                <Input
-                  placeholder="Type unit or area (e.g. Unit 204, Lobby)"
-                  value={workOrder.unit_number}
-                  onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                />
+              <Input
+                list="admin-wo-known-units"
+                placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                value={workOrder.unit_number}
+                onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
+                autoComplete="off"
+              />
+              {allUnits.length > 0 && (
+                <datalist id="admin-wo-known-units">
+                  {allUnits.map(u => <option key={u} value={u} />)}
+                </datalist>
               )}
             </div>
 

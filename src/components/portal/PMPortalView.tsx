@@ -141,7 +141,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
-      supabase.from("portal_requests").select("*").eq("link_id", linkId).order("created_at", { ascending: false }),
+      supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
 
     if (prop) setProperty(prop as PropertyData);
@@ -184,10 +184,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     if (!unitNumber.trim() || !pestType) return;
     setSubmitting(true);
 
+    // Case-insensitive normalization against known units
+    const typed = unitNumber.trim();
+    const canonical = knownUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed;
+
     const { error: err } = await supabase.from("portal_requests").insert({
       link_id: linkId,
       property_id: propertyId,
-      unit_number: unitNumber.trim(),
+      unit_number: canonical,
       request_type: "Service Request",
       description: `${pestType} - ${locationType}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
@@ -205,7 +209,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
-        .eq("link_id", linkId)
+        .eq("property_id", propertyId)
         .order("created_at", { ascending: false });
       if (reqs) setRequests(reqs);
     } else {
@@ -735,21 +739,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
               <CardContent className="space-y-3">
                 <div>
                   <Label className="text-sm">Unit or Area *</Label>
-                  {knownUnits.length > 0 ? (
-                    <div className="space-y-1">
-                      <Select value={unitNumber} onValueChange={setUnitNumber}>
-                        <SelectTrigger><SelectValue placeholder="Select or type unit / area" /></SelectTrigger>
-                        <SelectContent>
-                          {knownUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                          <SelectItem value="__other">Other (type below)...</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {unitNumber === "__other" && (
-                        <Input placeholder="Type unit or area (e.g. Pool deck, Unit 204)" onChange={e => setUnitNumber(e.target.value)} />
-                      )}
-                    </div>
-                  ) : (
-                    <Input placeholder="Type unit or area (e.g. Unit 204, Lobby)" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} />
+                  <Input
+                    list="pm-known-units"
+                    placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                    value={unitNumber}
+                    onChange={e => setUnitNumber(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {knownUnits.length > 0 && (
+                    <datalist id="pm-known-units">
+                      {knownUnits.map(u => <option key={u} value={u} />)}
+                    </datalist>
                   )}
                 </div>
 
@@ -885,7 +885,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                   const lastPastUnits = lastPast && Array.isArray(lastPast.units_planned)
                     ? lastPast.units_planned as string[]
                     : [];
-                  const unitsPlanned = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
+                  const baseUnits = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
+                  // For the next service, also merge in units from any open work orders
+                  const woUnits = isFirst
+                    ? Array.from(openRequestUnits).filter((u): u is string => Boolean(u))
+                    : [];
+                  const mergedSet = new Set<string>(baseUnits);
+                  woUnits.forEach(u => mergedSet.add(u));
+                  const unitsPlanned = Array.from(mergedSet)
+                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
                   const usingFallbackUnits = ownPlanned.length === 0 && lastPastUnits.length > 0;
 
                   // Carry-over notes from the most recent past service when this upcoming has none
