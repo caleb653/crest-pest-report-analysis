@@ -22,6 +22,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
+import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 
 // ─── Types ───
 interface PortalProperty {
