@@ -99,23 +99,32 @@ interface Props {
 
 const today = new Date().toISOString().split("T")[0];
 
-// Generate dummy dates: start April 16, 2025, then every week
-const generateDummyDates = (count: number): string[] => {
+// Add `days` to an ISO date string (YYYY-MM-DD) using UTC to avoid TZ drift.
+const addDaysISO = (isoDate: string, days: number): string => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().split("T")[0];
+};
+
+// Generate upcoming dates spaced exactly `frequencyDays` apart starting after `lastDate`.
+const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
   const dates: string[] = [];
-  let d = new Date("2025-04-16T00:00:00");
+  let cur = lastDate;
   for (let i = 0; i < count; i++) {
-    dates.push(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() + 7 * 86400000); // 1 week
+    cur = addDaysISO(cur, frequencyDays);
+    dates.push(cur);
   }
   return dates;
 };
 
-const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
+// Generate fallback dates starting from today, spaced `frequencyDays` apart.
+const generateDummyDates = (count: number, frequencyDays: number = 14): string[] => {
   const dates: string[] = [];
-  let d = new Date(lastDate + "T00:00:00");
+  let cur = today;
   for (let i = 0; i < count; i++) {
-    d = new Date(d.getTime() + 7 * 86400000); // weekly
-    dates.push(d.toISOString().split("T")[0]);
+    cur = addDaysISO(cur, frequencyDays);
+    dates.push(cur);
   }
   return dates;
 };
