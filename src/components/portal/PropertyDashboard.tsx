@@ -1363,50 +1363,6 @@ const PropertyDashboard = ({
           </CardContent>
         </Card>
 
-        {/* Customer Preference */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
-            <CardTitle className="text-base font-bold">Customer Preference</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-3 space-y-2">
-            <Select
-              value={(property.customer_preferences as any)?.preference || ""}
-              onValueChange={async (val) => {
-                const updated = { ...(property.customer_preferences || {}), preference: val };
-                if (val !== "Other") delete updated.otherText;
-                await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-                onRefresh();
-                toast({ title: `Preference set to ${val}`, duration: 1500 });
-              }}
-            >
-              <SelectTrigger className="text-xs h-8"><SelectValue placeholder="Select preference" /></SelectTrigger>
-              <SelectContent>
-                {PREFERENCE_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {(property.customer_preferences as any)?.preference === "Other" && (
-              <Input
-                placeholder="Specify preference..."
-                className="text-xs h-8"
-                defaultValue={(property.customer_preferences as any)?.otherText || ""}
-                onBlur={async (e) => {
-                  const updated = { ...(property.customer_preferences || {}), otherText: e.target.value };
-                  await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-                }}
-              />
-            )}
-            <Textarea
-              placeholder="Additional notes..."
-              className="text-xs min-h-[50px]"
-              defaultValue={(property.customer_preferences as any)?.notes || ""}
-              onBlur={async (e) => {
-                const updated = { ...(property.customer_preferences || {}), notes: e.target.value };
-                await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-              }}
-            />
-          </CardContent>
-        </Card>
-
         {/* Share Link */}
         {propertyLink && (
           <Card className="shadow-sm">
