@@ -1136,7 +1136,7 @@ const PropertyDashboard = ({
         </TabsTrigger>
         <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Bug className="w-5 h-5" />
-          <span>Request Work Order</span>
+          <span>Add work order</span>
         </TabsTrigger>
         <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <ClipboardList className="w-5 h-5" />
