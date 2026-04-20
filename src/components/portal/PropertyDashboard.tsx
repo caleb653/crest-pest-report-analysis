@@ -1040,7 +1040,7 @@ const PropertyDashboard = ({
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
-                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
