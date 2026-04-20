@@ -104,6 +104,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
 
   // Work order form
   const [submitting, setSubmitting] = useState(false);
