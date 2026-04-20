@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
+import { MapCanvas } from "@/components/MapCanvas";
 
 // ─── Types ───
 interface PortalProperty {
