@@ -1478,22 +1478,19 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 3: REQUEST WORK ORDER ══════════ */}
       <TabsContent value="request" className="mt-0">
         <div className="max-w-2xl mx-auto space-y-4">
-        {/* Work Order Form */}
-        <Card className="shadow-md border-primary/30 bg-gradient-to-b from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-3 py-4 border-b border-primary/20">
-            <CardTitle className="text-lg font-bold flex items-center gap-2">
-              <ClipboardList className="w-6 h-6 text-primary" />
-              Request Work Order
+        {/* Work Order Form — mirrors PM portal layout */}
+        <Card className="border-primary/30 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              Submit a service request for a specific unit or the entire facility.
-            </p>
+            <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
           </CardHeader>
-          <CardContent className="space-y-3.5 pt-4">
-            {/* Request type toggle */}
+          <CardContent className="space-y-3">
+            {/* Request Type (admin-only enhancement, kept compact) */}
             <div>
-              <Label className="text-sm font-semibold mb-1.5 block">Request Type *</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <Label className="text-sm">Request Type *</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
                 {([
                   { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
                   { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
@@ -1505,7 +1502,7 @@ const PropertyDashboard = ({
                       key={opt.v}
                       type="button"
                       onClick={() => setWorkOrder(wo => ({ ...wo, request_type: opt.v }))}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md scale-[1.02]" : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"}`}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"}`}
                     >
                       <Icon className="w-5 h-5" />
                       <span className="text-sm font-semibold">{opt.label}</span>
@@ -1515,82 +1512,101 @@ const PropertyDashboard = ({
                 })}
               </div>
             </div>
+
+            {/* Unit or Area */}
             <div>
-              <Label className="text-xs font-semibold">Unit or Area *</Label>
-              <Input
-                className="h-8 text-xs mt-1"
-                placeholder="Type unit number or area (e.g. Unit 102, Lobby, Exterior)"
-                value={workOrder.unit_number}
-                onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                list="unit-suggestions"
-              />
-              <datalist id="unit-suggestions">
-                <option value="Entire Facility" />
-                <option value="Common Areas" />
-                <option value="Exterior" />
-                {allUnits.map(u => <option key={u} value={`Unit ${u}`} />)}
-              </datalist>
+              <Label className="text-sm">Unit or Area *</Label>
+              {allUnits.length > 0 ? (
+                <div className="space-y-1">
+                  <Select
+                    value={allUnits.includes(workOrder.unit_number) ? workOrder.unit_number : (workOrder.unit_number ? "__other" : "")}
+                    onValueChange={v => setWorkOrder(wo => ({ ...wo, unit_number: v === "__other" ? "" : v }))}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select or type unit / area" /></SelectTrigger>
+                    <SelectContent>
+                      {allUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                      <SelectItem value="__other">Other (type below)...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(!allUnits.includes(workOrder.unit_number)) && (
+                    <Input
+                      placeholder="Type unit or area (e.g. Pool deck, Unit 204)"
+                      value={workOrder.unit_number}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
+                    />
+                  )}
+                </div>
+              ) : (
+                <Input
+                  placeholder="Type unit or area (e.g. Unit 204, Lobby)"
+                  value={workOrder.unit_number}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
+                />
+              )}
             </div>
+
+            {/* Pest Type */}
             <div>
-              <Label className="text-xs font-semibold">Pest Type</Label>
+              <Label className="text-sm">What are you dealing with? *</Label>
               <Select value={workOrder.pest_type} onValueChange={v => setWorkOrder(wo => ({ ...wo, pest_type: v }))}>
-                <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Select pest type" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select pest type" /></SelectTrigger>
                 <SelectContent>
                   {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Location */}
             <div>
-              <Label className="text-xs font-semibold">Location</Label>
-              <div className="flex gap-1 mt-1">
+              <Label className="text-sm">Where is the issue?</Label>
+              <div className="flex gap-2 mt-1">
                 {["Interior", "Exterior", "Both"].map(loc => (
-                  <button key={loc}
-                    className={`px-3 py-1.5 rounded-md text-xs border transition-all font-medium ${workOrder.location_type === loc ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-background hover:bg-muted border-border"}`}
-                    onClick={() => setWorkOrder(wo => ({ ...wo, location_type: loc }))}
-                  >{loc}</button>
+                  <button key={loc} type="button"
+                    className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${workOrder.location_type === loc ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                    onClick={() => setWorkOrder(wo => ({ ...wo, location_type: loc }))}>{loc}</button>
                 ))}
               </div>
             </div>
+
+            {/* Preferred Day */}
             <div>
-              <Label className="text-xs font-semibold">Preferred Date</Label>
-              <Select
-                value={
-                  ["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date)
-                    ? workOrder.preferred_date
-                    : workOrder.preferred_date
-                      ? "__custom"
-                      : ""
-                }
-                onValueChange={v => setWorkOrder(wo => ({ ...wo, preferred_date: v === "__custom" ? "" : v }))}
-              >
-                <SelectTrigger className="h-8 text-xs mt-1"><SelectValue placeholder="Select preferred timing" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Next Service">📅 Next Service</SelectItem>
-                  <SelectItem value="Next Few Weeks">🗓️ Next Few Weeks</SelectItem>
-                  <SelectItem value="__custom">Other (specify)...</SelectItem>
-                </SelectContent>
-              </Select>
-              {!["Next Service", "Next Few Weeks", ""].includes(workOrder.preferred_date) ? (
-                <Input
-                  className="h-8 text-xs mt-1"
-                  placeholder="Type a date or timing (e.g. Next Tuesday, Mid-May)"
-                  value={workOrder.preferred_date}
-                  onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value }))}
-                />
-              ) : null}
+              <Label className="text-sm">Preferred Day</Label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {([
+                  { key: "Next Service", label: "Next service" },
+                  { key: "Next Few Weeks", label: "Next few weeks" },
+                  { key: "__other", label: "Other" },
+                ] as const).map(opt => {
+                  const isPreset = ["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date);
+                  const active = opt.key === "__other" ? (workOrder.preferred_date !== "" && !isPreset) : workOrder.preferred_date === opt.key;
+                  return (
+                    <button key={opt.key} type="button"
+                      className={`px-3 py-2 rounded-lg text-xs border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                      onClick={() => setWorkOrder(wo => ({ ...wo, preferred_date: opt.key === "__other" ? " " : opt.key }))}>{opt.label}</button>
+                  );
+                })}
+              </div>
+              {workOrder.preferred_date !== "" && !["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date) && (
+                <Input className="mt-2" placeholder="Tell us when works (e.g. Tuesday afternoon, after the 15th)"
+                  value={workOrder.preferred_date.trim()}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value || " " }))} />
+              )}
             </div>
+
+            {/* Additional Details */}
             <div>
-              <Label className="text-xs font-semibold">Comments</Label>
-              <Textarea className="text-xs min-h-[40px] mt-1" placeholder="Describe the issue..." value={workOrder.comments}
-                onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} />
+              <Label className="text-sm">Additional Details</Label>
+              <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
+                value={workOrder.comments} onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} rows={3} />
             </div>
-            <Button size="lg" className="w-full h-11 text-sm font-semibold" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
-              <Send className="w-4 h-4 mr-1.5" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
+
+            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
+              <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* Tenant Service Request Link */}
+        {/* Tenant Service Request Link (admin-only) */}
         <Button className="w-full h-10 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
           onClick={() => {
             const link = propertyLink;
