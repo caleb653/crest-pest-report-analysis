@@ -910,7 +910,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
             }));
           };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {
