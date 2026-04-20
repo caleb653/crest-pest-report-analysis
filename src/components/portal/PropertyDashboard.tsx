@@ -1067,6 +1067,37 @@ const PropertyDashboard = ({
         </div>
 
                 {/* Service-level products used (one entry per product per service date) */}
+                {(() => {
+                  // Auto-merge any product names listed in the unit rows into the service-level list.
+                  const unitProductNames = new Set<string>();
+                  for (const r of cd.unitRows) {
+                    const raw = r.products_used;
+                    if (Array.isArray(raw)) {
+                      for (const p of raw) {
+                        const n = typeof p === "string" ? p : (p as any)?.name;
+                        if (n) unitProductNames.add(String(n).trim());
+                      }
+                    } else if (typeof raw === "string" && raw.trim()) {
+                      raw.split(",").map(x => x.trim()).filter(Boolean).forEach(n => unitProductNames.add(n));
+                    }
+                  }
+                  const existingNames = new Set((cd.products || []).map(p => p.name.toLowerCase()));
+                  const missing = Array.from(unitProductNames).filter(n => !existingNames.has(n.toLowerCase()));
+                  if (missing.length > 0) {
+                    setTimeout(() => {
+                      setCompletionData(prev => {
+                        const current = prev[s.id]?.products || [];
+                        const have = new Set(current.map(p => p.name.toLowerCase()));
+                        const additions = missing
+                          .filter(n => !have.has(n.toLowerCase()))
+                          .map(n => makeDefaultUsage(n));
+                        if (additions.length === 0) return prev;
+                        return { ...prev, [s.id]: { ...prev[s.id], products: [...current, ...additions] } };
+                      });
+                    }, 0);
+                  }
+                  return null;
+                })()}
                 <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                   <Label className="text-[11px] font-semibold flex items-center gap-1.5 mb-2">
                     <FlaskConical className="w-3.5 h-3.5 text-primary" />
