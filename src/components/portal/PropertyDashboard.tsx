@@ -1176,7 +1176,13 @@ const PropertyDashboard = ({
             }}
           >
             {mapUrl ? (
-              property.map_data ? (
+              isEditingMap ? (
+                <MapCanvas
+                  mapUrl={mapUrl}
+                  onSave={handleSaveMapData}
+                  initialData={property.map_data ? (typeof property.map_data === 'string' ? property.map_data : JSON.stringify(property.map_data)) : undefined}
+                />
+              ) : property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : (
                 <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
@@ -1188,6 +1194,18 @@ const PropertyDashboard = ({
                 <p className="text-[10px] opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
               </div>
             )}
+            {mapUrl && (
+              <Button
+                size="sm"
+                variant={isEditingMap ? "default" : "secondary"}
+                className="absolute top-2 right-2 h-7 px-2 text-xs shadow-sm"
+                onClick={() => setIsEditingMap(v => !v)}
+                disabled={savingMap}
+              >
+                <Edit className="w-3 h-3 mr-1" />
+                {isEditingMap ? (savingMap ? "Saving…" : "Done") : "Edit Map"}
+              </Button>
+            )}
             <label className="absolute bottom-2 right-2 bg-background/90 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1 shadow-sm border">
               <Image className="w-3.5 h-3.5" />
               {uploadingPropertyImage ? "Uploading..." : mapUrl ? "Change" : "Upload"}
@@ -1196,7 +1214,7 @@ const PropertyDashboard = ({
             </label>
           </div>
           <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
-            Tip: paste a screenshot (⌘/Ctrl + V) or drag &amp; drop an image to replace the site map
+            {isEditingMap ? "Add icons, draw, or erase. Changes save automatically." : "Tip: paste a screenshot (⌘/Ctrl + V) or drag & drop an image to replace the site map"}
           </div>
         </Card>
           </div>
