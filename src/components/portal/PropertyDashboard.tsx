@@ -1023,13 +1023,6 @@ const PropertyDashboard = ({
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="px-2 py-1.5" colSpan={1}>
-                              <ProductUsageEditor
-                                value={products}
-                                onChange={(next) => setRowProducts(idx, next)}
-                                compact
-                              />
-                            </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
