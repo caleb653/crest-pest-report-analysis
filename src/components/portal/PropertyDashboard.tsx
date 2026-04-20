@@ -965,7 +965,7 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Source</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
@@ -1011,16 +1011,13 @@ const PropertyDashboard = ({
                               <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent"
                                 value={row.findings} placeholder="Notes about this unit..." onChange={e => updateRow(idx, "findings", e.target.value)} />
                             </td>
-                            <td className="px-2 py-1.5">
-                              <Select value={row.pest_activity}
-                                onValueChange={(v) => updateRow(idx, "pest_activity", v)}>
-                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ACTIVITY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
+                            <td className="px-1 py-1">
+                              <UnitProductPicker
+                                value={Array.isArray(row.products_used)
+                                  ? (row.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean)
+                                  : (row.products_used || "")}
+                                onChange={(next) => updateRow(idx, "products_used", next as any)}
+                              />
                             </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
