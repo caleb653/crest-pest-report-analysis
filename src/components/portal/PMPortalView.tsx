@@ -465,38 +465,48 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
           </Card>
 
           {/* Property Plan + Customer Preference (top of page, read-only for PM) */}
-          {(property.notes || customerPref || customerPrefNotes) && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {property.notes && (
-                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5 text-primary" />
-                      Property Plan
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
-              {(customerPref || customerPrefNotes) && (
-                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5 text-primary" />
-                      Customer Preference
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  Property Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Service Frequency:
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {propertyFrequency === "weekly" ? "Weekly" : "Bi-Weekly"}
+                  </Badge>
+                </div>
+                {property.notes ? (
+                  <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No property plan set yet.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  Customer Preference
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {customerPref || customerPrefNotes ? (
+                  <p className="text-sm whitespace-pre-wrap">
+                    {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No customer preferences set yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
