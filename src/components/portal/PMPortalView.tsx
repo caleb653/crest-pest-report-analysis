@@ -218,7 +218,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     );
   }
 
-  const equipment = Array.isArray(property.equipment) ? property.equipment as string[] : [];
+  const equipment: { name: string; count: number }[] = Array.isArray(property.equipment)
+    ? (property.equipment as any[]).map((e) =>
+        typeof e === "string" ? { name: e, count: 1 } : { name: e?.name ?? "", count: e?.count ?? 1 }
+      )
+    : [];
   const mapUrl = property.map_image_url || property.image_url;
   const customerPref = (property.customer_preferences as any)?.preference;
   const customerPrefNotes = (property.customer_preferences as any)?.notes;
@@ -285,9 +289,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
           <CardContent className="pt-0">
             <div className="space-y-1.5">
               {equipment.map((eq, i) => (
-                <div key={eq} className="flex items-center gap-2.5">
+                <div key={`${eq.name}-${i}`} className="flex items-center gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                  <span className="text-sm">{eq}</span>
+                  <span className="text-sm">{eq.name}{eq.count > 1 ? ` ×${eq.count}` : ""}</span>
                 </div>
               ))}
             </div>
