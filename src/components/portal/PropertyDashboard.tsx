@@ -175,6 +175,31 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planDraft]);
 
+  // Local Customer Preference state — same debounced pattern as Property Plan
+  const initialPrefNotes = (property.customer_preferences as any)?.notes || "";
+  const [prefDraft, setPrefDraft] = useState<string>(initialPrefNotes);
+  useEffect(() => {
+    setPrefDraft((property.customer_preferences as any)?.notes || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.notes || "";
+    if (current === prefDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), notes: prefDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save preferences", variant: "destructive" });
+      } else {
+        toast({ title: "Customer preferences saved", duration: 1200 });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefDraft]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
