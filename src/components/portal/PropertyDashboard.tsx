@@ -829,6 +829,9 @@ const PropertyDashboard = ({
           </div>
         )}
 
+        {/* Per-service product totals (aggregated across this service's units) */}
+        <ProductUsageTotalsCard services={[s]} />
+
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
             <p className="text-xs font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
