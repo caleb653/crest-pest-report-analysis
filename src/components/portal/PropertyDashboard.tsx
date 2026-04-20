@@ -421,10 +421,9 @@ const PropertyDashboard = ({
     const ctxByUnit = new Map<string, import("@/lib/upcomingUnits").UpcomingUnitContext>();
     (unitContexts || []).forEach(c => ctxByUnit.set(String(c.unit_number), c));
 
-    const sourceFromCtx = (s: string | undefined): string => {
+    const sourceFromCtx = (unit: string, s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
-      // follow_up, carried, planned — all surface as Follow-up on the admin side
-      // (matches the PM portal which only shows Work Order vs. Follow-up).
+      if (pendingRequests.some(r => String(r.unit_number) === String(unit))) return "new-work-order";
       return "follow-up";
     };
 
@@ -441,7 +440,7 @@ const PropertyDashboard = ({
             products_used: [] as ProductUsage[],
             status: "To Be Treated",
             notes: ctx?.notes || "",
-            source: sourceFromCtx(ctx?.source),
+            source: sourceFromCtx(u, ctx?.source),
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "new-work-order" }];
@@ -900,6 +899,34 @@ const PropertyDashboard = ({
             );
           }
           const cd = completionData[s.id];
+          const latestSourceByUnit = new Map(
+            merged.unitContexts.map((uc) => [
+              String(uc.unit_number),
+              uc.source === "work_order" ? "new-work-order" : "follow-up",
+            ])
+          );
+          const hasSourceDrift = cd.unitRows.some((row: any) => {
+            const latest = latestSourceByUnit.get(String(row.unit_number));
+            return latest && row.source !== latest;
+          });
+          if (hasSourceDrift) {
+            setTimeout(() => {
+              setCompletionData(prev => {
+                const current = prev[s.id];
+                if (!current) return prev;
+                return {
+                  ...prev,
+                  [s.id]: {
+                    ...current,
+                    unitRows: current.unitRows.map((row: any) => {
+                      const latest = latestSourceByUnit.get(String(row.unit_number));
+                      return latest ? { ...row, source: latest } : row;
+                    }),
+                  },
+                };
+              });
+            }, 0);
+          }
           const updateRow = (idx: number, field: string, value: string) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
