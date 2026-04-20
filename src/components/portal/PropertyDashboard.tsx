@@ -967,7 +967,6 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold min-w-[420px]">Products & Amounts</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
