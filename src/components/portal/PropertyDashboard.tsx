@@ -1386,13 +1386,13 @@ const PropertyDashboard = ({
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
           </h3>
-          <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
             <button
-              className={`px-2.5 py-1 text-xs rounded-md transition-all ${pastViewMode === "date" ? "bg-background shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setPastViewMode("date")}
             >By Date</button>
             <button
-              className={`px-2.5 py-1 text-xs rounded-md transition-all ${pastViewMode === "unit" ? "bg-background shadow-sm font-semibold" : "text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               onClick={() => setPastViewMode("unit")}
             >By Unit</button>
           </div>
