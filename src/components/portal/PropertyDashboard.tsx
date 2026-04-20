@@ -63,7 +63,7 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
+const STATUS_OPTIONS = ["To Be Treated", "Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
