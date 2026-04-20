@@ -20,6 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
+import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 // ─── Types ───
@@ -61,7 +62,7 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["To be Treated", "Treated", "Clear", "Needs Follow-up"];
+const STATUS_OPTIONS = ["Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
@@ -282,7 +283,7 @@ const PropertyDashboard = ({
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
-      .filter((u: any) => u.status === "Needs Follow-up" && u.unit_number)
+      .filter((u: any) => u.status === "Treated - Follow Up" && u.unit_number)
       .map((u: any) => ({
         unit_number: String(u.unit_number),
         pest_activity: u.pest_activity || "",
@@ -439,12 +440,12 @@ const PropertyDashboard = ({
             findings: contextParts.join(" • "),
             pest_activity: fu?.pest_activity || "None",
             products_used: [] as ProductUsage[],
-            status: "To be Treated",
+            status: "Treated",
             notes: "",
             source,
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: {
@@ -459,7 +460,7 @@ const PropertyDashboard = ({
   const completeService = async (serviceId: string) => {
     const data = completionData[serviceId];
     const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
-    const flagged = unitRows.filter(r => r.status === "Needs Follow-up").map(r => r.unit_number);
+    const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
@@ -663,8 +664,8 @@ const PropertyDashboard = ({
               <tr>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[80px]">Activity</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[90px]">Status</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[180px]">Products</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[120px]">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -682,16 +683,14 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
                   </td>
-                  <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
-                      defaultValue={unit.pest_activity || "None"}
-                      onChange={e => updateUnitField(s.id, j, "pest_activity", e.target.value)}
-                    >
-                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
+                  <td className="px-1 py-1">
+                    <UnitProductPicker
+                      value={unit.products_used || ""}
+                      onChange={(next) => updateUnitField(s.id, j, "products_used", next)}
+                    />
                   </td>
                   <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
+                    <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${unit.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : ""}`}
                       defaultValue={unit.status || "Treated"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                     >
@@ -711,11 +710,11 @@ const PropertyDashboard = ({
                     <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
                       onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
                   </td>
-                  <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full" value={newUnitData.pest_activity}
-                      onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}>
-                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
+                  <td className="px-1 py-1">
+                    <UnitProductPicker
+                      value={newUnitData.products_used}
+                      onChange={(next) => setNewUnitData(d => ({ ...d, products_used: next }))}
+                    />
                   </td>
                   <td className="px-2 py-1">
                     <div className="flex gap-0.5">
@@ -893,7 +892,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "" }] },
             }));
           };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {
@@ -909,7 +908,7 @@ const PropertyDashboard = ({
               [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
             }));
           };
-          const flaggedCount = cd.unitRows.filter(r => r.status === "Needs Follow-up").length;
+          const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
 
           return (
             <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
@@ -966,7 +965,7 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Source</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
+                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
@@ -1012,21 +1011,18 @@ const PropertyDashboard = ({
                               <Input className="h-8 text-xs px-1.5 border-transparent hover:border-border focus:border-primary bg-transparent"
                                 value={row.findings} placeholder="Notes about this unit..." onChange={e => updateRow(idx, "findings", e.target.value)} />
                             </td>
-                            <td className="px-2 py-1.5">
-                              <Select value={row.pest_activity}
-                                onValueChange={(v) => updateRow(idx, "pest_activity", v)}>
-                                <SelectTrigger className="h-8 text-xs px-2 border-transparent hover:border-border bg-transparent">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ACTIVITY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
+                            <td className="px-1 py-1">
+                              <UnitProductPicker
+                                value={Array.isArray(row.products_used)
+                                  ? (row.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean)
+                                  : (row.products_used || "")}
+                                onChange={(next) => updateRow(idx, "products_used", next as any)}
+                              />
                             </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
-                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Needs Follow-up" ? "text-orange-600 font-semibold" : row.status === "To be Treated" ? "text-muted-foreground" : ""}`}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1115,7 +1111,7 @@ const PropertyDashboard = ({
                 {flaggedCount > 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                     <p className="text-[11px] font-medium text-orange-700">
-                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Needs Follow-up" — will auto-add to next service
+                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Treated - Follow Up" — will auto-add to next service
                     </p>
                   </div>
                 )}
