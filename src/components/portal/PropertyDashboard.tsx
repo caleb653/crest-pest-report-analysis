@@ -372,6 +372,13 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  // Save service-level products_used (per service date — not per unit).
+  // Debounced lightly via local state in the editor; this just persists what's passed in.
+  const updateServiceProducts = async (serviceId: string, products: ProductUsage[]) => {
+    await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+    onRefresh();
+  };
+
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
