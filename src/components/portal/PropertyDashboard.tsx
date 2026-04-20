@@ -750,8 +750,24 @@ const PropertyDashboard = ({
     })();
     const displayUnits = isUpcoming && isFirstUpcoming ? mergedUnitsForNext : unitsPlanned;
 
+    // PM-submitted note for this upcoming service date (if any).
+    const pmNotesMap: Record<string, string> =
+      ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
+    const pmNoteForThis = isUpcoming && s.service_date ? (pmNotesMap[s.service_date] || "") : "";
+
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3">
+        {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
+        {pmNoteForThis && (
+          <div className="bg-primary/10 border-2 border-primary/40 rounded-lg p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
+              <ClipboardList className="w-3 h-3" />
+              From the Property Manager — for the Technician
+            </p>
+            <p className="text-xs whitespace-pre-wrap font-medium">{pmNoteForThis}</p>
+          </div>
+        )}
+
         {/* Past service: inline-editable unit table */}
         {!isUpcoming && renderEditableUnitTable(s)}
 
