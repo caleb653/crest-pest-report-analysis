@@ -411,6 +411,40 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
             </CardContent>
           </Card>
 
+          {/* Property Plan + Customer Preference (top of page, read-only for PM) */}
+          {(property.notes || customerPref || customerPrefNotes) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {property.notes && (
+                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <ClipboardList className="w-5 h-5 text-primary" />
+                      Property Plan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+              {(customerPref || customerPrefNotes) && (
+                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
+                      <ClipboardList className="w-5 h-5 text-primary" />
+                      Customer Preference
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <p className="text-sm whitespace-pre-wrap">
+                      {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
               {mapUrl ? (
@@ -431,7 +465,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
             </div>
 
             <div className="space-y-4">
-
               {equipment.length > 0 && (
                 <Card>
                   <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
@@ -446,25 +479,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {customerPref && (
-                <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Customer Preference</p>
-                  <p className="text-sm font-medium">🌱 {customerPref}</p>
-                  {customerPrefNotes && <p className="text-xs text-muted-foreground mt-1">{customerPrefNotes}</p>}
-                </div>
-              )}
-
-              {property.notes && (
-                <Card>
-                  <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-muted-foreground" />Property Plan
-                  </CardTitle></CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
                   </CardContent>
                 </Card>
               )}

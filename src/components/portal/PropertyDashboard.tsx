@@ -175,6 +175,31 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planDraft]);
 
+  // Local Customer Preference state — same debounced pattern as Property Plan
+  const initialPrefNotes = (property.customer_preferences as any)?.notes || "";
+  const [prefDraft, setPrefDraft] = useState<string>(initialPrefNotes);
+  useEffect(() => {
+    setPrefDraft((property.customer_preferences as any)?.notes || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.notes || "";
+    if (current === prefDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), notes: prefDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save preferences", variant: "destructive" });
+      } else {
+        toast({ title: "Customer preferences saved", duration: 1200 });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefDraft]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
@@ -1125,26 +1150,48 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0 space-y-5">
-        {/* Property Plan Text Box */}
-        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" />
-              Property Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Textarea
-              placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-              className="min-h-[120px] text-sm resize-y"
-              value={planDraft}
-              onChange={(e) => setPlanDraft(e.target.value)}
-            />
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Property Plan + Customer Preference (top of page) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Property Plan
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea
+                placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
+                className="min-h-[120px] text-sm resize-y"
+                value={planDraft}
+                onChange={(e) => setPlanDraft(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Customer Preference
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea
+                placeholder="Customer preferences — product choices, scheduling preferences, access notes, communication preferences, etc."
+                className="min-h-[120px] text-sm resize-y"
+                value={prefDraft}
+                onChange={(e) => setPrefDraft(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
@@ -1313,50 +1360,6 @@ const PropertyDashboard = ({
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Customer Preference */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
-            <CardTitle className="text-base font-bold">Customer Preference</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-3 space-y-2">
-            <Select
-              value={(property.customer_preferences as any)?.preference || ""}
-              onValueChange={async (val) => {
-                const updated = { ...(property.customer_preferences || {}), preference: val };
-                if (val !== "Other") delete updated.otherText;
-                await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-                onRefresh();
-                toast({ title: `Preference set to ${val}`, duration: 1500 });
-              }}
-            >
-              <SelectTrigger className="text-xs h-8"><SelectValue placeholder="Select preference" /></SelectTrigger>
-              <SelectContent>
-                {PREFERENCE_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {(property.customer_preferences as any)?.preference === "Other" && (
-              <Input
-                placeholder="Specify preference..."
-                className="text-xs h-8"
-                defaultValue={(property.customer_preferences as any)?.otherText || ""}
-                onBlur={async (e) => {
-                  const updated = { ...(property.customer_preferences || {}), otherText: e.target.value };
-                  await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-                }}
-              />
-            )}
-            <Textarea
-              placeholder="Additional notes..."
-              className="text-xs min-h-[50px]"
-              defaultValue={(property.customer_preferences as any)?.notes || ""}
-              onBlur={async (e) => {
-                const updated = { ...(property.customer_preferences || {}), notes: e.target.value };
-                await supabase.from("portal_properties").update({ customer_preferences: updated }).eq("id", property.id);
-              }}
-            />
           </CardContent>
         </Card>
 
