@@ -664,6 +664,7 @@ const PropertyDashboard = ({
               <tr>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[140px]">Target Pest</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[180px]">Products</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[120px]">Status</th>
               </tr>
@@ -682,6 +683,15 @@ const PropertyDashboard = ({
                       defaultValue={unit.findings || ""}
                       onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
+                  </td>
+                  <td className="px-1 py-1">
+                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer px-1"
+                      value={unit.target_pest || ""}
+                      onChange={e => updateUnitField(s.id, j, "target_pest", e.target.value)}
+                    >
+                      <option value="">—</option>
+                      {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
                   </td>
                   <td className="px-1 py-1">
                     <UnitProductPicker
@@ -709,6 +719,15 @@ const PropertyDashboard = ({
                   <td className="px-2 py-1">
                     <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
                       onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
+                  </td>
+                  <td className="px-1 py-1">
+                    <select className="h-6 text-[11px] w-full bg-background border border-input rounded px-1"
+                      value={(newUnitData as any).target_pest || ""}
+                      onChange={e => setNewUnitData(d => ({ ...d, target_pest: e.target.value } as any))}
+                    >
+                      <option value="">—</option>
+                      {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
                   </td>
                   <td className="px-1 py-1">
                     <UnitProductPicker
