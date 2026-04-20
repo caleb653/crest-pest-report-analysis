@@ -297,16 +297,14 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  // Build the next 2 upcoming. If we have scheduled services, use those (up to 2).
-  // If we only have 1 scheduled, project a 2nd one `propertyFrequencyDays` after it.
+  // Build the next 2 upcoming.
+  // - If 1+ scheduled: keep ONLY the soonest scheduled as #1, then ALWAYS project #2
+  //   = #1.date + propertyFrequencyDays. (Ignores any far-future scheduled rows so
+  //   we don't show services months out.)
+  // - If 0 scheduled: project both from anchor (most recent past or today).
   const allUpcoming = (() => {
     const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
-    if (scheduled.length >= 2) {
-      return scheduled
-        .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-        .slice(0, 2);
-    }
-    if (scheduled.length === 1) {
+    if (scheduled.length >= 1) {
       const first = scheduled[0];
       const projected2 = first.service_date
         ? [{
