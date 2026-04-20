@@ -431,23 +431,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
             </div>
 
             <div className="space-y-4">
-              {scopeOfWork.length > 0 && (
-                <Card className="border-primary/20">
-                  <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary" />Scope of Work
-                  </CardTitle></CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-1.5">
-                      {scopeOfWork.map((type, i) => (
-                        <div key={type} className="flex items-center gap-2.5">
-                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                          <span className="text-sm font-medium">{type}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {equipment.length > 0 && (
                 <Card>
