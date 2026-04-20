@@ -345,47 +345,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   })();
   const upcomingServices: ServiceData[] = nextService ? [nextService] : [];
 
-  // PM upcoming-notes map (date -> note). Sync draft when the next service date changes.
+  // PM upcoming-notes map (date -> note). The draft state + save effect are placed
+  // above the early returns to satisfy Rules of Hooks. We resolve the key here for display.
   const pmNotesMap: Record<string, string> =
     ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
   const nextServiceDateKey = nextService?.service_date || "";
-  useEffect(() => {
-    setPmNoteDraft(nextServiceDateKey ? (pmNotesMap[nextServiceDateKey] || "") : "");
-    setPmNoteSavedDate(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nextServiceDateKey, property.id]);
-
-  // Debounced save of PM note for the next service date.
-  useEffect(() => {
-    if (!nextServiceDateKey) return;
-    const current = pmNotesMap[nextServiceDateKey] || "";
-    if (current === pmNoteDraft) return;
-    const t = setTimeout(async () => {
-      setPmNoteSaving(true);
-      const updatedMap = { ...pmNotesMap };
-      if (pmNoteDraft.trim()) {
-        updatedMap[nextServiceDateKey] = pmNoteDraft;
-      } else {
-        delete updatedMap[nextServiceDateKey];
-      }
-      const updatedPrefs = { ...(property.customer_preferences || {}), pm_upcoming_notes: updatedMap };
-      const { error } = await supabase
-        .from("portal_properties")
-        .update({ customer_preferences: updatedPrefs })
-        .eq("id", property.id);
-      setPmNoteSaving(false);
-      if (error) {
-        toast({ title: "Failed to save note", variant: "destructive" });
-      } else {
-        // Optimistic local update so subsequent comparisons reflect the saved value.
-        (property as any).customer_preferences = updatedPrefs;
-        setPmNoteSavedDate(nextServiceDateKey);
-        toast({ title: "Note saved", duration: 1200 });
-      }
-    }, 800);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pmNoteDraft, nextServiceDateKey]);
 
   const openRequestUnits = new Set(
     requests
