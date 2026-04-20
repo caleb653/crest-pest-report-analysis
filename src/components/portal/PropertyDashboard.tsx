@@ -1135,25 +1135,11 @@ const PropertyDashboard = ({
             <Textarea
               placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
               className="min-h-[120px] text-sm resize-y"
-              value={property.notes || ""}
-              onChange={async (e) => {
-                const newNotes = e.target.value;
-                // Optimistic update
-                onRefresh();
-                // Save to database
-                const { error } = await supabase
-                  .from("portal_properties")
-                  .update({ notes: newNotes })
-                  .eq("id", property.id);
-                if (error) {
-                  toast({ title: "Failed to save plan", variant: "destructive" });
-                } else {
-                  toast({ title: "Property plan saved", duration: 1500 });
-                }
-              }}
+              value={planDraft}
+              onChange={(e) => setPlanDraft(e.target.value)}
             />
             <p className="text-[11px] text-muted-foreground mt-2">
-              This plan will be visible to technicians and property managers
+              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
             </p>
           </CardContent>
         </Card>
