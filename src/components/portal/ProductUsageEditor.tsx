@@ -44,14 +44,6 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
     onChange(next);
   };
 
-  const filteredCatalog = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return CATALOG_PRODUCTS.slice(0, 30);
-    return CATALOG_PRODUCTS.filter(p =>
-      p.name.toLowerCase().includes(q) || (p.manufacturer || "").toLowerCase().includes(q)
-    ).slice(0, 30);
-  }, [search]);
-
   // Combined dropdown list: 12 standard products first, then full catalog (deduped)
   const combinedOptions = useMemo(() => {
     const seen = new Set<string>();
