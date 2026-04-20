@@ -17,6 +17,7 @@ import PinGate from "./components/PinGate";
 import PortalAdmin from "./pages/PortalAdmin";
 import ClientPortal from "./pages/ClientPortal";
 import TenantPortal from "./pages/TenantPortal";
+import PMPortal from "./pages/PMPortal";
 import AppointmentReport from "./pages/AppointmentReport";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/view-report/:reportId" element={<CustomerReportView />} />
           <Route path="/portal/:token" element={<ClientPortal />} />
           <Route path="/tenant/:token" element={<TenantPortal />} />
+          <Route path="/pm/:token" element={<PMPortal />} />
           <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
           <Route path="/portal-admin" element={<PortalAdmin />} />
           {/* All other routes require PIN */}

@@ -178,9 +178,16 @@ export const reviveSavedFabricObject = async ({
   });
 
   try {
-    await new Promise<void>((resolve) => {
-      tempCanvas.loadFromJSON({ objects: [obj], version: version || obj?.version || '6.0.0' }, () => resolve());
+    // Fabric v6: loadFromJSON returns a Promise. The 2nd argument is a per-object
+    // reviver, NOT a completion callback (that was v5). Awaiting the returned
+    // Promise is the only correct way to know loading finished.
+    const loadResult = tempCanvas.loadFromJSON({
+      objects: [obj],
+      version: version || obj?.version || '6.0.0',
     });
+    if (loadResult && typeof (loadResult as Promise<unknown>).then === 'function') {
+      await (loadResult as Promise<unknown>).catch(() => undefined);
+    }
 
     const revivedObject = tempCanvas.getObjects()[0];
     if (!revivedObject) return null;
