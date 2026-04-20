@@ -297,21 +297,22 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
   const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
-  // Always show exactly the next 2 upcoming.
-  // Rule: take the soonest scheduled service as #1 (ignore far-future scheduled rows),
-  // then ALWAYS project #2 = #1.date + frequency. If 0 scheduled, project both from
-  // (most recent past or today).
-  const upcomingServices: ServiceData[] = (() => {
-    const fallbackType = scheduledServices[0]?.service_type || pastServices[0]?.service_type || "General Pest Control";
-    const fallbackTech = scheduledServices[0]?.technician || pastServices[0]?.technician || null;
-    const fallbackUnits = scheduledServices[0]?.units_planned || pastServices[0]?.units_planned || null;
-    const buildProjected = (date: string, idx: number): ServiceData => ({
-      id: `projected-${idx}`,
+  // Show ONE detailed "next service" + 5 future date-only projections.
+  // Rule: take the soonest scheduled service as the next visit (ignore far-future scheduled rows
+  // beyond #1). Then project the following 5 visits = next.date + N * frequency.
+  // Projected visits show DATE ONLY — no notes, units, or other details.
+  const FUTURE_PROJECTION_COUNT = 5;
+  const nextService: ServiceData | null = (() => {
+    if (scheduledServices.length >= 1) return scheduledServices[0];
+    // No scheduled — project the next visit from most recent past (or today).
+    const anchorDate = pastServices[0]?.service_date || todayISO();
+    return {
+      id: "projected-next",
       property_id: propertyId,
-      service_date: date,
+      service_date: addDaysISO(anchorDate, propertyFrequencyDays),
       service_time: null,
-      service_type: fallbackType,
-      technician: fallbackTech,
+      service_type: pastServices[0]?.service_type || "General Pest Control",
+      technician: pastServices[0]?.technician || null,
       status: "scheduled",
       summary: null,
       findings: null,
@@ -321,23 +322,22 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       scheduling_status: "projected",
       prep_required: null,
       prep_notes: null,
-      units_planned: fallbackUnits,
+      units_planned: pastServices[0]?.units_planned || null,
       unit_details: [],
       special_notes: null,
-    });
-    if (scheduledServices.length >= 1) {
-      const first = scheduledServices[0];
-      const projected = first.service_date
-        ? [buildProjected(addDaysISO(first.service_date, propertyFrequencyDays), 0)]
-        : [];
-      return [first, ...projected];
-    }
-    // Zero scheduled — project two from anchor.
-    const anchorDate = pastServices[0]?.service_date || todayISO();
-    const first = addDaysISO(anchorDate, propertyFrequencyDays);
-    const second = addDaysISO(first, propertyFrequencyDays);
-    return [buildProjected(first, 0), buildProjected(second, 1)];
+    };
   })();
+  const futureProjectedDates: string[] = (() => {
+    if (!nextService?.service_date) return [];
+    const dates: string[] = [];
+    let cursor = nextService.service_date;
+    for (let i = 0; i < FUTURE_PROJECTION_COUNT; i++) {
+      cursor = addDaysISO(cursor, propertyFrequencyDays);
+      dates.push(cursor);
+    }
+    return dates;
+  })();
+  const upcomingServices: ServiceData[] = nextService ? [nextService] : [];
 
   const openRequestUnits = new Set(
     requests
