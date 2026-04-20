@@ -268,7 +268,9 @@ const PropertyDashboard = ({
   const allUpcoming = [
     ...scheduledServices.map(s => ({ ...s, isProjected: false })),
     ...projectedUpcoming,
-  ].sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  ]
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
+    .slice(0, 2); // Only ever show the next 2 upcoming services
 
   useEffect(() => {
     // Past services: all collapsed by default
