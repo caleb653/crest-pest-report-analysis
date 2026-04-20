@@ -262,13 +262,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const customerPref = (property.customer_preferences as any)?.preference;
   const customerPrefNotes = (property.customer_preferences as any)?.notes;
 
-  const today = new Date().toISOString().split("T")[0];
+  // Match admin portal logic exactly: past = completed, upcoming = everything else
   const pastServices = services
-    .filter(s => s.status === "completed" || (s.service_date && s.service_date < today))
+    .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcomingServices = services
-    .filter(s => s.status !== "completed" && s.service_date && s.service_date >= today)
+    .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+
+  // Units that need attention next visit: open work orders + follow-ups from most recent past service
+  const openRequestUnits = new Set(
+    requests
+      .filter(r => r.status === "pending" || r.status === "in_progress")
+      .map(r => r.unit_number)
+      .filter(Boolean) as string[]
+  );
+  const followUpUnits = (() => {
+    const set = new Set<string>();
+    if (pastServices.length > 0) {
+      const mostRecent = pastServices[0];
+      const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
+      details.forEach(u => {
+        if (u?.unit_number && (
+          u.status === "Needs Follow-up" ||
+          u.followUp === "Yes" ||
+          (u.pest_activity && ["High", "Moderate"].includes(u.pest_activity))
+        )) {
+          set.add(String(u.unit_number));
+        }
+      });
+    }
+    return set;
+  })();
 
   const servicesByUnit = (() => {
     const map = new Map<string, { service: ServiceData; unitDetail: any }[]>();
