@@ -1051,6 +1051,20 @@ const PropertyDashboard = ({
                   </button>
         </div>
 
+                {/* Service-level products used (one entry per product per service date) */}
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <Label className="text-[11px] font-semibold flex items-center gap-1.5 mb-2">
+                    <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                    Products Used (this service date)
+                  </Label>
+                  <ProductUsageEditor
+                    value={cd.products || []}
+                    onChange={(next) => setCompletionData(prev => ({
+                      ...prev,
+                      [s.id]: { ...prev[s.id], products: next },
+                    }))}
+                  />
+                </div>
 
                 {/* Photos uploader */}
                 <div>
