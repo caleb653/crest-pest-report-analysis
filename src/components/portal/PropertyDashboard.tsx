@@ -297,31 +297,27 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  // Build the next 2 upcoming.
-  // - If 1+ scheduled: keep ONLY the soonest scheduled as #1, then ALWAYS project #2
-  //   = #1.date + propertyFrequencyDays. (Ignores any far-future scheduled rows so
-  //   we don't show services months out.)
-  // - If 0 scheduled: project both from anchor (most recent past or today).
+  // Show ONE detailed "next service" + 5 future date-only projections.
+  // - If 1+ scheduled: keep ONLY the soonest as the next visit (ignore far-future scheduled rows).
+  // - If 0 scheduled: project the next visit from anchor (most recent past or today).
+  // Following 5 visits = next.date + N * propertyFrequencyDays. Date only — no details shown.
+  const FUTURE_PROJECTION_COUNT = 5;
   const allUpcoming = (() => {
     const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
-    if (scheduled.length >= 1) {
-      const first = scheduled[0];
-      const projected2 = first.service_date
-        ? [{
-            id: `projected-after-${first.id}`,
-            isProjected: true as const,
-            service_date: addDaysISO(first.service_date, propertyFrequencyDays),
-            service_type: first.service_type,
-            technician: first.technician,
-            status: "scheduled",
-            units_planned: first.units_planned,
-            property_id: property.id,
-          }]
-        : [];
-      return [first, ...projected2];
+    if (scheduled.length >= 1) return [scheduled[0]];
+    // No scheduled: take the first projected as the next visit.
+    return projectedUpcoming.slice(0, 1);
+  })();
+  const futureProjectedDates: string[] = (() => {
+    const next = allUpcoming[0];
+    if (!next?.service_date) return [];
+    const dates: string[] = [];
+    let cursor = next.service_date;
+    for (let i = 0; i < FUTURE_PROJECTION_COUNT; i++) {
+      cursor = addDaysISO(cursor, propertyFrequencyDays);
+      dates.push(cursor);
     }
-    // No scheduled: use the projected pair (already 2 entries, spaced by frequency).
-    return projectedUpcoming.slice(0, 2);
+    return dates;
   })();
 
   useEffect(() => {
