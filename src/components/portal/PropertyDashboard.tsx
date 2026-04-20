@@ -1798,7 +1798,14 @@ const PropertyDashboard = ({
               const isFirst = i === 0;
               const isExpanded = isFirst || expandedUpcomingId === s.id;
               const isProjected = (s as any).isProjected;
-              const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+              // SAME merge as the PM portal — single source of truth.
+              const mergedHeader = computeUpcomingUnits({
+                service: s,
+                isFirstUpcoming: isFirst,
+                requests: pendingRequests,
+                mostRecentPast: pastServices[0] || null,
+              });
+              const unitsPlanned = mergedHeader.units;
               const pmNotesMapHeader: Record<string, string> =
                 ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
               const hasPmNote = !!(s.service_date && pmNotesMapHeader[s.service_date]);
