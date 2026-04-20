@@ -16,7 +16,7 @@ export const STANDARD_PRODUCTS: StandardProduct[] = [
   { id: "MasterLine / Bifen I/T",         name: "MasterLine / Bifen I/T",         perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
   { id: "Essentria IC Pro",               name: "Essentria IC Pro",               perGallon: 2.00, unit: "oz",    appliedUnit: "gal" },
   { id: "Temprid FX",                     name: "Temprid FX",                     perGallon: 8.00, unit: "mL",    appliedUnit: "gal" },
-  { id: "Termidor SC",                    name: "Termidor SC",                    perGallon: 0.80, unit: "oz",    appliedUnit: "gal" },
+  { id: "Termidor SC",                    name: "Termidor SC",                    perGallon: 0.04, unit: "oz",    appliedUnit: "gal" },
   { id: "Phantom",                        name: "Phantom",                        perGallon: 3.00, unit: "oz",    appliedUnit: "gal" },
   { id: "OptiGard Flex Liquid",           name: "OptiGard Flex Liquid",           perGallon: 0.41, unit: "oz",    appliedUnit: "gal" },
   { id: "Onslaught FastCap Spider/Scorp", name: "Onslaught FastCap Spider/Scorp", perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
