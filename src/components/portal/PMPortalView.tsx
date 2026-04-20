@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
-  Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon,
+  Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -375,19 +375,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <MapPin className="w-4 h-4" />Property
+            <MapPin className="w-5 h-5" />
+            <span>Site Map and Plan</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Calendar className="w-4 h-4" />Past Services
+            <Calendar className="w-5 h-5" />
+            <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <ClipboardList className="w-4 h-4" />Request
+            <Bug className="w-5 h-5" />
+            <span>Request Work Order</span>
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Clock className="w-4 h-4" />Upcoming
+            <ClipboardList className="w-5 h-5" />
+            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileDown className="w-4 h-4" />Prep Sheets
+            <FileDown className="w-5 h-5" />
+            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
           </TabsTrigger>
         </TabsList>
 
@@ -755,16 +760,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                             {s.technician && ` • ${s.technician}`}
                             {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
-                          {/* Only show flagged units (work orders / follow-ups) on the next service card */}
-                          {flaggedUnits.length > 0 && (
+                          {/* Show all planned units (like admin) — flagged ones are highlighted */}
+                          {unitsPlanned.length > 0 && (
                             <div className="mt-1.5">
-                              <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-1">Units needing attention</p>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Units to be Treated</p>
                               <div className="flex flex-wrap gap-1">
-                                {flaggedUnits.map((u, idx) => {
-                                  const reason = openRequestUnits.has(u) ? "Work order" : "Follow-up";
+                                {unitsPlanned.map((u, idx) => {
+                                  const isWorkOrder = isFirst && openRequestUnits.has(u);
+                                  const isFollowUp = isFirst && followUpUnits.has(u);
+                                  const flagged = isWorkOrder || isFollowUp;
+                                  const label = isWorkOrder ? `${u} · Work order` : isFollowUp ? `${u} · Follow-up` : u;
                                   return (
-                                    <Badge key={`${u}-${idx}`} className="text-[10px] py-0 px-1.5 font-medium bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100">
-                                      {u} · {reason}
+                                    <Badge
+                                      key={`${u}-${idx}`}
+                                      variant={flagged ? "default" : "outline"}
+                                      className={`text-[10px] py-0 px-1.5 font-medium ${flagged ? "bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100" : ""}`}
+                                    >
+                                      {label}
                                     </Badge>
                                   );
                                 })}
