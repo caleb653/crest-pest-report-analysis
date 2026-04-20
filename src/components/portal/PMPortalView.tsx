@@ -249,6 +249,57 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     }
   };
 
+  // ─── PM upcoming-notes: hooks must run before any conditional return ───
+  // Compute the soonest scheduled service date OR the projected next date.
+  // This must mirror the `nextService` derivation below but only depends on raw state.
+  const _propertyForHook = property; // capture latest reference
+  const _scheduled = services.filter(s => s.status !== "completed").sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  const _past = services.filter(s => s.status === "completed").sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly" | "monthly" | "bi-monthly") || "bi-weekly";
+  const _freqDays = ({ "weekly": 7, "bi-weekly": 14, "monthly": 30, "bi-monthly": 60 } as const)[_freqKey] ?? 14;
+  const _nextDateKey: string = (() => {
+    if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
+    const anchor = _past[0]?.service_date || todayISO();
+    return addDaysISO(anchor, _freqDays);
+  })();
+  const _pmNotesMap: Record<string, string> =
+    ((_propertyForHook?.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
+
+  // Sync draft when the next-service date changes (or property switches).
+  useEffect(() => {
+    setPmNoteDraft(_nextDateKey ? (_pmNotesMap[_nextDateKey] || "") : "");
+    setPmNoteSavedDate(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_nextDateKey, _propertyForHook?.id]);
+
+  // Debounced save of PM note for the next-service date.
+  useEffect(() => {
+    if (!_nextDateKey || !_propertyForHook) return;
+    const current = _pmNotesMap[_nextDateKey] || "";
+    if (current === pmNoteDraft) return;
+    const t = setTimeout(async () => {
+      setPmNoteSaving(true);
+      const updatedMap = { ..._pmNotesMap };
+      if (pmNoteDraft.trim()) updatedMap[_nextDateKey] = pmNoteDraft;
+      else delete updatedMap[_nextDateKey];
+      const updatedPrefs = { ...(_propertyForHook.customer_preferences || {}), pm_upcoming_notes: updatedMap };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updatedPrefs })
+        .eq("id", _propertyForHook.id);
+      setPmNoteSaving(false);
+      if (error) {
+        toast({ title: "Failed to save note", variant: "destructive" });
+      } else {
+        (_propertyForHook as any).customer_preferences = updatedPrefs;
+        setPmNoteSavedDate(_nextDateKey);
+        toast({ title: "Note saved for upcoming service", duration: 1500 });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pmNoteDraft, _nextDateKey]);
+
   if (loading) {
     return (
       <div className="min-h-[300px] flex items-center justify-center">
