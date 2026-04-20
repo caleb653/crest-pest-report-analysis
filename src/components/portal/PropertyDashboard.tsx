@@ -238,10 +238,17 @@ const PropertyDashboard = ({
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
-  // Values: "weekly" (7 days) or "bi-weekly" (14 days). Defaults to bi-weekly.
-  const propertyFrequency: "weekly" | "bi-weekly" =
-    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
-  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+  // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly";
+  const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
+    "weekly": 7,
+    "bi-weekly": 14,
+    "monthly": 30,
+    "bi-monthly": 60,
+  };
+  const propertyFrequency: FrequencyKey =
+    ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
+  const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
   // Generate projected upcoming dates using the property's frequency toggle.
   // Anchor: most recent past service date (if any), else today. Spacing: propertyFrequencyDays.
