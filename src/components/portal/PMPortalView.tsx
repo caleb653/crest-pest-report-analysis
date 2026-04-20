@@ -955,6 +955,34 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                         </div>
                         {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       </button>
+
+                      {/* PM-editable notes for the next service. Visible to admins/technicians. */}
+                      {isFirst && (
+                        <div className="px-3 pb-3 -mt-1">
+                          <div className="border-t border-border/60 pt-2.5">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <Label htmlFor={`pm-notes-${s.id}`} className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                Notes / Comments for the Technician
+                              </Label>
+                              <span className="text-[10px] text-muted-foreground italic">
+                                {pmNoteSaving
+                                  ? "Saving…"
+                                  : pmNoteSavedDate === s.service_date
+                                    ? "Saved"
+                                    : "Auto-saves"}
+                              </span>
+                            </div>
+                            <Textarea
+                              id={`pm-notes-${s.id}`}
+                              value={pmNoteDraft}
+                              onChange={(e) => setPmNoteDraft(e.target.value)}
+                              placeholder="Add notes for Crest about this upcoming visit (e.g., units to focus on, access codes, tenant concerns)…"
+                              className="text-xs min-h-[70px] bg-background"
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       {isExpanded && (ownHasNotes || s.prep_required || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0)) && renderServiceDetailsRO(s)}
                     </Card>
                   );
