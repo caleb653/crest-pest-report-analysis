@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
-  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown
+  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -160,6 +160,7 @@ const PropertyDashboard = ({
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
+    products: ProductUsage[];
   }>>({});
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
@@ -372,6 +373,13 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  // Save service-level products_used (per service date — not per unit).
+  // Debounced lightly via local state in the editor; this just persists what's passed in.
+  const updateServiceProducts = async (serviceId: string, products: ProductUsage[]) => {
+    await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+    onRefresh();
+  };
+
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
@@ -439,7 +447,12 @@ const PropertyDashboard = ({
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
-      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
+      [serviceId]: {
+        unitRows: rows,
+        summary: "", findings: "", notes: "", technician: "",
+        time_in: "", time_out: "", photos: [],
+        products: normalizeUsageList((propServices.find(s => s.id === serviceId) as any)?.products_used) || [],
+      },
     }));
   };
 
@@ -453,24 +466,8 @@ const PropertyDashboard = ({
       ? `${data.time_in} - ${data.time_out}`
       : data?.time_in || data?.time_out || null;
 
-    // Aggregate products_used (ProductUsage[]) from unit rows.
-    // Keep one entry per (name + units) combo, summing amounts.
-    const aggregateMap = new Map<string, ProductUsage>();
-    unitRows.forEach(r => {
-      const list = Array.isArray(r.products_used) ? normalizeUsageList(r.products_used) : [];
-      list.forEach(u => {
-        if (!u.name) return;
-        const key = `${u.name}__${u.applied_unit}__${u.undiluted_unit}`;
-        const cur = aggregateMap.get(key);
-        if (cur) {
-          cur.applied_amount = (Number(cur.applied_amount || 0) + Number(u.applied_amount || 0)) || null;
-          cur.undiluted_amount = (Number(cur.undiluted_amount || 0) + Number(u.undiluted_amount || 0)) || null;
-        } else {
-          aggregateMap.set(key, { ...u });
-        }
-      });
-    });
-    const aggregatedProducts = Array.from(aggregateMap.values());
+    // Service-level products (entered once per service date — not per unit)
+    const aggregatedProducts = data?.products || [];
 
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
@@ -667,7 +664,6 @@ const PropertyDashboard = ({
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[80px]">Activity</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Products</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[90px]">Status</th>
               </tr>
             </thead>
@@ -695,12 +691,6 @@ const PropertyDashboard = ({
                     </select>
                   </td>
                   <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
-                      defaultValue={unit.products_used || ""}
-                      onBlur={e => { if (e.target.value !== (unit.products_used || "")) updateUnitField(s.id, j, "products_used", e.target.value); }}
-                    />
-                  </td>
-                  <td className="px-2 py-1">
                     <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
                       defaultValue={unit.status || "Treated"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
@@ -726,10 +716,6 @@ const PropertyDashboard = ({
                       onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}>
                       {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                  </td>
-                  <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Products" value={newUnitData.products_used}
-                      onChange={e => setNewUnitData(d => ({ ...d, products_used: e.target.value }))} />
                   </td>
                   <td className="px-2 py-1">
                     <div className="flex gap-0.5">
@@ -827,15 +813,17 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {products.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Products Used</p>
-            <ProductUsageSummary entries={products} />
-          </div>
-        )}
-
-        {/* Per-service product totals (aggregated across this service's units) */}
-        <ProductUsageTotalsCard services={[s]} />
+        {/* Service-level products used (editable, per service date — not per unit) */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+            <FlaskConical className="w-3.5 h-3.5" />
+            Products Used (this service date)
+          </p>
+          <ProductUsageEditor
+            value={products}
+            onChange={(next) => updateServiceProducts(s.id, next)}
+          />
+        </div>
 
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
@@ -979,7 +967,6 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold min-w-[420px]">Products & Amounts</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
@@ -1036,13 +1023,6 @@ const PropertyDashboard = ({
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="px-2 py-1.5" colSpan={1}>
-                              <ProductUsageEditor
-                                value={products}
-                                onChange={(next) => setRowProducts(idx, next)}
-                                compact
-                              />
-                            </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
@@ -1071,6 +1051,20 @@ const PropertyDashboard = ({
                   </button>
         </div>
 
+                {/* Service-level products used (one entry per product per service date) */}
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                  <Label className="text-[11px] font-semibold flex items-center gap-1.5 mb-2">
+                    <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                    Products Used (this service date)
+                  </Label>
+                  <ProductUsageEditor
+                    value={cd.products || []}
+                    onChange={(next) => setCompletionData(prev => ({
+                      ...prev,
+                      [s.id]: { ...prev[s.id], products: next },
+                    }))}
+                  />
+                </div>
 
                 {/* Photos uploader */}
                 <div>
