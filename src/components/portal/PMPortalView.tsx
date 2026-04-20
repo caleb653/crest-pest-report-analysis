@@ -136,6 +136,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
 
   useEffect(() => {
     loadAll();
+
+    // Realtime: when admin adds/removes a unit, deletes a service, or
+    // resolves a work order, the PM must see the change immediately so
+    // both portals always show the same upcoming-service info.
+    const channel = supabase
+      .channel(`pm-portal-sync-${propertyId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, () => loadAll())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [propertyId, linkId]);
 
   const loadAll = async () => {
