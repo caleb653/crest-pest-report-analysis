@@ -1061,8 +1061,10 @@ const PropertyDashboard = ({
                     onClick={addRow}>
                     <Plus className="w-3.5 h-3.5" /> Add unit row
                   </button>
-                </div>
+        </div>
 
+        {/* Cumulative product usage across all services for this property */}
+        <ProductUsageTotalsCard services={propServices as any} />
 
 
                 {/* Photos uploader */}
