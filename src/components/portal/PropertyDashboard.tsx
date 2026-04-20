@@ -1008,8 +1008,6 @@ const PropertyDashboard = ({
                                 <SelectContent>
                                   <SelectItem value="new-work-order">New Work Order</SelectItem>
                                   <SelectItem value="follow-up">Follow-up</SelectItem>
-                                  <SelectItem value="routine">Routine</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
                             </td>
