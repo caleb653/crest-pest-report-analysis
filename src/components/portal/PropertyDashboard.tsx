@@ -1485,6 +1485,9 @@ const PropertyDashboard = ({
           </div>
         </div>
 
+        {/* Cumulative product usage across ALL services for this property */}
+        <ProductUsageTotalsCard services={propServices as any} />
+
         {pastViewMode === "date" ? (
           pastServices.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
