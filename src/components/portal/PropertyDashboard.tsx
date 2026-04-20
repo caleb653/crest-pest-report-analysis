@@ -18,6 +18,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
+import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 // ─── Types ───
 interface PortalProperty {
@@ -153,7 +156,7 @@ const PropertyDashboard = ({
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
   // Inline completion form data
   const [completionData, setCompletionData] = useState<Record<string, {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: string[]; status: string; notes: string; source: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -427,13 +430,13 @@ const PropertyDashboard = ({
             target_pest: targetPest,
             findings: contextParts.join(" • "),
             pest_activity: fu?.pest_activity || "None",
-            products_used: [] as string[],
+            products_used: [] as ProductUsage[],
             status: "To be Treated",
             notes: "",
             source,
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as string[], status: "To be Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
@@ -450,10 +453,24 @@ const PropertyDashboard = ({
       ? `${data.time_in} - ${data.time_out}`
       : data?.time_in || data?.time_out || null;
 
-    // Aggregate products_used from unit rows for the products array
-    const aggregatedProducts = Array.from(new Set(
-      unitRows.flatMap(r => Array.isArray(r.products_used) ? r.products_used : [])
-    ));
+    // Aggregate products_used (ProductUsage[]) from unit rows.
+    // Keep one entry per (name + units) combo, summing amounts.
+    const aggregateMap = new Map<string, ProductUsage>();
+    unitRows.forEach(r => {
+      const list = Array.isArray(r.products_used) ? normalizeUsageList(r.products_used) : [];
+      list.forEach(u => {
+        if (!u.name) return;
+        const key = `${u.name}__${u.applied_unit}__${u.undiluted_unit}`;
+        const cur = aggregateMap.get(key);
+        if (cur) {
+          cur.applied_amount = (Number(cur.applied_amount || 0) + Number(u.applied_amount || 0)) || null;
+          cur.undiluted_amount = (Number(cur.undiluted_amount || 0) + Number(u.undiluted_amount || 0)) || null;
+        } else {
+          aggregateMap.set(key, { ...u });
+        }
+      });
+    });
+    const aggregatedProducts = Array.from(aggregateMap.values());
 
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
@@ -462,12 +479,12 @@ const PropertyDashboard = ({
       status: "completed",
       service_date: today,
       service_time: serviceTime,
-      unit_details: unitRows,
+      unit_details: unitRows as any,
       summary: data?.summary || null,
       findings: data?.findings || null,
       notes: data?.notes || null,
       technician: data?.technician || null,
-      products_used: aggregatedProducts,
+      products_used: aggregatedProducts as any,
       photos: photosToSave,
     }).eq("id", serviceId);
 
@@ -738,7 +755,7 @@ const PropertyDashboard = ({
   const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-    const products = s.products_used && Array.isArray(s.products_used) ? s.products_used as string[] : [];
+    const products: ProductUsage[] = normalizeUsageList(s.products_used);
 
     // For the first upcoming service, merge in units from most recent past + follow-ups
     const mergedUnitsForNext = (() => {
@@ -808,9 +825,7 @@ const PropertyDashboard = ({
         {products.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-1">Products Used</p>
-            <div className="flex flex-wrap gap-1">
-              {products.map((p, j) => <Badge key={j} variant="outline" className="text-[10px]">{p}</Badge>)}
-            </div>
+            <ProductUsageSummary entries={products} />
           </div>
         )}
 
@@ -882,14 +897,12 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [], status: "To be Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "" }] },
             }));
           };
-          const toggleProduct = (idx: number, product: string) => {
+          const setRowProducts = (idx: number, next: ProductUsage[]) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
-              const current = Array.isArray(rows[idx].products_used) ? rows[idx].products_used : [];
-              const next = current.includes(product) ? current.filter(p => p !== product) : [...current, product];
               rows[idx] = { ...rows[idx], products_used: next };
               return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
             });
@@ -958,7 +971,7 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold min-w-[420px]">Products & Amounts</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
@@ -967,7 +980,7 @@ const PropertyDashboard = ({
                         {cd.unitRows.map((row: any, idx: number) => {
                           const isFollowUp = row.source === "follow-up";
                           const isWorkOrder = row.source === "new-work-order";
-                          const products: string[] = Array.isArray(row.products_used) ? row.products_used : [];
+                          const products: ProductUsage[] = normalizeUsageList(row.products_used);
                           return (
                           <tr key={idx} className={`border-t border-border/40 ${isFollowUp ? "bg-orange-50/60" : isWorkOrder ? "bg-primary/[0.04]" : idx % 2 === 1 ? "bg-muted/20" : ""}`}>
                             <td className="px-2 py-1.5">
@@ -1015,37 +1028,12 @@ const PropertyDashboard = ({
                                 </SelectContent>
                               </Select>
                             </td>
-                            <td className="px-2 py-1.5">
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button className="h-8 w-full text-left text-[11px] px-2 rounded border border-transparent hover:border-border bg-transparent flex items-center justify-between gap-1">
-                                    <span className="truncate">
-                                      {products.length === 0 ? <span className="text-muted-foreground">Select products...</span> : `${products.length} selected`}
-                                    </span>
-                                    <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72 p-2 max-h-72 overflow-y-auto" align="start">
-                                  <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 px-1">Select products used</div>
-                                  {PRODUCT_OPTIONS_LIST.map(p => {
-                                    const checked = products.includes(p);
-                                    return (
-                                      <label key={p} className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer text-xs hover:bg-muted ${checked ? "bg-primary/10 font-medium" : ""}`}>
-                                        <input type="checkbox" checked={checked} onChange={() => toggleProduct(idx, p)} className="h-3.5 w-3.5" />
-                                        {p}
-                                      </label>
-                                    );
-                                  })}
-                                </PopoverContent>
-                              </Popover>
-                              {products.length > 0 && (
-                                <div className="flex flex-wrap gap-0.5 mt-1">
-                                  {products.slice(0, 3).map(p => (
-                                    <Badge key={p} variant="secondary" className="text-[9px] h-4 px-1">{p}</Badge>
-                                  ))}
-                                  {products.length > 3 && <Badge variant="outline" className="text-[9px] h-4 px-1">+{products.length - 3}</Badge>}
-                                </div>
-                              )}
+                            <td className="px-2 py-1.5" colSpan={1}>
+                              <ProductUsageEditor
+                                value={products}
+                                onChange={(next) => setRowProducts(idx, next)}
+                                compact
+                              />
                             </td>
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
@@ -1073,8 +1061,7 @@ const PropertyDashboard = ({
                     onClick={addRow}>
                     <Plus className="w-3.5 h-3.5" /> Add unit row
                   </button>
-                </div>
-
+        </div>
 
 
                 {/* Photos uploader */}
@@ -1497,6 +1484,9 @@ const PropertyDashboard = ({
             >By Unit</button>
           </div>
         </div>
+
+        {/* Cumulative product usage across ALL services for this property */}
+        <ProductUsageTotalsCard services={propServices as any} />
 
         {pastViewMode === "date" ? (
           pastServices.length === 0 ? (
