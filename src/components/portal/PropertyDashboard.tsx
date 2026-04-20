@@ -755,7 +755,7 @@ const PropertyDashboard = ({
   const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-    const products = s.products_used && Array.isArray(s.products_used) ? s.products_used as string[] : [];
+    const products: ProductUsage[] = normalizeUsageList(s.products_used);
 
     // For the first upcoming service, merge in units from most recent past + follow-ups
     const mergedUnitsForNext = (() => {
@@ -825,9 +825,7 @@ const PropertyDashboard = ({
         {products.length > 0 && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-1">Products Used</p>
-            <div className="flex flex-wrap gap-1">
-              {products.map((p, j) => <Badge key={j} variant="outline" className="text-[10px]">{p}</Badge>)}
-            </div>
+            <ProductUsageSummary entries={products} />
           </div>
         )}
 
@@ -973,7 +971,7 @@ const PropertyDashboard = ({
                           <th className="text-left px-2 py-1.5 font-semibold w-[140px]">Target Pest</th>
                           <th className="text-left px-2 py-1.5 font-semibold">Findings / Context</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[90px]">Activity</th>
-                          <th className="text-left px-2 py-1.5 font-semibold w-[200px]">Products</th>
+                          <th className="text-left px-2 py-1.5 font-semibold min-w-[420px]">Products & Amounts</th>
                           <th className="text-left px-2 py-1.5 font-semibold w-[130px]">Status</th>
                           <th className="w-[28px]"></th>
                         </tr>
