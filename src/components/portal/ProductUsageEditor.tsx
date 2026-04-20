@@ -52,81 +52,90 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
     ).slice(0, 30);
   }, [search]);
 
+  // Combined dropdown list: 12 standard products first, then full catalog (deduped)
+  const combinedOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Array<{ name: string; manufacturer?: string; standard?: boolean; perGallonHint?: string }> = [];
+    for (const p of STANDARD_PRODUCTS) {
+      seen.add(p.name.toLowerCase());
+      out.push({ name: p.name, standard: true, perGallonHint: `${p.perGallon} ${p.unit}/gal` });
+    }
+    for (const p of CATALOG_PRODUCTS) {
+      if (seen.has(p.name.toLowerCase())) continue;
+      seen.add(p.name.toLowerCase());
+      out.push({ name: p.name, manufacturer: p.manufacturer });
+    }
+    return out;
+  }, []);
+
+  const filteredOptions = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return combinedOptions;
+    return combinedOptions.filter(o =>
+      o.name.toLowerCase().includes(q) || (o.manufacturer || "").toLowerCase().includes(q)
+    );
+  }, [combinedOptions, search]);
+
   return (
     <div className={compact ? "space-y-1.5" : "space-y-2"}>
-      {/* Quick-pick chips for the 12 standard products */}
-      <div className="flex flex-wrap gap-1">
-        {STANDARD_PRODUCTS.map(p => {
-          const active = presentNames.has(p.id);
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => active ? onChange(value.filter(v => v.name !== p.id)) : addProduct(p.id)}
-              className={`text-[10px] leading-none px-2 py-1 rounded-full border transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground border-primary font-semibold"
-                  : "bg-background hover:bg-muted border-border text-foreground"
-              }`}
-              title={`${p.perGallon} ${p.unit} per gallon`}
-            >
-              {p.name}
-            </button>
-          );
-        })}
-
-        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="text-[10px] leading-none px-2 py-1 rounded-full border border-dashed border-border bg-background hover:bg-muted text-muted-foreground flex items-center gap-1"
-            >
-              <Search className="w-2.5 h-2.5" /> Other product
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-2" align="start">
-            <Input
-              autoFocus
-              placeholder="Search catalog…"
-              className="h-7 text-xs mb-2"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <div className="max-h-64 overflow-y-auto space-y-0.5">
-              {filteredCatalog.map(p => {
-                const active = presentNames.has(p.name);
-                return (
-                  <button
-                    key={p.name}
-                    type="button"
-                    disabled={active}
-                    onClick={() => { addProduct(p.name); setPickerOpen(false); setSearch(""); }}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted flex items-center justify-between ${active ? "opacity-40" : ""}`}
-                  >
-                    <span>
-                      <span className="font-medium">{p.name}</span>
-                      {p.manufacturer && <span className="text-muted-foreground"> · {p.manufacturer}</span>}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">{p.appliedUnit}</span>
-                  </button>
-                );
-              })}
-              {filteredCatalog.length === 0 && (
-                <p className="text-[11px] text-muted-foreground p-2 text-center">No matches</p>
-              )}
-              {search.trim() && !CATALOG_PRODUCTS.some(p => p.name.toLowerCase() === search.toLowerCase()) && (
+      {/* Single dropdown product picker */}
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-md border border-input bg-background hover:bg-muted text-xs text-muted-foreground"
+          >
+            <span className="flex items-center gap-1.5">
+              <Plus className="w-3 h-3" />
+              {value.length === 0 ? "Add a product…" : `Add another product (${value.length} added)`}
+            </span>
+            <ChevronDown className="w-3 h-3 opacity-60" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-2" align="start">
+          <Input
+            autoFocus
+            placeholder="Search products…"
+            className="h-8 text-xs mb-2"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <div className="max-h-72 overflow-y-auto space-y-0.5">
+            {filteredOptions.map(opt => {
+              const active = presentNames.has(opt.name);
+              return (
                 <button
+                  key={opt.name}
                   type="button"
-                  onClick={() => { addProduct(search.trim()); setPickerOpen(false); setSearch(""); }}
-                  className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted flex items-center gap-1.5 mt-1 border-t border-border pt-2"
+                  disabled={active}
+                  onClick={() => { addProduct(opt.name); setPickerOpen(false); setSearch(""); }}
+                  className={`w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted flex items-center justify-between gap-2 ${active ? "opacity-40" : ""}`}
                 >
-                  <Plus className="w-3 h-3" /> Add custom product: <span className="font-semibold">"{search.trim()}"</span>
+                  <span className="min-w-0 truncate">
+                    <span className="font-medium">{opt.name}</span>
+                    {opt.manufacturer && <span className="text-muted-foreground"> · {opt.manufacturer}</span>}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {opt.standard ? opt.perGallonHint : ""}
+                  </span>
                 </button>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+              );
+            })}
+            {filteredOptions.length === 0 && (
+              <p className="text-[11px] text-muted-foreground p-2 text-center">No matches</p>
+            )}
+            {search.trim() && !combinedOptions.some(o => o.name.toLowerCase() === search.toLowerCase()) && (
+              <button
+                type="button"
+                onClick={() => { addProduct(search.trim()); setPickerOpen(false); setSearch(""); }}
+                className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted flex items-center gap-1.5 mt-1 border-t border-border pt-2"
+              >
+                <Plus className="w-3 h-3" /> Add custom product: <span className="font-semibold">"{search.trim()}"</span>
+              </button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {/* Per-product amount rows */}
       {value.length > 0 && (
