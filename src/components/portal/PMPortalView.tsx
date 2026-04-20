@@ -268,7 +268,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcomingServices = services
     .filter(s => s.status !== "completed")
-    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
+    .slice(0, 2); // Only ever show the next 2 upcoming services
 
   // Units that need attention next visit: open work orders + follow-ups from most recent past service
   const openRequestUnits = new Set(
