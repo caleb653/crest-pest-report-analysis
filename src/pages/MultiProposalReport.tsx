@@ -608,18 +608,96 @@ const Report = () => {
     quantity: string;
   }
   const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
-  const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
+  // Per-option setup materials (keyed by proposalIndex)
+  const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
+  // Per-option additional details (keyed by proposalIndex)
+  const [proposalAdditionalDetails, setProposalAdditionalDetails] = useState<Record<number, string>>({});
+  // Per-option target pests (keyed by proposalIndex). When undefined, auto-computed from services.
+  const [proposalTargetPests, setProposalTargetPests] = useState<Record<number, string[]>>({});
+  // Tracks which proposals have user-overridden target pests (so we don't recompute over their edits)
+  const [proposalTargetPestsEdited, setProposalTargetPestsEdited] = useState<Record<number, boolean>>({});
+
   const [limitationsText, setLimitationsText] = useState("");
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
-  
-  const addSetupMaterial = (name: string, quantity: string) => {
+
+  const getProposalSetupMaterials = (idx: number): SetupMaterial[] =>
+    proposalSetupMaterials[idx] ?? [];
+
+  const addSetupMaterial = (proposalIndex: number, name: string, quantity: string) => {
     if (name.trim() && quantity.trim()) {
-      setSetupMaterials(prev => [...prev, { name: name.trim(), quantity: quantity.trim() }]);
+      setProposalSetupMaterials(prev => ({
+        ...prev,
+        [proposalIndex]: [...(prev[proposalIndex] ?? []), { name: name.trim(), quantity: quantity.trim() }],
+      }));
     }
   };
-  const removeSetupMaterial = (index: number) => {
-    setSetupMaterials(prev => prev.filter((_, i) => i !== index));
+  const removeSetupMaterial = (proposalIndex: number, index: number) => {
+    setProposalSetupMaterials(prev => ({
+      ...prev,
+      [proposalIndex]: (prev[proposalIndex] ?? []).filter((_, i) => i !== index),
+    }));
+  };
+
+  // GENERAL pests baseline (matches "Monthly Services" etc.)
+  const GENERAL_TARGET_PESTS = ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"];
+
+  // Compute target pests for an option based on its selected services.
+  // Defaults to general pests; adds Rodents / Mosquitoes when relevant services are present.
+  const computeTargetPestsForProposal = (proposalIndex: number): string[] => {
+    const proposal = proposals[proposalIndex];
+    if (!proposal) return [...GENERAL_TARGET_PESTS];
+    const services = proposal.services.filter(s => s.serviceType);
+    if (services.length === 0) return [...GENERAL_TARGET_PESTS];
+
+    const collected: string[] = [];
+    const seen = new Set<string>();
+    const add = (p: string) => { if (!seen.has(p)) { seen.add(p); collected.push(p); } };
+
+    // Always start with general pests as a baseline (per spec)
+    GENERAL_TARGET_PESTS.forEach(add);
+
+    // Add service-specific pests (Rodents, Mosquitoes, Bed Bugs, etc.)
+    services.forEach(s => {
+      const cfg = SERVICE_CONFIG[s.serviceType];
+      if (cfg?.targetPests) {
+        cfg.targetPests.forEach(add);
+      }
+    });
+    return collected;
+  };
+
+  const getProposalTargetPests = (idx: number): string[] => {
+    if (proposalTargetPestsEdited[idx] && proposalTargetPests[idx]) {
+      return proposalTargetPests[idx];
+    }
+    return proposalTargetPests[idx] ?? computeTargetPestsForProposal(idx);
+  };
+
+  // Auto-recompute non-edited proposal target pests when their services change
+  useEffect(() => {
+    setProposalTargetPests(prev => {
+      const next = { ...prev };
+      proposals.forEach((_, idx) => {
+        if (!proposalTargetPestsEdited[idx]) {
+          next[idx] = computeTargetPestsForProposal(idx);
+        }
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceTypesKey, proposals.length]);
+
+  // Detect weekly / bi-weekly services on a proposal — used for invoice note
+  const getInvoiceNoteForProposal = (proposalIndex: number): string | null => {
+    const proposal = proposals[proposalIndex];
+    if (!proposal) return null;
+    const recurring = proposal.services.filter(s => s.serviceType && (s.frequency === 7 || s.frequency === 14));
+    if (recurring.length === 0) return null;
+    // If ANY weekly → invoice every 4 services. Else bi-weekly only → every 2.
+    const hasWeekly = recurring.some(s => s.frequency === 7);
+    const count = hasWeekly ? 4 : 2;
+    return `Invoices are charged after every ${count} services.`;
   };
   
   const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
