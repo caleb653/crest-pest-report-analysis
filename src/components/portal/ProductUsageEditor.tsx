@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, Plus, X, Search, Calculator } from "lucide-react";
+import { ChevronDown, Plus, X, Calculator } from "lucide-react";
 import {
   STANDARD_PRODUCTS,
   CATALOG_PRODUCTS,
