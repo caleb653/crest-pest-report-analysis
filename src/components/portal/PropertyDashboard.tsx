@@ -22,6 +22,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
+import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 
 // ─── Types ───
 interface PortalProperty {
@@ -766,15 +767,15 @@ const PropertyDashboard = ({
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const products: ProductUsage[] = normalizeUsageList(s.products_used);
 
-    // For the first upcoming service, merge in units from most recent past + follow-ups
-    const mergedUnitsForNext = (() => {
-      if (!isUpcoming || !isFirstUpcoming) return unitsPlanned;
-      const all = new Set(unitsPlanned);
-      unitsFromMostRecent.forEach(u => all.add(u));
-      followUpFromPast.forEach(u => all.add(u));
-      return Array.from(all).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    })();
-    const displayUnits = isUpcoming && isFirstUpcoming ? mergedUnitsForNext : unitsPlanned;
+    // Use the SAME merge helper the PM portal uses so admin + PM can never
+    // disagree about which units will be treated on the next service.
+    const merged = computeUpcomingUnits({
+      service: s,
+      isFirstUpcoming: isUpcoming && isFirstUpcoming,
+      requests: pendingRequests,
+      mostRecentPast: pastServices[0] || null,
+    });
+    const displayUnits = isUpcoming ? merged.units : unitsPlanned;
 
     // PM-submitted note for this upcoming service date (if any).
     const pmNotesMap: Record<string, string> =
@@ -1797,7 +1798,14 @@ const PropertyDashboard = ({
               const isFirst = i === 0;
               const isExpanded = isFirst || expandedUpcomingId === s.id;
               const isProjected = (s as any).isProjected;
-              const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+              // SAME merge as the PM portal — single source of truth.
+              const mergedHeader = computeUpcomingUnits({
+                service: s,
+                isFirstUpcoming: isFirst,
+                requests: pendingRequests,
+                mostRecentPast: pastServices[0] || null,
+              });
+              const unitsPlanned = mergedHeader.units;
               const pmNotesMapHeader: Record<string, string> =
                 ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
               const hasPmNote = !!(s.service_date && pmNotesMapHeader[s.service_date]);

@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
+import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
 
 const PEST_TYPES = [
@@ -135,6 +136,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
 
   useEffect(() => {
     loadAll();
+
+    // Realtime: when admin adds/removes a unit, deletes a service, or
+    // resolves a work order, the PM must see the change immediately so
+    // both portals always show the same upcoming-service info.
+    const channel = supabase
+      .channel(`pm-portal-sync-${propertyId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, () => loadAll())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [propertyId, linkId]);
 
   const loadAll = async () => {
@@ -928,22 +940,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 {upcomingServices.map((s, i) => {
                   const isFirst = i === 0;
                   const isExpanded = isFirst || expandedUpcomingId === s.id;
-                  const ownPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-                  // Fall back to most recent past service's units when this upcoming has none planned yet
-                  const lastPast = pastServices[0];
-                  const lastPastUnits = lastPast && Array.isArray(lastPast.units_planned)
-                    ? lastPast.units_planned as string[]
-                    : [];
-                  const baseUnits = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
-                  // For the next service, also merge in units from any open work orders
-                  const woUnits = isFirst
-                    ? Array.from(openRequestUnits).filter((u): u is string => Boolean(u))
-                    : [];
-                  const mergedSet = new Set<string>(baseUnits);
-                  woUnits.forEach(u => mergedSet.add(u));
-                  const unitsPlanned = Array.from(mergedSet)
-                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-                  const usingFallbackUnits = ownPlanned.length === 0 && lastPastUnits.length > 0;
+                  const lastPast = pastServices[0] || null;
+                  const merged = computeUpcomingUnits({
+                    service: s,
+                    isFirstUpcoming: isFirst,
+                    requests,
+                    mostRecentPast: lastPast,
+                  });
+                  const unitsPlanned = merged.units;
+                  const usingFallbackUnits = merged.usingFallback;
 
                   // Carry-over notes from the most recent past service when this upcoming has none
                   const ownHasNotes = Boolean(s.summary || s.findings || s.notes || s.special_notes);
