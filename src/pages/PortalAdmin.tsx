@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PropertyDashboard from "@/components/portal/PropertyDashboard";
+import PMPortalView from "@/components/portal/PMPortalView";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox, Check } from "lucide-react";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox, Check, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -85,6 +86,7 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
+  const [pmPreviewMode, setPmPreviewMode] = useState(false);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
