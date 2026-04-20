@@ -155,6 +155,26 @@ const PropertyDashboard = ({
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
 
+  // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
+  const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
+  useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id, property.notes]);
+  useEffect(() => {
+    if ((property.notes || "") === planDraft) return;
+    const t = setTimeout(async () => {
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ notes: planDraft })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save plan", variant: "destructive" });
+      } else {
+        toast({ title: "Property plan saved", duration: 1200 });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planDraft]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
