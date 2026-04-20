@@ -608,18 +608,96 @@ const Report = () => {
     quantity: string;
   }
   const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
-  const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
+  // Per-option setup materials (keyed by proposalIndex)
+  const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
+  // Per-option additional details (keyed by proposalIndex)
+  const [proposalAdditionalDetails, setProposalAdditionalDetails] = useState<Record<number, string>>({});
+  // Per-option target pests (keyed by proposalIndex). When undefined, auto-computed from services.
+  const [proposalTargetPests, setProposalTargetPests] = useState<Record<number, string[]>>({});
+  // Tracks which proposals have user-overridden target pests (so we don't recompute over their edits)
+  const [proposalTargetPestsEdited, setProposalTargetPestsEdited] = useState<Record<number, boolean>>({});
+
   const [limitationsText, setLimitationsText] = useState("");
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
-  
-  const addSetupMaterial = (name: string, quantity: string) => {
+
+  const getProposalSetupMaterials = (idx: number): SetupMaterial[] =>
+    proposalSetupMaterials[idx] ?? [];
+
+  const addSetupMaterial = (proposalIndex: number, name: string, quantity: string) => {
     if (name.trim() && quantity.trim()) {
-      setSetupMaterials(prev => [...prev, { name: name.trim(), quantity: quantity.trim() }]);
+      setProposalSetupMaterials(prev => ({
+        ...prev,
+        [proposalIndex]: [...(prev[proposalIndex] ?? []), { name: name.trim(), quantity: quantity.trim() }],
+      }));
     }
   };
-  const removeSetupMaterial = (index: number) => {
-    setSetupMaterials(prev => prev.filter((_, i) => i !== index));
+  const removeSetupMaterial = (proposalIndex: number, index: number) => {
+    setProposalSetupMaterials(prev => ({
+      ...prev,
+      [proposalIndex]: (prev[proposalIndex] ?? []).filter((_, i) => i !== index),
+    }));
+  };
+
+  // GENERAL pests baseline (matches "Monthly Services" etc.)
+  const GENERAL_TARGET_PESTS = ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"];
+
+  // Compute target pests for an option based on its selected services.
+  // Defaults to general pests; adds Rodents / Mosquitoes when relevant services are present.
+  const computeTargetPestsForProposal = (proposalIndex: number): string[] => {
+    const proposal = proposals[proposalIndex];
+    if (!proposal) return [...GENERAL_TARGET_PESTS];
+    const services = proposal.services.filter(s => s.serviceType);
+    if (services.length === 0) return [...GENERAL_TARGET_PESTS];
+
+    const collected: string[] = [];
+    const seen = new Set<string>();
+    const add = (p: string) => { if (!seen.has(p)) { seen.add(p); collected.push(p); } };
+
+    // Always start with general pests as a baseline (per spec)
+    GENERAL_TARGET_PESTS.forEach(add);
+
+    // Add service-specific pests (Rodents, Mosquitoes, Bed Bugs, etc.)
+    services.forEach(s => {
+      const cfg = SERVICE_CONFIG[s.serviceType];
+      if (cfg?.targetPests) {
+        cfg.targetPests.forEach(add);
+      }
+    });
+    return collected;
+  };
+
+  const getProposalTargetPests = (idx: number): string[] => {
+    if (proposalTargetPestsEdited[idx] && proposalTargetPests[idx]) {
+      return proposalTargetPests[idx];
+    }
+    return proposalTargetPests[idx] ?? computeTargetPestsForProposal(idx);
+  };
+
+  // Auto-recompute non-edited proposal target pests when their services change
+  useEffect(() => {
+    setProposalTargetPests(prev => {
+      const next = { ...prev };
+      proposals.forEach((_, idx) => {
+        if (!proposalTargetPestsEdited[idx]) {
+          next[idx] = computeTargetPestsForProposal(idx);
+        }
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceTypesKey, proposals.length]);
+
+  // Detect weekly / bi-weekly services on a proposal — used for invoice note
+  const getInvoiceNoteForProposal = (proposalIndex: number): string | null => {
+    const proposal = proposals[proposalIndex];
+    if (!proposal) return null;
+    const recurring = proposal.services.filter(s => s.serviceType && (s.frequency === 7 || s.frequency === 14));
+    if (recurring.length === 0) return null;
+    // If ANY weekly → invoice every 4 services. Else bi-weekly only → every 2.
+    const hasWeekly = recurring.some(s => s.frequency === 7);
+    const count = hasWeekly ? 4 : 2;
+    return `Invoices are charged after every ${count} services.`;
   };
   
   const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
@@ -842,7 +920,29 @@ const Report = () => {
               setPreferredServiceTime(parsed.preferredServiceTime || "");
               setMainPointOfContact(parsed.mainPointOfContact || "");
               setContactPhone(parsed.contactPhone || "");
-              setSetupMaterials(parsed.setupMaterials || []);
+
+              // Per-option additional details (migrate legacy single value into Option A only)
+              if (parsed.proposalAdditionalDetails && typeof parsed.proposalAdditionalDetails === 'object') {
+                setProposalAdditionalDetails(parsed.proposalAdditionalDetails);
+              } else if (parsed.additionalDetails) {
+                setProposalAdditionalDetails({ 0: parsed.additionalDetails });
+              }
+
+              // Per-option setup materials (migrate legacy array into Option A only)
+              if (parsed.proposalSetupMaterials && typeof parsed.proposalSetupMaterials === 'object') {
+                setProposalSetupMaterials(parsed.proposalSetupMaterials);
+              } else if (Array.isArray(parsed.setupMaterials) && parsed.setupMaterials.length > 0) {
+                setProposalSetupMaterials({ 0: parsed.setupMaterials });
+              }
+
+              // Per-option target pests + edited flags
+              if (parsed.proposalTargetPests && typeof parsed.proposalTargetPests === 'object') {
+                setProposalTargetPests(parsed.proposalTargetPests);
+              }
+              if (parsed.proposalTargetPestsEdited && typeof parsed.proposalTargetPestsEdited === 'object') {
+                setProposalTargetPestsEdited(parsed.proposalTargetPestsEdited);
+              }
+
               setLimitationsText(parsed.limitationsText || "");
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
@@ -986,14 +1086,20 @@ const Report = () => {
     return JSON.stringify({
       _structuredNotes: true,
       _reportFormat: "multi-proposal",
-      additionalDetails: additionalDetails || notes || "",
+      // Legacy fields kept in sync with Option A for backward compat
+      additionalDetails: (proposalAdditionalDetails[0] ?? additionalDetails) || notes || "",
+      setupMaterials: proposalSetupMaterials[0] ?? [],
+      // New per-option fields
+      proposalAdditionalDetails,
+      proposalSetupMaterials,
+      proposalTargetPests,
+      proposalTargetPestsEdited,
       propertyType,
       companyName,
       preferredServiceDay,
       preferredServiceTime,
       mainPointOfContact,
       contactPhone,
-      setupMaterials,
       limitationsText,
       recommendedProposal,
       videoUrl,
@@ -2208,79 +2314,193 @@ Crest Pest Control`;
               </div>
             </Card>
 
-            {/* Additional Details */}
+            {/* Target Pests — per option (compact) */}
+            <Card data-pdf-section="target-pests" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+              <div className="print-section-header py-2 px-3.5 print:px-3 rounded-t-xl">
+                <span className="text-base print:text-sm font-bold uppercase">
+                  Target Pests — {proposalName}
+                </span>
+              </div>
+              <div className="p-2.5 print:p-2">
+                {(() => {
+                  const pests = getProposalTargetPests(proposalIndex);
+                  return (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pests.length === 0 && (
+                          <span className="text-xs text-muted-foreground italic">No target pests</span>
+                        )}
+                        {pests.map((pest, pestIdx) => (
+                          <span
+                            key={`${pest}-${pestIdx}`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-foreground text-xs print:text-[11px] border border-border group"
+                          >
+                            {pest}
+                            {!isReadOnly && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setProposalTargetPests(prev => ({
+                                    ...prev,
+                                    [proposalIndex]: pests.filter((_, i) => i !== pestIdx),
+                                  }));
+                                  setProposalTargetPestsEdited(prev => ({ ...prev, [proposalIndex]: true }));
+                                  pendingAutoSaveRef.current = true;
+                                }}
+                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                aria-label={`Remove ${pest}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                      {!isReadOnly && (
+                        <div className="no-print mt-2 flex flex-wrap gap-1">
+                          {PEST_OPTIONS.filter(p => p !== "Other" && !pests.includes(p)).map(p => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => {
+                                setProposalTargetPests(prev => ({
+                                  ...prev,
+                                  [proposalIndex]: [...(prev[proposalIndex] ?? pests), p],
+                                }));
+                                setProposalTargetPestsEdited(prev => ({ ...prev, [proposalIndex]: true }));
+                                pendingAutoSaveRef.current = true;
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                              + {p}
+                            </button>
+                          ))}
+                          {proposalTargetPestsEdited[proposalIndex] && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProposalTargetPestsEdited(prev => ({ ...prev, [proposalIndex]: false }));
+                                setProposalTargetPests(prev => ({
+                                  ...prev,
+                                  [proposalIndex]: computeTargetPestsForProposal(proposalIndex),
+                                }));
+                                pendingAutoSaveRef.current = true;
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                            >
+                              ↺ Reset to defaults
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </Card>
+
+            {/* Additional Details — per option */}
             <Card data-pdf-section="additional-details" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl flex flex-col">
               <div className="print-section-header py-2.5 px-3.5 rounded-t-xl">
                 <span className="text-lg print:text-base font-bold uppercase">Additional Details</span>
               </div>
               <div className="additional-details-body p-4 print:p-2.5 flex-1 flex flex-col">
-                <div className="no-print flex-1 flex flex-col">
-                  <RichTextEditor
-                    value={additionalDetails}
-                    onChange={setAdditionalDetails}
-                    placeholder="• Enter any additional details, notes, or observations..."
-                    fontSize={additionalDetailsFontSize}
-                    onFontSizeChange={setAdditionalDetailsFontSize}
-                    className="additional-details-editor flex-1 min-h-[80px] print:min-h-0"
-                  />
-                </div>
-                <div
-                  className="hidden print-content-formatted"
-                  style={{ fontSize: `${additionalDetailsFontSize}px` }}
-                  dangerouslySetInnerHTML={{ __html: formatProposedServices(additionalDetails || "") }}
-                />
+                {(() => {
+                  const detailsValue = proposalAdditionalDetails[proposalIndex] ?? (proposalIndex === 0 ? additionalDetails : "");
+                  return (
+                    <>
+                      <div className="no-print flex-1 flex flex-col">
+                        <RichTextEditor
+                          value={detailsValue}
+                          onChange={(v) => {
+                            setProposalAdditionalDetails(prev => ({ ...prev, [proposalIndex]: v }));
+                            if (proposalIndex === 0) setAdditionalDetails(v);
+                            pendingAutoSaveRef.current = true;
+                          }}
+                          placeholder="• Enter any additional details, notes, or observations..."
+                          fontSize={additionalDetailsFontSize}
+                          onFontSizeChange={setAdditionalDetailsFontSize}
+                          className="additional-details-editor flex-1 min-h-[80px] print:min-h-0"
+                        />
+                      </div>
+                      <div
+                        className="hidden print-content-formatted"
+                        style={{ fontSize: `${additionalDetailsFontSize}px` }}
+                        dangerouslySetInnerHTML={{ __html: formatProposedServices(detailsValue || "") }}
+                      />
+                    </>
+                  );
+                })()}
               </div>
             </Card>
 
-            {/* Setup Materials */}
+            {/* Setup Materials — per option */}
             <Card data-pdf-section="setup-materials" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
               <div className="print-section-header py-2.5 px-3.5 rounded-t-xl">
                 <span className="text-lg print:text-base font-bold uppercase">Setup Materials</span>
               </div>
               <div className="p-4 print:p-2.5">
-                {setupMaterials.length > 0 && (
-                  <div className="space-y-1 mb-2">
-                    {setupMaterials.map((mat, index) => (
-                      <div key={index} className="flex items-center justify-between text-base group">
-                        <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
-                        {!isReadOnly && (
-                          <button type="button" onClick={() => removeSetupMaterial(index)}
-                            className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                            <X className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {!isReadOnly && (
-                  <div className="no-print space-y-1.5">
-                    <div className="flex flex-wrap gap-1">
-                      {SETUP_MATERIAL_PRESETS.filter(
-                        (preset) => !setupMaterials.some((m) => m.name === preset)
-                      ).map((preset) => (
-                        <button key={preset} type="button"
-                          onClick={() => { const qty = prompt(`How many ${preset}?`, "1"); if (qty) addSetupMaterial(preset, qty); }}
-                          className="px-2 py-0.5 rounded text-[10px] bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
-                          + {preset}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-1">
-                      <Input value={newMaterialName} onChange={(e) => setNewMaterialName(e.target.value)} placeholder="Custom item" className="h-5 text-[10px] flex-1" />
-                      <Input value={newMaterialQty} onChange={(e) => setNewMaterialQty(e.target.value)} placeholder="Qty" className="h-5 text-[10px] w-12" />
-                      <Button type="button" size="sm" variant="outline" className="h-5 px-1.5 text-[10px]"
-                        onClick={() => { addSetupMaterial(newMaterialName, newMaterialQty); setNewMaterialName(""); setNewMaterialQty(""); }}>
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {setupMaterials.length === 0 && isReadOnly && (
-                  <p className="text-xs text-muted-foreground italic">No setup materials listed</p>
-                )}
+                {(() => {
+                  const optionMaterials = getProposalSetupMaterials(proposalIndex);
+                  return (
+                    <>
+                      {optionMaterials.length > 0 && (
+                        <div className="space-y-1 mb-2">
+                          {optionMaterials.map((mat, index) => (
+                            <div key={index} className="flex items-center justify-between text-base group">
+                              <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
+                              {!isReadOnly && (
+                                <button type="button" onClick={() => { removeSetupMaterial(proposalIndex, index); pendingAutoSaveRef.current = true; }}
+                                  className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!isReadOnly && (
+                        <div className="no-print space-y-1.5">
+                          <div className="flex flex-wrap gap-1">
+                            {SETUP_MATERIAL_PRESETS.filter(
+                              (preset) => !optionMaterials.some((m) => m.name === preset)
+                            ).map((preset) => (
+                              <button key={preset} type="button"
+                                onClick={() => { const qty = prompt(`How many ${preset}?`, "1"); if (qty) { addSetupMaterial(proposalIndex, preset, qty); pendingAutoSaveRef.current = true; } }}
+                                className="px-2 py-0.5 rounded text-[10px] bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                                + {preset}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex gap-1">
+                            <Input value={newMaterialName} onChange={(e) => setNewMaterialName(e.target.value)} placeholder="Custom item" className="h-5 text-[10px] flex-1" />
+                            <Input value={newMaterialQty} onChange={(e) => setNewMaterialQty(e.target.value)} placeholder="Qty" className="h-5 text-[10px] w-12" />
+                            <Button type="button" size="sm" variant="outline" className="h-5 px-1.5 text-[10px]"
+                              onClick={() => { addSetupMaterial(proposalIndex, newMaterialName, newMaterialQty); setNewMaterialName(""); setNewMaterialQty(""); pendingAutoSaveRef.current = true; }}>
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {optionMaterials.length === 0 && isReadOnly && (
+                        <p className="text-xs text-muted-foreground italic">No setup materials listed</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </Card>
+
+            {/* Invoice cadence note (only when option includes weekly / bi-weekly services) */}
+            {(() => {
+              const invoiceNote = getInvoiceNoteForProposal(proposalIndex);
+              if (!invoiceNote) return null;
+              return (
+                <div className="border border-border rounded-md px-3 py-2 text-center bg-muted/30 text-xs print:text-[11px] text-foreground italic">
+                  {invoiceNote}
+                </div>
+              );
+            })()}
 
             {/* Customer Signature — per-proposal */}
             {(() => {
