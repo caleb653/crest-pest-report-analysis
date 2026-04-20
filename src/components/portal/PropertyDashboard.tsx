@@ -297,31 +297,27 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  // Build the next 2 upcoming.
-  // - If 1+ scheduled: keep ONLY the soonest scheduled as #1, then ALWAYS project #2
-  //   = #1.date + propertyFrequencyDays. (Ignores any far-future scheduled rows so
-  //   we don't show services months out.)
-  // - If 0 scheduled: project both from anchor (most recent past or today).
+  // Show ONE detailed "next service" + 5 future date-only projections.
+  // - If 1+ scheduled: keep ONLY the soonest as the next visit (ignore far-future scheduled rows).
+  // - If 0 scheduled: project the next visit from anchor (most recent past or today).
+  // Following 5 visits = next.date + N * propertyFrequencyDays. Date only — no details shown.
+  const FUTURE_PROJECTION_COUNT = 5;
   const allUpcoming = (() => {
     const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
-    if (scheduled.length >= 1) {
-      const first = scheduled[0];
-      const projected2 = first.service_date
-        ? [{
-            id: `projected-after-${first.id}`,
-            isProjected: true as const,
-            service_date: addDaysISO(first.service_date, propertyFrequencyDays),
-            service_type: first.service_type,
-            technician: first.technician,
-            status: "scheduled",
-            units_planned: first.units_planned,
-            property_id: property.id,
-          }]
-        : [];
-      return [first, ...projected2];
+    if (scheduled.length >= 1) return [scheduled[0]];
+    // No scheduled: take the first projected as the next visit.
+    return projectedUpcoming.slice(0, 1);
+  })();
+  const futureProjectedDates: string[] = (() => {
+    const next = allUpcoming[0];
+    if (!next?.service_date) return [];
+    const dates: string[] = [];
+    let cursor = next.service_date;
+    for (let i = 0; i < FUTURE_PROJECTION_COUNT; i++) {
+      cursor = addDaysISO(cursor, propertyFrequencyDays);
+      dates.push(cursor);
     }
-    // No scheduled: use the projected pair (already 2 entries, spaced by frequency).
-    return projectedUpcoming.slice(0, 2);
+    return dates;
   })();
 
   useEffect(() => {
@@ -1787,6 +1783,32 @@ const PropertyDashboard = ({
                 </Card>
               );
             })}
+          </div>
+        )}
+
+        {/* Future projected visits — date only, no details */}
+        {futureProjectedDates.length > 0 && (
+          <div className="mt-6">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              Following {futureProjectedDates.length} visits ({propertyFrequency.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())})
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {futureProjectedDates.map((d, idx) => (
+                <div
+                  key={`future-${idx}`}
+                  className="flex items-center gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
+                >
+                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {idx + 2}
+                  </span>
+                  <span className="text-xs">{formatDate(d)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic mt-2">
+              Projected dates only — service details are confirmed closer to each visit.
+            </p>
           </div>
         )}
         </div>
