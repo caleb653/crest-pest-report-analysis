@@ -1191,27 +1191,31 @@ const PropertyDashboard = ({
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                   Service Frequency
                 </Label>
-                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+                <div className="inline-flex flex-wrap rounded-lg border border-border bg-muted p-1 gap-0.5">
                   {([
                     { key: "weekly", label: "Weekly" },
                     { key: "bi-weekly", label: "Bi-Weekly" },
+                    { key: "monthly", label: "Monthly" },
+                    { key: "bi-monthly", label: "Bi-Monthly" },
                   ] as const).map(opt => {
                     const active = propertyFrequency === opt.key;
                     return (
                       <button
                         key={opt.key}
                         type="button"
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                           active
                             ? "bg-background text-foreground shadow-sm"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                         onClick={async () => {
                           if (active) return;
+                          // Optimistically update local property object so toggle + projections refresh instantly
                           const updated = {
                             ...(property.customer_preferences || {}),
                             service_frequency: opt.key,
                           };
+                          (property as any).customer_preferences = updated;
                           const { error } = await supabase
                             .from("portal_properties")
                             .update({ customer_preferences: updated })
