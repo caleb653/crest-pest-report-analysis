@@ -238,10 +238,17 @@ const PropertyDashboard = ({
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
-  // Values: "weekly" (7 days) or "bi-weekly" (14 days). Defaults to bi-weekly.
-  const propertyFrequency: "weekly" | "bi-weekly" =
-    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
-  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+  // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly";
+  const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
+    "weekly": 7,
+    "bi-weekly": 14,
+    "monthly": 30,
+    "bi-monthly": 60,
+  };
+  const propertyFrequency: FrequencyKey =
+    ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
+  const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
   // Generate projected upcoming dates using the property's frequency toggle.
   // Anchor: most recent past service date (if any), else today. Spacing: propertyFrequencyDays.
@@ -290,16 +297,14 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  // Build the next 2 upcoming. If we have scheduled services, use those (up to 2).
-  // If we only have 1 scheduled, project a 2nd one `propertyFrequencyDays` after it.
+  // Build the next 2 upcoming.
+  // - If 1+ scheduled: keep ONLY the soonest scheduled as #1, then ALWAYS project #2
+  //   = #1.date + propertyFrequencyDays. (Ignores any far-future scheduled rows so
+  //   we don't show services months out.)
+  // - If 0 scheduled: project both from anchor (most recent past or today).
   const allUpcoming = (() => {
     const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
-    if (scheduled.length >= 2) {
-      return scheduled
-        .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-        .slice(0, 2);
-    }
-    if (scheduled.length === 1) {
+    if (scheduled.length >= 1) {
       const first = scheduled[0];
       const projected2 = first.service_date
         ? [{
@@ -1186,27 +1191,31 @@ const PropertyDashboard = ({
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                   Service Frequency
                 </Label>
-                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+                <div className="inline-flex flex-wrap rounded-lg border border-border bg-muted p-1 gap-0.5">
                   {([
                     { key: "weekly", label: "Weekly" },
                     { key: "bi-weekly", label: "Bi-Weekly" },
+                    { key: "monthly", label: "Monthly" },
+                    { key: "bi-monthly", label: "Bi-Monthly" },
                   ] as const).map(opt => {
                     const active = propertyFrequency === opt.key;
                     return (
                       <button
                         key={opt.key}
                         type="button"
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                           active
                             ? "bg-background text-foreground shadow-sm"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                         onClick={async () => {
                           if (active) return;
+                          // Optimistically update local property object so toggle + projections refresh instantly
                           const updated = {
                             ...(property.customer_preferences || {}),
                             service_frequency: opt.key,
                           };
+                          (property as any).customer_preferences = updated;
                           const { error } = await supabase
                             .from("portal_properties")
                             .update({ customer_preferences: updated })

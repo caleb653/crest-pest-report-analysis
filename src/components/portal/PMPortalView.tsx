@@ -280,18 +280,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level frequency toggle (managed by admin). Default bi-weekly.
-  const propertyFrequency: "weekly" | "bi-weekly" =
-    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
-  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly";
+  const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
+    "weekly": 7,
+    "bi-weekly": 14,
+    "monthly": 30,
+    "bi-monthly": 60,
+  };
+  const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
+    "weekly": "Weekly",
+    "bi-weekly": "Bi-Weekly",
+    "monthly": "Monthly",
+    "bi-monthly": "Bi-Monthly",
+  };
+  const propertyFrequency: FrequencyKey =
+    ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
+  const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
-  // Always show exactly the next 2 upcoming. Project from most recent past (or today)
-  // when there aren't enough scheduled services in the database.
+  // Always show exactly the next 2 upcoming.
+  // Rule: take the soonest scheduled service as #1 (ignore far-future scheduled rows),
+  // then ALWAYS project #2 = #1.date + frequency. If 0 scheduled, project both from
+  // (most recent past or today).
   const upcomingServices: ServiceData[] = (() => {
-    if (scheduledServices.length >= 2) return scheduledServices.slice(0, 2);
-    const anchorDate = scheduledServices[0]?.service_date || pastServices[0]?.service_date || todayISO();
-    const fallbackType = pastServices[0]?.service_type || "General Pest Control";
-    const fallbackTech = pastServices[0]?.technician || null;
-    const fallbackUnits = pastServices[0]?.units_planned || null;
+    const fallbackType = scheduledServices[0]?.service_type || pastServices[0]?.service_type || "General Pest Control";
+    const fallbackTech = scheduledServices[0]?.technician || pastServices[0]?.technician || null;
+    const fallbackUnits = scheduledServices[0]?.units_planned || pastServices[0]?.units_planned || null;
     const buildProjected = (date: string, idx: number): ServiceData => ({
       id: `projected-${idx}`,
       property_id: propertyId,
@@ -312,7 +325,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       unit_details: [],
       special_notes: null,
     });
-    if (scheduledServices.length === 1) {
+    if (scheduledServices.length >= 1) {
       const first = scheduledServices[0];
       const projected = first.service_date
         ? [buildProjected(addDaysISO(first.service_date, propertyFrequencyDays), 0)]
@@ -320,6 +333,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       return [first, ...projected];
     }
     // Zero scheduled — project two from anchor.
+    const anchorDate = pastServices[0]?.service_date || todayISO();
     const first = addDaysISO(anchorDate, propertyFrequencyDays);
     const second = addDaysISO(first, propertyFrequencyDays);
     return [buildProjected(first, 0), buildProjected(second, 1)];
@@ -479,7 +493,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                     Service Frequency:
                   </span>
                   <Badge variant="secondary" className="text-xs">
-                    {propertyFrequency === "weekly" ? "Weekly" : "Bi-Weekly"}
+                    {FREQUENCY_LABELS[propertyFrequency]}
                   </Badge>
                 </div>
                 {property.notes ? (
