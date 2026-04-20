@@ -710,11 +710,11 @@ const PropertyDashboard = ({
                     <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
                       onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
                   </td>
-                  <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full" value={newUnitData.pest_activity}
-                      onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}>
-                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
+                  <td className="px-1 py-1">
+                    <UnitProductPicker
+                      value={newUnitData.products_used}
+                      onChange={(next) => setNewUnitData(d => ({ ...d, products_used: next }))}
+                    />
                   </td>
                   <td className="px-2 py-1">
                     <div className="flex gap-0.5">
