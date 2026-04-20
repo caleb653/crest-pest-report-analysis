@@ -642,31 +642,52 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
               <div>
                 <h3 className="text-sm font-semibold mb-2">Your Previous Work Orders</h3>
                 <div className="space-y-2">
-                  {requests.map(r => (
-                    <Card key={r.id}>
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(r.status)}
-                            <Badge variant="outline" className="text-xs">
-                              {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                            </Badge>
+                  {requests.map(r => {
+                    // Find any upcoming service that already has this unit planned
+                    const matchedUpcoming = r.unit_number
+                      ? upcomingServices.find(s => Array.isArray(s.units_planned) && (s.units_planned as string[]).includes(r.unit_number!))
+                      : null;
+                    return (
+                      <Card key={r.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(r.status)}
+                              <Badge variant="outline" className="text-xs">
+                                {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                              </Badge>
+                              {r.request_type && (
+                                <Badge variant="secondary" className="text-[10px] capitalize">{r.request_type.replace(/_/g, " ")}</Badge>
+                              )}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </span>
-                        </div>
-                        {r.unit_number && <p className="text-xs text-muted-foreground">{r.unit_number}</p>}
-                        <p className="text-sm mt-1">{r.description}</p>
-                        {r.response_notes && (
-                          <div className="mt-2 bg-muted rounded-md p-2">
-                            <p className="text-xs font-medium text-muted-foreground mb-0.5">Response from Crest:</p>
-                            <p className="text-sm">{r.response_notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {r.unit_number && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-medium">{r.unit_number}</Badge>
+                              {r.location_type && <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>}
+                              {r.preferred_date && <span className="text-[10px] text-muted-foreground">• Wants: {r.preferred_date}</span>}
+                            </div>
+                          )}
+                          <p className="text-sm mt-1">{r.description}</p>
+                          {matchedUpcoming && (
+                            <div className="mt-2 bg-primary/5 border border-primary/15 rounded-md p-2">
+                              <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Scheduled for</p>
+                              <p className="text-xs">{formatDate(matchedUpcoming.service_date)} — {matchedUpcoming.service_type}</p>
+                            </div>
+                          )}
+                          {r.response_notes && (
+                            <div className="mt-2 bg-muted rounded-md p-2">
+                              <p className="text-xs font-medium text-muted-foreground mb-0.5">Response from Crest:</p>
+                              <p className="text-sm">{r.response_notes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -703,8 +724,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {formatDate(s.service_date)}
                             {s.technician && ` • ${s.technician}`}
-                            {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
+                            {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
+                          {/* Inline preview of planned units (like admin) */}
+                          {unitsPlanned.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {unitsPlanned.slice(0, 8).map((u, idx) => (
+                                <Badge key={`${u}-${idx}`} variant="outline" className="text-[10px] py-0 px-1.5 font-medium">
+                                  {u}
+                                </Badge>
+                              ))}
+                              {unitsPlanned.length > 8 && (
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                                  +{unitsPlanned.length - 8} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       </button>
