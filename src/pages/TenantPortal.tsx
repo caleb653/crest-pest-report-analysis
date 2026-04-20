@@ -193,24 +193,26 @@ const TenantPortal = () => {
             <p className="text-xs text-muted-foreground">Tell us what you're dealing with and we'll schedule service</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Unit Number */}
+            {/* Unit Number — free-text, case-insensitive match against known units */}
             <div>
-              <Label className="text-sm">Unit Number *</Label>
+              <Label className="text-sm">Unit Number / Area *</Label>
               {linkData?.unit_number ? (
                 <Input value={unitNumber} disabled className="bg-muted" />
-              ) : knownUnits.length > 0 ? (
-                <Select value={unitNumber} onValueChange={setUnitNumber}>
-                  <SelectTrigger><SelectValue placeholder="Select your unit" /></SelectTrigger>
-                  <SelectContent>
-                    {knownUnits.map(u => <SelectItem key={u} value={u}>Unit {u}</SelectItem>)}
-                    <SelectItem value="__other">Other...</SelectItem>
-                  </SelectContent>
-                </Select>
               ) : (
-                <Input placeholder="e.g. 204" value={unitNumber} onChange={e => setUnitNumber(e.target.value)} />
-              )}
-              {unitNumber === "__other" && (
-                <Input className="mt-1" placeholder="Enter your unit number" onChange={e => setUnitNumber(e.target.value)} />
+                <>
+                  <Input
+                    list="tenant-known-units"
+                    placeholder="Type unit or area (e.g. 204, Lobby, Pool deck)"
+                    value={unitNumber}
+                    onChange={e => setUnitNumber(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {knownUnits.length > 0 && (
+                    <datalist id="tenant-known-units">
+                      {knownUnits.map(u => <option key={u} value={u} />)}
+                    </datalist>
+                  )}
+                </>
               )}
             </div>
 
@@ -238,11 +240,14 @@ const TenantPortal = () => {
               </div>
             </div>
 
-            {/* When ready */}
+            {/* When ready — free-text */}
             <div>
               <Label className="text-sm">When are you available for service?</Label>
-              <Input type="date" value={preferredDate} onChange={e => setPreferredDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]} />
+              <Input
+                placeholder="e.g. Tuesday afternoon, after the 15th, ASAP"
+                value={preferredDate}
+                onChange={e => setPreferredDate(e.target.value)}
+              />
               <p className="text-xs text-muted-foreground mt-0.5">Leave blank if any time works</p>
             </div>
 
