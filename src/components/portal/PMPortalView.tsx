@@ -184,10 +184,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     if (!unitNumber.trim() || !pestType) return;
     setSubmitting(true);
 
+    // Case-insensitive normalization against known units
+    const typed = unitNumber.trim();
+    const canonical = knownUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed;
+
     const { error: err } = await supabase.from("portal_requests").insert({
       link_id: linkId,
       property_id: propertyId,
-      unit_number: unitNumber.trim(),
+      unit_number: canonical,
       request_type: "Service Request",
       description: `${pestType} - ${locationType}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
