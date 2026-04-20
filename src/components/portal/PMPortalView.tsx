@@ -115,6 +115,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
 
+  // PM notes for upcoming services — keyed by service_date (YYYY-MM-DD).
+  // Stored on portal_properties.customer_preferences.pm_upcoming_notes so admins can read them.
+  const [pmNoteDraft, setPmNoteDraft] = useState<string>("");
+  const [pmNoteSavedDate, setPmNoteSavedDate] = useState<string | null>(null);
+  const [pmNoteSaving, setPmNoteSaving] = useState(false);
+
   // Work order form
   const [submitting, setSubmitting] = useState(false);
   const [unitNumber, setUnitNumber] = useState("");
@@ -243,6 +249,57 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     }
   };
 
+  // ─── PM upcoming-notes: hooks must run before any conditional return ───
+  // Compute the soonest scheduled service date OR the projected next date.
+  // This must mirror the `nextService` derivation below but only depends on raw state.
+  const _propertyForHook = property; // capture latest reference
+  const _scheduled = services.filter(s => s.status !== "completed").sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  const _past = services.filter(s => s.status === "completed").sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly" | "monthly" | "bi-monthly") || "bi-weekly";
+  const _freqDays = ({ "weekly": 7, "bi-weekly": 14, "monthly": 30, "bi-monthly": 60 } as const)[_freqKey] ?? 14;
+  const _nextDateKey: string = (() => {
+    if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
+    const anchor = _past[0]?.service_date || todayISO();
+    return addDaysISO(anchor, _freqDays);
+  })();
+  const _pmNotesMap: Record<string, string> =
+    ((_propertyForHook?.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
+
+  // Sync draft when the next-service date changes (or property switches).
+  useEffect(() => {
+    setPmNoteDraft(_nextDateKey ? (_pmNotesMap[_nextDateKey] || "") : "");
+    setPmNoteSavedDate(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_nextDateKey, _propertyForHook?.id]);
+
+  // Debounced save of PM note for the next-service date.
+  useEffect(() => {
+    if (!_nextDateKey || !_propertyForHook) return;
+    const current = _pmNotesMap[_nextDateKey] || "";
+    if (current === pmNoteDraft) return;
+    const t = setTimeout(async () => {
+      setPmNoteSaving(true);
+      const updatedMap = { ..._pmNotesMap };
+      if (pmNoteDraft.trim()) updatedMap[_nextDateKey] = pmNoteDraft;
+      else delete updatedMap[_nextDateKey];
+      const updatedPrefs = { ...(_propertyForHook.customer_preferences || {}), pm_upcoming_notes: updatedMap };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updatedPrefs })
+        .eq("id", _propertyForHook.id);
+      setPmNoteSaving(false);
+      if (error) {
+        toast({ title: "Failed to save note", variant: "destructive" });
+      } else {
+        (_propertyForHook as any).customer_preferences = updatedPrefs;
+        setPmNoteSavedDate(_nextDateKey);
+        toast({ title: "Note saved for upcoming service", duration: 1500 });
+      }
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pmNoteDraft, _nextDateKey]);
+
   if (loading) {
     return (
       <div className="min-h-[300px] flex items-center justify-center">
@@ -338,6 +395,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     return dates;
   })();
   const upcomingServices: ServiceData[] = nextService ? [nextService] : [];
+
+  // PM upcoming-notes map (date -> note). The draft state + save effect are placed
+  // above the early returns to satisfy Rules of Hooks. We resolve the key here for display.
+  const pmNotesMap: Record<string, string> =
+    ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
+  const nextServiceDateKey = nextService?.service_date || "";
 
   const openRequestUnits = new Set(
     requests
@@ -892,6 +955,34 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                         </div>
                         {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       </button>
+
+                      {/* PM-editable notes for the next service. Visible to admins/technicians. */}
+                      {isFirst && (
+                        <div className="px-3 pb-3 -mt-1">
+                          <div className="border-t border-border/60 pt-2.5">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <Label htmlFor={`pm-notes-${s.id}`} className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                Notes / Comments for the Technician
+                              </Label>
+                              <span className="text-[10px] text-muted-foreground italic">
+                                {pmNoteSaving
+                                  ? "Saving…"
+                                  : pmNoteSavedDate === s.service_date
+                                    ? "Saved"
+                                    : "Auto-saves"}
+                              </span>
+                            </div>
+                            <Textarea
+                              id={`pm-notes-${s.id}`}
+                              value={pmNoteDraft}
+                              onChange={(e) => setPmNoteDraft(e.target.value)}
+                              placeholder="Add notes for Crest about this upcoming visit (e.g., units to focus on, access codes, tenant concerns)…"
+                              className="text-xs min-h-[70px] bg-background"
+                            />
+                          </div>
+                        </div>
+                      )}
+
                       {isExpanded && (ownHasNotes || s.prep_required || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0)) && renderServiceDetailsRO(s)}
                     </Card>
                   );
