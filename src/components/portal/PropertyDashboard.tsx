@@ -424,8 +424,8 @@ const PropertyDashboard = ({
     const sourceFromCtx = (s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
       if (s === "follow_up") return "follow-up";
-      if (s === "carried") return "follow-up";
-      return "new-work-order";
+      if (s === "carried") return "routine";
+      return "routine";
     };
 
     const rows = displayUnits.length > 0
@@ -439,12 +439,12 @@ const PropertyDashboard = ({
             findings: ctx?.findings || "",
             pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
             products_used: [] as ProductUsage[],
-            status: "Treated",
+            status: "To Be Treated",
             notes: ctx?.notes || "",
             source: sourceFromCtx(ctx?.source),
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: {
