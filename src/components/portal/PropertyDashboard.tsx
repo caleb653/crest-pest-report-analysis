@@ -99,23 +99,32 @@ interface Props {
 
 const today = new Date().toISOString().split("T")[0];
 
-// Generate dummy dates: start April 16, 2025, then every week
-const generateDummyDates = (count: number): string[] => {
+// Add `days` to an ISO date string (YYYY-MM-DD) using UTC to avoid TZ drift.
+const addDaysISO = (isoDate: string, days: number): string => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().split("T")[0];
+};
+
+// Generate upcoming dates spaced exactly `frequencyDays` apart starting after `lastDate`.
+const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
   const dates: string[] = [];
-  let d = new Date("2025-04-16T00:00:00");
+  let cur = lastDate;
   for (let i = 0; i < count; i++) {
-    dates.push(d.toISOString().split("T")[0]);
-    d = new Date(d.getTime() + 7 * 86400000); // 1 week
+    cur = addDaysISO(cur, frequencyDays);
+    dates.push(cur);
   }
   return dates;
 };
 
-const generateUpcomingDates = (lastDate: string, frequencyDays: number, count: number): string[] => {
+// Generate fallback dates starting from today, spaced `frequencyDays` apart.
+const generateDummyDates = (count: number, frequencyDays: number = 14): string[] => {
   const dates: string[] = [];
-  let d = new Date(lastDate + "T00:00:00");
+  let cur = today;
   for (let i = 0; i < count; i++) {
-    d = new Date(d.getTime() + 7 * 86400000); // weekly
-    dates.push(d.toISOString().split("T")[0]);
+    cur = addDaysISO(cur, frequencyDays);
+    dates.push(cur);
   }
   return dates;
 };
@@ -228,39 +237,30 @@ const PropertyDashboard = ({
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
-  // Generate projected upcoming with dummy dates
+  // Property-level service frequency toggle (stored in customer_preferences JSON)
+  // Values: "weekly" (7 days) or "bi-weekly" (14 days). Defaults to bi-weekly.
+  const propertyFrequency: "weekly" | "bi-weekly" =
+    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
+  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+
+  // Generate projected upcoming dates using the property's frequency toggle.
+  // Anchor: most recent past service date (if any), else today. Spacing: propertyFrequencyDays.
   const projectedUpcoming = (() => {
     if (scheduledServices.length > 0) return [];
-    const lastRecurring = pastServices.find(s => {
-      const freq = (s as any).frequency_days || SERVICE_FREQUENCY_MAP[s.service_type];
-      return freq && freq > 0;
-    });
-    if (!lastRecurring) {
-      // No past recurring — generate dummy dates anyway
-      const dates = generateDummyDates(5);
-      return dates.map((d, i) => ({
-        id: `projected-${i}`,
-        isProjected: true,
-        service_date: d,
-        service_type: "General Pest Control",
-        technician: null,
-        status: "scheduled",
-        units_planned: null,
-        property_id: property.id,
-      }));
-    }
-    const freq = (lastRecurring as any).frequency_days || SERVICE_FREQUENCY_MAP[lastRecurring.service_type] || 14;
-    const dates = lastRecurring.service_date
-      ? generateUpcomingDates(lastRecurring.service_date, freq, 5)
-      : generateDummyDates(5);
+    const mostRecent = pastServices[0];
+    const anchorDate = mostRecent?.service_date || today;
+    const dates = generateUpcomingDates(anchorDate, propertyFrequencyDays, 2);
+    const fallbackType = mostRecent?.service_type || "General Pest Control";
+    const fallbackTech = mostRecent?.technician || null;
+    const fallbackUnits = mostRecent?.units_planned || null;
     return dates.map((d, i) => ({
       id: `projected-${i}`,
       isProjected: true,
       service_date: d,
-      service_type: lastRecurring.service_type,
-      technician: lastRecurring.technician,
+      service_type: fallbackType,
+      technician: fallbackTech,
       status: "scheduled",
-      units_planned: lastRecurring.units_planned,
+      units_planned: fallbackUnits,
       property_id: property.id,
     }));
   })();
@@ -290,12 +290,34 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  const allUpcoming = [
-    ...scheduledServices.map(s => ({ ...s, isProjected: false })),
-    ...projectedUpcoming,
-  ]
-    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-    .slice(0, 2); // Only ever show the next 2 upcoming services
+  // Build the next 2 upcoming. If we have scheduled services, use those (up to 2).
+  // If we only have 1 scheduled, project a 2nd one `propertyFrequencyDays` after it.
+  const allUpcoming = (() => {
+    const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
+    if (scheduled.length >= 2) {
+      return scheduled
+        .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
+        .slice(0, 2);
+    }
+    if (scheduled.length === 1) {
+      const first = scheduled[0];
+      const projected2 = first.service_date
+        ? [{
+            id: `projected-after-${first.id}`,
+            isProjected: true as const,
+            service_date: addDaysISO(first.service_date, propertyFrequencyDays),
+            service_type: first.service_type,
+            technician: first.technician,
+            status: "scheduled",
+            units_planned: first.units_planned,
+            property_id: property.id,
+          }]
+        : [];
+      return [first, ...projected2];
+    }
+    // No scheduled: use the projected pair (already 2 entries, spaced by frequency).
+    return projectedUpcoming.slice(0, 2);
+  })();
 
   useEffect(() => {
     // Past services: all collapsed by default
@@ -1159,14 +1181,60 @@ const PropertyDashboard = ({
                 Property Plan
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 space-y-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Service Frequency
+                </Label>
+                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+                  {([
+                    { key: "weekly", label: "Weekly" },
+                    { key: "bi-weekly", label: "Bi-Weekly" },
+                  ] as const).map(opt => {
+                    const active = propertyFrequency === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                          active
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={async () => {
+                          if (active) return;
+                          const updated = {
+                            ...(property.customer_preferences || {}),
+                            service_frequency: opt.key,
+                          };
+                          const { error } = await supabase
+                            .from("portal_properties")
+                            .update({ customer_preferences: updated })
+                            .eq("id", property.id);
+                          if (error) {
+                            toast({ title: "Failed to save frequency", variant: "destructive" });
+                          } else {
+                            toast({ title: `Frequency set to ${opt.label}`, duration: 1500 });
+                            onRefresh();
+                          }
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Used to project the next two upcoming services on this property.
+                </p>
+              </div>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
                 className="min-h-[120px] text-sm resize-y"
                 value={planDraft}
                 onChange={(e) => setPlanDraft(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-[11px] text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
               </p>
             </CardContent>

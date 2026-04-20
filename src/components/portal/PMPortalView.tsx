@@ -90,6 +90,15 @@ const formatDate = (d: string | null) =>
 const formatShortDate = (d: string | null) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
+// Add `days` to YYYY-MM-DD using UTC to avoid TZ drift.
+const addDaysISO = (isoDate: string, days: number): string => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().split("T")[0];
+};
+const todayISO = () => new Date().toISOString().split("T")[0];
+
 const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProps) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("map");
@@ -266,12 +275,56 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const pastServices = services
     .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
-  const upcomingServices = services
+  const scheduledServices = services
     .filter(s => s.status !== "completed")
-    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-    .slice(0, 2); // Only ever show the next 2 upcoming services
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
-  // Units that need attention next visit: open work orders + follow-ups from most recent past service
+  // Property-level frequency toggle (managed by admin). Default bi-weekly.
+  const propertyFrequency: "weekly" | "bi-weekly" =
+    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
+  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+
+  // Always show exactly the next 2 upcoming. Project from most recent past (or today)
+  // when there aren't enough scheduled services in the database.
+  const upcomingServices: ServiceData[] = (() => {
+    if (scheduledServices.length >= 2) return scheduledServices.slice(0, 2);
+    const anchorDate = scheduledServices[0]?.service_date || pastServices[0]?.service_date || todayISO();
+    const fallbackType = pastServices[0]?.service_type || "General Pest Control";
+    const fallbackTech = pastServices[0]?.technician || null;
+    const fallbackUnits = pastServices[0]?.units_planned || null;
+    const buildProjected = (date: string, idx: number): ServiceData => ({
+      id: `projected-${idx}`,
+      property_id: propertyId,
+      service_date: date,
+      service_time: null,
+      service_type: fallbackType,
+      technician: fallbackTech,
+      status: "scheduled",
+      summary: null,
+      findings: null,
+      notes: null,
+      follow_up_recommended: null,
+      follow_up_notes: null,
+      scheduling_status: "projected",
+      prep_required: null,
+      prep_notes: null,
+      units_planned: fallbackUnits,
+      unit_details: [],
+      special_notes: null,
+    });
+    if (scheduledServices.length === 1) {
+      const first = scheduledServices[0];
+      const projected = first.service_date
+        ? [buildProjected(addDaysISO(first.service_date, propertyFrequencyDays), 0)]
+        : [];
+      return [first, ...projected];
+    }
+    // Zero scheduled — project two from anchor.
+    const first = addDaysISO(anchorDate, propertyFrequencyDays);
+    const second = addDaysISO(first, propertyFrequencyDays);
+    return [buildProjected(first, 0), buildProjected(second, 1)];
+  })();
+
   const openRequestUnits = new Set(
     requests
       .filter(r => r.status === "pending" || r.status === "in_progress")
@@ -412,38 +465,48 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
           </Card>
 
           {/* Property Plan + Customer Preference (top of page, read-only for PM) */}
-          {(property.notes || customerPref || customerPrefNotes) && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {property.notes && (
-                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5 text-primary" />
-                      Property Plan
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
-              {(customerPref || customerPrefNotes) && (
-                <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                  <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5 text-primary" />
-                      Customer Preference
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-sm whitespace-pre-wrap">
-                      {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  Property Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Service Frequency:
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {propertyFrequency === "weekly" ? "Weekly" : "Bi-Weekly"}
+                  </Badge>
+                </div>
+                {property.notes ? (
+                  <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No property plan set yet.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  Customer Preference
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {customerPref || customerPrefNotes ? (
+                  <p className="text-sm whitespace-pre-wrap">
+                    {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No customer preferences set yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
