@@ -664,8 +664,8 @@ const PropertyDashboard = ({
               <tr>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[80px]">Activity</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[90px]">Status</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[180px]">Products</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[120px]">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -683,16 +683,14 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
                   </td>
-                  <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
-                      defaultValue={unit.pest_activity || "None"}
-                      onChange={e => updateUnitField(s.id, j, "pest_activity", e.target.value)}
-                    >
-                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
+                  <td className="px-1 py-1">
+                    <UnitProductPicker
+                      value={unit.products_used || ""}
+                      onChange={(next) => updateUnitField(s.id, j, "products_used", next)}
+                    />
                   </td>
                   <td className="px-2 py-1">
-                    <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
+                    <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${unit.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : ""}`}
                       defaultValue={unit.status || "Treated"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                     >
