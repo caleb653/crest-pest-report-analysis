@@ -421,30 +421,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
   const nextServiceDateKey = nextService?.service_date || "";
 
-  const openRequestUnits = new Set(
-    requests
-      .filter(r => r.status === "pending" || r.status === "in_progress")
-      .map(r => r.unit_number)
-      .filter(Boolean) as string[]
-  );
-  const followUpUnits = (() => {
-    const set = new Set<string>();
-    if (pastServices.length > 0) {
-      const mostRecent = pastServices[0];
-      const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
-      details.forEach(u => {
-        if (u?.unit_number && (
-          u.status === "Treated - Follow Up" ||
-          u.status === "Needs Follow-up" ||
-          u.followUp === "Yes" ||
-          (u.pest_activity && ["High", "Moderate"].includes(u.pest_activity))
-        )) {
-          set.add(String(u.unit_number));
-        }
-      });
-    }
-    return set;
-  })();
+  // SAME logic the admin portal uses — single source of truth via upcomingUnits.ts.
+  // Using the helpers here guarantees the same set of "open work order" units
+  // and the same set of "follow-up" units are highlighted on both portals.
+  const openRequestsList = getOpenRequests(requests);
+  const openRequestUnits = new Set(openRequestsList.map(r => String(r.unit_number)));
+  const followUpDetailsFromPast = getFollowUpDetailsFromPast(pastServices[0] || null);
+  const followUpUnits = new Set(followUpDetailsFromPast.map(u => String(u.unit_number)));
 
   const servicesByUnit = (() => {
     const map = new Map<string, { service: ServiceData; unitDetail: any }[]>();
