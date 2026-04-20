@@ -1181,14 +1181,60 @@ const PropertyDashboard = ({
                 Property Plan
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-4 space-y-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Service Frequency
+                </Label>
+                <div className="inline-flex rounded-lg border border-border bg-muted p-1">
+                  {([
+                    { key: "weekly", label: "Weekly" },
+                    { key: "bi-weekly", label: "Bi-Weekly" },
+                  ] as const).map(opt => {
+                    const active = propertyFrequency === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                          active
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                        onClick={async () => {
+                          if (active) return;
+                          const updated = {
+                            ...(property.customer_preferences || {}),
+                            service_frequency: opt.key,
+                          };
+                          const { error } = await supabase
+                            .from("portal_properties")
+                            .update({ customer_preferences: updated })
+                            .eq("id", property.id);
+                          if (error) {
+                            toast({ title: "Failed to save frequency", variant: "destructive" });
+                          } else {
+                            toast({ title: `Frequency set to ${opt.label}`, duration: 1500 });
+                            onRefresh();
+                          }
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  Used to project the next two upcoming services on this property.
+                </p>
+              </div>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
                 className="min-h-[120px] text-sm resize-y"
                 value={planDraft}
                 onChange={(e) => setPlanDraft(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-[11px] text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
               </p>
             </CardContent>
