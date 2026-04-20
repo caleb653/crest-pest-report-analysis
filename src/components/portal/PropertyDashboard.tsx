@@ -663,8 +663,8 @@ const PropertyDashboard = ({
             <thead className="bg-muted">
               <tr>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[140px]">Target Pest</th>
+                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[180px]">Products</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[120px]">Status</th>
               </tr>
@@ -678,12 +678,6 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
                   </td>
-                  <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
-                      defaultValue={unit.findings || ""}
-                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
-                    />
-                  </td>
                   <td className="px-1 py-1">
                     <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer px-1"
                       value={unit.target_pest || ""}
@@ -692,6 +686,12 @@ const PropertyDashboard = ({
                       <option value="">—</option>
                       {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
+                      defaultValue={unit.findings || ""}
+                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
+                    />
                   </td>
                   <td className="px-1 py-1">
                     <UnitProductPicker
@@ -716,10 +716,6 @@ const PropertyDashboard = ({
                     <Input className="h-6 text-[11px] w-full px-1" placeholder="#" value={newUnitData.unit_number}
                       onChange={e => setNewUnitData(d => ({ ...d, unit_number: e.target.value }))} />
                   </td>
-                  <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
-                      onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
-                  </td>
                   <td className="px-1 py-1">
                     <select className="h-6 text-[11px] w-full bg-background border border-input rounded px-1"
                       value={(newUnitData as any).target_pest || ""}
@@ -728,6 +724,10 @@ const PropertyDashboard = ({
                       <option value="">—</option>
                       {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
+                  </td>
+                  <td className="px-2 py-1">
+                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Findings" value={newUnitData.findings}
+                      onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
                   </td>
                   <td className="px-1 py-1">
                     <UnitProductPicker
