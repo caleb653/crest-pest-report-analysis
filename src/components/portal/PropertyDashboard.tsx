@@ -160,6 +160,7 @@ const PropertyDashboard = ({
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
+    products: ProductUsage[];
   }>>({});
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
