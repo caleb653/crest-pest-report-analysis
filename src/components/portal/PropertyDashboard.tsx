@@ -237,39 +237,30 @@ const PropertyDashboard = ({
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
-  // Generate projected upcoming with dummy dates
+  // Property-level service frequency toggle (stored in customer_preferences JSON)
+  // Values: "weekly" (7 days) or "bi-weekly" (14 days). Defaults to bi-weekly.
+  const propertyFrequency: "weekly" | "bi-weekly" =
+    ((property.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly") || "bi-weekly";
+  const propertyFrequencyDays = propertyFrequency === "weekly" ? 7 : 14;
+
+  // Generate projected upcoming dates using the property's frequency toggle.
+  // Anchor: most recent past service date (if any), else today. Spacing: propertyFrequencyDays.
   const projectedUpcoming = (() => {
     if (scheduledServices.length > 0) return [];
-    const lastRecurring = pastServices.find(s => {
-      const freq = (s as any).frequency_days || SERVICE_FREQUENCY_MAP[s.service_type];
-      return freq && freq > 0;
-    });
-    if (!lastRecurring) {
-      // No past recurring — generate dummy dates anyway
-      const dates = generateDummyDates(5);
-      return dates.map((d, i) => ({
-        id: `projected-${i}`,
-        isProjected: true,
-        service_date: d,
-        service_type: "General Pest Control",
-        technician: null,
-        status: "scheduled",
-        units_planned: null,
-        property_id: property.id,
-      }));
-    }
-    const freq = (lastRecurring as any).frequency_days || SERVICE_FREQUENCY_MAP[lastRecurring.service_type] || 14;
-    const dates = lastRecurring.service_date
-      ? generateUpcomingDates(lastRecurring.service_date, freq, 5)
-      : generateDummyDates(5);
+    const mostRecent = pastServices[0];
+    const anchorDate = mostRecent?.service_date || today;
+    const dates = generateUpcomingDates(anchorDate, propertyFrequencyDays, 2);
+    const fallbackType = mostRecent?.service_type || "General Pest Control";
+    const fallbackTech = mostRecent?.technician || null;
+    const fallbackUnits = mostRecent?.units_planned || null;
     return dates.map((d, i) => ({
       id: `projected-${i}`,
       isProjected: true,
       service_date: d,
-      service_type: lastRecurring.service_type,
-      technician: lastRecurring.technician,
+      service_type: fallbackType,
+      technician: fallbackTech,
       status: "scheduled",
-      units_planned: lastRecurring.units_planned,
+      units_planned: fallbackUnits,
       property_id: property.id,
     }));
   })();
