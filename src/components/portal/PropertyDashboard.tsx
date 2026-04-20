@@ -20,6 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
+import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 // ─── Types ───
@@ -61,7 +62,7 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["To be Treated", "Treated", "Clear", "Needs Follow-up"];
+const STATUS_OPTIONS = ["Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
