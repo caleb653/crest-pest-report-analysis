@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
+import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
 
 const PEST_TYPES = [
