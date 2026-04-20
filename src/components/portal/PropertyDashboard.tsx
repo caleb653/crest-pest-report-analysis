@@ -1150,26 +1150,48 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0 space-y-5">
-        {/* Property Plan Text Box */}
-        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" />
-              Property Plan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Textarea
-              placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-              className="min-h-[120px] text-sm resize-y"
-              value={planDraft}
-              onChange={(e) => setPlanDraft(e.target.value)}
-            />
-            <p className="text-[11px] text-muted-foreground mt-2">
-              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Property Plan + Customer Preference (top of page) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Property Plan
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea
+                placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
+                className="min-h-[120px] text-sm resize-y"
+                value={planDraft}
+                onChange={(e) => setPlanDraft(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Customer Preference
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea
+                placeholder="Customer preferences — product choices, scheduling preferences, access notes, communication preferences, etc."
+                className="min-h-[120px] text-sm resize-y"
+                value={prefDraft}
+                onChange={(e) => setPrefDraft(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
