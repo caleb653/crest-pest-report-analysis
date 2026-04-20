@@ -816,11 +816,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 {upcomingServices.map((s, i) => {
                   const isFirst = i === 0;
                   const isExpanded = isFirst || expandedUpcomingId === s.id;
-                  const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-                  // Only highlight units that actually need attention: open work orders or follow-ups (next service only)
-                  const flaggedUnits = isFirst
-                    ? unitsPlanned.filter(u => openRequestUnits.has(u) || followUpUnits.has(u))
+                  const ownPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+                  // Fall back to most recent past service's units when this upcoming has none planned yet
+                  const lastPast = pastServices[0];
+                  const lastPastUnits = lastPast && Array.isArray(lastPast.units_planned)
+                    ? lastPast.units_planned as string[]
                     : [];
+                  const unitsPlanned = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
+                  const usingFallbackUnits = ownPlanned.length === 0 && lastPastUnits.length > 0;
+
+                  // Carry-over notes from the most recent past service when this upcoming has none
+                  const ownHasNotes = Boolean(s.summary || s.findings || s.notes || s.special_notes);
+                  const carryNotes = !ownHasNotes && lastPast
+                    ? [
+                        lastPast.special_notes,
+                        lastPast.follow_up_recommended ? lastPast.follow_up_notes : null,
+                      ].filter(Boolean).join("\n\n")
+                    : "";
+
                   return (
                     <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                       <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
@@ -835,14 +848,22 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                             {s.technician && ` • ${s.technician}`}
                             {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
-                          {/* Show all planned units (like admin) — flagged ones are highlighted */}
+
+                          {/* Units to be Treated — falls back to most recent past service */}
                           {unitsPlanned.length > 0 && (
                             <div className="mt-1.5">
-                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Units to be Treated</p>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                                Units to be Treated
+                                {usingFallbackUnits && (
+                                  <span className="ml-1 normal-case font-normal text-muted-foreground/80">
+                                    (carried from last service)
+                                  </span>
+                                )}
+                              </p>
                               <div className="flex flex-wrap gap-1">
                                 {unitsPlanned.map((u, idx) => {
                                   const isWorkOrder = isFirst && openRequestUnits.has(u);
-                                  const isFollowUp = isFirst && followUpUnits.has(u);
+                                  const isFollowUp = followUpUnits.has(u);
                                   const flagged = isWorkOrder || isFollowUp;
                                   const label = isWorkOrder ? `${u} · Work order` : isFollowUp ? `${u} · Follow-up` : u;
                                   return (
@@ -858,10 +879,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                               </div>
                             </div>
                           )}
+
+                          {/* Carry-over notes from the previous service when this upcoming has none */}
+                          {carryNotes && (
+                            <div className="mt-2 bg-muted/40 border border-border rounded-md p-2">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                                Notes carried from last service ({formatShortDate(lastPast?.service_date || null)})
+                              </p>
+                              <p className="text-xs whitespace-pre-wrap">{carryNotes}</p>
+                            </div>
+                          )}
                         </div>
                         {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       </button>
-                      {isExpanded && renderServiceDetailsRO(s)}
+                      {isExpanded && (ownHasNotes || s.prep_required || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0)) && renderServiceDetailsRO(s)}
                     </Card>
                   );
                 })}
