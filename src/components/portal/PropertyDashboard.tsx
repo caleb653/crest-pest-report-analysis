@@ -667,7 +667,6 @@ const PropertyDashboard = ({
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[60px]">Unit</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground">Findings</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[80px]">Activity</th>
-                <th className="text-left px-2 py-1.5 font-semibold text-foreground">Products</th>
                 <th className="text-left px-2 py-1.5 font-semibold text-foreground w-[90px]">Status</th>
               </tr>
             </thead>
@@ -695,12 +694,6 @@ const PropertyDashboard = ({
                     </select>
                   </td>
                   <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full border-transparent hover:border-border focus:border-primary bg-transparent px-1"
-                      defaultValue={unit.products_used || ""}
-                      onBlur={e => { if (e.target.value !== (unit.products_used || "")) updateUnitField(s.id, j, "products_used", e.target.value); }}
-                    />
-                  </td>
-                  <td className="px-2 py-1">
                     <select className="h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer"
                       defaultValue={unit.status || "Treated"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
@@ -726,10 +719,6 @@ const PropertyDashboard = ({
                       onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}>
                       {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                  </td>
-                  <td className="px-2 py-1">
-                    <Input className="h-6 text-[11px] w-full px-1" placeholder="Products" value={newUnitData.products_used}
-                      onChange={e => setNewUnitData(d => ({ ...d, products_used: e.target.value }))} />
                   </td>
                   <td className="px-2 py-1">
                     <div className="flex gap-0.5">
