@@ -461,45 +461,95 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
         {/* ════════ TAB 2: PAST SERVICES (read-only) ════════ */}
         <TabsContent value="past" className="mt-0">
           <div className="space-y-3 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/40">
+            <div className="flex items-center justify-between gap-3 pb-2.5 border-b-2 border-primary/40 flex-wrap">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-secondary" />Previous Services
                 <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
               </h3>
+              <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+                <button
+                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setPastViewMode("date")}
+                >By Date</button>
+                <button
+                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setPastViewMode("unit")}
+                >By Unit</button>
+              </div>
             </div>
 
-            {pastServices.length === 0 ? (
-              <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
+            {pastViewMode === "date" ? (
+              pastServices.length === 0 ? (
+                <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
+              ) : (
+                <div className="space-y-2">
+                  {pastServices.map((s, i) => {
+                    const isFirst = i === 0;
+                    const isExpanded = expandedPastId === s.id;
+                    return (
+                      <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                        <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
+                              <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                              <Badge variant="default" className="text-[10px]">Completed</Badge>
+                              {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                              <span>{formatDate(s.service_date)}</span>
+                              {s.technician && <span>• {s.technician}</span>}
+                              {Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && (
+                                <span>• {(s.unit_details as any[]).length} units</span>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </button>
+                        {isExpanded && renderServiceDetailsRO(s)}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )
             ) : (
-              <div className="space-y-2">
-                {pastServices.map((s, i) => {
-                  const isFirst = i === 0;
-                  const isExpanded = expandedPastId === s.id;
-                  return (
-                    <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
-                      <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
-                            <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
-                            <Badge variant="default" className="text-[10px]">Completed</Badge>
-                            {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
+              servicesByUnit.size === 0 ? (
+                <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No service history</CardContent></Card>
+              ) : (
+                <Accordion type="multiple" defaultValue={Array.from(servicesByUnit.keys()).slice(0, 1)}>
+                  {Array.from(servicesByUnit.entries())
+                    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+                    .map(([unitNum, entries]) => (
+                      <AccordionItem key={unitNum} value={unitNum} className="border rounded-lg mb-2 px-0 shadow-sm">
+                        <AccordionTrigger className="px-3 py-2.5 text-sm hover:no-underline bg-muted/20 rounded-t-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{unitNum === "General" ? "General Treatment" : `Unit ${unitNum}`}</span>
+                            <Badge variant="secondary" className="text-[10px]">{entries.length} services</Badge>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            <span>{formatDate(s.service_date)}</span>
-                            {s.technician && <span>• {s.technician}</span>}
-                            {Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && (
-                              <span>• {(s.unit_details as any[]).length} units</span>
-                            )}
-                          </div>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                      </button>
-                      {isExpanded && renderServiceDetailsRO(s)}
-                    </Card>
-                  );
-                })}
-              </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
+                          {entries.map(({ service, unitDetail }, j) => (
+                            <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs border border-transparent">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{service.service_type}</span>
+                                <span className="text-muted-foreground">{formatShortDate(service.service_date)}</span>
+                              </div>
+                              {unitDetail && (
+                                <div className="mt-1 text-muted-foreground space-y-0.5">
+                                  {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
+                                  {unitDetail.pest_activity && <p>Activity: {unitDetail.pest_activity}</p>}
+                                  {unitDetail.products_used && <p>Products: {unitDetail.products_used}</p>}
+                                  {unitDetail.notes && <p>Notes: {unitDetail.notes}</p>}
+                                </div>
+                              )}
+                              {!unitDetail && service.summary && <p className="text-muted-foreground mt-1">{service.summary}</p>}
+                            </div>
+                          ))}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                </Accordion>
+              )
             )}
           </div>
         </TabsContent>
