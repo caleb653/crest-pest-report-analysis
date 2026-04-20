@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
-  Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon,
+  Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
