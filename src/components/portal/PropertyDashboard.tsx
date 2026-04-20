@@ -447,7 +447,12 @@ const PropertyDashboard = ({
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
-      [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
+      [serviceId]: {
+        unitRows: rows,
+        summary: "", findings: "", notes: "", technician: "",
+        time_in: "", time_out: "", photos: [],
+        products: normalizeUsageList((propServices.find(s => s.id === serviceId) as any)?.products_used) || [],
+      },
     }));
   };
 
@@ -461,24 +466,8 @@ const PropertyDashboard = ({
       ? `${data.time_in} - ${data.time_out}`
       : data?.time_in || data?.time_out || null;
 
-    // Aggregate products_used (ProductUsage[]) from unit rows.
-    // Keep one entry per (name + units) combo, summing amounts.
-    const aggregateMap = new Map<string, ProductUsage>();
-    unitRows.forEach(r => {
-      const list = Array.isArray(r.products_used) ? normalizeUsageList(r.products_used) : [];
-      list.forEach(u => {
-        if (!u.name) return;
-        const key = `${u.name}__${u.applied_unit}__${u.undiluted_unit}`;
-        const cur = aggregateMap.get(key);
-        if (cur) {
-          cur.applied_amount = (Number(cur.applied_amount || 0) + Number(u.applied_amount || 0)) || null;
-          cur.undiluted_amount = (Number(cur.undiluted_amount || 0) + Number(u.undiluted_amount || 0)) || null;
-        } else {
-          aggregateMap.set(key, { ...u });
-        }
-      });
-    });
-    const aggregatedProducts = Array.from(aggregateMap.values());
+    // Service-level products (entered once per service date — not per unit)
+    const aggregatedProducts = data?.products || [];
 
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
