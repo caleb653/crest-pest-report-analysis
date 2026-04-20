@@ -18,6 +18,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
+import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 // ─── Types ───
 interface PortalProperty {
@@ -153,7 +156,7 @@ const PropertyDashboard = ({
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
   // Inline completion form data
   const [completionData, setCompletionData] = useState<Record<string, {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: string[]; status: string; notes: string; source: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -427,13 +430,13 @@ const PropertyDashboard = ({
             target_pest: targetPest,
             findings: contextParts.join(" • "),
             pest_activity: fu?.pest_activity || "None",
-            products_used: [] as string[],
+            products_used: [] as ProductUsage[],
             status: "To be Treated",
             notes: "",
             source,
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as string[], status: "To be Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: { unitRows: rows, summary: "", findings: "", notes: "", technician: "", time_in: "", time_out: "", photos: [] },
@@ -450,10 +453,24 @@ const PropertyDashboard = ({
       ? `${data.time_in} - ${data.time_out}`
       : data?.time_in || data?.time_out || null;
 
-    // Aggregate products_used from unit rows for the products array
-    const aggregatedProducts = Array.from(new Set(
-      unitRows.flatMap(r => Array.isArray(r.products_used) ? r.products_used : [])
-    ));
+    // Aggregate products_used (ProductUsage[]) from unit rows.
+    // Keep one entry per (name + units) combo, summing amounts.
+    const aggregateMap = new Map<string, ProductUsage>();
+    unitRows.forEach(r => {
+      const list = Array.isArray(r.products_used) ? normalizeUsageList(r.products_used) : [];
+      list.forEach(u => {
+        if (!u.name) return;
+        const key = `${u.name}__${u.applied_unit}__${u.undiluted_unit}`;
+        const cur = aggregateMap.get(key);
+        if (cur) {
+          cur.applied_amount = (Number(cur.applied_amount || 0) + Number(u.applied_amount || 0)) || null;
+          cur.undiluted_amount = (Number(cur.undiluted_amount || 0) + Number(u.undiluted_amount || 0)) || null;
+        } else {
+          aggregateMap.set(key, { ...u });
+        }
+      });
+    });
+    const aggregatedProducts = Array.from(aggregateMap.values());
 
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
