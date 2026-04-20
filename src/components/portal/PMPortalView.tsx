@@ -375,19 +375,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <MapPin className="w-4 h-4" />Property
+            <MapPin className="w-5 h-5" />
+            <span>Site Map and Plan</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Calendar className="w-4 h-4" />Past Services
+            <Calendar className="w-5 h-5" />
+            <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <ClipboardList className="w-4 h-4" />Request
+            <Bug className="w-5 h-5" />
+            <span>Request Work Order</span>
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Clock className="w-4 h-4" />Upcoming
+            <ClipboardList className="w-5 h-5" />
+            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileDown className="w-4 h-4" />Prep Sheets
+            <FileDown className="w-5 h-5" />
+            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
           </TabsTrigger>
         </TabsList>
 
