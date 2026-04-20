@@ -290,12 +290,34 @@ const PropertyDashboard = ({
     return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
   })();
 
-  const allUpcoming = [
-    ...scheduledServices.map(s => ({ ...s, isProjected: false })),
-    ...projectedUpcoming,
-  ]
-    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-    .slice(0, 2); // Only ever show the next 2 upcoming services
+  // Build the next 2 upcoming. If we have scheduled services, use those (up to 2).
+  // If we only have 1 scheduled, project a 2nd one `propertyFrequencyDays` after it.
+  const allUpcoming = (() => {
+    const scheduled = scheduledServices.map(s => ({ ...s, isProjected: false as const }));
+    if (scheduled.length >= 2) {
+      return scheduled
+        .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
+        .slice(0, 2);
+    }
+    if (scheduled.length === 1) {
+      const first = scheduled[0];
+      const projected2 = first.service_date
+        ? [{
+            id: `projected-after-${first.id}`,
+            isProjected: true as const,
+            service_date: addDaysISO(first.service_date, propertyFrequencyDays),
+            service_type: first.service_type,
+            technician: first.technician,
+            status: "scheduled",
+            units_planned: first.units_planned,
+            property_id: property.id,
+          }]
+        : [];
+      return [first, ...projected2];
+    }
+    // No scheduled: use the projected pair (already 2 entries, spaced by frequency).
+    return projectedUpcoming.slice(0, 2);
+  })();
 
   useEffect(() => {
     // Past services: all collapsed by default
