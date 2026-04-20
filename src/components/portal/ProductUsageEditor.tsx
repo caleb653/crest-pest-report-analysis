@@ -153,7 +153,7 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
                 <div className="col-span-4 flex gap-1">
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.5"
                     inputMode="decimal"
                     placeholder="0"
                     className="h-7 text-[11px] px-1.5 w-full"
@@ -171,7 +171,7 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
                 <div className="col-span-3 flex gap-1">
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.5"
                     inputMode="decimal"
                     placeholder="0"
                     className="h-7 text-[11px] px-1.5 w-full"
