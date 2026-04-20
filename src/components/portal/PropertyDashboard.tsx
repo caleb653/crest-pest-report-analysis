@@ -63,7 +63,7 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
+const STATUS_OPTIONS = ["To Be Treated", "Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
@@ -424,8 +424,8 @@ const PropertyDashboard = ({
     const sourceFromCtx = (s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
       if (s === "follow_up") return "follow-up";
-      if (s === "carried") return "follow-up";
-      return "new-work-order";
+      if (s === "carried") return "routine";
+      return "routine";
     };
 
     const rows = displayUnits.length > 0
@@ -439,12 +439,12 @@ const PropertyDashboard = ({
             findings: ctx?.findings || "",
             pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
             products_used: [] as ProductUsage[],
-            status: "Treated",
+            status: "To Be Treated",
             notes: ctx?.notes || "",
             source: sourceFromCtx(ctx?.source),
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: {
@@ -910,7 +910,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
             }));
           };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {
@@ -1040,7 +1040,7 @@ const PropertyDashboard = ({
                             <td className="px-2 py-1.5">
                               <Select value={row.status}
                                 onValueChange={(v) => updateRow(idx, "status", v)}>
-                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                <SelectTrigger className={`h-8 text-xs px-2 border-transparent hover:border-border bg-transparent ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
