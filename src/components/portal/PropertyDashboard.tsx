@@ -21,7 +21,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
-import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
+import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
 
 // ─── Types ───
 interface PortalProperty {
@@ -1071,14 +1071,14 @@ const PropertyDashboard = ({
                   // Auto-merge any product names listed in the unit rows into the service-level list.
                   const unitProductNames = new Set<string>();
                   for (const r of cd.unitRows) {
-                    const raw = r.products_used;
+                    const raw: any = (r as any).products_used;
                     if (Array.isArray(raw)) {
                       for (const p of raw) {
                         const n = typeof p === "string" ? p : (p as any)?.name;
                         if (n) unitProductNames.add(String(n).trim());
                       }
                     } else if (typeof raw === "string" && raw.trim()) {
-                      raw.split(",").map(x => x.trim()).filter(Boolean).forEach(n => unitProductNames.add(n));
+                      raw.split(",").map((x: string) => x.trim()).filter(Boolean).forEach((n: string) => unitProductNames.add(n));
                     }
                   }
                   const existingNames = new Set((cd.products || []).map(p => p.name.toLowerCase()));
