@@ -115,6 +115,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
 
+  // PM notes for upcoming services — keyed by service_date (YYYY-MM-DD).
+  // Stored on portal_properties.customer_preferences.pm_upcoming_notes so admins can read them.
+  const [pmNoteDraft, setPmNoteDraft] = useState<string>("");
+  const [pmNoteSavedDate, setPmNoteSavedDate] = useState<string | null>(null);
+  const [pmNoteSaving, setPmNoteSaving] = useState(false);
+
   // Work order form
   const [submitting, setSubmitting] = useState(false);
   const [unitNumber, setUnitNumber] = useState("");
