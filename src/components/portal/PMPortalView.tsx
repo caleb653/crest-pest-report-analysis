@@ -703,8 +703,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {formatDate(s.service_date)}
                             {s.technician && ` • ${s.technician}`}
-                            {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
+                            {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
+                          {/* Inline preview of planned units (like admin) */}
+                          {unitsPlanned.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {unitsPlanned.slice(0, 8).map((u, idx) => (
+                                <Badge key={`${u}-${idx}`} variant="outline" className="text-[10px] py-0 px-1.5 font-medium">
+                                  {u}
+                                </Badge>
+                              ))}
+                              {unitsPlanned.length > 8 && (
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                                  +{unitsPlanned.length - 8} more
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       </button>
