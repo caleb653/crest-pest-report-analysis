@@ -13,10 +13,16 @@ export interface StandardProduct {
 }
 
 export const STANDARD_PRODUCTS: StandardProduct[] = [
-  { id: "MasterLine / Bifen I/T",         name: "MasterLine / Bifen I/T",         perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "Essentria IC Pro",               name: "Essentria IC Pro",               perGallon: 2.00, unit: "oz",    appliedUnit: "gal" },
+  // Pinned to top in this order
   { id: "Temprid FX",                     name: "Temprid FX",                     perGallon: 8.00, unit: "mL",    appliedUnit: "gal" },
+  { id: "Alpine WSG",                     name: "Alpine WSG",                     perGallon: 10.00, unit: "grams", appliedUnit: "gal" },
+  { id: "MasterLine / Bifen I/T",         name: "MasterLine / Bifen I/T",         perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
   { id: "Termidor SC",                    name: "Termidor SC",                    perGallon: 0.04, unit: "oz",    appliedUnit: "gal" },
+  { id: "Delta Dust",                     name: "Delta Dust",                     perGallon: 0,    unit: "grams", appliedUnit: "grams" },
+  { id: "Advion Ant Gel Bait",            name: "Advion Ant Gel Bait",            perGallon: 0,    unit: "grams", appliedUnit: "grams" },
+  { id: "Advion Cockroach Gel Bait",      name: "Advion Cockroach Gel Bait",      perGallon: 0,    unit: "grams", appliedUnit: "grams" },
+  // Remaining standard products
+  { id: "Essentria IC Pro",               name: "Essentria IC Pro",               perGallon: 2.00, unit: "oz",    appliedUnit: "gal" },
   { id: "Phantom",                        name: "Phantom",                        perGallon: 3.00, unit: "oz",    appliedUnit: "gal" },
   { id: "OptiGard Flex Liquid",           name: "OptiGard Flex Liquid",           perGallon: 0.41, unit: "oz",    appliedUnit: "gal" },
   { id: "Onslaught FastCap Spider/Scorp", name: "Onslaught FastCap Spider/Scorp", perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
@@ -24,7 +30,6 @@ export const STANDARD_PRODUCTS: StandardProduct[] = [
   { id: "Gentrol IGR Concentrate",        name: "Gentrol IGR Concentrate",        perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
   { id: "Nyguard IGR Concentrate",        name: "Nyguard IGR Concentrate",        perGallon: 5.50, unit: "mL",    appliedUnit: "gal" },
   { id: "ExciteR",                        name: "ExciteR",                        perGallon: 1.56, unit: "oz",    appliedUnit: "gal" },
-  { id: "Alpine WSG",                     name: "Alpine WSG",                     perGallon: 10.00, unit: "grams", appliedUnit: "gal" },
 ];
 
 export const STANDARD_PRODUCT_IDS = new Set(STANDARD_PRODUCTS.map(p => p.id));
