@@ -270,6 +270,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     .filter(s => s.status !== "completed" && s.service_date && s.service_date >= today)
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
+  const servicesByUnit = (() => {
+    const map = new Map<string, { service: ServiceData; unitDetail: any }[]>();
+    pastServices.forEach(s => {
+      if (Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0) {
+        (s.unit_details as any[]).forEach(u => {
+          const key = u?.unit_number || "General";
+          if (!map.has(key)) map.set(key, []);
+          map.get(key)!.push({ service: s, unitDetail: u });
+        });
+      } else {
+        if (!map.has("General")) map.set("General", []);
+        map.get("General")!.push({ service: s, unitDetail: null });
+      }
+    });
+    return map;
+  })();
+
   const renderServiceDetailsRO = (s: ServiceData) => {
     const unitDetails = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
