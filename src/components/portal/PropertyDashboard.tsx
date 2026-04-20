@@ -503,6 +503,28 @@ const PropertyDashboard = ({
   };
 
   const mapUrl = property.map_image_url || property.image_url;
+  const [isEditingMap, setIsEditingMap] = useState(false);
+  const [savingMap, setSavingMap] = useState(false);
+  const handleSaveMapData = async (canvasData: string) => {
+    if (!canvasData) return;
+    setSavingMap(true);
+    try {
+      const parsed = JSON.parse(canvasData);
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ map_data: parsed })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Site map saved", duration: 1500 });
+      }
+    } catch (e: any) {
+      toast({ title: "Failed to save map", description: e?.message, variant: "destructive" });
+    } finally {
+      setSavingMap(false);
+    }
+  };
   // Equipment: local state for optimistic updates
   const parseEquipment = (eq: any): { name: string; count: number }[] => {
     if (!Array.isArray(eq)) return [];
