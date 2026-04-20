@@ -556,9 +556,14 @@ const PropertyDashboard = ({
 
   const submitWorkOrder = async () => {
     if (!workOrder.unit_number && !workOrder.comments) return;
+    // Case-insensitive normalization against existing units for this property
+    const typed = (workOrder.unit_number || "").trim();
+    const canonical = typed
+      ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
+      : "Facility";
     await supabase.from("portal_requests").insert({
       property_id: property.id,
-      unit_number: workOrder.unit_number || "Facility",
+      unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
       description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
