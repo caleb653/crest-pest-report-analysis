@@ -1063,9 +1063,6 @@ const PropertyDashboard = ({
                   </button>
         </div>
 
-        {/* Cumulative product usage across all services for this property */}
-        <ProductUsageTotalsCard services={propServices as any} />
-
 
                 {/* Photos uploader */}
                 <div>
