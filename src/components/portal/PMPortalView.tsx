@@ -90,6 +90,15 @@ const formatDate = (d: string | null) =>
 const formatShortDate = (d: string | null) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
+// Add `days` to YYYY-MM-DD using UTC to avoid TZ drift.
+const addDaysISO = (isoDate: string, days: number): string => {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, (m || 1) - 1, d || 1));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().split("T")[0];
+};
+const todayISO = () => new Date().toISOString().split("T")[0];
+
 const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProps) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("map");
