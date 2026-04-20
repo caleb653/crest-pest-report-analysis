@@ -182,13 +182,13 @@ export const makeDefaultUsage = (name: string): ProductUsage => {
       undiluted_unit: cat.undilutedUnit,
     };
   }
-  // unknown product → safe defaults
+  // unknown product → safe defaults (default to grams when unit is unknown)
   return {
     name,
     applied_amount: null,
     applied_unit: "gal",
     undiluted_amount: null,
-    undiluted_unit: "oz",
+    undiluted_unit: "grams",
   };
 };
 
