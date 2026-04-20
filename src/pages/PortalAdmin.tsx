@@ -119,6 +119,21 @@ const PortalAdmin = () => {
     });
   }, []);
 
+  // Realtime: keep admin in sync with PM portal submissions and any other
+  // client touching portal_services / portal_requests / portal_properties.
+  // Without this, if a PM submits a work order or schedules a unit, the
+  // admin would not see it until manual refresh — which can lead to the
+  // two portals showing different units for the same upcoming service.
+  useEffect(() => {
+    const channel = supabase
+      .channel("portal-admin-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services" }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests" }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties" }, () => loadAll())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   // Deferred property restore after data is loaded
   useEffect(() => {
     const savedPropId = sessionStorage.getItem("portal-admin-selected-property");
