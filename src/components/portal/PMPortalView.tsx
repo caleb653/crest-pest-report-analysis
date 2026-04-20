@@ -929,22 +929,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 {upcomingServices.map((s, i) => {
                   const isFirst = i === 0;
                   const isExpanded = isFirst || expandedUpcomingId === s.id;
-                  const ownPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-                  // Fall back to most recent past service's units when this upcoming has none planned yet
-                  const lastPast = pastServices[0];
-                  const lastPastUnits = lastPast && Array.isArray(lastPast.units_planned)
-                    ? lastPast.units_planned as string[]
-                    : [];
-                  const baseUnits = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
-                  // For the next service, also merge in units from any open work orders
-                  const woUnits = isFirst
-                    ? Array.from(openRequestUnits).filter((u): u is string => Boolean(u))
-                    : [];
-                  const mergedSet = new Set<string>(baseUnits);
-                  woUnits.forEach(u => mergedSet.add(u));
-                  const unitsPlanned = Array.from(mergedSet)
-                    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-                  const usingFallbackUnits = ownPlanned.length === 0 && lastPastUnits.length > 0;
+                  const lastPast = pastServices[0] || null;
+                  const merged = computeUpcomingUnits({
+                    service: s,
+                    isFirstUpcoming: isFirst,
+                    requests,
+                    mostRecentPast: lastPast,
+                  });
+                  const unitsPlanned = merged.units;
+                  const usingFallbackUnits = merged.usingFallback;
 
                   // Carry-over notes from the most recent past service when this upcoming has none
                   const ownHasNotes = Boolean(s.summary || s.findings || s.notes || s.special_notes);
