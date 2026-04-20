@@ -82,7 +82,7 @@ export const ProductUsageTotalsCard = ({ services }: { services: ServiceLike[] }
     <Card className="overflow-hidden">
       <div className="bg-primary/[0.06] px-3 py-2 border-b border-border flex items-center gap-2">
         <FlaskConical className="w-4 h-4 text-primary" />
-        <p className="text-xs font-bold uppercase tracking-wide">Cumulative Product Usage</p>
+        <p className="text-xs font-bold uppercase tracking-wide">Product Usage Totals</p>
         <Badge variant="secondary" className="ml-auto text-[10px]">{totals.length} product{totals.length === 1 ? "" : "s"}</Badge>
       </div>
       <table className="w-full text-xs">
