@@ -823,15 +823,17 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {products.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1">Products Used</p>
-            <ProductUsageSummary entries={products} />
-          </div>
-        )}
-
-        {/* Per-service product totals (aggregated across this service's units) */}
-        <ProductUsageTotalsCard services={[s]} />
+        {/* Service-level products used (editable, per service date — not per unit) */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+            <FlaskConical className="w-3.5 h-3.5" />
+            Products Used (this service date)
+          </p>
+          <ProductUsageEditor
+            value={products}
+            onChange={(next) => updateServiceProducts(s.id, next)}
+          />
+        </div>
 
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
