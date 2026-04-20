@@ -1776,6 +1776,9 @@ const PropertyDashboard = ({
               const isExpanded = isFirst || expandedUpcomingId === s.id;
               const isProjected = (s as any).isProjected;
               const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
+              const pmNotesMapHeader: Record<string, string> =
+                ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
+              const hasPmNote = !!(s.service_date && pmNotesMapHeader[s.service_date]);
 
               return (
                 <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
@@ -1786,6 +1789,7 @@ const PropertyDashboard = ({
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
+                        {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
