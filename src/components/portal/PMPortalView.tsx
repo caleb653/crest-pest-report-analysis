@@ -760,16 +760,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                             {s.technician && ` • ${s.technician}`}
                             {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units planned`}
                           </p>
-                          {/* Only show flagged units (work orders / follow-ups) on the next service card */}
-                          {flaggedUnits.length > 0 && (
+                          {/* Show all planned units (like admin) — flagged ones are highlighted */}
+                          {unitsPlanned.length > 0 && (
                             <div className="mt-1.5">
-                              <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-1">Units needing attention</p>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Units to be Treated</p>
                               <div className="flex flex-wrap gap-1">
-                                {flaggedUnits.map((u, idx) => {
-                                  const reason = openRequestUnits.has(u) ? "Work order" : "Follow-up";
+                                {unitsPlanned.map((u, idx) => {
+                                  const isWorkOrder = isFirst && openRequestUnits.has(u);
+                                  const isFollowUp = isFirst && followUpUnits.has(u);
+                                  const flagged = isWorkOrder || isFollowUp;
+                                  const label = isWorkOrder ? `${u} · Work order` : isFollowUp ? `${u} · Follow-up` : u;
                                   return (
-                                    <Badge key={`${u}-${idx}`} className="text-[10px] py-0 px-1.5 font-medium bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100">
-                                      {u} · {reason}
+                                    <Badge
+                                      key={`${u}-${idx}`}
+                                      variant={flagged ? "default" : "outline"}
+                                      className={`text-[10px] py-0 px-1.5 font-medium ${flagged ? "bg-orange-100 text-orange-900 border border-orange-300 hover:bg-orange-100" : ""}`}
+                                    >
+                                      {label}
                                     </Badge>
                                   );
                                 })}
