@@ -898,6 +898,32 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 })}
               </div>
             )}
+
+            {/* Future projected visits — date only, no details */}
+            {futureProjectedDates.length > 0 && (
+              <div className="mt-5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Following {futureProjectedDates.length} visits ({FREQUENCY_LABELS[propertyFrequency]})
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {futureProjectedDates.map((d, idx) => (
+                    <div
+                      key={`future-${idx}`}
+                      className="flex items-center gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
+                    >
+                      <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {idx + 2}
+                      </span>
+                      <span className="text-xs">{formatDate(d)}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic mt-2">
+                  Projected dates only — service details are confirmed closer to each visit.
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
