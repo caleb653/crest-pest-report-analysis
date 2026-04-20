@@ -440,12 +440,12 @@ const PropertyDashboard = ({
             findings: contextParts.join(" • "),
             pest_activity: fu?.pest_activity || "None",
             products_used: [] as ProductUsage[],
-            status: "To be Treated",
+            status: "Treated",
             notes: "",
             source,
           };
         })
-      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "new-work-order" }];
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "new-work-order" }];
     setCompletionData(prev => ({
       ...prev,
       [serviceId]: {
@@ -892,7 +892,7 @@ const PropertyDashboard = ({
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To be Treated", notes: "", source: "" }] },
+              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "Treated", notes: "", source: "" }] },
             }));
           };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {

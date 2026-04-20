@@ -468,8 +468,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 <div key={i} className="bg-muted/40 rounded-md p-2">
                   <p className="font-medium">Unit {u.unit_number || "—"}</p>
                   {u.findings && <p className="text-muted-foreground mt-0.5">Findings: {u.findings}</p>}
-                  {u.pest_activity && <p className="text-muted-foreground">Activity: {u.pest_activity}</p>}
-                  {u.products_used && <p className="text-muted-foreground">Products: {u.products_used}</p>}
+                  {u.products_used && (
+                    <p className="text-muted-foreground">
+                      Products: {Array.isArray(u.products_used)
+                        ? (u.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
+                        : u.products_used}
+                    </p>
+                  )}
                   {u.notes && <p className="text-muted-foreground">Notes: {u.notes}</p>}
                 </div>
               ))}
@@ -710,8 +715,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                               {unitDetail && (
                                 <div className="mt-1 text-muted-foreground space-y-0.5">
                                   {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
-                                  {unitDetail.pest_activity && <p>Activity: {unitDetail.pest_activity}</p>}
-                                  {unitDetail.products_used && <p>Products: {unitDetail.products_used}</p>}
+                                  {unitDetail.products_used && (
+                                    <p>
+                                      Products: {Array.isArray(unitDetail.products_used)
+                                        ? (unitDetail.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
+                                        : unitDetail.products_used}
+                                    </p>
+                                  )}
                                   {unitDetail.notes && <p>Notes: {unitDetail.notes}</p>}
                                 </div>
                               )}
