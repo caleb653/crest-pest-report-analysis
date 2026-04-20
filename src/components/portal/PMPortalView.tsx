@@ -716,6 +716,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                               {unitDetail && (
                                 <div className="mt-1 text-muted-foreground space-y-0.5">
                                   {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
+                                  {unitDetail.target_pest && <p>Target Pest: {unitDetail.target_pest}</p>}
                                   {unitDetail.products_used && (
                                     <p>
                                       Products: {Array.isArray(unitDetail.products_used)
