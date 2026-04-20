@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
+import { MapCanvas } from "@/components/MapCanvas";
 
 // ─── Types ───
 interface PortalProperty {
@@ -502,6 +503,28 @@ const PropertyDashboard = ({
   };
 
   const mapUrl = property.map_image_url || property.image_url;
+  const [isEditingMap, setIsEditingMap] = useState(false);
+  const [savingMap, setSavingMap] = useState(false);
+  const handleSaveMapData = async (canvasData: string) => {
+    if (!canvasData) return;
+    setSavingMap(true);
+    try {
+      const parsed = JSON.parse(canvasData);
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ map_data: parsed })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Site map saved", duration: 1500 });
+      }
+    } catch (e: any) {
+      toast({ title: "Failed to save map", description: e?.message, variant: "destructive" });
+    } finally {
+      setSavingMap(false);
+    }
+  };
   // Equipment: local state for optimistic updates
   const parseEquipment = (eq: any): { name: string; count: number }[] => {
     if (!Array.isArray(eq)) return [];
@@ -1153,7 +1176,13 @@ const PropertyDashboard = ({
             }}
           >
             {mapUrl ? (
-              property.map_data ? (
+              isEditingMap ? (
+                <MapCanvas
+                  mapUrl={mapUrl}
+                  onSave={handleSaveMapData}
+                  initialData={property.map_data ? (typeof property.map_data === 'string' ? property.map_data : JSON.stringify(property.map_data)) : undefined}
+                />
+              ) : property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : (
                 <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
@@ -1165,6 +1194,18 @@ const PropertyDashboard = ({
                 <p className="text-[10px] opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
               </div>
             )}
+            {mapUrl && (
+              <Button
+                size="sm"
+                variant={isEditingMap ? "default" : "secondary"}
+                className="absolute top-2 right-2 h-7 px-2 text-xs shadow-sm"
+                onClick={() => setIsEditingMap(v => !v)}
+                disabled={savingMap}
+              >
+                <Edit className="w-3 h-3 mr-1" />
+                {isEditingMap ? (savingMap ? "Saving…" : "Done") : "Edit Map"}
+              </Button>
+            )}
             <label className="absolute bottom-2 right-2 bg-background/90 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1 shadow-sm border">
               <Image className="w-3.5 h-3.5" />
               {uploadingPropertyImage ? "Uploading..." : mapUrl ? "Change" : "Upload"}
@@ -1173,7 +1214,7 @@ const PropertyDashboard = ({
             </label>
           </div>
           <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
-            Tip: paste a screenshot (⌘/Ctrl + V) or drag &amp; drop an image to replace the site map
+            {isEditingMap ? "Add icons, draw, or erase. Changes save automatically." : "Tip: paste a screenshot (⌘/Ctrl + V) or drag & drop an image to replace the site map"}
           </div>
         </Card>
           </div>
