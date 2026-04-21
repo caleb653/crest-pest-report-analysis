@@ -94,6 +94,16 @@ const formatDate = (d: string | null) =>
 const formatShortDate = (d: string | null) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
+// "Week of month" label like "April W3" — used for weekly/bi-weekly cadence
+// where the exact day isn't meaningful and we just want the rough week.
+const formatWeekOfMonth = (d: string | null) => {
+  if (!d) return "";
+  const date = new Date(d + "T00:00:00");
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const week = Math.ceil(date.getDate() / 7);
+  return `${month} W${week}`;
+};
+
 // Add `days` to YYYY-MM-DD using UTC to avoid TZ drift.
 const addDaysISO = (isoDate: string, days: number): string => {
   const [y, m, d] = isoDate.split("-").map(Number);
@@ -963,7 +973,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                           </div>
                           <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2 flex-wrap">
                             <Calendar className="w-4 h-4" />
-                            <span className="font-semibold text-foreground">{formatDate(s.service_date)}</span>
+                            <span className="font-semibold text-foreground">
+                              {((s as any).scheduling_status === "projected" &&
+                                (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly"))
+                                ? formatWeekOfMonth(s.service_date)
+                                : formatDate(s.service_date)}
+                            </span>
                             {s.technician && <span>• {s.technician}</span>}
                             {unitsPlanned.length > 0 && <span>• {unitsPlanned.length} unit{unitsPlanned.length === 1 ? "" : "s"}</span>}
                           </p>
@@ -1130,7 +1145,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                       <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">
                         {idx + 2}
                       </span>
-                      <span className="text-sm font-medium">{formatDate(d)}</span>
+                      <span className="text-sm font-medium">
+                        {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")
+                          ? formatWeekOfMonth(d)
+                          : formatDate(d)}
+                      </span>
                     </div>
                   ))}
                 </div>
