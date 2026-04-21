@@ -989,8 +989,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                       {isExpanded && (
                         <div className="px-5 pb-5 space-y-5">
                           {/* Big summary chips */}
-                          {(woCount > 0 || fuCount > 0 || carriedCount > 0) && (
-                            <div className="grid grid-cols-3 gap-3">
+                          {(woCount > 0 || fuCount > 0) && (
+                            <div className="grid grid-cols-2 gap-3">
                               <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-3 text-center">
                                 <p className="text-3xl font-bold text-orange-700 leading-none">{woCount}</p>
                                 <p className="text-xs font-semibold text-orange-900 mt-1.5 uppercase tracking-wide">New Work Order{woCount === 1 ? "" : "s"}</p>
@@ -998,10 +998,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                               <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-center">
                                 <p className="text-3xl font-bold text-amber-700 leading-none">{fuCount}</p>
                                 <p className="text-xs font-semibold text-amber-900 mt-1.5 uppercase tracking-wide">Follow-up{fuCount === 1 ? "" : "s"}</p>
-                              </div>
-                              <div className="rounded-xl border-2 border-border bg-muted/40 p-3 text-center">
-                                <p className="text-3xl font-bold text-foreground leading-none">{carriedCount}</p>
-                                <p className="text-xs font-semibold text-muted-foreground mt-1.5 uppercase tracking-wide">{usingFallbackUnits ? "Carried" : "Planned"}</p>
                               </div>
                             </div>
                           )}
