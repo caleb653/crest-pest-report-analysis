@@ -1589,22 +1589,27 @@ Crest Pest Control`;
     }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: 1 | 2 = 1,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("video/")) { toast.error("Please upload a video file"); return; }
-    setUploadingVideo(true);
+    const setUrl = slot === 2 ? setVideoUrl2 : setVideoUrl;
+    const setUploading = slot === 2 ? setUploadingVideo2 : setUploadingVideo;
+    setUploading(true);
     try {
       const localUrl = URL.createObjectURL(file);
-      setVideoUrl(localUrl);
+      setUrl(localUrl);
       const fileName = `${Math.random()}.${file.name.split('.').pop() || 'mp4'}`;
-      const filePath = `${reportId || "temp"}/video/${fileName}`;
+      const filePath = `${reportId || "temp"}/video${slot === 2 ? "2" : ""}/${fileName}`;
       const { error: uploadError } = await supabase.storage
         .from("report-images")
         .upload(filePath, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
-      setVideoUrl(publicUrl);
+      setUrl(publicUrl);
       URL.revokeObjectURL(localUrl);
       pendingAutoSaveRef.current = true;
       toast.success("Video uploaded");
@@ -1612,7 +1617,7 @@ Crest Pest Control`;
       console.error("Error uploading video:", error);
       toast.error("Failed to upload video");
     } finally {
-      setUploadingVideo(false);
+      setUploading(false);
     }
   };
 
