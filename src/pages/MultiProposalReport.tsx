@@ -391,7 +391,9 @@ const Report = () => {
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrl2, setVideoUrl2] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingVideo2, setUploadingVideo2] = useState(false);
 
   // Flatten all services across proposals for backward compat
   const allServices = proposals.flatMap(p => p.services);
