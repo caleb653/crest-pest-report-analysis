@@ -355,10 +355,17 @@ const SubmittedReports = () => {
     }
 
     // Type
-    if (typeFilter === "sales-all") {
-      filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
-    } else if (typeFilter !== "all") {
-      filtered = filtered.filter((r) => r.report_type === typeFilter);
+    // Pre-Proposals are a separate bucket — never show them in the default views.
+    // They only appear when explicitly selected via the "Pre-Proposal" filter.
+    if (typeFilter === "pre-proposal") {
+      filtered = filtered.filter((r) => r.is_pre_proposal);
+    } else {
+      filtered = filtered.filter((r) => !r.is_pre_proposal);
+      if (typeFilter === "sales-all") {
+        filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
+      } else if (typeFilter !== "all") {
+        filtered = filtered.filter((r) => r.report_type === typeFilter);
+      }
     }
 
     // Status
