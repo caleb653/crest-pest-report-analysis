@@ -136,11 +136,13 @@ const SubmittedReports = () => {
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
         const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
+        let isPreProposal = false;
         // Detect via _reportFormat marker in notes
         if (r.notes && typeof r.notes === 'string') {
           try {
             const parsed = JSON.parse(r.notes);
             if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
+            if (parsed?._isPreProposal === true) isPreProposal = true;
           } catch {}
         }
         // Fallback: detect via services array containing Proposal objects (have 'name' + 'services' keys)
@@ -159,6 +161,7 @@ const SubmittedReports = () => {
           report_type: isMultiProposal ? "multi-proposal" : isInitial ? "initial" : "sales",
           is_signed: !!r.customer_signature,
           is_sent: !!r.sent_to_customer_at,
+          is_pre_proposal: isPreProposal,
         };
       });
 
