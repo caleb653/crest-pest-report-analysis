@@ -113,6 +113,16 @@ export async function createPortalFromReport(reportId: string): Promise<{
     ? `Proposed Services:\n${summaryLines.join("\n")}`
     : null;
 
+  // Map the most-frequent recurring cadence (in days) to the PM portal's frequency key.
+  // Defaults to bi-weekly when no recurring service exists.
+  const frequencyKey: "weekly" | "bi-weekly" | "monthly" | "bi-monthly" = (() => {
+    if (mostFrequentDays === null) return "bi-weekly";
+    if (mostFrequentDays <= 7) return "weekly";
+    if (mostFrequentDays <= 14) return "bi-weekly";
+    if (mostFrequentDays <= 30) return "monthly";
+    return "bi-monthly";
+  })();
+
   // 4) Create portal_property — populate address + map + plan summary; leave preferences empty
   const propertyName = address || customerName;
   const mapImageUrl =
@@ -135,7 +145,8 @@ export async function createPortalFromReport(reportId: string): Promise<{
       map_image_url: mapImageUrl,
       map_data: (report as any).map_data || null,
       notes: propertyPlan,
-      customer_preferences: {},
+      // Only the service_frequency key is set — no other customer preferences.
+      customer_preferences: { service_frequency: frequencyKey },
     })
     .select("id")
     .single();
