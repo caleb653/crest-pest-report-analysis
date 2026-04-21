@@ -287,6 +287,13 @@ const FREQUENCY_OPTIONS = [
   { label: "90 days", days: 90 },
 ];
 
+const formatScheduleChip = (date: Date, isHighFreq: boolean) => {
+  if (!isHighFreq) return date.toLocaleDateString("en-US", { month: "short" });
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const week = Math.ceil(date.getDate() / 7);
+  return `${month} W${week}`;
+};
+
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
@@ -2135,7 +2142,7 @@ Crest Pest Control`;
                                     isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
                                   }`}
                                 >
-                                  {scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                  {formatScheduleChip(scheduleDate, true)}
                                 </span>
                               );
                             });
@@ -2153,7 +2160,7 @@ Crest Pest Control`;
                                   isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"
                                 }`}
                               >
-                                {scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                                {formatScheduleChip(scheduleDate, false)}
                               </span>
                             );
                           });
