@@ -973,7 +973,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                           </div>
                           <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2 flex-wrap">
                             <Calendar className="w-4 h-4" />
-                            <span className="font-semibold text-foreground">{formatDate(s.service_date)}</span>
+                            <span className="font-semibold text-foreground">
+                              {((s as any).scheduling_status === "projected" &&
+                                (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly"))
+                                ? formatWeekOfMonth(s.service_date)
+                                : formatDate(s.service_date)}
+                            </span>
                             {s.technician && <span>• {s.technician}</span>}
                             {unitsPlanned.length > 0 && <span>• {unitsPlanned.length} unit{unitsPlanned.length === 1 ? "" : "s"}</span>}
                           </p>
