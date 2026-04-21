@@ -584,6 +584,32 @@ const SubmittedReports = () => {
                               {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Multi-Proposal" : "Sales"}
                             </Badge>
 
+                            {report.is_pre_proposal && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                <Archive className="w-3 h-3 mr-1" />
+                                Pre-Proposal
+                              </Badge>
+                            )}
+
+                            {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => togglePreProposal(report.id, !report.is_pre_proposal, e)}
+                                disabled={togglingPreProposal === report.id}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                title={report.is_pre_proposal ? "Move back to Sales" : "Mark as Pre-Proposal"}
+                              >
+                                {togglingPreProposal === report.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : report.is_pre_proposal ? (
+                                  <ArchiveRestore className="w-4 h-4" />
+                                ) : (
+                                  <Archive className="w-4 h-4" />
+                                )}
+                              </Button>
+                            )}
+
                             <Button
                               variant="ghost"
                               size="icon"
