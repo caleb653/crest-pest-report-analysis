@@ -92,6 +92,16 @@ interface PMPortalViewProps {
 const formatDate = (d: string | null) =>
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "";
 const formatShortDate = (d: string | null) =>
+
+// "Week of month" label like "April W3" — used for weekly/bi-weekly cadence
+// where the exact day isn't meaningful and we just want the rough week.
+const formatWeekOfMonth = (d: string | null) => {
+  if (!d) return "";
+  const date = new Date(d + "T00:00:00");
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const week = Math.ceil(date.getDate() / 7);
+  return `${month} W${week}`;
+};
   d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
 
 // Add `days` to YYYY-MM-DD using UTC to avoid TZ drift.
