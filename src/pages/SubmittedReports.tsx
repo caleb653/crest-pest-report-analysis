@@ -114,6 +114,7 @@ const SubmittedReports = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
