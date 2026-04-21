@@ -536,6 +536,22 @@ const SubmittedReports = () => {
 
                             <Button
                               variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCreatePortal(report.id, e)}
+                              disabled={creatingPortal === report.id}
+                              className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                              title="Create a Client Portal pre-populated from this report"
+                            >
+                              {creatingPortal === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Building2 className="w-4 h-4" />
+                              )}
+                              <span className="hidden md:inline">Create Client Portal</span>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={(e) => promptDelete(report.id, e)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
