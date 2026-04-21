@@ -86,7 +86,34 @@ export async function createPortalFromReport(reportId: string): Promise<{
     clientId = newClient.id;
   }
 
-  // 3) Create portal_property — populate address + map data + property image
+  // 3) Build the proposed-services summary + determine the most frequent recurring cadence
+  const services = flattenServices((report as any).services);
+
+  const summaryLines: string[] = [];
+  let mostFrequentDays: number | null = null; // smallest positive frequency wins
+
+  for (const s of services) {
+    if (!s || !s.serviceType) continue;
+    const freq = s.frequency ?? SERVICE_FREQUENCY[s.serviceType] ?? null;
+
+    const parts: string[] = [`• ${s.serviceType}`];
+    if (s.initialPrice) parts.push(`Initial $${s.initialPrice}`);
+    if (s.recurringPrice) parts.push(`Recurring $${s.recurringPrice}`);
+    if (freq && freq > 0) parts.push(`every ${freq} days`);
+    else if (freq === 0) parts.push("one-time");
+    if ((s as any)._proposal) parts.push(`(${(s as any)._proposal})`);
+    summaryLines.push(parts.join(" — "));
+
+    if (freq && freq > 0) {
+      if (mostFrequentDays === null || freq < mostFrequentDays) mostFrequentDays = freq;
+    }
+  }
+
+  const propertyPlan = summaryLines.length > 0
+    ? `Proposed Services:\n${summaryLines.join("\n")}`
+    : null;
+
+  // 4) Create portal_property — populate address + map + plan summary; leave preferences empty
   const propertyName = address || customerName;
   const mapImageUrl =
     (report as any).rendered_map_url ||
@@ -107,45 +134,16 @@ export async function createPortalFromReport(reportId: string): Promise<{
       image_url: propertyImage,
       map_image_url: mapImageUrl,
       map_data: (report as any).map_data || null,
-      notes: `Created from report ${reportId}`,
+      notes: propertyPlan,
+      customer_preferences: {},
     })
     .select("id")
     .single();
   if (pErr || !newProperty) throw pErr || new Error("Failed to create property");
   const propertyId = newProperty.id;
 
-  // 4) Create portal_services from each proposed service
-  const services = flattenServices((report as any).services);
-  const targetPests = Array.isArray((report as any).target_pests)
-    ? (report as any).target_pests.join(", ")
-    : null;
-
-  const serviceRows = services
-    .filter((s) => s && s.serviceType)
-    .map((s) => {
-      const freq = s.frequency ?? SERVICE_FREQUENCY[s.serviceType] ?? null;
-      const summaryParts: string[] = [];
-      if ((s as any)._proposal) summaryParts.push(`Proposal: ${(s as any)._proposal}`);
-      if (s.initialPrice) summaryParts.push(`Initial: $${s.initialPrice}`);
-      if (s.recurringPrice) summaryParts.push(`Recurring: $${s.recurringPrice}`);
-      if (freq && freq > 0) summaryParts.push(`Every ${freq} days`);
-      else if (freq === 0) summaryParts.push("One-time");
-
-      return {
-        property_id: propertyId,
-        service_type: s.serviceType,
-        status: "scheduled",
-        scheduling_status: "proposed",
-        frequency_days: freq && freq > 0 ? freq : null,
-        summary: summaryParts.join(" • ") || null,
-        notes: targetPests ? `Target Pests: ${targetPests}` : null,
-      };
-    });
-
-  if (serviceRows.length > 0) {
-    const { error: sErr } = await supabase.from("portal_services").insert(serviceRows);
-    if (sErr) throw sErr;
-  }
+  // NOTE: Intentionally do NOT create any portal_services rows here.
+  // The Property Plan summarizes what was proposed; previous/upcoming services start blank.
 
   // 5) Create a PM (sub) link for this property
   const { data: link, error: lErr } = await supabase
