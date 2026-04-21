@@ -258,6 +258,43 @@ const SubmittedReports = () => {
     navigate("/");
   };
 
+  // Mark a Sales / Multi-Proposal report as a "Pre-Proposal" (or move it back).
+  // Stored as `_isPreProposal: true` inside the existing notes JSON so we don't
+  // need a schema change.
+  const togglePreProposal = async (reportId: string, makePre: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTogglingPreProposal(reportId);
+    try {
+      const { data: row, error: fErr } = await supabase
+        .from("reports")
+        .select("notes")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (fErr) throw fErr;
+
+      let parsed: any = {};
+      if (row?.notes && typeof row.notes === "string") {
+        try { parsed = JSON.parse(row.notes); } catch { parsed = { _legacyNotes: row.notes }; }
+      }
+      if (makePre) parsed._isPreProposal = true;
+      else delete parsed._isPreProposal;
+
+      const { error: uErr } = await supabase
+        .from("reports")
+        .update({ notes: JSON.stringify(parsed) })
+        .eq("id", reportId);
+      if (uErr) throw uErr;
+
+      toast.success(makePre ? "Marked as Pre-Proposal" : "Moved back to Sales");
+      await loadReports();
+    } catch (err: any) {
+      console.error("Toggle pre-proposal error:", err);
+      toast.error("Failed to update report");
+    } finally {
+      setTogglingPreProposal(null);
+    }
+  };
+
   const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCreatingPortal(reportId);
