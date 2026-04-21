@@ -27,6 +27,7 @@ import {
   Mail,
   PenLine,
   Loader2,
+  Building2,
 } from "lucide-react";
 import {
   Select,
@@ -36,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
+import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all";
