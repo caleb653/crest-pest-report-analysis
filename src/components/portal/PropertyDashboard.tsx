@@ -635,6 +635,13 @@ const PropertyDashboard = ({
   const formatWeekOf = (d: string | null) => {
     if (!d) return "TBD";
     const date = new Date(d + "T00:00:00");
+    // For weekly/bi-weekly cadence, the precise weekday isn't meaningful — show
+    // "Month W#" (e.g. "April W3"). For longer cadences, fall back to the full date.
+    if (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") {
+      const month = date.toLocaleDateString("en-US", { month: "long" });
+      const week = Math.ceil(date.getDate() / 7);
+      return `${month} W${week}`;
+    }
     return date.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" });
   };
   const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD";
