@@ -251,6 +251,34 @@ const SubmittedReports = () => {
     navigate("/");
   };
 
+  const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCreatingPortal(reportId);
+    try {
+      const result = await createPortalFromReport(reportId);
+      if (result) {
+        toast.success("Client portal created!", {
+          description: "Opening Portal Admin…",
+          action: {
+            label: "Copy PM Link",
+            onClick: () => {
+              const url = `${window.location.origin}/client-portal/${result.linkToken}`;
+              navigator.clipboard.writeText(url);
+              toast.success("PM link copied");
+            },
+          },
+        });
+        sessionStorage.setItem("portal-admin-selected-property", result.propertyId);
+        navigate("/client-portal-admin");
+      }
+    } catch (err: any) {
+      console.error("Create portal error:", err);
+      toast.error(err?.message || "Failed to create client portal");
+    } finally {
+      setCreatingPortal(null);
+    }
+  };
+
   const visibleReports = useMemo(() => {
     let filtered = reports;
 
