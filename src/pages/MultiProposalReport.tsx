@@ -1113,6 +1113,7 @@ const Report = () => {
       limitationsText,
       recommendedProposal,
       videoUrl,
+      videoUrl2,
       duplicatedPages,
       duplicateMapData: options?.duplicateMapDataOverride ?? duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
