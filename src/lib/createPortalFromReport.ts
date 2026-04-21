@@ -86,31 +86,36 @@ export async function createPortalFromReport(reportId: string): Promise<{
     clientId = newClient.id;
   }
 
-  // 3) Build the proposed-services summary + determine the most frequent recurring cadence
-  const services = flattenServices((report as any).services);
+  // 3) Build the proposed-services summary + determine the most frequent recurring cadence.
+  //    For multi-proposal reports, use only the recommended proposal (or the first one
+  //    if none is flagged). Single-proposal reports use all services.
+  const rawServices = (report as any).services;
+  let chosenServices: any[] = [];
 
-  const summaryLines: string[] = [];
+  if (Array.isArray(rawServices) && rawServices.length > 0
+      && typeof rawServices[0] === "object" && "services" in rawServices[0]) {
+    // Multi-proposal: pick the recommended proposal, else the first.
+    const recommended =
+      rawServices.find((p: any) => p.recommended || p.isRecommended) ?? rawServices[0];
+    chosenServices = Array.isArray(recommended?.services) ? recommended.services : [];
+  } else {
+    chosenServices = flattenServices(rawServices);
+  }
+
+  const serviceNames: string[] = [];
   let mostFrequentDays: number | null = null; // smallest positive frequency wins
 
-  for (const s of services) {
+  for (const s of chosenServices) {
     if (!s || !s.serviceType) continue;
+    if (!serviceNames.includes(s.serviceType)) serviceNames.push(s.serviceType);
     const freq = s.frequency ?? SERVICE_FREQUENCY[s.serviceType] ?? null;
-
-    const parts: string[] = [`• ${s.serviceType}`];
-    if (s.initialPrice) parts.push(`Initial $${s.initialPrice}`);
-    if (s.recurringPrice) parts.push(`Recurring $${s.recurringPrice}`);
-    if (freq && freq > 0) parts.push(`every ${freq} days`);
-    else if (freq === 0) parts.push("one-time");
-    if ((s as any)._proposal) parts.push(`(${(s as any)._proposal})`);
-    summaryLines.push(parts.join(" — "));
-
     if (freq && freq > 0) {
       if (mostFrequentDays === null || freq < mostFrequentDays) mostFrequentDays = freq;
     }
   }
 
-  const propertyPlan = summaryLines.length > 0
-    ? `Proposed Services:\n${summaryLines.join("\n")}`
+  const propertyPlan = serviceNames.length > 0
+    ? `Proposed Services:\n${serviceNames.map((n) => `• ${n}`).join("\n")}`
     : null;
 
   // Map the most-frequent recurring cadence (in days) to the PM portal's frequency key.
