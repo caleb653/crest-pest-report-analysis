@@ -28,6 +28,8 @@ import {
   PenLine,
   Loader2,
   Building2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import {
   Select,
@@ -40,7 +42,7 @@ import crestLogo from "@/assets/crest-logo-black.png";
 import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
-type TypeFilterValue = "all" | ReportType | "sales-all";
+type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
@@ -54,6 +56,7 @@ interface ReportListItem {
   report_type: ReportType;
   is_signed: boolean;
   is_sent: boolean;
+  is_pre_proposal: boolean;
 }
 
 const TECHNICIANS = [
