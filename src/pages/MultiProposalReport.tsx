@@ -391,7 +391,9 @@ const Report = () => {
 
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrl2, setVideoUrl2] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingVideo2, setUploadingVideo2] = useState(false);
 
   // Flatten all services across proposals for backward compat
   const allServices = proposals.flatMap(p => p.services);
@@ -953,6 +955,7 @@ const Report = () => {
               setLimitationsText(parsed.limitationsText || "");
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
+              if (parsed.videoUrl2) setVideoUrl2(parsed.videoUrl2);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
@@ -1110,6 +1113,7 @@ const Report = () => {
       limitationsText,
       recommendedProposal,
       videoUrl,
+      videoUrl2,
       duplicatedPages,
       duplicateMapData: options?.duplicateMapDataOverride ?? duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
@@ -1585,22 +1589,27 @@ Crest Pest Control`;
     }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    slot: 1 | 2 = 1,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("video/")) { toast.error("Please upload a video file"); return; }
-    setUploadingVideo(true);
+    const setUrl = slot === 2 ? setVideoUrl2 : setVideoUrl;
+    const setUploading = slot === 2 ? setUploadingVideo2 : setUploadingVideo;
+    setUploading(true);
     try {
       const localUrl = URL.createObjectURL(file);
-      setVideoUrl(localUrl);
+      setUrl(localUrl);
       const fileName = `${Math.random()}.${file.name.split('.').pop() || 'mp4'}`;
-      const filePath = `${reportId || "temp"}/video/${fileName}`;
+      const filePath = `${reportId || "temp"}/video${slot === 2 ? "2" : ""}/${fileName}`;
       const { error: uploadError } = await supabase.storage
         .from("report-images")
         .upload(filePath, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
       const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
-      setVideoUrl(publicUrl);
+      setUrl(publicUrl);
       URL.revokeObjectURL(localUrl);
       pendingAutoSaveRef.current = true;
       toast.success("Video uploaded");
@@ -1608,7 +1617,7 @@ Crest Pest Control`;
       console.error("Error uploading video:", error);
       toast.error("Failed to upload video");
     } finally {
-      setUploadingVideo(false);
+      setUploading(false);
     }
   };
 
@@ -2621,12 +2630,20 @@ Crest Pest Control`;
             </div>
             <div className="max-w-3xl mx-auto relative group">
               <video
+                id="property-video-1"
                 src={videoUrl}
                 controls
                 className="w-full rounded-lg border-2 border-border relative"
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
                 onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
                 onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                onEnded={() => {
+                  const v2 = document.getElementById('property-video-2') as HTMLVideoElement | null;
+                  if (v2) {
+                    v2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    v2.play().catch(() => {});
+                  }
+                }}
               />
               <div data-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
                 <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
@@ -2634,6 +2651,51 @@ Crest Pest Control`;
                 <p className="text-sm text-muted-foreground mt-2">Click to play</p>
               </div>
             </div>
+            {videoUrl2 && (
+              <div className="max-w-3xl mx-auto relative group mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-semibold text-foreground">Additional Video</h2>
+                  {!isReadOnly && (
+                    <Button variant="destructive" size="sm" className="no-print" onClick={() => setVideoUrl2(null)}>
+                      <X className="w-3 h-3 mr-1" /> Remove
+                    </Button>
+                  )}
+                </div>
+                <video
+                  id="property-video-2"
+                  src={videoUrl2}
+                  controls
+                  className="w-full rounded-lg border-2 border-border relative"
+                  poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                  onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay-2]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                  onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay-2]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                />
+                <div data-video-overlay-2 className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)', top: '2.5rem' }}>
+                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+                  <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
+                  <p className="text-sm text-muted-foreground mt-2">Plays after first video</p>
+                </div>
+              </div>
+            )}
+            {!videoUrl2 && !isReadOnly && (
+              <div className="max-w-3xl mx-auto mt-4 no-print flex items-center gap-3">
+                <div className="relative inline-flex">
+                  <Button variant="outline" size="sm" type="button">
+                    <Video className="w-4 h-4 mr-2" />
+                    Add Second Video
+                  </Button>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                    onChange={(e) => handleVideoUpload(e, 2)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                </div>
+                {uploadingVideo2 && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span className="text-xs text-muted-foreground">Plays automatically after the first video ends</span>
+              </div>
+            )}
           </div>
         </div>
       )}
