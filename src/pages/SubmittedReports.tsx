@@ -28,6 +28,8 @@ import {
   PenLine,
   Loader2,
   Building2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import {
   Select,
@@ -40,7 +42,7 @@ import crestLogo from "@/assets/crest-logo-black.png";
 import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
-type TypeFilterValue = "all" | ReportType | "sales-all";
+type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
@@ -54,6 +56,7 @@ interface ReportListItem {
   report_type: ReportType;
   is_signed: boolean;
   is_sent: boolean;
+  is_pre_proposal: boolean;
 }
 
 const TECHNICIANS = [
@@ -115,6 +118,7 @@ const SubmittedReports = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
+  const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -133,11 +137,13 @@ const SubmittedReports = () => {
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
         const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
+        let isPreProposal = false;
         // Detect via _reportFormat marker in notes
         if (r.notes && typeof r.notes === 'string') {
           try {
             const parsed = JSON.parse(r.notes);
             if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
+            if (parsed?._isPreProposal === true) isPreProposal = true;
           } catch {}
         }
         // Fallback: detect via services array containing Proposal objects (have 'name' + 'services' keys)
@@ -156,6 +162,7 @@ const SubmittedReports = () => {
           report_type: isMultiProposal ? "multi-proposal" : isInitial ? "initial" : "sales",
           is_signed: !!r.customer_signature,
           is_sent: !!r.sent_to_customer_at,
+          is_pre_proposal: isPreProposal,
         };
       });
 
@@ -251,6 +258,43 @@ const SubmittedReports = () => {
     navigate("/");
   };
 
+  // Mark a Sales / Multi-Proposal report as a "Pre-Proposal" (or move it back).
+  // Stored as `_isPreProposal: true` inside the existing notes JSON so we don't
+  // need a schema change.
+  const togglePreProposal = async (reportId: string, makePre: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTogglingPreProposal(reportId);
+    try {
+      const { data: row, error: fErr } = await supabase
+        .from("reports")
+        .select("notes")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (fErr) throw fErr;
+
+      let parsed: any = {};
+      if (row?.notes && typeof row.notes === "string") {
+        try { parsed = JSON.parse(row.notes); } catch { parsed = { _legacyNotes: row.notes }; }
+      }
+      if (makePre) parsed._isPreProposal = true;
+      else delete parsed._isPreProposal;
+
+      const { error: uErr } = await supabase
+        .from("reports")
+        .update({ notes: JSON.stringify(parsed) })
+        .eq("id", reportId);
+      if (uErr) throw uErr;
+
+      toast.success(makePre ? "Marked as Pre-Proposal" : "Moved back to Sales");
+      await loadReports();
+    } catch (err: any) {
+      console.error("Toggle pre-proposal error:", err);
+      toast.error("Failed to update report");
+    } finally {
+      setTogglingPreProposal(null);
+    }
+  };
+
   const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCreatingPortal(reportId);
@@ -311,10 +355,17 @@ const SubmittedReports = () => {
     }
 
     // Type
-    if (typeFilter === "sales-all") {
-      filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
-    } else if (typeFilter !== "all") {
-      filtered = filtered.filter((r) => r.report_type === typeFilter);
+    // Pre-Proposals are a separate bucket — never show them in the default views.
+    // They only appear when explicitly selected via the "Pre-Proposal" filter.
+    if (typeFilter === "pre-proposal") {
+      filtered = filtered.filter((r) => r.is_pre_proposal);
+    } else {
+      filtered = filtered.filter((r) => !r.is_pre_proposal);
+      if (typeFilter === "sales-all") {
+        filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
+      } else if (typeFilter !== "all") {
+        filtered = filtered.filter((r) => r.report_type === typeFilter);
+      }
     }
 
     // Status
@@ -415,6 +466,7 @@ const SubmittedReports = () => {
                   <SelectItem value="sales">Single Sales</SelectItem>
                   <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
+                  <SelectItem value="pre-proposal">Pre-Proposal</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -531,6 +583,32 @@ const SubmittedReports = () => {
                             <Badge variant={report.report_type === "initial" ? "secondary" : report.report_type === "multi-proposal" ? "outline" : "default"}>
                               {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Multi-Proposal" : "Sales"}
                             </Badge>
+
+                            {report.is_pre_proposal && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                <Archive className="w-3 h-3 mr-1" />
+                                Pre-Proposal
+                              </Badge>
+                            )}
+
+                            {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => togglePreProposal(report.id, !report.is_pre_proposal, e)}
+                                disabled={togglingPreProposal === report.id}
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                title={report.is_pre_proposal ? "Move back to Sales" : "Mark as Pre-Proposal"}
+                              >
+                                {togglingPreProposal === report.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : report.is_pre_proposal ? (
+                                  <ArchiveRestore className="w-4 h-4" />
+                                ) : (
+                                  <Archive className="w-4 h-4" />
+                                )}
+                              </Button>
+                            )}
 
                             <Button
                               variant="ghost"
