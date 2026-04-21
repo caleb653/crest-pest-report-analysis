@@ -955,6 +955,7 @@ const Report = () => {
               setLimitationsText(parsed.limitationsText || "");
               if (parsed.recommendedProposal !== undefined) setRecommendedProposal(parsed.recommendedProposal);
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
+              if (parsed.videoUrl2) setVideoUrl2(parsed.videoUrl2);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
