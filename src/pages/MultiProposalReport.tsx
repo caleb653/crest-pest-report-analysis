@@ -289,6 +289,13 @@ const FREQUENCY_OPTIONS = [
   { label: "90 days", days: 90 },
 ];
 
+const formatScheduleChip = (date: Date, isHighFreq: boolean) => {
+  if (!isHighFreq) return date.toLocaleDateString("en-US", { month: "short" });
+  const month = date.toLocaleDateString("en-US", { month: "long" });
+  const week = Math.ceil(date.getDate() / 7);
+  return `${month} W${week}`;
+};
+
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
@@ -1884,7 +1891,7 @@ Crest Pest Control`;
                         const isFirst = i === 0;
                         return (
                           <span key={i} className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"}`}>
-                            {isHighFreq ? scheduleDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : scheduleDate.toLocaleDateString("en-US", { month: "short" })}
+                            {formatScheduleChip(scheduleDate, isHighFreq)}
                           </span>
                         );
                       });
@@ -1957,7 +1964,7 @@ Crest Pest Control`;
                           d.setDate(d.getDate() + i * service.frequency);
                           return (
                             <span key={i} className={`schedule-pill ${i === 0 ? "schedule-pill--first" : ""}`}>
-                              {isHighFreq ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : d.toLocaleDateString("en-US", { month: "short" })}
+                              {formatScheduleChip(d, isHighFreq)}
                             </span>
                           );
                         });
