@@ -355,15 +355,18 @@ const SubmittedReports = () => {
     }
 
     // Type
-    // Pre-Proposals are a separate bucket — never show them in the default views.
-    // They only appear when explicitly selected via the "Pre-Proposal" filter.
+    // Pre-Proposals are hidden from the Sales-focused buckets (Sales, Multi-Proposal,
+    // Sales (All)) so the default sales portal view stays clean. They still show up
+    // in "All Types" and have their own dedicated "Pre-Proposal" filter.
     if (typeFilter === "pre-proposal") {
       filtered = filtered.filter((r) => r.is_pre_proposal);
+    } else if (typeFilter === "all") {
+      // show everything, including pre-proposals
     } else {
       filtered = filtered.filter((r) => !r.is_pre_proposal);
       if (typeFilter === "sales-all") {
         filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
-      } else if (typeFilter !== "all") {
+      } else {
         filtered = filtered.filter((r) => r.report_type === typeFilter);
       }
     }
