@@ -257,19 +257,32 @@ const SubmittedReports = () => {
     try {
       const result = await createPortalFromReport(reportId);
       if (result) {
+        // Verify the new property is readable before navigating, to avoid 404s
+        // from race conditions where Postgres hasn't yet propagated the row.
+        let ready = false;
+        for (let i = 0; i < 8 && !ready; i++) {
+          await new Promise((r) => setTimeout(r, 400));
+          const { data: check } = await supabase
+            .from("portal_properties")
+            .select("id")
+            .eq("id", result.propertyId)
+            .maybeSingle();
+          if (check?.id) ready = true;
+        }
+
         toast.success("Client portal created!", {
-          description: "Opening Portal Admin…",
+          description: "Opening the new portal…",
           action: {
             label: "Copy PM Link",
             onClick: () => {
-              const url = `${window.location.origin}/client-portal/${result.linkToken}`;
+              const url = `${window.location.origin}/pm/${result.linkToken}`;
               navigator.clipboard.writeText(url);
               toast.success("PM link copied");
             },
           },
         });
         sessionStorage.setItem("portal-admin-selected-property", result.propertyId);
-        navigate("/client-portal-admin");
+        navigate("/portal-admin");
       }
     } catch (err: any) {
       console.error("Create portal error:", err);
