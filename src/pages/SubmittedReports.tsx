@@ -27,6 +27,7 @@ import {
   Mail,
   PenLine,
   Loader2,
+  Building2,
 } from "lucide-react";
 import {
   Select,
@@ -36,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
+import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all";
@@ -112,6 +114,7 @@ const SubmittedReports = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
+  const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -246,6 +249,34 @@ const SubmittedReports = () => {
     sessionStorage.removeItem("app_logged_in_user");
     toast.success("Signed out");
     navigate("/");
+  };
+
+  const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCreatingPortal(reportId);
+    try {
+      const result = await createPortalFromReport(reportId);
+      if (result) {
+        toast.success("Client portal created!", {
+          description: "Opening Portal Admin…",
+          action: {
+            label: "Copy PM Link",
+            onClick: () => {
+              const url = `${window.location.origin}/client-portal/${result.linkToken}`;
+              navigator.clipboard.writeText(url);
+              toast.success("PM link copied");
+            },
+          },
+        });
+        sessionStorage.setItem("portal-admin-selected-property", result.propertyId);
+        navigate("/client-portal-admin");
+      }
+    } catch (err: any) {
+      console.error("Create portal error:", err);
+      toast.error(err?.message || "Failed to create client portal");
+    } finally {
+      setCreatingPortal(null);
+    }
   };
 
   const visibleReports = useMemo(() => {
@@ -501,6 +532,22 @@ const SubmittedReports = () => {
                               ) : (
                                 <Copy className="w-4 h-4" />
                               )}
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCreatePortal(report.id, e)}
+                              disabled={creatingPortal === report.id}
+                              className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                              title="Create a Client Portal pre-populated from this report"
+                            >
+                              {creatingPortal === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Building2 className="w-4 h-4" />
+                              )}
+                              <span className="hidden md:inline">Create Client Portal</span>
                             </Button>
 
                             <Button
