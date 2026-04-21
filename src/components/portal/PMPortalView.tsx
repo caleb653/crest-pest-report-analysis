@@ -1145,7 +1145,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                       <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">
                         {idx + 2}
                       </span>
-                      <span className="text-sm font-medium">{formatDate(d)}</span>
+                      <span className="text-sm font-medium">
+                        {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")
+                          ? formatWeekOfMonth(d)
+                          : formatDate(d)}
+                      </span>
                     </div>
                   ))}
                 </div>
