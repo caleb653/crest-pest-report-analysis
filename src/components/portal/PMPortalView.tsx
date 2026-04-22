@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
+  ClipboardCheck, BarChart3, Plus, Trash2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -20,6 +21,7 @@ import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
+import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 
 const PEST_TYPES = [
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
@@ -150,6 +152,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
 
+  // Survey state
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
+  const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
+  const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
+  const [surveyEmails, setSurveyEmails] = useState("");
+  const [sendingSurvey, setSendingSurvey] = useState(false);
+  const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
+
   useEffect(() => {
     loadAll();
 
@@ -174,6 +185,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       supabase.from("portal_prep_sheets").select("*").order("title"),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
+
+    const [{ data: svys }, { data: respRows }] = await Promise.all([
+      (supabase as any).from("portal_surveys").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      (supabase as any).from("portal_survey_responses").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+    ]);
+    if (Array.isArray(svys)) setSurveys(svys);
+    if (Array.isArray(respRows)) setSurveyResponses(respRows);
 
     if (prop) setProperty(prop as PropertyData);
 
@@ -287,6 +305,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       toast({ title: "Link copied" });
     } catch {
       toast({ title: "Couldn't copy link", variant: "destructive" });
+    }
+  };
+
+  const sendSurvey = async () => {
+    const emails = surveyEmails
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (emails.length === 0) {
+      toast({ title: "Add at least one valid email", variant: "destructive" });
+      return;
+    }
+    setSendingSurvey(true);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: propertyId,
+          client_id: property?.client_id || null,
+          title: surveyTitle.trim() || "Pest Activity Survey",
+          intro: surveyIntro.trim() || null,
+          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          recipient_emails: emails,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !created?.id) throw new Error("create_failed");
+      const { data: sendRes } = await supabase.functions.invoke("send-tenant-survey", {
+        body: { surveyId: created.id, appBaseUrl: window.location.origin },
+      });
+      if ((sendRes as any)?.ok) {
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        setSurveyEmails("");
+        loadAll();
+      } else {
+        toast({ title: "Could not send survey", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Could not send survey", variant: "destructive" });
+    } finally {
+      setSendingSurvey(false);
     }
   };
 
@@ -594,7 +653,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const content = (
     <div className="max-w-5xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map and Plan</span>
@@ -614,6 +673,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileDown className="w-5 h-5" />
             <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+          </TabsTrigger>
+          <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <BarChart3 className="w-5 h-5" />
+            <span>Survey Results <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
         </TabsList>
 

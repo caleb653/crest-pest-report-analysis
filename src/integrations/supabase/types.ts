@@ -356,6 +356,7 @@ export type Database = {
       }
       portal_services: {
         Row: {
+          appointment_service: string | null
           created_at: string
           findings: string | null
           follow_up_notes: string | null
@@ -382,6 +383,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_service?: string | null
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
@@ -408,6 +410,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_service?: string | null
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
@@ -442,6 +445,98 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      portal_survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          property_id: string
+          recipient_email: string | null
+          respondent_name: string | null
+          submitted_at: string | null
+          survey_id: string
+          token: string
+          unit_number: string | null
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          property_id: string
+          recipient_email?: string | null
+          respondent_name?: string | null
+          submitted_at?: string | null
+          survey_id: string
+          token?: string
+          unit_number?: string | null
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          property_id?: string
+          recipient_email?: string | null
+          respondent_name?: string | null
+          submitted_at?: string | null
+          survey_id?: string
+          token?: string
+          unit_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "portal_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_surveys: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          intro: string | null
+          property_id: string
+          questions: Json
+          recipient_emails: Json
+          sent_at: string | null
+          sent_count: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro?: string | null
+          property_id: string
+          questions?: Json
+          recipient_emails?: Json
+          sent_at?: string | null
+          sent_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intro?: string | null
+          property_id?: string
+          questions?: Json
+          recipient_emails?: Json
+          sent_at?: string | null
+          sent_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       reports: {
         Row: {

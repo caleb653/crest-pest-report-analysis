@@ -168,6 +168,8 @@ const AppointmentReport = () => {
   const [serviceDate, setServiceDate] = useState(serviceData?.service_date || new Date().toISOString().split("T")[0]);
   const [timeIn, setTimeIn] = useState("");
   const [timeOut, setTimeOut] = useState("");
+  // Appointment-level outcome (separate from per-unit status)
+  const [appointmentService, setAppointmentService] = useState<string>(serviceData?.appointment_service || "");
   const [targetPests, setTargetPests] = useState<string[]>([PEST_OPTIONS[0]]);
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
@@ -275,10 +277,12 @@ const AppointmentReport = () => {
       property_images: propertyImages, unit_rows: unitRows,
       common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
       tech_observations: techObservations,
+      appointment_service: appointmentService,
     };
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
       products_used: productsUsed, findings: todaysFindings || null,
+      appointment_service: appointmentService || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
     else toast.success("Appointment Report saved!");
@@ -410,12 +414,16 @@ const AppointmentReport = () => {
         if (rd.tech_observations) setTechObservations(rd.tech_observations);
         if (rd.time_in) setTimeIn(rd.time_in);
         if (rd.time_out) setTimeOut(rd.time_out);
+        if (rd.appointment_service) setAppointmentService(rd.appointment_service);
       } else {
         setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
         if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
         if (data.findings) setTodaysFindings(data.findings);
+      }
+      if ((data as any).appointment_service && !appointmentService) {
+        setAppointmentService((data as any).appointment_service);
       }
     };
 
@@ -555,6 +563,23 @@ const AppointmentReport = () => {
                 <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
                 <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
                 <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end pt-1 border-t">
+                <div className="md:col-span-1">
+                  <Label className="text-xs">Service (this appointment)</Label>
+                  <Select value={appointmentService || "__none"} onValueChange={(v) => setAppointmentService(v === "__none" ? "" : v)}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select outcome" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">—</SelectItem>
+                      <SelectItem value="Inspection Complete">Inspection Complete</SelectItem>
+                      <SelectItem value="Service Complete">Service Complete</SelectItem>
+                      <SelectItem value="Not Serviced">Not Serviced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="md:col-span-2 text-[11px] text-muted-foreground italic">
+                  Inspection statuses (Activity Found / Free and Clear) appear on the unit table when an inspection. Service statuses (Treated - Complete / Treated - Follow Up) when a service.
+                </p>
               </div>
 
               {/* Unit Table */}
