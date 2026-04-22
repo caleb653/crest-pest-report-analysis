@@ -697,6 +697,28 @@ const Report = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceTypesKey, proposals.length]);
 
+  // Auto-populate Attic Services additional details per proposal when Attic is selected
+  // and the additional details box is empty for that proposal.
+  useEffect(() => {
+    setProposalAdditionalDetails(prev => {
+      const next = { ...prev };
+      let changed = false;
+      proposals.forEach((proposal, idx) => {
+        const hasAttic = proposal.services.some(
+          (s) => s.serviceType === "Attic Services (see details below)"
+        );
+        const current = next[idx] ?? (idx === 0 ? additionalDetails : "");
+        if (hasAttic && (!current || current.trim() === "")) {
+          next[idx] = ATTIC_SERVICES_ADDITIONAL_DETAILS;
+          changed = true;
+          if (idx === 0) setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
+        }
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceTypesKey, proposals.length]);
+
   // Detect weekly / bi-weekly services on a proposal — used for invoice note
   const getInvoiceNoteForProposal = (proposalIndex: number): string | null => {
     const proposal = proposals[proposalIndex];
