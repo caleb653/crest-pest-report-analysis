@@ -228,15 +228,49 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       pest_type: pestType,
       location_type: locationType,
       preferred_date: computePreferredDate(),
-    } as any);
+      occupancy_status: occupancyStatus || null,
+      tenant_email: emailTenant ? tenantEmail.trim() || null : null,
+      prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
+      right_to_treat_requested: emailTenant ? requestRightToTreat : false,
+    } as any).select("id, right_to_treat_token").maybeSingle();
+    const insertedId = (err ? null : ((arguments as any)[0] || null)); // placeholder; ignored
+    void insertedId;
 
     if (!err) {
       toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
+      // If tenant email requested, fire-and-forget the send
+      if (emailTenant && tenantEmail.trim()) {
+        try {
+          // Re-query the just-inserted row to get the id and right_to_treat_token
+          const { data: justInserted } = await supabase
+            .from("portal_requests")
+            .select("id")
+            .eq("property_id", propertyId)
+            .eq("unit_number", canonical)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (justInserted?.id) {
+            await supabase.functions.invoke("send-tenant-work-order", {
+              body: { requestId: justInserted.id, appBaseUrl: window.location.origin },
+            });
+            toast({ title: "Tenant notified", description: `Email sent to ${tenantEmail.trim()}` });
+          }
+        } catch (e) {
+          console.error("send-tenant-work-order failed", e);
+          toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+        }
+      }
       setUnitNumber("");
       setPestType("");
       setDescription("");
       setPreferredDateChoice("next");
       setPreferredDateCustom("");
+      setOccupancyStatus("");
+      setEmailTenant(false);
+      setTenantEmail("");
+      setSelectedPrepSheetId("");
+      setRequestRightToTreat(false);
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
