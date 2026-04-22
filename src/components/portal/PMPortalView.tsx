@@ -233,8 +233,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
       right_to_treat_requested: emailTenant ? requestRightToTreat : false,
     } as any).select("id, right_to_treat_token").maybeSingle();
-    const insertedId = (err ? null : ((arguments as any)[0] || null)); // placeholder; ignored
-    void insertedId;
 
     if (!err) {
       toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
