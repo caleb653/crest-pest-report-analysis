@@ -215,6 +215,38 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefDraft]);
 
+  // Property Point of Contact — name + email, stored in customer_preferences.point_of_contact
+  const initialPocName = (property.customer_preferences as any)?.point_of_contact?.name || "";
+  const initialPocEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+  const [pocName, setPocName] = useState<string>(initialPocName);
+  const [pocEmail, setPocEmail] = useState<string>(initialPocEmail);
+  useEffect(() => {
+    setPocName((property.customer_preferences as any)?.point_of_contact?.name || "");
+    setPocEmail((property.customer_preferences as any)?.point_of_contact?.email || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const currentName = (property.customer_preferences as any)?.point_of_contact?.name || "";
+    const currentEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+    if (currentName === pocName && currentEmail === pocEmail) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        point_of_contact: { name: pocName, email: pocEmail },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save point of contact", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pocName, pocEmail]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
