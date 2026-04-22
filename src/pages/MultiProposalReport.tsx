@@ -2637,13 +2637,6 @@ Crest Pest Control`;
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
                 onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
                 onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-                onEnded={() => {
-                  const v2 = document.getElementById('property-video-2') as HTMLVideoElement | null;
-                  if (v2) {
-                    v2.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    v2.play().catch(() => {});
-                  }
-                }}
               />
               <div data-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
                 <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
@@ -2673,12 +2666,12 @@ Crest Pest Control`;
                 <div data-video-overlay-2 className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)', top: '2.5rem' }}>
                   <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
                   <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
-                  <p className="text-sm text-muted-foreground mt-2">Plays after first video</p>
+                  <p className="text-sm text-muted-foreground mt-2">Click to play</p>
                 </div>
               </div>
             )}
             {!videoUrl2 && !isReadOnly && (
-              <div className="max-w-3xl mx-auto mt-4 no-print flex items-center gap-3">
+              <div className="max-w-3xl mx-auto mt-4 no-print flex flex-wrap items-center gap-3">
                 <div className="relative inline-flex">
                   <Button variant="outline" size="sm" type="button">
                     <Video className="w-4 h-4 mr-2" />
@@ -2692,8 +2685,17 @@ Crest Pest Control`;
                     className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => setVideoUrl2('/videos/client-portal-video.mp4')}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Attach Client Portal Video
+                </Button>
                 {uploadingVideo2 && <Loader2 className="w-4 h-4 animate-spin" />}
-                <span className="text-xs text-muted-foreground">Plays automatically after the first video ends</span>
+                <span className="text-xs text-muted-foreground">Customer can click to play</span>
               </div>
             )}
           </div>
