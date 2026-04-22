@@ -746,7 +746,7 @@ const PropertyDashboard = ({
                   </td>
                   <td className="px-2 py-1">
                     <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${unit.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : ""}`}
-                      defaultValue={unit.status || "Treated"}
+                      defaultValue={unit.status || "Treated - Complete"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                     >
                       {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
