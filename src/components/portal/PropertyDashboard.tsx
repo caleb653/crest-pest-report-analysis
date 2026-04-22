@@ -1380,6 +1380,44 @@ const PropertyDashboard = ({
           </Card>
         </div>
 
+        {/* Property Point of Contact */}
+        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Property Point of Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Name
+                </Label>
+                <Input
+                  placeholder="Full name"
+                  value={pocName}
+                  onChange={(e) => setPocName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Email
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={pocEmail}
+                  onChange={(e) => setPocEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+            </p>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
             {/* Property Map - sized down with paste support */}
