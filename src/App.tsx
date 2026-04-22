@@ -20,6 +20,7 @@ import TenantPortal from "./pages/TenantPortal";
 import PMPortal from "./pages/PMPortal";
 import AppointmentReport from "./pages/AppointmentReport";
 import RightToTreat from "./pages/RightToTreat";
+import SurveyTake from "./pages/SurveyTake";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
           <Route path="/portal-admin" element={<PortalAdmin />} />
           <Route path="/right-to-treat/:token" element={<RightToTreat />} />
+          <Route path="/survey/:token" element={<SurveyTake />} />
           {/* All other routes require PIN */}
           <Route path="*" element={
             <PinGate>
