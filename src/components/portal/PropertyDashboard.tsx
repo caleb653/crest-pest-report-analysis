@@ -160,7 +160,7 @@ const PropertyDashboard = ({
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
-  const [newUnitData, setNewUnitData] = useState({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+  const [newUnitData, setNewUnitData] = useState({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
