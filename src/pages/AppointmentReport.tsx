@@ -584,30 +584,30 @@ const AppointmentReport = () => {
 
               {/* Unit Table */}
               <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
+                <table className="w-full text-sm border-collapse min-w-[1400px]">
                   <thead>
                     <tr className="bg-muted">
-                      <th className="border p-1.5 text-left w-10">#</th>
-                      <th className="border p-1.5 text-left w-16">Unit</th>
-                      <th className="border p-1.5 text-left">Target Pests</th>
-                      <th className="border p-1.5 text-left">Findings or Services Completed</th>
-                      <th className="border p-1.5 text-left">Areas Treated</th>
-                      <th className="border p-1.5 text-left">Products Used</th>
-                      <th className="border p-1.5 text-left w-28">Activity Level</th>
-                      <th className="border p-1.5 text-left w-32">Flags</th>
-                      <th className="border p-1.5 text-left w-36">Status</th>
-                      <th className="border p-1.5 w-8"></th>
+                      <th className="border p-2 text-left w-10 text-xs font-semibold whitespace-normal">#</th>
+                      <th className="border p-2 text-left w-20 text-xs font-semibold whitespace-normal">Unit</th>
+                      <th className="border p-2 text-left w-[140px] text-xs font-semibold whitespace-normal">Target Pests</th>
+                      <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[220px]">Findings or Services Completed</th>
+                      <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[160px]">Areas Treated</th>
+                      <th className="border p-2 text-left w-[160px] text-xs font-semibold whitespace-normal">Products Used</th>
+                      <th className="border p-2 text-left w-28 text-xs font-semibold whitespace-normal">Activity Level</th>
+                      <th className="border p-2 text-left w-[160px] text-xs font-semibold whitespace-normal">Flags</th>
+                      <th className="border p-2 text-left w-40 text-xs font-semibold whitespace-normal">Status</th>
+                      <th className="border p-2 w-10"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {unitRows.map((row, i) => (
                       <tr key={i} className="align-top">
-                        <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
-                        <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-7 text-xs border-0 px-1" placeholder="Unit" /></td>
+                        <td className="border p-1.5 text-center text-muted-foreground text-xs">{i + 1}</td>
+                        <td className="border p-1"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-8 text-sm border-0 px-1.5" placeholder="Unit" /></td>
                         <td className="border p-0.5">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="ghost" className="h-auto min-h-[2.5rem] py-1 text-xs w-full justify-start px-1 font-normal whitespace-normal text-left">
+                              <Button variant="ghost" className="h-auto min-h-[3rem] py-1.5 text-xs w-full justify-start px-1.5 font-normal whitespace-normal text-left leading-snug">
                                 {row.targetPests || <span className="text-muted-foreground">Select...</span>}
                               </Button>
                             </PopoverTrigger>
@@ -640,8 +640,8 @@ const AppointmentReport = () => {
                           <Textarea
                             value={row.notes}
                             onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))}
-                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
-                            rows={2}
+                            className="text-xs border-0 px-1.5 py-1.5 min-h-[3.5rem] resize-y leading-snug"
+                            rows={3}
                             placeholder="Findings or services completed..."
                           />
                         </td>
@@ -649,14 +649,14 @@ const AppointmentReport = () => {
                           <Textarea
                             value={row.areasTreated}
                             onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))}
-                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
-                            rows={2}
+                            className="text-xs border-0 px-1.5 py-1.5 min-h-[3.5rem] resize-y leading-snug"
+                            rows={3}
                           />
                         </td>
                         <td className="border p-0.5">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="ghost" className="h-auto min-h-[2.5rem] py-1 text-xs w-full justify-start px-1 font-normal whitespace-normal text-left">
+                              <Button variant="ghost" className="h-auto min-h-[3rem] py-1.5 text-xs w-full justify-start px-1.5 font-normal whitespace-normal text-left leading-snug">
                                 {row.productsUsed || <span className="text-muted-foreground">Select...</span>}
                               </Button>
                             </PopoverTrigger>
@@ -687,7 +687,7 @@ const AppointmentReport = () => {
                         </td>
                         <td className="border p-0.5">
                           <Select value={row.activityLevel || "__none"} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, activityLevel: v === "__none" ? "" : v } : r))}>
-                            <SelectTrigger className="h-7 text-xs border-0 px-1"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectTrigger className="h-9 text-xs border-0 px-1.5"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="__none">—</SelectItem>
                               <SelectItem value="Low">Low</SelectItem>
@@ -701,8 +701,8 @@ const AppointmentReport = () => {
                           <Textarea
                             value={row.flags}
                             onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, flags: e.target.value } : r))}
-                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
-                            rows={2}
+                            className="text-xs border-0 px-1.5 py-1.5 min-h-[3.5rem] resize-y leading-snug"
+                            rows={3}
                             placeholder="e.g. Sanitation concerns"
                           />
                         </td>
@@ -715,7 +715,7 @@ const AppointmentReport = () => {
                               followUp: v === "Treated - Follow Up" ? "Yes" : r.followUp,
                             } : r))}
                           >
-                            <SelectTrigger className="h-7 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-9 text-xs border-0 px-1.5"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="To Be Treated">To Be Treated</SelectItem>
                               <SelectItem value="Treated - Complete">Treated - Complete</SelectItem>
