@@ -19,6 +19,9 @@ import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { MapCanvas } from "@/components/MapCanvas";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 
+const SERVICE_STATUS_OPTIONS = ["Treated - Complete", "Treated - Follow Up"] as const;
+const INSPECTION_STATUS_OPTIONS = ["Activity Found - Follow Up", "Free and Clear*"] as const;
+
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
   { name: "Jesse Angulo", license: "OPR #14972" },
@@ -199,6 +202,7 @@ const AppointmentReport = () => {
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
   const mapFileInputRef = useRef<HTMLInputElement>(null);
+  const unitStatusOptions = appointmentService === "Inspection Complete" ? INSPECTION_STATUS_OPTIONS : SERVICE_STATUS_OPTIONS;
 
   // Load property map data (persistent across appointments)
   useEffect(() => {
@@ -578,7 +582,7 @@ const AppointmentReport = () => {
                   </Select>
                 </div>
                 <p className="md:col-span-2 text-[11px] text-muted-foreground italic">
-                  Inspection statuses (Activity Found / Free and Clear) appear on the unit table when an inspection. Service statuses (Treated - Complete / Treated - Follow Up) when a service.
+                  Inspection statuses switch to Activity Found - Follow Up / Free and Clear*. Service statuses switch to Treated - Complete / Treated - Follow Up.
                 </p>
               </div>
 
@@ -708,7 +712,7 @@ const AppointmentReport = () => {
                         </td>
                         <td className="border p-0.5">
                           <Select
-                            value={row.status || "To Be Treated"}
+                            value={row.status || unitStatusOptions[0]}
                             onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? {
                               ...r,
                               status: v,
@@ -717,11 +721,9 @@ const AppointmentReport = () => {
                           >
                             <SelectTrigger className="h-9 text-xs border-0 px-1.5"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="To Be Treated">To Be Treated</SelectItem>
-                              <SelectItem value="Treated - Complete">Treated - Complete</SelectItem>
-                              <SelectItem value="Treated - Follow Up">Treated - Follow Up</SelectItem>
-                              <SelectItem value="Inspected: Activity Found">Inspected: Activity Found</SelectItem>
-                              <SelectItem value="Inspected: Free and Clear">Inspected: Free and Clear*</SelectItem>
+                              {unitStatusOptions.map((status) => (
+                                <SelectItem key={status} value={status}>{status}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </td>
