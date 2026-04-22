@@ -62,8 +62,16 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
-const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["To Be Treated", "Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
+const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
+// Mirrors the AppointmentReport unit status set so admin + field stay in sync.
+const STATUS_OPTIONS = [
+  "To Be Treated",
+  "Treated - Complete",
+  "Treated - Follow Up",
+  "Inspected: Activity Found",
+  "Inspected: Free and Clear",
+  "Not Treated",
+];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
@@ -152,7 +160,7 @@ const PropertyDashboard = ({
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
-  const [newUnitData, setNewUnitData] = useState({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+  const [newUnitData, setNewUnitData] = useState({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
@@ -420,7 +428,7 @@ const PropertyDashboard = ({
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
     details.push({ ...newUnitData });
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
-    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
     onRefresh();
@@ -690,7 +698,7 @@ const PropertyDashboard = ({
           <p className="text-xs font-semibold text-muted-foreground">Units Treated ({unitDetails.length})</p>
           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
             setAddingUnitToService(s.id);
-            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
           }}>
             <Plus className="w-3 h-3 mr-0.5" />Add Unit
           </Button>
@@ -738,7 +746,7 @@ const PropertyDashboard = ({
                   </td>
                   <td className="px-2 py-1">
                     <select className={`h-6 text-[11px] w-full bg-transparent border-0 outline-none cursor-pointer ${unit.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : ""}`}
-                      defaultValue={unit.status || "Treated"}
+                      defaultValue={unit.status || "Treated - Complete"}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                     >
                       {STATUS_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
@@ -788,7 +796,7 @@ const PropertyDashboard = ({
           <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
             onClick={() => {
               setAddingUnitToService(s.id);
-              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
             }}>
             <Plus className="w-3 h-3" /> Add unit row
           </button>
