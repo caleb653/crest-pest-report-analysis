@@ -90,6 +90,7 @@ interface PMPortalViewProps {
   linkId: string;
   /** When true, hides the page chrome (header) — used inside admin preview. */
   embedded?: boolean;
+  initialTab?: string;
 }
 
 const formatDate = (d: string | null) =>
@@ -116,9 +117,9 @@ const addDaysISO = (isoDate: string, days: number): string => {
 };
 const todayISO = () => new Date().toISOString().split("T")[0];
 
-const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProps) => {
+const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map" }: PMPortalViewProps) => {
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("map");
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [scopeOfWork, setScopeOfWork] = useState<string[]>([]);
@@ -175,6 +176,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [propertyId, linkId]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const loadAll = async () => {
     setLoading(true);
