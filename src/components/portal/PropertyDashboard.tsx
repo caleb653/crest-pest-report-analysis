@@ -62,8 +62,16 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
-const ACTIVITY_OPTIONS = ["None", "Low", "Moderate", "High"];
-const STATUS_OPTIONS = ["To Be Treated", "Treated", "Inspected", "Not Treated", "Treated - Follow Up"];
+const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
+// Mirrors the AppointmentReport unit status set so admin + field stay in sync.
+const STATUS_OPTIONS = [
+  "To Be Treated",
+  "Treated - Complete",
+  "Treated - Follow Up",
+  "Inspected: Activity Found",
+  "Inspected: Free and Clear",
+  "Not Treated",
+];
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
