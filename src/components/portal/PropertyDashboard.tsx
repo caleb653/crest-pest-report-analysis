@@ -428,7 +428,7 @@ const PropertyDashboard = ({
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
     details.push({ ...newUnitData });
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
-    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
     onRefresh();
@@ -698,7 +698,7 @@ const PropertyDashboard = ({
           <p className="text-xs font-semibold text-muted-foreground">Units Treated ({unitDetails.length})</p>
           <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
             setAddingUnitToService(s.id);
-            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
           }}>
             <Plus className="w-3 h-3 mr-0.5" />Add Unit
           </Button>
@@ -796,7 +796,7 @@ const PropertyDashboard = ({
           <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
             onClick={() => {
               setAddingUnitToService(s.id);
-              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated", notes: "" });
+              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
             }}>
             <Plus className="w-3 h-3" /> Add unit row
           </button>
