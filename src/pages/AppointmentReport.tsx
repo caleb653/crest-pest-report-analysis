@@ -951,6 +951,12 @@ const AppointmentReport = () => {
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Appointment Report
             </Button>
+
+            {/* Free & Clear disclaimer */}
+            <p className="text-[10px] leading-snug text-muted-foreground italic px-1 pt-2 border-t">
+              *Free and clear is based on our assessment at the time of inspection and does not guarantee the absence of all pests.
+              Pests may reappear or migrate from neighboring units, common areas, or external sources beyond our control.
+            </p>
           </div>
         </div>
       </div>
