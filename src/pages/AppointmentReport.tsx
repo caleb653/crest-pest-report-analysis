@@ -145,6 +145,9 @@ const AppointmentReport = () => {
         productsUsed: details.products_used || "",
         followUp: isFollowUp ? "Yes" : "No",
         followUpNotes: isFollowUp ? "Follow-up from last service" : "",
+        status: "To Be Treated",
+        activityLevel: "",
+        flags: "",
       };
     });
   };
