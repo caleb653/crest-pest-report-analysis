@@ -277,10 +277,12 @@ const AppointmentReport = () => {
       property_images: propertyImages, unit_rows: unitRows,
       common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
       tech_observations: techObservations,
+      appointment_service: appointmentService,
     };
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
       products_used: productsUsed, findings: todaysFindings || null,
+      appointment_service: appointmentService || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
     else toast.success("Appointment Report saved!");
