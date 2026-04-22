@@ -1624,7 +1624,7 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 2: PREVIOUS SERVICES ══════════ */}
       <TabsContent value="past" className="mt-0">
-        <div className="space-y-3 max-w-5xl mx-auto">
+        <div className="space-y-3 max-w-[1600px] mx-auto">
         <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/40">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
