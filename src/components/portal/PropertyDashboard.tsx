@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
-  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical
+  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -214,6 +214,38 @@ const PropertyDashboard = ({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefDraft]);
+
+  // Property Point of Contact — name + email, stored in customer_preferences.point_of_contact
+  const initialPocName = (property.customer_preferences as any)?.point_of_contact?.name || "";
+  const initialPocEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+  const [pocName, setPocName] = useState<string>(initialPocName);
+  const [pocEmail, setPocEmail] = useState<string>(initialPocEmail);
+  useEffect(() => {
+    setPocName((property.customer_preferences as any)?.point_of_contact?.name || "");
+    setPocEmail((property.customer_preferences as any)?.point_of_contact?.email || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const currentName = (property.customer_preferences as any)?.point_of_contact?.name || "";
+    const currentEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+    if (currentName === pocName && currentEmail === pocEmail) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        point_of_contact: { name: pocName, email: pocEmail },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save point of contact", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pocName, pocEmail]);
 
   // Load pending requests and prep sheets for this property
   useEffect(() => {
@@ -1347,6 +1379,44 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
         </div>
+
+        {/* Property Point of Contact */}
+        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Property Point of Contact
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Name
+                </Label>
+                <Input
+                  placeholder="Full name"
+                  value={pocName}
+                  onChange={(e) => setPocName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Email
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={pocEmail}
+                  onChange={(e) => setPocEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2">
+              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+            </p>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
