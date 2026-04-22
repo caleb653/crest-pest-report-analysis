@@ -99,6 +99,9 @@ const AppointmentReport = () => {
     productsUsed: string;
     followUp: string;
     followUpNotes: string;
+    status: string;
+    activityLevel: string;
+    flags: string;
   }
 
   const emptyUnit: UnitRow = {
@@ -109,6 +112,9 @@ const AppointmentReport = () => {
     productsUsed: "",
     followUp: "No",
     followUpNotes: "",
+    status: "To Be Treated",
+    activityLevel: "",
+    flags: "",
   };
 
   const normalizeUnit = (value: unknown) => String(value ?? "").trim();
