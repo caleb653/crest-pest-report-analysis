@@ -565,23 +565,24 @@ const AppointmentReport = () => {
                       <th className="border p-1.5 text-left w-10">#</th>
                       <th className="border p-1.5 text-left w-16">Unit</th>
                       <th className="border p-1.5 text-left">Target Pests</th>
-                      <th className="border p-1.5 text-left">Notes</th>
+                      <th className="border p-1.5 text-left">Findings or Services Completed</th>
                       <th className="border p-1.5 text-left">Areas Treated</th>
                       <th className="border p-1.5 text-left">Products Used</th>
-                      <th className="border p-1.5 text-left w-16">Follow-Up?</th>
-                      <th className="border p-1.5 text-left">Follow-Up Notes</th>
+                      <th className="border p-1.5 text-left w-28">Activity Level</th>
+                      <th className="border p-1.5 text-left w-32">Flags</th>
+                      <th className="border p-1.5 text-left w-36">Status</th>
                       <th className="border p-1.5 w-8"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {unitRows.map((row, i) => (
-                      <tr key={i}>
+                      <tr key={i} className="align-top">
                         <td className="border p-1 text-center text-muted-foreground">{i + 1}</td>
-                        <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-6 text-xs border-0 px-1" placeholder="Unit" /></td>
+                        <td className="border p-0.5"><Input value={row.unit} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))} className="h-7 text-xs border-0 px-1" placeholder="Unit" /></td>
                         <td className="border p-0.5">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                              <Button variant="ghost" className="h-auto min-h-[2.5rem] py-1 text-xs w-full justify-start px-1 font-normal whitespace-normal text-left">
                                 {row.targetPests || <span className="text-muted-foreground">Select...</span>}
                               </Button>
                             </PopoverTrigger>
@@ -610,12 +611,27 @@ const AppointmentReport = () => {
                             </PopoverContent>
                           </Popover>
                         </td>
-                        <td className="border p-0.5"><Input value={row.notes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
-                        <td className="border p-0.5"><Input value={row.areasTreated} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Textarea
+                            value={row.notes}
+                            onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))}
+                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
+                            rows={2}
+                            placeholder="Findings or services completed..."
+                          />
+                        </td>
+                        <td className="border p-0.5">
+                          <Textarea
+                            value={row.areasTreated}
+                            onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, areasTreated: e.target.value } : r))}
+                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
+                            rows={2}
+                          />
+                        </td>
                         <td className="border p-0.5">
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="ghost" className="h-6 text-xs w-full justify-start px-1 font-normal truncate">
+                              <Button variant="ghost" className="h-auto min-h-[2.5rem] py-1 text-xs w-full justify-start px-1 font-normal whitespace-normal text-left">
                                 {row.productsUsed || <span className="text-muted-foreground">Select...</span>}
                               </Button>
                             </PopoverTrigger>
@@ -645,12 +661,45 @@ const AppointmentReport = () => {
                           </Popover>
                         </td>
                         <td className="border p-0.5">
-                          <Select value={row.followUp} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUp: v } : r))}>
-                            <SelectTrigger className="h-6 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="No">No</SelectItem><SelectItem value="Yes">Yes</SelectItem></SelectContent>
+                          <Select value={row.activityLevel || "__none"} onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, activityLevel: v === "__none" ? "" : v } : r))}>
+                            <SelectTrigger className="h-7 text-xs border-0 px-1"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none">—</SelectItem>
+                              <SelectItem value="Low">Low</SelectItem>
+                              <SelectItem value="Medium">Medium</SelectItem>
+                              <SelectItem value="High">High</SelectItem>
+                              <SelectItem value="Very High">Very High</SelectItem>
+                            </SelectContent>
                           </Select>
                         </td>
-                        <td className="border p-0.5"><Input value={row.followUpNotes} onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, followUpNotes: e.target.value } : r))} className="h-6 text-xs border-0 px-1" /></td>
+                        <td className="border p-0.5">
+                          <Textarea
+                            value={row.flags}
+                            onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, flags: e.target.value } : r))}
+                            className="text-xs border-0 px-1 py-1 min-h-[2.5rem] resize-y"
+                            rows={2}
+                            placeholder="e.g. Sanitation concerns"
+                          />
+                        </td>
+                        <td className="border p-0.5">
+                          <Select
+                            value={row.status || "To Be Treated"}
+                            onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? {
+                              ...r,
+                              status: v,
+                              followUp: v === "Treated - Follow Up" ? "Yes" : r.followUp,
+                            } : r))}
+                          >
+                            <SelectTrigger className="h-7 text-xs border-0 px-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="To Be Treated">To Be Treated</SelectItem>
+                              <SelectItem value="Treated - Complete">Treated - Complete</SelectItem>
+                              <SelectItem value="Treated - Follow Up">Treated - Follow Up</SelectItem>
+                              <SelectItem value="Inspected: Activity Found">Inspected: Activity Found</SelectItem>
+                              <SelectItem value="Inspected: Free and Clear">Inspected: Free and Clear*</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
                         <td className="border p-0.5 text-center">
                           {unitRows.length > 1 && <button className="text-destructive text-xs" onClick={() => setUnitRows(prev => prev.filter((_, j) => j !== i))}>×</button>}
                         </td>
