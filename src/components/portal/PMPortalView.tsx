@@ -152,6 +152,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
 
+  // Survey state
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
+  const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
+  const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
+  const [surveyEmails, setSurveyEmails] = useState("");
+  const [sendingSurvey, setSendingSurvey] = useState(false);
+  const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
+
   useEffect(() => {
     loadAll();
 
