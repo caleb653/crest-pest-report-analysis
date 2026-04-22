@@ -168,6 +168,8 @@ const AppointmentReport = () => {
   const [serviceDate, setServiceDate] = useState(serviceData?.service_date || new Date().toISOString().split("T")[0]);
   const [timeIn, setTimeIn] = useState("");
   const [timeOut, setTimeOut] = useState("");
+  // Appointment-level outcome (separate from per-unit status)
+  const [appointmentService, setAppointmentService] = useState<string>(serviceData?.appointment_service || "");
   const [targetPests, setTargetPests] = useState<string[]>([PEST_OPTIONS[0]]);
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
