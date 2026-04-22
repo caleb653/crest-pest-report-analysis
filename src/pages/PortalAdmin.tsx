@@ -819,13 +819,8 @@ const PortalAdmin = () => {
       {/* Main content */}
       <div className="max-w-[1600px] mx-auto px-4 py-4">
         {pmPreviewMode && propLinks[0] ? (
-          <div className="border-2 border-dashed border-primary/40 rounded-xl bg-muted/20 p-2">
-            <div className="text-xs text-muted-foreground text-center mb-2 font-medium">
-              ↓ This is exactly what the Property Manager sees ↓
-            </div>
-            <div className="bg-background rounded-lg overflow-hidden">
-              <PMPortalView propertyId={selectedProperty.id} linkId={propLinks[0].id} embedded />
-            </div>
+          <div className="bg-background rounded-lg overflow-hidden">
+            <PMPortalView propertyId={selectedProperty.id} linkId={propLinks[0].id} embedded />
           </div>
         ) : (
           <PropertyDashboard
