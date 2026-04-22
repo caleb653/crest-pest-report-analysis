@@ -308,6 +308,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
     }
   };
 
+  const sendSurvey = async () => {
+    const emails = surveyEmails
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (emails.length === 0) {
+      toast({ title: "Add at least one valid email", variant: "destructive" });
+      return;
+    }
+    setSendingSurvey(true);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: propertyId,
+          client_id: property?.client_id || null,
+          title: surveyTitle.trim() || "Pest Activity Survey",
+          intro: surveyIntro.trim() || null,
+          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          recipient_emails: emails,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !created?.id) throw new Error("create_failed");
+      const { data: sendRes } = await supabase.functions.invoke("send-tenant-survey", {
+        body: { surveyId: created.id, appBaseUrl: window.location.origin },
+      });
+      if ((sendRes as any)?.ok) {
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        setSurveyEmails("");
+        loadAll();
+      } else {
+        toast({ title: "Could not send survey", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Could not send survey", variant: "destructive" });
+    } finally {
+      setSendingSurvey(false);
+    }
+  };
+
   const downloadPrep = async (sheet: PrepSheet) => {
     if (!sheet.file_url) return;
     try {
