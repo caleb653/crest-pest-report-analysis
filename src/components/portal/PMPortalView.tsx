@@ -902,6 +902,56 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                     value={description} onChange={e => setDescription(e.target.value)} rows={3} />
                 </div>
 
+                {/* Tenant Notification Section */}
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
+                    <span className="text-sm font-medium">Email tenant?</span>
+                  </label>
+
+                  <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                    <div>
+                      <Label className="text-xs">Tenant Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="tenant@example.com"
+                        value={tenantEmail}
+                        onChange={e => setTenantEmail(e.target.value)}
+                        disabled={!emailTenant}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs">Prep Sheet to Send (optional)</Label>
+                      <Select
+                        value={selectedPrepSheetId || "__none"}
+                        onValueChange={(v) => setSelectedPrepSheetId(v === "__none" ? "" : v)}
+                        disabled={!emailTenant}
+                      >
+                        <SelectTrigger><SelectValue placeholder="No prep sheet" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">No prep sheet</SelectItem>
+                          {prepSheets.map(ps => (
+                            <SelectItem key={ps.id} value={ps.id}>{ps.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={requestRightToTreat}
+                        onCheckedChange={(v) => setRequestRightToTreat(!!v)}
+                        disabled={!emailTenant}
+                      />
+                      <span className="text-xs leading-snug">
+                        Send <strong>"Right to Treat"</strong> signature page<br />
+                        <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
                   <Send className="w-4 h-4 mr-2" />Submit Work Order
