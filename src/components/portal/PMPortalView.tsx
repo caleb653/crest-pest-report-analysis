@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
@@ -143,6 +144,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [description, setDescription] = useState("");
   const [preferredDateChoice, setPreferredDateChoice] = useState<"next" | "few-weeks" | "other">("next");
   const [preferredDateCustom, setPreferredDateCustom] = useState("");
+  const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
+  const [emailTenant, setEmailTenant] = useState(false);
+  const [tenantEmail, setTenantEmail] = useState("");
+  const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
+  const [requestRightToTreat, setRequestRightToTreat] = useState(false);
 
   useEffect(() => {
     loadAll();
