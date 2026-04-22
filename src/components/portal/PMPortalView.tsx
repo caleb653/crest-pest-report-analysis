@@ -867,6 +867,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 </div>
 
                 <div>
+                  <Label className="text-sm">Vacant or Occupied Unit</Label>
+                  <div className="flex gap-2 mt-1">
+                    {(["Occupied", "Vacant"] as const).map(opt => (
+                      <button key={opt} type="button"
+                        className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                        onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <Label className="text-sm">Preferred Day</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {([
