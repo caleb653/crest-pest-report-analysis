@@ -1399,6 +1399,197 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
             )}
           </div>
         </TabsContent>
+
+        {/* ════════ TAB 6: SURVEY RESULTS (compose + aggregated answers) ════════ */}
+        <TabsContent value="survey" className="mt-0">
+          <div className="max-w-4xl mx-auto space-y-5">
+            {/* Compose */}
+            <Card className="border-primary/30 shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Tenants get a short 5-question form. Results aggregate below as they respond.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-sm">Survey Title</Label>
+                  <Input value={surveyTitle} onChange={(e) => setSurveyTitle(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-sm">Intro Message</Label>
+                  <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-sm">Tenant Emails</Label>
+                  <Textarea
+                    rows={4}
+                    placeholder="Paste tenant emails — one per line, or comma-separated"
+                    value={surveyEmails}
+                    onChange={(e) => setSurveyEmails(e.target.value)}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Each tenant gets their own unique link so you can see who responded.
+                  </p>
+                </div>
+                <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
+                  <Send className="w-4 h-4 mr-2" />
+                  {sendingSurvey ? "Sending..." : "Send Survey"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Aggregated results across all surveys for this property */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses
+                  <Badge variant="secondary" className="ml-1 text-[11px]">
+                    {surveyResponses.filter((r) => r.submitted_at).length} submitted
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const submitted = surveyResponses.filter((r) => r.submitted_at);
+                  if (submitted.length === 0) {
+                    return (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        No responses yet. Once tenants submit, their answers will roll up here.
+                      </p>
+                    );
+                  }
+                  // Build aggregation: for each question id, count answers
+                  const tally: Record<string, Record<string, number>> = {};
+                  const openText: Record<string, string[]> = {};
+                  submitted.forEach((r) => {
+                    const ans = (r.answers || {}) as Record<string, any>;
+                    DEFAULT_PEST_SURVEY_QUESTIONS.forEach((q: SurveyQuestion) => {
+                      const v = ans[q.id];
+                      if (v === undefined || v === null || v === "") return;
+                      if (q.type === "text") {
+                        if (!openText[q.id]) openText[q.id] = [];
+                        openText[q.id].push(String(v));
+                      } else {
+                        if (!tally[q.id]) tally[q.id] = {};
+                        const values = Array.isArray(v) ? v : [v];
+                        values.forEach((val: any) => {
+                          const key = String(val);
+                          tally[q.id][key] = (tally[q.id][key] || 0) + 1;
+                        });
+                      }
+                    });
+                  });
+                  return (
+                    <div className="space-y-5">
+                      {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion) => {
+                        if (q.type === "text") {
+                          const responses = openText[q.id] || [];
+                          return (
+                            <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                              <p className="text-sm font-semibold mb-1.5">{q.label}</p>
+                              {responses.length === 0 ? (
+                                <p className="text-xs text-muted-foreground italic">No comments</p>
+                              ) : (
+                                <ul className="space-y-1.5">
+                                  {responses.map((c, i) => (
+                                    <li key={i} className="text-xs bg-muted/40 rounded px-2 py-1.5">"{c}"</li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          );
+                        }
+                        const counts = tally[q.id] || {};
+                        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+                        const opts = q.options || Object.keys(counts);
+                        return (
+                          <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                            <p className="text-sm font-semibold mb-2">{q.label}</p>
+                            <div className="space-y-1.5">
+                              {opts.map((opt) => {
+                                const c = counts[opt] || 0;
+                                const pct = total ? Math.round((c / total) * 100) : 0;
+                                return (
+                                  <div key={opt} className="space-y-0.5">
+                                    <div className="flex justify-between text-xs">
+                                      <span>{opt}</span>
+                                      <span className="text-muted-foreground tabular-nums">
+                                        {c} ({pct}%)
+                                      </span>
+                                    </div>
+                                    <div className="h-2 bg-muted rounded overflow-hidden">
+                                      <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Per-survey send history */}
+            {surveys.length > 0 && (
+              <Card className="shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Send History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {surveys.map((s) => {
+                      const responses = surveyResponses.filter((r) => r.survey_id === s.id);
+                      const submittedCount = responses.filter((r) => r.submitted_at).length;
+                      const recipients = Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0;
+                      const isExpanded = expandedSurveyId === s.id;
+                      return (
+                        <div key={s.id} className="border rounded-lg">
+                          <button
+                            className="w-full text-left p-3 flex items-center justify-between"
+                            onClick={() => setExpandedSurveyId(isExpanded ? null : s.id)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{s.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Sent {new Date(s.created_at).toLocaleDateString()} • {submittedCount}/{recipients} responded
+                              </p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </button>
+                          {isExpanded && (
+                            <div className="px-3 pb-3 border-t pt-3">
+                              {responses.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">No recipients yet.</p>
+                              ) : (
+                                <ul className="space-y-1">
+                                  {responses.map((r) => (
+                                    <li key={r.id} className="flex items-center justify-between text-xs">
+                                      <span className="truncate">{r.recipient_email || "Unknown"}</span>
+                                      <Badge variant={r.submitted_at ? "default" : "outline"} className="text-[10px]">
+                                        {r.submitted_at ? "Submitted" : "Pending"}
+                                      </Badge>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
