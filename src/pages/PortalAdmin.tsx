@@ -86,7 +86,10 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
-  const [pmPreviewMode, setPmPreviewMode] = useState(false);
+  // Default to the full PM view so admins always have parity with PMs
+  // (Survey tab, tenant work-order emails, etc.). Toggle reveals the
+  // admin-only editing tools (PropertyDashboard).
+  const [pmPreviewMode, setPmPreviewMode] = useState(true);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
@@ -765,7 +768,7 @@ const PortalAdmin = () => {
           <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => { setSelectedProperty(null); setPmPreviewMode(false); }}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />All Properties
           </Button>
-          <span className="text-background/60">{pmPreviewMode ? "PM Preview Mode" : "Crest Admin View"}</span>
+          <span className="text-background/60">{pmPreviewMode ? "Full Portal View (PM + Admin)" : "Admin Editing Tools"}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {propLinks[0] && (
@@ -786,10 +789,10 @@ const PortalAdmin = () => {
               </Button>
             </>
           )}
-          <Button variant={pmPreviewMode ? "secondary" : "ghost"} size="sm"
-            className={pmPreviewMode ? "h-7 px-2" : "text-background hover:text-background/80 h-7 px-2"}
+          <Button variant={pmPreviewMode ? "ghost" : "secondary"} size="sm"
+            className={pmPreviewMode ? "text-background hover:text-background/80 h-7 px-2" : "h-7 px-2"}
             onClick={() => setPmPreviewMode(v => !v)}>
-            {pmPreviewMode ? <><EyeOff className="w-3.5 h-3.5 mr-1" />Exit PM Preview</> : <><Eye className="w-3.5 h-3.5 mr-1" />View as PM</>}
+            {pmPreviewMode ? <><Settings className="w-3.5 h-3.5 mr-1" />Admin Editing Tools</> : <><Eye className="w-3.5 h-3.5 mr-1" />Back to Portal View</>}
           </Button>
         </div>
       </div>
