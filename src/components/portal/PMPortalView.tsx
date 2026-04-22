@@ -186,6 +186,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
 
+    const [{ data: svys }, { data: respRows }] = await Promise.all([
+      (supabase as any).from("portal_surveys").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      (supabase as any).from("portal_survey_responses").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+    ]);
+    if (Array.isArray(svys)) setSurveys(svys);
+    if (Array.isArray(respRows)) setSurveyResponses(respRows);
+
     if (prop) setProperty(prop as PropertyData);
 
     if (Array.isArray(svcs)) {
