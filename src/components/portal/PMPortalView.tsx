@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
+  ClipboardCheck, BarChart3, Plus, Trash2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -20,6 +21,7 @@ import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
+import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 
 const PEST_TYPES = [
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
