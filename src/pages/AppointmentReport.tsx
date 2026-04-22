@@ -564,6 +564,23 @@ const AppointmentReport = () => {
                 <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
                 <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end pt-1 border-t">
+                <div className="md:col-span-1">
+                  <Label className="text-xs">Service (this appointment)</Label>
+                  <Select value={appointmentService || "__none"} onValueChange={(v) => setAppointmentService(v === "__none" ? "" : v)}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select outcome" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">—</SelectItem>
+                      <SelectItem value="Inspection Complete">Inspection Complete</SelectItem>
+                      <SelectItem value="Service Complete">Service Complete</SelectItem>
+                      <SelectItem value="Not Serviced">Not Serviced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="md:col-span-2 text-[11px] text-muted-foreground italic">
+                  Inspection statuses (Activity Found / Free and Clear) appear on the unit table when an inspection. Service statuses (Treated - Complete / Treated - Follow Up) when a service.
+                </p>
+              </div>
 
               {/* Unit Table */}
               <div className="overflow-x-auto">
