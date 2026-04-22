@@ -414,12 +414,16 @@ const AppointmentReport = () => {
         if (rd.tech_observations) setTechObservations(rd.tech_observations);
         if (rd.time_in) setTimeIn(rd.time_in);
         if (rd.time_out) setTimeOut(rd.time_out);
+        if (rd.appointment_service) setAppointmentService(rd.appointment_service);
       } else {
         setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
         if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
         if (data.findings) setTodaysFindings(data.findings);
+      }
+      if ((data as any).appointment_service && !appointmentService) {
+        setAppointmentService((data as any).appointment_service);
       }
     };
 
