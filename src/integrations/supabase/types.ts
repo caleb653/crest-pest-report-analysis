@@ -271,12 +271,21 @@ export type Database = {
           id: string
           link_id: string | null
           location_type: string | null
+          occupancy_status: string | null
           pest_type: string | null
           preferred_date: string | null
+          prep_sheet_id: string | null
           property_id: string
           request_type: string
           response_notes: string | null
+          right_to_treat_requested: boolean
+          right_to_treat_signature: string | null
+          right_to_treat_signed_at: string | null
+          right_to_treat_signer_name: string | null
+          right_to_treat_token: string | null
           status: string
+          tenant_email: string | null
+          tenant_email_sent_at: string | null
           unit_number: string | null
           updated_at: string
         }
@@ -286,12 +295,21 @@ export type Database = {
           id?: string
           link_id?: string | null
           location_type?: string | null
+          occupancy_status?: string | null
           pest_type?: string | null
           preferred_date?: string | null
+          prep_sheet_id?: string | null
           property_id: string
           request_type?: string
           response_notes?: string | null
+          right_to_treat_requested?: boolean
+          right_to_treat_signature?: string | null
+          right_to_treat_signed_at?: string | null
+          right_to_treat_signer_name?: string | null
+          right_to_treat_token?: string | null
           status?: string
+          tenant_email?: string | null
+          tenant_email_sent_at?: string | null
           unit_number?: string | null
           updated_at?: string
         }
@@ -301,12 +319,21 @@ export type Database = {
           id?: string
           link_id?: string | null
           location_type?: string | null
+          occupancy_status?: string | null
           pest_type?: string | null
           preferred_date?: string | null
+          prep_sheet_id?: string | null
           property_id?: string
           request_type?: string
           response_notes?: string | null
+          right_to_treat_requested?: boolean
+          right_to_treat_signature?: string | null
+          right_to_treat_signed_at?: string | null
+          right_to_treat_signer_name?: string | null
+          right_to_treat_token?: string | null
           status?: string
+          tenant_email?: string | null
+          tenant_email_sent_at?: string | null
           unit_number?: string | null
           updated_at?: string
         }

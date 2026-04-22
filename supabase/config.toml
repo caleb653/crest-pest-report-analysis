@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.save-customer-signature]
 verify_jwt = false
+
+[functions.send-tenant-work-order]
+verify_jwt = false
+
+[functions.sign-right-to-treat]
+verify_jwt = false

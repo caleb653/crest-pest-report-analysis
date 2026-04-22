@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
@@ -143,6 +144,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
   const [description, setDescription] = useState("");
   const [preferredDateChoice, setPreferredDateChoice] = useState<"next" | "few-weeks" | "other">("next");
   const [preferredDateCustom, setPreferredDateCustom] = useState("");
+  const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
+  const [emailTenant, setEmailTenant] = useState(false);
+  const [tenantEmail, setTenantEmail] = useState("");
+  const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
+  const [requestRightToTreat, setRequestRightToTreat] = useState(false);
 
   useEffect(() => {
     loadAll();
@@ -222,15 +228,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
       pest_type: pestType,
       location_type: locationType,
       preferred_date: computePreferredDate(),
-    } as any);
+      occupancy_status: occupancyStatus || null,
+      tenant_email: emailTenant ? tenantEmail.trim() || null : null,
+      prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
+      right_to_treat_requested: emailTenant ? requestRightToTreat : false,
+    } as any).select("id, right_to_treat_token").maybeSingle();
 
     if (!err) {
       toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
+      // If tenant email requested, fire-and-forget the send
+      if (emailTenant && tenantEmail.trim()) {
+        try {
+          // Re-query the just-inserted row to get the id and right_to_treat_token
+          const { data: justInserted } = await supabase
+            .from("portal_requests")
+            .select("id")
+            .eq("property_id", propertyId)
+            .eq("unit_number", canonical)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (justInserted?.id) {
+            await supabase.functions.invoke("send-tenant-work-order", {
+              body: { requestId: justInserted.id, appBaseUrl: window.location.origin },
+            });
+            toast({ title: "Tenant notified", description: `Email sent to ${tenantEmail.trim()}` });
+          }
+        } catch (e) {
+          console.error("send-tenant-work-order failed", e);
+          toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+        }
+      }
       setUnitNumber("");
       setPestType("");
       setDescription("");
       setPreferredDateChoice("next");
       setPreferredDateCustom("");
+      setOccupancyStatus("");
+      setEmailTenant(false);
+      setTenantEmail("");
+      setSelectedPrepSheetId("");
+      setRequestRightToTreat(false);
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
@@ -829,6 +867,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                 </div>
 
                 <div>
+                  <Label className="text-sm">Vacant or Occupied Unit</Label>
+                  <div className="flex gap-2 mt-1">
+                    {(["Occupied", "Vacant"] as const).map(opt => (
+                      <button key={opt} type="button"
+                        className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                        onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <Label className="text-sm">Preferred Day</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {([
@@ -851,6 +900,56 @@ const PMPortalView = ({ propertyId, linkId, embedded = false }: PMPortalViewProp
                   <Label className="text-sm">Additional Details</Label>
                   <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
                     value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+                </div>
+
+                {/* Tenant Notification Section */}
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
+                    <span className="text-sm font-medium">Email tenant?</span>
+                  </label>
+
+                  <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                    <div>
+                      <Label className="text-xs">Tenant Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="tenant@example.com"
+                        value={tenantEmail}
+                        onChange={e => setTenantEmail(e.target.value)}
+                        disabled={!emailTenant}
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs">Prep Sheet to Send (optional)</Label>
+                      <Select
+                        value={selectedPrepSheetId || "__none"}
+                        onValueChange={(v) => setSelectedPrepSheetId(v === "__none" ? "" : v)}
+                        disabled={!emailTenant}
+                      >
+                        <SelectTrigger><SelectValue placeholder="No prep sheet" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">No prep sheet</SelectItem>
+                          {prepSheets.map(ps => (
+                            <SelectItem key={ps.id} value={ps.id}>{ps.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={requestRightToTreat}
+                        onCheckedChange={(v) => setRequestRightToTreat(!!v)}
+                        disabled={!emailTenant}
+                      />
+                      <span className="text-xs leading-snug">
+                        Send <strong>"Right to Treat"</strong> signature page<br />
+                        <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
