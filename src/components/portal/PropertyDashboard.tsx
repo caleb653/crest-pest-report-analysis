@@ -610,12 +610,13 @@ const PropertyDashboard = ({
 
   const submitWorkOrder = async () => {
     if (!workOrder.unit_number && !workOrder.comments) return;
+    setSubmittingWorkOrder(true);
     // Case-insensitive normalization against existing units for this property
     const typed = (workOrder.unit_number || "").trim();
     const canonical = typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
       : "Facility";
-    await supabase.from("portal_requests").insert({
+    const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
@@ -623,12 +624,38 @@ const PropertyDashboard = ({
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type,
       preferred_date: workOrder.preferred_date || null,
-    } as any);
+      occupancy_status: workOrder.occupancy_status || null,
+      tenant_email: workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null,
+      prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
+      right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
+    } as any).select("id").maybeSingle();
+    if (insertErr) {
+      toast({ title: "Could not submit work order", description: insertErr.message, variant: "destructive" });
+      setSubmittingWorkOrder(false);
+      return;
+    }
     toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
-    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" });
+    // Fire-and-forget tenant email
+    if (workOrder.email_tenant && workOrder.tenant_email.trim() && inserted?.id) {
+      try {
+        await supabase.functions.invoke("send-tenant-work-order", {
+          body: { requestId: inserted.id, appBaseUrl: window.location.origin },
+        });
+        toast({ title: "Tenant notified", description: `Email sent to ${workOrder.tenant_email.trim()}` });
+      } catch (e) {
+        console.error("send-tenant-work-order failed", e);
+        toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+      }
+    }
+    setWorkOrder({
+      unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "",
+      request_type: "treatment", occupancy_status: "",
+      email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+    });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
+    setSubmittingWorkOrder(false);
     onRefresh();
   };
 
