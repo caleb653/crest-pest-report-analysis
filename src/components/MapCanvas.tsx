@@ -1296,6 +1296,54 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         >
           <Minus className="w-3.5 h-3.5" />
         </Button>
+        {tool === 'line' && (
+          <div className="flex items-center gap-1 px-1.5 py-1 border-l border-border">
+            <input
+              type="color"
+              value={lineColor}
+              onChange={(e) => {
+                const newColor = e.target.value;
+                setLineColor(newColor);
+                // Recolor any currently-selected line(s)
+                const canvas = fabricCanvasRef.current;
+                if (canvas) {
+                  const active = canvas.getActiveObjects();
+                  active.forEach((obj) => {
+                    if (obj instanceof Line) {
+                      obj.set({ stroke: newColor });
+                    }
+                  });
+                  if (active.length) canvas.renderAll();
+                }
+              }}
+              className="w-6 h-6 rounded cursor-pointer"
+              title="Line Color"
+            />
+            <select
+              value={lineWidth}
+              onChange={(e) => {
+                const newWidth = Number(e.target.value);
+                setLineWidth(newWidth);
+                const canvas = fabricCanvasRef.current;
+                if (canvas) {
+                  const active = canvas.getActiveObjects();
+                  active.forEach((obj) => {
+                    if (obj instanceof Line) {
+                      obj.set({ strokeWidth: newWidth });
+                    }
+                  });
+                  if (active.length) canvas.renderAll();
+                }
+              }}
+              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+            >
+              <option value={2}>Thin</option>
+              <option value={5}>Medium</option>
+              <option value={8}>Thick</option>
+              <option value={12}>Bold</option>
+            </select>
+          </div>
+        )}
         <Button
           size="icon"
           variant={tool === 'draw' ? 'default' : 'outline'}
