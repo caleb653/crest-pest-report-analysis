@@ -22,6 +22,7 @@ import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 
 const PEST_TYPES = [
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
