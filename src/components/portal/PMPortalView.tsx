@@ -1547,10 +1547,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       {isUcOpen && (
                                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
                                         <div>
-                                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Source</p>
-                                          <p className="text-sm font-medium">{sourceLabel}</p>
-                                        </div>
-                                        <div>
                                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
                                           <p className="text-sm font-medium">{uc.target_pest || "—"}</p>
                                         </div>
