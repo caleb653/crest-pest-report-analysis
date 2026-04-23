@@ -1530,6 +1530,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                           }`}>
                                             {sourceLabel}
                                           </span>
+                                          {uc.target_pest && (
+                                            <span className="text-xs font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                                              {uc.target_pest}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                           <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
