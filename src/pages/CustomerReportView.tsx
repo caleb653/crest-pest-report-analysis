@@ -1337,6 +1337,14 @@ export default function CustomerReportView() {
             If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
           </p>
         </div>
+        {proposals.some((p) => p.services.some((s) => {
+          const f = typeof s.frequency === "string" ? parseInt(s.frequency, 10) : s.frequency;
+          return f === 28;
+        })) && (
+          <p className="text-[11px] italic text-muted-foreground text-center mt-2 leading-snug">
+            * Coming in 4-week cycles allows us to have the most consistent scheduling, and in turn the best quality service.
+          </p>
+        )}
       </div>
 
       <div className="max-w-5xl mx-auto text-center text-sm text-muted-foreground py-8 border-t border-border mt-8">
