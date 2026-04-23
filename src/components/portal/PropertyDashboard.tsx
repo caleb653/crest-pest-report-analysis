@@ -1163,6 +1163,20 @@ const PropertyDashboard = ({
           </div>
         )}
 
+        {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
+        {!isProjected && (
+          <div className="pt-2 border-t border-border/40">
+            <ServiceComments
+              serviceId={s.id}
+              reportData={(s as any).report_data}
+              comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
+              sender="crest"
+              defaultAuthor={s.technician || ""}
+              onChange={onRefresh}
+            />
+          </div>
+        )}
+
         {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format) */}
         {isUpcoming && !isProjected && (() => {
           // Auto-init completion data on first render for this expanded upcoming service
