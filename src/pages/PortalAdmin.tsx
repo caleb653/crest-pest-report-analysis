@@ -86,11 +86,11 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
-  // Default to the full portal view so admins have complete feature parity
-  // with PMs (Survey tab, full tenant work-order emails, Right-to-Treat, etc.).
-  // The toggle reveals the admin-only editing tools (PropertyDashboard) for
-  // managing services, equipment, and property details.
-  const [pmPreviewMode, setPmPreviewMode] = useState(true);
+  // Unified admin view: always render the full PMPortalView (with all 6 tabs).
+  // Admin-only editing tools (PropertyDashboard) are accessible via an
+  // overlay dialog so power-editing of services/equipment is preserved
+  // without splitting the experience into two separate views.
+  const [showAdminTools, setShowAdminTools] = useState(false);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
