@@ -715,9 +715,9 @@ const PropertyDashboard = ({
       property_id: property.id,
       unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
-      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"} - ${workOrder.location_type}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
-      location_type: workOrder.location_type,
+      location_type: workOrder.location_type || null,
       preferred_date: workOrder.preferred_date || null,
       occupancy_status: workOrder.occupancy_status || null,
       tenant_email: workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null,
@@ -743,8 +743,8 @@ const PropertyDashboard = ({
       }
     }
     setWorkOrder({
-      unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "",
-      request_type: "treatment", occupancy_status: "",
+      unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
+      request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
     });
     // Refresh requests
