@@ -1099,6 +1099,7 @@ Crest Pest Control
           emailMessage,
           buttonText: "View Your Report",
           baseUrl: window.location.origin,
+          reportType: "initial",
           ...(pdfBase64 ? {
             pdfBase64,
             pdfFilename: `Crest_Initial_Report_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
