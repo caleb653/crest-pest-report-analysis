@@ -221,17 +221,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   };
 
   const computePreferredDate = (): string | null => {
-    if (preferredDateChoice === "next") {
-      const d = new Date();
-      d.setDate(d.getDate() + 7);
-      return d.toISOString().split("T")[0];
-    }
-    if (preferredDateChoice === "few-weeks") {
-      const d = new Date();
-      d.setDate(d.getDate() + 21);
-      return d.toISOString().split("T")[0];
-    }
-    return preferredDateCustom || null;
+    // Save the human-friendly label exactly as chosen on the form so the PM
+    // (and admin) sees the same wording back ("Next service", "Next few weeks",
+    // or whatever they typed) instead of a computed calendar date.
+    if (preferredDateChoice === "next") return "Next service";
+    if (preferredDateChoice === "few-weeks") return "Next few weeks";
+    return preferredDateCustom.trim() || null;
   };
 
   const submitRequest = async () => {
