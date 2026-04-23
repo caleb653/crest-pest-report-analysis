@@ -624,6 +624,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           }`}>
                             {isInspection ? "Inspection" : "Service"}
                           </span>
+                          {u.target_pest && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                              {u.target_pest}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
