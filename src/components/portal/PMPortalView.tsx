@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
-  ClipboardCheck, BarChart3, Plus, Trash2,
+  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -872,6 +872,83 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </CardContent>
             </Card>
           </div>
+
+          {/* Property Point of Contact (read-only) */}
+          {(() => {
+            const poc = (property.customer_preferences as any)?.point_of_contact || {};
+            const pocName = poc.name || "";
+            const pocEmail = poc.email || "";
+            return (
+              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <User className="w-5 h-5 text-primary" />
+                    Property Point of Contact
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {pocName || pocEmail ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                        <p className="font-medium">{pocName || <span className="text-muted-foreground italic font-normal">—</span>}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                        {pocEmail ? (
+                          <a href={`mailto:${pocEmail}`} className="font-medium text-primary hover:underline break-all">{pocEmail}</a>
+                        ) : (
+                          <span className="text-muted-foreground italic">—</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No point of contact set yet.</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Cadence Visit Plan (read-only) — only weekly / bi-weekly */}
+          {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
+            const cycleLength = propertyFrequency === "weekly" ? 4 : 2;
+            const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+            const planArr = (planMap[propertyFrequency] || []).slice(0, cycleLength);
+            while (planArr.length < cycleLength) planArr.push("");
+            const hasAny = planArr.some(p => (p || "").trim());
+            return (
+              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Repeat className="w-5 h-5 text-primary" />
+                    Cadence Plan — {propertyFrequency === "weekly" ? "Weekly (4-visit rotation)" : "Bi-Weekly (2-visit rotation)"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-3">
+                  {hasAny ? (
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 ${cycleLength === 4 ? "lg:grid-cols-4" : ""} gap-3`}>
+                      {planArr.map((text, idx) => (
+                        <div key={idx} className="space-y-1.5 rounded-lg border border-border bg-background/60 p-2.5">
+                          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                            <span className="inline-flex w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold items-center justify-center">{idx + 1}</span>
+                            Visit {idx + 1}
+                          </Label>
+                          {text ? (
+                            <p className="text-xs whitespace-pre-wrap leading-relaxed">{text}</p>
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground italic">Not set</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No cadence plan set yet.</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div>
