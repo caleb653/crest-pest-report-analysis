@@ -43,7 +43,7 @@ const TenantPortal = () => {
   // Form state
   const [unitNumber, setUnitNumber] = useState("");
   const [pestType, setPestType] = useState("");
-  const [locationType, setLocationType] = useState("Interior");
+  const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
 
@@ -125,9 +125,9 @@ const TenantPortal = () => {
       property_id: propertyId,
       unit_number: canonical,
       request_type: "Service Request",
-      description: `${pestType} - ${locationType}${description ? ` - ${description}` : ""}`,
+      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
-      location_type: locationType,
+      location_type: locationType || null,
       preferred_date: preferredDate || null,
     } as any);
 
