@@ -792,10 +792,6 @@ const PortalAdmin = () => {
               </Button>
             </>
           )}
-          <Button variant="secondary" size="sm" className="h-7 px-2"
-            onClick={() => setShowAdminTools(true)}>
-            <Wrench className="w-3.5 h-3.5 mr-1" />Service Editor
-          </Button>
         </div>
       </div>
 
@@ -820,47 +816,23 @@ const PortalAdmin = () => {
 
       {/* Main content */}
       <div className="max-w-[1600px] mx-auto px-4 py-4">
-        {propLinks[0] ? (
-          <div className="bg-background rounded-lg overflow-hidden">
-            <PMPortalView propertyId={selectedProperty.id} linkId={propLinks[0].id} embedded />
-          </div>
-        ) : (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Setting up PM portal link…
-          </div>
-        )}
+        <PropertyDashboard
+          property={selectedProperty}
+          services={propServices}
+          links={propLinks}
+          clientName={client?.company || client?.name || ""}
+          clientId={selectedProperty.client_id}
+          onRefresh={loadAll}
+          onOpenServiceReport={openServiceReport}
+          onEditService={(s) => openServiceDialog(s)}
+          onDeleteService={deleteService}
+          onUpdatePropertyImage={updatePropertyImage}
+          uploadingPropertyImage={uploadingPropertyImage}
+          onCopyLink={copyLink}
+          onOpenPortal={openPortal}
+          onAddUpcomingService={() => createAndOpenReport("scheduled")}
+        />
       </div>
-
-      {/* Service Editor — full PropertyDashboard in an overlay so power-edit
-          tools (inline unit editing, equipment, service notes, etc.) remain
-          accessible from the unified admin view. */}
-      <Dialog open={showAdminTools} onOpenChange={setShowAdminTools}>
-        <DialogContent className="max-w-[1500px] w-[97vw] max-h-[92vh] overflow-y-auto p-0">
-          <DialogHeader className="px-5 pt-4 pb-2 border-b sticky top-0 bg-background z-10">
-            <DialogTitle className="flex items-center gap-2">
-              <Wrench className="w-4 h-4" /> Service Editor — {selectedProperty.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-4 py-4">
-            <PropertyDashboard
-              property={selectedProperty}
-              services={propServices}
-              links={propLinks}
-              clientName={client?.company || client?.name || ""}
-              clientId={selectedProperty.client_id}
-              onRefresh={loadAll}
-              onOpenServiceReport={openServiceReport}
-              onEditService={(s) => openServiceDialog(s)}
-              onDeleteService={deleteService}
-              onUpdatePropertyImage={updatePropertyImage}
-              uploadingPropertyImage={uploadingPropertyImage}
-              onCopyLink={copyLink}
-              onOpenPortal={openPortal}
-              onAddUpcomingService={() => createAndOpenReport("scheduled")}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Service Detail Modal */}
       <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
