@@ -593,6 +593,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 const kind = (u as any).kind || "service";
                 const isInspection = kind === "inspection";
                 const allComments: ServiceComment[] = Array.isArray(u.comments) ? (u.comments as ServiceComment[]) : [];
+                const unitKey = `past:${s.id}:${i}`;
+                const isUnitOpen = expandedUnitKeys.has(unitKey);
                 return (
                   <div
                     key={i}
@@ -601,9 +603,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     }`}
                   >
                     {/* Bold colored header bar */}
-                    <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                      isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
-                    }`}>
+                    <button
+                      type="button"
+                      onClick={() => toggleUnitKey(unitKey)}
+                      aria-expanded={isUnitOpen}
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+                        isFollowUp ? "bg-orange-100 hover:bg-orange-200/60 border-b-2 border-orange-500" : "bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60"
+                      } ${isUnitOpen ? "" : "border-b-0"}`}
+                    >
                       <div className="flex items-center gap-3">
                         <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                           isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -619,12 +626,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           </span>
                         </div>
                       </div>
-                      {u.status && (
-                        <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
-                          {u.status}
-                        </Badge>
-                      )}
-                    </div>
+                      <div className="flex items-center gap-2">
+                        {u.status && (
+                          <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
+                            {u.status}
+                          </Badge>
+                        )}
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                      </div>
+                    </button>
+                    {isUnitOpen && (<>
                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
                       {u.target_pest && (
                         <div>
@@ -691,6 +702,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         />
                       </div>
                     </div>
+                    </>)}
                   </div>
                 );
               })}
