@@ -71,6 +71,15 @@ serve(async (req) => {
 
     const showRtt = !!(reqRow as any).right_to_treat_requested && rttUrl;
 
+    const escapeHtml = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    const formatMultiline = (s: string) => escapeHtml(s).replace(/\r\n|\r|\n/g, "<br>");
+
     const html = `
 <!DOCTYPE html>
 <html><head><meta charset="utf-8" /></head>
@@ -88,7 +97,7 @@ serve(async (req) => {
       ${prep ? `
       <div style="margin:18px 0;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
         <p style="margin:0 0 6px;font-weight:600;">Prep Sheet: ${prep.title}</p>
-        ${prep.description ? `<p style="margin:0 0 8px;font-size:13px;color:#555;">${prep.description}</p>` : ""}
+        ${prep.description ? `<div style="margin:0 0 10px;font-size:13px;color:#555;line-height:1.55;white-space:pre-wrap;">${formatMultiline(prep.description)}</div>` : ""}
         ${prep.file_url ? `<a href="${prep.file_url}" style="display:inline-block;background:#95A197;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px;">View Prep Sheet</a>` : ""}
       </div>` : ""}
 
