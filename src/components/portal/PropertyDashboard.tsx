@@ -2098,7 +2098,66 @@ const PropertyDashboard = ({
                 value={workOrder.comments} onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} rows={3} />
             </div>
 
-            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
+            {/* Occupancy */}
+            <div>
+              <Label className="text-sm">Vacant or Occupied Unit</Label>
+              <div className="flex gap-2 mt-1">
+                {(["Occupied", "Vacant"] as const).map(opt => (
+                  <button key={opt} type="button"
+                    className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${workOrder.occupancy_status === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                    onClick={() => setWorkOrder(wo => ({ ...wo, occupancy_status: wo.occupancy_status === opt ? "" : opt }))}>{opt}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tenant Notification — full PM-portal parity */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
+                <span className="text-sm font-medium">Email tenant?</span>
+              </label>
+              <div className={`space-y-3 transition-opacity ${workOrder.email_tenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                <div>
+                  <Label className="text-xs">Tenant Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="tenant@example.com"
+                    value={workOrder.tenant_email}
+                    onChange={e => setWorkOrder(wo => ({ ...wo, tenant_email: e.target.value }))}
+                    disabled={!workOrder.email_tenant}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Prep Sheet to Send (optional)</Label>
+                  <Select
+                    value={workOrder.prep_sheet_id || "__none"}
+                    onValueChange={(v) => setWorkOrder(wo => ({ ...wo, prep_sheet_id: v === "__none" ? "" : v }))}
+                    disabled={!workOrder.email_tenant}
+                  >
+                    <SelectTrigger><SelectValue placeholder="No prep sheet" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No prep sheet</SelectItem>
+                      {prepSheets.map(ps => (
+                        <SelectItem key={ps.id} value={ps.id}>{ps.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={workOrder.right_to_treat}
+                    onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, right_to_treat: !!v }))}
+                    disabled={!workOrder.email_tenant}
+                  />
+                  <span className="text-xs leading-snug">
+                    Send <strong>"Right to Treat"</strong> signature page<br />
+                    <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number || submittingWorkOrder}>
               <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
