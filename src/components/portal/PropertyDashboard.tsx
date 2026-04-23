@@ -1252,15 +1252,39 @@ const PropertyDashboard = ({
 
         {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
         {!isProjected && (
-          <div className="pt-2 border-t border-border">
-            <ServiceComments
-              serviceId={s.id}
-              reportData={(s as any).report_data}
-              comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
-              sender="crest"
-              defaultAuthor={s.technician || ""}
-              onChange={onRefresh}
-            />
+          <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(() => {
+              const allComments = Array.isArray(((s as any).report_data || {}).comments)
+                ? ((s as any).report_data.comments as ServiceComment[])
+                : [];
+              return (
+                <>
+                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      reportData={(s as any).report_data}
+                      comments={allComments}
+                      sender="crest"
+                      filterSender="crest"
+                      title="Service Comments: Crest"
+                      defaultAuthor={s.technician || ""}
+                      onChange={onRefresh}
+                    />
+                  </div>
+                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      reportData={(s as any).report_data}
+                      comments={allComments}
+                      sender="pm"
+                      filterSender="pm"
+                      title="Service Comments: Property Manager"
+                      onChange={onRefresh}
+                    />
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -2076,7 +2100,7 @@ const PropertyDashboard = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
-                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                           <Badge variant="default" className="text-[10px]">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
                         </div>
@@ -2401,7 +2425,7 @@ const PropertyDashboard = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
-                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}

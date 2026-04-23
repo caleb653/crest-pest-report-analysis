@@ -747,14 +747,39 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </div>
         )}
         {/* Service-level comment thread (PM ↔ Crest) */}
-        <div className="pt-2 border-t border-border">
-          <ServiceComments
-            serviceId={s.id}
-            reportData={(s as any).report_data}
-            comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
-            sender="pm"
-            onChange={loadAll}
-          />
+        <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(() => {
+            const allComments = Array.isArray(((s as any).report_data || {}).comments)
+              ? ((s as any).report_data.comments as ServiceComment[])
+              : [];
+            return (
+              <>
+                <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
+                  <ServiceComments
+                    serviceId={s.id}
+                    reportData={(s as any).report_data}
+                    comments={allComments}
+                    sender="crest"
+                    filterSender="crest"
+                    title="Service Comments: Crest"
+                    readOnly
+                    onChange={loadAll}
+                  />
+                </div>
+                <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
+                  <ServiceComments
+                    serviceId={s.id}
+                    reportData={(s as any).report_data}
+                    comments={allComments}
+                    sender="pm"
+                    filterSender="pm"
+                    title="Service Comments: Property Manager"
+                    onChange={loadAll}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
     );
@@ -923,7 +948,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
-                              <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                              <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                               <Badge variant="default" className="text-[10px]">Completed</Badge>
                               {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
                             </div>
@@ -977,7 +1002,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               >
                                 {/* Header row: service type + date */}
                                 <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border">
-                                  <span className="font-semibold text-sm">{service.service_type}</span>
+                                  <span className="font-semibold text-sm">{(service as any).appointment_service || service.service_type}</span>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                                     {formatShortDate(service.service_date)}
                                   </span>
@@ -1205,7 +1230,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           {matchedUpcoming && (
                             <div className="mt-2 bg-primary/5 border border-primary/15 rounded-md p-2">
                               <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Scheduled for</p>
-                              <p className="text-xs">{formatDate(matchedUpcoming.service_date)} — {matchedUpcoming.service_type}</p>
+                              <p className="text-xs">{formatDate(matchedUpcoming.service_date)} — {(matchedUpcoming as any).appointment_service || matchedUpcoming.service_type}</p>
                             </div>
                           )}
                           {r.response_notes && (
@@ -1276,7 +1301,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
-                            <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{s.service_type}</p>
+                            <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(s as any).appointment_service || s.service_type}</p>
                             {!isFirst && <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>}
                           </div>
                           <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-2 flex-wrap">
