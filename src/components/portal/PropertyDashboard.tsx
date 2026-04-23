@@ -707,6 +707,89 @@ const PropertyDashboard = ({
     }));
   };
 
+  // ─── Per-unit photo upload (saved unit_details rows) ───
+  const uploadUnitPhoto = async (serviceId: string, unitIndex: number, file: File) => {
+    const key = `${serviceId}:${unitIndex}`;
+    setUploadingUnitPhotoFor(key);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/unit-${unitIndex}-${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      const svc = propServices.find(s => s.id === serviceId);
+      const details = Array.isArray(svc?.unit_details) ? [...(svc!.unit_details as any[])] : [];
+      if (details[unitIndex]) {
+        const existing = Array.isArray(details[unitIndex].photos) ? details[unitIndex].photos : [];
+        details[unitIndex] = { ...details[unitIndex], photos: [...existing, { url: pub.publicUrl }] };
+        await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+        onRefresh();
+      }
+      toast({ title: "Photo added to unit", duration: 1500 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingUnitPhotoFor(null);
+    }
+  };
+
+  const removeUnitPhoto = async (serviceId: string, unitIndex: number, photoIdx: number) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    const details = Array.isArray(svc?.unit_details) ? [...(svc!.unit_details as any[])] : [];
+    if (!details[unitIndex]) return;
+    const photos = Array.isArray(details[unitIndex].photos) ? [...details[unitIndex].photos] : [];
+    photos.splice(photoIdx, 1);
+    details[unitIndex] = { ...details[unitIndex], photos };
+    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    onRefresh();
+  };
+
+  // ─── Per-unit photo upload (in-progress completion form rows) ───
+  const uploadCompletionUnitPhoto = async (serviceId: string, rowIdx: number, file: File) => {
+    const key = `${serviceId}:${rowIdx}`;
+    setUploadingCompletionUnitPhotoFor(key);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/unit-row-${rowIdx}-${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      setCompletionData(prev => {
+        const cur = prev[serviceId];
+        if (!cur) return prev;
+        const rows = [...cur.unitRows];
+        const existing = Array.isArray((rows[rowIdx] as any).photos) ? (rows[rowIdx] as any).photos : [];
+        rows[rowIdx] = { ...(rows[rowIdx] as any), photos: [...existing, { url: pub.publicUrl }] } as any;
+        return { ...prev, [serviceId]: { ...cur, unitRows: rows } };
+      });
+      toast({ title: "Photo added", duration: 1200 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingCompletionUnitPhotoFor(null);
+    }
+  };
+
+  const removeCompletionUnitPhoto = (serviceId: string, rowIdx: number, photoIdx: number) => {
+    setCompletionData(prev => {
+      const cur = prev[serviceId];
+      if (!cur) return prev;
+      const rows = [...cur.unitRows];
+      const photos = Array.isArray((rows[rowIdx] as any).photos) ? [...(rows[rowIdx] as any).photos] : [];
+      photos.splice(photoIdx, 1);
+      rows[rowIdx] = { ...(rows[rowIdx] as any), photos } as any;
+      return { ...prev, [serviceId]: { ...cur, unitRows: rows } };
+    });
+  };
+
   const submitWorkOrder = async () => {
     if (!workOrder.unit_number && !workOrder.comments) return;
     setSubmittingWorkOrder(true);
