@@ -32,6 +32,20 @@ interface LegendItem {
 
 const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
+// Badge color palette assigned per icon TYPE in placement order.
+// First icon type placed = red, second type = blue, third = green, etc.
+// All emblems of the same type share the same color.
+const ICON_BADGE_COLORS = [
+  '#DC2626', // red
+  '#2563EB', // blue
+  '#16A34A', // green
+  '#D97706', // amber
+  '#9333EA', // purple
+  '#0891B2', // cyan
+  '#DB2777', // pink
+  '#525252', // neutral
+];
+
 const AVAILABLE_ICONS = [
   { icon: 'bug', label: 'Pest Activity', symbol: '◉', svgPath: bugIcon },
   { icon: 'rat', label: 'Rodent Activity', symbol: '▲', svgPath: ratIcon },
