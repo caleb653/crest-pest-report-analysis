@@ -293,6 +293,66 @@ const PropertyDashboard = ({
     loadPrepSheets();
   }, [property.id]);
 
+  // Load surveys + responses for this property
+  useEffect(() => {
+    const loadSurveys = async () => {
+      const [{ data: svys }, { data: respRows }] = await Promise.all([
+        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      ]);
+      if (Array.isArray(svys)) setSurveys(svys);
+      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+    };
+    loadSurveys();
+  }, [property.id]);
+
+  const sendSurvey = async () => {
+    const emails = surveyEmails
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (emails.length === 0) {
+      toast({ title: "Add at least one valid email", variant: "destructive" });
+      return;
+    }
+    setSendingSurvey(true);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: property.id,
+          client_id: clientId || null,
+          title: surveyTitle.trim() || "Pest Activity Survey",
+          intro: surveyIntro.trim() || null,
+          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          recipient_emails: emails,
+        })
+        .select("*")
+        .single();
+      if (error || !created) throw error;
+      const { data: sendRes } = await supabase.functions.invoke("send-tenant-survey", {
+        body: { surveyId: created.id, appBaseUrl: window.location.origin },
+      });
+      if ((sendRes as any)?.ok) {
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+      } else {
+        toast({ title: "Survey created", description: "Email send may have failed — check logs." });
+      }
+      setSurveyEmails("");
+      const [{ data: svys }, { data: respRows }] = await Promise.all([
+        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      ]);
+      if (Array.isArray(svys)) setSurveys(svys);
+      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+    } catch (e: any) {
+      console.error("sendSurvey failed", e);
+      toast({ title: "Send failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSendingSurvey(false);
+    }
+  };
+
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
     .filter(s => s.status === "completed")
