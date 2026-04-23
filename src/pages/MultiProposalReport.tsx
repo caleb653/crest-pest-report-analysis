@@ -3103,9 +3103,9 @@ Crest Pest Control`;
             </p>
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
           </div>
-          {proposals.some((p) => p.services.some((s) => s.frequency === 28)) && (
+          {proposals.some((p) => p.services.some((s) => s.frequency === 7 || s.frequency === 14 || s.frequency === 28)) && (
             <p className="text-[11px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug">
-              * Commercial accounts run on four-week cycles for consistent scheduling (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
+              * Scheduling and billing run on four-week cycles to help ensure consistency (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
             </p>
           )}
         </div>
