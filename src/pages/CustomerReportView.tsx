@@ -146,6 +146,8 @@ const formatFrequency = (freq: string | number): string => {
   if (typeof freq === "string") return freq;
   if (freq === 0) return "One-Time";
   if (freq === 7) return "Weekly";
+  if (freq === 14) return "Bi-Weekly";
+  if (freq === 28) return "Every 4 Weeks";
   if (freq === 30) return "Monthly";
   if (freq === 60) return "Bi-Monthly";
   if (freq === 90) return "Quarterly";
