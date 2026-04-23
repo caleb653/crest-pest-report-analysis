@@ -839,12 +839,12 @@ const PropertyDashboard = ({
     return (
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-semibold text-muted-foreground">Units Treated ({unitDetails.length})</p>
+          <p className="text-xs font-semibold text-muted-foreground">Areas Treated ({unitDetails.length})</p>
           <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => {
             setAddingUnitToService(s.id);
             setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
           }}>
-            <Plus className="w-3 h-3 mr-0.5" />Add Unit
+            <Plus className="w-3 h-3 mr-0.5" />Add Area
           </Button>
         </div>
         {/* Mini per-unit service report cards (replaces wide horizontal table) */}
@@ -868,14 +868,12 @@ const PropertyDashboard = ({
                     }`}>
                       {j + 1}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Unit</span>
-                      <Input
-                        className="h-9 text-lg font-bold w-28 px-2 bg-background"
-                        defaultValue={unit.unit_number || ""}
-                        onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
-                      />
-                    </div>
+                    <Input
+                      className="h-9 text-lg font-bold w-40 px-2 bg-background"
+                      placeholder="Area / Unit / Room"
+                      defaultValue={unit.unit_number || ""}
+                      onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
+                    />
                   </div>
                   <select
                     className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
