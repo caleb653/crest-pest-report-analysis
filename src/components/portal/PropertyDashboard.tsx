@@ -1103,7 +1103,7 @@ const PropertyDashboard = ({
           <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
             onClick={() => {
               setAddingUnitToService(s.id);
-              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
+              setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
             }}>
             <Plus className="w-3 h-3" /> Add unit row
           </button>
