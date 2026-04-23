@@ -1599,6 +1599,11 @@ const PropertyDashboard = ({
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
+                              {row.target_pest && (
+                                <span className="text-xs font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                                  {row.target_pest}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
