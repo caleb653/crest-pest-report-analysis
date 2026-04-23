@@ -766,11 +766,11 @@ const PortalAdmin = () => {
       {/* Admin bar */}
       <div className="bg-foreground text-background px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => { setSelectedProperty(null); setPmPreviewMode(true); }}>
+          <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => { setSelectedProperty(null); }}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />All Properties
           </Button>
           <span className="text-background/60 font-medium">
-            {pmPreviewMode ? "Admin Portal — Full View" : "Admin Editing Tools"}
+            Admin Portal — Full View
           </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -792,10 +792,9 @@ const PortalAdmin = () => {
               </Button>
             </>
           )}
-          <Button variant={pmPreviewMode ? "ghost" : "secondary"} size="sm"
-            className={pmPreviewMode ? "text-background hover:text-background/80 h-7 px-2" : "h-7 px-2"}
-            onClick={() => setPmPreviewMode(v => !v)}>
-            {pmPreviewMode ? <><Settings className="w-3.5 h-3.5 mr-1" />Admin Editing Tools</> : <><Eye className="w-3.5 h-3.5 mr-1" />Back to Portal View</>}
+          <Button variant="secondary" size="sm" className="h-7 px-2"
+            onClick={() => setShowAdminTools(true)}>
+            <Wrench className="w-3.5 h-3.5 mr-1" />Service Editor
           </Button>
         </div>
       </div>
@@ -807,7 +806,7 @@ const PortalAdmin = () => {
             <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
             <div className="flex-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-0.5">
-                <span className="cursor-pointer hover:text-foreground" onClick={() => { setSelectedProperty(null); setPmPreviewMode(true); }}>Properties</span>
+                <span className="cursor-pointer hover:text-foreground" onClick={() => { setSelectedProperty(null); }}>Properties</span>
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-foreground font-medium">{selectedProperty.name}</span>
               </div>
