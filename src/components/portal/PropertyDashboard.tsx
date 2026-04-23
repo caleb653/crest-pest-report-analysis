@@ -708,129 +708,156 @@ const PropertyDashboard = ({
             <Plus className="w-3 h-3 mr-0.5" />Add Unit
           </Button>
         </div>
-        <div className="border rounded-lg overflow-x-auto">
-          <table className="w-full text-sm border-collapse min-w-[1400px]">
-            <thead className="bg-muted">
-              <tr>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal w-[80px]">Unit</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[150px]">Target Pest</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[260px]">Findings / Notes</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[130px]">Activity Level</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[220px]">Products</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[180px]">Status</th>
-                <th className="border p-2 text-left text-xs font-semibold whitespace-normal min-w-[200px]">Internal Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unitDetails.map((unit: any, j: number) => (
-                <tr key={j} className={`border-t border-border/40 ${j % 2 === 1 ? "bg-muted/30" : ""}`}>
-                  <td className="border p-2 align-top">
-                    <Input className="h-9 text-sm w-full px-2"
+        {/* Mini per-unit service report cards (replaces wide horizontal table) */}
+        <div className="space-y-3">
+          {unitDetails.map((unit: any, j: number) => {
+            const isFollowUp = unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+            return (
+              <div
+                key={j}
+                className={`rounded-lg border-2 bg-card shadow-sm p-3.5 ${
+                  isFollowUp ? "border-orange-300 bg-orange-50/30" : "border-border"
+                }`}
+              >
+                {/* Card header: Unit # + status pill */}
+                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border/60">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Unit</span>
+                    <Input
+                      className="h-9 text-base font-bold w-24 px-2"
                       defaultValue={unit.unit_number || ""}
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer"
+                  </div>
+                  <select
+                    className={`h-9 text-sm bg-background border border-input rounded-md px-2.5 cursor-pointer font-medium ${isFollowUp ? "text-orange-600" : ""}`}
+                    defaultValue={unit.status || "Treated - Complete"}
+                    onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
+                  >
+                    {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                {/* Card body — 2-column grid for roomy fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
+                    <select
+                      className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
                       value={unit.target_pest || ""}
                       onChange={e => updateUnitField(s.id, j, "target_pest", e.target.value)}
                     >
                       <option value="">—</option>
                       {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
-                  </td>
-                  <td className="border p-2 align-top">
-                    <Textarea className="text-sm w-full px-2 py-1.5 min-h-[3.5rem] leading-snug whitespace-normal"
-                      defaultValue={unit.findings || ""}
-                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
-                    />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer"
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
+                    <select
+                      className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
                       value={unit.pest_activity || "None"}
                       onChange={e => updateUnitField(s.id, j, "pest_activity", e.target.value)}
                     >
                       {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                  </td>
-                  <td className="border p-2 align-top">
-                    <UnitProductPicker
-                      value={unit.products_used || ""}
-                      onChange={(next) => updateUnitField(s.id, j, "products_used", next)}
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Findings / Notes (visible to customer)</Label>
+                    <Textarea
+                      className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal mt-1"
+                      defaultValue={unit.findings || ""}
+                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className={`h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer ${(unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up") ? "text-orange-600 font-semibold" : ""}`}
-                      defaultValue={unit.status || "Treated - Complete"}
-                      onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
-                    >
-                      {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </td>
-                  <td className="border p-2 align-top">
-                    <Textarea className="text-sm w-full px-2 py-1.5 min-h-[3.5rem] leading-snug whitespace-normal"
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
+                    <div className="mt-1">
+                      <UnitProductPicker
+                        value={unit.products_used || ""}
+                        onChange={(next) => updateUnitField(s.id, j, "products_used", next)}
+                      />
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
+                    <Textarea
+                      className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug whitespace-normal mt-1"
                       defaultValue={unit.notes || ""}
                       onBlur={e => { if (e.target.value !== (unit.notes || "")) updateUnitField(s.id, j, "notes", e.target.value); }}
                     />
-                  </td>
-                </tr>
-              ))}
-              {/* Inline add row */}
-              {addingUnitToService === s.id && (
-                <tr className="border-t border-primary/30 bg-primary/5">
-                  <td className="border p-2 align-top">
-                    <Input className="h-9 text-sm w-full px-2" placeholder="#" value={newUnitData.unit_number}
-                      onChange={e => setNewUnitData(d => ({ ...d, unit_number: e.target.value }))} />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2"
-                      value={(newUnitData as any).target_pest || ""}
-                      onChange={e => setNewUnitData(d => ({ ...d, target_pest: e.target.value } as any))}
-                    >
-                      <option value="">—</option>
-                      {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </td>
-                  <td className="border p-2 align-top">
-                    <Textarea className="text-sm w-full px-2 py-1.5 min-h-[3.5rem] leading-snug" placeholder="Findings" value={newUnitData.findings}
-                      onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))} />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2"
-                      value={newUnitData.pest_activity || "None"}
-                      onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}
-                    >
-                      {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </td>
-                  <td className="border p-2 align-top">
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Inline add-unit card */}
+          {addingUnitToService === s.id && (
+            <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3.5">
+              <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-primary/30">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">New Unit</span>
+                  <Input className="h-9 text-base font-bold w-24 px-2" placeholder="#"
+                    value={newUnitData.unit_number}
+                    onChange={e => setNewUnitData(d => ({ ...d, unit_number: e.target.value }))}
+                  />
+                </div>
+                <select className="h-9 text-sm bg-background border border-input rounded-md px-2.5"
+                  value={newUnitData.status || "Treated - Complete"}
+                  onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
+                >
+                  {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
+                  <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 mt-1"
+                    value={(newUnitData as any).target_pest || ""}
+                    onChange={e => setNewUnitData(d => ({ ...d, target_pest: e.target.value } as any))}
+                  >
+                    <option value="">—</option>
+                    {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
+                  <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 mt-1"
+                    value={newUnitData.pest_activity || "None"}
+                    onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}
+                  >
+                    {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Findings / Notes</Label>
+                  <Textarea className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug mt-1" placeholder="What was found / what was treated…"
+                    value={newUnitData.findings}
+                    onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
+                  <div className="mt-1">
                     <UnitProductPicker
                       value={newUnitData.products_used}
                       onChange={(next) => setNewUnitData(d => ({ ...d, products_used: next }))}
                     />
-                  </td>
-                  <td className="border p-2 align-top">
-                    <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2"
-                      value={newUnitData.status || "Treated - Complete"}
-                      onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
-                    >
-                      {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                  </td>
-                  <td className="border p-2 align-top">
-                    <div className="flex flex-col gap-1">
-                      <Textarea className="text-sm w-full px-2 py-1.5 min-h-[2.5rem] leading-snug" placeholder="Notes" value={newUnitData.notes}
-                        onChange={e => setNewUnitData(d => ({ ...d, notes: e.target.value }))} />
-                      <div className="flex gap-1">
-                        <Button size="sm" className="h-7 text-xs px-2 flex-1" onClick={() => addUnitToService(s.id)} disabled={!newUnitData.unit_number}>Save</Button>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setAddingUnitToService(null)}>Cancel</Button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes</Label>
+                  <Textarea className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug mt-1" placeholder="Admin-only notes…"
+                    value={newUnitData.notes}
+                    onChange={e => setNewUnitData(d => ({ ...d, notes: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <Button size="sm" className="flex-1" onClick={() => addUnitToService(s.id)} disabled={!newUnitData.unit_number}>Save Unit</Button>
+                <Button variant="ghost" size="sm" onClick={() => setAddingUnitToService(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </div>
         {/* Quick add row if not already adding */}
         {addingUnitToService !== s.id && (

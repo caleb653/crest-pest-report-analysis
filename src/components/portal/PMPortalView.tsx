@@ -567,23 +567,63 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         )}
         {unitDetails.length > 0 && (
           <div>
-            <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Units Treated</p>
-            <div className="space-y-1.5">
-              {unitDetails.map((u: any, i: number) => (
-                <div key={i} className="bg-muted/40 rounded-md p-2">
-                  <p className="font-medium">Unit {u.unit_number || "—"}</p>
-                  {u.findings && <p className="text-muted-foreground mt-0.5">Findings: {u.findings}</p>}
-                  {u.target_pest && <p className="text-muted-foreground">Target Pest: {u.target_pest}</p>}
-                  {u.products_used && (
-                    <p className="text-muted-foreground">
-                      Products: {Array.isArray(u.products_used)
-                        ? (u.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
-                        : u.products_used}
-                    </p>
-                  )}
-                  {u.notes && <p className="text-muted-foreground">Notes: {u.notes}</p>}
-                </div>
-              ))}
+            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Units Treated ({unitDetails.length})</p>
+            <div className="space-y-3">
+              {unitDetails.map((u: any, i: number) => {
+                const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
+                const productsText = Array.isArray(u.products_used)
+                  ? (u.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
+                  : u.products_used;
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-lg border-2 p-3.5 bg-card shadow-sm ${
+                      isFollowUp ? "border-orange-300 bg-orange-50/40" : "border-border"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-border/60 flex-wrap">
+                      <span className="text-sm font-bold">Unit {u.unit_number || "—"}</span>
+                      {u.status && (
+                        <Badge variant="outline" className={`text-[10px] ${isFollowUp ? "border-orange-300 text-orange-700 bg-orange-50" : ""}`}>
+                          {u.status}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                      {u.target_pest && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
+                          <p>{u.target_pest}</p>
+                        </div>
+                      )}
+                      {u.pest_activity && u.pest_activity !== "None" && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Activity Level</p>
+                          <p>{u.pest_activity}</p>
+                        </div>
+                      )}
+                      {u.findings && (
+                        <div className="md:col-span-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Findings</p>
+                          <p className="whitespace-pre-wrap leading-relaxed">{u.findings}</p>
+                        </div>
+                      )}
+                      {productsText && (
+                        <div className="md:col-span-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Products</p>
+                          <p className="whitespace-pre-wrap">{productsText}</p>
+                        </div>
+                      )}
+                      {u.notes && (
+                        <div className="md:col-span-2">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Notes</p>
+                          <p className="whitespace-pre-wrap leading-relaxed">{u.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
