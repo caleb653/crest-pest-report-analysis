@@ -144,9 +144,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [submitting, setSubmitting] = useState(false);
   const [unitNumber, setUnitNumber] = useState("");
   const [pestType, setPestType] = useState("");
-  const [locationType, setLocationType] = useState("Interior");
+  const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
-  const [preferredDateChoice, setPreferredDateChoice] = useState<"next" | "few-weeks" | "other">("next");
+  const [preferredDateChoice, setPreferredDateChoice] = useState<"" | "next" | "few-weeks" | "other">("");
   const [preferredDateCustom, setPreferredDateCustom] = useState("");
   const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
   const [emailTenant, setEmailTenant] = useState(false);
@@ -225,6 +225,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // Save the human-friendly label exactly as chosen on the form so the PM
     // (and admin) sees the same wording back ("Next service", "Next few weeks",
     // or whatever they typed) instead of a computed calendar date.
+    if (preferredDateChoice === "") return null;
     if (preferredDateChoice === "next") return "Next service";
     if (preferredDateChoice === "few-weeks") return "Next few weeks";
     return preferredDateCustom.trim() || null;
@@ -243,9 +244,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       property_id: propertyId,
       unit_number: canonical,
       request_type: "Service Request",
-      description: `${pestType} - ${locationType}${description ? ` - ${description}` : ""}`,
+      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
-      location_type: locationType,
+      location_type: locationType || null,
       preferred_date: computePreferredDate(),
       occupancy_status: occupancyStatus || null,
       tenant_email: emailTenant ? tenantEmail.trim() || null : null,
