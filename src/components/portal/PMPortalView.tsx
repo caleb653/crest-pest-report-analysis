@@ -573,7 +573,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         )}
         {unitDetails.length > 0 && (
           <div>
-            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Units Treated ({unitDetails.length})</p>
+            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Areas Treated ({unitDetails.length})</p>
             <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
                 const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
@@ -597,7 +597,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         }`}>
                           {i + 1}
                         </div>
-                        <span className="text-base font-bold">Unit {u.unit_number || "—"}</span>
+                        <span className="text-base font-bold">{u.unit_number || "—"}</span>
                       </div>
                       {u.status && (
                         <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-400 text-orange-700 bg-orange-50" : "border-primary/40 bg-background"}`}>
