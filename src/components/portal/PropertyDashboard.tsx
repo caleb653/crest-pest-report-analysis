@@ -397,12 +397,13 @@ const PropertyDashboard = ({
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
-  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly";
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "quarterly";
   const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
     "weekly": 7,
     "bi-weekly": 14,
     "monthly": 30,
     "bi-monthly": 60,
+    "quarterly": 90,
   };
   const propertyFrequency: FrequencyKey =
     ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
