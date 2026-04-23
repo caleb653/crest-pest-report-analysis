@@ -22,6 +22,7 @@ import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 
 const PEST_TYPES = [
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
@@ -560,9 +561,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
         {summaryCombined && (
-          <div>
-            <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Summary</p>
-            <p className="whitespace-pre-wrap">{summaryCombined}</p>
+          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ClipboardList className="w-3.5 h-3.5 text-primary" />
+              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
+                Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+              </p>
+            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
         {unitDetails.length > 0 && (
@@ -620,6 +626,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           <p className="whitespace-pre-wrap leading-relaxed">{u.notes}</p>
                         </div>
                       )}
+                    </div>
+                    {/* Per-unit comment thread (PM ↔ Crest) */}
+                    <div className="mt-3 pt-3 border-t border-border/40">
+                      <ServiceComments
+                        serviceId={s.id}
+                        unitIndex={i}
+                        unitDetails={unitDetails}
+                        comments={Array.isArray(u.comments) ? (u.comments as ServiceComment[]) : []}
+                        sender="pm"
+                        compact
+                        onChange={loadAll}
+                      />
                     </div>
                   </div>
                 );
@@ -686,6 +704,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-orange-800 whitespace-pre-wrap">{s.follow_up_notes}</p>
           </div>
         )}
+        {/* Service-level comment thread (PM ↔ Crest) */}
+        <div className="pt-2 border-t border-border/40">
+          <ServiceComments
+            serviceId={s.id}
+            reportData={(s as any).report_data}
+            comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
+            sender="pm"
+            onChange={loadAll}
+          />
+        </div>
       </div>
     );
   };

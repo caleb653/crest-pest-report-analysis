@@ -26,6 +26,7 @@ import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 
 // ─── Types ───
 interface PortalProperty {
@@ -924,6 +925,19 @@ const PropertyDashboard = ({
                     />
                   </div>
                 </div>
+                {/* Per-unit comment thread (Crest ↔ PM) */}
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <ServiceComments
+                    serviceId={s.id}
+                    unitIndex={j}
+                    unitDetails={unitDetails}
+                    comments={Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : []}
+                    sender="crest"
+                    defaultAuthor={s.technician || ""}
+                    compact
+                    onChange={onRefresh}
+                  />
+                </div>
               </div>
             );
           })}
@@ -1076,9 +1090,16 @@ const PropertyDashboard = ({
         })()}
 
         {(s.summary || s.findings || s.notes) && (
-          <div className="bg-muted/30 rounded-lg p-3 border border-border/40">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
-            <p className="text-xs whitespace-pre-wrap">{[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}</p>
+          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ClipboardList className="w-3.5 h-3.5 text-primary" />
+              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
+                Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+              </p>
+            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+              {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+            </p>
           </div>
         )}
 
@@ -1139,6 +1160,20 @@ const PropertyDashboard = ({
             <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
               <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
+          </div>
+        )}
+
+        {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
+        {!isProjected && (
+          <div className="pt-2 border-t border-border/40">
+            <ServiceComments
+              serviceId={s.id}
+              reportData={(s as any).report_data}
+              comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
+              sender="crest"
+              defaultAuthor={s.technician || ""}
+              onChange={onRefresh}
+            />
           </div>
         )}
 
