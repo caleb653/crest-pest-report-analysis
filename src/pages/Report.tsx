@@ -625,7 +625,19 @@ const Report = () => {
     name: string;
     quantity: string;
   }
-  const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
+  const SETUP_MATERIAL_PRESETS = [
+    "Bait Boxes",
+    "Mosquito Stations",
+    "Tin Cats",
+    "Snap Traps",
+    "Steel Wool",
+    "Chicken Wire",
+    "Vacuum",
+    "Sanitation Spray",
+    "Fly Lights",
+    "Door Sweep",
+    "Drill",
+  ];
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
   const [limitationsText, setLimitationsText] = useState("");
   const [newMaterialName, setNewMaterialName] = useState("");
