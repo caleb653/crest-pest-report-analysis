@@ -3103,6 +3103,11 @@ Crest Pest Control`;
             </p>
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
           </div>
+          {proposals.some((p) => p.services.some((s) => s.frequency === 28)) && (
+            <p className="text-[11px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug">
+              * Coming in 4-week cycles allows us to have the most consistent scheduling, and in turn the best quality service.
+            </p>
+          )}
         </div>
       </div>
 
