@@ -2100,7 +2100,7 @@ const PropertyDashboard = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
-                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                           <Badge variant="default" className="text-[10px]">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
                         </div>
