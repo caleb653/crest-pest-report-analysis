@@ -1014,11 +1014,38 @@ const PropertyDashboard = ({
                   />
                 </div>
                 <select className="h-9 text-sm bg-background border border-input rounded-md px-2.5"
-                  value={newUnitData.status || "Treated - Complete"}
+                  value={newUnitData.status || (((newUnitData as any).kind === "inspection") ? "Free and Clear" : "Complete")}
                   onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
                 >
-                  {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                  {(((newUnitData as any).kind === "inspection")
+                    ? ["Free and Clear", "Activity Found"]
+                    : ["Complete", "Needs Follow Up", "Not Serviced"]
+                  ).map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
+              </div>
+              {/* Service / Inspection toggle for the new area */}
+              <div className="mb-3">
+                <div className="inline-flex rounded-lg border-2 border-border bg-muted/40 p-0.5">
+                  {(["service", "inspection"] as const).map(k => {
+                    const active = ((newUnitData as any).kind || "service") === k;
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setNewUnitData(d => ({
+                          ...d,
+                          kind: k,
+                          status: k === "inspection" ? "Free and Clear" : "Complete",
+                        } as any))}
+                        className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                          active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {k === "service" ? "Service" : "Inspection"}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
