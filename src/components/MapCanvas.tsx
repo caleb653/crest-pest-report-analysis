@@ -434,8 +434,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         // Start drawing a line
         lineStartRef.current = { x: pt.x, y: pt.y };
         const tempLine = new Line([pt.x, pt.y, pt.x, pt.y], {
-          stroke: '#DC2626',
-          strokeWidth: 5,
+          stroke: lineColorRef.current,
+          strokeWidth: lineWidthRef.current,
           selectable: false,
           evented: false,
         });
@@ -468,8 +468,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           
           // Create final line (selectable)
           const finalLine = new Line([lineStartRef.current.x, lineStartRef.current.y, pt.x, pt.y], {
-            stroke: '#DC2626',
-            strokeWidth: 5,
+            stroke: lineColorRef.current,
+            strokeWidth: lineWidthRef.current,
             selectable: true,
             hasControls: true,
             hasBorders: true,
