@@ -1451,65 +1451,99 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                   </span>
                                 )}
                               </p>
-                              <div className="space-y-2">
-                                {unitContexts.map((uc) => {
+                              <div className="space-y-6">
+                                {unitContexts.map((uc, idx) => {
                                   const isWO = uc.source === "work_order";
                                   const isFU = uc.source === "follow_up";
-                                  const sourceBadge = isWO
-                                    ? { label: "New Work Order", cls: "bg-orange-100 text-orange-900 border-orange-500" }
+                                  const sourceLabel = isWO
+                                    ? "Work Order"
                                     : isFU
-                                      ? { label: "Follow-up", cls: "bg-amber-100 text-amber-900 border-amber-500" }
+                                      ? "Follow-up"
                                       : uc.source === "carried"
-                                        ? { label: "Carried from last", cls: "bg-muted text-muted-foreground border-border" }
-                                        : { label: "Planned", cls: "bg-secondary/20 text-secondary-foreground border-secondary/40" };
-
+                                        ? "Carried"
+                                        : "Planned";
                                   return (
                                     <div
                                       key={uc.unit_number}
-                                      className={`rounded-lg border-2 p-3.5 ${
-                                        isWO
-                                          ? "border-orange-200 bg-orange-50/50"
-                                          : isFU
-                                            ? "border-amber-400 bg-amber-50/50"
-                                            : "border-border bg-muted/30"
+                                      className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
+                                        isFU
+                                          ? "border-orange-500"
+                                          : isWO
+                                            ? "border-primary/70"
+                                            : "border-primary/60"
                                       }`}
                                     >
-                                      <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
-                                        <span className="text-base font-bold">Unit {uc.unit_number}</span>
-                                        <Badge variant="outline" className={`text-[10px] py-0.5 px-2 font-semibold ${sourceBadge.cls}`}>
-                                          {sourceBadge.label}
-                                        </Badge>
-                                        {uc.target_pest && (
-                                          <Badge variant="secondary" className="text-[10px] py-0.5 px-2">
-                                            <Bug className="w-3 h-3 mr-1" />{uc.target_pest}
+                                      {/* Bold colored header bar — matches admin upcoming card */}
+                                      <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
+                                        isFU
+                                          ? "bg-orange-100 border-b-2 border-orange-500"
+                                          : isWO
+                                            ? "bg-primary/10 border-b-2 border-primary/60"
+                                            : "bg-muted/40 border-b-2 border-border"
+                                      }`}>
+                                        <div className="flex items-center gap-3 flex-wrap">
+                                          <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                                            isFU ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                                          }`}>
+                                            {idx + 1}
+                                          </div>
+                                          <span className="text-lg font-bold">{uc.unit_number}</span>
+                                          <span className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                                            isWO
+                                              ? "text-primary bg-background border-primary/60"
+                                              : isFU
+                                                ? "text-orange-700 bg-background border-orange-500"
+                                                : "text-muted-foreground bg-background border-border"
+                                          }`}>
+                                            {sourceLabel}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
+                                            To Be Treated
                                           </Badge>
+                                        </div>
+                                      </div>
+                                      {/* Card body — 2-column grid mirroring admin upcoming */}
+                                      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                                        <div>
+                                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Source</p>
+                                          <p className="text-sm font-medium">{sourceLabel}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
+                                          <p className="text-sm font-medium">{uc.target_pest || "—"}</p>
+                                        </div>
+                                        {isFU && uc.follow_up?.pest_activity && uc.follow_up.pest_activity !== "None" && (
+                                          <div>
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Last Activity Level</p>
+                                            <p className="text-sm font-medium">{uc.follow_up.pest_activity}</p>
+                                          </div>
                                         )}
                                         {isWO && uc.request?.location_type && (
-                                          <Badge variant="outline" className="text-[10px] py-0.5 px-2">
-                                            {uc.request.location_type}
-                                          </Badge>
+                                          <div>
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Location</p>
+                                            <p className="text-sm font-medium">{uc.request.location_type}</p>
+                                          </div>
+                                        )}
+                                        {isWO && uc.request?.preferred_date && (
+                                          <div>
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Preferred Date</p>
+                                            <p className="text-sm font-medium">{uc.request.preferred_date}</p>
+                                          </div>
+                                        )}
+                                        {(uc.findings || uc.notes) && (
+                                          <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3 mt-1">
+                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                              <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                                              <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Findings / Context</p>
+                                            </div>
+                                            <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                              {[uc.findings, !isWO ? uc.notes : null].filter(Boolean).join("\n\n")}
+                                            </p>
+                                          </div>
                                         )}
                                       </div>
-                                      {uc.findings && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          <span className="font-semibold text-foreground/80">Findings:</span> {uc.findings}
-                                        </p>
-                                      )}
-                                      {isWO && uc.request?.preferred_date && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          <span className="font-semibold text-foreground/80">Preferred date:</span> {uc.request.preferred_date}
-                                        </p>
-                                      )}
-                                      {isFU && uc.follow_up?.pest_activity && uc.follow_up.pest_activity !== "None" && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          <span className="font-semibold text-foreground/80">Last activity level:</span> {uc.follow_up.pest_activity}
-                                        </p>
-                                      )}
-                                      {uc.notes && !isWO && (
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          <span className="font-semibold text-foreground/80">Notes:</span> {uc.notes}
-                                        </p>
-                                      )}
                                     </div>
                                   );
                                 })}
