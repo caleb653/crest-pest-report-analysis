@@ -983,6 +983,16 @@ const PropertyDashboard = ({
                       defaultValue={unit.unit_number || ""}
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                      isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
+                    }`}>
+                      {isInspection ? "Inspection" : "Service"}
+                    </span>
+                    {unit.target_pest && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                        {unit.target_pest}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <select
@@ -1599,6 +1609,11 @@ const PropertyDashboard = ({
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
+                              {row.target_pest && (
+                                <span className="text-xs font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                                  {row.target_pest}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
@@ -1630,18 +1645,6 @@ const PropertyDashboard = ({
                           {/* Card body — 2-column roomy grid */}
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
-                              <Select value={row.source || "new-work-order"} onValueChange={(v) => updateRow(idx, "source", v)}>
-                                <SelectTrigger className="h-9 text-sm mt-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="new-work-order">New Work Order</SelectItem>
-                                  <SelectItem value="follow-up">Follow-up</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
                             <div>
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                               <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>

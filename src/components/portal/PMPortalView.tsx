@@ -624,6 +624,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           }`}>
                             {isInspection ? "Inspection" : "Service"}
                           </span>
+                          {u.target_pest && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                              {u.target_pest}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1525,6 +1530,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                           }`}>
                                             {sourceLabel}
                                           </span>
+                                          {uc.target_pest && (
+                                            <span className="text-xs font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                                              {uc.target_pest}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                           <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
@@ -1536,10 +1546,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       {/* Card body — 2-column grid mirroring admin upcoming */}
                                       {isUcOpen && (
                                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                                        <div>
-                                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Source</p>
-                                          <p className="text-sm font-medium">{sourceLabel}</p>
-                                        </div>
                                         <div>
                                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
                                           <p className="text-sm font-medium">{uc.target_pest || "—"}</p>
