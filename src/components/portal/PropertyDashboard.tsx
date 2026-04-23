@@ -540,7 +540,7 @@ const PropertyDashboard = ({
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
     details.push({ ...newUnitData });
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
-    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
+    setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
     onRefresh();
