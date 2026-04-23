@@ -956,8 +956,8 @@ const PropertyDashboard = ({
             <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3.5">
               <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-primary/30">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">New Unit</span>
-                  <Input className="h-9 text-base font-bold w-24 px-2" placeholder="#"
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">New Area</span>
+                  <Input className="h-9 text-base font-bold w-40 px-2" placeholder="Area / Unit / Room"
                     value={newUnitData.unit_number}
                     onChange={e => setNewUnitData(d => ({ ...d, unit_number: e.target.value }))}
                   />
