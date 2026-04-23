@@ -2604,6 +2604,56 @@ const PropertyDashboard = ({
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-primary" />Survey Questions Preview
+                <Badge variant="secondary" className="ml-1 text-[11px]">{DEFAULT_PEST_SURVEY_QUESTIONS.length} questions</Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">This is exactly what tenants will see.</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion, idx) => (
+                  <div key={q.id} className="border rounded-md p-3 bg-muted/30">
+                    <p className="text-sm font-semibold mb-2">
+                      <span className="text-muted-foreground mr-1">{idx + 1}.</span>{q.label}
+                    </p>
+                    {q.type === "rating" && (
+                      <div className="space-y-1">
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} className="w-9 h-9 rounded border bg-background flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                              {n}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between text-[10px] text-muted-foreground max-w-[230px] px-0.5">
+                          <span>1 = Poor</span><span>5 = Excellent</span>
+                        </div>
+                      </div>
+                    )}
+                    {q.type === "text" && (
+                      <div className="border rounded bg-background h-14 text-[11px] text-muted-foreground italic px-2 py-1.5">
+                        Open-ended response…
+                      </div>
+                    )}
+                    {(q.type === "single" || q.type === "multi") && (
+                      <div className="space-y-1">
+                        {(q.options || []).map((opt) => (
+                          <div key={opt} className="flex items-center gap-2 text-xs">
+                            <div className={`w-3.5 h-3.5 border ${q.type === "single" ? "rounded-full" : "rounded-sm"} bg-background`} />
+                            <span>{opt}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses
                 <Badge variant="secondary" className="ml-1 text-[11px]">
                   {surveyResponses.filter((r) => r.submitted_at).length} submitted
