@@ -1628,11 +1628,18 @@ const PropertyDashboard = ({
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
-                              {row.target_pest && (
-                                <span className="text-xs font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
-                                  {row.target_pest}
-                                </span>
-                              )}
+                              {/* Target Pest (in-header) */}
+                              <div data-no-toggle onClick={(e) => e.stopPropagation()}>
+                                <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
+                                  <SelectTrigger className="h-9 text-xs font-semibold w-[160px] bg-background">
+                                    <SelectValue placeholder="Target Pest…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">— None —</SelectItem>
+                                    {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
@@ -1660,18 +1667,6 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
-                              <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
-                                <SelectTrigger className="h-9 text-sm mt-1">
-                                  <SelectValue placeholder="Select pest" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__none__">— None —</SelectItem>
-                                  {PEST_TYPES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </div>
                             <div className="md:col-span-2">
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Findings / Context (visible to customer)</Label>
                               <Textarea
