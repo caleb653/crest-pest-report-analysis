@@ -317,9 +317,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         FabricImage.fromURL(svgPath).then((img) => {
           // Create number badge
           const badgeSize = 14;
+          const badgeColor = getBadgeColorForIconType(currentIcon);
           const badge = new FabricCircle({
             radius: badgeSize / 2,
-            fill: '#DC2626',
+            fill: badgeColor,
             originX: 'center',
             originY: 'center',
             left: (img.width || 32) / 2 + 8,
