@@ -1560,6 +1560,8 @@ const PropertyDashboard = ({
                     {cd.unitRows.map((row: any, idx: number) => {
                       const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
                       const isWorkOrder = row.source === "new-work-order";
+                      const unitKey = `pd-up:${s.id}:${idx}`;
+                      const isUnitOpen = expandedUnitKeys.has(unitKey);
                       return (
                         <div
                           key={idx}
@@ -1578,7 +1580,7 @@ const PropertyDashboard = ({
                               : isWorkOrder
                                 ? "bg-primary/10 border-b-2 border-primary/60"
                                 : "bg-muted/40 border-b-2 border-border"
-                          }`}>
+                          } ${isUnitOpen ? "" : "border-b-0"}`}>
                             <div className="flex items-center gap-3 flex-wrap">
                               <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                                 isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -1614,9 +1616,19 @@ const PropertyDashboard = ({
                               >
                                 <X className="w-4 h-4" />
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleUnitKey(unitKey)}
+                                aria-expanded={isUnitOpen}
+                                aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
+                                className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
+                              >
+                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                              </button>
                             </div>
                           </div>
                           {/* Card body — 2-column roomy grid */}
+                          {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
