@@ -627,6 +627,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         </div>
                       )}
                     </div>
+                    {/* Per-unit comment thread (PM ↔ Crest) */}
+                    <div className="mt-3 pt-3 border-t border-border/40">
+                      <ServiceComments
+                        serviceId={s.id}
+                        unitIndex={i}
+                        unitDetails={unitDetails}
+                        comments={Array.isArray(u.comments) ? (u.comments as ServiceComment[]) : []}
+                        sender="pm"
+                        compact
+                        onChange={loadAll}
+                      />
+                    </div>
                   </div>
                 );
               })}
