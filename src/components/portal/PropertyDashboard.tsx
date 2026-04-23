@@ -156,7 +156,13 @@ const PropertyDashboard = ({
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
-  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" as "treatment" | "inspection" });
+  const [workOrder, setWorkOrder] = useState({
+    unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "",
+    request_type: "treatment" as "treatment" | "inspection",
+    occupancy_status: "" as "" | "Occupied" | "Vacant",
+    email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+  });
+  const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("map");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
@@ -180,6 +186,15 @@ const PropertyDashboard = ({
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
+
+  // Survey state — mirrors PMPortalView so admin has full survey workflow
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
+  const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
+  const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
+  const [surveyEmails, setSurveyEmails] = useState("");
+  const [sendingSurvey, setSendingSurvey] = useState(false);
+  const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
