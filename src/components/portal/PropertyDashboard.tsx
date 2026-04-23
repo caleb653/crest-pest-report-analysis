@@ -1636,18 +1636,6 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
-                              <Select value={row.source || "new-work-order"} onValueChange={(v) => updateRow(idx, "source", v)}>
-                                <SelectTrigger className="h-9 text-sm mt-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="new-work-order">New Work Order</SelectItem>
-                                  <SelectItem value="follow-up">Follow-up</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                               <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
                                 <SelectTrigger className="h-9 text-sm mt-1">
