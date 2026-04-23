@@ -518,7 +518,7 @@ const PropertyDashboard = ({
   })();
 
   // ─── Inline unit editing for past services ───
-  const updateUnitField = async (serviceId: string, unitIndex: number, field: string, value: string) => {
+  const updateUnitField = async (serviceId: string, unitIndex: number, field: string, value: any) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
