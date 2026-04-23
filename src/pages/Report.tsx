@@ -2920,7 +2920,7 @@ Crest Pest Control`;
           </div>
           {services.some((s) => s.frequency === 28) && (
             <p className="text-[10px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug">
-              * Coming in 4-week cycles allows us to have the most consistent scheduling, and in turn the best quality service.
+              * Commercial accounts run on four-week cycles for consistent scheduling (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
             </p>
           )}
         </div>
