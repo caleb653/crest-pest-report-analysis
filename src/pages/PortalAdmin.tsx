@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PropertyDashboard from "@/components/portal/PropertyDashboard";
-import PMPortalView from "@/components/portal/PMPortalView";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox, Check, Eye, EyeOff, Wrench } from "lucide-react";
+import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, ClipboardList, FileText, MessageSquare, ChevronRight, Calendar, Phone, Mail, Download, Settings, Send, Edit, Image, X, Users, Inbox, Check, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -86,11 +85,8 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
-  // Unified admin view: always render the full PMPortalView (with all 6 tabs).
-  // Admin-only editing tools (PropertyDashboard) are accessible via an
-  // overlay dialog so power-editing of services/equipment is preserved
-  // without splitting the experience into two separate views.
-  const [showAdminTools, setShowAdminTools] = useState(false);
+  // Unified admin view: render the editable PropertyDashboard directly so
+  // admins can edit services in place without an extra overlay step.
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
@@ -792,10 +788,6 @@ const PortalAdmin = () => {
               </Button>
             </>
           )}
-          <Button variant="secondary" size="sm" className="h-7 px-2"
-            onClick={() => setShowAdminTools(true)}>
-            <Wrench className="w-3.5 h-3.5 mr-1" />Service Editor
-          </Button>
         </div>
       </div>
 
@@ -820,47 +812,23 @@ const PortalAdmin = () => {
 
       {/* Main content */}
       <div className="max-w-[1600px] mx-auto px-4 py-4">
-        {propLinks[0] ? (
-          <div className="bg-background rounded-lg overflow-hidden">
-            <PMPortalView propertyId={selectedProperty.id} linkId={propLinks[0].id} embedded />
-          </div>
-        ) : (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Setting up PM portal link…
-          </div>
-        )}
+        <PropertyDashboard
+          property={selectedProperty}
+          services={propServices}
+          links={propLinks}
+          clientName={client?.company || client?.name || ""}
+          clientId={selectedProperty.client_id}
+          onRefresh={loadAll}
+          onOpenServiceReport={openServiceReport}
+          onEditService={(s) => openServiceDialog(s)}
+          onDeleteService={deleteService}
+          onUpdatePropertyImage={updatePropertyImage}
+          uploadingPropertyImage={uploadingPropertyImage}
+          onCopyLink={copyLink}
+          onOpenPortal={openPortal}
+          onAddUpcomingService={() => createAndOpenReport("scheduled")}
+        />
       </div>
-
-      {/* Service Editor — full PropertyDashboard in an overlay so power-edit
-          tools (inline unit editing, equipment, service notes, etc.) remain
-          accessible from the unified admin view. */}
-      <Dialog open={showAdminTools} onOpenChange={setShowAdminTools}>
-        <DialogContent className="max-w-[1500px] w-[97vw] max-h-[92vh] overflow-y-auto p-0">
-          <DialogHeader className="px-5 pt-4 pb-2 border-b sticky top-0 bg-background z-10">
-            <DialogTitle className="flex items-center gap-2">
-              <Wrench className="w-4 h-4" /> Service Editor — {selectedProperty.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="px-4 py-4">
-            <PropertyDashboard
-              property={selectedProperty}
-              services={propServices}
-              links={propLinks}
-              clientName={client?.company || client?.name || ""}
-              clientId={selectedProperty.client_id}
-              onRefresh={loadAll}
-              onOpenServiceReport={openServiceReport}
-              onEditService={(s) => openServiceDialog(s)}
-              onDeleteService={deleteService}
-              onUpdatePropertyImage={updatePropertyImage}
-              uploadingPropertyImage={uploadingPropertyImage}
-              onCopyLink={copyLink}
-              onOpenPortal={openPortal}
-              onAddUpcomingService={() => createAndOpenReport("scheduled")}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Service Detail Modal */}
       <Dialog open={!!selectedService} onOpenChange={() => setSelectedService(null)}>
