@@ -614,7 +614,13 @@ const PropertyDashboard = ({
 
   const completeService = async (serviceId: string) => {
     const data = completionData[serviceId];
-    const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
+    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
+      ...r,
+      // Persist any per-unit photos uploaded during completion (strip uploading flags)
+      photos: Array.isArray(r.photos)
+        ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+        : undefined,
+    }));
     const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
