@@ -155,6 +155,15 @@ const PropertyDashboard = ({
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
+  // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
+  const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
+  const toggleUnitKey = (key: string) =>
+    setExpandedUnitKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
   const [workOrder, setWorkOrder] = useState({
@@ -949,6 +958,8 @@ const PropertyDashboard = ({
             const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
               || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
             const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
+            const unitKey = `pd-past:${s.id}:${j}`;
+            const isUnitOpen = expandedUnitKeys.has(unitKey);
             return (
               <div
                 key={j}
@@ -959,7 +970,7 @@ const PropertyDashboard = ({
                 {/* Bold colored header bar — makes each unit obviously distinct */}
                 <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
                   isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
-                }`}>
+                } ${isUnitOpen ? "" : "border-b-0"}`}>
                   <div className="flex items-center gap-3">
                     <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                       isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -973,16 +984,28 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
                   </div>
-                  <select
-                    className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
-                      isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
-                    }`}
-                    value={unit.status || defaultStatusFor(kind)}
-                    onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
-                  >
-                    {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
+                        isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
+                      }`}
+                      value={unit.status || defaultStatusFor(kind)}
+                      onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
+                    >
+                      {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => toggleUnitKey(unitKey)}
+                      aria-expanded={isUnitOpen}
+                      aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
+                      className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
+                    >
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
                 </div>
+                {isUnitOpen && (<>
                 {/* Service / Inspection toggle */}
                 <div className="px-4 pt-3 -mb-1">
                   <div className="inline-flex rounded-lg border-2 border-border bg-muted/40 p-0.5">
@@ -1141,6 +1164,7 @@ const PropertyDashboard = ({
                     />
                   </div>
                 </div>
+                </>)}
               </div>
             );
           })}
@@ -1536,6 +1560,8 @@ const PropertyDashboard = ({
                     {cd.unitRows.map((row: any, idx: number) => {
                       const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
                       const isWorkOrder = row.source === "new-work-order";
+                      const unitKey = `pd-up:${s.id}:${idx}`;
+                      const isUnitOpen = expandedUnitKeys.has(unitKey);
                       return (
                         <div
                           key={idx}
@@ -1554,7 +1580,7 @@ const PropertyDashboard = ({
                               : isWorkOrder
                                 ? "bg-primary/10 border-b-2 border-primary/60"
                                 : "bg-muted/40 border-b-2 border-border"
-                          }`}>
+                          } ${isUnitOpen ? "" : "border-b-0"}`}>
                             <div className="flex items-center gap-3 flex-wrap">
                               <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                                 isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -1590,9 +1616,19 @@ const PropertyDashboard = ({
                               >
                                 <X className="w-4 h-4" />
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleUnitKey(unitKey)}
+                                aria-expanded={isUnitOpen}
+                                aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
+                                className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
+                              >
+                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                              </button>
                             </div>
                           </div>
                           {/* Card body — 2-column roomy grid */}
+                          {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
@@ -1680,6 +1716,7 @@ const PropertyDashboard = ({
                               )}
                             </div>
                           </div>
+                          )}
                         </div>
                       );
                     })}
