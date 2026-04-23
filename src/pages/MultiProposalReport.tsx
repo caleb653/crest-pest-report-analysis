@@ -1548,6 +1548,7 @@ Crest Pest Control`;
           emailSubject,
           emailMessage,
           baseUrl: window.location.origin,
+          reportType: "multi-proposal",
           ...(pdfBase64 ? {
             pdfBase64,
             pdfFilename: `Crest_MultiProposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,

@@ -23,6 +23,7 @@ interface SendReportRequest {
   pdfBase64?: string;
   pdfFilename?: string;
   buttonText?: string;
+  reportType?: "sales" | "multi-proposal" | "initial";
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -44,6 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
       pdfBase64,
       pdfFilename,
       buttonText,
+      reportType,
     }: SendReportRequest = await req.json();
 
     if (!customerEmail) {
@@ -147,9 +149,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     const finalSubject = emailSubject || `Crest Pest Control: Service Proposal`;
 
+    // Route reply-to based on report type:
+    //  - Sales / Multi-Proposal -> sales@crestpestco.com
+    //  - Initial Pest Report    -> office@crestpestcontrol.com
+    const replyToAddress =
+      reportType === "initial"
+        ? "office@crestpestcontrol.com"
+        : reportType === "sales" || reportType === "multi-proposal"
+        ? "sales@crestpestco.com"
+        : "office@crestpestcontrol.com";
+
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
-      reply_to: "office@crestpestcontrol.com",
+      reply_to: replyToAddress,
       to: [customerEmail],
       ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: finalSubject,
