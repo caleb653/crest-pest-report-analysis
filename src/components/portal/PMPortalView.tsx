@@ -561,7 +561,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
         {summaryCombined && (
-          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+          <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
               <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
@@ -586,13 +586,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 return (
                   <div
                     key={i}
-                    className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
-                      isFollowUp ? "border-orange-400" : "border-primary/30"
+                    className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
+                      isFollowUp ? "border-orange-500" : "border-primary/60"
                     }`}
                   >
                     {/* Bold colored header bar */}
                     <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                      isFollowUp ? "bg-orange-100 border-b-2 border-orange-300" : "bg-primary/10 border-b-2 border-primary/30"
+                      isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
                     }`}>
                       <div className="flex items-center gap-3">
                         <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
@@ -603,14 +603,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-base font-bold">{u.unit_number || "—"}</span>
                           <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
-                            isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/40 text-primary"
+                            isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
                           }`}>
                             {isInspection ? "Inspection" : "Service"}
                           </span>
                         </div>
                       </div>
                       {u.status && (
-                        <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-400 text-orange-700 bg-orange-50" : "border-primary/40 bg-background"}`}>
+                        <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
                           {u.status}
                         </Badge>
                       )}
@@ -643,7 +643,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     </div>
                     {/* FINDINGS — its own visually distinct box */}
                     {u.findings && (
-                      <div className="mx-4 mb-4 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-3">
+                      <div className="mx-4 mb-4 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
                         <div className="flex items-center gap-1.5 mb-1.5">
                           <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
                           <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Technician Findings</p>
@@ -652,8 +652,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       </div>
                     )}
                     {/* Two separate comment boxes — Crest (read-only) + Property Manager (editable) */}
-                    <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-2.5">
+                    <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
                         <ServiceComments
                           serviceId={s.id}
                           unitIndex={i}
@@ -667,7 +667,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           onChange={loadAll}
                         />
                       </div>
-                      <div className="rounded-lg border-2 border-sky-300 bg-sky-50/60 p-2.5">
+                      <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
                         <ServiceComments
                           serviceId={s.id}
                           unitIndex={i}
@@ -704,7 +704,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   </thead>
                   <tbody>
                     {products.map((p, i) => (
-                      <tr key={i} className="border-t border-border/40">
+                      <tr key={i} className="border-t border-border">
                         <td className="px-2 py-1 font-medium">{p.name}</td>
                         <td className="px-2 py-1 text-muted-foreground">
                           {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
@@ -729,7 +729,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </div>
         )}
         {s.prep_required && s.prep_notes && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+          <div className="bg-amber-50 border border-amber-400 rounded-md p-2">
             <p className="font-semibold text-amber-900 mb-0.5">Prep Required</p>
             <p className="text-amber-800 whitespace-pre-wrap">{s.prep_notes}</p>
           </div>
@@ -747,7 +747,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </div>
         )}
         {/* Service-level comment thread (PM ↔ Crest) */}
-        <div className="pt-2 border-t border-border/40">
+        <div className="pt-2 border-t border-border">
           <ServiceComments
             serviceId={s.id}
             reportData={(s as any).report_data}
@@ -763,7 +763,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-5xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map and Plan</span>
@@ -892,7 +892,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 2: PAST SERVICES (read-only) ════════ */}
         <TabsContent value="past" className="mt-0">
           <div className="space-y-3 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between gap-3 pb-2.5 border-b-2 border-primary/40 flex-wrap">
+            <div className="flex items-center justify-between gap-3 pb-2.5 border-b-2 border-primary/70 flex-wrap">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-secondary" />Previous Services
                 <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
@@ -976,7 +976,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 className="rounded-lg border border-border bg-background p-3.5 shadow-sm"
                               >
                                 {/* Header row: service type + date */}
-                                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border/60">
+                                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border">
                                   <span className="font-semibold text-sm">{service.service_type}</span>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                                     {formatShortDate(service.service_date)}
@@ -1030,7 +1030,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 3: REQUEST WORK ORDER ════════ */}
         <TabsContent value="request" className="mt-0">
           <div className="max-w-2xl mx-auto space-y-4">
-            <Card className="border-primary/30 shadow-md">
+            <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
@@ -1227,7 +1227,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 4: UPCOMING (read-only) — bigger, richer per-unit detail ════════ */}
         <TabsContent value="upcoming" className="mt-0">
           <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="border-b-2 border-primary/40 pb-3">
+            <div className="border-b-2 border-primary/70 pb-3">
               <h3 className="text-xl font-bold flex items-center gap-2.5">
                 <ClipboardList className="w-7 h-7 text-secondary" />Upcoming Services
                 <Badge variant="secondary" className="text-sm ml-1">{upcomingServices.length}</Badge>
@@ -1303,7 +1303,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 <p className="text-3xl font-bold text-orange-700 leading-none">{woCount}</p>
                                 <p className="text-xs font-semibold text-orange-900 mt-1.5 uppercase tracking-wide">New Work Order{woCount === 1 ? "" : "s"}</p>
                               </div>
-                              <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-3 text-center">
+                              <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-3 text-center">
                                 <p className="text-3xl font-bold text-amber-700 leading-none">{fuCount}</p>
                                 <p className="text-xs font-semibold text-amber-900 mt-1.5 uppercase tracking-wide">Follow-up{fuCount === 1 ? "" : "s"}</p>
                               </div>
@@ -1353,9 +1353,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                   const isWO = uc.source === "work_order";
                                   const isFU = uc.source === "follow_up";
                                   const sourceBadge = isWO
-                                    ? { label: "New Work Order", cls: "bg-orange-100 text-orange-900 border-orange-300" }
+                                    ? { label: "New Work Order", cls: "bg-orange-100 text-orange-900 border-orange-500" }
                                     : isFU
-                                      ? { label: "Follow-up", cls: "bg-amber-100 text-amber-900 border-amber-300" }
+                                      ? { label: "Follow-up", cls: "bg-amber-100 text-amber-900 border-amber-500" }
                                       : uc.source === "carried"
                                         ? { label: "Carried from last", cls: "bg-muted text-muted-foreground border-border" }
                                         : { label: "Planned", cls: "bg-secondary/20 text-secondary-foreground border-secondary/40" };
@@ -1367,7 +1367,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                         isWO
                                           ? "border-orange-200 bg-orange-50/50"
                                           : isFU
-                                            ? "border-amber-200 bg-amber-50/50"
+                                            ? "border-amber-400 bg-amber-50/50"
                                             : "border-border bg-muted/30"
                                       }`}
                                     >
@@ -1468,7 +1468,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 5: PREP SHEETS (download/copy/view only) ════════ */}
         <TabsContent value="prep" className="mt-0">
           <div className="space-y-2 max-w-4xl mx-auto">
-            <div className="border-b-2 border-primary/40 pb-3 mb-3">
+            <div className="border-b-2 border-primary/70 pb-3 mb-3">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
@@ -1482,7 +1482,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {prepSheets.map(ps => {
                   const isExpanded = expandedPrepSheet === ps.id;
                   return (
-                    <Card key={ps.id} className="shadow-sm hover:border-primary/30 transition-all">
+                    <Card key={ps.id} className="shadow-sm hover:border-primary/60 transition-all">
                       <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPrepSheet(isExpanded ? null : ps.id)}>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold">{ps.title}</p>
@@ -1491,7 +1491,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                       </button>
                       {isExpanded && (
-                        <div className="px-3 pb-3 border-t border-border/60 pt-3 space-y-3">
+                        <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
                           {ps.description && (
                             <div className="bg-muted/30 rounded-lg p-3 max-h-[400px] overflow-y-auto">
                               <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
@@ -1550,7 +1550,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         <TabsContent value="survey" className="mt-0">
           <div className="max-w-4xl mx-auto space-y-5">
             {/* Compose */}
-            <Card className="border-primary/30 shadow-md">
+            <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
@@ -1634,7 +1634,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         if (q.type === "text") {
                           const responses = openText[q.id] || [];
                           return (
-                            <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                            <div key={q.id} className="border-l-2 border-primary/70 pl-3">
                               <p className="text-sm font-semibold mb-1.5">{q.label}</p>
                               {responses.length === 0 ? (
                                 <p className="text-xs text-muted-foreground italic">No comments</p>
@@ -1652,7 +1652,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         const total = Object.values(counts).reduce((a, b) => a + b, 0);
                         const opts = q.options || Object.keys(counts);
                         return (
-                          <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                          <div key={q.id} className="border-l-2 border-primary/70 pl-3">
                             <p className="text-sm font-semibold mb-2">{q.label}</p>
                             <div className="space-y-1.5">
                               {opts.map((opt) => {

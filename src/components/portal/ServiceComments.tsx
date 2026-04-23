@@ -142,7 +142,7 @@ export const ServiceComments = ({
                     <span className="text-muted-foreground">· {fmtTime(c.created_at)}</span>
                   </div>
                   <div className={`inline-block text-left rounded-lg px-3 py-2 text-xs whitespace-pre-wrap shadow-sm border ${
-                    isMine ? "bg-primary/10 border-primary/30" : "bg-muted/60 border-border/60"
+                    isMine ? "bg-primary/10 border-primary/60" : "bg-muted/60 border-border"
                   }`}>
                     {c.text}
                   </div>
@@ -163,7 +163,7 @@ export const ServiceComments = ({
       )}
 
       {!readOnly && (
-        <div className="rounded-lg border border-border/60 bg-background p-2 space-y-1.5">
+        <div className="rounded-lg border border-border bg-background p-2 space-y-1.5">
           <div className="flex items-center gap-2">
             <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${senderMeta[sender].avatarClass}`}>
               {senderMeta[sender].initials(author || defaultAuthor)}

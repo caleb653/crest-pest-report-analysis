@@ -858,13 +858,13 @@ const PropertyDashboard = ({
             return (
               <div
                 key={j}
-                className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
-                  isFollowUp ? "border-orange-400" : "border-primary/30"
+                className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
+                  isFollowUp ? "border-orange-500" : "border-primary/60"
                 }`}
               >
                 {/* Bold colored header bar — makes each unit obviously distinct */}
                 <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                  isFollowUp ? "bg-orange-100 border-b-2 border-orange-300" : "bg-primary/10 border-b-2 border-primary/30"
+                  isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
                 }`}>
                   <div className="flex items-center gap-3">
                     <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
@@ -881,7 +881,7 @@ const PropertyDashboard = ({
                   </div>
                   <select
                     className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
-                      isFollowUp ? "border-orange-400 text-orange-700" : "border-primary/40 text-foreground"
+                      isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
                     }`}
                     value={unit.status || defaultStatusFor(kind)}
                     onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
@@ -954,7 +954,7 @@ const PropertyDashboard = ({
                   </div>
                 </div>
                 {/* FINDINGS — its own visually distinct box */}
-                <div className="mx-4 mb-4 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-3">
+                <div className="mx-4 mb-4 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
                     <Label className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">
@@ -962,15 +962,15 @@ const PropertyDashboard = ({
                     </Label>
                   </div>
                   <Textarea
-                    className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-200 focus-visible:ring-amber-400"
+                    className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-400 focus-visible:ring-amber-400"
                     placeholder="What did the technician observe in this area?"
                     defaultValue={unit.findings || ""}
                     onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                   />
                 </div>
                 {/* Two separate comment boxes — Crest team + Property Manager */}
-                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-2.5">
+                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
                     <ServiceComments
                       serviceId={s.id}
                       unitIndex={j}
@@ -984,7 +984,7 @@ const PropertyDashboard = ({
                       onChange={onRefresh}
                     />
                   </div>
-                  <div className="rounded-lg border-2 border-sky-300 bg-sky-50/60 p-2.5">
+                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
                     <ServiceComments
                       serviceId={s.id}
                       unitIndex={j}
@@ -1004,8 +1004,8 @@ const PropertyDashboard = ({
 
           {/* Inline add-unit card */}
           {addingUnitToService === s.id && (
-            <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3.5">
-              <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-primary/30">
+            <div className="rounded-lg border-2 border-primary/70 bg-primary/5 p-3.5">
+              <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-primary/60">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">New Area</span>
                   <Input className="h-9 text-base font-bold w-40 px-2" placeholder="Area / Unit / Room"
@@ -1100,7 +1100,7 @@ const PropertyDashboard = ({
         </div>
         {/* Quick add row if not already adding */}
         {addingUnitToService !== s.id && (
-          <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+          <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
             onClick={() => {
               setAddingUnitToService(s.id);
               setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
@@ -1134,10 +1134,10 @@ const PropertyDashboard = ({
     const pmNoteForThis = isUpcoming && s.service_date ? (pmNotesMap[s.service_date] || "") : "";
 
     return (
-      <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3">
+      <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
         {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
         {pmNoteForThis && (
-          <div className="bg-primary/10 border-2 border-primary/40 rounded-lg p-3">
+          <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
               <ClipboardList className="w-3 h-3" />
               From the Property Manager — for the Technician
@@ -1177,7 +1177,7 @@ const PropertyDashboard = ({
         })()}
 
         {(s.summary || s.findings || s.notes) && (
-          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+          <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
               <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
@@ -1209,7 +1209,7 @@ const PropertyDashboard = ({
         )}
 
         {s.special_notes && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+          <div className="bg-amber-50 border border-amber-400 rounded-lg p-2.5">
             <p className="text-xs text-amber-700">{s.special_notes}</p>
           </div>
         )}
@@ -1232,7 +1232,7 @@ const PropertyDashboard = ({
                 const url = typeof photo === "string" ? photo : photo?.url || photo?.src;
                 if (!url) return null;
                 return (
-                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border/60 hover:border-primary/50 transition-all hover:shadow-md">
+                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-all hover:shadow-md">
                     <img src={url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                   </a>
                 );
@@ -1243,7 +1243,7 @@ const PropertyDashboard = ({
 
         {/* Actions */}
         {!isProjected && (
-          <div className="flex gap-1.5 pt-1 border-t border-border/40 mt-2">
+          <div className="flex gap-1.5 pt-1 border-t border-border mt-2">
             <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
               <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
@@ -1252,7 +1252,7 @@ const PropertyDashboard = ({
 
         {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
         {!isProjected && (
-          <div className="pt-2 border-t border-border/40">
+          <div className="pt-2 border-t border-border">
             <ServiceComments
               serviceId={s.id}
               reportData={(s as any).report_data}
@@ -1331,7 +1331,7 @@ const PropertyDashboard = ({
           const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
 
           return (
-            <div className="space-y-3 pt-2 border-t border-border/40 mt-2">
+            <div className="space-y-3 pt-2 border-t border-border mt-2">
               <div className="bg-gradient-to-br from-primary/[0.04] to-transparent rounded-lg p-3 space-y-3 border border-primary/20">
                 <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-green-600" />
@@ -1363,7 +1363,7 @@ const PropertyDashboard = ({
                 </div>
 
                 {/* Summary — single large box, above the units table */}
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="rounded-lg border border-border bg-muted/20 p-3">
                   <Label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Summary</Label>
                   <Textarea className="text-xs min-h-[120px] mt-1.5 bg-background resize-y" placeholder="Service summary..." value={cd.summary}
                     onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value, findings: "", notes: "" } }))} />
@@ -1384,20 +1384,20 @@ const PropertyDashboard = ({
                       return (
                         <div
                           key={idx}
-                          className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
+                          className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
                             isFollowUp
-                              ? "border-orange-400"
+                              ? "border-orange-500"
                               : isWorkOrder
-                                ? "border-primary/40"
-                                : "border-primary/30"
+                                ? "border-primary/70"
+                                : "border-primary/60"
                           }`}
                         >
                           {/* Bold colored header bar — visually separates each area */}
                           <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
                             isFollowUp
-                              ? "bg-orange-100 border-b-2 border-orange-300"
+                              ? "bg-orange-100 border-b-2 border-orange-500"
                               : isWorkOrder
-                                ? "bg-primary/10 border-b-2 border-primary/30"
+                                ? "bg-primary/10 border-b-2 border-primary/60"
                                 : "bg-muted/40 border-b-2 border-border"
                           }`}>
                             <div className="flex items-center gap-3 flex-wrap">
@@ -1413,10 +1413,10 @@ const PropertyDashboard = ({
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
                               />
                               {isWorkOrder && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-background border border-primary/30 px-2 py-0.5 rounded">Work Order</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">Work Order</span>
                               )}
                               {isFollowUp && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-400 px-2 py-0.5 rounded">Follow-up</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -1488,7 +1488,7 @@ const PropertyDashboard = ({
                       );
                     })}
                   </div>
-                  <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
+                  <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
                     onClick={addRow}>
                     <Plus className="w-3.5 h-3.5" /> Add area
                   </button>
@@ -1526,7 +1526,7 @@ const PropertyDashboard = ({
                   }
                   return null;
                 })()}
-                <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <div className="rounded-lg border border-border bg-muted/20 p-3">
                   <Label className="text-[11px] font-semibold flex items-center gap-1.5 mb-2">
                     <FlaskConical className="w-3.5 h-3.5 text-primary" />
                     Products Used (this service date)
@@ -1547,7 +1547,7 @@ const PropertyDashboard = ({
                     Service Photos {cd.photos.length > 0 && <span className="text-muted-foreground font-normal">({cd.photos.length})</span>}
                   </Label>
                   <label className="cursor-pointer block">
-                    <div className={`w-full border-2 border-dashed rounded-xl py-6 px-4 flex flex-col items-center justify-center gap-2 transition-all ${uploadingPhotoFor === s.id ? "bg-muted border-primary/40" : "border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/50"}`}>
+                    <div className={`w-full border-2 border-dashed rounded-xl py-6 px-4 flex flex-col items-center justify-center gap-2 transition-all ${uploadingPhotoFor === s.id ? "bg-muted border-primary/70" : "border-primary/60 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/50"}`}>
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                         {uploadingPhotoFor === s.id ? (
                           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -1573,7 +1573,7 @@ const PropertyDashboard = ({
                   {cd.photos.length > 0 && (
                     <div className="grid grid-cols-4 gap-2 mt-2">
                       {cd.photos.map((p, idx) => (
-                        <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border/60 group">
+                        <div key={idx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
                           <img src={p.url} alt={`Service photo ${idx + 1}`} className="w-full h-full object-cover" />
                           <button type="button" onClick={() => removeCompletionPhoto(s.id, idx)}
                             className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
@@ -1627,7 +1627,7 @@ const PropertyDashboard = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -1936,7 +1936,7 @@ const PropertyDashboard = ({
                 const item = equipmentItems.find(e => e.name === eq);
                 const isChecked = !!item;
                 return (
-                  <div key={eq} className={`flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border ${isChecked ? "bg-primary/10 border-primary/30 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"}`}>
+                  <div key={eq} className={`flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border ${isChecked ? "bg-primary/10 border-primary/60 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"}`}>
                     <label className="flex items-center gap-2.5 cursor-pointer flex-1">
                       <input type="checkbox" checked={isChecked} onChange={async () => {
                         const updated = isChecked
@@ -1969,7 +1969,7 @@ const PropertyDashboard = ({
               })}
               {/* Custom equipment items */}
               {equipmentItems.filter(e => !EQUIPMENT_OPTIONS.includes(e.name)).map(custom => (
-                <div key={custom.name} className="flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border bg-primary/10 border-primary/30 font-medium">
+                <div key={custom.name} className="flex items-center gap-2.5 text-xs rounded-md px-2 py-1.5 transition-all border bg-primary/10 border-primary/60 font-medium">
                   <label className="flex items-center gap-2.5 cursor-pointer flex-1">
                     <input type="checkbox" checked onChange={async () => {
                       const updated = equipmentItems.filter(e => e.name !== custom.name);
@@ -2043,7 +2043,7 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 2: PREVIOUS SERVICES ══════════ */}
       <TabsContent value="past" className="mt-0">
         <div className="space-y-3 max-w-[1600px] mx-auto">
-        <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/40">
+        <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/70">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
@@ -2113,7 +2113,7 @@ const PropertyDashboard = ({
                     </AccordionTrigger>
                     <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
                       {entries.map(({ service, unitDetail }, j) => (
-                        <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border/40"
+                        <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
                           <div className="flex items-center justify-between">
                             <span className="font-medium">{service.service_type}</span>
@@ -2143,7 +2143,7 @@ const PropertyDashboard = ({
       <TabsContent value="request" className="mt-0">
         <div className="max-w-2xl mx-auto space-y-4">
         {/* Work Order Form — mirrors PM portal layout */}
-        <Card className="border-primary/30 shadow-md">
+        <Card className="border-primary/60 shadow-md">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
@@ -2166,7 +2166,7 @@ const PropertyDashboard = ({
                       key={opt.v}
                       type="button"
                       onClick={() => setWorkOrder(wo => ({ ...wo, request_type: opt.v }))}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/40 hover:bg-muted/50"}`}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
                     >
                       <Icon className="w-5 h-5" />
                       <span className="text-sm font-semibold">{opt.label}</span>
@@ -2368,7 +2368,7 @@ const PropertyDashboard = ({
         )}
 
         {/* Upcoming Services */}
-        <div className="border-b-2 border-primary/40 pb-2.5">
+        <div className="border-b-2 border-primary/70 pb-2.5">
           <h3 className="text-base font-bold flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-secondary" />Upcoming Services
             <Badge variant="secondary" className="text-[11px] ml-1">{allUpcoming.length}</Badge>
@@ -2404,7 +2404,7 @@ const PropertyDashboard = ({
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
-                        {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/30 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
+                        {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
@@ -2469,7 +2469,7 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 5: PREP SHEETS ══════════ */}
       <TabsContent value="prep" className="mt-0">
         <div className="space-y-2 max-w-4xl mx-auto">
-          <div className="border-b-2 border-primary/40 pb-3 mb-3">
+          <div className="border-b-2 border-primary/70 pb-3 mb-3">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
@@ -2481,7 +2481,7 @@ const PropertyDashboard = ({
           ) : (
           <div className="space-y-2">
             {prepSheets.map(ps => (
-              <Card key={ps.id} className="shadow-sm hover:border-primary/30 transition-all">
+              <Card key={ps.id} className="shadow-sm hover:border-primary/60 transition-all">
                 <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPrepSheet(expandedPrepSheet === ps.id ? null : ps.id)}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold">{ps.title}</p>
@@ -2490,7 +2490,7 @@ const PropertyDashboard = ({
                   <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${expandedPrepSheet === ps.id ? "rotate-180" : ""}`} />
                 </button>
                 {expandedPrepSheet === ps.id && ps.description && (
-                  <div className="px-3 pb-3 border-t border-border/60 pt-3 space-y-3">
+                  <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
                     <div className="bg-muted/30 rounded-lg p-3 max-h-[400px] overflow-y-auto">
                       <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
                     </div>
@@ -2540,7 +2540,7 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 6: TENANT SURVEY ══════════ */}
       <TabsContent value="survey" className="mt-0">
         <div className="max-w-4xl mx-auto space-y-5">
-          <Card className="border-primary/30 shadow-md">
+          <Card className="border-primary/60 shadow-md">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
@@ -2622,7 +2622,7 @@ const PropertyDashboard = ({
                       if (q.type === "text") {
                         const responses = openText[q.id] || [];
                         return (
-                          <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                          <div key={q.id} className="border-l-2 border-primary/70 pl-3">
                             <p className="text-sm font-semibold mb-1.5">{q.label}</p>
                             {responses.length === 0 ? (
                               <p className="text-xs text-muted-foreground italic">No comments</p>
@@ -2640,7 +2640,7 @@ const PropertyDashboard = ({
                       const total = Object.values(counts).reduce((a, b) => a + b, 0);
                       const opts = q.options || Object.keys(counts);
                       return (
-                        <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                        <div key={q.id} className="border-l-2 border-primary/70 pl-3">
                           <p className="text-sm font-semibold mb-2">{q.label}</p>
                           <div className="space-y-1.5">
                             {opts.map((opt) => {
