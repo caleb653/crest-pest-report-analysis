@@ -1142,7 +1142,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-sm">Unit or Area *</Label>
+                  <Label className="text-sm">Unit, Property, or Area *</Label>
                   <Input
                     list="pm-known-units"
                     placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
