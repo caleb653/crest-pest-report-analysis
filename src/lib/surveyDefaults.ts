@@ -32,16 +32,6 @@ export const DEFAULT_PEST_SURVEY_QUESTIONS: SurveyQuestion[] = [
     type: "rating",
   },
   {
-    id: "neighbor_reports",
-    label: "Have you heard neighbors mention pest issues? (5 = never hear of any)",
-    type: "rating",
-  },
-  {
-    id: "pest_details",
-    label: "If you've seen pests, what kind and where? (optional)",
-    type: "text",
-  },
-  {
     id: "comments",
     label: "Any other comments about pest activity or the property? (optional)",
     type: "text",
