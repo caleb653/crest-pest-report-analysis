@@ -704,6 +704,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-orange-800 whitespace-pre-wrap">{s.follow_up_notes}</p>
           </div>
         )}
+        {/* Service-level comment thread (PM ↔ Crest) */}
+        <div className="pt-2 border-t border-border/40">
+          <ServiceComments
+            serviceId={s.id}
+            reportData={(s as any).report_data}
+            comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
+            sender="pm"
+            onChange={loadAll}
+          />
+        </div>
       </div>
     );
   };
