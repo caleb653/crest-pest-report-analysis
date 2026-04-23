@@ -110,6 +110,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   const tempLineRef = useRef<Line | null>(null);
   const [drawColor, setDrawColor] = useState('#DC2626');
   const [drawBrushSize, setDrawBrushSize] = useState(4);
+  const [lineColor, setLineColor] = useState('#DC2626');
+  const [lineWidth, setLineWidth] = useState(5);
+  const lineColorRef = useRef('#DC2626');
+  const lineWidthRef = useRef(5);
+
+  useEffect(() => { lineColorRef.current = lineColor; }, [lineColor]);
+  useEffect(() => { lineWidthRef.current = lineWidth; }, [lineWidth]);
   
   // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
   const isMapInteractive = false;
@@ -427,8 +434,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         // Start drawing a line
         lineStartRef.current = { x: pt.x, y: pt.y };
         const tempLine = new Line([pt.x, pt.y, pt.x, pt.y], {
-          stroke: '#DC2626',
-          strokeWidth: 5,
+          stroke: lineColorRef.current,
+          strokeWidth: lineWidthRef.current,
           selectable: false,
           evented: false,
         });
@@ -461,8 +468,8 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           
           // Create final line (selectable)
           const finalLine = new Line([lineStartRef.current.x, lineStartRef.current.y, pt.x, pt.y], {
-            stroke: '#DC2626',
-            strokeWidth: 5,
+            stroke: lineColorRef.current,
+            strokeWidth: lineWidthRef.current,
             selectable: true,
             hasControls: true,
             hasBorders: true,
@@ -1289,6 +1296,54 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         >
           <Minus className="w-3.5 h-3.5" />
         </Button>
+        {tool === 'line' && (
+          <div className="flex items-center gap-1 px-1.5 py-1 border-l border-border">
+            <input
+              type="color"
+              value={lineColor}
+              onChange={(e) => {
+                const newColor = e.target.value;
+                setLineColor(newColor);
+                // Recolor any currently-selected line(s)
+                const canvas = fabricCanvasRef.current;
+                if (canvas) {
+                  const active = canvas.getActiveObjects();
+                  active.forEach((obj) => {
+                    if (obj instanceof Line) {
+                      obj.set({ stroke: newColor });
+                    }
+                  });
+                  if (active.length) canvas.renderAll();
+                }
+              }}
+              className="w-6 h-6 rounded cursor-pointer"
+              title="Line Color"
+            />
+            <select
+              value={lineWidth}
+              onChange={(e) => {
+                const newWidth = Number(e.target.value);
+                setLineWidth(newWidth);
+                const canvas = fabricCanvasRef.current;
+                if (canvas) {
+                  const active = canvas.getActiveObjects();
+                  active.forEach((obj) => {
+                    if (obj instanceof Line) {
+                      obj.set({ strokeWidth: newWidth });
+                    }
+                  });
+                  if (active.length) canvas.renderAll();
+                }
+              }}
+              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+            >
+              <option value={2}>Thin</option>
+              <option value={5}>Medium</option>
+              <option value={8}>Thick</option>
+              <option value={12}>Bold</option>
+            </select>
+          </div>
+        )}
         <Button
           size="icon"
           variant={tool === 'draw' ? 'default' : 'outline'}
