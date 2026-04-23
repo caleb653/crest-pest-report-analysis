@@ -37,7 +37,6 @@ const TenantPortal = () => {
   const [error, setError] = useState("");
   const [linkData, setLinkData] = useState<any>(null);
   const [propertyName, setPropertyName] = useState("");
-  const [requests, setRequests] = useState<RequestData[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -99,14 +98,8 @@ const TenantPortal = () => {
       }
     }
 
-    // Load requests for this link
-    const { data: reqs } = await supabase
-      .from("portal_requests")
-      .select("*")
-      .eq("link_id", link.id)
-      .order("created_at", { ascending: false });
-    if (reqs) setRequests(reqs);
-
+    // NOTE: We intentionally do NOT load previous work orders on the tenant portal.
+    // Tenants must never see what other tenants (or even their past selves) have submitted.
     setLoading(false);
   };
 
