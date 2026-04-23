@@ -7,37 +7,41 @@ export interface SurveyQuestion {
 
 export const DEFAULT_PEST_SURVEY_QUESTIONS: SurveyQuestion[] = [
   {
-    id: "activity_level",
-    label: "How would you rate pest activity in your unit over the last 30 days?",
-    type: "single",
-    options: ["None", "Low", "Moderate", "High"],
+    id: "overall_satisfaction",
+    label: "Overall, how satisfied are you with the pest control service?",
+    type: "rating",
   },
   {
-    id: "pest_types",
-    label: "Which pests have you seen? (select all that apply)",
-    type: "multi",
-    options: [
-      "Ants", "Spiders", "Cockroaches", "Rodents (mice/rats)", "Bed bugs",
-      "Fleas", "Wasps/Bees", "Silverfish", "Earwigs", "Mosquitoes", "Other / not sure",
-    ],
+    id: "effectiveness",
+    label: "How effective has the service been at controlling pests?",
+    type: "rating",
   },
   {
-    id: "location_seen",
-    label: "Where have you noticed activity? (select all that apply)",
-    type: "multi",
-    options: ["Kitchen", "Bathroom", "Bedroom", "Living room", "Garage / patio", "Common area / hallway"],
+    id: "professionalism",
+    label: "How professional and courteous was the technician?",
+    type: "rating",
   },
   {
-    id: "satisfaction",
-    label: "How satisfied are you with Crest's pest control service? (1 = poor, 5 = excellent)",
+    id: "communication",
+    label: "How well did we communicate (scheduling, updates, follow-up)?",
+    type: "rating",
+  },
+  {
+    id: "cleanliness",
+    label: "How clean and respectful was the work performed in your space?",
+    type: "rating",
+  },
+  {
+    id: "recommend",
+    label: "How likely are you to recommend us to others?",
     type: "rating",
   },
   {
     id: "comments",
-    label: "Any additional comments or concerns?",
+    label: "Any additional comments or concerns? (optional)",
     type: "text",
   },
 ];
 
 export const DEFAULT_SURVEY_INTRO =
-  "Crest Pest Control is checking in. Please take 30 seconds to share what you've been seeing in your unit. Your feedback helps us serve you better.";
+  "Crest Pest Control is checking in. Please take a moment to rate your experience on a scale of 1 (poor) to 5 (excellent). Your feedback helps us serve you better.";
