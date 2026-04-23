@@ -846,37 +846,73 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   {Array.from(servicesByUnit.entries())
                     .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
                     .map(([unitNum, entries]) => (
-                      <AccordionItem key={unitNum} value={unitNum} className="border rounded-lg mb-2 px-0 shadow-sm">
-                        <AccordionTrigger className="px-3 py-2.5 text-sm hover:no-underline bg-muted/20 rounded-t-lg">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{unitNum === "General" ? "General Treatment" : `Unit ${unitNum}`}</span>
+                      <AccordionItem key={unitNum} value={unitNum} className="border rounded-xl mb-3 px-0 shadow-sm bg-card overflow-hidden">
+                        <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline bg-muted/30">
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-semibold text-base">
+                              {unitNum === "General" ? "General Treatment" : `Unit ${unitNum}`}
+                            </span>
                             <Badge variant="secondary" className="text-[10px]">{entries.length} services</Badge>
                           </div>
                         </AccordionTrigger>
-                        <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
-                          {entries.map(({ service, unitDetail }, j) => (
-                            <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs border border-transparent">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{service.service_type}</span>
-                                <span className="text-muted-foreground">{formatShortDate(service.service_date)}</span>
-                              </div>
-                              {unitDetail && (
-                                <div className="mt-1 text-muted-foreground space-y-0.5">
-                                  {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
-                                  {unitDetail.target_pest && <p>Target Pest: {unitDetail.target_pest}</p>}
-                                  {unitDetail.products_used && (
-                                    <p>
-                                      Products: {Array.isArray(unitDetail.products_used)
-                                        ? (unitDetail.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
-                                        : unitDetail.products_used}
-                                    </p>
-                                  )}
-                                  {unitDetail.notes && <p>Notes: {unitDetail.notes}</p>}
+                        <AccordionContent className="px-4 pb-4 pt-3 space-y-3">
+                          {entries.map(({ service, unitDetail }, j) => {
+                            const productsText = unitDetail?.products_used
+                              ? (Array.isArray(unitDetail.products_used)
+                                  ? (unitDetail.products_used as any[])
+                                      .map((p: any) => typeof p === "string" ? p : p?.name)
+                                      .filter(Boolean)
+                                      .join(", ")
+                                  : unitDetail.products_used)
+                              : "";
+                            return (
+                              <div
+                                key={`${service.id}-${j}`}
+                                className="rounded-lg border border-border bg-background p-3.5 shadow-sm"
+                              >
+                                {/* Header row: service type + date */}
+                                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border/60">
+                                  <span className="font-semibold text-sm">{service.service_type}</span>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {formatShortDate(service.service_date)}
+                                  </span>
                                 </div>
-                              )}
-                              {!unitDetail && service.summary && <p className="text-muted-foreground mt-1">{service.summary}</p>}
-                            </div>
-                          ))}
+
+                                {unitDetail ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-2.5 text-xs">
+                                    {unitDetail.findings && (
+                                      <div className="space-y-0.5">
+                                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide">Findings</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{unitDetail.findings}</p>
+                                      </div>
+                                    )}
+                                    {unitDetail.target_pest && (
+                                      <div className="space-y-0.5">
+                                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide">Target Pest</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{unitDetail.target_pest}</p>
+                                      </div>
+                                    )}
+                                    {productsText && (
+                                      <div className="space-y-0.5 md:col-span-2">
+                                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide">Products Used</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{productsText}</p>
+                                      </div>
+                                    )}
+                                    {unitDetail.notes && (
+                                      <div className="space-y-0.5 md:col-span-2">
+                                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide">Notes</p>
+                                        <p className="whitespace-pre-wrap leading-relaxed">{unitDetail.notes}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  service.summary && (
+                                    <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{service.summary}</p>
+                                  )
+                                )}
+                              </div>
+                            );
+                          })}
                         </AccordionContent>
                       </AccordionItem>
                     ))}

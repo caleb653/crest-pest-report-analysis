@@ -86,10 +86,10 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
-  // Default to the full PM view so admins always have parity with PMs
-  // (Survey tab, tenant work-order emails, etc.). Toggle reveals the
-  // admin-only editing tools (PropertyDashboard).
-  const [pmPreviewMode, setPmPreviewMode] = useState(true);
+  // Admins land on the admin dashboard by default. The toggle reveals
+  // the PM preview (Survey tab, tenant work-order emails, etc.) so admins
+  // still have parity with PMs when needed.
+  const [pmPreviewMode, setPmPreviewMode] = useState(false);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
