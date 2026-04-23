@@ -561,9 +561,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
         {summaryCombined && (
-          <div>
-            <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Summary</p>
-            <p className="whitespace-pre-wrap">{summaryCombined}</p>
+          <div className="rounded-lg border-2 border-primary/40 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <ClipboardList className="w-3.5 h-3.5 text-primary" />
+              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
+                Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+              </p>
+            </div>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
         {unitDetails.length > 0 && (
