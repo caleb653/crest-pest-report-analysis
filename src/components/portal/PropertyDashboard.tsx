@@ -1024,11 +1024,17 @@ const PropertyDashboard = ({
                         );
                       })}
                     </div>
-                    {unit.target_pest && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
-                        {unit.target_pest}
-                      </span>
-                    )}
+                    {/* Target Pest (in-header) */}
+                    <select
+                      data-no-toggle
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-9 text-xs font-semibold bg-background border border-border rounded-md px-2 cursor-pointer min-w-[140px]"
+                      value={unit.target_pest || ""}
+                      onChange={e => updateUnitField(s.id, j, "target_pest", e.target.value)}
+                    >
+                      <option value="">Target Pest…</option>
+                      {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
                   </div>
                   <div className="flex items-center gap-2">
                     <select
@@ -1048,18 +1054,7 @@ const PropertyDashboard = ({
                 {/* Card body — left 2/3 fields, right 1/3 unit photos */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
-                    <select
-                      className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
-                      value={unit.target_pest || ""}
-                      onChange={e => updateUnitField(s.id, j, "target_pest", e.target.value)}
-                    >
-                      <option value="">—</option>
-                      {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
                     <select
                       className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
