@@ -1296,40 +1296,51 @@ const PropertyDashboard = ({
                 {/* Unit-by-unit table — same format as Previous Services */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <Label className="text-[11px] font-semibold">Units Treated ({cd.unitRows.length})</Label>
+                    <Label className="text-[11px] font-semibold">Areas Treated ({cd.unitRows.length})</Label>
                     <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={addRow}>
-                      <Plus className="w-3 h-3 mr-0.5" />Add Unit
+                      <Plus className="w-3 h-3 mr-0.5" />Add Area
                     </Button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-6">
                     {cd.unitRows.map((row: any, idx: number) => {
                       const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
                       const isWorkOrder = row.source === "new-work-order";
                       return (
                         <div
                           key={idx}
-                          className={`rounded-lg border-2 bg-card shadow-sm p-3.5 ${
+                          className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
                             isFollowUp
-                              ? "border-orange-300 bg-orange-50/40"
+                              ? "border-orange-400"
                               : isWorkOrder
-                                ? "border-primary/30 bg-primary/[0.04]"
-                                : "border-border"
+                                ? "border-primary/40"
+                                : "border-primary/30"
                           }`}
                         >
-                          {/* Card header: Unit # + Status + remove */}
-                          <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border/60">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Unit</span>
+                          {/* Bold colored header bar — visually separates each area */}
+                          <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
+                            isFollowUp
+                              ? "bg-orange-100 border-b-2 border-orange-300"
+                              : isWorkOrder
+                                ? "bg-primary/10 border-b-2 border-primary/30"
+                                : "bg-muted/40 border-b-2 border-border"
+                          }`}>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                                isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                              }`}>
+                                {idx + 1}
+                              </div>
                               <Input
-                                className="h-9 text-base font-bold w-24 px-2"
+                                className="h-9 text-lg font-bold w-40 px-2 bg-background"
+                                placeholder="Area / Unit / Room"
                                 value={row.unit_number}
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
                               />
                               {isWorkOrder && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-2 py-0.5 rounded">Work Order</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-background border border-primary/30 px-2 py-0.5 rounded">Work Order</span>
                               )}
                               {isFollowUp && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-orange-100 px-2 py-0.5 rounded">Follow-up</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-400 px-2 py-0.5 rounded">Follow-up</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -1344,14 +1355,14 @@ const PropertyDashboard = ({
                               <button
                                 onClick={() => removeRow(idx)}
                                 className="text-muted-foreground hover:text-destructive p-1"
-                                title="Remove unit"
+                                title="Remove area"
                               >
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
                           {/* Card body — 2-column roomy grid */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
                               <Select value={row.source || "new-work-order"} onValueChange={(v) => updateRow(idx, "source", v)}>
@@ -1403,7 +1414,7 @@ const PropertyDashboard = ({
                   </div>
                   <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border/60 transition-colors flex items-center justify-center gap-1"
                     onClick={addRow}>
-                    <Plus className="w-3.5 h-3.5" /> Add unit row
+                    <Plus className="w-3.5 h-3.5" /> Add area
                   </button>
         </div>
 
