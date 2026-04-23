@@ -1668,13 +1668,14 @@ const PropertyDashboard = ({
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="md:col-span-2">
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Findings / Context (visible to customer)</Label>
-                              <Textarea
-                                className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal mt-1"
-                                value={row.findings}
-                                placeholder="What was found / what was treated…"
-                                onChange={e => updateRow(idx, "findings", e.target.value)}
-                              />
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
+                              <select
+                                className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
+                                value={row.pest_activity || "None"}
+                                onChange={e => updateRow(idx, "pest_activity", e.target.value)}
+                              >
+                                {ACTIVITY_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                              </select>
                             </div>
                             <div className="md:col-span-2">
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
@@ -1686,6 +1687,29 @@ const PropertyDashboard = ({
                                   onChange={(next) => updateRow(idx, "products_used", next as any)}
                                 />
                               </div>
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
+                              <Textarea
+                                className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug whitespace-normal mt-1"
+                                value={row.notes || ""}
+                                onChange={e => updateRow(idx, "notes", e.target.value)}
+                              />
+                            </div>
+                            {/* FINDINGS — highlighted amber box (visible to customer) */}
+                            <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                                <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                                  Technician Findings (visible to customer)
+                                </Label>
+                              </div>
+                              <Textarea
+                                className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-400 focus-visible:ring-amber-400"
+                                placeholder="What did the technician observe in this area?"
+                                value={row.findings}
+                                onChange={e => updateRow(idx, "findings", e.target.value)}
+                              />
                             </div>
                             </div>
                             {/* Per-unit photos — right 1/3 */}
