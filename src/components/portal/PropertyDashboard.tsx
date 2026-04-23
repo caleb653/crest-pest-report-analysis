@@ -1062,6 +1062,55 @@ const PropertyDashboard = ({
                     onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                   />
                 </div>
+                {/* UNIT PHOTOS — attach photos to this specific unit */}
+                <div className="mx-4 mb-4 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Image className="w-3.5 h-3.5 text-primary" />
+                    <Label className="text-xs font-bold text-foreground uppercase tracking-wide">
+                      Unit Photos {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                        <span className="text-muted-foreground font-normal normal-case">({unit.photos.length})</span>
+                      )}
+                    </Label>
+                  </div>
+                  <label className="cursor-pointer block">
+                    <div className={`w-full border-2 border-dashed rounded-lg py-3 px-3 flex items-center justify-center gap-2 transition-all ${uploadingUnitPhotoFor === `${s.id}:${j}` ? "bg-muted border-primary/70" : "border-primary/50 bg-background hover:bg-primary/[0.06] hover:border-primary/70"}`}>
+                      {uploadingUnitPhotoFor === `${s.id}:${j}` ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-primary" />
+                      )}
+                      <span className="text-xs font-semibold text-foreground">
+                        {uploadingUnitPhotoFor === `${s.id}:${j}` ? "Uploading…" : "Add photo to this unit"}
+                      </span>
+                    </div>
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      disabled={uploadingUnitPhotoFor === `${s.id}:${j}`}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadUnitPhoto(s.id, j, f);
+                        (e.target as HTMLInputElement).value = "";
+                      }} />
+                  </label>
+                  {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {(unit.photos as any[]).map((p: any, pIdx: number) => {
+                        const url = typeof p === "string" ? p : p?.url;
+                        if (!url) return null;
+                        return (
+                          <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
+                            <a href={url} target="_blank" rel="noopener noreferrer">
+                              <img src={url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </a>
+                            <button type="button" onClick={() => removeUnitPhoto(s.id, j, pIdx)}
+                              className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 {/* Two separate comment boxes — Crest team + Property Manager */}
                 <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
