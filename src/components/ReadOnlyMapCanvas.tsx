@@ -32,6 +32,19 @@ const AVAILABLE_ICONS = [
   { icon: 'water-source', label: 'Water Source', svgPath: waterSourceIcon },
 ];
 
+// Badge color palette assigned per icon TYPE in placement order.
+// Must match MapCanvas so the read-only view renders the same colors.
+const ICON_BADGE_COLORS = [
+  '#DC2626', // red
+  '#2563EB', // blue
+  '#16A34A', // green
+  '#D97706', // amber
+  '#9333EA', // purple
+  '#0891B2', // cyan
+  '#DB2777', // pink
+  '#525252', // neutral
+];
+
 // Reference size for normalizing coordinates (matches MapCanvas)
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
@@ -108,6 +121,17 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
 
       const loadPromises: Promise<void>[] = [];
       const foundIcons = new Set<string>();
+      // Assign each icon TYPE a badge color in the order it first appears
+      // in the saved object array (matches the editor's placement order).
+      const iconTypeOrder: string[] = [];
+      const getBadgeColorForIconType = (iconType: string): string => {
+        let idx = iconTypeOrder.indexOf(iconType);
+        if (idx === -1) {
+          iconTypeOrder.push(iconType);
+          idx = iconTypeOrder.length - 1;
+        }
+        return ICON_BADGE_COLORS[idx % ICON_BADGE_COLORS.length];
+      };
 
       objectsArray.forEach((obj: any) => {
         const objType = String(obj.type || '').toLowerCase();
@@ -121,6 +145,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           
           if (iconInfo) {
             foundIcons.add(iconType);
+            const badgeColor = getBadgeColorForIconType(iconType);
             const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
               const groupObjects: any[] = [img];
               
@@ -128,7 +153,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
                 const badgeSize = 14;
                 const badge = new FabricCircle({
                   radius: badgeSize / 2,
-                  fill: '#DC2626',
+                  fill: badgeColor,
                   originX: 'center',
                   originY: 'center',
                   left: (img.width || 32) / 2 + 8,

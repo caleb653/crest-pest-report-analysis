@@ -32,6 +32,20 @@ interface LegendItem {
 
 const SHAPE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A8DADC', '#F4A261', '#E76F51', '#95A197', '#C3D1C5'];
 
+// Badge color palette assigned per icon TYPE in placement order.
+// First icon type placed = red, second type = blue, third = green, etc.
+// All emblems of the same type share the same color.
+const ICON_BADGE_COLORS = [
+  '#DC2626', // red
+  '#2563EB', // blue
+  '#16A34A', // green
+  '#D97706', // amber
+  '#9333EA', // purple
+  '#0891B2', // cyan
+  '#DB2777', // pink
+  '#525252', // neutral
+];
+
 const AVAILABLE_ICONS = [
   { icon: 'bug', label: 'Pest Activity', symbol: '◉', svgPath: bugIcon },
   { icon: 'rat', label: 'Rodent Activity', symbol: '▲', svgPath: ratIcon },
@@ -76,6 +90,20 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
   const iconCountsRef = useRef<Record<string, number>>({});
+  // Tracks the assignment order of icon types so each type gets a distinct
+  // badge color. First type placed -> ICON_BADGE_COLORS[0] (red), second
+  // type -> [1] (blue), etc. Persists across saves via obj.data.iconType.
+  const iconTypeOrderRef = useRef<string[]>([]);
+
+  const getBadgeColorForIconType = (iconType: string): string => {
+    const order = iconTypeOrderRef.current;
+    let idx = order.indexOf(iconType);
+    if (idx === -1) {
+      order.push(iconType);
+      idx = order.length - 1;
+    }
+    return ICON_BADGE_COLORS[idx % ICON_BADGE_COLORS.length];
+  };
   // Line drawing state
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -289,9 +317,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         FabricImage.fromURL(svgPath).then((img) => {
           // Create number badge
           const badgeSize = 14;
+          const badgeColor = getBadgeColorForIconType(currentIcon);
           const badge = new FabricCircle({
             radius: badgeSize / 2,
-            fill: '#DC2626',
+            fill: badgeColor,
             originX: 'center',
             originY: 'center',
             left: (img.width || 32) / 2 + 8,
@@ -602,9 +631,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                 
                 if (iconNumber) {
                   const badgeSize = 14;
+                  const badgeColor = getBadgeColorForIconType(iconType);
                   const badge = new FabricCircle({
                     radius: badgeSize / 2,
-                    fill: '#DC2626',
+                    fill: badgeColor,
                     originX: 'center',
                     originY: 'center',
                     left: (img.width || 32) / 2 + 8,
@@ -1080,6 +1110,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     setLegendItems([]);
     setShowLegend(false);
     iconCountsRef.current = {};
+    iconTypeOrderRef.current = [];
   };
 
   const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
