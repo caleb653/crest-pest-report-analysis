@@ -183,6 +183,10 @@ const PropertyDashboard = ({
     products: ProductUsage[];
   }>>({});
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  // Tracks per-unit photo uploads:  `${serviceId}:${unitIndex}` while uploading
+  const [uploadingUnitPhotoFor, setUploadingUnitPhotoFor] = useState<string | null>(null);
+  // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
+  const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
@@ -518,7 +522,7 @@ const PropertyDashboard = ({
   })();
 
   // ─── Inline unit editing for past services ───
-  const updateUnitField = async (serviceId: string, unitIndex: number, field: string, value: string) => {
+  const updateUnitField = async (serviceId: string, unitIndex: number, field: string, value: any) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
@@ -610,7 +614,13 @@ const PropertyDashboard = ({
 
   const completeService = async (serviceId: string) => {
     const data = completionData[serviceId];
-    const unitRows = data?.unitRows?.filter(r => r.unit_number) || [];
+    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
+      ...r,
+      // Persist any per-unit photos uploaded during completion (strip uploading flags)
+      photos: Array.isArray(r.photos)
+        ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+        : undefined,
+    }));
     const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
@@ -701,6 +711,89 @@ const PropertyDashboard = ({
         photos: prev[serviceId].photos.filter((_, i) => i !== idx),
       },
     }));
+  };
+
+  // ─── Per-unit photo upload (saved unit_details rows) ───
+  const uploadUnitPhoto = async (serviceId: string, unitIndex: number, file: File) => {
+    const key = `${serviceId}:${unitIndex}`;
+    setUploadingUnitPhotoFor(key);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/unit-${unitIndex}-${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      const svc = propServices.find(s => s.id === serviceId);
+      const details = Array.isArray(svc?.unit_details) ? [...(svc!.unit_details as any[])] : [];
+      if (details[unitIndex]) {
+        const existing = Array.isArray(details[unitIndex].photos) ? details[unitIndex].photos : [];
+        details[unitIndex] = { ...details[unitIndex], photos: [...existing, { url: pub.publicUrl }] };
+        await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+        onRefresh();
+      }
+      toast({ title: "Photo added to unit", duration: 1500 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingUnitPhotoFor(null);
+    }
+  };
+
+  const removeUnitPhoto = async (serviceId: string, unitIndex: number, photoIdx: number) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    const details = Array.isArray(svc?.unit_details) ? [...(svc!.unit_details as any[])] : [];
+    if (!details[unitIndex]) return;
+    const photos = Array.isArray(details[unitIndex].photos) ? [...details[unitIndex].photos] : [];
+    photos.splice(photoIdx, 1);
+    details[unitIndex] = { ...details[unitIndex], photos };
+    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    onRefresh();
+  };
+
+  // ─── Per-unit photo upload (in-progress completion form rows) ───
+  const uploadCompletionUnitPhoto = async (serviceId: string, rowIdx: number, file: File) => {
+    const key = `${serviceId}:${rowIdx}`;
+    setUploadingCompletionUnitPhotoFor(key);
+    try {
+      const { compressImage, inferImageUploadMeta } = await import("@/lib/imageUpload");
+      const { blob } = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
+      const meta = inferImageUploadMeta(file);
+      const path = `service-photos/${serviceId}/unit-row-${rowIdx}-${Date.now()}.${meta.ext}`;
+      const { error } = await supabase.storage.from("report-images").upload(path, blob, {
+        contentType: meta.contentType, upsert: false,
+      });
+      if (error) throw error;
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      setCompletionData(prev => {
+        const cur = prev[serviceId];
+        if (!cur) return prev;
+        const rows = [...cur.unitRows];
+        const existing = Array.isArray((rows[rowIdx] as any).photos) ? (rows[rowIdx] as any).photos : [];
+        rows[rowIdx] = { ...(rows[rowIdx] as any), photos: [...existing, { url: pub.publicUrl }] } as any;
+        return { ...prev, [serviceId]: { ...cur, unitRows: rows } };
+      });
+      toast({ title: "Photo added", duration: 1200 });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setUploadingCompletionUnitPhotoFor(null);
+    }
+  };
+
+  const removeCompletionUnitPhoto = (serviceId: string, rowIdx: number, photoIdx: number) => {
+    setCompletionData(prev => {
+      const cur = prev[serviceId];
+      if (!cur) return prev;
+      const rows = [...cur.unitRows];
+      const photos = Array.isArray((rows[rowIdx] as any).photos) ? [...(rows[rowIdx] as any).photos] : [];
+      photos.splice(photoIdx, 1);
+      rows[rowIdx] = { ...(rows[rowIdx] as any), photos } as any;
+      return { ...prev, [serviceId]: { ...cur, unitRows: rows } };
+    });
   };
 
   const submitWorkOrder = async () => {
@@ -968,6 +1061,55 @@ const PropertyDashboard = ({
                     defaultValue={unit.findings || ""}
                     onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                   />
+                </div>
+                {/* UNIT PHOTOS — attach photos to this specific unit */}
+                <div className="mx-4 mb-4 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Image className="w-3.5 h-3.5 text-primary" />
+                    <Label className="text-xs font-bold text-foreground uppercase tracking-wide">
+                      Unit Photos {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                        <span className="text-muted-foreground font-normal normal-case">({unit.photos.length})</span>
+                      )}
+                    </Label>
+                  </div>
+                  <label className="cursor-pointer block">
+                    <div className={`w-full border-2 border-dashed rounded-lg py-3 px-3 flex items-center justify-center gap-2 transition-all ${uploadingUnitPhotoFor === `${s.id}:${j}` ? "bg-muted border-primary/70" : "border-primary/50 bg-background hover:bg-primary/[0.06] hover:border-primary/70"}`}>
+                      {uploadingUnitPhotoFor === `${s.id}:${j}` ? (
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-primary" />
+                      )}
+                      <span className="text-xs font-semibold text-foreground">
+                        {uploadingUnitPhotoFor === `${s.id}:${j}` ? "Uploading…" : "Add photo to this unit"}
+                      </span>
+                    </div>
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      disabled={uploadingUnitPhotoFor === `${s.id}:${j}`}
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadUnitPhoto(s.id, j, f);
+                        (e.target as HTMLInputElement).value = "";
+                      }} />
+                  </label>
+                  {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {(unit.photos as any[]).map((p: any, pIdx: number) => {
+                        const url = typeof p === "string" ? p : p?.url;
+                        if (!url) return null;
+                        return (
+                          <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
+                            <a href={url} target="_blank" rel="noopener noreferrer">
+                              <img src={url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </a>
+                            <button type="button" onClick={() => removeUnitPhoto(s.id, j, pIdx)}
+                              className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 {/* Two separate comment boxes — Crest team + Property Manager */}
                 <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1507,6 +1649,47 @@ const PropertyDashboard = ({
                                   onChange={(next) => updateRow(idx, "products_used", next as any)}
                                 />
                               </div>
+                            </div>
+                            {/* Per-unit photos (attach to this specific unit) */}
+                            <div className="md:col-span-2">
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                                <Image className="w-3.5 h-3.5" />
+                                Unit Photos {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
+                                  <span className="text-muted-foreground font-normal normal-case">({(row as any).photos.length})</span>
+                                )}
+                              </Label>
+                              <label className="cursor-pointer block mt-1">
+                                <div className={`w-full border-2 border-dashed rounded-lg py-3 px-3 flex items-center justify-center gap-2 transition-all ${uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "bg-muted border-primary/70" : "border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"}`}>
+                                  {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? (
+                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Plus className="w-4 h-4 text-primary" />
+                                  )}
+                                  <span className="text-xs font-semibold text-foreground">
+                                    {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "Uploading…" : "Add photo to this unit"}
+                                  </span>
+                                </div>
+                                <input type="file" accept="image/*" capture="environment" className="hidden"
+                                  disabled={uploadingCompletionUnitPhotoFor === `${s.id}:${idx}`}
+                                  onChange={e => {
+                                    const f = e.target.files?.[0];
+                                    if (f) uploadCompletionUnitPhoto(s.id, idx, f);
+                                    (e.target as HTMLInputElement).value = "";
+                                  }} />
+                              </label>
+                              {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
+                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                  {((row as any).photos as any[]).map((p: any, pIdx: number) => (
+                                    <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
+                                      <img src={p.url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                                      <button type="button" onClick={() => removeCompletionUnitPhoto(s.id, idx, pIdx)}
+                                        className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

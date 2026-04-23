@@ -167,6 +167,22 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
                             <p className="whitespace-pre-wrap leading-relaxed">{unit.notes}</p>
                           </div>
                         )}
+                        {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                          <div className="md:col-span-2">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Photos ({unit.photos.length})</p>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {(unit.photos as any[]).map((photo: any, pIdx: number) => {
+                                const url = typeof photo === "string" ? photo : photo?.url || photo?.src;
+                                if (!url) return null;
+                                return (
+                                  <a key={pIdx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-all hover:shadow-md">
+                                    <img src={url} alt={`Unit ${unit.unit_number || i + 1} photo ${pIdx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
