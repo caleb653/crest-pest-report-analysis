@@ -1337,7 +1337,7 @@ export default function CustomerReportView() {
             If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
           </p>
         </div>
-        {proposals.some((p) => p.services.some((s) => {
+        {parsedProposals.some((p) => p.services.some((s) => {
           const f = typeof s.frequency === "string" ? parseInt(s.frequency, 10) : s.frequency;
           return f === 28;
         })) && (
