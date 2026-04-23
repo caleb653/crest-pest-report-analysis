@@ -580,6 +580,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 const productsText = Array.isArray(u.products_used)
                   ? (u.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
                   : u.products_used;
+                const kind = (u as any).kind || "service";
+                const isInspection = kind === "inspection";
+                const allComments: ServiceComment[] = Array.isArray(u.comments) ? (u.comments as ServiceComment[]) : [];
                 return (
                   <div
                     key={i}
@@ -597,7 +600,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         }`}>
                           {i + 1}
                         </div>
-                        <span className="text-base font-bold">{u.unit_number || "—"}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-base font-bold">{u.unit_number || "—"}</span>
+                          <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                            isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/40 text-primary"
+                          }`}>
+                            {isInspection ? "Inspection" : "Service"}
+                          </span>
+                        </div>
                       </div>
                       {u.status && (
                         <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-400 text-orange-700 bg-orange-50" : "border-primary/40 bg-background"}`}>
@@ -618,12 +628,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           <p>{u.pest_activity}</p>
                         </div>
                       )}
-                      {u.findings && (
-                        <div className="md:col-span-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Findings</p>
-                          <p className="whitespace-pre-wrap leading-relaxed">{u.findings}</p>
-                        </div>
-                      )}
                       {productsText && (
                         <div className="md:col-span-2">
                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Products</p>
@@ -637,17 +641,45 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         </div>
                       )}
                     </div>
-                    {/* Per-unit comment thread (PM ↔ Crest) */}
-                    <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20">
-                      <ServiceComments
-                        serviceId={s.id}
-                        unitIndex={i}
-                        unitDetails={unitDetails}
-                        comments={Array.isArray(u.comments) ? (u.comments as ServiceComment[]) : []}
-                        sender="pm"
-                        compact
-                        onChange={loadAll}
-                      />
+                    {/* FINDINGS — its own visually distinct box */}
+                    {u.findings && (
+                      <div className="mx-4 mb-4 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-3">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                          <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Technician Findings</p>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{u.findings}</p>
+                      </div>
+                    )}
+                    {/* Two separate comment boxes — Crest (read-only) + Property Manager (editable) */}
+                    <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-2.5">
+                        <ServiceComments
+                          serviceId={s.id}
+                          unitIndex={i}
+                          unitDetails={unitDetails}
+                          comments={allComments}
+                          sender="crest"
+                          filterSender="crest"
+                          title="Crest Team Comments"
+                          readOnly
+                          compact
+                          onChange={loadAll}
+                        />
+                      </div>
+                      <div className="rounded-lg border-2 border-sky-300 bg-sky-50/60 p-2.5">
+                        <ServiceComments
+                          serviceId={s.id}
+                          unitIndex={i}
+                          unitDetails={unitDetails}
+                          comments={allComments}
+                          sender="pm"
+                          filterSender="pm"
+                          title="Your Comments (Property Manager)"
+                          compact
+                          onChange={loadAll}
+                        />
+                      </div>
                     </div>
                   </div>
                 );

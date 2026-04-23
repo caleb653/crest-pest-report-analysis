@@ -32,6 +32,10 @@ interface Props {
   readOnly?: boolean;
   /** Compact label (used inside unit cards). */
   compact?: boolean;
+  /** Only display + post comments from this sender. Used to render two side-by-side boxes. */
+  filterSender?: CommentSender;
+  /** Override box label (defaults derived from sender/compact). */
+  title?: string;
   onChange: () => void | Promise<void>;
 }
 
@@ -59,15 +63,17 @@ const fmtTime = (iso: string) => {
 
 export const ServiceComments = ({
   comments, serviceId, unitIndex, reportData, unitDetails,
-  sender, defaultAuthor = "", readOnly = false, compact = false, onChange,
+  sender, defaultAuthor = "", readOnly = false, compact = false, filterSender, title, onChange,
 }: Props) => {
   const [draft, setDraft] = useState("");
   const [author, setAuthor] = useState(defaultAuthor);
   const [saving, setSaving] = useState(false);
 
   const sorted = useMemo(
-    () => [...comments].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")),
-    [comments]
+    () => [...comments]
+      .filter(c => filterSender ? c.sender === filterSender : true)
+      .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")),
+    [comments, filterSender]
   );
 
   const persist = async (next: ServiceComment[]) => {
@@ -97,7 +103,8 @@ export const ServiceComments = ({
       id: (crypto as any).randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
       sender, author: finalAuthor, text, created_at: new Date().toISOString(),
     };
-    const ok = await persist([...sorted, newComment]);
+    // Persist against the FULL comments array (not the filtered view) so the other side's posts are preserved.
+    const ok = await persist([...comments, newComment]);
     if (ok) {
       setDraft("");
       await onChange();
@@ -105,7 +112,7 @@ export const ServiceComments = ({
   };
 
   const remove = async (id: string) => {
-    const ok = await persist(sorted.filter(c => c.id !== id));
+    const ok = await persist(comments.filter(c => c.id !== id));
     if (ok) await onChange();
   };
 
@@ -114,7 +121,7 @@ export const ServiceComments = ({
       <div className="flex items-center gap-1.5 mb-2">
         <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-          {compact ? "Unit Comments" : "Service Comments"} ({sorted.length})
+          {title ?? (compact ? "Comments" : "Service Comments")} ({sorted.length})
         </p>
       </div>
 
