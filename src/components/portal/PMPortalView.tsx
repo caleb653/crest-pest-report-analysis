@@ -747,14 +747,39 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </div>
         )}
         {/* Service-level comment thread (PM ↔ Crest) */}
-        <div className="pt-2 border-t border-border">
-          <ServiceComments
-            serviceId={s.id}
-            reportData={(s as any).report_data}
-            comments={Array.isArray(((s as any).report_data || {}).comments) ? ((s as any).report_data.comments as ServiceComment[]) : []}
-            sender="pm"
-            onChange={loadAll}
-          />
+        <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(() => {
+            const allComments = Array.isArray(((s as any).report_data || {}).comments)
+              ? ((s as any).report_data.comments as ServiceComment[])
+              : [];
+            return (
+              <>
+                <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
+                  <ServiceComments
+                    serviceId={s.id}
+                    reportData={(s as any).report_data}
+                    comments={allComments}
+                    sender="crest"
+                    filterSender="crest"
+                    title="Service Comments: Crest"
+                    readOnly
+                    onChange={loadAll}
+                  />
+                </div>
+                <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
+                  <ServiceComments
+                    serviceId={s.id}
+                    reportData={(s as any).report_data}
+                    comments={allComments}
+                    sender="pm"
+                    filterSender="pm"
+                    title="Service Comments: Property Manager"
+                    onChange={loadAll}
+                  />
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
     );
