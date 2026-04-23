@@ -37,7 +37,6 @@ const TenantPortal = () => {
   const [error, setError] = useState("");
   const [linkData, setLinkData] = useState<any>(null);
   const [propertyName, setPropertyName] = useState("");
-  const [requests, setRequests] = useState<RequestData[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -99,14 +98,8 @@ const TenantPortal = () => {
       }
     }
 
-    // Load requests for this link
-    const { data: reqs } = await supabase
-      .from("portal_requests")
-      .select("*")
-      .eq("link_id", link.id)
-      .order("created_at", { ascending: false });
-    if (reqs) setRequests(reqs);
-
+    // NOTE: We intentionally do NOT load previous work orders on the tenant portal.
+    // Tenants must never see what other tenants (or even their past selves) have submitted.
     setLoading(false);
   };
 
@@ -272,40 +265,6 @@ const TenantPortal = () => {
             </Button>
           </CardContent>
         </Card>
-
-        {/* ─── Past Requests ─── */}
-        {requests.length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold mb-2">Your Previous Requests</h2>
-            <div className="space-y-2">
-              {requests.map(r => (
-                <Card key={r.id}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(r.status)}
-                        <Badge variant="outline" className="text-xs">
-                          {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </div>
-                    {r.unit_number && <p className="text-xs text-muted-foreground">Unit {r.unit_number}</p>}
-                    <p className="text-sm mt-1">{r.description}</p>
-                    {r.response_notes && (
-                      <div className="mt-2 bg-muted rounded-md p-2">
-                        <p className="text-xs font-medium text-muted-foreground mb-0.5">Response from Crest:</p>
-                        <p className="text-sm">{r.response_notes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Footer */}
