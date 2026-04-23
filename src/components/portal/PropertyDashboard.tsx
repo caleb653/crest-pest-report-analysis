@@ -1592,13 +1592,29 @@ const PropertyDashboard = ({
                           }`}
                         >
                           {/* Bold colored header bar — visually separates each area */}
-                          <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                            isFollowUp
-                              ? "bg-orange-100 border-b-2 border-orange-500"
-                              : isWorkOrder
-                                ? "bg-primary/10 border-b-2 border-primary/60"
-                                : "bg-muted/40 border-b-2 border-border"
-                          } ${isUnitOpen ? "" : "border-b-0"}`}>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              const t = e.target as HTMLElement;
+                              if (t.closest("input, select, button, textarea, [data-no-toggle], [role='combobox'], [data-radix-collection-item]")) return;
+                              toggleUnitKey(unitKey);
+                            }}
+                            onKeyDown={(e) => {
+                              if ((e.key === "Enter" || e.key === " ") && (e.target as HTMLElement) === e.currentTarget) {
+                                e.preventDefault();
+                                toggleUnitKey(unitKey);
+                              }
+                            }}
+                            aria-expanded={isUnitOpen}
+                            className={`flex items-center justify-between gap-3 px-4 py-3 cursor-pointer select-none transition-colors ${
+                              isFollowUp
+                                ? "bg-orange-100 hover:bg-orange-200/60 border-b-2 border-orange-500"
+                                : isWorkOrder
+                                  ? "bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60"
+                                  : "bg-muted/40 hover:bg-muted/60 border-b-2 border-border"
+                            } ${isUnitOpen ? "" : "border-b-0"}`}
+                          >
                             <div className="flex items-center gap-3 flex-wrap">
                               <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                                 isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -1624,35 +1640,31 @@ const PropertyDashboard = ({
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
-                                <SelectTrigger className={`h-9 text-sm w-[170px] ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
+                              <div data-no-toggle onClick={(e) => e.stopPropagation()}>
+                                <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
+                                  <SelectTrigger className={`h-9 text-sm w-[170px] ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                               <button
-                                onClick={() => removeRow(idx)}
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeRow(idx); }}
                                 className="text-muted-foreground hover:text-destructive p-1"
                                 title="Remove area"
                               >
                                 <X className="w-4 h-4" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => toggleUnitKey(unitKey)}
-                                aria-expanded={isUnitOpen}
-                                aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
-                                className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
-                              >
-                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
-                              </button>
+                              <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
                             </div>
                           </div>
-                          {/* Card body — 2-column roomy grid */}
+                          {/* Card body — left 2/3 fields, right 1/3 unit photos */}
                           {isUnitOpen && (
-                          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                               <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
@@ -1685,8 +1697,9 @@ const PropertyDashboard = ({
                                 />
                               </div>
                             </div>
-                            {/* Per-unit photos (attach to this specific unit) */}
-                            <div className="md:col-span-2">
+                            </div>
+                            {/* Per-unit photos — right 1/3 */}
+                            <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                                 <Image className="w-3.5 h-3.5" />
                                 Unit Photos {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
@@ -1713,7 +1726,7 @@ const PropertyDashboard = ({
                                   }} />
                               </label>
                               {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
-                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                <div className="grid grid-cols-2 gap-2 mt-2">
                                   {((row as any).photos as any[]).map((p: any, pIdx: number) => (
                                     <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
                                       <img src={p.url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" />
