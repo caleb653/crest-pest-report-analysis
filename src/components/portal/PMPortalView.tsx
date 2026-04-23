@@ -133,6 +133,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
+  const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
+  const toggleUnitKey = (key: string) =>
+    setExpandedUnitKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   // PM notes for upcoming services — keyed by service_date (YYYY-MM-DD).
   // Stored on portal_properties.customer_preferences.pm_upcoming_notes so admins can read them.
