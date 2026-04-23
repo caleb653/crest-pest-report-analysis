@@ -1483,6 +1483,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       : uc.source === "carried"
                                         ? "Carried"
                                         : "Planned";
+                                  const ucKey = `up:${s.id}:${uc.unit_number}`;
+                                  const isUcOpen = expandedUnitKeys.has(ucKey);
                                   return (
                                     <div
                                       key={uc.unit_number}
@@ -1495,13 +1497,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       }`}
                                     >
                                       {/* Bold colored header bar — matches admin upcoming card */}
-                                      <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                                        isFU
-                                          ? "bg-orange-100 border-b-2 border-orange-500"
-                                          : isWO
-                                            ? "bg-primary/10 border-b-2 border-primary/60"
-                                            : "bg-muted/40 border-b-2 border-border"
-                                      }`}>
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleUnitKey(ucKey)}
+                                        aria-expanded={isUcOpen}
+                                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+                                          isFU
+                                            ? "bg-orange-100 hover:bg-orange-200/60 border-b-2 border-orange-500"
+                                            : isWO
+                                              ? "bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60"
+                                              : "bg-muted/40 hover:bg-muted/60 border-b-2 border-border"
+                                        } ${isUcOpen ? "" : "border-b-0"}`}
+                                      >
                                         <div className="flex items-center gap-3 flex-wrap">
                                           <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                                             isFU ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -1523,9 +1530,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                           <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
                                             To Be Treated
                                           </Badge>
+                                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUcOpen ? "rotate-180" : ""}`} />
                                         </div>
-                                      </div>
+                                      </button>
                                       {/* Card body — 2-column grid mirroring admin upcoming */}
+                                      {isUcOpen && (
                                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
                                         <div>
                                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Source</p>
@@ -1565,6 +1574,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                           </div>
                                         )}
                                       </div>
+                                      )}
                                     </div>
                                   );
                                 })}
