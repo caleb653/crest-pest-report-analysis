@@ -925,6 +925,19 @@ const PropertyDashboard = ({
                     />
                   </div>
                 </div>
+                {/* Per-unit comment thread (Crest ↔ PM) */}
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <ServiceComments
+                    serviceId={s.id}
+                    unitIndex={j}
+                    unitDetails={unitDetails}
+                    comments={Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : []}
+                    sender="crest"
+                    defaultAuthor={s.technician || ""}
+                    compact
+                    onChange={onRefresh}
+                  />
+                </div>
               </div>
             );
           })}
