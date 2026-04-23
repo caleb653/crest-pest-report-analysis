@@ -574,7 +574,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {unitDetails.length > 0 && (
           <div>
             <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Units Treated ({unitDetails.length})</p>
-            <div className="space-y-3">
+            <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
                 const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
                 const productsText = Array.isArray(u.products_used)
@@ -583,19 +583,29 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 return (
                   <div
                     key={i}
-                    className={`rounded-lg border-2 p-3.5 bg-card shadow-sm ${
-                      isFollowUp ? "border-orange-300 bg-orange-50/40" : "border-border"
+                    className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
+                      isFollowUp ? "border-orange-400" : "border-primary/30"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-border/60 flex-wrap">
-                      <span className="text-sm font-bold">Unit {u.unit_number || "—"}</span>
+                    {/* Bold colored header bar */}
+                    <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
+                      isFollowUp ? "bg-orange-100 border-b-2 border-orange-300" : "bg-primary/10 border-b-2 border-primary/30"
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                          isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                        }`}>
+                          {i + 1}
+                        </div>
+                        <span className="text-base font-bold">Unit {u.unit_number || "—"}</span>
+                      </div>
                       {u.status && (
-                        <Badge variant="outline" className={`text-[10px] ${isFollowUp ? "border-orange-300 text-orange-700 bg-orange-50" : ""}`}>
+                        <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-400 text-orange-700 bg-orange-50" : "border-primary/40 bg-background"}`}>
                           {u.status}
                         </Badge>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
                       {u.target_pest && (
                         <div>
                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
@@ -628,7 +638,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       )}
                     </div>
                     {/* Per-unit comment thread (PM ↔ Crest) */}
-                    <div className="mt-3 pt-3 border-t border-border/40">
+                    <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20">
                       <ServiceComments
                         serviceId={s.id}
                         unitIndex={i}

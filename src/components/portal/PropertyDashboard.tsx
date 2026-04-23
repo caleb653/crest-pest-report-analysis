@@ -848,28 +848,39 @@ const PropertyDashboard = ({
           </Button>
         </div>
         {/* Mini per-unit service report cards (replaces wide horizontal table) */}
-        <div className="space-y-3">
+        <div className="space-y-6">
           {unitDetails.map((unit: any, j: number) => {
             const isFollowUp = unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
             return (
               <div
                 key={j}
-                className={`rounded-lg border-2 bg-card shadow-sm p-3.5 ${
-                  isFollowUp ? "border-orange-300 bg-orange-50/30" : "border-border"
+                className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border/40 overflow-hidden ${
+                  isFollowUp ? "border-orange-400" : "border-primary/30"
                 }`}
               >
-                {/* Card header: Unit # + status pill */}
-                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border/60">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Unit</span>
-                    <Input
-                      className="h-9 text-base font-bold w-24 px-2"
-                      defaultValue={unit.unit_number || ""}
-                      onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
-                    />
+                {/* Bold colored header bar — makes each unit obviously distinct */}
+                <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
+                  isFollowUp ? "bg-orange-100 border-b-2 border-orange-300" : "bg-primary/10 border-b-2 border-primary/30"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
+                      isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
+                    }`}>
+                      {j + 1}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Unit</span>
+                      <Input
+                        className="h-9 text-lg font-bold w-28 px-2 bg-background"
+                        defaultValue={unit.unit_number || ""}
+                        onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
+                      />
+                    </div>
                   </div>
                   <select
-                    className={`h-9 text-sm bg-background border border-input rounded-md px-2.5 cursor-pointer font-medium ${isFollowUp ? "text-orange-600" : ""}`}
+                    className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
+                      isFollowUp ? "border-orange-400 text-orange-700" : "border-primary/40 text-foreground"
+                    }`}
                     defaultValue={unit.status || "Treated - Complete"}
                     onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                   >
@@ -877,7 +888,7 @@ const PropertyDashboard = ({
                   </select>
                 </div>
                 {/* Card body — 2-column grid for roomy fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                     <select
@@ -926,7 +937,7 @@ const PropertyDashboard = ({
                   </div>
                 </div>
                 {/* Per-unit comment thread (Crest ↔ PM) */}
-                <div className="mt-3 pt-3 border-t border-border/40">
+                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20">
                   <ServiceComments
                     serviceId={s.id}
                     unitIndex={j}
