@@ -121,6 +121,17 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
 
       const loadPromises: Promise<void>[] = [];
       const foundIcons = new Set<string>();
+      // Assign each icon TYPE a badge color in the order it first appears
+      // in the saved object array (matches the editor's placement order).
+      const iconTypeOrder: string[] = [];
+      const getBadgeColorForIconType = (iconType: string): string => {
+        let idx = iconTypeOrder.indexOf(iconType);
+        if (idx === -1) {
+          iconTypeOrder.push(iconType);
+          idx = iconTypeOrder.length - 1;
+        }
+        return ICON_BADGE_COLORS[idx % ICON_BADGE_COLORS.length];
+      };
 
       objectsArray.forEach((obj: any) => {
         const objType = String(obj.type || '').toLowerCase();
@@ -134,6 +145,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
           
           if (iconInfo) {
             foundIcons.add(iconType);
+            const badgeColor = getBadgeColorForIconType(iconType);
             const promise = FabricImage.fromURL(iconInfo.svgPath).then((img) => {
               const groupObjects: any[] = [img];
               
@@ -141,7 +153,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
                 const badgeSize = 14;
                 const badge = new FabricCircle({
                   radius: badgeSize / 2,
-                  fill: '#DC2626',
+                  fill: badgeColor,
                   originX: 'center',
                   originY: 'center',
                   left: (img.width || 32) / 2 + 8,
