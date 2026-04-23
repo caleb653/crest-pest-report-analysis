@@ -968,10 +968,27 @@ const PropertyDashboard = ({
                 }`}
               >
                 {/* Bold colored header bar — makes each unit obviously distinct */}
-                <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
-                  isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
-                } ${isUnitOpen ? "" : "border-b-0"}`}>
-                  <div className="flex items-center gap-3">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    // Don't toggle when interacting with form controls inside the header
+                    const t = e.target as HTMLElement;
+                    if (t.closest("input, select, button, textarea, [data-no-toggle]")) return;
+                    toggleUnitKey(unitKey);
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && (e.target as HTMLElement) === e.currentTarget) {
+                      e.preventDefault();
+                      toggleUnitKey(unitKey);
+                    }
+                  }}
+                  aria-expanded={isUnitOpen}
+                  className={`flex items-center justify-between gap-3 px-4 py-3 cursor-pointer select-none transition-colors ${
+                    isFollowUp ? "bg-orange-100 hover:bg-orange-200/60 border-b-2 border-orange-500" : "bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60"
+                  } ${isUnitOpen ? "" : "border-b-0"}`}
+                >
+                  <div className="flex items-center gap-3 flex-wrap">
                     <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                       isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
                     }`}>
@@ -983,11 +1000,30 @@ const PropertyDashboard = ({
                       defaultValue={unit.unit_number || ""}
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
-                    <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
-                      isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
-                    }`}>
-                      {isInspection ? "Inspection" : "Service"}
-                    </span>
+                    {/* Service / Inspection toggle (in-header) */}
+                    <div data-no-toggle className="inline-flex rounded-md border border-border bg-background p-0.5">
+                      {(["service", "inspection"] as const).map(k => {
+                        const active = kind === k;
+                        return (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateUnitField(s.id, j, "kind", k);
+                              updateUnitField(s.id, j, "status", defaultStatusFor(k));
+                            }}
+                            className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide rounded transition-colors ${
+                              active
+                                ? (k === "inspection" ? "bg-sky-500 text-white shadow-sm" : "bg-primary text-primary-foreground shadow-sm")
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {k === "service" ? "Service" : "Inspection"}
+                          </button>
+                        );
+                      })}
+                    </div>
                     {unit.target_pest && (
                       <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
                         {unit.target_pest}
@@ -1001,46 +1037,17 @@ const PropertyDashboard = ({
                       }`}
                       value={unit.status || defaultStatusFor(kind)}
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                    <button
-                      type="button"
-                      onClick={() => toggleUnitKey(unitKey)}
-                      aria-expanded={isUnitOpen}
-                      aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
-                      className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
-                    >
-                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
-                    </button>
+                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
                   </div>
                 </div>
                 {isUnitOpen && (<>
-                {/* Service / Inspection toggle */}
-                <div className="px-4 pt-3 -mb-1">
-                  <div className="inline-flex rounded-lg border-2 border-border bg-muted/40 p-0.5">
-                    {(["service", "inspection"] as const).map(k => {
-                      const active = kind === k;
-                      return (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => {
-                            updateUnitField(s.id, j, "kind", k);
-                            updateUnitField(s.id, j, "status", defaultStatusFor(k));
-                          }}
-                          className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                            active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {k === "service" ? "Service" : "Inspection"}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Card body — 2-column grid for roomy fields */}
-                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Card body — left 2/3 fields, right 1/3 unit photos */}
+                <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                     <select
@@ -1079,24 +1086,24 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.notes || "")) updateUnitField(s.id, j, "notes", e.target.value); }}
                     />
                   </div>
-                </div>
-                {/* FINDINGS — its own visually distinct box */}
-                <div className="mx-4 mb-4 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                    <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                      Technician Findings (visible to customer)
-                    </Label>
+                  {/* FINDINGS — its own visually distinct box */}
+                  <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                      <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                        Technician Findings (visible to customer)
+                      </Label>
+                    </div>
+                    <Textarea
+                      className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-400 focus-visible:ring-amber-400"
+                      placeholder="What did the technician observe in this area?"
+                      defaultValue={unit.findings || ""}
+                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
+                    />
                   </div>
-                  <Textarea
-                    className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-400 focus-visible:ring-amber-400"
-                    placeholder="What did the technician observe in this area?"
-                    defaultValue={unit.findings || ""}
-                    onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
-                  />
-                </div>
-                {/* UNIT PHOTOS — attach photos to this specific unit */}
-                <div className="mx-4 mb-4 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3">
+                  </div>
+                  {/* UNIT PHOTOS — right 1/3 column */}
+                  <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Image className="w-3.5 h-3.5 text-primary" />
                     <Label className="text-xs font-bold text-foreground uppercase tracking-wide">
@@ -1125,7 +1132,7 @@ const PropertyDashboard = ({
                       }} />
                   </label>
                   {Array.isArray(unit.photos) && unit.photos.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mt-2">
+                    <div className="grid grid-cols-2 gap-2 mt-2">
                       {(unit.photos as any[]).map((p: any, pIdx: number) => {
                         const url = typeof p === "string" ? p : p?.url;
                         if (!url) return null;
@@ -1143,6 +1150,7 @@ const PropertyDashboard = ({
                       })}
                     </div>
                   )}
+                </div>
                 </div>
                 {/* Two separate comment boxes — Crest team + Property Manager */}
                 <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
