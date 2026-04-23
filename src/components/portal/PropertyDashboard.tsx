@@ -183,6 +183,10 @@ const PropertyDashboard = ({
     products: ProductUsage[];
   }>>({});
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  // Tracks per-unit photo uploads:  `${serviceId}:${unitIndex}` while uploading
+  const [uploadingUnitPhotoFor, setUploadingUnitPhotoFor] = useState<string | null>(null);
+  // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
+  const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
