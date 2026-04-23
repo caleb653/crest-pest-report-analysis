@@ -1339,10 +1339,10 @@ export default function CustomerReportView() {
         </div>
         {parsedProposals.some((p) => p.services.some((s) => {
           const f = typeof s.frequency === "string" ? parseInt(s.frequency, 10) : s.frequency;
-          return f === 28;
+          return f === 7 || f === 14 || f === 28;
         })) && (
           <p className="text-[11px] italic text-muted-foreground text-center mt-2 leading-snug">
-            * Commercial accounts run on four-week cycles for consistent scheduling (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
+            * Scheduling and billing run on four-week cycles to help ensure consistency (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
           </p>
         )}
       </div>
