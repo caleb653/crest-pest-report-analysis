@@ -17,16 +17,6 @@ export const DEFAULT_PEST_SURVEY_QUESTIONS: SurveyQuestion[] = [
     type: "rating",
   },
   {
-    id: "outdoor_pest_issues",
-    label: "Do you notice pest issues around the property — landscaping, trash areas, common areas? (5 = no issues at all)",
-    type: "rating",
-  },
-  {
-    id: "worry_level",
-    label: "How often do you worry about pests in your space? (5 = never worry)",
-    type: "rating",
-  },
-  {
     id: "comfort_level",
     label: "How comfortable do you feel in your space because of pest conditions? (5 = very comfortable)",
     type: "rating",

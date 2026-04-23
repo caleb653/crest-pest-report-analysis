@@ -2205,7 +2205,7 @@ const PropertyDashboard = ({
 
             {/* Unit or Area — free-text with case-insensitive suggestion list */}
             <div>
-              <Label className="text-sm">Unit or Area *</Label>
+              <Label className="text-sm">Unit, Property, or Area *</Label>
               <Input
                 list="admin-wo-known-units"
                 placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
