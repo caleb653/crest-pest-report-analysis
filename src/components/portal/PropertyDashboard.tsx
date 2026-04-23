@@ -1636,6 +1636,63 @@ const PropertyDashboard = ({
           </CardContent>
         </Card>
 
+        {/* Cadence Visit Plan — explains what each visit in the rotation will cover.
+            Only meaningful for weekly (4 visits / cycle) and bi-weekly (2 visits / cycle).
+            For monthly / bi-monthly there is no rotation, so the card is hidden. */}
+        {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
+          const cycleLength = propertyFrequency === "weekly" ? 4 : 2;
+          const planArr = (cadencePlanDraft[propertyFrequency] || []).slice(0, cycleLength);
+          while (planArr.length < cycleLength) planArr.push("");
+          return (
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Repeat className="w-5 h-5 text-primary" />
+                  Cadence Plan — {propertyFrequency === "weekly" ? "Weekly (4-visit rotation)" : "Bi-Weekly (2-visit rotation)"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Describe what the {cycleLength === 4 ? "1st, 2nd, 3rd, and 4th" : "1st and 2nd"} visit of the cycle will cover.
+                  Future projected services on this property will display the matching focus.
+                </p>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${cycleLength === 4 ? "lg:grid-cols-4" : ""} gap-3`}>
+                  {Array.from({ length: cycleLength }).map((_, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <span className="inline-flex w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold items-center justify-center">{idx + 1}</span>
+                        Visit {idx + 1}
+                      </Label>
+                      <Textarea
+                        rows={3}
+                        className="text-xs resize-y"
+                        placeholder={
+                          idx === 0 ? "e.g. Full perimeter dewebbing + exterior power-spray"
+                            : idx === 1 ? "e.g. Spot-treat hotspots, refill bait stations"
+                            : idx === 2 ? "e.g. Interior common areas + restroom monitoring"
+                            : "e.g. Trash room flush + structural exclusion check"
+                        }
+                        value={planArr[idx]}
+                        onChange={(e) => {
+                          const next = { ...cadencePlanDraft };
+                          const arr = (next[propertyFrequency] || []).slice();
+                          while (arr.length < cycleLength) arr.push("");
+                          arr[idx] = e.target.value;
+                          next[propertyFrequency] = arr;
+                          setCadencePlanDraft(next);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Auto-saves a moment after you stop typing.
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
             {/* Property Map - sized down with paste support */}
