@@ -90,6 +90,20 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   const isTouchRef = useRef(false);
   const clickPlacedRef = useRef(false);
   const iconCountsRef = useRef<Record<string, number>>({});
+  // Tracks the assignment order of icon types so each type gets a distinct
+  // badge color. First type placed -> ICON_BADGE_COLORS[0] (red), second
+  // type -> [1] (blue), etc. Persists across saves via obj.data.iconType.
+  const iconTypeOrderRef = useRef<string[]>([]);
+
+  const getBadgeColorForIconType = (iconType: string): string => {
+    const order = iconTypeOrderRef.current;
+    let idx = order.indexOf(iconType);
+    if (idx === -1) {
+      order.push(iconType);
+      idx = order.length - 1;
+    }
+    return ICON_BADGE_COLORS[idx % ICON_BADGE_COLORS.length];
+  };
   // Line drawing state
   const [lineStartPoint, setLineStartPoint] = useState<{ x: number; y: number } | null>(null);
   const lineStartRef = useRef<{ x: number; y: number } | null>(null);
