@@ -916,7 +916,7 @@ const PropertyDashboard = ({
                 {/* Card body — 2-column grid for roomy fields */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                     <select
                       className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
                       value={unit.target_pest || ""}
@@ -927,7 +927,7 @@ const PropertyDashboard = ({
                     </select>
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
                     <select
                       className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 cursor-pointer mt-1"
                       value={unit.pest_activity || "None"}
@@ -937,7 +937,7 @@ const PropertyDashboard = ({
                     </select>
                   </div>
                   <div className="md:col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
                     <div className="mt-1">
                       <UnitProductPicker
                         value={unit.products_used || ""}
@@ -946,7 +946,7 @@ const PropertyDashboard = ({
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
                     <Textarea
                       className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug whitespace-normal mt-1"
                       defaultValue={unit.notes || ""}
@@ -958,7 +958,7 @@ const PropertyDashboard = ({
                 <div className="mx-4 mb-4 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                    <Label className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">
+                    <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
                       Technician Findings (visible to customer)
                     </Label>
                   </div>
@@ -1050,7 +1050,7 @@ const PropertyDashboard = ({
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                   <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 mt-1"
                     value={(newUnitData as any).target_pest || ""}
                     onChange={e => setNewUnitData(d => ({ ...d, target_pest: e.target.value } as any))}
@@ -1060,7 +1060,7 @@ const PropertyDashboard = ({
                   </select>
                 </div>
                 <div>
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
                   <select className="h-9 text-sm w-full bg-background border border-input rounded-md px-2 mt-1"
                     value={newUnitData.pest_activity || "None"}
                     onChange={e => setNewUnitData(d => ({ ...d, pest_activity: e.target.value }))}
@@ -1069,14 +1069,14 @@ const PropertyDashboard = ({
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Findings / Notes</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Findings / Notes</Label>
                   <Textarea className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug mt-1" placeholder="What was found / what was treated…"
                     value={newUnitData.findings}
                     onChange={e => setNewUnitData(d => ({ ...d, findings: e.target.value }))}
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
                   <div className="mt-1">
                     <UnitProductPicker
                       value={newUnitData.products_used}
@@ -1085,7 +1085,7 @@ const PropertyDashboard = ({
                   </div>
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes</Label>
                   <Textarea className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug mt-1" placeholder="Admin-only notes…"
                     value={newUnitData.notes}
                     onChange={e => setNewUnitData(d => ({ ...d, notes: e.target.value }))}
@@ -1101,7 +1101,7 @@ const PropertyDashboard = ({
         </div>
         {/* Quick add row if not already adding */}
         {addingUnitToService !== s.id && (
-          <button className="w-full mt-1 py-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
+          <button className="w-full mt-1 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
             onClick={() => {
               setAddingUnitToService(s.id);
               setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
@@ -1139,7 +1139,7 @@ const PropertyDashboard = ({
         {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
         {pmNoteForThis && (
           <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
               <ClipboardList className="w-3 h-3" />
               From the Property Manager — for the Technician
             </p>
@@ -1161,8 +1161,8 @@ const PropertyDashboard = ({
           return (
             <div className="bg-primary text-primary-foreground rounded-lg p-3 flex items-center justify-between shadow-sm">
               <div>
-                <p className="text-[10px] uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
-                <p className="text-[11px] opacity-85 mt-0.5">
+                <p className="text-xs uppercase tracking-wide font-semibold opacity-90">Interior Units to Treat</p>
+                <p className="text-xs opacity-85 mt-0.5">
                   {fuCount > 0 && <span>{fuCount} follow-up{fuCount === 1 ? "" : "s"}</span>}
                   {fuCount > 0 && woCount > 0 && <span> + </span>}
                   {woCount > 0 && <span>{woCount} work order{woCount === 1 ? "" : "s"}</span>}
@@ -1171,7 +1171,7 @@ const PropertyDashboard = ({
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold leading-none">{total}</p>
-                <p className="text-[10px] mt-1 opacity-80">unique unit{total === 1 ? "" : "s"}</p>
+                <p className="text-xs mt-1 opacity-80">unique unit{total === 1 ? "" : "s"}</p>
               </div>
             </div>
           );
@@ -1181,7 +1181,7 @@ const PropertyDashboard = ({
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
-              <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary">
                 Technician Findings{s.technician ? ` — ${s.technician}` : ""}
               </p>
             </div>
@@ -1193,7 +1193,7 @@ const PropertyDashboard = ({
 
         {/* Service-level products used (editable, per service date — not per unit) */}
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+          <p className="text-sm font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
             <FlaskConical className="w-3.5 h-3.5" />
             Products Used (this service date)
           </p>
@@ -1205,27 +1205,27 @@ const PropertyDashboard = ({
 
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
-            <p className="text-xs font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
+            <p className="text-sm font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
           </div>
         )}
 
         {s.special_notes && (
           <div className="bg-amber-50 border border-amber-400 rounded-lg p-2.5">
-            <p className="text-xs text-amber-700">{s.special_notes}</p>
+            <p className="text-sm text-amber-700">{s.special_notes}</p>
           </div>
         )}
 
         {s.prep_required && s.prep_notes && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
-            <p className="text-xs font-medium text-blue-700">Prep Required</p>
-            <p className="text-xs text-blue-600 mt-0.5">{s.prep_notes}</p>
+            <p className="text-sm font-medium text-blue-700">Prep Required</p>
+            <p className="text-sm text-blue-600 mt-0.5">{s.prep_notes}</p>
           </div>
         )}
 
         {/* Photos */}
         {Array.isArray(s.photos) && s.photos.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+            <p className="text-sm font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
               <Image className="w-3.5 h-3.5" />Photos ({s.photos.length})
             </p>
             <div className="grid grid-cols-3 gap-1.5">
@@ -1366,7 +1366,7 @@ const PropertyDashboard = ({
                 {/* Technician + Time In/Out */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-[11px] font-semibold">Technician</Label>
+                    <Label className="text-xs font-semibold">Technician</Label>
                     <Select value={cd.technician || ""}
                       onValueChange={(v) => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], technician: v } }))}>
                       <SelectTrigger className="h-9 text-xs mt-0.5"><SelectValue placeholder="Select technician" /></SelectTrigger>
@@ -1376,12 +1376,12 @@ const PropertyDashboard = ({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold">Time In</Label>
+                    <Label className="text-xs font-semibold">Time In</Label>
                     <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_in}
                       onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_in: e.target.value } }))} />
                   </div>
                   <div>
-                    <Label className="text-[11px] font-semibold">Time Out</Label>
+                    <Label className="text-xs font-semibold">Time Out</Label>
                     <Input type="time" className="h-7 text-xs mt-0.5" value={cd.time_out}
                       onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], time_out: e.target.value } }))} />
                   </div>
@@ -1389,7 +1389,7 @@ const PropertyDashboard = ({
 
                 {/* Summary — single large box, above the units table */}
                 <div className="rounded-lg border border-border bg-muted/20 p-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Summary</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Summary</Label>
                   <Textarea className="text-xs min-h-[120px] mt-1.5 bg-background resize-y" placeholder="Service summary..." value={cd.summary}
                     onChange={e => setCompletionData(prev => ({ ...prev, [s.id]: { ...prev[s.id], summary: e.target.value, findings: "", notes: "" } }))} />
                 </div>
@@ -1397,8 +1397,8 @@ const PropertyDashboard = ({
                 {/* Unit-by-unit table — same format as Previous Services */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <Label className="text-[11px] font-semibold">Areas Treated ({cd.unitRows.length})</Label>
-                    <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={addRow}>
+                    <Label className="text-xs font-semibold">Areas Treated ({cd.unitRows.length})</Label>
+                    <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
                       <Plus className="w-3 h-3 mr-0.5" />Add Area
                     </Button>
                   </div>
@@ -1438,10 +1438,10 @@ const PropertyDashboard = ({
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
                               />
                               {isWorkOrder && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">Work Order</span>
+                                <span className="text-xs font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">Work Order</span>
                               )}
                               {isFollowUp && (
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
+                                <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -1465,7 +1465,7 @@ const PropertyDashboard = ({
                           {/* Card body — 2-column roomy grid */}
                           <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Source</Label>
                               <Select value={row.source || "new-work-order"} onValueChange={(v) => updateRow(idx, "source", v)}>
                                 <SelectTrigger className="h-9 text-sm mt-1">
                                   <SelectValue />
@@ -1477,7 +1477,7 @@ const PropertyDashboard = ({
                               </Select>
                             </div>
                             <div>
-                              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Target Pest</Label>
                               <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
                                 <SelectTrigger className="h-9 text-sm mt-1">
                                   <SelectValue placeholder="Select pest" />
@@ -1489,7 +1489,7 @@ const PropertyDashboard = ({
                               </Select>
                             </div>
                             <div className="md:col-span-2">
-                              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Findings / Context (visible to customer)</Label>
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Findings / Context (visible to customer)</Label>
                               <Textarea
                                 className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal mt-1"
                                 value={row.findings}
@@ -1498,7 +1498,7 @@ const PropertyDashboard = ({
                               />
                             </div>
                             <div className="md:col-span-2">
-                              <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
                               <div className="mt-1">
                                 <UnitProductPicker
                                   value={Array.isArray(row.products_used)
@@ -1513,7 +1513,7 @@ const PropertyDashboard = ({
                       );
                     })}
                   </div>
-                  <button className="w-full mt-1 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
+                  <button className="w-full mt-1 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
                     onClick={addRow}>
                     <Plus className="w-3.5 h-3.5" /> Add area
                   </button>
@@ -1552,7 +1552,7 @@ const PropertyDashboard = ({
                   return null;
                 })()}
                 <div className="rounded-lg border border-border bg-muted/20 p-3">
-                  <Label className="text-[11px] font-semibold flex items-center gap-1.5 mb-2">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5 mb-2">
                     <FlaskConical className="w-3.5 h-3.5 text-primary" />
                     Products Used (this service date)
                   </Label>
@@ -1584,7 +1584,7 @@ const PropertyDashboard = ({
                         <p className="text-sm font-bold text-foreground">
                           {uploadingPhotoFor === s.id ? "Uploading..." : "Add Photo"}
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">Tap to take a photo or upload from gallery</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Tap to take a photo or upload from gallery</p>
                       </div>
                     </div>
                     <input type="file" accept="image/*" capture="environment" className="hidden"
@@ -1613,7 +1613,7 @@ const PropertyDashboard = ({
                 {/* Follow-up warning */}
                 {flaggedCount > 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
-                    <p className="text-[11px] font-medium text-orange-700">
+                    <p className="text-xs font-medium text-orange-700">
                       ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Treated - Follow Up" — will auto-add to next service
                     </p>
                   </div>
@@ -1659,7 +1659,7 @@ const PropertyDashboard = ({
         </TabsTrigger>
         <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Calendar className="w-5 h-5" />
-          <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
+          <span>Previous Services <Badge variant="secondary" className="ml-1 text-xs h-4">{pastServices.length}</Badge></span>
         </TabsTrigger>
         <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Bug className="w-5 h-5" />
@@ -1667,15 +1667,15 @@ const PropertyDashboard = ({
         </TabsTrigger>
         <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <ClipboardList className="w-5 h-5" />
-          <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{allUpcoming.length}</Badge></span>
+          <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{allUpcoming.length}</Badge></span>
         </TabsTrigger>
         <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <FileDown className="w-5 h-5" />
-          <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+          <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
         </TabsTrigger>
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <BarChart3 className="w-5 h-5" />
-          <span>Tenant Survey <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveys.length}</Badge></span>
+          <span>Tenant Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
       </TabsList>
 
@@ -1738,7 +1738,7 @@ const PropertyDashboard = ({
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1.5">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   Used to project the next two upcoming services on this property.
                 </p>
               </div>
@@ -1748,7 +1748,7 @@ const PropertyDashboard = ({
                 value={planDraft}
                 onChange={(e) => setPlanDraft(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
               </p>
             </CardContent>
@@ -1768,7 +1768,7 @@ const PropertyDashboard = ({
                 value={prefDraft}
                 onChange={(e) => setPrefDraft(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
               </p>
             </CardContent>
@@ -1807,7 +1807,7 @@ const PropertyDashboard = ({
                 />
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Auto-saves a moment after you stop typing. Visible to technicians and property managers.
             </p>
           </CardContent>
@@ -1837,7 +1837,7 @@ const PropertyDashboard = ({
                   {Array.from({ length: cycleLength }).map((_, idx) => (
                     <div key={idx} className="space-y-1.5">
                       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                        <span className="inline-flex w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold items-center justify-center">{idx + 1}</span>
+                        <span className="inline-flex w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs font-bold items-center justify-center">{idx + 1}</span>
                         Visit {idx + 1}
                       </Label>
                       <Textarea
@@ -1862,7 +1862,7 @@ const PropertyDashboard = ({
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Auto-saves a moment after you stop typing.
                 </p>
               </CardContent>
@@ -1923,7 +1923,7 @@ const PropertyDashboard = ({
               <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 p-4 text-center">
                 <Image className="w-8 h-8 opacity-40" />
                 <p className="text-xs">No property image</p>
-                <p className="text-[10px] opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
+                <p className="text-xs opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
               </div>
             )}
             {mapUrl && (
@@ -1977,7 +1977,7 @@ const PropertyDashboard = ({
                       <Input
                         type="number"
                         min={1}
-                        className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
+                        className="h-6 w-14 text-xs text-center border-border/50 px-1"
                         value={item?.count || 1}
                         onChange={(e) => {
                           const count = parseInt(e.target.value) || 1;
@@ -2004,7 +2004,7 @@ const PropertyDashboard = ({
                     }} className="rounded accent-[hsl(130,14%,65%)] w-3.5 h-3.5" />
                     {custom.name}
                   </label>
-                  <Input type="number" min={1} className="h-6 w-14 text-[11px] text-center border-border/50 px-1"
+                  <Input type="number" min={1} className="h-6 w-14 text-xs text-center border-border/50 px-1"
                     value={custom.count || 1}
                     onChange={(e) => {
                       const count = parseInt(e.target.value) || 1;
@@ -2072,7 +2072,7 @@ const PropertyDashboard = ({
         <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/70">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
-            <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{pastServices.length}</Badge>
           </h3>
           <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
             <button
@@ -2101,10 +2101,10 @@ const PropertyDashboard = ({
                     <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
+                          {isFirst && <Badge className="text-xs bg-primary text-primary-foreground">Most Recent</Badge>}
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
-                          <Badge variant="default" className="text-[10px]">Completed</Badge>
-                          {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
+                          <Badge variant="default" className="text-xs">Completed</Badge>
+                          {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span>{formatDate(s.service_date)}</span>
@@ -2134,7 +2134,7 @@ const PropertyDashboard = ({
                     <AccordionTrigger className="px-3 py-2.5 text-sm hover:no-underline bg-muted/20 rounded-t-lg">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{unitNum === "General" ? "General Treatment" : `Unit ${unitNum}`}</span>
-                        <Badge variant="secondary" className="text-[10px]">{entries.length} services</Badge>
+                        <Badge variant="secondary" className="text-xs">{entries.length} services</Badge>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
@@ -2196,7 +2196,7 @@ const PropertyDashboard = ({
                     >
                       <Icon className="w-5 h-5" />
                       <span className="text-sm font-semibold">{opt.label}</span>
-                      <span className={`text-[10px] ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                      <span className={`text-xs ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
                     </button>
                   );
                 })}
@@ -2397,7 +2397,7 @@ const PropertyDashboard = ({
         <div className="border-b-2 border-primary/70 pb-2.5">
           <h3 className="text-base font-bold flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-secondary" />Upcoming Services
-            <Badge variant="secondary" className="text-[11px] ml-1">{allUpcoming.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{allUpcoming.length}</Badge>
           </h3>
         </div>
 
@@ -2426,11 +2426,11 @@ const PropertyDashboard = ({
                   <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
+                        {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
-                        {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
-                        {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
-                        {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
+                        {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
+                        {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
+                        {hasPmNote && <Badge className="text-xs bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
@@ -2450,7 +2450,7 @@ const PropertyDashboard = ({
         {/* Future projected visits — date only, no details */}
         {futureProjectedDates.length > 0 && (
           <div className="mt-6">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
               Following {futureProjectedDates.length} visits ({propertyFrequency.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())})
             </p>
@@ -2466,25 +2466,25 @@ const PropertyDashboard = ({
                     key={`future-${idx}`}
                     className="flex items-start gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
                   >
-                    <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                       {idx + 2}
                     </span>
                     <div className="min-w-0 flex-1">
                       <span className="text-xs block">{formatDate(d)}</span>
                       {cycleLength > 1 && (
-                        <span className="text-[10px] text-primary font-semibold uppercase tracking-wide">
+                        <span className="text-xs text-primary font-semibold uppercase tracking-wide">
                           Visit {visitInCycle} of {cycleLength}
                         </span>
                       )}
                       {note && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{note}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{note}</p>
                       )}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <p className="text-[10px] text-muted-foreground italic mt-2">
+            <p className="text-xs text-muted-foreground italic mt-2">
               Projected dates only — service details are confirmed closer to each visit.
             </p>
           </div>
@@ -2592,7 +2592,7 @@ const PropertyDashboard = ({
                   value={surveyEmails}
                   onChange={(e) => setSurveyEmails(e.target.value)}
                 />
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Each tenant gets their own unique link so you can see who responded.
                 </p>
               </div>
@@ -2607,7 +2607,7 @@ const PropertyDashboard = ({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" />Survey Questions Preview
-                <Badge variant="secondary" className="ml-1 text-[11px]">{DEFAULT_PEST_SURVEY_QUESTIONS.length} questions</Badge>
+                <Badge variant="secondary" className="ml-1 text-xs">{DEFAULT_PEST_SURVEY_QUESTIONS.length} questions</Badge>
               </CardTitle>
               <p className="text-xs text-muted-foreground">This is exactly what tenants will see.</p>
             </CardHeader>
@@ -2627,13 +2627,13 @@ const PropertyDashboard = ({
                             </div>
                           ))}
                         </div>
-                        <div className="flex justify-between text-[10px] text-muted-foreground max-w-[230px] px-0.5">
+                        <div className="flex justify-between text-xs text-muted-foreground max-w-[230px] px-0.5">
                           <span>1 = Poor</span><span>5 = Excellent</span>
                         </div>
                       </div>
                     )}
                     {q.type === "text" && (
-                      <div className="border rounded bg-background h-14 text-[11px] text-muted-foreground italic px-2 py-1.5">
+                      <div className="border rounded bg-background h-14 text-xs text-muted-foreground italic px-2 py-1.5">
                         Open-ended response…
                       </div>
                     )}
@@ -2657,7 +2657,7 @@ const PropertyDashboard = ({
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses
-                <Badge variant="secondary" className="ml-1 text-[11px]">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {surveyResponses.filter((r) => r.submitted_at).length} submitted
                 </Badge>
               </CardTitle>
@@ -2715,7 +2715,7 @@ const PropertyDashboard = ({
                       <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-4 flex items-center justify-between">
                         <div>
                           <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Overall Average</p>
-                          <p className="text-[11px] text-muted-foreground">Across all rating questions • 5 = good</p>
+                          <p className="text-xs text-muted-foreground">Across all rating questions • 5 = good</p>
                         </div>
                         <div className="text-right">
                           <p className="text-3xl font-bold text-primary tabular-nums">{overallAvg.toFixed(2)}<span className="text-base text-muted-foreground font-normal"> / 5</span></p>
@@ -2750,7 +2750,7 @@ const PropertyDashboard = ({
                               <p className="text-sm font-semibold">{q.label}</p>
                               <p className="text-sm font-bold tabular-nums whitespace-nowrap">
                                 {avg !== null ? `${avg.toFixed(2)} / 5` : "—"}
-                                <span className="text-[11px] text-muted-foreground font-normal ml-1">({r?.count || 0})</span>
+                                <span className="text-xs text-muted-foreground font-normal ml-1">({r?.count || 0})</span>
                               </p>
                             </div>
                             <div className="h-2 bg-muted rounded overflow-hidden">
@@ -2828,7 +2828,7 @@ const PropertyDashboard = ({
                                 {responses.map((r) => (
                                   <li key={r.id} className="flex items-center justify-between text-xs">
                                     <span className="truncate">{r.recipient_email || "Unknown"}</span>
-                                    <Badge variant={r.submitted_at ? "default" : "outline"} className="text-[10px]">
+                                    <Badge variant={r.submitted_at ? "default" : "outline"} className="text-xs">
                                       {r.submitted_at ? "Submitted" : "Pending"}
                                     </Badge>
                                   </li>
