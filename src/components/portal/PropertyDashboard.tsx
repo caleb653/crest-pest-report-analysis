@@ -155,6 +155,15 @@ const PropertyDashboard = ({
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
+  // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
+  const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
+  const toggleUnitKey = (key: string) =>
+    setExpandedUnitKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
   const [workOrder, setWorkOrder] = useState({
