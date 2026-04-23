@@ -1716,6 +1716,7 @@ const PropertyDashboard = ({
                               )}
                             </div>
                           </div>
+                          )}
                         </div>
                       );
                     })}
