@@ -1601,6 +1601,47 @@ const PropertyDashboard = ({
                                 />
                               </div>
                             </div>
+                            {/* Per-unit photos (attach to this specific unit) */}
+                            <div className="md:col-span-2">
+                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                                <Image className="w-3.5 h-3.5" />
+                                Unit Photos {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
+                                  <span className="text-muted-foreground font-normal normal-case">({(row as any).photos.length})</span>
+                                )}
+                              </Label>
+                              <label className="cursor-pointer block mt-1">
+                                <div className={`w-full border-2 border-dashed rounded-lg py-3 px-3 flex items-center justify-center gap-2 transition-all ${uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "bg-muted border-primary/70" : "border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"}`}>
+                                  {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? (
+                                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Plus className="w-4 h-4 text-primary" />
+                                  )}
+                                  <span className="text-xs font-semibold text-foreground">
+                                    {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "Uploading…" : "Add photo to this unit"}
+                                  </span>
+                                </div>
+                                <input type="file" accept="image/*" capture="environment" className="hidden"
+                                  disabled={uploadingCompletionUnitPhotoFor === `${s.id}:${idx}`}
+                                  onChange={e => {
+                                    const f = e.target.files?.[0];
+                                    if (f) uploadCompletionUnitPhoto(s.id, idx, f);
+                                    (e.target as HTMLInputElement).value = "";
+                                  }} />
+                              </label>
+                              {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
+                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                  {((row as any).photos as any[]).map((p: any, pIdx: number) => (
+                                    <div key={pIdx} className="relative aspect-square rounded-md overflow-hidden border border-border group">
+                                      <img src={p.url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" />
+                                      <button type="button" onClick={() => removeCompletionUnitPhoto(s.id, idx, pIdx)}
+                                        className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground">
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
