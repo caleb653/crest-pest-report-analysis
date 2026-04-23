@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
-  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User
+  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
+  BarChart3, Phone, Mail, Repeat
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -23,6 +25,7 @@ import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits } from "@/lib/upcomingUnits";
+import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 
 // ─── Types ───
 interface PortalProperty {
@@ -153,7 +156,13 @@ const PropertyDashboard = ({
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
-  const [workOrder, setWorkOrder] = useState({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" as "treatment" | "inspection" });
+  const [workOrder, setWorkOrder] = useState({
+    unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "",
+    request_type: "treatment" as "treatment" | "inspection",
+    occupancy_status: "" as "" | "Occupied" | "Vacant",
+    email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+  });
+  const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("map");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
@@ -177,6 +186,15 @@ const PropertyDashboard = ({
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
+
+  // Survey state — mirrors PMPortalView so admin has full survey workflow
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
+  const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
+  const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
+  const [surveyEmails, setSurveyEmails] = useState("");
+  const [sendingSurvey, setSendingSurvey] = useState(false);
+  const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
@@ -255,6 +273,39 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail]);
 
+  // ─── Cadence Visit Plan ───
+  // For weekly and bi-weekly schedules, technicians rotate what they focus on
+  // each visit (e.g. visit 1 = full exterior, visit 2 = spot-treat hotspots).
+  // Stored at customer_preferences.cadence_visit_plan as { weekly: string[4], "bi-weekly": string[2] }.
+  // Length matches the cycle so each upcoming visit can show its planned focus.
+  const initialCadencePlan: Record<string, string[]> =
+    ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+  const [cadencePlanDraft, setCadencePlanDraft] = useState<Record<string, string[]>>(initialCadencePlan);
+  useEffect(() => {
+    setCadencePlanDraft(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = JSON.stringify(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
+    if (current === JSON.stringify(cadencePlanDraft)) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        cadence_visit_plan: cadencePlanDraft,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save cadence plan", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cadencePlanDraft]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
@@ -274,6 +325,66 @@ const PropertyDashboard = ({
     loadRequests();
     loadPrepSheets();
   }, [property.id]);
+
+  // Load surveys + responses for this property
+  useEffect(() => {
+    const loadSurveys = async () => {
+      const [{ data: svys }, { data: respRows }] = await Promise.all([
+        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      ]);
+      if (Array.isArray(svys)) setSurveys(svys);
+      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+    };
+    loadSurveys();
+  }, [property.id]);
+
+  const sendSurvey = async () => {
+    const emails = surveyEmails
+      .split(/[\s,;]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    if (emails.length === 0) {
+      toast({ title: "Add at least one valid email", variant: "destructive" });
+      return;
+    }
+    setSendingSurvey(true);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: property.id,
+          client_id: clientId || null,
+          title: surveyTitle.trim() || "Pest Activity Survey",
+          intro: surveyIntro.trim() || null,
+          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          recipient_emails: emails,
+        })
+        .select("*")
+        .single();
+      if (error || !created) throw error;
+      const { data: sendRes } = await supabase.functions.invoke("send-tenant-survey", {
+        body: { surveyId: created.id, appBaseUrl: window.location.origin },
+      });
+      if ((sendRes as any)?.ok) {
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+      } else {
+        toast({ title: "Survey created", description: "Email send may have failed — check logs." });
+      }
+      setSurveyEmails("");
+      const [{ data: svys }, { data: respRows }] = await Promise.all([
+        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      ]);
+      if (Array.isArray(svys)) setSurveys(svys);
+      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+    } catch (e: any) {
+      console.error("sendSurvey failed", e);
+      toast({ title: "Send failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSendingSurvey(false);
+    }
+  };
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
@@ -592,12 +703,13 @@ const PropertyDashboard = ({
 
   const submitWorkOrder = async () => {
     if (!workOrder.unit_number && !workOrder.comments) return;
+    setSubmittingWorkOrder(true);
     // Case-insensitive normalization against existing units for this property
     const typed = (workOrder.unit_number || "").trim();
     const canonical = typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
       : "Facility";
-    await supabase.from("portal_requests").insert({
+    const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
@@ -605,12 +717,38 @@ const PropertyDashboard = ({
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type,
       preferred_date: workOrder.preferred_date || null,
-    } as any);
+      occupancy_status: workOrder.occupancy_status || null,
+      tenant_email: workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null,
+      prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
+      right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
+    } as any).select("id").maybeSingle();
+    if (insertErr) {
+      toast({ title: "Could not submit work order", description: insertErr.message, variant: "destructive" });
+      setSubmittingWorkOrder(false);
+      return;
+    }
     toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
-    setWorkOrder({ unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "", request_type: "treatment" });
+    // Fire-and-forget tenant email
+    if (workOrder.email_tenant && workOrder.tenant_email.trim() && inserted?.id) {
+      try {
+        await supabase.functions.invoke("send-tenant-work-order", {
+          body: { requestId: inserted.id, appBaseUrl: window.location.origin },
+        });
+        toast({ title: "Tenant notified", description: `Email sent to ${workOrder.tenant_email.trim()}` });
+      } catch (e) {
+        console.error("send-tenant-work-order failed", e);
+        toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+      }
+    }
+    setWorkOrder({
+      unit_number: "", pest_type: "", location_type: "Interior", comments: "", preferred_date: "",
+      request_type: "treatment", occupancy_status: "",
+      email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+    });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
+    setSubmittingWorkOrder(false);
     onRefresh();
   };
 
@@ -1338,7 +1476,7 @@ const PropertyDashboard = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
+      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/30 rounded-xl shadow-sm mb-5">
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -1358,6 +1496,10 @@ const PropertyDashboard = ({
         <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <FileDown className="w-5 h-5" />
           <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <BarChart3 className="w-5 h-5" />
+          <span>Tenant Survey <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
       </TabsList>
 
@@ -1493,6 +1635,63 @@ const PropertyDashboard = ({
             </p>
           </CardContent>
         </Card>
+
+        {/* Cadence Visit Plan — explains what each visit in the rotation will cover.
+            Only meaningful for weekly (4 visits / cycle) and bi-weekly (2 visits / cycle).
+            For monthly / bi-monthly there is no rotation, so the card is hidden. */}
+        {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
+          const cycleLength = propertyFrequency === "weekly" ? 4 : 2;
+          const planArr = (cadencePlanDraft[propertyFrequency] || []).slice(0, cycleLength);
+          while (planArr.length < cycleLength) planArr.push("");
+          return (
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Repeat className="w-5 h-5 text-primary" />
+                  Cadence Plan — {propertyFrequency === "weekly" ? "Weekly (4-visit rotation)" : "Bi-Weekly (2-visit rotation)"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Describe what the {cycleLength === 4 ? "1st, 2nd, 3rd, and 4th" : "1st and 2nd"} visit of the cycle will cover.
+                  Future projected services on this property will display the matching focus.
+                </p>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 ${cycleLength === 4 ? "lg:grid-cols-4" : ""} gap-3`}>
+                  {Array.from({ length: cycleLength }).map((_, idx) => (
+                    <div key={idx} className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                        <span className="inline-flex w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold items-center justify-center">{idx + 1}</span>
+                        Visit {idx + 1}
+                      </Label>
+                      <Textarea
+                        rows={3}
+                        className="text-xs resize-y"
+                        placeholder={
+                          idx === 0 ? "e.g. Full perimeter dewebbing + exterior power-spray"
+                            : idx === 1 ? "e.g. Spot-treat hotspots, refill bait stations"
+                            : idx === 2 ? "e.g. Interior common areas + restroom monitoring"
+                            : "e.g. Trash room flush + structural exclusion check"
+                        }
+                        value={planArr[idx]}
+                        onChange={(e) => {
+                          const next = { ...cadencePlanDraft };
+                          const arr = (next[propertyFrequency] || []).slice();
+                          while (arr.length < cycleLength) arr.push("");
+                          arr[idx] = e.target.value;
+                          next[propertyFrequency] = arr;
+                          setCadencePlanDraft(next);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Auto-saves a moment after you stop typing.
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
@@ -1899,7 +2098,66 @@ const PropertyDashboard = ({
                 value={workOrder.comments} onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} rows={3} />
             </div>
 
-            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number}>
+            {/* Occupancy */}
+            <div>
+              <Label className="text-sm">Vacant or Occupied Unit</Label>
+              <div className="flex gap-2 mt-1">
+                {(["Occupied", "Vacant"] as const).map(opt => (
+                  <button key={opt} type="button"
+                    className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${workOrder.occupancy_status === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                    onClick={() => setWorkOrder(wo => ({ ...wo, occupancy_status: wo.occupancy_status === opt ? "" : opt }))}>{opt}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tenant Notification — full PM-portal parity */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
+                <span className="text-sm font-medium">Email tenant?</span>
+              </label>
+              <div className={`space-y-3 transition-opacity ${workOrder.email_tenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                <div>
+                  <Label className="text-xs">Tenant Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="tenant@example.com"
+                    value={workOrder.tenant_email}
+                    onChange={e => setWorkOrder(wo => ({ ...wo, tenant_email: e.target.value }))}
+                    disabled={!workOrder.email_tenant}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Prep Sheet to Send (optional)</Label>
+                  <Select
+                    value={workOrder.prep_sheet_id || "__none"}
+                    onValueChange={(v) => setWorkOrder(wo => ({ ...wo, prep_sheet_id: v === "__none" ? "" : v }))}
+                    disabled={!workOrder.email_tenant}
+                  >
+                    <SelectTrigger><SelectValue placeholder="No prep sheet" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No prep sheet</SelectItem>
+                      {prepSheets.map(ps => (
+                        <SelectItem key={ps.id} value={ps.id}>{ps.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={workOrder.right_to_treat}
+                    onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, right_to_treat: !!v }))}
+                    disabled={!workOrder.email_tenant}
+                  />
+                  <span className="text-xs leading-snug">
+                    Send <strong>"Right to Treat"</strong> signature page<br />
+                    <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number || submittingWorkOrder}>
               <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
@@ -2020,17 +2278,34 @@ const PropertyDashboard = ({
               Following {futureProjectedDates.length} visits ({propertyFrequency.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())})
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {futureProjectedDates.map((d, idx) => (
-                <div
-                  key={`future-${idx}`}
-                  className="flex items-center gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
-                >
-                  <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
-                    {idx + 2}
-                  </span>
-                  <span className="text-xs">{formatDate(d)}</span>
-                </div>
-              ))}
+              {futureProjectedDates.map((d, idx) => {
+                const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+                // Visit-of-cycle index — the "next" visit (allUpcoming[0]) is index 0 of the rotation.
+                const visitInCycle = ((idx + 1) % cycleLength) + 1;
+                const note = cycleLength > 1 ? (planArr[visitInCycle - 1] || "").trim() : "";
+                return (
+                  <div
+                    key={`future-${idx}`}
+                    className="flex items-start gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {idx + 2}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs block">{formatDate(d)}</span>
+                      {cycleLength > 1 && (
+                        <span className="text-[10px] text-primary font-semibold uppercase tracking-wide">
+                          Visit {visitInCycle} of {cycleLength}
+                        </span>
+                      )}
+                      {note && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{note}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             <p className="text-[10px] text-muted-foreground italic mt-2">
               Projected dates only — service details are confirmed closer to each visit.
@@ -2107,6 +2382,193 @@ const PropertyDashboard = ({
               </Card>
             ))}
           </div>
+          )}
+        </div>
+      </TabsContent>
+
+      {/* ══════════ TAB 6: TENANT SURVEY ══════════ */}
+      <TabsContent value="survey" className="mt-0">
+        <div className="max-w-4xl mx-auto space-y-5">
+          <Card className="border-primary/30 shadow-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Tenants get a short 5-question form. Results aggregate below as they respond.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-sm">Survey Title</Label>
+                <Input value={surveyTitle} onChange={(e) => setSurveyTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-sm">Intro Message</Label>
+                <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-sm">Tenant Emails</Label>
+                <Textarea
+                  rows={4}
+                  placeholder="Paste tenant emails — one per line, or comma-separated"
+                  value={surveyEmails}
+                  onChange={(e) => setSurveyEmails(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Each tenant gets their own unique link so you can see who responded.
+                </p>
+              </div>
+              <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
+                <Send className="w-4 h-4 mr-2" />
+                {sendingSurvey ? "Sending..." : "Send Survey"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses
+                <Badge variant="secondary" className="ml-1 text-[11px]">
+                  {surveyResponses.filter((r) => r.submitted_at).length} submitted
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const submitted = surveyResponses.filter((r) => r.submitted_at);
+                if (submitted.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      No responses yet. Once tenants submit, their answers will roll up here.
+                    </p>
+                  );
+                }
+                const tally: Record<string, Record<string, number>> = {};
+                const openText: Record<string, string[]> = {};
+                submitted.forEach((r) => {
+                  const ans = (r.answers || {}) as Record<string, any>;
+                  DEFAULT_PEST_SURVEY_QUESTIONS.forEach((q: SurveyQuestion) => {
+                    const v = ans[q.id];
+                    if (v === undefined || v === null || v === "") return;
+                    if (q.type === "text") {
+                      if (!openText[q.id]) openText[q.id] = [];
+                      openText[q.id].push(String(v));
+                    } else {
+                      if (!tally[q.id]) tally[q.id] = {};
+                      const values = Array.isArray(v) ? v : [v];
+                      values.forEach((val: any) => {
+                        const key = String(val);
+                        tally[q.id][key] = (tally[q.id][key] || 0) + 1;
+                      });
+                    }
+                  });
+                });
+                return (
+                  <div className="space-y-5">
+                    {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion) => {
+                      if (q.type === "text") {
+                        const responses = openText[q.id] || [];
+                        return (
+                          <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                            <p className="text-sm font-semibold mb-1.5">{q.label}</p>
+                            {responses.length === 0 ? (
+                              <p className="text-xs text-muted-foreground italic">No comments</p>
+                            ) : (
+                              <ul className="space-y-1.5">
+                                {responses.map((c, i) => (
+                                  <li key={i} className="text-xs bg-muted/40 rounded px-2 py-1.5">"{c}"</li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        );
+                      }
+                      const counts = tally[q.id] || {};
+                      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+                      const opts = q.options || Object.keys(counts);
+                      return (
+                        <div key={q.id} className="border-l-2 border-primary/40 pl-3">
+                          <p className="text-sm font-semibold mb-2">{q.label}</p>
+                          <div className="space-y-1.5">
+                            {opts.map((opt) => {
+                              const c = counts[opt] || 0;
+                              const pct = total ? Math.round((c / total) * 100) : 0;
+                              return (
+                                <div key={opt} className="space-y-0.5">
+                                  <div className="flex justify-between text-xs">
+                                    <span>{opt}</span>
+                                    <span className="text-muted-foreground tabular-nums">
+                                      {c} ({pct}%)
+                                    </span>
+                                  </div>
+                                  <div className="h-2 bg-muted rounded overflow-hidden">
+                                    <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          {surveys.length > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Send History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {surveys.map((s) => {
+                    const responses = surveyResponses.filter((r) => r.survey_id === s.id);
+                    const submittedCount = responses.filter((r) => r.submitted_at).length;
+                    const recipients = Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0;
+                    const isExpanded = expandedSurveyId === s.id;
+                    return (
+                      <div key={s.id} className="border rounded-lg">
+                        <button
+                          className="w-full text-left p-3 flex items-center justify-between"
+                          onClick={() => setExpandedSurveyId(isExpanded ? null : s.id)}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold truncate">{s.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Sent {new Date(s.created_at).toLocaleDateString()} • {submittedCount}/{recipients} responded
+                            </p>
+                          </div>
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        </button>
+                        {isExpanded && (
+                          <div className="px-3 pb-3 border-t pt-3">
+                            {responses.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">No recipients yet.</p>
+                            ) : (
+                              <ul className="space-y-1">
+                                {responses.map((r) => (
+                                  <li key={r.id} className="flex items-center justify-between text-xs">
+                                    <span className="truncate">{r.recipient_email || "Unknown"}</span>
+                                    <Badge variant={r.submitted_at ? "default" : "outline"} className="text-[10px]">
+                                      {r.submitted_at ? "Submitted" : "Pending"}
+                                    </Badge>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </TabsContent>
