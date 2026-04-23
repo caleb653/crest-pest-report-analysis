@@ -983,6 +983,16 @@ const PropertyDashboard = ({
                       defaultValue={unit.unit_number || ""}
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                      isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
+                    }`}>
+                      {isInspection ? "Inspection" : "Service"}
+                    </span>
+                    {unit.target_pest && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-foreground bg-background border border-border px-2 py-0.5 rounded">
+                        {unit.target_pest}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <select
