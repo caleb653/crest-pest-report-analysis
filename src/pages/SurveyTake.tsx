@@ -204,20 +204,26 @@ const SurveyTake = () => {
                     </div>
                   )}
                   {q.type === "rating" && (
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4, 5].map((n) => {
-                        const selected = Number(answers[q.id]) === n;
-                        return (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => setAnswers((a) => ({ ...a, [q.id]: n }))}
-                            className={`w-10 h-10 rounded-md border text-sm font-semibold transition ${selected ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
-                          >
-                            {n}
-                          </button>
-                        );
-                      })}
+                    <div className="space-y-1.5">
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((n) => {
+                          const selected = Number(answers[q.id]) === n;
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => setAnswers((a) => ({ ...a, [q.id]: n }))}
+                              className={`w-11 h-11 rounded-md border text-sm font-semibold transition ${selected ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
+                            >
+                              {n}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-between text-[10px] text-muted-foreground px-1 max-w-[280px]">
+                        <span>1 = Poor</span>
+                        <span>5 = Excellent</span>
+                      </div>
                     </div>
                   )}
                   {q.type === "text" && (

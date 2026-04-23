@@ -2622,6 +2622,7 @@ const PropertyDashboard = ({
                 }
                 const tally: Record<string, Record<string, number>> = {};
                 const openText: Record<string, string[]> = {};
+                const ratingSums: Record<string, { sum: number; count: number }> = {};
                 submitted.forEach((r) => {
                   const ans = (r.answers || {}) as Record<string, any>;
                   DEFAULT_PEST_SURVEY_QUESTIONS.forEach((q: SurveyQuestion) => {
@@ -2630,6 +2631,12 @@ const PropertyDashboard = ({
                     if (q.type === "text") {
                       if (!openText[q.id]) openText[q.id] = [];
                       openText[q.id].push(String(v));
+                    } else if (q.type === "rating") {
+                      const num = Number(v);
+                      if (!Number.isFinite(num)) return;
+                      if (!ratingSums[q.id]) ratingSums[q.id] = { sum: 0, count: 0 };
+                      ratingSums[q.id].sum += num;
+                      ratingSums[q.id].count += 1;
                     } else {
                       if (!tally[q.id]) tally[q.id] = {};
                       const values = Array.isArray(v) ? v : [v];
@@ -2640,8 +2647,29 @@ const PropertyDashboard = ({
                     }
                   });
                 });
+                const ratingQs = DEFAULT_PEST_SURVEY_QUESTIONS.filter((q) => q.type === "rating");
+                const overallTotals = ratingQs.reduce(
+                  (acc, q) => {
+                    const r = ratingSums[q.id];
+                    if (r) { acc.sum += r.sum; acc.count += r.count; }
+                    return acc;
+                  },
+                  { sum: 0, count: 0 }
+                );
+                const overallAvg = overallTotals.count > 0 ? overallTotals.sum / overallTotals.count : null;
                 return (
                   <div className="space-y-5">
+                    {overallAvg !== null && (
+                      <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Overall Average</p>
+                          <p className="text-[11px] text-muted-foreground">Across all rating questions • 5 = good</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-primary tabular-nums">{overallAvg.toFixed(2)}<span className="text-base text-muted-foreground font-normal"> / 5</span></p>
+                        </div>
+                      </div>
+                    )}
                     {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion) => {
                       if (q.type === "text") {
                         const responses = openText[q.id] || [];
@@ -2657,6 +2685,25 @@ const PropertyDashboard = ({
                                 ))}
                               </ul>
                             )}
+                          </div>
+                        );
+                      }
+                      if (q.type === "rating") {
+                        const r = ratingSums[q.id];
+                        const avg = r && r.count > 0 ? r.sum / r.count : null;
+                        const pct = avg !== null ? (avg / 5) * 100 : 0;
+                        return (
+                          <div key={q.id} className="border-l-2 border-primary/70 pl-3">
+                            <div className="flex items-baseline justify-between mb-1.5 gap-2">
+                              <p className="text-sm font-semibold">{q.label}</p>
+                              <p className="text-sm font-bold tabular-nums whitespace-nowrap">
+                                {avg !== null ? `${avg.toFixed(2)} / 5` : "—"}
+                                <span className="text-[11px] text-muted-foreground font-normal ml-1">({r?.count || 0})</span>
+                              </p>
+                            </div>
+                            <div className="h-2 bg-muted rounded overflow-hidden">
+                              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                            </div>
                           </div>
                         );
                       }
