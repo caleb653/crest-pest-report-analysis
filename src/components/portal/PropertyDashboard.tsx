@@ -273,6 +273,39 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail]);
 
+  // ─── Cadence Visit Plan ───
+  // For weekly and bi-weekly schedules, technicians rotate what they focus on
+  // each visit (e.g. visit 1 = full exterior, visit 2 = spot-treat hotspots).
+  // Stored at customer_preferences.cadence_visit_plan as { weekly: string[4], "bi-weekly": string[2] }.
+  // Length matches the cycle so each upcoming visit can show its planned focus.
+  const initialCadencePlan: Record<string, string[]> =
+    ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+  const [cadencePlanDraft, setCadencePlanDraft] = useState<Record<string, string[]>>(initialCadencePlan);
+  useEffect(() => {
+    setCadencePlanDraft(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = JSON.stringify(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
+    if (current === JSON.stringify(cadencePlanDraft)) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        cadence_visit_plan: cadencePlanDraft,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save cadence plan", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cadencePlanDraft]);
+
   // Load pending requests and prep sheets for this property
   useEffect(() => {
     const loadRequests = async () => {
