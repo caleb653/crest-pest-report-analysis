@@ -1193,7 +1193,7 @@ const PropertyDashboard = ({
 
         {/* Service-level products used (editable, per service date — not per unit) */}
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+          <p className="text-sm font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
             <FlaskConical className="w-3.5 h-3.5" />
             Products Used (this service date)
           </p>
@@ -1205,27 +1205,27 @@ const PropertyDashboard = ({
 
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
-            <p className="text-xs font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
+            <p className="text-sm font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
           </div>
         )}
 
         {s.special_notes && (
           <div className="bg-amber-50 border border-amber-400 rounded-lg p-2.5">
-            <p className="text-xs text-amber-700">{s.special_notes}</p>
+            <p className="text-sm text-amber-700">{s.special_notes}</p>
           </div>
         )}
 
         {s.prep_required && s.prep_notes && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
-            <p className="text-xs font-medium text-blue-700">Prep Required</p>
-            <p className="text-xs text-blue-600 mt-0.5">{s.prep_notes}</p>
+            <p className="text-sm font-medium text-blue-700">Prep Required</p>
+            <p className="text-sm text-blue-600 mt-0.5">{s.prep_notes}</p>
           </div>
         )}
 
         {/* Photos */}
         {Array.isArray(s.photos) && s.photos.length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
+            <p className="text-sm font-semibold text-muted-foreground mb-1.5 flex items-center gap-1">
               <Image className="w-3.5 h-3.5" />Photos ({s.photos.length})
             </p>
             <div className="grid grid-cols-3 gap-1.5">
