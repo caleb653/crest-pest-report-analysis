@@ -1110,6 +1110,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     setLegendItems([]);
     setShowLegend(false);
     iconCountsRef.current = {};
+    iconTypeOrderRef.current = [];
   };
 
   const updateLegendItem = (index: number, field: 'emoji' | 'label', value: string) => {
