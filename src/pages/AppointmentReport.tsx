@@ -941,7 +941,7 @@ const AppointmentReport = () => {
 
             {/* Today's Findings */}
             <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Today's Findings</Label>
+              <Label className="font-semibold">Summary of Resident and Common Area Services</Label>
               <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
             </Card>
 

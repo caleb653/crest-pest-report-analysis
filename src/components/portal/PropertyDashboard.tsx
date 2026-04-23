@@ -1333,18 +1333,6 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Service-level products used (editable, per service date — not per unit) */}
-        <div>
-          <p className="text-sm font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
-            <FlaskConical className="w-3.5 h-3.5" />
-            Products Used (this service date)
-          </p>
-          <ProductUsageEditor
-            value={products}
-            onChange={(next) => updateServiceProducts(s.id, next)}
-          />
-        </div>
-
         {s.follow_up_recommended && s.follow_up_notes && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
             <p className="text-sm font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
