@@ -641,42 +641,65 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       </div>
                     </button>
                     {isUnitOpen && (<>
-                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                      {u.target_pest && (
-                        <div>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
-                          <p>{u.target_pest}</p>
+                    {/* Body — left 2/3 details, right 1/3 unit photos */}
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="md:col-span-2 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                          {u.target_pest && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
+                              <p>{u.target_pest}</p>
+                            </div>
+                          )}
+                          {u.pest_activity && u.pest_activity !== "None" && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Activity Level</p>
+                              <p>{u.pest_activity}</p>
+                            </div>
+                          )}
+                          {productsText && (
+                            <div className="md:col-span-2">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Products</p>
+                              <p className="whitespace-pre-wrap">{productsText}</p>
+                            </div>
+                          )}
+                          {u.notes && (
+                            <div className="md:col-span-2">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Notes</p>
+                              <p className="whitespace-pre-wrap leading-relaxed">{u.notes}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {u.pest_activity && u.pest_activity !== "None" && (
-                        <div>
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Activity Level</p>
-                          <p>{u.pest_activity}</p>
-                        </div>
-                      )}
-                      {productsText && (
-                        <div className="md:col-span-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Products</p>
-                          <p className="whitespace-pre-wrap">{productsText}</p>
-                        </div>
-                      )}
-                      {u.notes && (
-                        <div className="md:col-span-2">
-                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Notes</p>
-                          <p className="whitespace-pre-wrap leading-relaxed">{u.notes}</p>
+                        {u.findings && (
+                          <div className="rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                              <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Technician Findings</p>
+                            </div>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{u.findings}</p>
+                          </div>
+                        )}
+                      </div>
+                      {/* Unit photos — right 1/3 */}
+                      {Array.isArray(u.photos) && u.photos.length > 0 && (
+                        <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
+                          <p className="text-[10px] font-bold text-foreground uppercase tracking-wide mb-2">
+                            Unit Photos <span className="text-muted-foreground font-normal normal-case">({u.photos.length})</span>
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(u.photos as any[]).map((p: any, pIdx: number) => {
+                              const url = typeof p === "string" ? p : p?.url;
+                              if (!url) return null;
+                              return (
+                                <a key={pIdx} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-md overflow-hidden border border-border block">
+                                  <img src={url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                </a>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
-                    {/* FINDINGS — its own visually distinct box */}
-                    {u.findings && (
-                      <div className="mx-4 mb-4 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
-                        <div className="flex items-center gap-1.5 mb-1.5">
-                          <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                          <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Technician Findings</p>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{u.findings}</p>
-                      </div>
-                    )}
                     {/* Two separate comment boxes — Crest (read-only) + Property Manager (editable) */}
                     <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
