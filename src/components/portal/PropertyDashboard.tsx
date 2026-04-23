@@ -830,11 +830,11 @@ const PropertyDashboard = ({
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
-    const apptService = (s as any).appointment_service || "";
-    const isInspection = apptService === "Inspection Complete";
-    const rowStatusOptions = isInspection
-      ? ["Activity Found - Follow Up", "Free and Clear*"]
-      : ["To Be Treated", "Treated - Complete", "Treated - Follow Up", "Not Treated"];
+    const SERVICE_STATUSES = ["Complete", "Needs Follow Up", "Not Serviced"];
+    const INSPECTION_STATUSES = ["Free and Clear", "Activity Found"];
+    const isInspectionUnit = (u: any) => (u?.kind || "service") === "inspection";
+    const statusOptionsFor = (u: any) => isInspectionUnit(u) ? INSPECTION_STATUSES : SERVICE_STATUSES;
+    const defaultStatusFor = (kind: string) => kind === "inspection" ? "Free and Clear" : "Complete";
 
     return (
       <div>
@@ -842,7 +842,7 @@ const PropertyDashboard = ({
           <p className="text-xs font-semibold text-muted-foreground">Areas Treated ({unitDetails.length})</p>
           <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => {
             setAddingUnitToService(s.id);
-            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Treated - Complete", notes: "" });
+            setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" } as any);
           }}>
             <Plus className="w-3 h-3 mr-0.5" />Add Area
           </Button>
@@ -850,7 +850,11 @@ const PropertyDashboard = ({
         {/* Mini per-unit service report cards (replaces wide horizontal table) */}
         <div className="space-y-6">
           {unitDetails.map((unit: any, j: number) => {
-            const isFollowUp = unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+            const kind = unit.kind || "service";
+            const isInspection = kind === "inspection";
+            const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
+              || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+            const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
             return (
               <div
                 key={j}
@@ -879,11 +883,34 @@ const PropertyDashboard = ({
                     className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
                       isFollowUp ? "border-orange-400 text-orange-700" : "border-primary/40 text-foreground"
                     }`}
-                    defaultValue={unit.status || "Treated - Complete"}
+                    value={unit.status || defaultStatusFor(kind)}
                     onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                   >
-                    {rowStatusOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                    {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
+                </div>
+                {/* Service / Inspection toggle */}
+                <div className="px-4 pt-3 -mb-1">
+                  <div className="inline-flex rounded-lg border-2 border-border bg-muted/40 p-0.5">
+                    {(["service", "inspection"] as const).map(k => {
+                      const active = kind === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => {
+                            updateUnitField(s.id, j, "kind", k);
+                            updateUnitField(s.id, j, "status", defaultStatusFor(k));
+                          }}
+                          className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                            active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {k === "service" ? "Service" : "Inspection"}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 {/* Card body — 2-column grid for roomy fields */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -909,14 +936,6 @@ const PropertyDashboard = ({
                     </select>
                   </div>
                   <div className="md:col-span-2">
-                    <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Findings / Notes (visible to customer)</Label>
-                    <Textarea
-                      className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal mt-1"
-                      defaultValue={unit.findings || ""}
-                      onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
                     <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Products Used</Label>
                     <div className="mt-1">
                       <UnitProductPicker
@@ -934,18 +953,50 @@ const PropertyDashboard = ({
                     />
                   </div>
                 </div>
-                {/* Per-unit comment thread (Crest ↔ PM) */}
-                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20">
-                  <ServiceComments
-                    serviceId={s.id}
-                    unitIndex={j}
-                    unitDetails={unitDetails}
-                    comments={Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : []}
-                    sender="crest"
-                    defaultAuthor={s.technician || ""}
-                    compact
-                    onChange={onRefresh}
+                {/* FINDINGS — its own visually distinct box */}
+                <div className="mx-4 mb-4 rounded-lg border-2 border-amber-300 bg-amber-50/60 p-3">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                    <Label className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">
+                      Technician Findings (visible to customer)
+                    </Label>
+                  </div>
+                  <Textarea
+                    className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-200 focus-visible:ring-amber-400"
+                    placeholder="What did the technician observe in this area?"
+                    defaultValue={unit.findings || ""}
+                    onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                   />
+                </div>
+                {/* Two separate comment boxes — Crest team + Property Manager */}
+                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border/60 bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      unitIndex={j}
+                      unitDetails={unitDetails}
+                      comments={allComments}
+                      sender="crest"
+                      filterSender="crest"
+                      title="Crest Team Comments"
+                      defaultAuthor={s.technician || ""}
+                      compact
+                      onChange={onRefresh}
+                    />
+                  </div>
+                  <div className="rounded-lg border-2 border-sky-300 bg-sky-50/60 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      unitIndex={j}
+                      unitDetails={unitDetails}
+                      comments={allComments}
+                      sender="pm"
+                      filterSender="pm"
+                      title="Property Manager Comments"
+                      compact
+                      onChange={onRefresh}
+                    />
+                  </div>
                 </div>
               </div>
             );
