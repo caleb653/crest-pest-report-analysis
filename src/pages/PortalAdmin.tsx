@@ -86,10 +86,11 @@ const PortalAdmin = () => {
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
-  // Admins land on the admin dashboard by default. The toggle reveals
-  // the PM preview (Survey tab, tenant work-order emails, etc.) so admins
-  // still have parity with PMs when needed.
-  const [pmPreviewMode, setPmPreviewMode] = useState(false);
+  // Default to the full portal view so admins have complete feature parity
+  // with PMs (Survey tab, full tenant work-order emails, Right-to-Treat, etc.).
+  // The toggle reveals the admin-only editing tools (PropertyDashboard) for
+  // managing services, equipment, and property details.
+  const [pmPreviewMode, setPmPreviewMode] = useState(true);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProperty, setShowAddProperty] = useState(false);
@@ -768,7 +769,9 @@ const PortalAdmin = () => {
           <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => { setSelectedProperty(null); setPmPreviewMode(true); }}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />All Properties
           </Button>
-          <span className="text-background/60">{pmPreviewMode ? "Full Portal View (PM + Admin)" : "Admin Editing Tools"}</span>
+          <span className="text-background/60 font-medium">
+            {pmPreviewMode ? "Admin Portal — Full View" : "Admin Editing Tools"}
+          </span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {propLinks[0] && (
