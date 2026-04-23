@@ -110,6 +110,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   const tempLineRef = useRef<Line | null>(null);
   const [drawColor, setDrawColor] = useState('#DC2626');
   const [drawBrushSize, setDrawBrushSize] = useState(4);
+  const [lineColor, setLineColor] = useState('#DC2626');
+  const [lineWidth, setLineWidth] = useState(5);
+  const lineColorRef = useRef('#DC2626');
+  const lineWidthRef = useRef(5);
+
+  useEffect(() => { lineColorRef.current = lineColor; }, [lineColor]);
+  useEffect(() => { lineWidthRef.current = lineWidth; }, [lineWidth]);
   
   // Map is always non-interactive; overlay canvas handles all interactions so annotations stay above
   const isMapInteractive = false;
