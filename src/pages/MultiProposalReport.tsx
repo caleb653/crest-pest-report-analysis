@@ -616,7 +616,19 @@ const Report = () => {
     name: string;
     quantity: string;
   }
-  const SETUP_MATERIAL_PRESETS = ["Bait Boxes", "Mosquito Stations", "Tin Cats"];
+  const SETUP_MATERIAL_PRESETS = [
+    "Bait Boxes",
+    "Mosquito Stations",
+    "Tin Cats",
+    "Snap Traps",
+    "Steel Wool",
+    "Chicken Wire",
+    "Vacuum",
+    "Sanitation Spray",
+    "Fly Lights",
+    "Door Sweep",
+    "Drill",
+  ];
   // Per-option setup materials (keyed by proposalIndex)
   const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
   // Per-option additional details (keyed by proposalIndex)
