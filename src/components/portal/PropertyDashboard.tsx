@@ -958,6 +958,8 @@ const PropertyDashboard = ({
             const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
               || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
             const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
+            const unitKey = `pd-past:${s.id}:${j}`;
+            const isUnitOpen = expandedUnitKeys.has(unitKey);
             return (
               <div
                 key={j}
@@ -968,7 +970,7 @@ const PropertyDashboard = ({
                 {/* Bold colored header bar — makes each unit obviously distinct */}
                 <div className={`flex items-center justify-between gap-3 px-4 py-3 ${
                   isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/60"
-                }`}>
+                } ${isUnitOpen ? "" : "border-b-0"}`}>
                   <div className="flex items-center gap-3">
                     <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
                       isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
@@ -982,16 +984,28 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.unit_number || "")) updateUnitField(s.id, j, "unit_number", e.target.value); }}
                     />
                   </div>
-                  <select
-                    className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
-                      isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
-                    }`}
-                    value={unit.status || defaultStatusFor(kind)}
-                    onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
-                  >
-                    {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
+                        isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
+                      }`}
+                      value={unit.status || defaultStatusFor(kind)}
+                      onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
+                    >
+                      {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => toggleUnitKey(unitKey)}
+                      aria-expanded={isUnitOpen}
+                      aria-label={isUnitOpen ? "Collapse unit" : "Expand unit"}
+                      className="h-9 w-9 rounded-md border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors"
+                    >
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
                 </div>
+                {isUnitOpen && (<>
                 {/* Service / Inspection toggle */}
                 <div className="px-4 pt-3 -mb-1">
                   <div className="inline-flex rounded-lg border-2 border-border bg-muted/40 p-0.5">
