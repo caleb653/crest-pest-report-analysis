@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
-  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User
+  Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
+  BarChart3, Phone, Mail, Repeat
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -23,6 +25,7 @@ import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits } from "@/lib/upcomingUnits";
+import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 
 // ─── Types ───
 interface PortalProperty {
