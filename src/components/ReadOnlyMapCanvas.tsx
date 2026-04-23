@@ -32,6 +32,19 @@ const AVAILABLE_ICONS = [
   { icon: 'water-source', label: 'Water Source', svgPath: waterSourceIcon },
 ];
 
+// Badge color palette assigned per icon TYPE in placement order.
+// Must match MapCanvas so the read-only view renders the same colors.
+const ICON_BADGE_COLORS = [
+  '#DC2626', // red
+  '#2563EB', // blue
+  '#16A34A', // green
+  '#D97706', // amber
+  '#9333EA', // purple
+  '#0891B2', // cyan
+  '#DB2777', // pink
+  '#525252', // neutral
+];
+
 // Reference size for normalizing coordinates (matches MapCanvas)
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
