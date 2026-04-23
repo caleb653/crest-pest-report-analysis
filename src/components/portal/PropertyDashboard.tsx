@@ -2425,7 +2425,7 @@ const PropertyDashboard = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-[10px] bg-secondary text-secondary-foreground">Next Service</Badge>}
-                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{s.service_type}</p>
+                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                         {isProjected && <Badge variant="outline" className="text-[10px]">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-[10px]">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-[10px] bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
