@@ -663,8 +663,21 @@ const Report = () => {
     const seen = new Set<string>();
     const add = (p: string) => { if (!seen.has(p)) { seen.add(p); collected.push(p); } };
 
-    // Always start with general pests as a baseline (per spec)
-    GENERAL_TARGET_PESTS.forEach(add);
+    // Determine if this proposal contains any "general pest" service.
+    // A general pest service is one whose configured targetPests include any
+    // of the GENERAL_TARGET_PESTS (e.g. Monthly/Bi-Monthly/Quarterly,
+    // Commercial General Pest, General Pest Control, Combined Commercial Rodent + Pest).
+    // Rodent-only / mosquito-only / bed-bug-only services do NOT trigger the
+    // general baseline — so a rodent-only proposal lists only "Rodents".
+    const generalSet = new Set(GENERAL_TARGET_PESTS);
+    const hasGeneralService = services.some(s => {
+      const cfg = SERVICE_CONFIG[s.serviceType];
+      return cfg?.targetPests?.some(p => generalSet.has(p));
+    });
+
+    if (hasGeneralService) {
+      GENERAL_TARGET_PESTS.forEach(add);
+    }
 
     // Add service-specific pests (Rodents, Mosquitoes, Bed Bugs, etc.)
     services.forEach(s => {
