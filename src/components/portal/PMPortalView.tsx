@@ -1743,8 +1743,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {unitContexts.map((uc, idx) => {
                                   const isWO = uc.source === "work_order";
                                   const isFU = uc.source === "follow_up";
+                                  // Show the EXACT kind of work order (Inspection vs Treatment)
+                                  // so the PM sees the same label the technician will act on.
+                                  const isInspectionWO =
+                                    isWO && (uc.request?.request_type || "").toLowerCase().includes("inspection");
                                   const sourceLabel = isWO
-                                    ? "Work Order"
+                                    ? (isInspectionWO ? "Inspection" : "Treatment")
                                     : isFU
                                       ? "Follow-up"
                                       : uc.source === "carried"
