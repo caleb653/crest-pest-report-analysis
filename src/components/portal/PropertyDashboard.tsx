@@ -2770,6 +2770,18 @@ const PropertyDashboard = ({
                         {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-xs bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
+                        {(() => {
+                          const ov = computeOverage(unitsPlanned.length, planCfg);
+                          if (!ov.hasOverage) return null;
+                          return (
+                            <Badge
+                              title={`${ov.totalUnits} units to treat • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
+                              className="text-xs bg-amber-500 text-white border-transparent hover:bg-amber-500"
+                            >
+                              +{ov.unitsOver} over • {formatOverageMoney(ov.overageCost)}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
