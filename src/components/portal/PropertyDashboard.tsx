@@ -1067,12 +1067,14 @@ const PropertyDashboard = ({
     return (
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-semibold text-muted-foreground">Areas Treated ({unitDetails.length})</p>
+          <p className="text-xs font-semibold text-muted-foreground">
+            {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
+          </p>
           <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => {
             setAddingUnitToService(s.id);
             setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" } as any);
           }}>
-            <Plus className="w-3 h-3 mr-0.5" />Add Area
+            <Plus className="w-3 h-3 mr-0.5" />{isHOA ? "Add Area / Unit" : "Add Area"}
           </Button>
         </div>
         {/* Mini per-unit service report cards (replaces wide horizontal table) */}
