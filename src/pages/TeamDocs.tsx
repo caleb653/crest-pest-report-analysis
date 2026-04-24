@@ -103,7 +103,7 @@ const TeamDocs = () => {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("team_documents").insert({
+      const { data: inserted, error } = await supabase.from("team_documents").insert({
         document_type: "meal_period_waiver",
         employee_name: employeeName,
         job_title: jobTitle || null,
@@ -116,8 +116,14 @@ const TeamDocs = () => {
         representative_title: repTitle || null,
         representative_signature: repSignature || null,
         representative_signed_date: repSignedDate || null,
-      } as any);
+      } as any).select("id").maybeSingle();
       if (error) throw error;
+      // Notify Caleb (in-app + email). Best-effort, do not block UX on failure.
+      if (inserted?.id) {
+        supabase.functions.invoke("notify-meal-waiver", {
+          body: { documentId: inserted.id },
+        }).catch((e) => console.error("notify-meal-waiver invoke failed:", e));
+      }
       toast.success("Waiver submitted successfully!");
       resetForm();
       setActiveView("menu");
