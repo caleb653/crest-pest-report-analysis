@@ -27,6 +27,7 @@ import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/produc
 import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
+import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 
 // ─── Types ───
 interface PortalProperty {
