@@ -102,9 +102,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-4 right-4 z-10">
-        <NotificationBell />
-      </div>
       <img 
         src={crestBug} 
         alt="" 
