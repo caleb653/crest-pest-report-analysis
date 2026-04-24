@@ -79,15 +79,6 @@ const PRODUCTS = [
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
 
-const PREFERENCE_OPTIONS = [
-  "Green / Eco-Friendly Products",
-  "Standard Products",
-  "No Preference",
-  "Interior Treatment Only",
-  "Exterior Treatment Only",
-  "Other",
-];
-
 const PortalAdmin = () => {
   const navigate = useNavigate();
   const [clients, setClients] = useState<PortalClient[]>([]);
