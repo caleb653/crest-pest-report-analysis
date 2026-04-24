@@ -881,6 +881,7 @@ const PortalAdmin = () => {
           onCopyLink={copyLink}
           onOpenPortal={openPortal}
           onAddUpcomingService={() => createAndOpenReport("scheduled")}
+          propertyType={getPropertyType(selectedProperty)}
         />
       </div>
 

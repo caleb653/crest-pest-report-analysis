@@ -113,6 +113,12 @@ interface Props {
   onCopyLink?: (token: string, type: string) => void;
   onOpenPortal?: (token: string, type: string) => void;
   onAddUpcomingService?: () => void;
+  /**
+   * Property classification — drives the HOA-vs-Apartment view differences.
+   * HOA mode shifts emphasis to common areas, hides per-unit treatment details,
+   * and swaps the work-order tenant block for a homeowner contact block.
+   */
+  propertyType?: "apartments" | "hoa" | "commercial";
 }
 
 const today = new Date().toISOString().split("T")[0];
@@ -152,7 +158,9 @@ const PropertyDashboard = ({
   onRefresh, onOpenServiceReport, onEditService, onDeleteService,
   onUpdatePropertyImage, uploadingPropertyImage,
   onCopyLink, onOpenPortal, onAddUpcomingService,
+  propertyType = "apartments",
 }: Props) => {
+  const isHOA = propertyType === "hoa";
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
@@ -172,6 +180,8 @@ const PropertyDashboard = ({
     request_type: "" as "" | "treatment" | "inspection",
     occupancy_status: "" as "" | "Occupied" | "Vacant",
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+    // HOA-mode customer contact (homeowner submitting the request).
+    customer_name: "", customer_phone: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("map");
@@ -913,16 +923,30 @@ const PropertyDashboard = ({
     const canonical = typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
       : "Facility";
+    // HOA mode: prepend the homeowner contact info to the description so it's
+    // visible everywhere the work order is rendered (no schema change needed).
+    const customerHeader = isHOA && (workOrder.customer_name.trim() || workOrder.customer_phone.trim() || workOrder.tenant_email.trim())
+      ? `Customer: ${[
+          workOrder.customer_name.trim() || "—",
+          workOrder.customer_phone.trim() ? `📞 ${workOrder.customer_phone.trim()}` : null,
+          workOrder.tenant_email.trim() ? `✉ ${workOrder.tenant_email.trim()}` : null,
+        ].filter(Boolean).join(" • ")}\n`
+      : "";
+    // HOA mode: tenant_email is the homeowner's email (always saved when present),
+    // not gated behind the legacy "email tenant?" checkbox.
+    const tenantEmailToSave = isHOA
+      ? (workOrder.tenant_email.trim() || null)
+      : (workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null);
     const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
-      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      description: `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type || null,
       preferred_date: workOrder.preferred_date || null,
       occupancy_status: workOrder.occupancy_status || null,
-      tenant_email: workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null,
+      tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
     } as any).select("id").maybeSingle();
@@ -948,6 +972,7 @@ const PropertyDashboard = ({
       unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
       request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+      customer_name: "", customer_phone: "",
     });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
@@ -1042,12 +1067,14 @@ const PropertyDashboard = ({
     return (
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <p className="text-xs font-semibold text-muted-foreground">Areas Treated ({unitDetails.length})</p>
+          <p className="text-xs font-semibold text-muted-foreground">
+            {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
+          </p>
           <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => {
             setAddingUnitToService(s.id);
             setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" } as any);
           }}>
-            <Plus className="w-3 h-3 mr-0.5" />Add Area
+            <Plus className="w-3 h-3 mr-0.5" />{isHOA ? "Add Area / Unit" : "Add Area"}
           </Button>
         </div>
         {/* Mini per-unit service report cards (replaces wide horizontal table) */}
@@ -1124,8 +1151,8 @@ const PropertyDashboard = ({
                         );
                       })}
                     </div>
-                    {/* Target Pest (in-header) */}
-                    <select
+                    {/* Target Pest (in-header) — hidden in HOA mode (no treatment detail) */}
+                    {!isHOA && (<select
                       data-no-toggle
                       onClick={(e) => e.stopPropagation()}
                       className="h-9 text-xs font-semibold bg-background border border-border rounded-md px-2 cursor-pointer min-w-[140px]"
@@ -1134,7 +1161,7 @@ const PropertyDashboard = ({
                     >
                       <option value="">Target Pest…</option>
                       {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
+                    </select>)}
                   </div>
                   <div className="flex items-center gap-2">
                     <select
@@ -1147,10 +1174,11 @@ const PropertyDashboard = ({
                     >
                       {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                    {!isHOA && <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />}
                   </div>
                 </div>
-                {isUnitOpen && (<>
+                {/* HOA mode: hide ALL per-unit treatment details — show only the area name + service type + status. */}
+                {!isHOA && isUnitOpen && (<>
                 {/* Card body — left 2/3 fields, right 1/3 unit photos */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1421,6 +1449,29 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+        {/* HOA mode: surface the site map inline with each service so the
+            common areas treated are the visual focus of the report. */}
+        {isHOA && !isUpcoming && (mapUrl || property.map_data) && (
+          <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50/40 overflow-hidden">
+            <div className="px-3 py-2 bg-emerald-100/60 border-b border-emerald-200 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-emerald-700" />
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                Common Areas Treated — Site Map
+              </p>
+            </div>
+            <div className="bg-background" style={{ height: 280 }}>
+              {property.map_data ? (
+                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+              ) : mapUrl ? (
+                <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
+              ) : null}
+            </div>
+            <p className="px-3 py-1.5 text-[11px] text-emerald-900/80 italic border-t border-emerald-200">
+              Reference the map above for which community areas were serviced on this visit.
+            </p>
+          </div>
+        )}
+
         {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
         {pmNoteForThis && (
           <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
@@ -2020,6 +2071,23 @@ const PropertyDashboard = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      {/* Property-type mode banner — makes the active view obvious to admins. */}
+      {(propertyType === "hoa" || propertyType === "apartments") && (
+        <div className={`mb-3 rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold ${
+          propertyType === "hoa"
+            ? "bg-emerald-50 border-emerald-300 text-emerald-900"
+            : "bg-sky-50 border-sky-300 text-sky-900"
+        }`}>
+          <span className="px-1.5 py-0.5 rounded bg-white/70 border border-current/30 text-[10px] uppercase tracking-wider">
+            {propertyType === "hoa" ? "HOA Portal" : "Apartment Portal"}
+          </span>
+          <span className="font-normal">
+            {propertyType === "hoa"
+              ? "Community-focused view — common areas are the focal point of each service. Per-unit treatment details are minimized."
+              : "Unit-focused view — each unit shows full treatment detail. Common areas are summarized."}
+          </span>
+        </div>
+      )}
       <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
@@ -2607,11 +2675,55 @@ const PropertyDashboard = ({
         <Card className="border-primary/60 shadow-md">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+              <ClipboardList className="w-4 h-4 text-primary" />
+              {isHOA ? "Submit a Homeowner Work Order" : "Submit a Work Order"}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
+            <p className="text-xs text-muted-foreground">
+              {isHOA
+                ? "Capture the homeowner's contact info and the issue — we'll schedule service."
+                : "Tell us what's going on and we'll schedule service."}
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* HOA-only: Homeowner contact block (different from PM-only block in apartment mode). */}
+            {isHOA && (
+              <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                  <ClipboardList className="w-3.5 h-3.5" />Homeowner Contact
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Name *</Label>
+                    <Input
+                      placeholder="Homeowner full name"
+                      value={workOrder.customer_name}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, customer_name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Phone *</Label>
+                    <Input
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={workOrder.customer_phone}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, customer_phone: e.target.value }))}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-xs">Email *</Label>
+                    <Input
+                      type="email"
+                      placeholder="homeowner@example.com"
+                      value={workOrder.tenant_email}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, tenant_email: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  This is the homeowner submitting the issue — different from the property manager. Their contact info is saved with the work order.
+                </p>
+              </div>
+            )}
             {/* Request Type (admin-only enhancement, kept compact) */}
             <div>
               <Label className="text-sm">Request Type *</Label>
@@ -2723,7 +2835,7 @@ const PropertyDashboard = ({
             </div>
 
             {/* Tenant Notification — full PM-portal parity */}
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA ? "hidden" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
                 <span className="text-sm font-medium">Email tenant?</span>
@@ -2769,7 +2881,16 @@ const PropertyDashboard = ({
               </div>
             </div>
 
-            <Button className="w-full" size="lg" onClick={submitWorkOrder} disabled={!workOrder.unit_number || submittingWorkOrder}>
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={submitWorkOrder}
+              disabled={
+                !workOrder.unit_number ||
+                submittingWorkOrder ||
+                (isHOA && (!workOrder.customer_name.trim() || !workOrder.customer_phone.trim() || !workOrder.tenant_email.trim()))
+              }
+            >
               <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
