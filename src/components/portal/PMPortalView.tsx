@@ -63,6 +63,8 @@ interface RequestData {
   pest_type?: string | null;
   location_type?: string | null;
   preferred_date?: string | null;
+  occupancy_status?: string | null;
+  tenant_email?: string | null;
 }
 
 interface ServiceData {
@@ -165,6 +167,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Work order form
   const [submitting, setSubmitting] = useState(false);
   const [unitNumber, setUnitNumber] = useState("");
+  const [requestKind, setRequestKind] = useState<"treatment" | "inspection">("treatment");
   const [pestType, setPestType] = useState("");
   const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
@@ -323,8 +326,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       link_id: linkId,
       property_id: propertyId,
       unit_number: canonical,
-      request_type: "Service Request",
-      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
+      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
+      description: `[${requestKind === "inspection" ? "INSPECTION" : "TREATMENT"}] ${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
       preferred_date: computePreferredDate(),
@@ -335,7 +338,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     } as any).select("id, right_to_treat_token").maybeSingle();
 
     if (!err) {
-      toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
+      toast({
+        title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
+        description: "Crest will reach out shortly.",
+      });
       if (pmInserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -367,6 +373,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         }
       }
       setUnitNumber("");
+      setRequestKind("treatment");
       setPestType("");
       setDescription("");
       setPreferredDateChoice("next");
@@ -1364,6 +1371,32 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Inspection vs Treatment — must come first so the rest of the
+                    form (and the work-order context downstream) reflects the
+                    correct request kind. Mirrors the admin work-order form. */}
+                <div>
+                  <Label className="text-sm">What do you need? *</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {([
+                      { v: "treatment", label: "Treatment", desc: "Active pest treatment" },
+                      { v: "inspection", label: "Inspection", desc: "Assess & investigate" },
+                    ] as const).map(opt => {
+                      const active = requestKind === opt.v;
+                      return (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => setRequestKind(opt.v)}
+                          className={`flex flex-col items-center gap-0.5 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
+                        >
+                          <span className="text-sm font-semibold">{opt.label}</span>
+                          <span className={`text-xs ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
                   <Label className="text-sm">Unit, Property, or Area *</Label>
                   <Input
@@ -1489,7 +1522,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-                  <Send className="w-4 h-4 mr-2" />Submit Work Order
+                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
                 </Button>
               </CardContent>
             </Card>
@@ -1545,7 +1578,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                               </Badge>
                               {r.request_type && (
-                                <Badge variant="secondary" className="text-[10px] capitalize">{r.request_type.replace(/_/g, " ")}</Badge>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {r.request_type.toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
+                                </Badge>
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
@@ -1557,6 +1592,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-medium">{r.unit_number}</Badge>
                               {r.location_type && <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>}
                               {r.preferred_date && <span className="text-[10px] text-muted-foreground">• Wants: {r.preferred_date}</span>}
+                              {r.occupancy_status && <span className="text-[10px] text-muted-foreground">• {r.occupancy_status}</span>}
                             </div>
                           )}
                           <p className="text-sm mt-1">{r.description}</p>
@@ -1710,8 +1746,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {unitContexts.map((uc, idx) => {
                                   const isWO = uc.source === "work_order";
                                   const isFU = uc.source === "follow_up";
+                                  // Show the EXACT kind of work order (Inspection vs Treatment)
+                                  // so the PM sees the same label the technician will act on.
+                                  const isInspectionWO =
+                                    isWO && (uc.request?.request_type || "").toLowerCase().includes("inspection");
                                   const sourceLabel = isWO
-                                    ? "Work Order"
+                                    ? (isInspectionWO ? "Inspection" : "Treatment")
                                     : isFU
                                       ? "Follow-up"
                                       : uc.source === "carried"
@@ -1797,12 +1837,26 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             <p className="text-sm font-medium">{uc.request.preferred_date}</p>
                                           </div>
                                         )}
+                                        {isWO && uc.request?.occupancy_status && (
+                                          <div>
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Unit Status</p>
+                                            <p className="text-sm font-medium">{uc.request.occupancy_status}</p>
+                                          </div>
+                                        )}
+                                        {isWO && uc.request?.tenant_email && (
+                                          <div>
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Tenant Contact</p>
+                                            <p className="text-sm font-medium break-all">{uc.request.tenant_email}</p>
+                                          </div>
+                                        )}
                                         {uc.context && (
                                           <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 mt-1">
                                             <div className="flex items-center gap-1.5 mb-1.5">
                                               <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
                                               <p className="text-[11px] font-bold text-sky-900 uppercase tracking-wide">
-                                                {isWO ? "Work Order Context" : "Last Service Context"}
+                                                {isWO
+                                                  ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
+                                                  : "Last Service Context"}
                                               </p>
                                             </div>
                                             <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
