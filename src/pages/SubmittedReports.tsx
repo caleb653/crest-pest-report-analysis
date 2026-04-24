@@ -30,6 +30,9 @@ import {
   Building2,
   Archive,
   ArchiveRestore,
+  Trophy,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import {
   Select,
@@ -42,7 +45,7 @@ import crestLogo from "@/assets/crest-logo-black.png";
 import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
-type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal";
+type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
 
 type StatusFilter = "all" | "created" | "sent" | "signed";
 type DateFilter = "recent" | "week" | "month" | "all";
@@ -57,6 +60,7 @@ interface ReportListItem {
   is_signed: boolean;
   is_sent: boolean;
   is_pre_proposal: boolean;
+  deal_status: "won" | "lost" | null;
 }
 
 const TECHNICIANS = [
@@ -119,6 +123,7 @@ const SubmittedReports = () => {
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
+  const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
@@ -138,12 +143,16 @@ const SubmittedReports = () => {
         const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
         let isPreProposal = false;
+        let dealStatus: "won" | "lost" | null = null;
         // Detect via _reportFormat marker in notes
         if (r.notes && typeof r.notes === 'string') {
           try {
             const parsed = JSON.parse(r.notes);
             if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
             if (parsed?._isPreProposal === true) isPreProposal = true;
+            if (parsed?._dealStatus === "won" || parsed?._dealStatus === "lost") {
+              dealStatus = parsed._dealStatus;
+            }
           } catch {}
         }
         // Fallback: detect via services array containing Proposal objects (have 'name' + 'services' keys)
@@ -163,6 +172,7 @@ const SubmittedReports = () => {
           is_signed: !!r.customer_signature,
           is_sent: !!r.sent_to_customer_at,
           is_pre_proposal: isPreProposal,
+          deal_status: dealStatus,
         };
       });
 
@@ -295,6 +305,49 @@ const SubmittedReports = () => {
     }
   };
 
+  // Mark a Sales / Multi-Proposal report as Won or Lost (or clear the marker).
+  // Stored alongside _isPreProposal in the notes JSON so no schema change is
+  // needed. Won/Lost reports are filtered out of the default Sales views.
+  const setDealStatus = async (
+    reportId: string,
+    status: "won" | "lost" | null,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    setTogglingDealStatus(reportId);
+    try {
+      const { data: row, error: fErr } = await supabase
+        .from("reports")
+        .select("notes")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (fErr) throw fErr;
+
+      let parsed: any = {};
+      if (row?.notes && typeof row.notes === "string") {
+        try { parsed = JSON.parse(row.notes); } catch { parsed = { _legacyNotes: row.notes }; }
+      }
+      if (status) parsed._dealStatus = status;
+      else delete parsed._dealStatus;
+
+      const { error: uErr } = await supabase
+        .from("reports")
+        .update({ notes: JSON.stringify(parsed) })
+        .eq("id", reportId);
+      if (uErr) throw uErr;
+
+      toast.success(
+        status === "won" ? "Marked as Won" : status === "lost" ? "Marked as Lost" : "Deal status cleared",
+      );
+      await loadReports();
+    } catch (err: any) {
+      console.error("Toggle deal status error:", err);
+      toast.error("Failed to update deal status");
+    } finally {
+      setTogglingDealStatus(null);
+    }
+  };
+
   const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCreatingPortal(reportId);
@@ -358,12 +411,18 @@ const SubmittedReports = () => {
     // Pre-Proposals are hidden from the Sales-focused buckets (Sales, Multi-Proposal,
     // Sales (All)) so the default sales portal view stays clean. They still show up
     // in "All Types" and have their own dedicated "Pre-Proposal" filter.
+    // Won / Lost reports are also hidden from the default Sales views — they live
+    // in their own dedicated "Won Deals" and "Lost Deals" buckets.
     if (typeFilter === "pre-proposal") {
       filtered = filtered.filter((r) => r.is_pre_proposal);
+    } else if (typeFilter === "won") {
+      filtered = filtered.filter((r) => r.deal_status === "won");
+    } else if (typeFilter === "lost") {
+      filtered = filtered.filter((r) => r.deal_status === "lost");
     } else if (typeFilter === "all") {
-      // show everything, including pre-proposals
+      // show everything, including pre-proposals and won/lost
     } else {
-      filtered = filtered.filter((r) => !r.is_pre_proposal);
+      filtered = filtered.filter((r) => !r.is_pre_proposal && !r.deal_status);
       if (typeFilter === "sales-all") {
         filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
       } else {
@@ -470,6 +529,8 @@ const SubmittedReports = () => {
                   <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                   <SelectItem value="pre-proposal">Pre-Proposal</SelectItem>
+                  <SelectItem value="won">Won Deals</SelectItem>
+                  <SelectItem value="lost">Lost Deals</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -594,6 +655,19 @@ const SubmittedReports = () => {
                               </Badge>
                             )}
 
+                            {report.deal_status === "won" && (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                <Trophy className="w-3 h-3 mr-1" />
+                                Won
+                              </Badge>
+                            )}
+                            {report.deal_status === "lost" && (
+                              <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
+                                <XCircle className="w-3 h-3 mr-1" />
+                                Lost
+                              </Badge>
+                            )}
+
                             {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
                               <Button
                                 variant="ghost"
@@ -611,6 +685,58 @@ const SubmittedReports = () => {
                                   <Archive className="w-4 h-4" />
                                 )}
                               </Button>
+                            )}
+
+                            {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
+                              <>
+                                {report.deal_status ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => setDealStatus(report.id, null, e)}
+                                    disabled={togglingDealStatus === report.id}
+                                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Clear deal status"
+                                  >
+                                    {togglingDealStatus === report.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => setDealStatus(report.id, "won", e)}
+                                      disabled={togglingDealStatus === report.id}
+                                      className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                                      title="Mark as Won"
+                                    >
+                                      {togglingDealStatus === report.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trophy className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => setDealStatus(report.id, "lost", e)}
+                                      disabled={togglingDealStatus === report.id}
+                                      className="text-rose-700 hover:text-rose-800 hover:bg-rose-50"
+                                      title="Mark as Lost"
+                                    >
+                                      {togglingDealStatus === report.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </>
+                                )}
+                              </>
                             )}
 
                             <Button
