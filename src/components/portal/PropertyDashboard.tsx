@@ -35,6 +35,7 @@ interface PortalProperty {
   id: string; client_id: string; name: string; address: string | null; notes: string | null;
   image_url: string | null; map_data: any; map_image_url: string | null;
   equipment: any; customer_preferences: any;
+  owner_tech?: string | null;
 }
 interface PortalService {
   id: string; property_id: string; service_date: string | null; service_time: string | null;
