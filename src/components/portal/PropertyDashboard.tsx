@@ -328,6 +328,41 @@ const PropertyDashboard = ({
     }
   };
 
+  // Crest Point of Contact — name + email + phone for the Crest staff member
+  // that the PM should reach out to. Stored in customer_preferences.crest_point_of_contact.
+  const initialCrestName = (property.customer_preferences as any)?.crest_point_of_contact?.name || "";
+  const initialCrestEmail = (property.customer_preferences as any)?.crest_point_of_contact?.email || "";
+  const initialCrestPhone = (property.customer_preferences as any)?.crest_point_of_contact?.phone || "";
+  const [crestName, setCrestName] = useState<string>(initialCrestName);
+  const [crestEmail, setCrestEmail] = useState<string>(initialCrestEmail);
+  const [crestPhone, setCrestPhone] = useState<string>(initialCrestPhone);
+  useEffect(() => {
+    setCrestName((property.customer_preferences as any)?.crest_point_of_contact?.name || "");
+    setCrestEmail((property.customer_preferences as any)?.crest_point_of_contact?.email || "");
+    setCrestPhone((property.customer_preferences as any)?.crest_point_of_contact?.phone || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const cur = (property.customer_preferences as any)?.crest_point_of_contact || {};
+    if ((cur.name || "") === crestName && (cur.email || "") === crestEmail && (cur.phone || "") === crestPhone) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        crest_point_of_contact: { name: crestName, email: crestEmail, phone: crestPhone },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save Crest contact", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crestName, crestEmail, crestPhone]);
+
   // ─── Unit Plan: included units per service + price per unit overage ───
   // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
   const initialPlanCfg = readUnitPlanConfig(property.customer_preferences);
