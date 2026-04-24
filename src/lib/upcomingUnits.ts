@@ -109,9 +109,18 @@ export interface UpcomingUnitContext {
   last_unit_detail?: UnitDetailRow;
   /** Pre-filled target pest (for the technician). */
   target_pest?: string;
-  /** Pre-filled findings text (for the technician). */
+  /**
+   * Work-Order / Last-Service CONTEXT (separate from findings).
+   *  - Work order  → "<pest> activity reported (Interior): <description>"
+   *  - Follow-up / carried → "Last service notes: …" from prior visit
+   */
+  context?: string;
+  /**
+   * Actual TECHNICIAN FINDINGS pre-filled from the most recent past service
+   * (only populated for follow_up / carried — never synthesized from a work order).
+   */
   findings?: string;
-  /** Pre-filled notes text (for the technician). */
+  /** Pre-filled notes text (for the technician — internal). */
   notes?: string;
 }
 
