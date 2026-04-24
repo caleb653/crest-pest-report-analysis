@@ -1578,7 +1578,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                               </Badge>
                               {r.request_type && (
-                                <Badge variant="secondary" className="text-[10px] capitalize">{r.request_type.replace(/_/g, " ")}</Badge>
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {r.request_type.toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
+                                </Badge>
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
@@ -1590,6 +1592,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-medium">{r.unit_number}</Badge>
                               {r.location_type && <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>}
                               {r.preferred_date && <span className="text-[10px] text-muted-foreground">• Wants: {r.preferred_date}</span>}
+                              {r.occupancy_status && <span className="text-[10px] text-muted-foreground">• {r.occupancy_status}</span>}
                             </div>
                           )}
                           <p className="text-sm mt-1">{r.description}</p>
