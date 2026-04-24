@@ -128,6 +128,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
 
+  // Token of the PM link itself — used to build the public Tenant Request link
+  // (community-style link the PM can share so a tenant can submit a request
+  // without seeing the rest of the portal).
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+
+  // Editable Property Point of Contact (PM can update their own info)
+  const [pocName, setPocName] = useState<string>("");
+  const [pocEmail, setPocEmail] = useState<string>("");
+  const [pocPhone, setPocPhone] = useState<string>("");
+  // Editable extra customer preference notes (PM-managed)
+  const [pmPrefDraft, setPmPrefDraft] = useState<string>("");
+
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
