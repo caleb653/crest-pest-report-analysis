@@ -440,7 +440,7 @@ const SubmittedReports = () => {
       filtered = filtered.filter((r) => r.deal_status === "lost");
     } else if (statusFilter === "all") {
       // show every status, including Lost
-    } else if (statusFilter !== "all") {
+    } else {
       filtered = filtered.filter((r) => {
         // Default behavior: hide Lost so it never clutters Created/Sent/Signed views.
         if (r.deal_status === "lost") return false;
