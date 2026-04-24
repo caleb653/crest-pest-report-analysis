@@ -835,11 +835,11 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         row = data;
       }
 
-      setEditableTech(row.technician_name);
+      setEditableTech(row.technician_name || "");
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
-      setEditableFindings((row.findings as string[]) || []);
+      setEditableFindings(normalizeStringArray(row.findings));
       // Mark findings as edited if there was saved data, to prevent auto-override
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
         findingsEditedRef.current = true;
@@ -852,10 +852,11 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
-        setServices((row.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })) as ServiceItem[]);
+        const normalizedServices = normalizeServices(row.services);
+        setServices(normalizedServices);
         // Prevent the service auto-population effect from re-appending descriptions already saved
         addedServiceTypesRef.current = new Set(
-          (row.services as ServiceItem[])
+          normalizedServices
             .map((s) => s.serviceType)
             .filter((t): t is string => !!t),
         );
@@ -873,13 +874,13 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setEditableLicenseNumber(row.license_number);
       }
       if (row.target_pests && Array.isArray(row.target_pests)) {
-        setEditableTargetPests(row.target_pests as string[]);
+        setEditableTargetPests(normalizeStringArray(row.target_pests));
       }
       if (row.products_used && Array.isArray(row.products_used)) {
-        setEditableProductsUsed(row.products_used as string[]);
+        setEditableProductsUsed(normalizeStringArray(row.products_used));
       }
       if (row.equipment && Array.isArray(row.equipment)) {
-        setEditableEquipment(row.equipment as string[]);
+        setEditableEquipment(normalizeStringArray(row.equipment));
       }
       if (row.report_title) {
         setEditableTitle(row.report_title);
@@ -906,7 +907,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
             setAdditionalDetails(row.notes);
           }
         } else {
-          setAdditionalDetails(row.notes as string);
+          setAdditionalDetails(typeof row.notes === "string" ? row.notes : "");
         }
       }
       
