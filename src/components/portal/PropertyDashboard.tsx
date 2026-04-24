@@ -2632,11 +2632,55 @@ const PropertyDashboard = ({
         <Card className="border-primary/60 shadow-md">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+              <ClipboardList className="w-4 h-4 text-primary" />
+              {isHOA ? "Submit a Homeowner Work Order" : "Submit a Work Order"}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
+            <p className="text-xs text-muted-foreground">
+              {isHOA
+                ? "Capture the homeowner's contact info and the issue — we'll schedule service."
+                : "Tell us what's going on and we'll schedule service."}
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* HOA-only: Homeowner contact block (different from PM-only block in apartment mode). */}
+            {isHOA && (
+              <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                  <ClipboardList className="w-3.5 h-3.5" />Homeowner Contact
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Name *</Label>
+                    <Input
+                      placeholder="Homeowner full name"
+                      value={workOrder.customer_name}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, customer_name: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Phone *</Label>
+                    <Input
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={workOrder.customer_phone}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, customer_phone: e.target.value }))}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label className="text-xs">Email *</Label>
+                    <Input
+                      type="email"
+                      placeholder="homeowner@example.com"
+                      value={workOrder.tenant_email}
+                      onChange={e => setWorkOrder(wo => ({ ...wo, tenant_email: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  This is the homeowner submitting the issue — different from the property manager. Their contact info is saved with the work order.
+                </p>
+              </div>
+            )}
             {/* Request Type (admin-only enhancement, kept compact) */}
             <div>
               <Label className="text-sm">Request Type *</Label>
