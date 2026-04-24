@@ -59,7 +59,6 @@ const PROPERTY_TYPES = [
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Jesse Angulo", license: "OPR #14972" },
   { name: "Jake Shubin", license: "FR 71068" },
   { name: "Caleb Whalen", license: "FR 71183" },
   { name: "Jackson Latham", license: "FR 68261" },

@@ -349,17 +349,24 @@ const ClientPortal = () => {
     if (!chatInput.trim() || !linkData || !client) return;
     setSending(true);
     const senderName = client.company || client.name;
-    const { error: err } = await supabase.from("portal_messages").insert({
+    const { data: msgInserted, error: err } = await supabase.from("portal_messages").insert({
       link_id: linkData.id, client_id: linkData.client_id,
       sender_name: senderName, sender_type: "client",
       subject: "Portal Chat", message: chatInput.trim(),
-    });
+    }).select("id").maybeSingle();
     if (!err) {
       try {
         await supabase.functions.invoke("send-portal-message", {
           body: { senderName, propertyName: client.company || null, subject: `Chat from ${senderName}`, message: chatInput.trim() },
         });
       } catch (e) { console.error("Email send failed:", e); }
+      if (msgInserted?.id) {
+        try {
+          await supabase.functions.invoke("notify-submission", {
+            body: { kind: "message", messageId: msgInserted.id },
+          });
+        } catch (e) { console.error("notify-submission failed", e); }
+      }
       setChatInput("");
       loadMessages();
     } else {

@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
+import NotificationBell from "@/components/NotificationBell";
 import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
@@ -67,7 +68,6 @@ const TECHNICIANS = [
   "Caleb Whalen",
   "Jake Shubin",
   "Darrell Tanner",
-  "Jesse Angulo",
   "Jackson Latham",
   "Dylan Gallegos",
   "Michael Muniz",
@@ -96,7 +96,7 @@ function isWithinDays(dateStr: string, days: number): boolean {
   return d >= cutoff;
 }
 
-const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "Jesse Angulo"];
+const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos"];
 
 const SubmittedReports = () => {
   const navigate = useNavigate();
@@ -468,6 +468,7 @@ const SubmittedReports = () => {
             <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               Home
             </Button>

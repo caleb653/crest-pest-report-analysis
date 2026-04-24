@@ -21,6 +21,7 @@ import PMPortal from "./pages/PMPortal";
 import AppointmentReport from "./pages/AppointmentReport";
 import RightToTreat from "./pages/RightToTreat";
 import SurveyTake from "./pages/SurveyTake";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/submitted-reports" element={<SubmittedReports />} />
                 <Route path="/portal-admin" element={<PortalAdmin />} />
                 <Route path="/team-docs" element={<TeamDocs />} />
+                <Route path="/notifications" element={<Notifications />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PinGate>

@@ -4,21 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, User } from "lucide-react";
 import { toast } from "sonner";
+import { STAFF_NAMES } from "@/lib/staffRoster";
 
 const SelectTechnician = () => {
   const navigate = useNavigate();
   const loggedInUser = sessionStorage.getItem("app_logged_in_user") || "";
   const [selectedTech, setSelectedTech] = useState(loggedInUser);
 
-  const technicians = [
-    "Darrell Tanner",
-    "Jesse Angulo",
-    "Jake Shubin",
-    "Caleb Whalen",
-    "Jackson Latham",
-    "Dylan Gallegos",
-    "Michael Muniz",
-  ];
+  const technicians = STAFF_NAMES;
 
   const handleNext = () => {
     if (!selectedTech) {

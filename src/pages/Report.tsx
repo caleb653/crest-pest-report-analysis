@@ -49,7 +49,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
-  { name: "Jesse Angulo", license: "OPR #14972" },
   { name: "Jake Shubin", license: "FR 71068" },
   { name: "Caleb Whalen", license: "FR 71183" },
   { name: "Jackson Latham", license: "FR 68261" },
@@ -3090,7 +3089,6 @@ Crest Pest Control`;
                   "dlongoria@crestpestco.com",
                   "jlatham@crestpestco.com",
                   "dtanner@crestpestco.com",
-                  "jangulo@crestpestco.com",
                   "dgallegos@crestpestco.com",
                   "mmuniz@crestpestco.com",
                 ].filter(email => !ccEmails.includes(email)).map((email) => (

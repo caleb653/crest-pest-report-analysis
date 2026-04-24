@@ -248,7 +248,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     const typed = unitNumber.trim();
     const canonical = knownUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed;
 
-    const { error: err } = await supabase.from("portal_requests").insert({
+    const { data: pmInserted, error: err } = await supabase.from("portal_requests").insert({
       link_id: linkId,
       property_id: propertyId,
       unit_number: canonical,
@@ -265,6 +265,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
     if (!err) {
       toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
+      if (pmInserted?.id) {
+        try {
+          await supabase.functions.invoke("notify-submission", {
+            body: { kind: "work_order", requestId: pmInserted.id },
+          });
+        } catch (e) { console.error("notify-submission failed", e); }
+      }
       // If tenant email requested, fire-and-forget the send
       if (emailTenant && tenantEmail.trim()) {
         try {

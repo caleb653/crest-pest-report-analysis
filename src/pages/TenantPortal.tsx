@@ -113,7 +113,7 @@ const TenantPortal = () => {
     const typed = unitNumber.trim();
     const canonical = knownUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed;
 
-    const { error: err } = await supabase.from("portal_requests").insert({
+    const { data: inserted, error: err } = await supabase.from("portal_requests").insert({
       link_id: linkData.id,
       property_id: propertyId,
       unit_number: canonical,
@@ -122,10 +122,17 @@ const TenantPortal = () => {
       pest_type: pestType,
       location_type: locationType || null,
       preferred_date: preferredDate || null,
-    } as any);
+    } as any).select("id").maybeSingle();
 
     if (!err) {
       toast({ title: "Request submitted", description: "We'll get back to you soon." });
+      if (inserted?.id) {
+        try {
+          await supabase.functions.invoke("notify-submission", {
+            body: { kind: "work_order", requestId: inserted.id },
+          });
+        } catch (e) { console.error("notify-submission failed", e); }
+      }
       setPestType("");
       setDescription("");
       setPreferredDate("");

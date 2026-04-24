@@ -18,7 +18,6 @@ const EMPLOYEES = [
   "Caleb Whalen",
   "Jake Shubin",
   "Darrell Tanner",
-  "Jesse Angulo",
   "Jackson Latham",
   "Dylan Gallegos",
   "Michael Muniz",

@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.sign-right-to-treat]
 verify_jwt = false
+
+[functions.notify-submission]
+verify_jwt = false

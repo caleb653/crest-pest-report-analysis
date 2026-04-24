@@ -18,6 +18,8 @@ import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, 
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
+import NotificationBell from "@/components/NotificationBell";
+import { STAFF_NAMES } from "@/lib/staffRoster";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -110,6 +112,7 @@ const PortalAdmin = () => {
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
   const [newProperty, setNewProperty] = useState<{ name: string; address: string; notes: string; image_url: string; client_id: string; property_type: PropertyType }>({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
+  const [newPropertyOwnerTech, setNewPropertyOwnerTech] = useState<string>("");
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
   const [propertySubTab, setPropertySubTab] = useState<PropertyType>("apartments");
 
@@ -241,12 +244,14 @@ const PortalAdmin = () => {
       client_id: newProperty.client_id, name: newProperty.name, address: newProperty.address || null,
       notes: newProperty.notes || null, image_url: newProperty.image_url || null,
       customer_preferences: { property_type: newProperty.property_type },
+      owner_tech: newPropertyOwnerTech || null,
     });
     if (!error) {
       toast({ title: "Property added" });
       setShowAddProperty(false);
       setPropertySubTab(newProperty.property_type);
       setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
+      setNewPropertyOwnerTech("");
       loadAll();
     }
   };
@@ -583,7 +588,8 @@ const PortalAdmin = () => {
         <div className="bg-card border-b px-4 py-3 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
           <img src={crestLogo} alt="Crest" className="h-8" />
-          <h1 className="text-lg font-bold">Client Portal Admin</h1>
+          <h1 className="text-lg font-bold flex-1">Client Portal Admin</h1>
+          <NotificationBell />
         </div>
 
         <div className="p-4 max-w-7xl mx-auto">
@@ -635,6 +641,17 @@ const PortalAdmin = () => {
                           </div>
                           <div><Label>Property Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
                           <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
+                          {(newProperty.property_type === "hoa" || newProperty.property_type === "apartments") && (
+                            <div>
+                              <Label>Client Owner (Crest staff)</Label>
+                              <Select value={newPropertyOwnerTech} onValueChange={setNewPropertyOwnerTech}>
+                                <SelectTrigger><SelectValue placeholder="Assign a Crest team member" /></SelectTrigger>
+                                <SelectContent>
+                                  {STAFF_NAMES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                           <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
                           <div>
                             <Label>Property Image</Label>
