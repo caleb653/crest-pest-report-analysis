@@ -1571,13 +1571,13 @@ const PropertyDashboard = ({
         {!isUpcoming && renderEditableUnitTable(s)}
 
         {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
-        {isUpcoming && isFirstUpcoming && (followUpDetailsFromPast.length > 0 || pendingRequests.length > 0) && (() => {
-          const uniqueInteriorUnits = new Set<string>();
-          followUpDetailsFromPast.forEach(u => { if (u.unit_number) uniqueInteriorUnits.add(String(u.unit_number)); });
-          pendingRequests.forEach(r => { if (r.unit_number) uniqueInteriorUnits.add(String(r.unit_number)); });
-          const total = uniqueInteriorUnits.size;
-          const fuCount = followUpDetailsFromPast.length;
-          const woCount = pendingRequests.length;
+        {isUpcoming && isFirstUpcoming && merged.units.length > 0 && (() => {
+          // Use the SAME merged unit list as the overage banner so the two
+          // numbers can never disagree (planned + work orders + follow-ups,
+          // all deduped to truly unique unit numbers).
+          const total = merged.units.length;
+          const fuCount = merged.followUpUnits.size;
+          const woCount = merged.openRequestUnits.size;
           return (
             <div className="bg-primary text-primary-foreground rounded-lg p-3 flex items-center justify-between shadow-sm">
               <div>
