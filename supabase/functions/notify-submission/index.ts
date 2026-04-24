@@ -57,6 +57,9 @@ serve(async (req) => {
     let ownerTech: string | null = null;
     let relatedRequestId: string | null = null;
     let relatedMessageId: string | null = null;
+    // Property Point of Contact email — when set, gets CC'd on work order
+    // notifications so the PM is always in the loop.
+    let pmPocEmail: string | null = null;
 
     if (body.kind === "work_order") {
       if (!body.requestId) {
@@ -87,7 +90,7 @@ serve(async (req) => {
       // receives every notification — this just keeps the PM in the loop.
       const pocEmail = (prop as any)?.customer_preferences?.point_of_contact?.email as string | undefined;
       if (pocEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail)) {
-        (reqRow as any).__pocEmail = pocEmail.trim();
+        pmPocEmail = pocEmail.trim();
       }
 
       subject = `New Work Order — ${propertyName}${reqRow.unit_number ? ` (Unit ${reqRow.unit_number})` : ""}`;
@@ -171,13 +174,9 @@ serve(async (req) => {
     const recipients = new Set<string>([OFFICE_EMAIL]);
     if (carmenStaff?.email) recipients.add(carmenStaff.email);
     if (ownerStaff?.email) recipients.add(ownerStaff.email);
-    // CC the property's Point of Contact (PM) if one is configured
-    if (body.kind === "work_order") {
-      // We stashed the email on reqRow above; re-fetch defensively if missing
-      // (the stash is scoped to that branch).
-      // @ts-ignore — using attached field
-      const pocEmail = (globalThis as any).__noop || undefined;
-    }
+    // CC the property's Point of Contact (PM) on work order emails so the PM
+    // always sees what tenants submit, alongside the office.
+    if (pmPocEmail) recipients.add(pmPocEmail);
 
     // ── Send email ──
     if (RESEND_API_KEY) {
