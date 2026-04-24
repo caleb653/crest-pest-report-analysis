@@ -38,6 +38,51 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          notification_type: string
+          recipient_name: string | null
+          recipient_username: string | null
+          related_message_id: string | null
+          related_property_id: string | null
+          related_request_id: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          notification_type?: string
+          recipient_name?: string | null
+          recipient_username?: string | null
+          related_message_id?: string | null
+          related_property_id?: string | null
+          related_request_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          notification_type?: string
+          recipient_name?: string | null
+          recipient_username?: string | null
+          related_message_id?: string | null
+          related_property_id?: string | null
+          related_request_id?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       portal_clients: {
         Row: {
           company: string | null
@@ -224,6 +269,7 @@ export type Database = {
           map_image_url: string | null
           name: string
           notes: string | null
+          owner_tech: string | null
           updated_at: string
         }
         Insert: {
@@ -238,6 +284,7 @@ export type Database = {
           map_image_url?: string | null
           name: string
           notes?: string | null
+          owner_tech?: string | null
           updated_at?: string
         }
         Update: {
@@ -252,6 +299,7 @@ export type Database = {
           map_image_url?: string | null
           name?: string
           notes?: string | null
+          owner_tech?: string | null
           updated_at?: string
         }
         Relationships: [
