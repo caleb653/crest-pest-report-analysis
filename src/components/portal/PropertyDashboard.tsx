@@ -452,6 +452,45 @@ const PropertyDashboard = ({
   // Plan config (included units + overage $) — single read used everywhere below.
   const planCfg = readUnitPlanConfig(property.customer_preferences);
 
+  // Sync calculated overage onto each service's report_data so it can be used
+  // for invoicing / reporting later. Runs whenever the plan config or services
+  // change. Only writes when the stored snapshot differs from the live calc,
+  // and only for services that actually belong to this property.
+  useEffect(() => {
+    if (!planCfg.included_units) return;
+    const tasks: Promise<any>[] = [];
+    propServices.forEach(svc => {
+      const isCompleted = svc.status === "completed";
+      const totalUnits = isCompleted
+        ? (Array.isArray(svc.unit_details) ? (svc.unit_details as any[]).length : 0)
+        : (Array.isArray(svc.units_planned) ? (svc.units_planned as string[]).length : 0);
+      const ov = computeOverage(totalUnits, planCfg);
+      const stored = (svc as any).report_data?.overage || null;
+      const snapshot = {
+        included_units: ov.includedUnits,
+        price_per_unit: ov.pricePerUnit,
+        total_units: ov.totalUnits,
+        units_over: ov.unitsOver,
+        overage_cost: ov.overageCost,
+      };
+      const same =
+        stored &&
+        stored.included_units === snapshot.included_units &&
+        stored.price_per_unit === snapshot.price_per_unit &&
+        stored.total_units === snapshot.total_units &&
+        stored.units_over === snapshot.units_over &&
+        stored.overage_cost === snapshot.overage_cost;
+      if (same) return;
+      const merged = { ...((svc as any).report_data || {}), overage: snapshot };
+      tasks.push(
+        supabase.from("portal_services").update({ report_data: merged }).eq("id", svc.id)
+      );
+    });
+    // Fire-and-forget: no toast, no refresh — invoicing reads via report_data later.
+    if (tasks.length > 0) Promise.allSettled(tasks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planCfg.included_units, planCfg.overage_price_per_unit, propServices.length, property.id]);
+
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
   type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "quarterly";
