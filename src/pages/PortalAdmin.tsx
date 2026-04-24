@@ -109,8 +109,9 @@ const PortalAdmin = () => {
   const [editingPrepSheet, setEditingPrepSheet] = useState<PortalPrepSheet | null>(null);
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
-  const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "", client_id: "" });
+  const [newProperty, setNewProperty] = useState<{ name: string; address: string; notes: string; image_url: string; client_id: string; property_type: PropertyType }>({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
+  const [propertySubTab, setPropertySubTab] = useState<PropertyType>("apartments");
 
   const emptyServiceForm = {
     property_id: "", service_date: "", service_time: "", service_type: "", technician: "",
