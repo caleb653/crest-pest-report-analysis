@@ -27,6 +27,7 @@ import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/produc
 import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
+import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 
 // ─── Types ───
 interface PortalProperty {
@@ -287,6 +288,46 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail]);
 
+  // ─── Unit Plan: included units per service + price per unit overage ───
+  // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
+  const initialPlanCfg = readUnitPlanConfig(property.customer_preferences);
+  const [includedUnitsDraft, setIncludedUnitsDraft] = useState<string>(
+    initialPlanCfg.included_units ? String(initialPlanCfg.included_units) : ""
+  );
+  const [overagePriceDraft, setOveragePriceDraft] = useState<string>(
+    initialPlanCfg.overage_price_per_unit ? String(initialPlanCfg.overage_price_per_unit) : ""
+  );
+  useEffect(() => {
+    const cfg = readUnitPlanConfig(property.customer_preferences);
+    setIncludedUnitsDraft(cfg.included_units ? String(cfg.included_units) : "");
+    setOveragePriceDraft(cfg.overage_price_per_unit ? String(cfg.overage_price_per_unit) : "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = readUnitPlanConfig(property.customer_preferences);
+    const draftIncluded = Number(includedUnitsDraft) || 0;
+    const draftPrice = Number(overagePriceDraft) || 0;
+    if ((current.included_units || 0) === draftIncluded && (current.overage_price_per_unit || 0) === draftPrice) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        included_units: draftIncluded,
+        overage_price_per_unit: draftPrice,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save unit plan", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+        toast({ title: "Unit plan saved", duration: 1200 });
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedUnitsDraft, overagePriceDraft]);
+
   // ─── Cadence Visit Plan ───
   // For weekly and bi-weekly schedules, technicians rotate what they focus on
   // each visit (e.g. visit 1 = full exterior, visit 2 = spot-treat hotspots).
@@ -407,6 +448,50 @@ const PropertyDashboard = ({
   const scheduledServices = propServices
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+
+  // Plan config (included units + overage $) — single read used everywhere below.
+  const planCfg = readUnitPlanConfig(property.customer_preferences);
+
+  // Sync calculated overage onto each service's report_data so it can be used
+  // for invoicing / reporting later. Runs whenever the plan config or services
+  // change. Only writes when the stored snapshot differs from the live calc,
+  // and only for services that actually belong to this property.
+  useEffect(() => {
+    if (!planCfg.included_units) return;
+    const tasks: Promise<any>[] = [];
+    propServices.forEach(svc => {
+      const isCompleted = svc.status === "completed";
+      const totalUnits = isCompleted
+        ? (Array.isArray(svc.unit_details) ? (svc.unit_details as any[]).length : 0)
+        : (Array.isArray(svc.units_planned) ? (svc.units_planned as string[]).length : 0);
+      const ov = computeOverage(totalUnits, planCfg);
+      const stored = (svc as any).report_data?.overage || null;
+      const snapshot = {
+        included_units: ov.includedUnits,
+        price_per_unit: ov.pricePerUnit,
+        total_units: ov.totalUnits,
+        units_over: ov.unitsOver,
+        overage_cost: ov.overageCost,
+      };
+      const same =
+        stored &&
+        stored.included_units === snapshot.included_units &&
+        stored.price_per_unit === snapshot.price_per_unit &&
+        stored.total_units === snapshot.total_units &&
+        stored.units_over === snapshot.units_over &&
+        stored.overage_cost === snapshot.overage_cost;
+      if (same) return;
+      const merged = { ...((svc as any).report_data || {}), overage: snapshot };
+      tasks.push(
+        Promise.resolve(
+          supabase.from("portal_services").update({ report_data: merged }).eq("id", svc.id)
+        )
+      );
+    });
+    // Fire-and-forget: no toast, no refresh — invoicing reads via report_data later.
+    if (tasks.length > 0) Promise.allSettled(tasks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planCfg.included_units, planCfg.overage_price_per_unit, propServices.length, property.id]);
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
@@ -1313,6 +1398,12 @@ const PropertyDashboard = ({
       ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
     const pmNoteForThis = isUpcoming && s.service_date ? (pmNotesMap[s.service_date] || "") : "";
 
+    // Overage calculation — uses merged unit count for upcoming, treated unit count for past.
+    const overageUnitCount = isUpcoming
+      ? merged.units.length
+      : (Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0);
+    const overage = computeOverage(overageUnitCount, planCfg);
+
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
         {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
@@ -1323,6 +1414,22 @@ const PropertyDashboard = ({
               From the Property Manager — for the Technician
             </p>
             <p className="text-xs whitespace-pre-wrap font-medium">{pmNoteForThis}</p>
+          </div>
+        )}
+
+        {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
+        {overage.hasOverage && (
+          <div className="border-2 border-amber-500/70 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+              <Flag className="w-3.5 h-3.5" />
+              Overage on this service
+            </p>
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+              {overage.totalUnits} units {isUpcoming ? "scheduled" : "treated"} — {overage.includedUnits} included • {overage.unitsOver} over the plan
+            </p>
+            <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
+              {overage.unitsOver} × {formatOverageMoney(overage.pricePerUnit)} = <span className="font-bold">{formatOverageMoney(overage.overageCost)}</span> additional charge for this visit.
+            </p>
           </div>
         )}
 
@@ -1988,6 +2095,42 @@ const PropertyDashboard = ({
                   Used to project the next two upcoming services on this property.
                 </p>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                    Included Interior Units / Service
+                  </Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    placeholder="e.g. 10"
+                    value={includedUnitsDraft}
+                    onChange={(e) => setIncludedUnitsDraft(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                    Price per Additional Unit
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-7"
+                      value={overagePriceDraft}
+                      onChange={(e) => setOveragePriceDraft(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Each service includes the number of interior units above. Any units treated beyond that are billed at the additional-unit price.
+              </p>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
                 className="min-h-[120px] text-sm resize-y"
@@ -2351,6 +2494,19 @@ const PropertyDashboard = ({
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                           <Badge variant="default" className="text-xs">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
+                          {(() => {
+                            const total = Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0;
+                            const ov = computeOverage(total, planCfg);
+                            if (!ov.hasOverage) return null;
+                            return (
+                              <Badge
+                                title={`${ov.totalUnits} units treated • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
+                                className="text-xs bg-amber-500 text-white border-transparent hover:bg-amber-500"
+                              >
+                                +{ov.unitsOver} over • {formatOverageMoney(ov.overageCost)}
+                              </Badge>
+                            );
+                          })()}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span>{formatDate(s.service_date)}</span>
@@ -2677,6 +2833,18 @@ const PropertyDashboard = ({
                         {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-xs bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
+                        {(() => {
+                          const ov = computeOverage(unitsPlanned.length, planCfg);
+                          if (!ov.hasOverage) return null;
+                          return (
+                            <Badge
+                              title={`${ov.totalUnits} units to treat • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
+                              className="text-xs bg-amber-500 text-white border-transparent hover:bg-amber-500"
+                            >
+                              +{ov.unitsOver} over • {formatOverageMoney(ov.overageCost)}
+                            </Badge>
+                          );
+                        })()}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
