@@ -140,6 +140,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [pocPhone, setPocPhone] = useState<string>("");
   // Editable extra customer preference notes (PM-managed)
   const [pmPrefDraft, setPmPrefDraft] = useState<string>("");
+  // Editable Property Plan pricing (PM can update included units & pricing)
+  const [includedUnitsDraft, setIncludedUnitsDraft] = useState<string>("");
+  const [overagePriceDraft, setOveragePriceDraft] = useState<string>("");
+  const [basePriceDraft, setBasePriceDraft] = useState<string>("");
 
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
