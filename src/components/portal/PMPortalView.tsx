@@ -20,7 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
-import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
+import { readUnitPlanConfig } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
@@ -140,6 +140,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [pocPhone, setPocPhone] = useState<string>("");
   // Editable extra customer preference notes (PM-managed)
   const [pmPrefDraft, setPmPrefDraft] = useState<string>("");
+  // Editable Property Plan pricing (PM can update included units & pricing)
+  const [includedUnitsDraft, setIncludedUnitsDraft] = useState<string>("");
+  const [overagePriceDraft, setOveragePriceDraft] = useState<string>("");
+  const [basePriceDraft, setBasePriceDraft] = useState<string>("");
 
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
@@ -251,6 +255,40 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pmPrefDraft]);
 
+  // ─── Debounced save: Property Plan pricing (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const current = readUnitPlanConfig(property.customer_preferences);
+    const draftIncluded = Number(includedUnitsDraft) || 0;
+    const draftPrice = Number(overagePriceDraft) || 0;
+    const draftBase = Number(basePriceDraft) || 0;
+    if (
+      (current.included_units || 0) === draftIncluded &&
+      (current.overage_price_per_unit || 0) === draftPrice &&
+      (current.base_service_price || 0) === draftBase
+    ) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        included_units: draftIncluded,
+        overage_price_per_unit: draftPrice,
+        base_service_price: draftBase,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save pricing", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+        toast({ title: "Pricing saved", duration: 1200 });
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedUnitsDraft, overagePriceDraft, basePriceDraft]);
+
   const loadAll = async () => {
     setLoading(true);
 
@@ -279,6 +317,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setPocEmail(poc.email || "");
       setPocPhone(poc.phone || "");
       setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+      const planCfg = readUnitPlanConfig((prop as any).customer_preferences);
+      setIncludedUnitsDraft(planCfg.included_units ? String(planCfg.included_units) : "");
+      setOveragePriceDraft(planCfg.overage_price_per_unit ? String(planCfg.overage_price_per_unit) : "");
+      setBasePriceDraft(planCfg.base_service_price ? String(planCfg.base_service_price) : "");
     }
 
     if (Array.isArray(svcs)) {
@@ -983,32 +1025,56 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
-                  if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                           Included Interior Units / Service
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.included_units ? cfg.included_units : "—"}
-                        </p>
+                        </Label>
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          placeholder="e.g. 10"
+                          value={includedUnitsDraft}
+                          onChange={(e) => setIncludedUnitsDraft(e.target.value)}
+                        />
                       </div>
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                          Price / Additional Unit
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.overage_price_per_unit ? formatOverageMoney(cfg.overage_price_per_unit!) : "—"}
-                        </p>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                          Price per Additional Unit
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step="1"
+                            placeholder="0"
+                            className="pl-7 text-right"
+                            value={overagePriceDraft}
+                            onChange={(e) => setOveragePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
+                          />
+                        </div>
                       </div>
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                           Base Price / Service
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}
-                        </p>
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step="1"
+                            placeholder="0"
+                            className="pl-7 text-right"
+                            value={basePriceDraft}
+                            onChange={(e) => setBasePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
