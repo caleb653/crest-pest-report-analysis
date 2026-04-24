@@ -20,6 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
+import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
