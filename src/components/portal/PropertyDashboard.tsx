@@ -2885,7 +2885,101 @@ const PropertyDashboard = ({
                         {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
                       </p>
                     </div>
-                    {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isFirst && (
+                        <Popover
+                          open={reschedulingId === s.id}
+                          onOpenChange={(open) => {
+                            if (open) {
+                              setReschedulingId(s.id);
+                              setRescheduleDate(s.service_date || today);
+                            } else {
+                              setReschedulingId(null);
+                            }
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Calendar className="w-3 h-3" />
+                              Reschedule
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-72 p-3 space-y-2"
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div>
+                              <Label className="text-xs">New service date</Label>
+                              <Input
+                                type="date"
+                                value={rescheduleDate}
+                                onChange={(e) => setRescheduleDate(e.target.value)}
+                                className="h-9 mt-1"
+                              />
+                              <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
+                                Following visits will roll forward at the {propertyFrequency.replace("-", " ")} cadence.
+                              </p>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-xs"
+                                onClick={() => setReschedulingId(null)}
+                                disabled={rescheduleSaving}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="h-8 text-xs"
+                                disabled={!rescheduleDate || rescheduleSaving}
+                                onClick={async () => {
+                                  if (!rescheduleDate) return;
+                                  setRescheduleSaving(true);
+                                  try {
+                                    if (isProjected) {
+                                      // No DB row yet — create a real scheduled service so
+                                      // the projection anchors on this confirmed date.
+                                      await supabase.from("portal_services").insert({
+                                        property_id: property.id,
+                                        service_type: s.service_type || "General Pest Control",
+                                        service_date: rescheduleDate,
+                                        technician: (s as any).technician || null,
+                                        status: "scheduled",
+                                        units_planned: Array.isArray(s.units_planned) ? s.units_planned : [],
+                                        frequency_days: propertyFrequencyDays,
+                                      } as any);
+                                    } else {
+                                      await supabase
+                                        .from("portal_services")
+                                        .update({ service_date: rescheduleDate })
+                                        .eq("id", s.id);
+                                    }
+                                    toast({ title: "Service rescheduled", description: `Next visit set to ${formatDate(rescheduleDate)}` });
+                                    setReschedulingId(null);
+                                    onRefresh();
+                                  } catch (err: any) {
+                                    toast({ title: "Reschedule failed", description: err?.message || "Unknown error", variant: "destructive" });
+                                  } finally {
+                                    setRescheduleSaving(false);
+                                  }
+                                }}
+                              >
+                                {rescheduleSaving ? "Saving…" : "Save date"}
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                      {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                    </div>
                   </button>
                   {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
