@@ -449,6 +449,9 @@ const PropertyDashboard = ({
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
+  // Plan config (included units + overage $) — single read used everywhere below.
+  const planCfg = readUnitPlanConfig(property.customer_preferences);
+
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
   type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "quarterly";
