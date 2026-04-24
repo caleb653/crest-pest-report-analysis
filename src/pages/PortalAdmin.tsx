@@ -570,6 +570,7 @@ const PortalAdmin = () => {
           <Tabs value={globalTab} onValueChange={setGlobalTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
+              <TabsTrigger value="billing"><DollarSign className="w-4 h-4 mr-1" />Billing &amp; Schedule</TabsTrigger>
               <TabsTrigger value="prep-sheets"><FileText className="w-4 h-4 mr-1" />Prep Sheets</TabsTrigger>
               <TabsTrigger value="messages"><MessageSquare className="w-4 h-4 mr-1" />Messages</TabsTrigger>
             </TabsList>
