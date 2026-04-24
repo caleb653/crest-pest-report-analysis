@@ -288,6 +288,46 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail]);
 
+  // ─── Unit Plan: included units per service + price per unit overage ───
+  // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
+  const initialPlanCfg = readUnitPlanConfig(property.customer_preferences);
+  const [includedUnitsDraft, setIncludedUnitsDraft] = useState<string>(
+    initialPlanCfg.included_units ? String(initialPlanCfg.included_units) : ""
+  );
+  const [overagePriceDraft, setOveragePriceDraft] = useState<string>(
+    initialPlanCfg.overage_price_per_unit ? String(initialPlanCfg.overage_price_per_unit) : ""
+  );
+  useEffect(() => {
+    const cfg = readUnitPlanConfig(property.customer_preferences);
+    setIncludedUnitsDraft(cfg.included_units ? String(cfg.included_units) : "");
+    setOveragePriceDraft(cfg.overage_price_per_unit ? String(cfg.overage_price_per_unit) : "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = readUnitPlanConfig(property.customer_preferences);
+    const draftIncluded = Number(includedUnitsDraft) || 0;
+    const draftPrice = Number(overagePriceDraft) || 0;
+    if ((current.included_units || 0) === draftIncluded && (current.overage_price_per_unit || 0) === draftPrice) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        included_units: draftIncluded,
+        overage_price_per_unit: draftPrice,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save unit plan", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+        toast({ title: "Unit plan saved", duration: 1200 });
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedUnitsDraft, overagePriceDraft]);
+
   // ─── Cadence Visit Plan ───
   // For weekly and bi-weekly schedules, technicians rotate what they focus on
   // each visit (e.g. visit 1 = full exterior, visit 2 = spot-treat hotspots).
