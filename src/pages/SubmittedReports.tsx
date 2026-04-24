@@ -142,12 +142,16 @@ const SubmittedReports = () => {
         const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
         let isPreProposal = false;
+        let dealStatus: "won" | "lost" | null = null;
         // Detect via _reportFormat marker in notes
         if (r.notes && typeof r.notes === 'string') {
           try {
             const parsed = JSON.parse(r.notes);
             if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
             if (parsed?._isPreProposal === true) isPreProposal = true;
+            if (parsed?._dealStatus === "won" || parsed?._dealStatus === "lost") {
+              dealStatus = parsed._dealStatus;
+            }
           } catch {}
         }
         // Fallback: detect via services array containing Proposal objects (have 'name' + 'services' keys)
@@ -167,6 +171,7 @@ const SubmittedReports = () => {
           is_signed: !!r.customer_signature,
           is_sent: !!r.sent_to_customer_at,
           is_pre_proposal: isPreProposal,
+          deal_status: dealStatus,
         };
       });
 
