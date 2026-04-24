@@ -369,16 +369,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
   const downloadPrep = async (sheet: PrepSheet) => {
     if (!sheet.file_url) return;
+    // Force a true download via Supabase storage's `download` query param.
+    // The cross-origin `<a download>` attribute is ignored by browsers, so we
+    // fetch the file as a blob and trigger a same-origin download instead.
     try {
+      const res = await fetch(sheet.file_url);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = sheet.file_url;
+      a.href = objectUrl;
       a.download = `${sheet.title}.pdf`;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (err) {
+      console.error("Download failed", err);
+      // Fall back to opening in a new tab so the user can save manually.
       window.open(sheet.file_url, "_blank", "noopener,noreferrer");
     }
   };
@@ -1703,10 +1711,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           )}
                           <div className="flex flex-wrap gap-1.5">
                             {ps.file_url && (
-                              <Button size="sm" variant="outline" className="h-9 text-sm" asChild>
-                                <a href={ps.file_url} target="_blank" rel="noopener noreferrer">
-                                  <Eye className="w-3.5 h-3.5 mr-1" />View
-                                </a>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 text-sm"
+                                onClick={() => window.open(ps.file_url!, "_blank", "noopener,noreferrer")}
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />View
                               </Button>
                             )}
                             {ps.file_url && (
