@@ -80,7 +80,6 @@ const STATUS_OPTIONS = [
 
 const TECHNICIAN_OPTIONS = [
   "Darrell Tanner",
-  "Jesse Angulo",
   "Jake Shubin",
   "Caleb Whalen",
   "Jackson Latham",

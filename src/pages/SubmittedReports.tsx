@@ -67,7 +67,6 @@ const TECHNICIANS = [
   "Caleb Whalen",
   "Jake Shubin",
   "Darrell Tanner",
-  "Jesse Angulo",
   "Jackson Latham",
   "Dylan Gallegos",
   "Michael Muniz",
@@ -96,7 +95,7 @@ function isWithinDays(dateStr: string, days: number): boolean {
   return d >= cutoff;
 }
 
-const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "Jesse Angulo"];
+const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos"];
 
 const SubmittedReports = () => {
   const navigate = useNavigate();
