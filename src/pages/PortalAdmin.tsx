@@ -566,7 +566,7 @@ const PortalAdmin = () => {
           <h1 className="text-lg font-bold">Client Portal Admin</h1>
         </div>
 
-        <div className="p-4 max-w-5xl mx-auto">
+        <div className="p-4 max-w-7xl mx-auto">
           <Tabs value={globalTab} onValueChange={setGlobalTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
