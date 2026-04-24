@@ -255,6 +255,40 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pmPrefDraft]);
 
+  // ─── Debounced save: Property Plan pricing (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const current = readUnitPlanConfig(property.customer_preferences);
+    const draftIncluded = Number(includedUnitsDraft) || 0;
+    const draftPrice = Number(overagePriceDraft) || 0;
+    const draftBase = Number(basePriceDraft) || 0;
+    if (
+      (current.included_units || 0) === draftIncluded &&
+      (current.overage_price_per_unit || 0) === draftPrice &&
+      (current.base_service_price || 0) === draftBase
+    ) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        included_units: draftIncluded,
+        overage_price_per_unit: draftPrice,
+        base_service_price: draftBase,
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save pricing", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+        toast({ title: "Pricing saved", duration: 1200 });
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includedUnitsDraft, overagePriceDraft, basePriceDraft]);
+
   const loadAll = async () => {
     setLoading(true);
 
