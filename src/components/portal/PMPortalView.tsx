@@ -547,8 +547,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       )
     : [];
   const mapUrl = property.map_image_url || property.image_url;
-  const customerPref = (property.customer_preferences as any)?.preference;
-  const customerPrefNotes = (property.customer_preferences as any)?.notes;
 
   // Match admin portal logic exactly: past = completed, upcoming = everything else
   const pastServices = services
