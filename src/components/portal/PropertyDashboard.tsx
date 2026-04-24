@@ -1873,6 +1873,42 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {(() => {
+                              const uc = merged.unitContexts.find(
+                                (c) => String(c.unit_number) === String(row.unit_number)
+                              );
+                              if (!uc) return null;
+                              return (
+                                <>
+                                  {uc.context && (
+                                    <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+                                      <div className="flex items-center gap-1.5 mb-1.5">
+                                        <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                                        <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                                          {isWorkOrder ? "Work Order Context" : "Last Service Context"}
+                                        </Label>
+                                      </div>
+                                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                        {uc.context}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {uc.findings && (
+                                    <div className="md:col-span-2 rounded-lg border-2 border-amber-400 bg-amber-50/40 p-3">
+                                      <div className="flex items-center gap-1.5 mb-1.5">
+                                        <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                                        <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                                          Findings (from last visit)
+                                        </Label>
+                                      </div>
+                                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                        {uc.findings}
+                                      </p>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                             <div className="md:col-span-2">
                               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</Label>
                               <select

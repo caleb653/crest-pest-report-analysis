@@ -1704,14 +1704,27 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             <p className="text-sm font-medium">{uc.request.preferred_date}</p>
                                           </div>
                                         )}
-                                        {(uc.findings || uc.notes) && (
+                                        {uc.context && (
+                                          <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 mt-1">
+                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                              <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                                              <p className="text-[11px] font-bold text-sky-900 uppercase tracking-wide">
+                                                {isWO ? "Work Order Context" : "Last Service Context"}
+                                              </p>
+                                            </div>
+                                            <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                              {uc.context}
+                                            </p>
+                                          </div>
+                                        )}
+                                        {uc.findings && (
                                           <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3 mt-1">
                                             <div className="flex items-center gap-1.5 mb-1.5">
                                               <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                                              <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Findings / Context</p>
+                                              <p className="text-[11px] font-bold text-amber-900 uppercase tracking-wide">Findings (from last visit)</p>
                                             </div>
                                             <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                              {[uc.findings, !isWO ? uc.notes : null].filter(Boolean).join("\n\n")}
+                                              {uc.findings}
                                             </p>
                                           </div>
                                         )}

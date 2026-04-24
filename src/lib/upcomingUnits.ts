@@ -109,9 +109,18 @@ export interface UpcomingUnitContext {
   last_unit_detail?: UnitDetailRow;
   /** Pre-filled target pest (for the technician). */
   target_pest?: string;
-  /** Pre-filled findings text (for the technician). */
+  /**
+   * Work-Order / Last-Service CONTEXT (separate from findings).
+   *  - Work order  → "<pest> activity reported (Interior): <description>"
+   *  - Follow-up / carried → "Last service notes: …" from prior visit
+   */
+  context?: string;
+  /**
+   * Actual TECHNICIAN FINDINGS pre-filled from the most recent past service
+   * (only populated for follow_up / carried — never synthesized from a work order).
+   */
   findings?: string;
-  /** Pre-filled notes text (for the technician). */
+  /** Pre-filled notes text (for the technician — internal). */
   notes?: string;
 }
 
@@ -192,16 +201,40 @@ export function computeUpcomingUnits(args: {
       followUp?.target_pest ||
       lastDetail?.target_pest ||
       "";
-    const findings =
-      // Work order: synthesize "<pest> activity reported in <Interior/Exterior>"
-      (request
-        ? `${request.pest_type || "Pest"} activity reported${
-            request.location_type ? ` (${request.location_type})` : ""
-          }${request.description ? `: ${request.description}` : ""}`
-        : "") ||
-      followUp?.findings ||
-      lastDetail?.findings ||
-      "";
+    // Two SEPARATE pieces of information:
+    //   • context  → what triggered this unit being on the next service
+    //                (work order details, OR a summary of the prior visit)
+    //   • findings → actual technician findings from the most recent past
+    //                service, only when this is a follow-up / carry-over
+    const contextParts: string[] = [];
+    if (request) {
+      contextParts.push(
+        `${request.pest_type || "Pest"} activity reported${
+          request.location_type ? ` (${request.location_type})` : ""
+        }${request.description ? `: ${request.description}` : ""}`
+      );
+      if (request.preferred_date) {
+        contextParts.push(`Preferred date: ${request.preferred_date}`);
+      }
+    } else {
+      const priorDetail = followUp || lastDetail;
+      if (priorDetail?.pest_activity && priorDetail.pest_activity !== "None") {
+        contextParts.push(`Last visit pest activity: ${priorDetail.pest_activity}`);
+      }
+      if (priorDetail?.notes) {
+        contextParts.push(`Last service notes: ${priorDetail.notes}`);
+      }
+      if (priorDetail?.status) {
+        contextParts.push(`Last status: ${priorDetail.status}`);
+      }
+    }
+    const context = contextParts.filter(Boolean).join("\n");
+
+    // Findings come ONLY from prior-service technician notes (never from a work order).
+    const findings = !request
+      ? (followUp?.findings || lastDetail?.findings || "")
+      : "";
+
     const notes =
       (request?.preferred_date ? `Preferred: ${request.preferred_date}` : "") ||
       followUp?.notes ||
@@ -214,6 +247,7 @@ export function computeUpcomingUnits(args: {
       follow_up: followUp,
       last_unit_detail: lastDetail,
       target_pest,
+      context,
       findings,
       notes,
     };
