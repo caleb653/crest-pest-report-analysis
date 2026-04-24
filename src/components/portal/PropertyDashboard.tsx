@@ -2431,6 +2431,19 @@ const PropertyDashboard = ({
                           <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
                           <Badge variant="default" className="text-xs">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
+                          {(() => {
+                            const total = Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0;
+                            const ov = computeOverage(total, planCfg);
+                            if (!ov.hasOverage) return null;
+                            return (
+                              <Badge
+                                title={`${ov.totalUnits} units treated • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
+                                className="text-xs bg-amber-500 text-white border-transparent hover:bg-amber-500"
+                              >
+                                +{ov.unitsOver} over • {formatOverageMoney(ov.overageCost)}
+                              </Badge>
+                            );
+                          })()}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span>{formatDate(s.service_date)}</span>
