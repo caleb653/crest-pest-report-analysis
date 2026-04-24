@@ -15,6 +15,13 @@ interface SurveyQuestion {
   label: string;
   type: "single" | "multi" | "rating" | "text";
   options?: string[];
+  dependsOn?: {
+    questionId: string;
+    equals?: string;
+    includesAny?: string[];
+    excludesAny?: string[];
+  };
+  otherFreeText?: boolean;
 }
 
 const SurveyTake = () => {
@@ -28,6 +35,7 @@ const SurveyTake = () => {
   const [respondentName, setRespondentName] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [otherText, setOtherText] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!token) { setError("Invalid link"); setLoading(false); return; }
@@ -63,8 +71,10 @@ const SurveyTake = () => {
 
   const handleSubmit = async () => {
     if (!survey) return;
-    // Light validation: at least one answer
-    const answered = Object.values(answers).some((v) => {
+    // Light validation: at least one visible answer
+    const visibleQs = (survey.questions || []).filter((q) => isQuestionVisible(q, answers));
+    const answered = visibleQs.some((q) => {
+      const v = answers[q.id];
       if (Array.isArray(v)) return v.length > 0;
       return v !== undefined && v !== null && String(v).trim() !== "";
     });
@@ -73,6 +83,12 @@ const SurveyTake = () => {
       return;
     }
     setSubmitting(true);
+    // Merge inline "Other" text into answers under `${qid}__other`
+    const finalAnswers: Record<string, unknown> = { ...answers };
+    for (const [qid, txt] of Object.entries(otherText)) {
+      const trimmed = (txt || "").trim();
+      if (trimmed) finalAnswers[`${qid}__other`] = trimmed;
+    }
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-survey-response`;
       const res = await fetch(url, {
@@ -84,7 +100,7 @@ const SurveyTake = () => {
         },
         body: JSON.stringify({
           token,
-          answers,
+          answers: finalAnswers,
           respondentName: respondentName.trim() || undefined,
           unitNumber: unitNumber.trim() || undefined,
         }),
