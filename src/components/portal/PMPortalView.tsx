@@ -1411,6 +1411,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </CardContent>
             </Card>
 
+            {/* Shareable Tenant Request Link — community-style, no history visible */}
+            <Card className="border-secondary/40 bg-secondary/[0.04]">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <ExternalLink className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">Tenant Request Link</p>
+                    <p className="text-xs text-muted-foreground">
+                      Share this with a tenant or community member so they can submit a single
+                      service request. They won't see anyone else's history — it just gets added
+                      to the next service.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={!linkToken}
+                  onClick={() => {
+                    if (!linkToken) return;
+                    const url = `${window.location.origin}/tenant/${linkToken}`;
+                    navigator.clipboard.writeText(url);
+                    toast({ title: "Link copied", description: "Send this to your tenant or resident." });
+                  }}
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  Copy Tenant Request Link
+                </Button>
+              </CardContent>
+            </Card>
+
             {requests.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold mb-2">Your Previous Work Orders</h3>
