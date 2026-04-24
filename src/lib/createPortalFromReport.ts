@@ -47,7 +47,12 @@ function flattenServices(reportServices: any): Array<{
   return reportServices as any[];
 }
 
-export async function createPortalFromReport(reportId: string): Promise<{
+export type PortalPropertyType = "apartments" | "hoa" | "commercial";
+
+export async function createPortalFromReport(
+  reportId: string,
+  propertyType: PortalPropertyType = "apartments",
+): Promise<{
   clientId: string;
   propertyId: string;
   linkToken: string;
