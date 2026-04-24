@@ -2306,12 +2306,15 @@ const PropertyDashboard = ({
               <User className="w-5 h-5 text-primary" />
               Property Point of Contact
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              The property manager / on-site contact for this location, plus the Crest staff member who owns the account.
+            </p>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Name
+                  PM / Contact Name
                 </Label>
                 <Input
                   placeholder="Full name"
@@ -2321,7 +2324,7 @@ const PropertyDashboard = ({
               </div>
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Email
+                  PM Email
                 </Label>
                 <Input
                   type="email"
@@ -2330,9 +2333,37 @@ const PropertyDashboard = ({
                   onChange={(e) => setPocEmail(e.target.value)}
                 />
               </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  PM Phone
+                </Label>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="(555) 123-4567"
+                  value={pocPhone}
+                  onChange={(e) => setPocPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Crest Client Owner
+                </Label>
+                <Select value={ownerTechDraft || "__none__"} onValueChange={saveOwnerTech}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign Crest staff…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {STAFF_NAMES.map((n) => (
+                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+            <p className="text-xs text-muted-foreground mt-3">
+              PM info auto-saves a moment after you stop typing. The Client Owner is notified (alongside the office) any time a work order or message is submitted on this property.
             </p>
           </CardContent>
         </Card>
