@@ -49,6 +49,18 @@ interface UnitDetail {
   [key: string]: string;
 }
 
+type PropertyType = "apartments" | "hoa" | "commercial";
+const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
+  { value: "apartments", label: "Apartments" },
+  { value: "hoa", label: "HOA" },
+  { value: "commercial", label: "Commercial" },
+];
+const getPropertyType = (p: PortalProperty): PropertyType => {
+  const t = (p.customer_preferences as any)?.property_type;
+  if (t === "hoa" || t === "commercial" || t === "apartments") return t;
+  return "apartments";
+};
+
 const SERVICE_TYPES = [
   "General Pest Control", "Commercial General Pest Control", "Rodent Trapping",
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
@@ -97,8 +109,9 @@ const PortalAdmin = () => {
   const [editingPrepSheet, setEditingPrepSheet] = useState<PortalPrepSheet | null>(null);
 
   const [newClient, setNewClient] = useState({ name: "", company: "", email: "", phone: "", notes: "" });
-  const [newProperty, setNewProperty] = useState({ name: "", address: "", notes: "", image_url: "", client_id: "" });
+  const [newProperty, setNewProperty] = useState<{ name: string; address: string; notes: string; image_url: string; client_id: string; property_type: PropertyType }>({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
+  const [propertySubTab, setPropertySubTab] = useState<PropertyType>("apartments");
 
   const emptyServiceForm = {
     property_id: "", service_date: "", service_time: "", service_type: "", technician: "",
@@ -227,8 +240,15 @@ const PortalAdmin = () => {
     const { error } = await supabase.from("portal_properties").insert({
       client_id: newProperty.client_id, name: newProperty.name, address: newProperty.address || null,
       notes: newProperty.notes || null, image_url: newProperty.image_url || null,
+      customer_preferences: { property_type: newProperty.property_type },
     });
-    if (!error) { toast({ title: "Property added" }); setShowAddProperty(false); setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "" }); loadAll(); }
+    if (!error) {
+      toast({ title: "Property added" });
+      setShowAddProperty(false);
+      setPropertySubTab(newProperty.property_type);
+      setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
+      loadAll();
+    }
   };
 
   const updatePropertyImage = async (propId: string, file: File) => {
@@ -571,8 +591,6 @@ const PortalAdmin = () => {
             <TabsList className="mb-4">
               <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
               <TabsTrigger value="billing"><DollarSign className="w-4 h-4 mr-1" />Billing &amp; Schedule</TabsTrigger>
-              <TabsTrigger value="prep-sheets"><FileText className="w-4 h-4 mr-1" />Prep Sheets</TabsTrigger>
-              <TabsTrigger value="messages"><MessageSquare className="w-4 h-4 mr-1" />Messages</TabsTrigger>
             </TabsList>
 
             <TabsContent value="properties">
@@ -606,6 +624,15 @@ const PortalAdmin = () => {
                               <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.company || c.name}</SelectItem>)}</SelectContent>
                             </Select>
                           </div>
+                          <div>
+                            <Label>Property Type *</Label>
+                            <Select value={newProperty.property_type} onValueChange={v => setNewProperty(p => ({ ...p, property_type: v as PropertyType }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {PROPERTY_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <div><Label>Property Name *</Label><Input value={newProperty.name} onChange={e => setNewProperty({ ...newProperty, name: e.target.value })} /></div>
                           <div><Label>Address</Label><Input value={newProperty.address} onChange={e => setNewProperty({ ...newProperty, address: e.target.value })} /></div>
                           <div><Label>Notes</Label><Textarea value={newProperty.notes} onChange={e => setNewProperty({ ...newProperty, notes: e.target.value })} /></div>
@@ -624,15 +651,30 @@ const PortalAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {allProperties.length === 0 ? (
+                  <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType)} className="mb-4">
+                    <TabsList>
+                      {PROPERTY_TYPES.map(t => {
+                        const count = allProperties.filter(p => getPropertyType(p) === t.value).length;
+                        return (
+                          <TabsTrigger key={t.value} value={t.value}>
+                            {t.label}
+                            <span className="ml-1.5 text-xs text-muted-foreground">({count})</span>
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </Tabs>
+                  {(() => {
+                    const filtered = allProperties.filter(p => getPropertyType(p) === propertySubTab);
+                    return filtered.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="font-medium">No properties yet</p>
-                      <p className="text-xs mt-1">Add a client first, then add a property</p>
+                      <p className="font-medium">No {PROPERTY_TYPES.find(t => t.value === propertySubTab)?.label} properties yet</p>
+                      <p className="text-xs mt-1">Click "Add Property" and choose this type</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {allProperties.map(p => {
+                      {filtered.map(p => {
                         const propServices = allServices.filter(s => s.property_id === p.id);
                         const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
                         const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
@@ -658,7 +700,8 @@ const PortalAdmin = () => {
                         );
                       })}
                     </div>
-                  )}
+                  );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
