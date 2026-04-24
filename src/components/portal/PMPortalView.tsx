@@ -1371,6 +1371,32 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Inspection vs Treatment — must come first so the rest of the
+                    form (and the work-order context downstream) reflects the
+                    correct request kind. Mirrors the admin work-order form. */}
+                <div>
+                  <Label className="text-sm">What do you need? *</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {([
+                      { v: "treatment", label: "Treatment", desc: "Active pest treatment" },
+                      { v: "inspection", label: "Inspection", desc: "Assess & investigate" },
+                    ] as const).map(opt => {
+                      const active = requestKind === opt.v;
+                      return (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() => setRequestKind(opt.v)}
+                          className={`flex flex-col items-center gap-0.5 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
+                        >
+                          <span className="text-sm font-semibold">{opt.label}</span>
+                          <span className={`text-xs ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
                   <Label className="text-sm">Unit, Property, or Area *</Label>
                   <Input
