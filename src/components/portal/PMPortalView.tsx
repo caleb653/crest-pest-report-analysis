@@ -63,6 +63,8 @@ interface RequestData {
   pest_type?: string | null;
   location_type?: string | null;
   preferred_date?: string | null;
+  occupancy_status?: string | null;
+  tenant_email?: string | null;
 }
 
 interface ServiceData {
