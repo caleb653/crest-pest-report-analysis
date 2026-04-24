@@ -19,28 +19,13 @@ export default defineConfig(async ({ mode }) => ({
     },
   },
   build: {
-    // Split very heavy/rarely-used libraries into their own chunks so they
-    // are cached independently and never block the initial app render.
-    // Chunks only download the first time a page that needs them is opened.
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Canvas + PDF: only used inside report pages and the merged-PDF export
-          "vendor-canvas": ["fabric", "html2canvas", "jspdf"],
-          // Charts: only used by recharts-backed dashboards
-          "vendor-charts": ["recharts"],
-          // Radix UI primitives ship a lot of small files — group them
-          "vendor-radix": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-select",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-toast",
-            "@radix-ui/react-tooltip",
-          ],
-        },
-      },
-    },
+    // We intentionally do NOT define manualChunks here. Earlier we tried to
+    // pre-group "vendor-canvas / vendor-charts / vendor-radix", but rollup
+    // ended up hoisting React (and the JSX runtime) into the first vendor
+    // chunk that happened to import it — the Sales Report bundle then tried
+    // to resolve React out of `vendor-charts`, which crashed in production.
+    // Vite's default per-route splitting (combined with our React.lazy()
+    // route boundaries) already keeps the initial bundle small without the
+    // fragile cross-chunk references.
   },
 }));
