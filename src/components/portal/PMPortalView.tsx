@@ -996,54 +996,60 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   Customer Preference
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                {customerPref || customerPrefNotes ? (
-                  <p className="text-sm whitespace-pre-wrap">
-                    {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">No customer preferences set yet.</p>
+              <CardContent className="pt-4 space-y-3">
+                {customerPref && (
+                  <div>
+                    <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                      Selected Preference
+                    </Label>
+                    <p className="text-sm">{customerPref}</p>
+                  </div>
                 )}
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                    Notes for Crest
+                  </Label>
+                  <Textarea
+                    placeholder="Add or update preferences (e.g. dog park to be treated every visit, gate code, access notes)…"
+                    value={pmPrefDraft}
+                    onChange={e => setPmPrefDraft(e.target.value)}
+                    rows={3}
+                    className="text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Saves automatically.</p>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Property Point of Contact (read-only) */}
-          {(() => {
-            const poc = (property.customer_preferences as any)?.point_of_contact || {};
-            const pocName = poc.name || "";
-            const pocEmail = poc.email || "";
-            return (
-              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                  <CardTitle className="text-base font-bold flex items-center gap-2">
-                    <User className="w-5 h-5 text-primary" />
-                    Property Point of Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  {pocName || pocEmail ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
-                        <p className="font-medium">{pocName || <span className="text-muted-foreground italic font-normal">—</span>}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
-                        {pocEmail ? (
-                          <a href={`mailto:${pocEmail}`} className="font-medium text-primary hover:underline break-all">{pocEmail}</a>
-                        ) : (
-                          <span className="text-muted-foreground italic">—</span>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No point of contact set yet.</p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })()}
+          {/* Property Point of Contact (PM-editable) */}
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Property Point of Contact
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Your contact info — Crest will reach you here for this property. Saves automatically.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                  <Input value={pocName} onChange={e => setPocName(e.target.value)} placeholder="Your name" />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                  <Input type="email" value={pocEmail} onChange={e => setPocEmail(e.target.value)} placeholder="you@example.com" />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                  <Input type="tel" value={pocPhone} onChange={e => setPocPhone(e.target.value)} placeholder="(555) 555-5555" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Cadence Visit Plan (read-only) — only weekly / bi-weekly */}
           {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
