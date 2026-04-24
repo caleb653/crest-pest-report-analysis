@@ -45,7 +45,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Crest Pest Control Portal <onboarding@resend.dev>",
-        to: ["office@crestpestco.com"],
+        to: ["office@crestpestcontrol.com"],
         subject: `Portal Message: ${subject}`,
         html: htmlBody,
         reply_to: senderEmail || undefined,

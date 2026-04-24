@@ -952,7 +952,7 @@ const PortalAdmin = () => {
 
       {/* Footer */}
       <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
-        <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestco.com</p>
+        <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestcontrol.com</p>
       </div>
     </div>
   );

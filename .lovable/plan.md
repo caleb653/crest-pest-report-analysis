@@ -11,7 +11,7 @@
 - Prep sheet preview/download
 
 ## Phase 3 — Messaging & polish
-- Message Crest form → sends email to office@crestpestco.com
+- Message Crest form → sends email to office@crestpestcontrol.com
 - Admin impersonation (view as client)
 - Polish and mobile optimization
 
