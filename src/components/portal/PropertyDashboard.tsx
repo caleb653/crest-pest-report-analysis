@@ -297,21 +297,31 @@ const PropertyDashboard = ({
   const [overagePriceDraft, setOveragePriceDraft] = useState<string>(
     initialPlanCfg.overage_price_per_unit ? String(initialPlanCfg.overage_price_per_unit) : ""
   );
+  const [basePriceDraft, setBasePriceDraft] = useState<string>(
+    initialPlanCfg.base_service_price ? String(initialPlanCfg.base_service_price) : ""
+  );
   useEffect(() => {
     const cfg = readUnitPlanConfig(property.customer_preferences);
     setIncludedUnitsDraft(cfg.included_units ? String(cfg.included_units) : "");
     setOveragePriceDraft(cfg.overage_price_per_unit ? String(cfg.overage_price_per_unit) : "");
+    setBasePriceDraft(cfg.base_service_price ? String(cfg.base_service_price) : "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
     const current = readUnitPlanConfig(property.customer_preferences);
     const draftIncluded = Number(includedUnitsDraft) || 0;
     const draftPrice = Number(overagePriceDraft) || 0;
-    if ((current.included_units || 0) === draftIncluded && (current.overage_price_per_unit || 0) === draftPrice) return;
+    const draftBase = Number(basePriceDraft) || 0;
+    if (
+      (current.included_units || 0) === draftIncluded &&
+      (current.overage_price_per_unit || 0) === draftPrice &&
+      (current.base_service_price || 0) === draftBase
+    ) return;
     const t = setTimeout(async () => {
       const updated = {
         ...(property.customer_preferences || {}),
         included_units: draftIncluded,
         overage_price_per_unit: draftPrice,
+        base_service_price: draftBase,
       };
       const { error } = await supabase
         .from("portal_properties")
@@ -326,7 +336,7 @@ const PropertyDashboard = ({
     }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [includedUnitsDraft, overagePriceDraft]);
+  }, [includedUnitsDraft, overagePriceDraft, basePriceDraft]);
 
   // ─── Cadence Visit Plan ───
   // For weekly and bi-weekly schedules, technicians rotate what they focus on
@@ -2095,7 +2105,7 @@ const PropertyDashboard = ({
                   Used to project the next two upcoming services on this property.
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                     Included Interior Units / Service
@@ -2127,9 +2137,27 @@ const PropertyDashboard = ({
                     />
                   </div>
                 </div>
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                    Base Price / Service
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-7"
+                      value={basePriceDraft}
+                      onChange={(e) => setBasePriceDraft(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground -mt-1">
-                Each service includes the number of interior units above. Any units treated beyond that are billed at the additional-unit price.
+                Each service is billed at the base price and includes the listed number of interior units. Any units treated beyond that are billed at the additional-unit price.
               </p>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
