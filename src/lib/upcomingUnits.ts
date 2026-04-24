@@ -247,6 +247,7 @@ export function computeUpcomingUnits(args: {
       follow_up: followUp,
       last_unit_detail: lastDetail,
       target_pest,
+      context,
       findings,
       notes,
     };
