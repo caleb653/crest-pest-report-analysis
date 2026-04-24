@@ -16,6 +16,10 @@ export type RequestRow = {
   description?: string | null;
   preferred_date?: string | null;
   created_at?: string | null;
+  /** "Service Request" | "Inspection Request" — set on the work order itself. */
+  request_type?: string | null;
+  occupancy_status?: string | null;
+  tenant_email?: string | null;
 };
 
 export type UnitDetailRow = {
@@ -237,11 +241,24 @@ export function computeUpcomingUnits(args: {
     //                service, only when this is a follow-up / carry-over
     const contextParts: string[] = [];
     if (request) {
+      // Lead with the type of request (Inspection vs Treatment) so the
+      // technician immediately knows what they're walking into.
+      const kindLabel =
+        (request.request_type || "").toLowerCase().includes("inspection")
+          ? "Inspection Request"
+          : "Treatment Request";
+      contextParts.push(kindLabel);
       contextParts.push(
         `${request.pest_type || "Pest"} activity reported${
           request.location_type ? ` (${request.location_type})` : ""
         }${request.description ? `: ${request.description}` : ""}`
       );
+      if (request.occupancy_status) {
+        contextParts.push(`Unit status: ${request.occupancy_status}`);
+      }
+      if (request.tenant_email) {
+        contextParts.push(`Tenant contact: ${request.tenant_email}`);
+      }
       if (request.preferred_date) {
         contextParts.push(`Preferred date: ${request.preferred_date}`);
       }
