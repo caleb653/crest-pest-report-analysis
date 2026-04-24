@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
 import NotificationBell from "@/components/NotificationBell";
-import { createPortalFromReport } from "@/lib/createPortalFromReport";
+import { createPortalFromReport, type PortalPropertyType } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
@@ -122,6 +122,7 @@ const SubmittedReports = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
+  const [portalTypePickerReportId, setPortalTypePickerReportId] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
   const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
 
