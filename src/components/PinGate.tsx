@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import crestLogo from "@/assets/crest-logo-black.png";
+import NotificationBell from "@/components/NotificationBell";
 
 const STORAGE_KEY = "app_user_verified";
 const USER_KEY = "app_logged_in_user";
@@ -53,7 +54,17 @@ const PinGate = ({ children }: { children: React.ReactNode }) => {
     setError("");
   };
 
-  if (verified) return <>{children}</>;
+  if (verified) {
+    return (
+      <>
+        {children}
+        {/* Global floating notification bell — visible on every authenticated page */}
+        <div className="fixed top-3 right-3 z-[100]">
+          <NotificationBell className="bg-card/90 backdrop-blur border shadow-md hover:bg-card" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
