@@ -1735,6 +1735,47 @@ const PropertyDashboard = ({
               });
             }, 0);
           }
+          // Detect units that are in the merged set (open work orders, follow-ups,
+          // newly-planned units) but NOT yet in the editor — append them so the
+          // "Areas Treated" count always matches the "unique units" badge above.
+          const existingUnitSet = new Set(
+            cd.unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean)
+          );
+          const missingContexts = merged.unitContexts.filter(
+            (uc) => !existingUnitSet.has(String(uc.unit_number).trim())
+          );
+          if (missingContexts.length > 0) {
+            setTimeout(() => {
+              setCompletionData(prev => {
+                const current = prev[s.id];
+                if (!current) return prev;
+                const have = new Set(
+                  current.unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean)
+                );
+                const additions = missingContexts
+                  .filter((uc) => !have.has(String(uc.unit_number).trim()))
+                  .map((ctx) => {
+                    const fu = ctx.follow_up;
+                    const lastDetail = ctx.last_unit_detail;
+                    return {
+                      unit_number: ctx.unit_number,
+                      target_pest: ctx.target_pest || "",
+                      findings: ctx.findings || "",
+                      pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
+                      products_used: [] as ProductUsage[],
+                      status: "To Be Treated",
+                      notes: ctx.notes || "",
+                      source: ctx.source === "work_order" ? "new-work-order" : "follow-up",
+                    };
+                  });
+                if (additions.length === 0) return prev;
+                return {
+                  ...prev,
+                  [s.id]: { ...current, unitRows: [...current.unitRows, ...additions] },
+                };
+              });
+            }, 0);
+          }
           const updateRow = (idx: number, field: string, value: string) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
