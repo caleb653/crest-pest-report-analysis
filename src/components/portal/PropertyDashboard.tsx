@@ -923,16 +923,30 @@ const PropertyDashboard = ({
     const canonical = typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
       : "Facility";
+    // HOA mode: prepend the homeowner contact info to the description so it's
+    // visible everywhere the work order is rendered (no schema change needed).
+    const customerHeader = isHOA && (workOrder.customer_name.trim() || workOrder.customer_phone.trim() || workOrder.tenant_email.trim())
+      ? `Customer: ${[
+          workOrder.customer_name.trim() || "—",
+          workOrder.customer_phone.trim() ? `📞 ${workOrder.customer_phone.trim()}` : null,
+          workOrder.tenant_email.trim() ? `✉ ${workOrder.tenant_email.trim()}` : null,
+        ].filter(Boolean).join(" • ")}\n`
+      : "";
+    // HOA mode: tenant_email is the homeowner's email (always saved when present),
+    // not gated behind the legacy "email tenant?" checkbox.
+    const tenantEmailToSave = isHOA
+      ? (workOrder.tenant_email.trim() || null)
+      : (workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null);
     const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
       request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
-      description: `[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      description: `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type || null,
       preferred_date: workOrder.preferred_date || null,
       occupancy_status: workOrder.occupancy_status || null,
-      tenant_email: workOrder.email_tenant ? (workOrder.tenant_email.trim() || null) : null,
+      tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
     } as any).select("id").maybeSingle();
