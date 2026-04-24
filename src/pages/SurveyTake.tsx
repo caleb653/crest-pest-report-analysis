@@ -106,6 +106,9 @@ const SurveyTake = () => {
       const trimmed = (txt || "").trim();
       if (trimmed) finalAnswers[`${qid}__other`] = trimmed;
     }
+    // Persist unit number from Q1 into the dedicated column when present.
+    const q1Unit = (finalAnswers.unit_number as string | undefined)?.toString().trim();
+    const unitToSend = q1Unit || unitNumber.trim() || undefined;
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-survey-response`;
       const res = await fetch(url, {
@@ -119,7 +122,7 @@ const SurveyTake = () => {
           token,
           answers: finalAnswers,
           respondentName: respondentName.trim() || undefined,
-          unitNumber: unitNumber.trim() || undefined,
+          unitNumber: unitToSend,
         }),
       });
       const json = await res.json();
