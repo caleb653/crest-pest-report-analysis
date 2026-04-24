@@ -123,6 +123,7 @@ const SubmittedReports = () => {
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
+  const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
 
   useEffect(() => {
     loadReports();
