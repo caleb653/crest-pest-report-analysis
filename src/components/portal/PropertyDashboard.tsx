@@ -297,21 +297,31 @@ const PropertyDashboard = ({
   const [overagePriceDraft, setOveragePriceDraft] = useState<string>(
     initialPlanCfg.overage_price_per_unit ? String(initialPlanCfg.overage_price_per_unit) : ""
   );
+  const [basePriceDraft, setBasePriceDraft] = useState<string>(
+    initialPlanCfg.base_service_price ? String(initialPlanCfg.base_service_price) : ""
+  );
   useEffect(() => {
     const cfg = readUnitPlanConfig(property.customer_preferences);
     setIncludedUnitsDraft(cfg.included_units ? String(cfg.included_units) : "");
     setOveragePriceDraft(cfg.overage_price_per_unit ? String(cfg.overage_price_per_unit) : "");
+    setBasePriceDraft(cfg.base_service_price ? String(cfg.base_service_price) : "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
     const current = readUnitPlanConfig(property.customer_preferences);
     const draftIncluded = Number(includedUnitsDraft) || 0;
     const draftPrice = Number(overagePriceDraft) || 0;
-    if ((current.included_units || 0) === draftIncluded && (current.overage_price_per_unit || 0) === draftPrice) return;
+    const draftBase = Number(basePriceDraft) || 0;
+    if (
+      (current.included_units || 0) === draftIncluded &&
+      (current.overage_price_per_unit || 0) === draftPrice &&
+      (current.base_service_price || 0) === draftBase
+    ) return;
     const t = setTimeout(async () => {
       const updated = {
         ...(property.customer_preferences || {}),
         included_units: draftIncluded,
         overage_price_per_unit: draftPrice,
+        base_service_price: draftBase,
       };
       const { error } = await supabase
         .from("portal_properties")
@@ -326,7 +336,7 @@ const PropertyDashboard = ({
     }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [includedUnitsDraft, overagePriceDraft]);
+  }, [includedUnitsDraft, overagePriceDraft, basePriceDraft]);
 
   // ─── Cadence Visit Plan ───
   // For weekly and bi-weekly schedules, technicians rotate what they focus on
