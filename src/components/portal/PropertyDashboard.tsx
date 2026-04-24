@@ -28,12 +28,14 @@ import { computeUpcomingUnits } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
+import { STAFF_NAMES } from "@/lib/staffRoster";
 
 // ─── Types ───
 interface PortalProperty {
   id: string; client_id: string; name: string; address: string | null; notes: string | null;
   image_url: string | null; map_data: any; map_image_url: string | null;
   equipment: any; customer_preferences: any;
+  owner_tech?: string | null;
 }
 interface PortalService {
   id: string; property_id: string; service_date: string | null; service_time: string | null;
@@ -270,23 +272,27 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefDraft]);
 
-  // Property Point of Contact — name + email, stored in customer_preferences.point_of_contact
+  // Property Point of Contact — name + email + phone, stored in customer_preferences.point_of_contact
   const initialPocName = (property.customer_preferences as any)?.point_of_contact?.name || "";
   const initialPocEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+  const initialPocPhone = (property.customer_preferences as any)?.point_of_contact?.phone || "";
   const [pocName, setPocName] = useState<string>(initialPocName);
   const [pocEmail, setPocEmail] = useState<string>(initialPocEmail);
+  const [pocPhone, setPocPhone] = useState<string>(initialPocPhone);
   useEffect(() => {
     setPocName((property.customer_preferences as any)?.point_of_contact?.name || "");
     setPocEmail((property.customer_preferences as any)?.point_of_contact?.email || "");
+    setPocPhone((property.customer_preferences as any)?.point_of_contact?.phone || "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
     const currentName = (property.customer_preferences as any)?.point_of_contact?.name || "";
     const currentEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
-    if (currentName === pocName && currentEmail === pocEmail) return;
+    const currentPhone = (property.customer_preferences as any)?.point_of_contact?.phone || "";
+    if (currentName === pocName && currentEmail === pocEmail && currentPhone === pocPhone) return;
     const t = setTimeout(async () => {
       const updated = {
         ...(property.customer_preferences || {}),
-        point_of_contact: { name: pocName, email: pocEmail },
+        point_of_contact: { name: pocName, email: pocEmail, phone: pocPhone },
       };
       const { error } = await supabase
         .from("portal_properties")
@@ -300,7 +306,28 @@ const PropertyDashboard = ({
     }, 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pocName, pocEmail]);
+  }, [pocName, pocEmail, pocPhone]);
+
+  // Crest Client Owner — which staff member owns this property
+  const [ownerTechDraft, setOwnerTechDraft] = useState<string>(property.owner_tech || "");
+  useEffect(() => {
+    setOwnerTechDraft(property.owner_tech || "");
+  }, [property.id, property.owner_tech]);
+  const saveOwnerTech = async (value: string) => {
+    const next = value === "__none__" ? null : value;
+    setOwnerTechDraft(next || "");
+    const { error } = await supabase
+      .from("portal_properties")
+      .update({ owner_tech: next })
+      .eq("id", property.id);
+    if (error) {
+      toast({ title: "Failed to save client owner", variant: "destructive" });
+    } else {
+      (property as any).owner_tech = next;
+      toast({ title: "Client owner updated", duration: 1500 });
+      onRefresh();
+    }
+  };
 
   // ─── Unit Plan: included units per service + price per unit overage ───
   // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
@@ -2279,12 +2306,15 @@ const PropertyDashboard = ({
               <User className="w-5 h-5 text-primary" />
               Property Point of Contact
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              The property manager / on-site contact for this location, plus the Crest staff member who owns the account.
+            </p>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Name
+                  PM / Contact Name
                 </Label>
                 <Input
                   placeholder="Full name"
@@ -2294,7 +2324,7 @@ const PropertyDashboard = ({
               </div>
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Email
+                  PM Email
                 </Label>
                 <Input
                   type="email"
@@ -2303,9 +2333,37 @@ const PropertyDashboard = ({
                   onChange={(e) => setPocEmail(e.target.value)}
                 />
               </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  PM Phone
+                </Label>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="(555) 123-4567"
+                  value={pocPhone}
+                  onChange={(e) => setPocPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Crest Client Owner
+                </Label>
+                <Select value={ownerTechDraft || "__none__"} onValueChange={saveOwnerTech}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Assign Crest staff…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Unassigned</SelectItem>
+                    {STAFF_NAMES.map((n) => (
+                      <SelectItem key={n} value={n}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+            <p className="text-xs text-muted-foreground mt-3">
+              PM info auto-saves a moment after you stop typing. The Client Owner is notified (alongside the office) any time a work order or message is submitted on this property.
             </p>
           </CardContent>
         </Card>
