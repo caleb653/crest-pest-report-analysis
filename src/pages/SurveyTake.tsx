@@ -15,6 +15,13 @@ interface SurveyQuestion {
   label: string;
   type: "single" | "multi" | "rating" | "text";
   options?: string[];
+  dependsOn?: {
+    questionId: string;
+    equals?: string;
+    includesAny?: string[];
+    excludesAny?: string[];
+  };
+  otherFreeText?: boolean;
 }
 
 const SurveyTake = () => {
@@ -28,6 +35,24 @@ const SurveyTake = () => {
   const [respondentName, setRespondentName] = useState("");
   const [unitNumber, setUnitNumber] = useState("");
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
+  const [otherText, setOtherText] = useState<Record<string, string>>({});
+
+  const isQuestionVisible = (q: SurveyQuestion, current: Record<string, unknown>): boolean => {
+    if (!q.dependsOn) return true;
+    const parent = current[q.dependsOn.questionId];
+    if (q.dependsOn.equals !== undefined) {
+      return parent === q.dependsOn.equals;
+    }
+    if (q.dependsOn.includesAny && q.dependsOn.includesAny.length > 0) {
+      const arr = Array.isArray(parent) ? (parent as string[]) : [];
+      return q.dependsOn.includesAny.some((v) => arr.includes(v));
+    }
+    if (q.dependsOn.excludesAny && q.dependsOn.excludesAny.length > 0) {
+      const arr = Array.isArray(parent) ? (parent as string[]) : [];
+      return !q.dependsOn.excludesAny.every((v) => arr.includes(v));
+    }
+    return true;
+  };
 
   useEffect(() => {
     if (!token) { setError("Invalid link"); setLoading(false); return; }
@@ -63,8 +88,10 @@ const SurveyTake = () => {
 
   const handleSubmit = async () => {
     if (!survey) return;
-    // Light validation: at least one answer
-    const answered = Object.values(answers).some((v) => {
+    // Light validation: at least one visible answer
+    const visibleQs = (survey.questions || []).filter((q) => isQuestionVisible(q, answers));
+    const answered = visibleQs.some((q) => {
+      const v = answers[q.id];
       if (Array.isArray(v)) return v.length > 0;
       return v !== undefined && v !== null && String(v).trim() !== "";
     });
@@ -73,6 +100,15 @@ const SurveyTake = () => {
       return;
     }
     setSubmitting(true);
+    // Merge inline "Other" text into answers under `${qid}__other`
+    const finalAnswers: Record<string, unknown> = { ...answers };
+    for (const [qid, txt] of Object.entries(otherText)) {
+      const trimmed = (txt || "").trim();
+      if (trimmed) finalAnswers[`${qid}__other`] = trimmed;
+    }
+    // Persist unit number from Q1 into the dedicated column when present.
+    const q1Unit = (finalAnswers.unit_number as string | undefined)?.toString().trim();
+    const unitToSend = q1Unit || unitNumber.trim() || undefined;
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-survey-response`;
       const res = await fetch(url, {
@@ -84,9 +120,9 @@ const SurveyTake = () => {
         },
         body: JSON.stringify({
           token,
-          answers,
+          answers: finalAnswers,
           respondentName: respondentName.trim() || undefined,
-          unitNumber: unitNumber.trim() || undefined,
+          unitNumber: unitToSend,
         }),
       });
       const json = await res.json();
@@ -154,19 +190,13 @@ const SurveyTake = () => {
               <div className="rounded-md border bg-muted/40 p-3 text-xs leading-relaxed whitespace-pre-wrap">{survey.intro}</div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Your Name (optional)</Label>
-                <Input value={respondentName} onChange={(e) => setRespondentName(e.target.value)} maxLength={200} />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Unit Number (optional)</Label>
-                <Input value={unitNumber} onChange={(e) => setUnitNumber(e.target.value)} maxLength={50} />
-              </div>
+            <div className="space-y-1.5 max-w-xs">
+              <Label className="text-xs">Your Name (optional)</Label>
+              <Input value={respondentName} onChange={(e) => setRespondentName(e.target.value)} maxLength={200} />
             </div>
 
             <div className="space-y-5">
-              {(survey?.questions || []).map((q) => (
+              {(survey?.questions || []).filter((q) => isQuestionVisible(q, answers)).map((q) => (
                 <div key={q.id} className="space-y-2">
                   <Label className="text-sm font-semibold">{q.label}</Label>
                   {q.type === "single" && (
@@ -187,17 +217,29 @@ const SurveyTake = () => {
                       {(q.options || []).map((opt) => {
                         const current = Array.isArray(answers[q.id]) ? (answers[q.id] as string[]) : [];
                         const checked = current.includes(opt);
+                        const showOther = q.otherFreeText && opt === "Other" && checked;
                         return (
-                          <div key={opt} className="flex items-center gap-2">
-                            <Checkbox
-                              id={`${q.id}-${opt}`}
-                              checked={checked}
-                              onCheckedChange={(c) => {
-                                const next = c ? [...current, opt] : current.filter((x) => x !== opt);
-                                setAnswers((a) => ({ ...a, [q.id]: next }));
-                              }}
-                            />
-                            <Label htmlFor={`${q.id}-${opt}`} className="text-sm font-normal cursor-pointer">{opt}</Label>
+                          <div key={opt} className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id={`${q.id}-${opt}`}
+                                checked={checked}
+                                onCheckedChange={(c) => {
+                                  const next = c ? [...current, opt] : current.filter((x) => x !== opt);
+                                  setAnswers((a) => ({ ...a, [q.id]: next }));
+                                }}
+                              />
+                              <Label htmlFor={`${q.id}-${opt}`} className="text-sm font-normal cursor-pointer">{opt}</Label>
+                            </div>
+                            {showOther && (
+                              <Input
+                                className="ml-6 max-w-sm"
+                                placeholder="Please specify..."
+                                value={otherText[q.id] || ""}
+                                onChange={(e) => setOtherText((o) => ({ ...o, [q.id]: e.target.value }))}
+                                maxLength={300}
+                              />
+                            )}
                           </div>
                         );
                       })}
