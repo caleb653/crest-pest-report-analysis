@@ -1083,6 +1083,57 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </CardContent>
           </Card>
 
+          {/* Crest Point of Contact (read-only — set by Crest in admin) */}
+          {(() => {
+            const crestPOC = (property.customer_preferences as any)?.crest_point_of_contact || {};
+            const hasAny = (crestPOC.name || crestPOC.email || crestPOC.phone);
+            return (
+              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <User className="w-5 h-5 text-primary" />
+                    Crest Point of Contact
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The Crest team member to reach out to about this property.
+                  </p>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {hasAny ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                        <p className="text-sm font-medium">{crestPOC.name || "—"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                        {crestPOC.email ? (
+                          <a href={`mailto:${crestPOC.email}`} className="text-sm font-medium text-primary hover:underline break-all">
+                            {crestPOC.email}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium">—</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                        {crestPOC.phone ? (
+                          <a href={`tel:${crestPOC.phone}`} className="text-sm font-medium text-primary hover:underline">
+                            {crestPOC.phone}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium">—</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Not set — please contact the Crest office.</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
+
           {/* Cadence Visit Plan (read-only) — only weekly / bi-weekly */}
           {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
             const cycleLength = propertyFrequency === "weekly" ? 4 : 2;
