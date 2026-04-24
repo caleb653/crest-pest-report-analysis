@@ -113,6 +113,12 @@ interface Props {
   onCopyLink?: (token: string, type: string) => void;
   onOpenPortal?: (token: string, type: string) => void;
   onAddUpcomingService?: () => void;
+  /**
+   * Property classification — drives the HOA-vs-Apartment view differences.
+   * HOA mode shifts emphasis to common areas, hides per-unit treatment details,
+   * and swaps the work-order tenant block for a homeowner contact block.
+   */
+  propertyType?: "apartments" | "hoa" | "commercial";
 }
 
 const today = new Date().toISOString().split("T")[0];
@@ -152,7 +158,9 @@ const PropertyDashboard = ({
   onRefresh, onOpenServiceReport, onEditService, onDeleteService,
   onUpdatePropertyImage, uploadingPropertyImage,
   onCopyLink, onOpenPortal, onAddUpcomingService,
+  propertyType = "apartments",
 }: Props) => {
+  const isHOA = propertyType === "hoa";
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
@@ -172,6 +180,8 @@ const PropertyDashboard = ({
     request_type: "" as "" | "treatment" | "inspection",
     occupancy_status: "" as "" | "Occupied" | "Vacant",
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+    // HOA-mode customer contact (homeowner submitting the request).
+    customer_name: "", customer_phone: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("map");
