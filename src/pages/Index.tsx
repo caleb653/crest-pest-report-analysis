@@ -3,8 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
-import NotificationBell from "@/components/NotificationBell";
-
 const reportTypes = [
   {
     id: "initial-pest",
