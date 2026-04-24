@@ -184,6 +184,11 @@ const PropertyDashboard = ({
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
+  // Inline reschedule of the next upcoming service. Persists the new date and
+  // projection of the following visits naturally rolls forward at the cadence.
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState<string>("");
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   const [completionData, setCompletionData] = useState<Record<string, {
     unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
