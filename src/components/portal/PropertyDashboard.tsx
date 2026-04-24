@@ -483,7 +483,9 @@ const PropertyDashboard = ({
       if (same) return;
       const merged = { ...((svc as any).report_data || {}), overage: snapshot };
       tasks.push(
-        supabase.from("portal_services").update({ report_data: merged }).eq("id", svc.id)
+        Promise.resolve(
+          supabase.from("portal_services").update({ report_data: merged }).eq("id", svc.id)
+        )
       );
     });
     // Fire-and-forget: no toast, no refresh — invoicing reads via report_data later.
