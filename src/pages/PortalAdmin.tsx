@@ -18,6 +18,8 @@ import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, 
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
+import NotificationBell from "@/components/NotificationBell";
+import { STAFF_NAMES } from "@/lib/staffRoster";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -583,7 +585,8 @@ const PortalAdmin = () => {
         <div className="bg-card border-b px-4 py-3 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
           <img src={crestLogo} alt="Crest" className="h-8" />
-          <h1 className="text-lg font-bold">Client Portal Admin</h1>
+          <h1 className="text-lg font-bold flex-1">Client Portal Admin</h1>
+          <NotificationBell />
         </div>
 
         <div className="p-4 max-w-7xl mx-auto">

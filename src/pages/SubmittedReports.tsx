@@ -467,6 +467,7 @@ const SubmittedReports = () => {
             <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={() => navigate("/")}>
               Home
             </Button>
