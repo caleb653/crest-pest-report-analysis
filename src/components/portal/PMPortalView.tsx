@@ -1522,7 +1522,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-                  <Send className="w-4 h-4 mr-2" />Submit Work Order
+                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
                 </Button>
               </CardContent>
             </Card>
