@@ -326,8 +326,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       link_id: linkId,
       property_id: propertyId,
       unit_number: canonical,
-      request_type: "Service Request",
-      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
+      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
+      description: `[${requestKind === "inspection" ? "INSPECTION" : "TREATMENT"}] ${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
       preferred_date: computePreferredDate(),
@@ -338,7 +338,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     } as any).select("id, right_to_treat_token").maybeSingle();
 
     if (!err) {
-      toast({ title: "Work order submitted", description: "Crest will reach out shortly." });
+      toast({
+        title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
+        description: "Crest will reach out shortly.",
+      });
       if (pmInserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -370,6 +373,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         }
       }
       setUnitNumber("");
+      setRequestKind("treatment");
       setPestType("");
       setDescription("");
       setPreferredDateChoice("next");
