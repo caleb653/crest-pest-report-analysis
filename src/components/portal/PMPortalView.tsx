@@ -1966,7 +1966,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
         <p className="flex items-center justify-center gap-3">
           <span className="flex items-center gap-1"><Phone className="w-3 h-3" />949-424-5000</span>
-          <span className="flex items-center gap-1"><Mail className="w-3 h-3" />office@crestpestco.com</span>
+          <span className="flex items-center gap-1"><Mail className="w-3 h-3" />office@crestpestcontrol.com</span>
         </p>
         <p className="mt-1">© {new Date().getFullYear()} Crest Pest Control</p>
       </div>
