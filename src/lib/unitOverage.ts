@@ -15,6 +15,8 @@ export interface UnitPlanConfig {
   included_units?: number | null;
   /** Dollar amount charged per unit treated beyond the included count. */
   overage_price_per_unit?: number | null;
+  /** Base price billed for each service visit (before overage). */
+  base_service_price?: number | null;
 }
 
 export interface OverageResult {
@@ -37,9 +39,11 @@ export function readUnitPlanConfig(customer_preferences: any): UnitPlanConfig {
   const cp = customer_preferences || {};
   const included = Number(cp.included_units);
   const price = Number(cp.overage_price_per_unit);
+  const base = Number(cp.base_service_price);
   return {
     included_units: Number.isFinite(included) && included > 0 ? included : 0,
     overage_price_per_unit: Number.isFinite(price) && price > 0 ? price : 0,
+    base_service_price: Number.isFinite(base) && base > 0 ? base : 0,
   };
 }
 
