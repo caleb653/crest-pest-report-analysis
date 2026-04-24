@@ -57,6 +57,9 @@ serve(async (req) => {
     let ownerTech: string | null = null;
     let relatedRequestId: string | null = null;
     let relatedMessageId: string | null = null;
+    // Property Point of Contact email — when set, gets CC'd on work order
+    // notifications so the PM is always in the loop.
+    let pmPocEmail: string | null = null;
 
     if (body.kind === "work_order") {
       if (!body.requestId) {
@@ -75,11 +78,19 @@ serve(async (req) => {
       relatedRequestId = reqRow.id;
 
       const { data: prop } = await supabase
-        .from("portal_properties").select("name, owner_tech, address")
+        .from("portal_properties").select("name, owner_tech, address, customer_preferences")
         .eq("id", reqRow.property_id).maybeSingle();
       if (prop) {
         propertyName = prop.name || propertyName;
         ownerTech = (prop as any).owner_tech || null;
+      }
+
+      // Capture the property's Point of Contact email so we can CC the PM
+      // any time a tenant (or PM) submits a work order. The office still
+      // receives every notification — this just keeps the PM in the loop.
+      const pocEmail = (prop as any)?.customer_preferences?.point_of_contact?.email as string | undefined;
+      if (pocEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail)) {
+        pmPocEmail = pocEmail.trim();
       }
 
       subject = `New Work Order — ${propertyName}${reqRow.unit_number ? ` (Unit ${reqRow.unit_number})` : ""}`;
@@ -163,6 +174,9 @@ serve(async (req) => {
     const recipients = new Set<string>([OFFICE_EMAIL]);
     if (carmenStaff?.email) recipients.add(carmenStaff.email);
     if (ownerStaff?.email) recipients.add(ownerStaff.email);
+    // CC the property's Point of Contact (PM) on work order emails so the PM
+    // always sees what tenants submit, alongside the office.
+    if (pmPocEmail) recipients.add(pmPocEmail);
 
     // ── Send email ──
     if (RESEND_API_KEY) {

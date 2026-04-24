@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
-  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat,
+  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat, ExternalLink,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -128,6 +128,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
 
+  // Token of the PM link itself — used to build the public Tenant Request link
+  // (community-style link the PM can share so a tenant can submit a request
+  // without seeing the rest of the portal).
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+
+  // Editable Property Point of Contact (PM can update their own info)
+  const [pocName, setPocName] = useState<string>("");
+  const [pocEmail, setPocEmail] = useState<string>("");
+  const [pocPhone, setPocPhone] = useState<string>("");
+  // Editable extra customer preference notes (PM-managed)
+  const [pmPrefDraft, setPmPrefDraft] = useState<string>("");
+
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
@@ -191,15 +203,65 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // ─── Debounced save: Property Point of Contact (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const currentPoc = (property.customer_preferences as any)?.point_of_contact || {};
+    if ((currentPoc.name || "") === pocName &&
+        (currentPoc.email || "") === pocEmail &&
+        (currentPoc.phone || "") === pocPhone) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        point_of_contact: { name: pocName, email: pocEmail, phone: pocPhone },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save point of contact", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pocName, pocEmail, pocPhone]);
+
+  // ─── Debounced save: extra customer-preference notes (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const current = (property.customer_preferences as any)?.notes || "";
+    if (current === pmPrefDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), notes: pmPrefDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save preferences", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pmPrefDraft]);
+
   const loadAll = async () => {
     setLoading(true);
 
-    const [{ data: prop }, { data: svcs }, { data: sheets }, { data: reqs }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: sheets }, { data: reqs }, { data: linkRow }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      supabase.from("portal_links").select("token").eq("id", linkId).maybeSingle(),
     ]);
+
+    if (linkRow?.token) setLinkToken(linkRow.token as string);
 
     const [{ data: svys }, { data: respRows }] = await Promise.all([
       (supabase as any).from("portal_surveys").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
@@ -208,7 +270,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (Array.isArray(svys)) setSurveys(svys);
     if (Array.isArray(respRows)) setSurveyResponses(respRows);
 
-    if (prop) setProperty(prop as PropertyData);
+    if (prop) {
+      setProperty(prop as PropertyData);
+      // Hydrate editable POC + customer-pref-notes drafts from the latest property row
+      const poc = (prop as any).customer_preferences?.point_of_contact || {};
+      setPocName(poc.name || "");
+      setPocEmail(poc.email || "");
+      setPocPhone(poc.phone || "");
+      setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+    }
 
     if (Array.isArray(svcs)) {
       setServices(svcs as ServiceData[]);
@@ -926,54 +996,60 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   Customer Preference
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                {customerPref || customerPrefNotes ? (
-                  <p className="text-sm whitespace-pre-wrap">
-                    {[customerPref, customerPrefNotes].filter(Boolean).join("\n\n")}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">No customer preferences set yet.</p>
+              <CardContent className="pt-4 space-y-3">
+                {customerPref && (
+                  <div>
+                    <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                      Selected Preference
+                    </Label>
+                    <p className="text-sm">{customerPref}</p>
+                  </div>
                 )}
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                    Notes for Crest
+                  </Label>
+                  <Textarea
+                    placeholder="Add or update preferences (e.g. dog park to be treated every visit, gate code, access notes)…"
+                    value={pmPrefDraft}
+                    onChange={e => setPmPrefDraft(e.target.value)}
+                    rows={3}
+                    className="text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Saves automatically.</p>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Property Point of Contact (read-only) */}
-          {(() => {
-            const poc = (property.customer_preferences as any)?.point_of_contact || {};
-            const pocName = poc.name || "";
-            const pocEmail = poc.email || "";
-            return (
-              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                  <CardTitle className="text-base font-bold flex items-center gap-2">
-                    <User className="w-5 h-5 text-primary" />
-                    Property Point of Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  {pocName || pocEmail ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
-                        <p className="font-medium">{pocName || <span className="text-muted-foreground italic font-normal">—</span>}</p>
-                      </div>
-                      <div>
-                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
-                        {pocEmail ? (
-                          <a href={`mailto:${pocEmail}`} className="font-medium text-primary hover:underline break-all">{pocEmail}</a>
-                        ) : (
-                          <span className="text-muted-foreground italic">—</span>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No point of contact set yet.</p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })()}
+          {/* Property Point of Contact (PM-editable) */}
+          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                Property Point of Contact
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Your contact info — Crest will reach you here for this property. Saves automatically.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                  <Input value={pocName} onChange={e => setPocName(e.target.value)} placeholder="Your name" />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                  <Input type="email" value={pocEmail} onChange={e => setPocEmail(e.target.value)} placeholder="you@example.com" />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                  <Input type="tel" value={pocPhone} onChange={e => setPocPhone(e.target.value)} placeholder="(555) 555-5555" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Cadence Visit Plan (read-only) — only weekly / bi-weekly */}
           {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
@@ -1331,6 +1407,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
                   <Send className="w-4 h-4 mr-2" />Submit Work Order
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Shareable Tenant Request Link — community-style, no history visible */}
+            <Card className="border-secondary/40 bg-secondary/[0.04]">
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <ExternalLink className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">Tenant Request Link</p>
+                    <p className="text-xs text-muted-foreground">
+                      Share this with a tenant or community member so they can submit a single
+                      service request. They won't see anyone else's history — it just gets added
+                      to the next service.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={!linkToken}
+                  onClick={() => {
+                    if (!linkToken) return;
+                    const url = `${window.location.origin}/tenant/${linkToken}`;
+                    navigator.clipboard.writeText(url);
+                    toast({ title: "Link copied", description: "Send this to your tenant or resident." });
+                  }}
+                >
+                  <Copy className="w-3.5 h-3.5 mr-1.5" />
+                  Copy Tenant Request Link
                 </Button>
               </CardContent>
             </Card>
