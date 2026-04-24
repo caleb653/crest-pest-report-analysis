@@ -328,6 +328,41 @@ const PropertyDashboard = ({
     }
   };
 
+  // Crest Point of Contact — name + email + phone for the Crest staff member
+  // that the PM should reach out to. Stored in customer_preferences.crest_point_of_contact.
+  const initialCrestName = (property.customer_preferences as any)?.crest_point_of_contact?.name || "";
+  const initialCrestEmail = (property.customer_preferences as any)?.crest_point_of_contact?.email || "";
+  const initialCrestPhone = (property.customer_preferences as any)?.crest_point_of_contact?.phone || "";
+  const [crestName, setCrestName] = useState<string>(initialCrestName);
+  const [crestEmail, setCrestEmail] = useState<string>(initialCrestEmail);
+  const [crestPhone, setCrestPhone] = useState<string>(initialCrestPhone);
+  useEffect(() => {
+    setCrestName((property.customer_preferences as any)?.crest_point_of_contact?.name || "");
+    setCrestEmail((property.customer_preferences as any)?.crest_point_of_contact?.email || "");
+    setCrestPhone((property.customer_preferences as any)?.crest_point_of_contact?.phone || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const cur = (property.customer_preferences as any)?.crest_point_of_contact || {};
+    if ((cur.name || "") === crestName && (cur.email || "") === crestEmail && (cur.phone || "") === crestPhone) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        crest_point_of_contact: { name: crestName, email: crestEmail, phone: crestPhone },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save Crest contact", variant: "destructive" });
+      } else {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crestName, crestEmail, crestPhone]);
+
   // ─── Unit Plan: included units per service + price per unit overage ───
   // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
   const initialPlanCfg = readUnitPlanConfig(property.customer_preferences);
@@ -2342,11 +2377,11 @@ const PropertyDashboard = ({
               Property Point of Contact
             </CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
-              The property manager / on-site contact for this location, plus the Crest staff member who owns the account.
+              The property manager / on-site contact for this location.
             </p>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                   PM / Contact Name
@@ -2380,10 +2415,65 @@ const PropertyDashboard = ({
                   onChange={(e) => setPocPhone(e.target.value)}
                 />
               </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              PM info auto-saves a moment after you stop typing.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Crest Point of Contact — the Crest staff member the PM should contact */}
+        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Crest Point of Contact
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              The Crest staff member that the property manager should reach out to. Visible in the PM portal.
+            </p>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Crest Client Owner
+                  Crest Contact Name
                 </Label>
+                <Input
+                  placeholder="Full name"
+                  value={crestName}
+                  onChange={(e) => setCrestName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Crest Email
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="email@crestpestcontrol.com"
+                  value={crestEmail}
+                  onChange={(e) => setCrestEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                  Crest Phone
+                </Label>
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="(555) 123-4567"
+                  value={crestPhone}
+                  onChange={(e) => setCrestPhone(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="pt-3 border-t border-border">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                Crest Client Owner (internal)
+              </Label>
+              <div className="max-w-xs">
                 <Select value={ownerTechDraft || "__none__"} onValueChange={saveOwnerTech}>
                   <SelectTrigger>
                     <SelectValue placeholder="Assign Crest staff…" />
@@ -2396,10 +2486,10 @@ const PropertyDashboard = ({
                   </SelectContent>
                 </Select>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                The Client Owner is notified (alongside the office) any time a work order or message is submitted on this property. Internal — not shown in the PM portal.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              PM info auto-saves a moment after you stop typing. The Client Owner is notified (alongside the office) any time a work order or message is submitted on this property.
-            </p>
           </CardContent>
         </Card>
 

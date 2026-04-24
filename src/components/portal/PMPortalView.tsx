@@ -20,6 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
+import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
@@ -980,6 +981,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     {FREQUENCY_LABELS[propertyFrequency]}
                   </Badge>
                 </div>
+                {(() => {
+                  const cfg = readUnitPlanConfig(property.customer_preferences);
+                  if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Included Interior Units / Service
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.included_units ? cfg.included_units : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Price / Additional Unit
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.overage_price_per_unit ? formatOverageMoney(cfg.overage_price_per_unit!) : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Base Price / Service
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  const cfg = readUnitPlanConfig(property.customer_preferences);
+                  if (!cfg.included_units) return null;
+                  return (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
+                    </p>
+                  );
+                })()}
                 {property.notes ? (
                   <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
                 ) : (
@@ -1040,6 +1082,57 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </div>
             </CardContent>
           </Card>
+
+          {/* Crest Point of Contact (read-only — set by Crest in admin) */}
+          {(() => {
+            const crestPOC = (property.customer_preferences as any)?.crest_point_of_contact || {};
+            const hasAny = (crestPOC.name || crestPOC.email || crestPOC.phone);
+            return (
+              <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+                <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <User className="w-5 h-5 text-primary" />
+                    Crest Point of Contact
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The Crest team member to reach out to about this property.
+                  </p>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {hasAny ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                        <p className="text-sm font-medium">{crestPOC.name || "—"}</p>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                        {crestPOC.email ? (
+                          <a href={`mailto:${crestPOC.email}`} className="text-sm font-medium text-primary hover:underline break-all">
+                            {crestPOC.email}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium">—</p>
+                        )}
+                      </div>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                        {crestPOC.phone ? (
+                          <a href={`tel:${crestPOC.phone}`} className="text-sm font-medium text-primary hover:underline">
+                            {crestPOC.phone}
+                          </a>
+                        ) : (
+                          <p className="text-sm font-medium">—</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Not set — please contact the Crest office.</p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Cadence Visit Plan (read-only) — only weekly / bi-weekly */}
           {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly") && (() => {
