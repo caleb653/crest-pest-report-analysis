@@ -349,11 +349,10 @@ const SubmittedReports = () => {
     }
   };
 
-  const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCreatePortal = async (reportId: string, propertyType: PortalPropertyType) => {
     setCreatingPortal(reportId);
     try {
-      const result = await createPortalFromReport(reportId);
+      const result = await createPortalFromReport(reportId, propertyType);
       if (result) {
         // Verify the new property is readable before navigating, to avoid 404s
         // from race conditions where Postgres hasn't yet propagated the row.
