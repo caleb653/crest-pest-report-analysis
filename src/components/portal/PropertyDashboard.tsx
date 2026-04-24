@@ -1151,8 +1151,8 @@ const PropertyDashboard = ({
                         );
                       })}
                     </div>
-                    {/* Target Pest (in-header) */}
-                    <select
+                    {/* Target Pest (in-header) — hidden in HOA mode (no treatment detail) */}
+                    {!isHOA && (<select
                       data-no-toggle
                       onClick={(e) => e.stopPropagation()}
                       className="h-9 text-xs font-semibold bg-background border border-border rounded-md px-2 cursor-pointer min-w-[140px]"
@@ -1161,7 +1161,7 @@ const PropertyDashboard = ({
                     >
                       <option value="">Target Pest…</option>
                       {PEST_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
+                    </select>)}
                   </div>
                   <div className="flex items-center gap-2">
                     <select
@@ -1174,7 +1174,7 @@ const PropertyDashboard = ({
                     >
                       {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
+                    {!isHOA && <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />}
                   </div>
                 </div>
                 {/* HOA mode: hide ALL per-unit treatment details — show only the area name + service type + status. */}
