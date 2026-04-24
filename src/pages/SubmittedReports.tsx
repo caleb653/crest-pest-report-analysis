@@ -305,6 +305,49 @@ const SubmittedReports = () => {
     }
   };
 
+  // Mark a Sales / Multi-Proposal report as Won or Lost (or clear the marker).
+  // Stored alongside _isPreProposal in the notes JSON so no schema change is
+  // needed. Won/Lost reports are filtered out of the default Sales views.
+  const setDealStatus = async (
+    reportId: string,
+    status: "won" | "lost" | null,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    setTogglingDealStatus(reportId);
+    try {
+      const { data: row, error: fErr } = await supabase
+        .from("reports")
+        .select("notes")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (fErr) throw fErr;
+
+      let parsed: any = {};
+      if (row?.notes && typeof row.notes === "string") {
+        try { parsed = JSON.parse(row.notes); } catch { parsed = { _legacyNotes: row.notes }; }
+      }
+      if (status) parsed._dealStatus = status;
+      else delete parsed._dealStatus;
+
+      const { error: uErr } = await supabase
+        .from("reports")
+        .update({ notes: JSON.stringify(parsed) })
+        .eq("id", reportId);
+      if (uErr) throw uErr;
+
+      toast.success(
+        status === "won" ? "Marked as Won" : status === "lost" ? "Marked as Lost" : "Deal status cleared",
+      );
+      await loadReports();
+    } catch (err: any) {
+      console.error("Toggle deal status error:", err);
+      toast.error("Failed to update deal status");
+    } finally {
+      setTogglingDealStatus(null);
+    }
+  };
+
   const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCreatingPortal(reportId);
