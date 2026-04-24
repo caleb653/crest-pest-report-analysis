@@ -373,8 +373,23 @@ const Report = () => {
     recurringPrice: string;
     frequency: number;
   }
+  const defaultServiceItem = (): ServiceItem => ({ serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 });
+  const normalizeStringArray = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  const normalizeServices = (value: unknown): ServiceItem[] => {
+    if (!Array.isArray(value)) return [defaultServiceItem()];
+    const normalized = value
+      .filter((service): service is Record<string, unknown> => !!service && typeof service === "object" && !Array.isArray(service))
+      .map((service) => ({
+        serviceType: String(service.serviceType ?? service.service_type ?? ""),
+        initialPrice: String(service.initialPrice ?? service.initial_price ?? ""),
+        recurringPrice: String(service.recurringPrice ?? service.recurring_price ?? ""),
+        frequency: Number.isFinite(Number(service.frequency)) ? Number(service.frequency) : 30,
+      }));
+    return normalized.length > 0 ? normalized : [defaultServiceItem()];
+  };
   const [services, setServices] = useState<ServiceItem[]>([
-    { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 },
+    defaultServiceItem(),
   ]);
 
   const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
@@ -517,7 +532,7 @@ const Report = () => {
 
   const addService = () => {
     if (services.length < 3) {
-      setServices((prev) => [...prev, { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 }]);
+      setServices((prev) => [...prev, defaultServiceItem()]);
     }
   };
 
