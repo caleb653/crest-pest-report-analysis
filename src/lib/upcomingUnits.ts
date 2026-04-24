@@ -39,6 +39,16 @@ export type ServiceRow = {
 const sortNumeric = (arr: string[]) =>
   arr.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
+/**
+ * Normalize a unit number for set/dedupe purposes.
+ * Ensures "5", " 5 ", "5 " all collapse to a single unique unit.
+ * Returns "" for empty/nullish input so callers can filter it out.
+ */
+const normalizeUnit = (u: unknown): string => {
+  if (u === null || u === undefined) return "";
+  return String(u).trim();
+};
+
 /** Return the open (pending / in_progress) requests, deduped by unit (most-recent first). */
 export function getOpenRequests(requests: RequestRow[] | null | undefined): RequestRow[] {
   const seen = new Set<string>();
@@ -148,20 +158,39 @@ export function computeUpcomingUnits(args: {
   allPastServices?: ServiceRow[];
 }) {
   const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices } = args;
+  // Normalize + dedupe planned units up front so "5" / " 5" / "5 " never count twice.
   const ownPlanned = Array.isArray(service?.units_planned)
-    ? (service.units_planned as string[]).filter(Boolean).map(String)
+    ? Array.from(
+        new Set(
+          (service.units_planned as unknown[])
+            .map(normalizeUnit)
+            .filter(Boolean)
+        )
+      )
     : [];
   const ownPlannedSet = new Set(ownPlanned);
 
   const openRequests = getOpenRequests(requests);
-  const openRequestUnits = new Set(openRequests.map(r => String(r.unit_number)));
+  const openRequestUnits = new Set(
+    openRequests.map(r => normalizeUnit(r.unit_number)).filter(Boolean)
+  );
   const followUpDetails = getFollowUpDetailsFromPast(mostRecentPast);
-  const followUpUnits = new Set(followUpDetails.map(u => String(u.unit_number)));
+  const followUpUnits = new Set(
+    followUpDetails.map(u => normalizeUnit(u.unit_number)).filter(Boolean)
+  );
   const followUpByUnit = new Map<string, UnitDetailRow>();
-  followUpDetails.forEach(u => followUpByUnit.set(String(u.unit_number), u));
+  followUpDetails.forEach(u => {
+    const k = normalizeUnit(u.unit_number);
+    if (k) followUpByUnit.set(k, u);
+  });
   const requestByUnit = new Map<string, RequestRow>();
-  openRequests.forEach(r => requestByUnit.set(String(r.unit_number), r));
-  const lastPastUnits = getUnitsFromMostRecentPast(mostRecentPast);
+  openRequests.forEach(r => {
+    const k = normalizeUnit(r.unit_number);
+    if (k) requestByUnit.set(k, r);
+  });
+  const lastPastUnits = getUnitsFromMostRecentPast(mostRecentPast)
+    .map(normalizeUnit)
+    .filter(Boolean);
 
   // For each unit, find the most-recent unit_detail from any past service (used as
   // a fallback to pre-fill findings/products/target_pest for the technician).
@@ -177,7 +206,7 @@ export function computeUpcomingUnits(args: {
   pastsForLookup.forEach(svc => {
     const dets = Array.isArray(svc.unit_details) ? (svc.unit_details as UnitDetailRow[]) : [];
     dets.forEach(d => {
-      const u = d?.unit_number ? String(d.unit_number) : "";
+      const u = normalizeUnit(d?.unit_number);
       if (!u) return;
       if (!lastDetailByUnit.has(u)) lastDetailByUnit.set(u, d);
     });
