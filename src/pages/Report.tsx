@@ -373,8 +373,23 @@ const Report = () => {
     recurringPrice: string;
     frequency: number;
   }
+  const defaultServiceItem = (): ServiceItem => ({ serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 });
+  const normalizeStringArray = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+  const normalizeServices = (value: unknown): ServiceItem[] => {
+    if (!Array.isArray(value)) return [defaultServiceItem()];
+    const normalized = value
+      .filter((service): service is Record<string, unknown> => !!service && typeof service === "object" && !Array.isArray(service))
+      .map((service) => ({
+        serviceType: String(service.serviceType ?? service.service_type ?? ""),
+        initialPrice: String(service.initialPrice ?? service.initial_price ?? ""),
+        recurringPrice: String(service.recurringPrice ?? service.recurring_price ?? ""),
+        frequency: Number.isFinite(Number(service.frequency)) ? Number(service.frequency) : 30,
+      }));
+    return normalized.length > 0 ? normalized : [defaultServiceItem()];
+  };
   const [services, setServices] = useState<ServiceItem[]>([
-    { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 },
+    defaultServiceItem(),
   ]);
 
   const handleServiceChange = (index: number, field: keyof ServiceItem, value: string | number) => {
@@ -517,7 +532,7 @@ const Report = () => {
 
   const addService = () => {
     if (services.length < 3) {
-      setServices((prev) => [...prev, { serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 }]);
+      setServices((prev) => [...prev, defaultServiceItem()]);
     }
   };
 
@@ -820,11 +835,11 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         row = data;
       }
 
-      setEditableTech(row.technician_name);
+      setEditableTech(row.technician_name || "");
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
-      setEditableFindings((row.findings as string[]) || []);
+      setEditableFindings(normalizeStringArray(row.findings));
       // Mark findings as edited if there was saved data, to prevent auto-override
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
         findingsEditedRef.current = true;
@@ -837,10 +852,11 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
-        setServices((row.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })) as ServiceItem[]);
+        const normalizedServices = normalizeServices(row.services);
+        setServices(normalizedServices);
         // Prevent the service auto-population effect from re-appending descriptions already saved
         addedServiceTypesRef.current = new Set(
-          (row.services as ServiceItem[])
+          normalizedServices
             .map((s) => s.serviceType)
             .filter((t): t is string => !!t),
         );
@@ -858,13 +874,13 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setEditableLicenseNumber(row.license_number);
       }
       if (row.target_pests && Array.isArray(row.target_pests)) {
-        setEditableTargetPests(row.target_pests as string[]);
+        setEditableTargetPests(normalizeStringArray(row.target_pests));
       }
       if (row.products_used && Array.isArray(row.products_used)) {
-        setEditableProductsUsed(row.products_used as string[]);
+        setEditableProductsUsed(normalizeStringArray(row.products_used));
       }
       if (row.equipment && Array.isArray(row.equipment)) {
-        setEditableEquipment(row.equipment as string[]);
+        setEditableEquipment(normalizeStringArray(row.equipment));
       }
       if (row.report_title) {
         setEditableTitle(row.report_title);
@@ -891,7 +907,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
             setAdditionalDetails(row.notes);
           }
         } else {
-          setAdditionalDetails(row.notes as string);
+          setAdditionalDetails(typeof row.notes === "string" ? row.notes : "");
         }
       }
       
@@ -910,15 +926,31 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         mapDataPreview: row.map_data ? JSON.stringify(row.map_data).substring(0, 150) : "null",
       });
 
-      setMapData(row.map_data ? JSON.stringify(row.map_data) : null);
+      if (typeof row.map_data === "string") {
+        setMapData(row.map_data);
+      } else if (row.map_data && typeof row.map_data === "object") {
+        setMapData(JSON.stringify(row.map_data));
+      } else {
+        setMapData(null);
+      }
 
       // Load custom map and property images
       if (row.custom_map_url) {
         setCustomMapImage(row.custom_map_url);
       }
 
-      if (row.property_images) {
-        setPropertyImages(row.property_images as Array<{ image: string; caption?: string }>);
+      if (Array.isArray(row.property_images)) {
+        setPropertyImages(
+          row.property_images
+            .map((item: any) =>
+              typeof item === "string"
+                ? { image: item, caption: "" }
+                : item && typeof item === "object" && typeof item.image === "string"
+                  ? { image: item.image, caption: typeof item.caption === "string" ? item.caption : "" }
+                  : null,
+            )
+            .filter((item): item is { image: string; caption: string } => !!item),
+        );
       }
 
       // Extract coordinates from map_url if available, otherwise geocode
@@ -1148,7 +1180,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
           if (!invokeError && data?.ok) {
             savedViaAdmin = true;
             if (data.report?.services) {
-              setServices((data.report.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })));
+              setServices(normalizeServices(data.report.services));
             }
             console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
           } else {
