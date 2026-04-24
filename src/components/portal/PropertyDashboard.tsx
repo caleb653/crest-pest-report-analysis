@@ -958,6 +958,7 @@ const PropertyDashboard = ({
       unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
       request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
+      customer_name: "", customer_phone: "",
     });
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
