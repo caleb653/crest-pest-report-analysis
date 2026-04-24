@@ -926,7 +926,13 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         mapDataPreview: row.map_data ? JSON.stringify(row.map_data).substring(0, 150) : "null",
       });
 
-      setMapData(row.map_data ? JSON.stringify(row.map_data) : null);
+      if (typeof row.map_data === "string") {
+        setMapData(row.map_data);
+      } else if (row.map_data && typeof row.map_data === "object") {
+        setMapData(JSON.stringify(row.map_data));
+      } else {
+        setMapData(null);
+      }
 
       // Load custom map and property images
       if (row.custom_map_url) {
