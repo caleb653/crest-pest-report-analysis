@@ -411,12 +411,18 @@ const SubmittedReports = () => {
     // Pre-Proposals are hidden from the Sales-focused buckets (Sales, Multi-Proposal,
     // Sales (All)) so the default sales portal view stays clean. They still show up
     // in "All Types" and have their own dedicated "Pre-Proposal" filter.
+    // Won / Lost reports are also hidden from the default Sales views — they live
+    // in their own dedicated "Won Deals" and "Lost Deals" buckets.
     if (typeFilter === "pre-proposal") {
       filtered = filtered.filter((r) => r.is_pre_proposal);
+    } else if (typeFilter === "won") {
+      filtered = filtered.filter((r) => r.deal_status === "won");
+    } else if (typeFilter === "lost") {
+      filtered = filtered.filter((r) => r.deal_status === "lost");
     } else if (typeFilter === "all") {
-      // show everything, including pre-proposals
+      // show everything, including pre-proposals and won/lost
     } else {
-      filtered = filtered.filter((r) => !r.is_pre_proposal);
+      filtered = filtered.filter((r) => !r.is_pre_proposal && !r.deal_status);
       if (typeFilter === "sales-all") {
         filtered = filtered.filter((r) => r.report_type === "sales" || r.report_type === "multi-proposal");
       } else {
