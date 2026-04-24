@@ -830,6 +830,46 @@ const SubmittedReports = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Property Type Picker — required before creating a Client Portal */}
+      <Dialog open={!!portalTypePickerReportId} onOpenChange={(open) => { if (!open) setPortalTypePickerReportId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Property Type</DialogTitle>
+            <DialogDescription>
+              Choose the type of property — this determines which section of the Client Portal it appears in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2">
+            {([
+              { value: "apartments", label: "Apartments" },
+              { value: "hoa", label: "HOA" },
+              { value: "commercial", label: "Commercial" },
+            ] as { value: PortalPropertyType; label: string }[]).map((opt) => (
+              <Button
+                key={opt.value}
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5"
+                disabled={!!creatingPortal}
+                onClick={async () => {
+                  const id = portalTypePickerReportId;
+                  if (!id) return;
+                  setPortalTypePickerReportId(null);
+                  await handleCreatePortal(id, opt.value);
+                }}
+              >
+                <Building2 className="w-6 h-6 text-primary" />
+                <span className="font-medium">{opt.label}</span>
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPortalTypePickerReportId(null)} disabled={!!creatingPortal}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
