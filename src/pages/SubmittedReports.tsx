@@ -48,7 +48,7 @@ import { createPortalFromReport, type PortalPropertyType } from "@/lib/createPor
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
 
-type StatusFilter = "all" | "created" | "sent" | "signed";
+type StatusFilter = "all" | "created" | "sent" | "signed" | "won" | "lost";
 type DateFilter = "recent" | "week" | "month" | "all";
 
 interface ReportListItem {
@@ -431,11 +431,28 @@ const SubmittedReports = () => {
     }
 
     // Status
-    if (statusFilter !== "all") {
+    // Hide Lost deals from every view by default — they only appear when the
+    // user explicitly picks the "Lost" filter (or "All Statuses"). Won deals
+    // also have their own bucket but stay visible in default views.
+    if (statusFilter === "won") {
+      filtered = filtered.filter((r) => r.deal_status === "won");
+    } else if (statusFilter === "lost") {
+      filtered = filtered.filter((r) => r.deal_status === "lost");
+    } else if (statusFilter === "all") {
+      // show every status, including Lost
+    } else {
       filtered = filtered.filter((r) => {
+        // Default behavior: hide Lost so it never clutters Created/Sent/Signed views.
+        if (r.deal_status === "lost") return false;
         const status = getStatusLabel(r);
         return status.toLowerCase() === statusFilter;
       });
+    }
+    // Even when no status filter is applied, Lost deals should be hidden from
+    // the main "Submitted Proposals" experience unless the user explicitly
+    // opts into the Lost / All Statuses buckets.
+    if (statusFilter !== "all" && statusFilter !== "lost" && statusFilter !== "won") {
+      filtered = filtered.filter((r) => r.deal_status !== "lost");
     }
 
     // Date
@@ -516,6 +533,8 @@ const SubmittedReports = () => {
                   <SelectItem value="created">Created</SelectItem>
                   <SelectItem value="sent">Sent</SelectItem>
                   <SelectItem value="signed">Signed</SelectItem>
+                  <SelectItem value="won">Won</SelectItem>
+                  <SelectItem value="lost">Lost</SelectItem>
                 </SelectContent>
               </Select>
 
