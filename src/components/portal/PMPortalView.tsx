@@ -1025,32 +1025,56 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
-                  if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                           Included Interior Units / Service
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.included_units ? cfg.included_units : "—"}
-                        </p>
+                        </Label>
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          placeholder="e.g. 10"
+                          value={includedUnitsDraft}
+                          onChange={(e) => setIncludedUnitsDraft(e.target.value)}
+                        />
                       </div>
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                          Price / Additional Unit
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.overage_price_per_unit ? formatOverageMoney(cfg.overage_price_per_unit!) : "—"}
-                        </p>
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                          Price per Additional Unit
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step="1"
+                            placeholder="0"
+                            className="pl-7 text-right"
+                            value={overagePriceDraft}
+                            onChange={(e) => setOveragePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
+                          />
+                        </div>
                       </div>
-                      <div className="rounded-lg border border-border bg-background p-2.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                      <div>
+                        <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                           Base Price / Service
-                        </p>
-                        <p className="text-base font-bold mt-0.5">
-                          {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}
-                        </p>
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step="1"
+                            placeholder="0"
+                            className="pl-7 text-right"
+                            value={basePriceDraft}
+                            onChange={(e) => setBasePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
+                          />
+                        </div>
                       </div>
                     </div>
                   );
