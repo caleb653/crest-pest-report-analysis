@@ -663,6 +663,15 @@ const PortalAdmin = () => {
               </Card>
             </TabsContent>
 
+            {/* Billing & Schedule tab — admin-only revenue + overage tracking */}
+            <TabsContent value="billing">
+              <BillingDashboard
+                clients={clients}
+                properties={allProperties}
+                services={allServices}
+              />
+            </TabsContent>
+
             {/* Prep Sheets tab */}
             <TabsContent value="prep-sheets">
               <Card>
