@@ -60,7 +60,7 @@ const PinGate = ({ children }: { children: React.ReactNode }) => {
         {children}
         {/* Global floating notification bell — visible on every authenticated page */}
         <div className="fixed top-3 right-3 z-[100]">
-          <NotificationBell className="bg-card/90 backdrop-blur border shadow-md hover:bg-card" />
+          <NotificationBell className="bg-card/90 backdrop-blur border shadow-md hover:bg-card h-14 w-14 [&_svg]:w-7 [&_svg]:h-7" />
         </div>
       </>
     );
