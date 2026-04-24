@@ -933,8 +933,18 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setCustomMapImage(row.custom_map_url);
       }
 
-      if (row.property_images) {
-        setPropertyImages(row.property_images as Array<{ image: string; caption?: string }>);
+      if (Array.isArray(row.property_images)) {
+        setPropertyImages(
+          row.property_images
+            .map((item: any) =>
+              typeof item === "string"
+                ? { image: item, caption: "" }
+                : item && typeof item === "object" && typeof item.image === "string"
+                  ? { image: item.image, caption: typeof item.caption === "string" ? item.caption : "" }
+                  : null,
+            )
+            .filter((item): item is { image: string; caption: string } => !!item),
+        );
       }
 
       // Extract coordinates from map_url if available, otherwise geocode
