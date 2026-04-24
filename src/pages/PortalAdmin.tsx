@@ -49,6 +49,18 @@ interface UnitDetail {
   [key: string]: string;
 }
 
+type PropertyType = "apartments" | "hoa" | "commercial";
+const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
+  { value: "apartments", label: "Apartments" },
+  { value: "hoa", label: "HOA" },
+  { value: "commercial", label: "Commercial" },
+];
+const getPropertyType = (p: PortalProperty): PropertyType => {
+  const t = (p.customer_preferences as any)?.property_type;
+  if (t === "hoa" || t === "commercial" || t === "apartments") return t;
+  return "apartments";
+};
+
 const SERVICE_TYPES = [
   "General Pest Control", "Commercial General Pest Control", "Rodent Trapping",
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
