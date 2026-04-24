@@ -1180,7 +1180,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
           if (!invokeError && data?.ok) {
             savedViaAdmin = true;
             if (data.report?.services) {
-              setServices((data.report.services as any[]).map(s => ({ ...s, frequency: s.frequency ?? 30 })));
+              setServices(normalizeServices(data.report.services));
             }
             console.log("Admin save successful:", { servicesCount: data.report?.services?.length });
           } else {
