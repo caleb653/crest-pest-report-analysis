@@ -1745,6 +1745,43 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           )}
 
                           {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
+
+                          {/* Service-level comment thread (PM ↔ Crest) for upcoming visit */}
+                          <div className="pt-3 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {(() => {
+                              const allComments = Array.isArray(((s as any).report_data || {}).comments)
+                                ? ((s as any).report_data.comments as ServiceComment[])
+                                : [];
+                              return (
+                                <>
+                                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
+                                    <ServiceComments
+                                      serviceId={s.id}
+                                      reportData={(s as any).report_data}
+                                      comments={allComments}
+                                      sender="crest"
+                                      filterSender="crest"
+                                      title="Crest Team Comments"
+                                      readOnly
+                                      onChange={loadAll}
+                                    />
+                                  </div>
+                                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
+                                    <ServiceComments
+                                      serviceId={s.id}
+                                      reportData={(s as any).report_data}
+                                      comments={allComments}
+                                      sender="pm"
+                                      filterSender="pm"
+                                      defaultAuthor={pocName}
+                                      title="Your Comments (Property Manager)"
+                                      onChange={loadAll}
+                                    />
+                                  </div>
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
                       )}
                     </Card>
