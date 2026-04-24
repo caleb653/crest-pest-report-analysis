@@ -283,6 +283,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setPocEmail(poc.email || "");
       setPocPhone(poc.phone || "");
       setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+      const planCfg = readUnitPlanConfig((prop as any).customer_preferences);
+      setIncludedUnitsDraft(planCfg.included_units ? String(planCfg.included_units) : "");
+      setOveragePriceDraft(planCfg.overage_price_per_unit ? String(planCfg.overage_price_per_unit) : "");
+      setBasePriceDraft(planCfg.base_service_price ? String(planCfg.base_service_price) : "");
     }
 
     if (Array.isArray(svcs)) {
