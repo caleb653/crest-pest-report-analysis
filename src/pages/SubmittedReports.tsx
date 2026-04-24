@@ -655,6 +655,19 @@ const SubmittedReports = () => {
                               </Badge>
                             )}
 
+                            {report.deal_status === "won" && (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                <Trophy className="w-3 h-3 mr-1" />
+                                Won
+                              </Badge>
+                            )}
+                            {report.deal_status === "lost" && (
+                              <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200">
+                                <XCircle className="w-3 h-3 mr-1" />
+                                Lost
+                              </Badge>
+                            )}
+
                             {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
                               <Button
                                 variant="ghost"
@@ -672,6 +685,58 @@ const SubmittedReports = () => {
                                   <Archive className="w-4 h-4" />
                                 )}
                               </Button>
+                            )}
+
+                            {(report.report_type === "sales" || report.report_type === "multi-proposal") && (
+                              <>
+                                {report.deal_status ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => setDealStatus(report.id, null, e)}
+                                    disabled={togglingDealStatus === report.id}
+                                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Clear deal status"
+                                  >
+                                    {togglingDealStatus === report.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="w-4 h-4" />
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => setDealStatus(report.id, "won", e)}
+                                      disabled={togglingDealStatus === report.id}
+                                      className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                                      title="Mark as Won"
+                                    >
+                                      {togglingDealStatus === report.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trophy className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => setDealStatus(report.id, "lost", e)}
+                                      disabled={togglingDealStatus === report.id}
+                                      className="text-rose-700 hover:text-rose-800 hover:bg-rose-50"
+                                      title="Mark as Lost"
+                                    >
+                                      {togglingDealStatus === report.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <XCircle className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </>
+                                )}
+                              </>
                             )}
 
                             <Button
