@@ -203,6 +203,53 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // ─── Debounced save: Property Point of Contact (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const currentPoc = (property.customer_preferences as any)?.point_of_contact || {};
+    if ((currentPoc.name || "") === pocName &&
+        (currentPoc.email || "") === pocEmail &&
+        (currentPoc.phone || "") === pocPhone) return;
+    const t = setTimeout(async () => {
+      const updated = {
+        ...(property.customer_preferences || {}),
+        point_of_contact: { name: pocName, email: pocEmail, phone: pocPhone },
+      };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save point of contact", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pocName, pocEmail, pocPhone]);
+
+  // ─── Debounced save: extra customer-preference notes (PM-editable) ───
+  useEffect(() => {
+    if (!property) return;
+    const current = (property.customer_preferences as any)?.notes || "";
+    if (current === pmPrefDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), notes: pmPrefDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (error) {
+        toast({ title: "Failed to save preferences", variant: "destructive" });
+      } else {
+        setProperty({ ...property, customer_preferences: updated } as PropertyData);
+      }
+    }, 700);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pmPrefDraft]);
+
   const loadAll = async () => {
     setLoading(true);
 
