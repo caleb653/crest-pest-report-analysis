@@ -271,23 +271,27 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefDraft]);
 
-  // Property Point of Contact — name + email, stored in customer_preferences.point_of_contact
+  // Property Point of Contact — name + email + phone, stored in customer_preferences.point_of_contact
   const initialPocName = (property.customer_preferences as any)?.point_of_contact?.name || "";
   const initialPocEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
+  const initialPocPhone = (property.customer_preferences as any)?.point_of_contact?.phone || "";
   const [pocName, setPocName] = useState<string>(initialPocName);
   const [pocEmail, setPocEmail] = useState<string>(initialPocEmail);
+  const [pocPhone, setPocPhone] = useState<string>(initialPocPhone);
   useEffect(() => {
     setPocName((property.customer_preferences as any)?.point_of_contact?.name || "");
     setPocEmail((property.customer_preferences as any)?.point_of_contact?.email || "");
+    setPocPhone((property.customer_preferences as any)?.point_of_contact?.phone || "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
     const currentName = (property.customer_preferences as any)?.point_of_contact?.name || "";
     const currentEmail = (property.customer_preferences as any)?.point_of_contact?.email || "";
-    if (currentName === pocName && currentEmail === pocEmail) return;
+    const currentPhone = (property.customer_preferences as any)?.point_of_contact?.phone || "";
+    if (currentName === pocName && currentEmail === pocEmail && currentPhone === pocPhone) return;
     const t = setTimeout(async () => {
       const updated = {
         ...(property.customer_preferences || {}),
-        point_of_contact: { name: pocName, email: pocEmail },
+        point_of_contact: { name: pocName, email: pocEmail, phone: pocPhone },
       };
       const { error } = await supabase
         .from("portal_properties")
@@ -301,7 +305,28 @@ const PropertyDashboard = ({
     }, 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pocName, pocEmail]);
+  }, [pocName, pocEmail, pocPhone]);
+
+  // Crest Client Owner — which staff member owns this property
+  const [ownerTechDraft, setOwnerTechDraft] = useState<string>(property.owner_tech || "");
+  useEffect(() => {
+    setOwnerTechDraft(property.owner_tech || "");
+  }, [property.id, property.owner_tech]);
+  const saveOwnerTech = async (value: string) => {
+    const next = value === "__none__" ? null : value;
+    setOwnerTechDraft(next || "");
+    const { error } = await supabase
+      .from("portal_properties")
+      .update({ owner_tech: next })
+      .eq("id", property.id);
+    if (error) {
+      toast({ title: "Failed to save client owner", variant: "destructive" });
+    } else {
+      (property as any).owner_tech = next;
+      toast({ title: "Client owner updated", duration: 1500 });
+      onRefresh();
+    }
+  };
 
   // ─── Unit Plan: included units per service + price per unit overage ───
   // Stored on customer_preferences so PM/admin/tech all see the same plan terms.
