@@ -981,6 +981,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     {FREQUENCY_LABELS[propertyFrequency]}
                   </Badge>
                 </div>
+                {(() => {
+                  const cfg = readUnitPlanConfig(property.customer_preferences);
+                  if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Included Interior Units / Service
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.included_units ? cfg.included_units : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Price / Additional Unit
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.overage_price_per_unit ? formatOverageMoney(cfg.overage_price_per_unit!) : "—"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-border bg-background p-2.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                          Base Price / Service
+                        </p>
+                        <p className="text-base font-bold mt-0.5">
+                          {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  const cfg = readUnitPlanConfig(property.customer_preferences);
+                  if (!cfg.included_units) return null;
+                  return (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
+                    </p>
+                  );
+                })()}
                 {property.notes ? (
                   <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
                 ) : (
