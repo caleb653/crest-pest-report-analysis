@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
+import NotificationBell from "@/components/NotificationBell";
 import { createPortalFromReport } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
