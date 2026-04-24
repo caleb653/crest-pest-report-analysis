@@ -955,6 +955,14 @@ const PropertyDashboard = ({
       return;
     }
     toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
+    // Fire-and-forget staff notification (office + Carmen + client owner)
+    if (inserted?.id) {
+      try {
+        await supabase.functions.invoke("notify-submission", {
+          body: { kind: "work_order", requestId: inserted.id },
+        });
+      } catch (e) { console.error("notify-submission failed", e); }
+    }
     // Fire-and-forget tenant email
     if (workOrder.email_tenant && workOrder.tenant_email.trim() && inserted?.id) {
       try {
