@@ -1855,6 +1855,14 @@ const PropertyDashboard = ({
                     {cd.unitRows.map((row: any, idx: number) => {
                       const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
                       const isWorkOrder = row.source === "new-work-order";
+                      // Look up the work-order kind (Inspection vs Treatment) so the
+                      // header badge + context label match what was actually requested.
+                      const ucForRow = merged.unitContexts.find(
+                        (c) => String(c.unit_number) === String(row.unit_number)
+                      );
+                      const reqTypeLower = (ucForRow?.request?.request_type || "").toLowerCase();
+                      const isInspectionWO = isWorkOrder && reqTypeLower.includes("inspection");
+                      const woLabel = isInspectionWO ? "Inspection" : "Treatment";
                       const unitKey = `pd-up:${s.id}:${idx}`;
                       const isUnitOpen = expandedUnitKeys.has(unitKey);
                       return (
@@ -1905,7 +1913,7 @@ const PropertyDashboard = ({
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
                               />
                               {isWorkOrder && (
-                                <span className="text-xs font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">Work Order</span>
+                                <span className="text-xs font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">{woLabel}</span>
                               )}
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
@@ -1956,12 +1964,48 @@ const PropertyDashboard = ({
                               if (!uc) return null;
                               return (
                                 <>
+                                  {/* Surface the structured work-order fields (location,
+                                      occupancy, tenant, preferred date) so admin gets the
+                                      same actionable detail the PM submitted. */}
+                                  {isWorkOrder && uc.request && (
+                                    (uc.request.location_type || uc.request.occupancy_status ||
+                                     uc.request.tenant_email || uc.request.preferred_date) && (
+                                      <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                        {uc.request.location_type && (
+                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+                                            <p className="text-xs font-medium">{uc.request.location_type}</p>
+                                          </div>
+                                        )}
+                                        {uc.request.occupancy_status && (
+                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit Status</p>
+                                            <p className="text-xs font-medium">{uc.request.occupancy_status}</p>
+                                          </div>
+                                        )}
+                                        {uc.request.preferred_date && (
+                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Preferred</p>
+                                            <p className="text-xs font-medium">{uc.request.preferred_date}</p>
+                                          </div>
+                                        )}
+                                        {uc.request.tenant_email && (
+                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
+                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Tenant</p>
+                                            <p className="text-xs font-medium break-all">{uc.request.tenant_email}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  )}
                                   {uc.context && (
                                     <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
                                       <div className="flex items-center gap-1.5 mb-1.5">
                                         <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
                                         <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
-                                          {isWorkOrder ? "Work Order Context" : "Last Service Context"}
+                                          {isWorkOrder
+                                            ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
+                                            : "Last Service Context"}
                                         </Label>
                                       </div>
                                       <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
