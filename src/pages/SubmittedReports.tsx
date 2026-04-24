@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/select";
 import crestLogo from "@/assets/crest-logo-black.png";
 import NotificationBell from "@/components/NotificationBell";
-import { createPortalFromReport } from "@/lib/createPortalFromReport";
+import { createPortalFromReport, type PortalPropertyType } from "@/lib/createPortalFromReport";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
@@ -122,6 +122,7 @@ const SubmittedReports = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
+  const [portalTypePickerReportId, setPortalTypePickerReportId] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
   const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
 
@@ -348,11 +349,10 @@ const SubmittedReports = () => {
     }
   };
 
-  const handleCreatePortal = async (reportId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCreatePortal = async (reportId: string, propertyType: PortalPropertyType) => {
     setCreatingPortal(reportId);
     try {
-      const result = await createPortalFromReport(reportId);
+      const result = await createPortalFromReport(reportId, propertyType);
       if (result) {
         // Verify the new property is readable before navigating, to avoid 404s
         // from race conditions where Postgres hasn't yet propagated the row.
@@ -758,7 +758,7 @@ const SubmittedReports = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => handleCreatePortal(report.id, e)}
+                              onClick={(e) => { e.stopPropagation(); setPortalTypePickerReportId(report.id); }}
                               disabled={creatingPortal === report.id}
                               className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
                               title="Create a Client Portal pre-populated from this report"
@@ -826,6 +826,46 @@ const SubmittedReports = () => {
               disabled={deleting || !deletePassword.trim()}
             >
               {deleting ? "Deleting..." : "Delete Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Property Type Picker — required before creating a Client Portal */}
+      <Dialog open={!!portalTypePickerReportId} onOpenChange={(open) => { if (!open) setPortalTypePickerReportId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Property Type</DialogTitle>
+            <DialogDescription>
+              Choose the type of property — this determines which section of the Client Portal it appears in.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-2">
+            {([
+              { value: "apartments", label: "Apartments" },
+              { value: "hoa", label: "HOA" },
+              { value: "commercial", label: "Commercial" },
+            ] as { value: PortalPropertyType; label: string }[]).map((opt) => (
+              <Button
+                key={opt.value}
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5"
+                disabled={!!creatingPortal}
+                onClick={async () => {
+                  const id = portalTypePickerReportId;
+                  if (!id) return;
+                  setPortalTypePickerReportId(null);
+                  await handleCreatePortal(id, opt.value);
+                }}
+              >
+                <Building2 className="w-6 h-6 text-primary" />
+                <span className="font-medium">{opt.label}</span>
+              </Button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPortalTypePickerReportId(null)} disabled={!!creatingPortal}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>

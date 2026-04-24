@@ -47,7 +47,12 @@ function flattenServices(reportServices: any): Array<{
   return reportServices as any[];
 }
 
-export async function createPortalFromReport(reportId: string): Promise<{
+export type PortalPropertyType = "apartments" | "hoa" | "commercial";
+
+export async function createPortalFromReport(
+  reportId: string,
+  propertyType: PortalPropertyType = "apartments",
+): Promise<{
   clientId: string;
   propertyId: string;
   linkToken: string;
@@ -150,8 +155,8 @@ export async function createPortalFromReport(reportId: string): Promise<{
       map_image_url: mapImageUrl,
       map_data: (report as any).map_data || null,
       notes: propertyPlan,
-      // Only the service_frequency key is set — no other customer preferences.
-      customer_preferences: { service_frequency: frequencyKey },
+      // Only the service_frequency + property_type keys are set — no other customer preferences.
+      customer_preferences: { service_frequency: frequencyKey, property_type: propertyType },
     })
     .select("id")
     .single();
