@@ -1357,6 +1357,12 @@ const PropertyDashboard = ({
       ((property.customer_preferences as any)?.pm_upcoming_notes as Record<string, string>) || {};
     const pmNoteForThis = isUpcoming && s.service_date ? (pmNotesMap[s.service_date] || "") : "";
 
+    // Overage calculation — uses merged unit count for upcoming, treated unit count for past.
+    const overageUnitCount = isUpcoming
+      ? merged.units.length
+      : (Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0);
+    const overage = computeOverage(overageUnitCount, planCfg);
+
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
         {/* PM-submitted note for the upcoming visit — high-visibility callout for the technician */}
@@ -1367,6 +1373,22 @@ const PropertyDashboard = ({
               From the Property Manager — for the Technician
             </p>
             <p className="text-xs whitespace-pre-wrap font-medium">{pmNoteForThis}</p>
+          </div>
+        )}
+
+        {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
+        {overage.hasOverage && (
+          <div className="border-2 border-amber-500/70 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+              <Flag className="w-3.5 h-3.5" />
+              Overage on this service
+            </p>
+            <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+              {overage.totalUnits} units {isUpcoming ? "scheduled" : "treated"} — {overage.includedUnits} included • {overage.unitsOver} over the plan
+            </p>
+            <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
+              {overage.unitsOver} × {formatOverageMoney(overage.pricePerUnit)} = <span className="font-bold">{formatOverageMoney(overage.overageCost)}</span> additional charge for this visit.
+            </p>
           </div>
         )}
 
