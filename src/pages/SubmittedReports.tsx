@@ -529,6 +529,8 @@ const SubmittedReports = () => {
                   <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                   <SelectItem value="pre-proposal">Pre-Proposal</SelectItem>
+                  <SelectItem value="won">Won Deals</SelectItem>
+                  <SelectItem value="lost">Lost Deals</SelectItem>
                 </SelectContent>
               </Select>
 
