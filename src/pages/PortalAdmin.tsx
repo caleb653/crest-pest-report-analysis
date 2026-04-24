@@ -240,8 +240,15 @@ const PortalAdmin = () => {
     const { error } = await supabase.from("portal_properties").insert({
       client_id: newProperty.client_id, name: newProperty.name, address: newProperty.address || null,
       notes: newProperty.notes || null, image_url: newProperty.image_url || null,
+      customer_preferences: { property_type: newProperty.property_type },
     });
-    if (!error) { toast({ title: "Property added" }); setShowAddProperty(false); setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "" }); loadAll(); }
+    if (!error) {
+      toast({ title: "Property added" });
+      setShowAddProperty(false);
+      setPropertySubTab(newProperty.property_type);
+      setNewProperty({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
+      loadAll();
+    }
   };
 
   const updatePropertyImage = async (propId: string, file: File) => {
