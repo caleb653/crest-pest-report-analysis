@@ -206,12 +206,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const loadAll = async () => {
     setLoading(true);
 
-    const [{ data: prop }, { data: svcs }, { data: sheets }, { data: reqs }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: sheets }, { data: reqs }, { data: linkRow }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      supabase.from("portal_links").select("token").eq("id", linkId).maybeSingle(),
     ]);
+
+    if (linkRow?.token) setLinkToken(linkRow.token as string);
 
     const [{ data: svys }, { data: respRows }] = await Promise.all([
       (supabase as any).from("portal_surveys").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
@@ -220,7 +223,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (Array.isArray(svys)) setSurveys(svys);
     if (Array.isArray(respRows)) setSurveyResponses(respRows);
 
-    if (prop) setProperty(prop as PropertyData);
+    if (prop) {
+      setProperty(prop as PropertyData);
+      // Hydrate editable POC + customer-pref-notes drafts from the latest property row
+      const poc = (prop as any).customer_preferences?.point_of_contact || {};
+      setPocName(poc.name || "");
+      setPocEmail(poc.email || "");
+      setPocPhone(poc.phone || "");
+      setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+    }
 
     if (Array.isArray(svcs)) {
       setServices(svcs as ServiceData[]);
