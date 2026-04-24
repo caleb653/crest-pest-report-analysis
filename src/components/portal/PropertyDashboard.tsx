@@ -2792,7 +2792,7 @@ const PropertyDashboard = ({
             </div>
 
             {/* Tenant Notification — full PM-portal parity */}
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA ? "hidden" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
                 <span className="text-sm font-medium">Email tenant?</span>
