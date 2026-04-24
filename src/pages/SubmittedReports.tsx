@@ -758,7 +758,7 @@ const SubmittedReports = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => handleCreatePortal(report.id, e)}
+                              onClick={(e) => { e.stopPropagation(); setPortalTypePickerReportId(report.id); }}
                               disabled={creatingPortal === report.id}
                               className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
                               title="Create a Client Portal pre-populated from this report"
