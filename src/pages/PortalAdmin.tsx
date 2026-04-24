@@ -651,15 +651,30 @@ const PortalAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {allProperties.length === 0 ? (
+                  <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType)} className="mb-4">
+                    <TabsList>
+                      {PROPERTY_TYPES.map(t => {
+                        const count = allProperties.filter(p => getPropertyType(p) === t.value).length;
+                        return (
+                          <TabsTrigger key={t.value} value={t.value}>
+                            {t.label}
+                            <span className="ml-1.5 text-xs text-muted-foreground">({count})</span>
+                          </TabsTrigger>
+                        );
+                      })}
+                    </TabsList>
+                  </Tabs>
+                  {(() => {
+                    const filtered = allProperties.filter(p => getPropertyType(p) === propertySubTab);
+                    return filtered.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="font-medium">No properties yet</p>
-                      <p className="text-xs mt-1">Add a client first, then add a property</p>
+                      <p className="font-medium">No {PROPERTY_TYPES.find(t => t.value === propertySubTab)?.label} properties yet</p>
+                      <p className="text-xs mt-1">Click "Add Property" and choose this type</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {allProperties.map(p => {
+                      {filtered.map(p => {
                         const propServices = allServices.filter(s => s.property_id === p.id);
                         const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
                         const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
@@ -685,7 +700,8 @@ const PortalAdmin = () => {
                         );
                       })}
                     </div>
-                  )}
+                  );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
