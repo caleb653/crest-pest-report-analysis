@@ -3343,7 +3343,7 @@ const PropertyDashboard = ({
                 {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion, idx) => (
                   <div key={q.id} className="border rounded-md p-3 bg-muted/30">
                     <p className="text-sm font-semibold mb-2">
-                      <span className="text-muted-foreground mr-1">{idx + 1}.</span>{q.label}
+                      <span className="text-muted-foreground mr-1">{idx + 1}.</span>{q.label.replace(/^\s*\d+\.\s*/, "")}
                     </p>
                     {q.type === "rating" && (
                       <div className="space-y-1">
