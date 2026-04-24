@@ -2200,13 +2200,13 @@ const PropertyDashboard = ({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                     <Input
                       type="number"
-                      inputMode="decimal"
+                      inputMode="numeric"
                       min={0}
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-7"
+                      step="1"
+                      placeholder="0"
+                      className="pl-7 text-right"
                       value={overagePriceDraft}
-                      onChange={(e) => setOveragePriceDraft(e.target.value)}
+                      onChange={(e) => setOveragePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
                     />
                   </div>
                 </div>
@@ -2218,13 +2218,13 @@ const PropertyDashboard = ({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
                     <Input
                       type="number"
-                      inputMode="decimal"
+                      inputMode="numeric"
                       min={0}
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-7"
+                      step="1"
+                      placeholder="0"
+                      className="pl-7 text-right"
                       value={basePriceDraft}
-                      onChange={(e) => setBasePriceDraft(e.target.value)}
+                      onChange={(e) => setBasePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
                     />
                   </div>
                 </div>
