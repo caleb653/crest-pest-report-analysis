@@ -997,14 +997,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-4 space-y-3">
-                {customerPref && (
-                  <div>
-                    <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
-                      Selected Preference
-                    </Label>
-                    <p className="text-sm">{customerPref}</p>
-                  </div>
-                )}
                 <div>
                   <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                     Notes for Crest
