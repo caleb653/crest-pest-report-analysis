@@ -580,7 +580,7 @@ const PortalAdmin = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
           <img src={crestLogo} alt="Crest" className="h-8" />
           <h1 className="text-lg font-bold flex-1">Client Portal Admin</h1>
-          <NotificationBell />
+          {/* <NotificationBell /> hidden to prevent crashes */}
         </div>
 
         <div className="p-4 max-w-7xl mx-auto">
