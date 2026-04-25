@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ const NotificationBell = ({ className }: { className?: string }) => {
   const navigate = useNavigate();
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const channelNameRef = useRef(`notifications-bell-${Math.random().toString(36).slice(2)}`);
 
   const load = async () => {
     if (!staff) return;
@@ -40,7 +41,7 @@ const NotificationBell = ({ className }: { className?: string }) => {
     if (!staff) return;
     // Realtime subscription for new notifications
     const channel = supabase
-      .channel("notifications-bell")
+      .channel(channelNameRef.current)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
