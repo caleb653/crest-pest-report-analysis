@@ -309,6 +309,9 @@ const EXCLUSION_PRESETS: { label: string; text: string }[] = [
 
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
+// Pre-built proposed services language for "Multi-Family - Apartment Complex" property type
+const APARTMENT_COMPLEX_PROPOSED_SERVICES = `<b>Every Visit</b><br>• Check in with management to understand any pest issues and confirm units to be serviced for that day<br>• [X] interior units* per visit for general pests, german roaches, and fleas. +$50 per unit above [X] units<br>• Address any active exterior pest problem areas as needed<br>• Provide the full service report and findings on our Crest Pest client portal<br><br><b>1st Weekly Visit (Focus on Zone #A)</b><br>• Inspect and treat the exterior and interior of the office, the pool area, and the exterior of buildings [XYZ]<br><br><b>2nd Weekly Visit (Focus on Zone #B)</b><br>• Inspect and treat the exterior of buildings [XYZ]<br><br><b>3rd Weekly Visit (Focus on Zone #C)</b><br>• Inspect and treat the exterior of buildings [XYZ]<br><br><b>4th Weekly Visit (Focus on Rodent Bait Stations)</b><br>• On initial visit, install [X] rodent bait stations around the property (see the site map below)<br>• On follow-up visits, check, replenish, and adjust rodent bait stations as needed<br>• Report findings on new rodent activity to management<br><br><b>Additional charges:</b> +$50 per unit above [X] units; $95 for ad hoc treatments; bed bug pricing depends on severity<br><br>* Interior units include treatments or inspections`;
+
 const FREQUENCY_OPTIONS = [
   { label: "One-Time", days: 0 },
   { label: "Weekly", days: 7 },
