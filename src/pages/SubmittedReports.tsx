@@ -169,7 +169,7 @@ const SubmittedReports = () => {
           address: r.address,
           created_at: r.created_at,
           report_type: isMultiProposal ? "multi-proposal" : isInitial ? "initial" : "sales",
-          is_signed: !!r.has_signature,
+          is_signed: r.has_signature === true,
           is_sent: !!r.sent_to_customer_at,
           is_pre_proposal: isPreProposal,
           deal_status: dealStatus,
