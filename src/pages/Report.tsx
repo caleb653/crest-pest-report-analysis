@@ -2054,10 +2054,10 @@ Crest Pest Control`;
                                    frequency: 7,
                                  },
                                ]);
-                               // Pre-fill the proposed services / additional details with the apartment complex template
-                               setAdditionalDetails(APARTMENT_COMPLEX_PROPOSED_SERVICES);
-                               setAdditionalDetailsHeader("Proposed Services");
-                               // Mark these service types as already added so the auto-add effect doesn't append duplicates
+                               // Pre-fill the Proposed Services field with the apartment-complex template
+                               setEditableFindings([APARTMENT_COMPLEX_PROPOSED_SERVICES]);
+                               // Prevent the auto-populate effect from appending the default
+                               // Commercial General Pest / Rodent Bait Boxes service descriptions
                                addedServiceTypesRef.current.add("Commercial General Pest");
                                addedServiceTypesRef.current.add("Rodent Bait Boxes");
                                findingsEditedRef.current = true;
