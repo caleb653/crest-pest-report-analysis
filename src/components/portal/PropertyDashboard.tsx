@@ -2423,7 +2423,7 @@ const PropertyDashboard = ({
               </p>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-                className="min-h-[120px] text-sm resize-y"
+                className="min-h-[360px] text-sm resize-y leading-relaxed"
                 value={planDraft}
                 onChange={(e) => setPlanDraft(e.target.value)}
               />
