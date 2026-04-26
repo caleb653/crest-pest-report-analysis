@@ -1173,6 +1173,7 @@ const Report = () => {
       proposalSetupMaterials,
       proposalTargetPests,
       proposalTargetPestsEdited,
+      proposalSelectedExclusions,
       propertyType,
       companyName,
       preferredServiceDay,
