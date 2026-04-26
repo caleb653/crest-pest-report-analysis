@@ -581,9 +581,9 @@ const Report = () => {
   
   const PROPERTY_TYPES = [
     "Residential",
+    "Multi-Family - Apartment Complex",
     "Commercial",
     "Apartment",
-    "Multi-Family - Apartment Complex",
     "HOA",
     "Restaurant",
     "Automotive",
