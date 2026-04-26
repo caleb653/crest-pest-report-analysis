@@ -646,6 +646,8 @@ const Report = () => {
   ];
   // Per-option setup materials (keyed by proposalIndex)
   const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
+  // Per-option preset exclusion labels (keyed by proposalIndex)
+  const [proposalSelectedExclusions, setProposalSelectedExclusions] = useState<Record<number, string[]>>({});
   // Per-option additional details (keyed by proposalIndex)
   const [proposalAdditionalDetails, setProposalAdditionalDetails] = useState<Record<number, string>>({});
   // Per-option target pests (keyed by proposalIndex). When undefined, auto-computed from services.
