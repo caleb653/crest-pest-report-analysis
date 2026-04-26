@@ -275,6 +275,38 @@ const SERVICE_CONFIG: Record<
 // Attic Services additional details content for page 2 (HTML formatted)
 const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Exclusion Work Warranty:</b><br>• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service<br>• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.<br>• All warranties excludes new openings made by others or natural deterioration.<br>• Crest is not liable for any structural or property damage caused by rodents.<br><br><b>Not Included Services:</b><br>• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
+// Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
+const EXCLUSION_PRESETS: { label: string; text: string }[] = [
+  {
+    label: "Specialty Pests",
+    text: "Specialty Pests: Given the unique nature of these pests, treatment for German cockroaches, interior fleas, bed bugs, and bees is not covered under this agreement. We offer our customers these specialty pest services at a discount.",
+  },
+  {
+    label: "Rodents",
+    text: "Rodents: This agreement does not cover control for rats and mice.",
+  },
+  {
+    label: "Rodent Trapping",
+    text: "Rodent Trapping: This agreement does not cover rodent trapping. We offer these services to our customers at a discounted rate following an inspection.",
+  },
+  {
+    label: "Exclusion",
+    text: "Exclusion: This agreement does not include physical exclusion work, such as sealing or blocking entry points to prevent pest access.",
+  },
+  {
+    label: "Web Removal",
+    text: "Web Removal: Removal of spider webs or egg sacs from the interior or exterior of the property is not included in this service agreement.",
+  },
+  {
+    label: "Individual Residences",
+    text: "Individual Residences: This contract does not extend coverage to individual residential units and applies only to the common areas and/or structures specified in the agreement. Services are provided to residents at a discounted rate and require a separate signed agreement.",
+  },
+  {
+    label: "Bed Bugs",
+    text: "Bed Bugs: Bed bug treatment is not included in this agreement, but we offer it to our customers at a discounted rate following a required inspection.",
+  },
+];
+
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
@@ -655,6 +687,7 @@ const Report = () => {
   ];
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
   const [limitationsText, setLimitationsText] = useState("");
+  const [selectedExclusions, setSelectedExclusions] = useState<string[]>([]);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
@@ -900,6 +933,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
               setContactPhone(parsed.contactPhone || "");
               setSetupMaterials(parsed.setupMaterials || []);
               setLimitationsText(parsed.limitationsText || "");
+              setSelectedExclusions(Array.isArray(parsed.selectedExclusions) ? parsed.selectedExclusions : []);
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -1098,6 +1132,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       contactPhone,
       setupMaterials,
       limitationsText,
+      selectedExclusions,
     });
 
   const buildServicesPayload = () =>
@@ -2773,16 +2808,86 @@ Crest Pest Control`;
               {/* Limitations Section */}
               <Card data-pdf-section="limitations" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg flex-[0.3] flex flex-col">
                 <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">Limitations</span>
+                  <span className="text-xs print:text-[10px] font-bold uppercase">Limitations & Exclusions</span>
                 </div>
                 <div className="p-2 flex-1 flex flex-col">
+                  {/* Preset exclusions multi-select (editor only) */}
+                  {!isReadOnly && (
+                    <div className="no-print mb-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs justify-between w-full"
+                          >
+                            <span className="truncate">
+                              {selectedExclusions.length === 0
+                                ? "Select preset exclusions..."
+                                : `${selectedExclusions.length} selected`}
+                            </span>
+                            <ChevronDown className="w-3 h-3 ml-1 shrink-0" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[320px] p-1 bg-popover z-50" align="start">
+                          <div className="max-h-72 overflow-auto">
+                            {EXCLUSION_PRESETS.map((preset) => {
+                              const checked = selectedExclusions.includes(preset.label);
+                              return (
+                                <button
+                                  key={preset.label}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedExclusions((prev) =>
+                                      prev.includes(preset.label)
+                                        ? prev.filter((l) => l !== preset.label)
+                                        : [...prev, preset.label]
+                                    );
+                                  }}
+                                  className="w-full flex items-start gap-2 px-2 py-1.5 text-left text-xs rounded hover:bg-accent"
+                                >
+                                  <span
+                                    className={cn(
+                                      "mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                      checked ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                                    )}
+                                  >
+                                    {checked && <Check className="w-3 h-3" />}
+                                  </span>
+                                  <span className="font-medium">{preset.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
+                  {/* Render selected preset exclusion clauses (web + PDF) */}
+                  {selectedExclusions.length > 0 && (
+                    <div className="space-y-1 mb-2">
+                      {EXCLUSION_PRESETS.filter((p) => selectedExclusions.includes(p.label)).map((p) => (
+                        <p key={p.label} className="text-[11px] print:text-[10px] leading-snug text-foreground">
+                          {p.text}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Free-text limitations (still supported) */}
                   {isReadOnly ? (
-                    <p className="text-xs text-foreground whitespace-pre-wrap">{limitationsText || "None"}</p>
+                    limitationsText ? (
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{limitationsText}</p>
+                    ) : selectedExclusions.length === 0 ? (
+                      <p className="text-xs text-foreground">None</p>
+                    ) : null
                   ) : (
                     <textarea
                       value={limitationsText}
                       onChange={(e) => setLimitationsText(e.target.value)}
-                      placeholder="• Enter any limitations or exclusions..."
+                      placeholder="• Add any additional custom limitations..."
                       className="text-xs w-full flex-1 bg-transparent border-none outline-none resize-none placeholder:text-muted-foreground"
                     />
                   )}
