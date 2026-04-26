@@ -275,6 +275,38 @@ const SERVICE_CONFIG: Record<
 // Attic Services additional details content for page 2 (HTML formatted)
 const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Exclusion Work Warranty:</b><br>• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service<br>• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.<br>• All warranties excludes new openings made by others or natural deterioration.<br>• Crest is not liable for any structural or property damage caused by rodents.<br><br><b>Not Included Services:</b><br>• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
+// Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
+const EXCLUSION_PRESETS: { label: string; text: string }[] = [
+  {
+    label: "Specialty Pests",
+    text: "Specialty Pests: Given the unique nature of these pests, treatment for German cockroaches, interior fleas, bed bugs, and bees is not covered under this agreement. We offer our customers these specialty pest services at a discount.",
+  },
+  {
+    label: "Rodents",
+    text: "Rodents: This agreement does not cover control for rats and mice.",
+  },
+  {
+    label: "Rodent Trapping",
+    text: "Rodent Trapping: This agreement does not cover rodent trapping. We offer these services to our customers at a discounted rate following an inspection.",
+  },
+  {
+    label: "Exclusion",
+    text: "Exclusion: This agreement does not include physical exclusion work, such as sealing or blocking entry points to prevent pest access.",
+  },
+  {
+    label: "Web Removal",
+    text: "Web Removal: Removal of spider webs or egg sacs from the interior or exterior of the property is not included in this service agreement.",
+  },
+  {
+    label: "Individual Residences",
+    text: "Individual Residences: This contract does not extend coverage to individual residential units and applies only to the common areas and/or structures specified in the agreement. Services are provided to residents at a discounted rate and require a separate signed agreement.",
+  },
+  {
+    label: "Bed Bugs",
+    text: "Bed Bugs: Bed bug treatment is not included in this agreement, but we offer it to our customers at a discounted rate following a required inspection.",
+  },
+];
+
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 const FREQUENCY_OPTIONS = [
