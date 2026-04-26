@@ -133,10 +133,12 @@ const SubmittedReports = () => {
   const loadReports = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("id, technician_name, customer_name, address, created_at, next_steps, customer_signature, sent_to_customer_at, notes")
-        .order("created_at", { ascending: false });
+      // Perf: the full `reports` table averages ~46 KB of `notes` per row plus
+      // a base64 signature blob. Listing all of them used to download ~10 MB
+      // every time this page opened. The `list_reports_summary` RPC returns
+      // only the small list fields plus a 2 KB head of notes and a boolean
+      // signature flag — typically a few hundred KB total.
+      const { data, error } = await supabase.rpc("list_reports_summary");
 
       if (error) throw error;
 
@@ -145,17 +147,14 @@ const SubmittedReports = () => {
         let isMultiProposal = false;
         let isPreProposal = false;
         let dealStatus: "won" | "lost" | null = null;
-        // Detect via _reportFormat marker in notes
-        if (r.notes && typeof r.notes === 'string') {
-          try {
-            const parsed = JSON.parse(r.notes);
-            if (parsed?._reportFormat === "multi-proposal") isMultiProposal = true;
-            if (parsed?._isPreProposal === true) isPreProposal = true;
-            if (parsed?._dealStatus === "won" || parsed?._dealStatus === "lost") {
-              dealStatus = parsed._dealStatus;
-            }
-          } catch {}
-        }
+        // Detect via _reportFormat marker. We only need to peek at the start of
+        // the notes blob — markers live near the top of the JSON. A cheap
+        // substring match avoids parsing megabytes of text.
+        const head = typeof r.notes_head === "string" ? r.notes_head : "";
+        if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
+        if (head.includes('"_isPreProposal":true')) isPreProposal = true;
+        if (head.includes('"_dealStatus":"won"')) dealStatus = "won";
+        else if (head.includes('"_dealStatus":"lost"')) dealStatus = "lost";
         // Fallback: detect via services array containing Proposal objects (have 'name' + 'services' keys)
         if (!isMultiProposal && Array.isArray(r.services) && r.services.length > 0) {
           const first = r.services[0];
@@ -170,7 +169,7 @@ const SubmittedReports = () => {
           address: r.address,
           created_at: r.created_at,
           report_type: isMultiProposal ? "multi-proposal" : isInitial ? "initial" : "sales",
-          is_signed: !!r.customer_signature,
+          is_signed: r.has_signature === true,
           is_sent: !!r.sent_to_customer_at,
           is_pre_proposal: isPreProposal,
           deal_status: dealStatus,
