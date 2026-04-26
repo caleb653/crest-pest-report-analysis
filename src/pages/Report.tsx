@@ -2032,7 +2032,39 @@ Crest Pest Control`;
                       <span className="text-foreground font-medium">{propertyType || "—"}</span>
                     ) : (
                       <>
-                        <Select value={propertyType} onValueChange={setPropertyType}>
+                         <Select
+                           value={propertyType}
+                           onValueChange={(value) => {
+                             setPropertyType(value);
+                             if (value === "Multi-Family - Apartment Complex") {
+                               // Auto-fill pricing table with General Pest + Rodent Bait Boxes (weekly cadence)
+                               const gpConfig = SERVICE_CONFIG["Commercial General Pest"];
+                               const baitConfig = SERVICE_CONFIG["Rodent Bait Boxes"];
+                               setServices([
+                                 {
+                                   serviceType: "Commercial General Pest",
+                                   initialPrice: String(gpConfig?.defaultInitial ?? ""),
+                                   recurringPrice: String(gpConfig?.defaultRecurring ?? ""),
+                                   frequency: 7,
+                                 },
+                                 {
+                                   serviceType: "Rodent Bait Boxes",
+                                   initialPrice: String(baitConfig?.defaultInitial ?? ""),
+                                   recurringPrice: String(baitConfig?.defaultRecurring ?? ""),
+                                   frequency: 7,
+                                 },
+                               ]);
+                               // Pre-fill the proposed services / additional details with the apartment complex template
+                               setAdditionalDetails(APARTMENT_COMPLEX_PROPOSED_SERVICES);
+                               setAdditionalDetailsHeader("Proposed Services");
+                               // Mark these service types as already added so the auto-add effect doesn't append duplicates
+                               addedServiceTypesRef.current.add("Commercial General Pest");
+                               addedServiceTypesRef.current.add("Rodent Bait Boxes");
+                               findingsEditedRef.current = true;
+                               setUserEditedFindings(true);
+                             }
+                           }}
+                         >
                           <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
