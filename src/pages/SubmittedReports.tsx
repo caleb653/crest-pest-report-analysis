@@ -133,15 +133,12 @@ const SubmittedReports = () => {
   const loadReports = async () => {
     setLoading(true);
     try {
-      // Perf: avoid pulling the full `notes` (avg ~46 KB/row) and `customer_signature`
-      // (avg ~2.7 KB base64) blobs across all reports. We only need markers from
-      // the first ~600 chars of notes, and a boolean for whether a signature exists.
-      const { data, error } = await supabase
-        .from("reports")
-        .select(
-          "id, technician_name, customer_name, address, created_at, next_steps, sent_to_customer_at, services, notes_preview:notes, has_signature:customer_signature"
-        )
-        .order("created_at", { ascending: false });
+      // Perf: the full `reports` table averages ~46 KB of `notes` per row plus
+      // a base64 signature blob. Listing all of them used to download ~10 MB
+      // every time this page opened. The `list_reports_summary` RPC returns
+      // only the small list fields plus a 2 KB head of notes and a boolean
+      // signature flag — typically a few hundred KB total.
+      const { data, error } = await supabase.rpc("list_reports_summary");
 
       if (error) throw error;
 
@@ -153,8 +150,7 @@ const SubmittedReports = () => {
         // Detect via _reportFormat marker. We only need to peek at the start of
         // the notes blob — markers live near the top of the JSON. A cheap
         // substring match avoids parsing megabytes of text.
-        const notesText = typeof r.notes_preview === "string" ? r.notes_preview : "";
-        const head = notesText.slice(0, 2000);
+        const head = typeof r.notes_head === "string" ? r.notes_head : "";
         if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
         if (head.includes('"_isPreProposal":true')) isPreProposal = true;
         if (head.includes('"_dealStatus":"won"')) dealStatus = "won";
