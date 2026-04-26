@@ -2889,7 +2889,47 @@ Crest Pest Control`;
                   {isReadOnly ? (
                     <span className="text-foreground font-medium">{propertyType || "—"}</span>
                   ) : (
-                    <Select value={propertyType} onValueChange={setPropertyType}>
+                    <Select
+                      value={propertyType}
+                      onValueChange={(value) => {
+                        setPropertyType(value);
+                        if (value === "Multi-Family - Apartment Complex") {
+                          // Auto-fill Option A pricing table with Commercial General Pest + Rodent Bait Boxes (weekly)
+                          const gpConfig = SERVICE_CONFIG["Commercial General Pest"];
+                          const baitConfig = SERVICE_CONFIG["Rodent Bait Boxes"];
+                          setProposals((prev) => {
+                            const updated = [...prev];
+                            const optionA = updated[0] ?? { name: "Option A", services: [] };
+                            updated[0] = {
+                              ...optionA,
+                              name: optionA.name || "Option A",
+                              services: [
+                                {
+                                  serviceType: "Commercial General Pest",
+                                  initialPrice: String(gpConfig?.defaultInitial ?? ""),
+                                  recurringPrice: String(gpConfig?.defaultRecurring ?? ""),
+                                  frequency: 7,
+                                },
+                                {
+                                  serviceType: "Rodent Bait Boxes",
+                                  initialPrice: String(baitConfig?.defaultInitial ?? ""),
+                                  recurringPrice: String(baitConfig?.defaultRecurring ?? ""),
+                                  frequency: 7,
+                                },
+                              ],
+                            };
+                            return updated;
+                          });
+                          // Pre-fill Option A's proposed services with the apartment-complex template
+                          setProposalFindings((prev) => ({ ...prev, 0: APARTMENT_COMPLEX_PROPOSED_SERVICES }));
+                          setEditableFindings((prev) => {
+                            const next = [...prev];
+                            next[0] = APARTMENT_COMPLEX_PROPOSED_SERVICES;
+                            return next;
+                          });
+                        }
+                      }}
+                    >
                       <SelectTrigger className="bg-transparent border-b border-border text-foreground h-7 text-xs flex-1 min-w-0 focus:ring-0 [&>svg]:h-3 [&>svg]:w-3">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
