@@ -1100,6 +1100,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       contactPhone,
       setupMaterials,
       limitationsText,
+      selectedExclusions,
     });
 
   const buildServicesPayload = () =>
