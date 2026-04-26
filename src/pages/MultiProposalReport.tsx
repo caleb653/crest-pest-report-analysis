@@ -2580,6 +2580,86 @@ Crest Pest Control`;
               </div>
             </Card>
 
+            {/* Limitations & Exclusions — per option */}
+            {(() => {
+              const optionExclusions = proposalSelectedExclusions[proposalIndex] ?? [];
+              const toggle = (label: string) => {
+                setProposalSelectedExclusions((prev) => {
+                  const current = prev[proposalIndex] ?? [];
+                  const next = current.includes(label)
+                    ? current.filter((l) => l !== label)
+                    : [...current, label];
+                  return { ...prev, [proposalIndex]: next };
+                });
+                pendingAutoSaveRef.current = true;
+              };
+              if (isReadOnly && optionExclusions.length === 0 && !limitationsText) return null;
+              return (
+                <Card data-pdf-section="limitations" className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl">
+                  <div className="print-section-header py-2.5 px-3.5 rounded-t-xl">
+                    <span className="text-lg print:text-base font-bold uppercase">Limitations & Exclusions</span>
+                  </div>
+                  <div className="p-4 print:p-2.5">
+                    {!isReadOnly && (
+                      <div className="no-print mb-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button type="button" variant="outline" size="sm" className="h-7 text-xs justify-between w-full">
+                              <span className="truncate">
+                                {optionExclusions.length === 0
+                                  ? "Select preset exclusions..."
+                                  : `${optionExclusions.length} selected`}
+                              </span>
+                              <ChevronDown className="w-3 h-3 ml-1 shrink-0" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-1 bg-popover z-50" align="start">
+                            <div className="max-h-72 overflow-auto">
+                              {EXCLUSION_PRESETS.map((preset) => {
+                                const checked = optionExclusions.includes(preset.label);
+                                return (
+                                  <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => toggle(preset.label)}
+                                    className="w-full flex items-start gap-2 px-2 py-1.5 text-left text-xs rounded hover:bg-accent"
+                                  >
+                                    <span
+                                      className={cn(
+                                        "mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                        checked ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                                      )}
+                                    >
+                                      {checked && <Check className="w-3 h-3" />}
+                                    </span>
+                                    <span className="font-medium">{preset.label}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+
+                    {optionExclusions.length > 0 && (
+                      <div className="space-y-1">
+                        {EXCLUSION_PRESETS.filter((p) => optionExclusions.includes(p.label)).map((p) => (
+                          <p key={p.label} className="text-xs print:text-[11px] leading-snug text-foreground">
+                            {p.text}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {optionExclusions.length === 0 && isReadOnly && (
+                      <p className="text-xs text-muted-foreground italic">No exclusions listed</p>
+                    )}
+                  </div>
+                </Card>
+              );
+            })()}
+
             {/* Invoice cadence note (only when option includes weekly / bi-weekly services) */}
             {(() => {
               const invoiceNote = getInvoiceNoteForProposal(proposalIndex);
