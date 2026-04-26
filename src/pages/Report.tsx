@@ -655,6 +655,7 @@ const Report = () => {
   ];
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
   const [limitationsText, setLimitationsText] = useState("");
+  const [selectedExclusions, setSelectedExclusions] = useState<string[]>([]);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
