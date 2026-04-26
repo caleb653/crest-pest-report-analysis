@@ -119,9 +119,40 @@ export async function createPortalFromReport(
     }
   }
 
-  const propertyPlan = serviceNames.length > 0
-    ? `Proposed Services:\n${serviceNames.map((n) => `• ${n}`).join("\n")}`
-    : null;
+  // Prefer the FULL "Proposed Services" text written on the sales report
+  // (stored in `findings[0]` as HTML). Fall back to a bullet list of service
+  // names if no findings exist. The portal renders this in a plain Textarea,
+  // so convert <br>, list-style HTML and tags into plain text.
+  const findingsHtml: string | null = (() => {
+    const f = (report as any).findings;
+    if (Array.isArray(f) && f.length > 0 && typeof f[0] === "string" && f[0].trim().length > 0) {
+      return f[0] as string;
+    }
+    return null;
+  })();
+
+  const htmlToPlainText = (html: string): string =>
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "• ")
+      .replace(/<\/(h[1-6]|div)>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+  const propertyPlan = findingsHtml
+    ? `Proposed Services:\n\n${htmlToPlainText(findingsHtml)}`
+    : serviceNames.length > 0
+      ? `Proposed Services:\n${serviceNames.map((n) => `• ${n}`).join("\n")}`
+      : null;
 
   // Map the most-frequent recurring cadence (in days) to the PM portal's frequency key.
   // Defaults to bi-weekly when no recurring service exists.
