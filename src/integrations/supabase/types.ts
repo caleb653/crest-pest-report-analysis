@@ -775,6 +775,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_reports_summary: {
+        Args: never
+        Returns: {
+          address: string
+          created_at: string
+          customer_name: string
+          has_signature: boolean
+          id: string
+          next_steps: Json
+          notes_head: string
+          sent_to_customer_at: string
+          services: Json
+          technician_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "technician"
