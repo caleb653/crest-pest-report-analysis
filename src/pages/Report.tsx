@@ -901,6 +901,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
               setContactPhone(parsed.contactPhone || "");
               setSetupMaterials(parsed.setupMaterials || []);
               setLimitationsText(parsed.limitationsText || "");
+              setSelectedExclusions(Array.isArray(parsed.selectedExclusions) ? parsed.selectedExclusions : []);
             } else {
               setAdditionalDetails(row.notes);
             }
