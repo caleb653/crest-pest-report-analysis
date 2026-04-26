@@ -583,6 +583,7 @@ const Report = () => {
     "Residential",
     "Commercial",
     "Apartment",
+    "Multi-Family - Apartment Complex",
     "HOA",
     "Restaurant",
     "Automotive",
