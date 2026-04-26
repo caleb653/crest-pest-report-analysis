@@ -1008,6 +1008,11 @@ const Report = () => {
                 setProposalSetupMaterials({ 0: parsed.setupMaterials });
               }
 
+              // Per-option preset exclusions
+              if (parsed.proposalSelectedExclusions && typeof parsed.proposalSelectedExclusions === 'object') {
+                setProposalSelectedExclusions(parsed.proposalSelectedExclusions);
+              }
+
               // Per-option target pests + edited flags
               if (parsed.proposalTargetPests && typeof parsed.proposalTargetPests === 'object') {
                 setProposalTargetPests(parsed.proposalTargetPests);
