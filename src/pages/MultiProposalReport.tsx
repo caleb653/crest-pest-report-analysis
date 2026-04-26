@@ -2927,6 +2927,10 @@ Crest Pest Control`;
                             next[0] = APARTMENT_COMPLEX_PROPOSED_SERVICES;
                             return next;
                           });
+                          // Prevent the auto-populate effect from appending the default
+                          // Commercial General Pest / Rodent Bait Boxes service descriptions
+                          addedServiceTypesRef.current.add("Commercial General Pest");
+                          addedServiceTypesRef.current.add("Rodent Bait Boxes");
                         }
                       }}
                     >
