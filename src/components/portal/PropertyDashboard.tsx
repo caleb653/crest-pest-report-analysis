@@ -1946,7 +1946,7 @@ const PropertyDashboard = ({
         )}
 
         {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
-        {!isProjected && (
+        {!isProjected && !isUpcoming && (
           <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
             {(() => {
               const allComments = Array.isArray(((s as any).report_data || {}).comments)
