@@ -268,3 +268,76 @@ export const aggregateUsage = (entries: ProductUsage[]): AggregateRow[] => {
   }
   return Array.from(byKey.values()).sort((a, b) => a.name.localeCompare(b.name));
 };
+
+// ─── EPA Registration # lookup (standard products first, then catalog) ───
+export const findEpaNumber = (name: string): string | undefined => {
+  if (!name) return undefined;
+  const std = findStandardProduct(name);
+  if (std?.epa) return std.epa;
+  const cat = findCatalogProduct(name);
+  if (cat?.epa) return cat.epa;
+  return undefined;
+};
+
+// ─── Convert any volume amount → fluid ounces (for dilution math) ───
+const toFlOz = (amount: number, unit: string): number | null => {
+  const u = (unit || "").toLowerCase();
+  switch (u) {
+    case "fl oz": case "floz": case "oz": return amount; // treat dry "oz" loosely
+    case "ml": return amount / 29.5735;
+    case "cc": return amount / 29.5735;
+    case "gal": return amount * 128;
+    case "qt": return amount * 32;
+    case "grams": case "g": case "lbs": case "lb":
+    case "each": case "pkg": case "units": case "can":
+      return null; // dry / discrete — no volumetric dilution math
+    default: return null;
+  }
+};
+const flOzToUnit = (flOz: number, unit: string): number => {
+  const u = (unit || "").toLowerCase();
+  switch (u) {
+    case "fl oz": case "floz": case "oz": return flOz;
+    case "ml": case "cc": return flOz * 29.5735;
+    case "gal": return flOz / 128;
+    case "qt": return flOz / 32;
+    default: return flOz;
+  }
+};
+
+// ─── Dilution math result for a single ProductUsage ───
+// Returns dilution rate (% concentrate) and mix ratio (concentrate per 1 gallon finished mix).
+// Falls back to undefined fields if the units are not volumetric.
+export interface DilutionInfo {
+  ratePct?: number;          // 0.### %
+  mixRatioPerGal?: number;   // amount of concentrate per 1 gal finished mix
+  mixRatioUnit?: string;     // unit for mixRatioPerGal (matches u.undiluted_unit)
+}
+export const computeDilution = (u: ProductUsage): DilutionInfo => {
+  const appliedFlOz = u.applied_amount != null ? toFlOz(Number(u.applied_amount), u.applied_unit) : null;
+  const concFlOz = u.undiluted_amount != null ? toFlOz(Number(u.undiluted_amount), u.undiluted_unit) : null;
+
+  let ratePct: number | undefined;
+  if (appliedFlOz && appliedFlOz > 0 && concFlOz != null) {
+    ratePct = +(100 * (concFlOz / appliedFlOz)).toFixed(2);
+  }
+
+  // Mix ratio per 1 gal finished mix, expressed in the concentrate's unit
+  let mixRatioPerGal: number | undefined;
+  let mixRatioUnit: string | undefined;
+  // Standard products have a known per-gallon ratio
+  const std = findStandardProduct(u.name);
+  if (std && std.perGallon > 0) {
+    mixRatioPerGal = std.perGallon;
+    mixRatioUnit = std.unit;
+  } else if (appliedFlOz && appliedFlOz > 0 && u.undiluted_amount != null) {
+    // Derive: concentrate per (appliedFlOz / 128) gallons
+    const galsApplied = appliedFlOz / 128;
+    if (galsApplied > 0) {
+      mixRatioPerGal = +(Number(u.undiluted_amount) / galsApplied).toFixed(3);
+      mixRatioUnit = u.undiluted_unit;
+    }
+  }
+
+  return { ratePct, mixRatioPerGal, mixRatioUnit };
+};
