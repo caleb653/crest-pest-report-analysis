@@ -33,17 +33,20 @@ export default function PreApplicationNoticePage() {
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     // Lazy-load to keep the initial bundle small.
-    const html2pdf = (await import("html2pdf.js")).default;
-    html2pdf()
-      .set({
-        margin: 0,
-        filename: `Pre-Application-Notice-${(property?.name || "Property").replace(/[^a-z0-9]+/gi, "-")}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-      })
-      .from(printRef.current)
-      .save();
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+    const canvas = await html2canvas(printRef.current, {
+      scale: 2, useCORS: true, backgroundColor: "#ffffff",
+    });
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const pdf = new jsPDF({ unit: "in", format: "letter", orientation: "portrait" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    pdf.addImage(imgData, "JPEG", 0, 0, pageW, pageH);
+    const safeName = (property?.name || "Property").replace(/[^a-z0-9]+/gi, "-");
+    pdf.save(`Pre-Application-Notice-${safeName}.pdf`);
   };
 
   if (loading) {
