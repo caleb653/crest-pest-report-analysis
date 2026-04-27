@@ -1257,13 +1257,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   {pastServices.map((s, i) => {
                     const isFirst = i === 0;
                     const isExpanded = expandedPastId === s.id;
+                    const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                    const planMapPast = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+                    const planArrPast = (planMapPast[propertyFrequency] || []) as string[];
+                    const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
+                    const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
+                    const displayTitle = (s as any).appointment_service || cadenceLabel || s.service_type;
                     return (
                       <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                         <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
-                              <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
+                              <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{displayTitle}</p>
                               <Badge variant="default" className="text-[10px]">Completed</Badge>
                               {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
                             </div>
