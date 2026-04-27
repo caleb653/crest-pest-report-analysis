@@ -315,6 +315,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setLoading(false);
   };
 
+  const handleWorkOrderPhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !propertyId) return;
+    setUploadingWorkOrderPhotos(true);
+    const urls: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `work-order-photos/${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("report-images")
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+        if (upErr) {
+          toast({ title: "Photo upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+        if (pub?.publicUrl) urls.push(pub.publicUrl);
+      }
+      if (urls.length) setWorkOrderPhotos(prev => [...prev, ...urls]);
+    } finally {
+      setUploadingWorkOrderPhotos(false);
+    }
+  };
+
   const submitRequest = async () => {
     const isGeneral = requestKind === "general";
     if (isGeneral) {
