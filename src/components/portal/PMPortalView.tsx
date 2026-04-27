@@ -1924,30 +1924,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             <p className="text-sm font-medium">{uc.follow_up.pest_activity}</p>
                                           </div>
                                         )}
-                                        {isWO && uc.request?.location_type && (
-                                          <div>
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Location</p>
-                                            <p className="text-sm font-medium">{uc.request.location_type}</p>
-                                          </div>
-                                        )}
-                                        {isWO && uc.request?.preferred_date && (
-                                          <div>
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Preferred Date</p>
-                                            <p className="text-sm font-medium">{uc.request.preferred_date}</p>
-                                          </div>
-                                        )}
-                                        {isWO && uc.request?.occupancy_status && (
-                                          <div>
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Unit Status</p>
-                                            <p className="text-sm font-medium">{uc.request.occupancy_status}</p>
-                                          </div>
-                                        )}
-                                        {isWO && uc.request?.tenant_email && (
-                                          <div>
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Tenant Contact</p>
-                                            <p className="text-sm font-medium break-all">{uc.request.tenant_email}</p>
-                                          </div>
-                                        )}
+                                        {/* Work-order request pills (location, preferred date,
+                                            unit status, tenant contact) intentionally omitted —
+                                            those fields are already surfaced inside the
+                                            Treatment Request Context block below to avoid
+                                            redundancy. */}
                                         {uc.context && (
                                           <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 mt-1">
                                             <div className="flex items-center gap-1.5 mb-1.5">
