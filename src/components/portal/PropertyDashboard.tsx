@@ -3228,7 +3228,7 @@ const PropertyDashboard = ({
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                <div>
+                {!isHOA && (<div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                     Included Interior Units / Service
                   </Label>
@@ -3240,8 +3240,8 @@ const PropertyDashboard = ({
                     value={includedUnitsDraft}
                     onChange={(e) => setIncludedUnitsDraft(e.target.value)}
                   />
-                </div>
-                <div>
+                </div>)}
+                {!isHOA && (<div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                     Price per Additional Unit
                   </Label>
@@ -3258,7 +3258,7 @@ const PropertyDashboard = ({
                       onChange={(e) => setOveragePriceDraft(e.target.value.replace(/[^\d]/g, ""))}
                     />
                   </div>
-                </div>
+                </div>)}
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                     Base Price / Every 4 Weeks
@@ -3284,7 +3284,7 @@ const PropertyDashboard = ({
               <p className="text-[11px] font-semibold text-amber-700 italic -mt-2">
                 * Pricing reflects the units serviced on the day of a scheduled service.
               </p>
-              <div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3">
+              {!isHOA && (<div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3">
                 <Label className="text-xs font-bold uppercase tracking-wide text-amber-800 mb-1.5 block flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   Required Time per Treatment
@@ -3298,7 +3298,7 @@ const PropertyDashboard = ({
                 <p className="text-[11px] text-amber-900/80 mt-1.5">
                   Visible to the property manager and Crest admin so visits can be scheduled with enough time on-site.
                 </p>
-              </div>
+              </div>)}
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
                 className="min-h-[640px] text-sm resize-y leading-relaxed"
@@ -3334,8 +3334,8 @@ const PropertyDashboard = ({
               tabIndex={0}
             >
               <div
-                className="relative bg-muted max-w-[520px] mx-auto"
-                style={{ aspectRatio: "3 / 4" }}
+                className={`relative bg-muted mx-auto ${isHOA ? "max-w-[600px]" : "max-w-[520px]"}`}
+                style={{ aspectRatio: isHOA ? "3 / 4.4" : "3 / 4" }}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -4031,7 +4031,7 @@ const PropertyDashboard = ({
             </div>
 
             {/* Occupancy — hidden for "General Request" */}
-            {workOrder.request_type !== "general" && (
+            {workOrder.request_type !== "general" && !isHOA && (
             <div>
               <Label className="text-sm">Vacant or Occupied Unit</Label>
               <div className="flex gap-2 mt-1">
