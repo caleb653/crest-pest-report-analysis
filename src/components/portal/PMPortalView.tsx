@@ -942,6 +942,69 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     );
   };
 
+  // ─── Quarterly Updates: upload video + save row ───
+  const uploadQuarterlyUpdate = async () => {
+    if (!quFile) {
+      toast({ title: "Choose a video file first", variant: "destructive" });
+      return;
+    }
+    setQuUploading(true);
+    try {
+      const ext = quFile.name.split(".").pop() || "mp4";
+      const safeName = `${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("portal-videos")
+        .upload(safeName, quFile, { contentType: quFile.type || "video/mp4", upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("portal-videos").getPublicUrl(safeName);
+      const { error: insErr } = await (supabase as any).from("portal_quarterly_updates").insert({
+        property_id: propertyId,
+        title: quTitle.trim() || null,
+        comment: quComment.trim() || null,
+        video_url: pub.publicUrl,
+        file_name: quFile.name,
+        uploaded_by: quUploadedBy.trim() || null,
+      });
+      if (insErr) throw insErr;
+      toast({ title: "Quarterly update uploaded" });
+      setQuTitle("");
+      setQuComment("");
+      setQuUploadedBy("");
+      setQuFile(null);
+      const { data: quRows } = await (supabase as any)
+        .from("portal_quarterly_updates")
+        .select("*")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false });
+      if (Array.isArray(quRows)) setQuarterlyUpdates(quRows);
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Upload failed", description: e?.message || "Could not upload video", variant: "destructive" });
+    } finally {
+      setQuUploading(false);
+    }
+  };
+
+  const deleteQuarterlyUpdate = async (id: string, videoUrl: string | null) => {
+    if (!confirm("Delete this quarterly update?")) return;
+    try {
+      // Best-effort: strip the storage path from the public URL and delete the file
+      if (videoUrl) {
+        const marker = "/portal-videos/";
+        const idx = videoUrl.indexOf(marker);
+        if (idx !== -1) {
+          const path = videoUrl.slice(idx + marker.length);
+          await supabase.storage.from("portal-videos").remove([path]);
+        }
+      }
+      await (supabase as any).from("portal_quarterly_updates").delete().eq("id", id);
+      setQuarterlyUpdates(prev => prev.filter(q => q.id !== id));
+      toast({ title: "Deleted" });
+    } catch (e: any) {
+      toast({ title: "Could not delete", description: e?.message, variant: "destructive" });
+    }
+  };
+
   const content = (
     <div className="max-w-5xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
