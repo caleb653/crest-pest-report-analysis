@@ -1752,7 +1752,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     <p className="text-sm font-semibold">{isHOA ? "Resident Request Link" : "Tenant Request Link"}</p>
                     <p className="text-xs text-muted-foreground">
                       {isHOA
-                        ? "Share this with any homeowner or resident so they can flag an issue in the community. They won't see anyone else's submissions — their request gets folded into the next visit."
+                        ? "Share this with any resident so they can flag a community pest sighting or submit a service request for their home. They won't see anyone else's submissions — community sightings roll into the next visit."
                         : "Share this with a tenant or community member so they can submit a single service request. They won't see anyone else's history — it just gets added to the next service."}
                     </p>
                   </div>
@@ -1766,7 +1766,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     if (!linkToken) return;
                     const url = `${window.location.origin}/tenant/${linkToken}`;
                     navigator.clipboard.writeText(url);
-                    toast({ title: "Link copied", description: isHOA ? "Send this to a homeowner or resident." : "Send this to your tenant or resident." });
+                    toast({ title: "Link copied", description: isHOA ? "Send this to any resident." : "Send this to your tenant or resident." });
                   }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
