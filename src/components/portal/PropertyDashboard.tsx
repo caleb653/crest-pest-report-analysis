@@ -1278,8 +1278,13 @@ const PropertyDashboard = ({
     setCompletionData(prev => ({ ...prev, [serviceId]: { ...(prev[serviceId] || current), ...patch } }));
   };
 
-  const completeService = async (serviceId: string) => {
-    const data = completionData[serviceId];
+  const completeService = async (
+    serviceId: string,
+    service?: PortalService | any,
+    unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
+  ) => {
+    const serviceForDraft = service || propServices.find(p => p.id === serviceId);
+    const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
       ...r,
       // Explicitly coerce the two follow-up booleans so they NEVER drop out
