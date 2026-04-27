@@ -312,6 +312,42 @@ export type Database = {
           },
         ]
       }
+      portal_quarterly_updates: {
+        Row: {
+          comment: string | null
+          created_at: string
+          file_name: string | null
+          id: string
+          property_id: string
+          title: string | null
+          updated_at: string
+          uploaded_by: string | null
+          video_url: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          property_id: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          file_name?: string | null
+          id?: string
+          property_id?: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       portal_requests: {
         Row: {
           created_at: string
