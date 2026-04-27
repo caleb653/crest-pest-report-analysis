@@ -69,14 +69,21 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
-// Mirrors the AppointmentReport unit status set so admin + field stay in sync.
-const STATUS_OPTIONS = [
-  "To Be Treated",
-  "Treated - Complete",
-  "Treated - Follow Up",
-  "Inspected: Activity Found",
-  "Inspected: Free and Clear",
-  "Not Treated",
+// Status option sets are now context-aware: technicians only see the choices
+// that make sense for the kind of visit they're filling out (treatment vs.
+// inspection). The underlying canonical values are preserved so existing
+// filtering / follow-up logic keeps working.
+const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "To Be Treated",       label: "To Be Treated" },
+  { value: "Treated - Complete",  label: "Completed" },
+  { value: "Treated - Follow Up", label: "Treated - Follow Up Needed" },
+  { value: "Not Treated",         label: "Not Treated" },
+];
+const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "To Be Treated",              label: "To Be Inspected" },
+  { value: "Inspected: Free and Clear",  label: "Free and Clear" },
+  { value: "Inspected: Activity Found",  label: "Activity Found - Follow Up Needed" },
+  { value: "Not Treated",                label: "Not Inspected" },
 ];
 
 const TECHNICIAN_OPTIONS = [
