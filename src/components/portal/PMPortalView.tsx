@@ -367,6 +367,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       tenant_email: emailTenant ? tenantEmail.trim() || null : null,
       prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
       right_to_treat_requested: emailTenant ? requestRightToTreat : false,
+      photos: workOrderPhotos,
     } as any).select("id, right_to_treat_token").maybeSingle();
 
     if (!err) {
@@ -415,6 +416,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setTenantEmail("");
       setSelectedPrepSheetId("");
       setRequestRightToTreat(false);
+      setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
