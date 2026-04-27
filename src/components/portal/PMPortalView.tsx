@@ -191,6 +191,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
   const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
 
+  // ─── HOA-only request flow ───
+  // HOA portals offer a simplified two-type intake: "Community Pest Sighting"
+  // (board reports activity in common area) vs "Service Request" (a specific
+  // unit/home wants paid treatment). Both still write to portal_requests.
+  const [hoaRequestKind, setHoaRequestKind] = useState<"" | "community" | "service">("");
+  const [hoaAddress, setHoaAddress] = useState("");
+  const [hoaLocation, setHoaLocation] = useState("");
+  const [hoaPests, setHoaPests] = useState("");
+  const [hoaDetails, setHoaDetails] = useState("");
+
   // Survey state
   const [surveys, setSurveys] = useState<any[]>([]);
   const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
