@@ -79,8 +79,7 @@ const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 // filtering / follow-up logic keeps working.
 const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Treated - Free and Clear" },
-  { value: "Complete",            label: "Complete" },
+  { value: "Treated - Complete",  label: "Treated" },
   { value: "Not Treated",         label: "Not Treated" },
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -1591,7 +1590,7 @@ const PropertyDashboard = ({
     // Past-service status dropdowns mirror the upcoming-visit options so the
     // technician sees the same vocabulary regardless of which tab they're in.
     const SERVICE_STATUSES: { value: string; label: string }[] = [
-      { value: "Complete",          label: "Treated - Free and Clear" },
+      { value: "Complete",          label: "Treated" },
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
