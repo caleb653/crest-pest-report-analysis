@@ -156,8 +156,8 @@ export interface UpcomingUnitContext {
  *   • For the FIRST upcoming service only, also merges in:
  *       - units from open work orders (pending / in_progress requests)
  *       - units flagged for follow-up on the most recent past service
- *       - if `units_planned` is empty, fall back to all units treated on
- *         the most recent past service so admins/PMs never see "0 units".
+ *   • NEVER fall back to all units treated on the last visit. A unit may only
+ *     roll forward as follow-up when `follow_up_needed === true`.
  *
  * Returns the merged unit list (sorted numerically) plus per-unit context
  * (source, work-order info, follow-up findings) so admin + PM render the
@@ -358,11 +358,11 @@ export function computeUpcomingUnits(args: {
     };
   }
 
-  // First upcoming service: merge planned + work orders + follow-ups,
-  // falling back to last past's units when nothing is planned yet.
+  // First upcoming service: merge planned + work orders + explicit follow-ups.
+  // Do NOT carry all last-visit units forward — that would create accidental
+  // follow-up work when the checkbox was not explicitly selected.
   const merged = new Set<string>();
-  const baseUnits = ownPlanned.length > 0 ? ownPlanned : lastPastUnits;
-  baseUnits.forEach(u => merged.add(u));
+  ownPlanned.forEach(u => merged.add(u));
   openRequestUnits.forEach(u => merged.add(u));
   followUpUnits.forEach(u => merged.add(u));
 
@@ -376,6 +376,6 @@ export function computeUpcomingUnits(args: {
     followUpUnits,
     openRequests,
     followUpDetails,
-    usingFallback: ownPlanned.length === 0 && lastPastUnits.length > 0,
+    usingFallback: false,
   };
 }
