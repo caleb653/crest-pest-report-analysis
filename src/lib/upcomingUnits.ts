@@ -88,11 +88,18 @@ export function getFollowUpDetailsFromPast(
   return details.filter(u => {
     if (!u?.unit_number) return false;
     const status = u.status || "";
+    // ONLY flag a unit as needing a follow-up when the technician
+    // EXPLICITLY chose a follow-up status. If they marked the unit as
+    // "Completed" / "Complete" — even with High/Moderate activity noted —
+    // we respect that choice and do NOT auto-roll it into the next service.
     return (
       status === "Treated - Follow Up" ||
+      status === "Treated - Follow Up Needed" ||
       status === "Needs Follow-up" ||
-      u.followUp === "Yes" ||
-      (u.pest_activity && ["High", "Moderate"].includes(u.pest_activity))
+      status === "Needs Follow Up" ||
+      status === "Activity Found - Follow Up Needed" ||
+      status === "Inspected: Activity Found" ||
+      u.followUp === "Yes"
     );
   });
 }
