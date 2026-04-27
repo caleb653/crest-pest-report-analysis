@@ -1105,11 +1105,20 @@ const PropertyDashboard = ({
   // the read-back (`s.summary || s.findings || s.notes`) shows exactly what
   // the admin typed without duplication.
   const updateServiceFindings = async (serviceId: string, value: string) => {
-    await supabase
+    const { error } = await supabase
       .from("portal_services")
       .update({ summary: value, findings: null, notes: null })
       .eq("id", serviceId);
-    onRefresh();
+    if (error) {
+      toast({ title: "Technician findings did not save", description: error.message, variant: "destructive" });
+      return;
+    }
+    const svc = (propServices as any[]).find(s => s.id === serviceId);
+    if (svc) {
+      svc.summary = value;
+      svc.findings = null;
+      svc.notes = null;
+    }
   };
 
   const addUnitToService = async (serviceId: string) => {
