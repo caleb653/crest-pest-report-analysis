@@ -1883,6 +1883,60 @@ const PropertyDashboard = ({
       : (Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0);
     const overage = computeOverage(overageUnitCount, planCfg);
 
+    // ─── HOA dedicated layout ───
+    // Boards (and the techs working on HOAs) get a totally different view
+    // than apartments: big editable site map on the left, findings on the
+    // right, and small chips of homes scheduled / treated at the bottom.
+    // Used for BOTH past and upcoming HOA services so PM + admin views
+    // stay in sync (admin = editable, PM = read-only via HOAServiceView).
+    if (isHOA) {
+      const hoaUnits: HOAUnitItem[] = (isUpcoming
+        ? merged.unitContexts.map((uc) => ({
+            unit_number: String(uc.unit_number || "").trim(),
+            follow_up_needed: uc.source === "follow_up",
+          }))
+        : (Array.isArray(s.unit_details) ? (s.unit_details as any[]) : []).map((u: any) => ({
+            unit_number: String(u.unit_number || "").trim(),
+            status: u.status || undefined,
+            follow_up_needed: !!u.follow_up_needed,
+          }))
+      ).filter((u) => u.unit_number);
+      const findingsCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
+      return (
+        <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {pmNoteForThis && (
+            <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
+                <ClipboardList className="w-3 h-3" />
+                From the Property Manager — for the Technician
+              </p>
+              <p className="text-xs whitespace-pre-wrap font-medium">{pmNoteForThis}</p>
+            </div>
+          )}
+          <HOAServiceView
+            mode="admin"
+            isUpcoming={isUpcoming}
+            mapUrl={mapUrl}
+            mapData={property.map_data}
+            onSaveMapData={handleSaveMapData}
+            onUploadMapImage={(file) => onUpdatePropertyImage(property.id, file)}
+            uploadingMap={uploadingPropertyImage}
+            findings={findingsCombined}
+            technician={s.technician}
+            products={products}
+            units={hoaUnits}
+          />
+          {!isProjected && (
+            <div className="flex gap-1.5 pt-1 border-t border-border mt-2">
+              <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
+                <Trash2 className="w-3 h-3 text-destructive" />
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
         {/* HOA mode (past service): MAP + SUMMARY are ~90% of the report.
