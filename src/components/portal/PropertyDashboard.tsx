@@ -173,6 +173,7 @@ const PropertyDashboard = ({
   const isHOA = propertyType === "hoa";
   // For apartments: "date" / "unit" toggle. HOA shows only "date".
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  const [byUnitSearch, setByUnitSearch] = useState("");
   const residentTerm = isHOA ? "resident" : "tenant";
   const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
