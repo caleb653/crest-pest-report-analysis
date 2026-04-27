@@ -4686,6 +4686,12 @@ const PropertyDashboard = ({
         </div>
       </TabsContent>
 
+      {isHOA && (
+        <TabsContent value="quarterly" className="mt-0">
+          <QuarterlyVideoTab propertyId={property.id} mode="admin" uploaderName="Crest Admin" />
+        </TabsContent>
+      )}
+
     </Tabs>
   );
 };
