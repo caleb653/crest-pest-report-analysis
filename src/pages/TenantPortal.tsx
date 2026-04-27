@@ -204,7 +204,7 @@ const TenantPortal = () => {
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
           <div>
-            <h1 className="text-lg font-bold">Service Request Form</h1>
+            <h1 className="text-lg font-bold">{isHOA ? "Resident Request Form" : "Service Request Form"}</h1>
             {propertyName && <p className="text-sm text-muted-foreground">{propertyName}</p>}
             {linkData?.unit_number && (
               <p className="text-xs text-muted-foreground">Unit {linkData.unit_number}</p>
