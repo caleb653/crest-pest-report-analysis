@@ -324,7 +324,6 @@ const AppointmentReport = () => {
 
         const unitsPlanned = Array.isArray(data.units_planned) ? (data.units_planned as string[]) : [];
         const followUps: string[] = [];
-        const recentUnits: string[] = [];
         const pestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
 
         const details = Array.isArray(recentCompleted?.unit_details) ? (recentCompleted.unit_details as any[]) : [];
@@ -332,7 +331,6 @@ const AppointmentReport = () => {
           const unitNumber = normalizeUnit(unit?.unit_number);
           if (!unitNumber) return;
 
-          recentUnits.push(unitNumber);
           pestData[unitNumber] = {
             findings: unit.findings || "",
             pest_activity: unit.pest_activity || "",
@@ -359,7 +357,6 @@ const AppointmentReport = () => {
             pest_activity: existing.pest_activity || request.pest_type || "",
             products_used: existing.products_used || "",
           };
-          recentUnits.push(unitNumber);
         });
 
         const mergedUnits = Array.from(new Set([...unitsPlanned, ...followUps]))
