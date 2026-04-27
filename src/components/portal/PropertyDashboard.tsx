@@ -3152,6 +3152,8 @@ const PropertyDashboard = ({
 
         {/* Required pesticide notice — shown at the bottom of every completed service report */}
         {!isUpcoming && !isProjected && <PesticideNotice />}
+        {/* Apartment-specific inspection disclaimer */}
+        {!isUpcoming && !isProjected && propertyType === "apartments" && <ApartmentInspectionDisclaimer />}
 
       </div>
     );
