@@ -694,6 +694,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               unit_number: String(u.unit_number || "").trim(),
               status: u.status || undefined,
               follow_up_needed: !!u.follow_up_needed,
+              target_pest: u.target_pest || "",
             })).filter((u) => u.unit_number)
           : unitsPlanned.map((u) => ({ unit_number: String(u || "").trim() }))
               .filter((u) => u.unit_number);
@@ -1825,6 +1826,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                   ? unitContexts.map((uc) => ({
                                       unit_number: String(uc.unit_number || "").trim(),
                                       follow_up_needed: uc.source === "follow_up",
+                                      target_pest: uc.target_pest || (uc as any)?.request?.pest_type || "",
                                     }))
                                   : (Array.isArray(s.units_planned) ? (s.units_planned as string[]) : [])
                                       .map((u) => ({ unit_number: String(u || "").trim() }))
