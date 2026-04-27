@@ -41,8 +41,10 @@ const TenantPortal = () => {
 
   // Form state
   const [unitNumber, setUnitNumber] = useState("");
+  const [requestKind, setRequestKind] = useState<"treatment" | "inspection">("treatment");
   const [pestType, setPestType] = useState("");
   const [locationType, setLocationType] = useState("");
+  const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
   const [description, setDescription] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
 
@@ -117,15 +119,16 @@ const TenantPortal = () => {
       link_id: linkData.id,
       property_id: propertyId,
       unit_number: canonical,
-      request_type: "Service Request",
+      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
       description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
+      occupancy_status: occupancyStatus || null,
       preferred_date: preferredDate || null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
-      toast({ title: "Request submitted", description: "We'll get back to you soon." });
+      toast({ title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted", description: "We'll get back to you soon." });
       if (inserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -133,7 +136,10 @@ const TenantPortal = () => {
           });
         } catch (e) { console.error("notify-submission failed", e); }
       }
+      setRequestKind("treatment");
       setPestType("");
+      setLocationType("");
+      setOccupancyStatus("");
       setDescription("");
       setPreferredDate("");
       loadPortal();
