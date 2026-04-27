@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw } from "lucide-react";
+import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2 } from "lucide-react";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { useState, useEffect, useRef } from "react";
@@ -104,6 +104,29 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   const canEditMap = mode === "admin" && !!onSaveServiceMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
 
+  // Tracks autosave state for the inline map editor so the admin gets a
+  // clear "Saving… / Saved" pill instead of having to wonder whether their
+  // emblem stuck.
+  const [mapSaveState, setMapSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const savedTimerRef = useRef<number | null>(null);
+  const handleMapAutoSave = async (canvasData: string) => {
+    if (!onSaveServiceMapData) return;
+    setMapSaveState("saving");
+    try {
+      await onSaveServiceMapData(canvasData);
+      setMapSaveState("saved");
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => setMapSaveState("idle"), 1500);
+    } catch {
+      setMapSaveState("idle");
+    }
+  };
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    };
+  }, []);
+
   // Per-service overlay takes precedence over the permanent site map.
   const hasServiceOverlay =
     serviceMapData != null &&
@@ -159,6 +182,27 @@ export function HOAServiceView(props: HOAServiceViewProps) {
               </div>
               {canEditMap && (
                 <div className="flex items-center gap-1.5">
+                  {isEditingMap && mapSaveState !== "idle" && (
+                    <span
+                      className={`flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                        mapSaveState === "saving"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-200 text-emerald-900"
+                      }`}
+                    >
+                      {mapSaveState === "saving" ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Saving…
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3 h-3" />
+                          Saved
+                        </>
+                      )}
+                    </span>
+                  )}
                   {hasServiceOverlay && !isEditingMap && onResetServiceMapData && (
                     <Button
                       size="sm"
@@ -187,7 +231,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                     disabled={!mapUrl}
                   >
                     <Edit className="w-3 h-3 mr-1" />
-                    {isEditingMap ? "Done" : "Edit Map"}
+                    {isEditingMap ? "Done — Saved" : "Edit Map"}
                   </Button>
                 </div>
               )}
@@ -244,7 +288,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                 isEditingMap && canEditMap ? (
                   <MapCanvas
                     mapUrl={mapUrl}
-                    onSave={onSaveServiceMapData}
+                    onSave={handleMapAutoSave}
                     initialData={
                       editorSeedData
                         ? typeof editorSeedData === "string"

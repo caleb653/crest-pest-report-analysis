@@ -1391,8 +1391,12 @@ const PropertyDashboard = ({
       if (error) {
         toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Service map saved", duration: 1500 });
-        onRefresh();
+        // Silent autosave — keep the in-memory service in sync so the editor
+        // doesn't remount or lose state mid-edit. We mutate the cached row
+        // instead of triggering onRefresh() on every emblem add.
+        if (svc) {
+          (svc as any).report_data = merged;
+        }
       }
     } catch (e: any) {
       toast({ title: "Failed to save map", description: e?.message, variant: "destructive" });
