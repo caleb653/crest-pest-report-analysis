@@ -2478,9 +2478,65 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             {surveys.length > 0 && (
               <Card className="shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Send History</CardTitle>
+                  <CardTitle className="text-base">{isHOA ? "Past Survey Summaries" : "Send History"}</CardTitle>
+                  {isHOA && (
+                    <p className="text-xs text-muted-foreground">Each entry rolls up everything sent that month — click to expand.</p>
+                  )}
                 </CardHeader>
                 <CardContent>
+                  {isHOA ? (() => {
+                    const groups = new Map<string, { label: string; date: Date; surveys: any[] }>();
+                    surveys.forEach((s: any) => {
+                      const d = new Date(s.created_at);
+                      const key = `${d.getFullYear()}-${d.getMonth()}`;
+                      const label = `Survey — ${d.toLocaleString("en-US", { month: "long", year: "numeric" })}`;
+                      if (!groups.has(key)) groups.set(key, { label, date: new Date(d.getFullYear(), d.getMonth(), 1), surveys: [] });
+                      groups.get(key)!.surveys.push(s);
+                    });
+                    const ordered = Array.from(groups.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+                    return (
+                      <div className="space-y-2">
+                        {ordered.map((g) => {
+                          const ids = new Set(g.surveys.map((s: any) => s.id));
+                          const responses = surveyResponses.filter((r: any) => ids.has(r.survey_id));
+                          const submitted = responses.filter((r: any) => r.submitted_at).length;
+                          const recipientsTotal = g.surveys.reduce(
+                            (acc: number, s: any) => acc + (Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0),
+                            0
+                          );
+                          return (
+                            <details key={g.label} className="rounded-lg border bg-muted/20 group">
+                              <summary className="flex items-center justify-between gap-3 cursor-pointer p-3 list-none">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold truncate">{g.label}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {g.surveys.length} send{g.surveys.length === 1 ? "" : "s"} • {submitted}/{recipientsTotal} responded
+                                  </p>
+                                </div>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                              </summary>
+                              <div className="px-3 pb-3 border-t pt-2 space-y-2">
+                                {g.surveys.map((s: any) => {
+                                  const resps = surveyResponses.filter((r: any) => r.survey_id === s.id);
+                                  const sub = resps.filter((r: any) => r.submitted_at).length;
+                                  const rec = Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0;
+                                  return (
+                                    <div key={s.id} className="text-xs flex items-center justify-between gap-2 bg-background rounded p-2 border">
+                                      <span className="truncate">
+                                        <span className="font-semibold">{s.title || "Pest Activity Survey"}</span>{" "}
+                                        <span className="text-muted-foreground">— {new Date(s.created_at).toLocaleDateString()}</span>
+                                      </span>
+                                      <Badge variant="outline" className="text-[10px]">{sub}/{rec}</Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </details>
+                          );
+                        })}
+                      </div>
+                    );
+                  })() : (
                   <div className="space-y-2">
                     {surveys.map((s) => {
                       const responses = surveyResponses.filter((r) => r.survey_id === s.id);
@@ -2523,6 +2579,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       );
                     })}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             )}
