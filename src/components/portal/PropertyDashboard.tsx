@@ -2312,18 +2312,6 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {isProjected && (
-          <Button variant="outline" size="sm" className="h-7 text-xs w-full" onClick={async () => {
-            await supabase.from("portal_services").insert({
-              property_id: property.id, service_type: s.service_type,
-              service_date: s.service_date, status: "scheduled", units_planned: s.units_planned,
-            });
-            toast({ title: "Service scheduled" });
-            onRefresh();
-          }}>
-            <Plus className="w-3 h-3 mr-1" />Schedule This Service
-          </Button>
-        )}
       </div>
     );
   };
@@ -3358,7 +3346,11 @@ const PropertyDashboard = ({
                         })()}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {isProjected ? formatWeekOf(s.service_date) : formatDate(s.service_date)}
+                        {isProjected ? (
+                          <span className="italic">No date set — click Reschedule to pick one</span>
+                        ) : (
+                          formatDate(s.service_date)
+                        )}
                         {(s as any).technician && ` • ${(s as any).technician}`}
                         {unitsPlanned.length > 0 && ` • ${unitsPlanned.length} units`}
                       </p>
@@ -3370,7 +3362,7 @@ const PropertyDashboard = ({
                           onOpenChange={(open) => {
                             if (open) {
                               setReschedulingId(s.id);
-                              setRescheduleDate(s.service_date || today);
+                              setRescheduleDate(isProjected ? "" : (s.service_date || today));
                             } else {
                               setReschedulingId(null);
                             }
