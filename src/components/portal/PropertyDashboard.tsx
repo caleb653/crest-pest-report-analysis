@@ -3729,12 +3729,16 @@ const PropertyDashboard = ({
               size="lg"
               onClick={submitWorkOrder}
               disabled={
-                !workOrder.unit_number ||
+                (workOrder.request_type === "general"
+                  ? !workOrder.comments.trim()
+                  : !workOrder.unit_number) ||
                 submittingWorkOrder ||
                 (isHOA && (!workOrder.customer_name.trim() || !workOrder.customer_phone.trim() || !workOrder.tenant_email.trim()))
               }
             >
-              <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
+              <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "general"
+                ? "General Request"
+                : workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>
