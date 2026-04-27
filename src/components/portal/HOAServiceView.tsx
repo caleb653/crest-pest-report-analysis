@@ -71,6 +71,10 @@ export interface HOAServiceViewProps {
 
   /** Products used on this visit. */
   products?: any[];
+  /** Optional read-only display list — usually the rolled-up service+unit
+   *  totals. Used by the PM read-only table; the editor still binds to
+   *  `products` so edits round-trip cleanly. */
+  displayProducts?: any[];
   /** Admin-only — edit products used for this service (works for upcoming + past). */
   onChangeProducts?: (next: ProductUsage[]) => void;
 
@@ -110,6 +114,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     technician,
     onChangeFindings,
     products = [],
+    displayProducts,
     units,
     onChangeUnitStatus,
     onUploadMapImage,
@@ -179,6 +184,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   }, [localFindings, canEditFindings, onChangeFindings]);
 
   const productList = normalizeUsageList(products);
+  const displayList = normalizeUsageList(displayProducts ?? products);
 
   return (
     <div className="space-y-4">
