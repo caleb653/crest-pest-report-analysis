@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.notify-meal-waiver]
 verify_jwt = false
+
+[functions.send-service-completed]
+verify_jwt = false
