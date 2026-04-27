@@ -168,9 +168,8 @@ const PropertyDashboard = ({
   propertyType = "apartments",
 }: Props) => {
   const isHOA = propertyType === "hoa";
-  // For HOA: "date" = Service Reports, "quarterly" = Quarterly Updates.
-  // For apartments: "date" / "unit" toggle stays unchanged.
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
+  // For apartments: "date" / "unit" toggle. HOA shows only "date".
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const residentTerm = isHOA ? "resident" : "tenant";
   const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
@@ -250,13 +249,6 @@ const PropertyDashboard = ({
   // Survey state — mirrors PMPortalView so admin has full survey workflow
   const [surveys, setSurveys] = useState<any[]>([]);
 
-  // Quarterly Updates (videos + comments)
-  const [quarterlyUpdates, setQuarterlyUpdates] = useState<any[]>([]);
-  const [quTitle, setQuTitle] = useState("");
-  const [quComment, setQuComment] = useState("");
-  const [quUploadedBy, setQuUploadedBy] = useState("");
-  const [quFile, setQuFile] = useState<File | null>(null);
-  const [quUploading, setQuUploading] = useState(false);
   const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
   const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
   const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
@@ -567,70 +559,6 @@ const PropertyDashboard = ({
     };
     loadSurveys();
   }, [property.id]);
-
-  // Load quarterly updates for this property
-  const reloadQuarterlyUpdates = async () => {
-    const { data: rows } = await (supabase as any)
-      .from("portal_quarterly_updates")
-      .select("*")
-      .eq("property_id", property.id)
-      .order("created_at", { ascending: false });
-    if (Array.isArray(rows)) setQuarterlyUpdates(rows);
-  };
-  useEffect(() => { reloadQuarterlyUpdates(); /* eslint-disable-next-line */ }, [property.id]);
-
-  const uploadQuarterlyUpdate = async () => {
-    if (!quFile) {
-      toast({ title: "Choose a video file first", variant: "destructive" });
-      return;
-    }
-    setQuUploading(true);
-    try {
-      const ext = quFile.name.split(".").pop() || "mp4";
-      const safeName = `${property.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("portal-videos")
-        .upload(safeName, quFile, { contentType: quFile.type || "video/mp4", upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("portal-videos").getPublicUrl(safeName);
-      const { error: insErr } = await (supabase as any).from("portal_quarterly_updates").insert({
-        property_id: property.id,
-        title: quTitle.trim() || null,
-        comment: quComment.trim() || null,
-        video_url: pub.publicUrl,
-        file_name: quFile.name,
-        uploaded_by: quUploadedBy.trim() || null,
-      });
-      if (insErr) throw insErr;
-      toast({ title: "Quarterly update uploaded" });
-      setQuTitle(""); setQuComment(""); setQuUploadedBy(""); setQuFile(null);
-      await reloadQuarterlyUpdates();
-    } catch (e: any) {
-      console.error(e);
-      toast({ title: "Upload failed", description: e?.message || "Could not upload", variant: "destructive" });
-    } finally {
-      setQuUploading(false);
-    }
-  };
-
-  const deleteQuarterlyUpdate = async (id: string, videoUrl: string | null) => {
-    if (!confirm("Delete this quarterly update?")) return;
-    try {
-      if (videoUrl) {
-        const marker = "/portal-videos/";
-        const idx = videoUrl.indexOf(marker);
-        if (idx !== -1) {
-          const path = videoUrl.slice(idx + marker.length);
-          await supabase.storage.from("portal-videos").remove([path]);
-        }
-      }
-      await (supabase as any).from("portal_quarterly_updates").delete().eq("id", id);
-      setQuarterlyUpdates(prev => prev.filter(q => q.id !== id));
-      toast({ title: "Deleted" });
-    } catch (e: any) {
-      toast({ title: "Could not delete", description: e?.message, variant: "destructive" });
-    }
-  };
 
   const sendSurvey = async () => {
     const emails = surveyEmails
@@ -2847,7 +2775,7 @@ const PropertyDashboard = ({
           </span>
         </div>
       )}
-      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-7"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -2874,12 +2802,6 @@ const PropertyDashboard = ({
           <BarChart3 className="w-5 h-5" />
           <span>{isHOA ? "Resident Survey" : "Tenant Survey"} <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
-        {!isHOA && (
-          <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Video className="w-5 h-5" />
-            <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-xs h-4">{quarterlyUpdates.length}</Badge></span>
-          </TabsTrigger>
-        )}
       </TabsList>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
@@ -3393,89 +3315,7 @@ const PropertyDashboard = ({
 
 
 
-        {(!isHOA && pastViewMode === "quarterly") ? (
-          <div className="space-y-5">
-            {/* Inline upload form so admins can post a quarterly update without leaving the tab */}
-            <Card className="border-primary/60 shadow-md">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-primary" />Upload Quarterly Update
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Share a video walkthrough or update with this community.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label className="text-sm">Title (optional)</Label>
-                  <Input value={quTitle} onChange={(e) => setQuTitle(e.target.value)} placeholder="e.g., Q1 2026 Walkthrough" />
-                </div>
-                <div>
-                  <Label className="text-sm">Comment</Label>
-                  <Textarea value={quComment} onChange={(e) => setQuComment(e.target.value)} rows={3} placeholder="What we covered, what to look for…" />
-                </div>
-                <div>
-                  <Label className="text-sm">Uploaded by (optional)</Label>
-                  <Input value={quUploadedBy} onChange={(e) => setQuUploadedBy(e.target.value)} placeholder="Your name" />
-                </div>
-                <div>
-                  <Label className="text-sm">Video file</Label>
-                  <Input type="file" accept="video/*" onChange={(e) => setQuFile(e.target.files?.[0] || null)} />
-                  {quFile && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {quFile.name} ({(quFile.size / (1024 * 1024)).toFixed(1)} MB)
-                    </p>
-                  )}
-                </div>
-                <Button onClick={uploadQuarterlyUpdate} disabled={quUploading || !quFile} className="w-full">
-                  {quUploading ? "Uploading…" : (<><Upload className="w-4 h-4 mr-2" />Upload Update</>)}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {quarterlyUpdates.length === 0 ? (
-              <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
-                <Video className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                No quarterly updates uploaded yet.
-              </CardContent></Card>
-            ) : (
-              <div className="space-y-4">
-                {quarterlyUpdates.map((q) => (
-                  <Card key={q.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <Video className="w-4 h-4 text-primary" />
-                            {q.title || "Quarterly Update"}
-                          </CardTitle>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(q.created_at).toLocaleString("en-US", {
-                              month: "short", day: "numeric", year: "numeric",
-                              hour: "numeric", minute: "2-digit",
-                            })}
-                            {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => deleteQuarterlyUpdate(q.id, q.video_url)} title="Delete">
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {q.video_url && (
-                        <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
-                      )}
-                      {q.comment && (
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : pastViewMode === "date" ? (
+        {pastViewMode === "date" ? (
           pastServices.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
           ) : (
@@ -4578,96 +4418,6 @@ const PropertyDashboard = ({
         </div>
       </TabsContent>
 
-      {/* ══════════ TAB 7: QUARTERLY UPDATES ══════════ */}
-      <TabsContent value="quarterly" className="mt-0">
-        <div className="max-w-4xl mx-auto space-y-5">
-          <Card className="border-primary/60 shadow-md">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Upload className="w-4 h-4 text-primary" />Upload Quarterly Update
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Upload a video walkthrough or update for this property. The PM/HOA portal will see it.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label className="text-sm">Title (optional)</Label>
-                <Input value={quTitle} onChange={(e) => setQuTitle(e.target.value)} placeholder="e.g., Q1 2026 Property Walkthrough" />
-              </div>
-              <div>
-                <Label className="text-sm">Comment</Label>
-                <Textarea value={quComment} onChange={(e) => setQuComment(e.target.value)} placeholder="Notes about this update — what we covered, what to look for, recommendations…" rows={4} />
-              </div>
-              <div>
-                <Label className="text-sm">Uploaded by (optional)</Label>
-                <Input value={quUploadedBy} onChange={(e) => setQuUploadedBy(e.target.value)} placeholder="Your name" />
-              </div>
-              <div>
-                <Label className="text-sm">Video file</Label>
-                <Input type="file" accept="video/*" onChange={(e) => setQuFile(e.target.files?.[0] || null)} />
-                {quFile && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {quFile.name} ({(quFile.size / (1024 * 1024)).toFixed(1)} MB)
-                  </p>
-                )}
-              </div>
-              <Button onClick={uploadQuarterlyUpdate} disabled={quUploading || !quFile} className="w-full">
-                {quUploading ? "Uploading…" : (<><Upload className="w-4 h-4 mr-2" />Upload Update</>)}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {quarterlyUpdates.length === 0 ? (
-            <Card>
-              <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                <Video className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                No quarterly updates uploaded yet.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {quarterlyUpdates.map((q) => (
-                <Card key={q.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Video className="w-4 h-4 text-primary" />
-                          {q.title || "Quarterly Update"}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {new Date(q.created_at).toLocaleString("en-US", {
-                            month: "short", day: "numeric", year: "numeric",
-                            hour: "numeric", minute: "2-digit",
-                          })}
-                          {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteQuarterlyUpdate(q.id, q.video_url)} title="Delete">
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {q.video_url && (
-                      <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
-                    )}
-                    {q.comment && (
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
-                    )}
-                    {q.video_url && (
-                      <a href={q.video_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
-                        <ExternalLink className="w-3 h-3" />Open video in new tab
-                      </a>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </TabsContent>
     </Tabs>
   );
 };
