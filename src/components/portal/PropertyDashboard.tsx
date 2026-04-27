@@ -1408,6 +1408,7 @@ const PropertyDashboard = ({
       tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
+      photos: workOrderPhotos,
     } as any).select("id").maybeSingle();
     if (insertErr) {
       toast({ title: "Could not submit work order", description: insertErr.message, variant: "destructive" });
@@ -1443,6 +1444,7 @@ const PropertyDashboard = ({
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
       customer_name: "", customer_phone: "",
     });
+    setWorkOrderPhotos([]);
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
