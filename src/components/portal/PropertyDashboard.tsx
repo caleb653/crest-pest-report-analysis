@@ -169,7 +169,11 @@ const PropertyDashboard = ({
   propertyType = "apartments",
 }: Props) => {
   const isHOA = propertyType === "hoa";
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  // For HOA: "date" = Service Reports, "quarterly" = Quarterly Updates.
+  // For apartments: "date" / "unit" toggle stays unchanged.
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
+  const residentTerm = isHOA ? "resident" : "tenant";
+  const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
