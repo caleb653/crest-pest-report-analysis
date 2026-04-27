@@ -759,7 +759,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         })()}
         {unitDetails.length > 0 && (
           <div>
-            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Unit Summary ({unitDetails.length})</p>
+            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">
+              {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Unit Summary (${unitDetails.length})`}
+            </p>
             <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
                 const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
