@@ -198,6 +198,35 @@ const PropertyDashboard = ({
     customer_name: "", customer_phone: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
+  // Photos attached to the new work order (any number, all optional).
+  // Stored as an array of public URLs from the `report-images` bucket and
+  // persisted into portal_requests.photos on submit.
+  const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
+  const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
+  const handleWorkOrderPhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingWorkOrderPhotos(true);
+    const urls: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `work-order-photos/${property.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("report-images")
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+        if (upErr) {
+          toast({ title: "Photo upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+        if (pub?.publicUrl) urls.push(pub.publicUrl);
+      }
+      if (urls.length) setWorkOrderPhotos(prev => [...prev, ...urls]);
+    } finally {
+      setUploadingWorkOrderPhotos(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState<string>("map");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
