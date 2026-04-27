@@ -2013,6 +2013,18 @@ const PropertyDashboard = ({
               [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
             }));
 
+            // Seed the local-dismissed set so the auto-merge effect doesn't
+            // re-add this unit before the DB refresh propagates the persisted
+            // dismissed_units list. This is what was causing the unit to
+            // "disappear for a second then come back".
+            if (unitLabel) {
+              setRecentlyDismissedUnits(prev => {
+                const next = new Set(prev[s.id] || []);
+                next.add(unitLabel);
+                return { ...prev, [s.id]: next };
+              });
+            }
+
             // For real (non-projected) services, persist the deletion so the
             // unit doesn't reappear from the work-order / follow-up auto-merge.
             // We do this by:
