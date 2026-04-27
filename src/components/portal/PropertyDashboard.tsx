@@ -1240,13 +1240,18 @@ const PropertyDashboard = ({
   };
 
   const submitWorkOrder = async () => {
-    if (!workOrder.unit_number && !workOrder.comments) return;
+    const isGeneral = workOrder.request_type === "general";
+    if (isGeneral) {
+      if (!workOrder.comments.trim()) return;
+    } else if (!workOrder.unit_number && !workOrder.comments) return;
     setSubmittingWorkOrder(true);
     // Case-insensitive normalization against existing units for this property
     const typed = (workOrder.unit_number || "").trim();
-    const canonical = typed
+    const canonical = isGeneral
+      ? null
+      : (typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
-      : "Facility";
+      : "Facility");
     // HOA mode: prepend the homeowner contact info to the description so it's
     // visible everywhere the work order is rendered (no schema change needed).
     const customerHeader = isHOA && (workOrder.customer_name.trim() || workOrder.customer_phone.trim() || workOrder.tenant_email.trim())
@@ -1264,11 +1269,15 @@ const PropertyDashboard = ({
     const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
-      request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
-      description: `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
-      pest_type: workOrder.pest_type || null,
-      location_type: workOrder.location_type || null,
-      occupancy_status: workOrder.occupancy_status || null,
+      request_type: isGeneral
+        ? "General Request"
+        : workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
+      description: isGeneral
+        ? `${customerHeader}[GENERAL] ${workOrder.comments.trim()}`
+        : `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      pest_type: isGeneral ? null : (workOrder.pest_type || null),
+      location_type: isGeneral ? null : (workOrder.location_type || null),
+      occupancy_status: isGeneral ? null : (workOrder.occupancy_status || null),
       tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
@@ -1278,7 +1287,9 @@ const PropertyDashboard = ({
       setSubmittingWorkOrder(false);
       return;
     }
-    toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
+    toast({ title: isGeneral
+      ? "General request submitted"
+      : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
     // Fire-and-forget staff notification (office + Carmen + client owner)
     if (inserted?.id) {
       try {
