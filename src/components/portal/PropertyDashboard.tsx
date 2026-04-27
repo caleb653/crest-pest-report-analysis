@@ -2103,7 +2103,11 @@ const PropertyDashboard = ({
           const latestSourceByUnit = new Map(
             merged.unitContexts.map((uc) => [
               String(uc.unit_number),
-              uc.source === "work_order" ? "new-work-order" : "follow-up",
+              uc.source === "work_order"
+                ? "new-work-order"
+                : uc.source === "follow_up"
+                  ? "follow-up"
+                  : uc.source,
             ])
           );
           const hasSourceDrift = cd.unitRows.some((row: any) => {
@@ -2164,7 +2168,11 @@ const PropertyDashboard = ({
                       products_used: [] as ProductUsage[],
                       status: "To Be Treated",
                       notes: ctx.notes || "",
-                      source: ctx.source === "work_order" ? "new-work-order" : "follow-up",
+                      source: ctx.source === "work_order"
+                        ? "new-work-order"
+                        : ctx.source === "follow_up"
+                          ? "follow-up"
+                          : ctx.source,
                     };
                   });
                 if (additions.length === 0) return prev;
@@ -2336,7 +2344,7 @@ const PropertyDashboard = ({
                   </div>
                   <div className="space-y-6">
                     {cd.unitRows.map((row: any, idx: number) => {
-                      const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
+                      const isFollowUp = row.source === "follow-up";
                       const isWorkOrder = row.source === "new-work-order";
                       // Look up the work-order kind (Inspection vs Treatment) so the
                       // header badge + context label match what was actually requested.
@@ -2445,7 +2453,7 @@ const PropertyDashboard = ({
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
                                   <SelectTrigger className={`h-9 text-sm w-[230px] font-semibold border-2 ${
-                                    row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found"
+                                    row.status === "Inspected: Activity Found"
                                       ? "text-orange-700 border-orange-500 bg-orange-50"
                                       : row.status === "To Be Treated"
                                         ? "text-primary-foreground border-primary bg-primary"
