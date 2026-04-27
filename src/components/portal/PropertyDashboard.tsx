@@ -1765,14 +1765,57 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Past service: inline-editable unit table */}
-        {!isUpcoming && renderEditableUnitTable(s)}
+        {/* Past service body — for HOA, the narrative (findings + products)
+            comes FIRST and the per-unit editable table is demoted into a
+            small collapsible "Specific Homes Treated" section underneath.
+            Apartment / commercial views render the editable table inline as
+            before so per-unit data entry stays primary. */}
+        {!isUpcoming && isHOA && (
+          <>
+            {/* Robust Technician Findings / Summary / Notes — main story */}
+            {(s.summary || s.findings || s.notes) && (
+              <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-5 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <ClipboardList className="w-4 h-4 text-primary" />
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                    Technician Report{s.technician ? ` — ${s.technician}` : ""}
+                  </p>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+                  {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+                </p>
+              </div>
+            )}
+            {/* Robust Products Used — emphasized for HOA reports */}
+            {products.length > 0 && (
+              <div className="rounded-xl border-2 border-primary/40 bg-card p-3.5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 flex items-center gap-1.5">
+                  <FlaskConical className="w-4 h-4" />
+                  Products Used (this visit)
+                </p>
+                <ProductUsageSummary entries={products} />
+              </div>
+            )}
+            {/* Specific Homes Treated — small, collapsible, secondary */}
+            <details className="rounded-lg border border-border bg-muted/20 px-3 py-2 group">
+              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
+                <span>Specific Homes Treated ({Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0})</span>
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-2">
+                {renderEditableUnitTable(s)}
+              </div>
+            </details>
+          </>
+        )}
 
-        {/* Past service: service-level products (with Applied / Undiluted amounts).
-            These are saved at completion time via the ProductUsageEditor but
-            previously had no display, so the technician's amounts looked "lost"
-            after they hit Complete. */}
-        {!isUpcoming && products.length > 0 && (
+        {/* Past service (apartments / commercial): inline-editable unit table */}
+        {!isUpcoming && !isHOA && renderEditableUnitTable(s)}
+
+        {/* Past service (apartments / commercial): service-level products
+            (with Applied / Undiluted amounts). HOA renders products in the
+            robust block above, so we skip this in HOA mode. */}
+        {!isUpcoming && !isHOA && products.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
               <FlaskConical className="w-3.5 h-3.5 text-primary" />
