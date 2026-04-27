@@ -914,7 +914,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-7xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-7"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+        <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
@@ -941,12 +941,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <BarChart3 className="w-5 h-5" />
             <span>{isHOA ? "Resident Survey" : "Survey Results"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
-          {!isHOA && (
-            <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-              <Video className="w-5 h-5" />
-              <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></span>
-            </TabsTrigger>
-          )}
         </TabsList>
 
         {/* ════════ TAB 1: PROPERTY / MAP ════════ */}
@@ -1256,38 +1250,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               )}
             </div>
 
-            {(!isHOA && pastViewMode === "quarterly") ? (
-              quarterlyUpdates.length === 0 ? (
-                <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No quarterly updates uploaded yet</CardContent></Card>
-              ) : (
-                <div className="space-y-4">
-                  {quarterlyUpdates.map((q) => (
-                    <Card key={q.id} className="overflow-hidden shadow-sm">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Video className="w-4 h-4 text-primary" />
-                          {q.title || "Quarterly Update"}
-                        </CardTitle>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {new Date(q.created_at).toLocaleString("en-US", {
-                            month: "short", day: "numeric", year: "numeric",
-                          })}
-                          {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
-                        </p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {q.video_url && (
-                          <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
-                        )}
-                        {q.comment && (
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )
-            ) : pastViewMode === "date" ? (
+            {pastViewMode === "date" ? (
               pastServices.length === 0 ? (
                 <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
               ) : (
