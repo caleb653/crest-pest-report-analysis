@@ -3311,31 +3311,6 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
 
-          {/* ⚠️ RED NOTES — ADMIN-ONLY. NEVER expose in PM portal. */}
-          <Card className="shadow-sm border-2 border-red-500 bg-red-50/60">
-            <CardHeader className="pb-3 pt-4 border-b-2 border-red-500 bg-red-100/70">
-              <CardTitle className="text-base font-bold flex items-center gap-2 text-red-800">
-                <AlertTriangle className="w-5 h-5 text-red-700" />
-                RED NOTES — Internal / Admin Only
-              </CardTitle>
-              <p className="text-xs font-semibold text-red-700 mt-1">
-                Confidential. Visible ONLY in the admin portal — never shown to the property manager.
-                These notes appear at the top of every appointment in the admin portal.
-              </p>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Textarea
-                placeholder="Internal admin-only notes — billing flags, account warnings, sensitive context techs need to know before each visit."
-                className="min-h-[160px] text-sm resize-y leading-relaxed bg-background border-red-300 focus-visible:ring-red-400"
-                value={redNotesDraft}
-                onChange={(e) => setRedNotesDraft(e.target.value)}
-              />
-              <p className="text-[11px] text-red-700 mt-1.5 font-medium">
-                Auto-saves a moment after you stop typing. NEVER visible to the PM portal.
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Right column: Property Map — sized down with paste support */}
           <div className="space-y-4">
             <Card
@@ -3690,6 +3665,24 @@ const PropertyDashboard = ({
 
           </div>
         </div>
+
+        {/* ⚠️ RED NOTES — ADMIN-ONLY, compact, at the very bottom of the tab. NEVER expose in PM portal. */}
+        <Card className="shadow-sm border border-red-400 bg-red-50/50 mt-4">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-700" />
+              <p className="text-[11px] font-bold uppercase tracking-wide text-red-800">
+                Red Notes — Admin Only (never shown to PM)
+              </p>
+            </div>
+            <Textarea
+              placeholder="Internal admin-only notes — shown at the top of every appointment in the admin portal."
+              className="min-h-[70px] text-xs resize-y leading-snug bg-background border-red-300 focus-visible:ring-red-400"
+              value={redNotesDraft}
+              onChange={(e) => setRedNotesDraft(e.target.value)}
+            />
+          </CardContent>
+        </Card>
       </TabsContent>
 
       {/* ══════════ TAB 2: PREVIOUS SERVICES ══════════ */}
