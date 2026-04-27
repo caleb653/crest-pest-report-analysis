@@ -2186,7 +2186,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "homeowners" : "tenants"}.</p>
+              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "residents" : "tenants"}.</p>
             </div>
             {prepSheets.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available yet</CardContent></Card>
@@ -2322,11 +2322,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Community Pest Survey" : "Send Tenant Pest Survey"}
+                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Resident Pest Survey" : "Send Tenant Pest Survey"}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {isHOA
-                    ? "Homeowners get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
+                    ? "Residents get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
                     : "Tenants get a short 5-question form. Results aggregate below as they respond."}
                 </p>
               </CardHeader>
