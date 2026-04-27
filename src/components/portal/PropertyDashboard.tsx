@@ -1852,7 +1852,9 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {(s.summary || s.findings || s.notes) && (
+        {/* Skip the duplicate findings block in HOA past-service mode — the
+            robust block above already shows it as the focal narrative. */}
+        {!(isHOA && !isUpcoming) && (s.summary || s.findings || s.notes) && (
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
