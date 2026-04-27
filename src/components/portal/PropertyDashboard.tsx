@@ -1368,6 +1368,57 @@ const PropertyDashboard = ({
       setSavingMap(false);
     }
   };
+
+  /**
+   * HOA per-service map persistence.
+   *
+   * The PERMANENT site map (with emblems shared across every visit) lives on
+   * `portal_properties.map_data` and is edited from the Site Map / Plan page.
+   * Per-service drawings/edits live on `portal_services.report_data.service_map_data`
+   * — they show up ONLY for that one service and never bleed into the next visit.
+   */
+  const saveServiceMapData = async (serviceId: string, canvasData: string) => {
+    if (!serviceId || !canvasData) return;
+    try {
+      const parsed = JSON.parse(canvasData);
+      const svc = (propServices as any[]).find((s) => s.id === serviceId);
+      const existing = (svc?.report_data && typeof svc.report_data === "object") ? svc.report_data : {};
+      const merged = { ...existing, service_map_data: parsed };
+      const { error } = await supabase
+        .from("portal_services")
+        .update({ report_data: merged })
+        .eq("id", serviceId);
+      if (error) {
+        toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Service map saved", duration: 1500 });
+        onRefresh();
+      }
+    } catch (e: any) {
+      toast({ title: "Failed to save map", description: e?.message, variant: "destructive" });
+    }
+  };
+
+  const resetServiceMapData = async (serviceId: string) => {
+    if (!serviceId) return;
+    try {
+      const svc = (propServices as any[]).find((s) => s.id === serviceId);
+      const existing = (svc?.report_data && typeof svc.report_data === "object") ? svc.report_data : {};
+      const { service_map_data: _drop, ...rest } = existing;
+      const { error } = await supabase
+        .from("portal_services")
+        .update({ report_data: rest })
+        .eq("id", serviceId);
+      if (error) {
+        toast({ title: "Failed to revert map", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Reverted to permanent site map", duration: 1500 });
+        onRefresh();
+      }
+    } catch (e: any) {
+      toast({ title: "Failed to revert map", description: e?.message, variant: "destructive" });
+    }
+  };
   // Equipment: local state for optimistic updates
   const parseEquipment = (eq: any): { name: string; count: number }[] => {
     if (!Array.isArray(eq)) return [];
