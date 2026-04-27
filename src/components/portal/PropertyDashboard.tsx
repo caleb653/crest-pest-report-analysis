@@ -3600,6 +3600,59 @@ const PropertyDashboard = ({
                         </Button>
                       )}
                     </div>
+                    {/* Email this prep sheet as a PDF to any address */}
+                    {ps.file_url && (
+                      <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3 mt-1">
+                        <Label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5">
+                          <Mail className="w-3.5 h-3.5 text-primary" />Email this prep sheet (PDF)
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          <Input
+                            type="email"
+                            placeholder="recipient@email.com"
+                            value={prepEmailDraft[ps.id] || ""}
+                            onChange={(e) => setPrepEmailDraft(d => ({ ...d, [ps.id]: e.target.value }))}
+                            className="h-9 text-sm flex-1 min-w-[220px]"
+                          />
+                          <Button
+                            size="sm"
+                            className="h-9 text-sm"
+                            disabled={
+                              prepEmailSending === ps.id ||
+                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((prepEmailDraft[ps.id] || "").trim())
+                            }
+                            onClick={async () => {
+                              const to = (prepEmailDraft[ps.id] || "").trim();
+                              setPrepEmailSending(ps.id);
+                              try {
+                                const { data, error } = await supabase.functions.invoke("send-prep-sheet", {
+                                  body: { prepSheetId: ps.id, email: to },
+                                });
+                                if (error || !(data as any)?.ok) {
+                                  throw new Error((data as any)?.message || error?.message || "send_failed");
+                                }
+                                toast({ title: "Prep sheet emailed", description: `Sent "${ps.title}" to ${to}` });
+                                setPrepEmailDraft(d => ({ ...d, [ps.id]: "" }));
+                              } catch (err) {
+                                toast({
+                                  title: "Email failed",
+                                  description: err instanceof Error ? err.message : "Could not send email.",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setPrepEmailSending(null);
+                              }
+                            }}
+                          >
+                            <Send className="w-3.5 h-3.5 mr-1" />
+                            {prepEmailSending === ps.id ? "Sending…" : "Send PDF"}
+                          </Button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Subject will be: <span className="font-semibold">{ps.title}</span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
