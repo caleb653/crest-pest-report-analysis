@@ -151,7 +151,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Per-prep-sheet "email this PDF" form state.
   const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
   const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  // For non-HOA portals: "date" / "unit" (existing behavior).
+  // For HOA portals: "date" (= Service Reports) / "quarterly" (= Quarterly Updates).
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
   const toggleUnitKey = (key: string) =>
@@ -588,12 +590,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
   // HOA mode reframes the entire portal away from "units / tenants" toward
-  // "common areas / homeowners / community" wording. Apartment portals are
-  // unaffected so we don't disturb that flow.
+  // "common areas / residents / community" wording. Apartment portals are
+  // unaffected so we don't disturb that flow. Per product direction, every
+  // user-visible "Tenant" becomes "Resident" in HOA mode.
   const isHOA = ((property.customer_preferences as any)?.property_type) === "hoa";
   const portalRoleLabel = isHOA ? "HOA Board Portal" : "Property Manager Portal";
-  const residentTerm = isHOA ? "homeowner" : "tenant";
-  const ResidentTerm = isHOA ? "Homeowner" : "Tenant";
+  const residentTerm = isHOA ? "resident" : "tenant";
+  const ResidentTerm = isHOA ? "Resident" : "Tenant";
 
   // Show ONE detailed "next service" + 5 future date-only projections.
   // Rule: take the soonest scheduled service as the next visit (ignore far-future scheduled rows
@@ -789,41 +792,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </details>
           )}
 
-          {/* PM ↔ Crest service-level comments — unchanged for HOA */}
-          <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(() => {
-              const allComments = Array.isArray(((s as any).report_data || {}).comments)
-                ? ((s as any).report_data.comments as ServiceComment[])
-                : [];
-              return (
-                <>
-                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="crest"
-                      filterSender="crest"
-                      title="Service Comments: Crest"
-                      readOnly
-                      onChange={loadAll}
-                    />
-                  </div>
-                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="pm"
-                      filterSender="pm"
-                      title="Service Comments: Property Manager"
-                      onChange={loadAll}
-                    />
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+          {/* HOA past-service comments block intentionally removed —
+              residents/board don't engage with this section per product. */}
         </div>
       );
     }
@@ -1131,7 +1101,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-7xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-7"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
@@ -1148,18 +1118,22 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <ClipboardList className="w-5 h-5" />
             <span>{isHOA ? "Upcoming Visits" : "Upcoming Services"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileDown className="w-5 h-5" />
-            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
-          </TabsTrigger>
+          {!isHOA && (
+            <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <FileDown className="w-5 h-5" />
+              <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <BarChart3 className="w-5 h-5" />
             <span>{isHOA ? "Resident Survey" : "Survey Results"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Video className="w-5 h-5" />
-            <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></span>
-          </TabsTrigger>
+          {!isHOA && (
+            <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <Video className="w-5 h-5" />
+              <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ════════ TAB 1: PROPERTY / MAP ════════ */}
@@ -1456,18 +1430,64 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
               </h3>
               <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-                <button
-                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setPastViewMode("date")}
-                >By Date</button>
-                <button
-                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setPastViewMode("unit")}
-                >By Unit</button>
+                {isHOA ? (
+                  <>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("date")}
+                    >Service Reports</button>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("quarterly")}
+                    >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("date")}
+                    >By Date</button>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("unit")}
+                    >By Unit</button>
+                  </>
+                )}
               </div>
             </div>
 
-            {pastViewMode === "date" ? (
+            {pastViewMode === "quarterly" ? (
+              quarterlyUpdates.length === 0 ? (
+                <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No quarterly updates uploaded yet</CardContent></Card>
+              ) : (
+                <div className="space-y-4">
+                  {quarterlyUpdates.map((q) => (
+                    <Card key={q.id} className="overflow-hidden shadow-sm">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Video className="w-4 h-4 text-primary" />
+                          {q.title || "Quarterly Update"}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(q.created_at).toLocaleString("en-US", {
+                            month: "short", day: "numeric", year: "numeric",
+                          })}
+                          {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {q.video_url && (
+                          <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
+                        )}
+                        {q.comment && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )
+            ) : pastViewMode === "date" ? (
               pastServices.length === 0 ? (
                 <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
               ) : (
@@ -1689,15 +1709,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
-                    <span className="text-sm font-medium">{isHOA ? "Email homeowner?" : "Email tenant?"}</span>
+                    <span className="text-sm font-medium">{isHOA ? "Email resident?" : "Email tenant?"}</span>
                   </label>
 
                   <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
                     <div>
-                      <Label className="text-xs">{isHOA ? "Homeowner Email" : "Tenant Email"}</Label>
+                      <Label className="text-xs">{isHOA ? "Resident Email" : "Tenant Email"}</Label>
                       <Input
                         type="email"
-                        placeholder={isHOA ? "homeowner@example.com" : "tenant@example.com"}
+                        placeholder={isHOA ? "resident@example.com" : "tenant@example.com"}
                         value={tenantEmail}
                         onChange={e => setTenantEmail(e.target.value)}
                         disabled={!emailTenant}
@@ -1751,7 +1771,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     <p className="text-sm font-semibold">{isHOA ? "Resident Request Link" : "Tenant Request Link"}</p>
                     <p className="text-xs text-muted-foreground">
                       {isHOA
-                        ? "Share this with any homeowner or resident so they can flag an issue in the community. They won't see anyone else's submissions — their request gets folded into the next visit."
+                        ? "Share this with any resident so they can flag a community pest sighting or submit a service request for their home. They won't see anyone else's submissions — community sightings roll into the next visit."
                         : "Share this with a tenant or community member so they can submit a single service request. They won't see anyone else's history — it just gets added to the next service."}
                     </p>
                   </div>
@@ -1765,7 +1785,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     if (!linkToken) return;
                     const url = `${window.location.origin}/tenant/${linkToken}`;
                     navigator.clipboard.writeText(url);
-                    toast({ title: "Link copied", description: isHOA ? "Send this to a homeowner or resident." : "Send this to your tenant or resident." });
+                    toast({ title: "Link copied", description: isHOA ? "Send this to any resident." : "Send this to your tenant or resident." });
                   }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
@@ -2185,7 +2205,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "homeowners" : "tenants"}.</p>
+              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "residents" : "tenants"}.</p>
             </div>
             {prepSheets.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available yet</CardContent></Card>
@@ -2321,11 +2341,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Community Pest Survey" : "Send Tenant Pest Survey"}
+                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Resident Pest Survey" : "Send Tenant Pest Survey"}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
                   {isHOA
-                    ? "Homeowners get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
+                    ? "Residents get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
                     : "Tenants get a short 5-question form. Results aggregate below as they respond."}
                 </p>
               </CardHeader>
@@ -2339,11 +2359,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-sm">{isHOA ? "Homeowner Emails" : "Tenant Emails"}</Label>
+                  <Label className="text-sm">{isHOA ? "Resident Emails" : "Tenant Emails"}</Label>
                   <Textarea
                     rows={4}
                     placeholder={isHOA
-                      ? "Paste homeowner emails — one per line, or comma-separated"
+                      ? "Paste resident emails — one per line, or comma-separated"
                       : "Paste tenant emails — one per line, or comma-separated"}
                     value={surveyEmails}
                     onChange={(e) => setSurveyEmails(e.target.value)}
