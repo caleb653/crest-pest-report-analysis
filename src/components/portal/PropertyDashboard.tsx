@@ -1847,9 +1847,9 @@ const PropertyDashboard = ({
                   onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
                 >
                   {(((newUnitData as any).kind === "inspection")
-                    ? ["Free and Clear", "Activity Found"]
-                    : ["Complete", "Not Serviced"]
-                  ).map(a => <option key={a} value={a}>{a}</option>)}
+                    ? [{ v: "Free and Clear", l: "No Activity Found" }, { v: "Activity Found", l: "Activity Found" }]
+                    : [{ v: "Complete", l: "Complete" }, { v: "Not Serviced", l: "Not Serviced" }]
+                  ).map(a => <option key={a.v} value={a.v}>{a.l}</option>)}
                 </select>
               </div>
               {/* Service / Inspection toggle for the new area */}
