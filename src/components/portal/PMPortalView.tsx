@@ -1843,11 +1843,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
                                 <Bug className="w-4 h-4" />
                                 Units to be Treated
-                                {usingFallbackUnits && (
-                                  <span className="ml-1 normal-case font-normal text-muted-foreground/80">
-                                    (carried from last service)
-                                  </span>
-                                )}
                               </p>
                               <div className="space-y-6">
                                 {unitContexts.map((uc, idx) => {
@@ -1990,46 +1985,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                           {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
 
-                          {/* Service-level comment thread (PM ↔ Crest) for upcoming visit.
-                              Hidden in HOA mode — the community map and feedback summary
-                              are the focal point; PM still has the technician notes box above. */}
-                          {!isHOA && (
-                          <div className="pt-3 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {(() => {
-                              const allComments = Array.isArray(((s as any).report_data || {}).comments)
-                                ? ((s as any).report_data.comments as ServiceComment[])
-                                : [];
-                              return (
-                                <>
-                                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                                    <ServiceComments
-                                      serviceId={s.id}
-                                      reportData={(s as any).report_data}
-                                      comments={allComments}
-                                      sender="crest"
-                                      filterSender="crest"
-                                      title="Crest Team Comments"
-                                      readOnly
-                                      onChange={loadAll}
-                                    />
-                                  </div>
-                                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                                    <ServiceComments
-                                      serviceId={s.id}
-                                      reportData={(s as any).report_data}
-                                      comments={allComments}
-                                      sender="pm"
-                                      filterSender="pm"
-                                      defaultAuthor={pocName}
-                                      title="Your Comments (Property Manager)"
-                                      onChange={loadAll}
-                                    />
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </div>
-                          )}
                         </div>
                       )}
                     </Card>
