@@ -307,7 +307,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                   <img
                     src={mapUrl}
                     alt="Community site map"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-cover"
                   />
                 )
               ) : (
