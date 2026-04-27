@@ -173,7 +173,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Work order form
   const [submitting, setSubmitting] = useState(false);
   const [unitNumber, setUnitNumber] = useState("");
-  const [requestKind, setRequestKind] = useState<"treatment" | "inspection">("treatment");
+  const [requestKind, setRequestKind] = useState<"treatment" | "inspection" | "general">("treatment");
   const [pestType, setPestType] = useState("");
   const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
