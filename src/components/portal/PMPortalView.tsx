@@ -1519,7 +1519,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     <Label className="text-sm whitespace-nowrap shrink-0">Unit or Property *</Label>
                     <Input
                       list="pm-known-units"
-                      placeholder={isHOA ? "1234MAINST, LOT27" : "UNIT204, 1234MAINST"}
+                      placeholder={isHOA ? "1234MAINST" : "UNIT204, 1234MAINST"}
                       value={unitNumber}
                       onChange={e => setUnitNumber(e.target.value.toUpperCase().replace(/\s+/g, ""))}
                       onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
