@@ -342,6 +342,57 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail, pocPhone]);
 
+  // ─── Required Time per Treatment (visible to PM + Admin) ───
+  // Stored on customer_preferences.required_treatment_time as a free-form string
+  // (e.g. "45 minutes", "1.5 hours") so techs/PMs can plan around it.
+  const initialRequiredTime = (property.customer_preferences as any)?.required_treatment_time || "";
+  const [requiredTimeDraft, setRequiredTimeDraft] = useState<string>(initialRequiredTime);
+  useEffect(() => {
+    setRequiredTimeDraft((property.customer_preferences as any)?.required_treatment_time || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.required_treatment_time || "";
+    if (current === requiredTimeDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), required_treatment_time: requiredTimeDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (!error) {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requiredTimeDraft]);
+
+  // ─── RED NOTES (ADMIN-ONLY — NEVER shown in PM portal) ───
+  // Confidential admin-only notes. Stored on customer_preferences.red_notes.
+  // PMPortalView.tsx must NEVER read this field.
+  const initialRedNotes = (property.customer_preferences as any)?.red_notes || "";
+  const [redNotesDraft, setRedNotesDraft] = useState<string>(initialRedNotes);
+  useEffect(() => {
+    setRedNotesDraft((property.customer_preferences as any)?.red_notes || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.red_notes || "";
+    if (current === redNotesDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), red_notes: redNotesDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (!error) {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redNotesDraft]);
+  const redNotesValue = (property.customer_preferences as any)?.red_notes || "";
+
   // Crest Client Owner — which staff member owns this property
   const [ownerTechDraft, setOwnerTechDraft] = useState<string>(property.owner_tech || "");
   useEffect(() => {
