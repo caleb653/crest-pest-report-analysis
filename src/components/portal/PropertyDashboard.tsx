@@ -1672,6 +1672,20 @@ const PropertyDashboard = ({
         {/* Past service: inline-editable unit table */}
         {!isUpcoming && renderEditableUnitTable(s)}
 
+        {/* Past service: service-level products (with Applied / Undiluted amounts).
+            These are saved at completion time via the ProductUsageEditor but
+            previously had no display, so the technician's amounts looked "lost"
+            after they hit Complete. */}
+        {!isUpcoming && products.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+              <FlaskConical className="w-3.5 h-3.5 text-primary" />
+              Products Used (this service date)
+            </p>
+            <ProductUsageSummary entries={products} />
+          </div>
+        )}
+
         {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
         {isUpcoming && isFirstUpcoming && merged.units.length > 0 && (() => {
           // Use the SAME merged unit list as the overage banner so the two
