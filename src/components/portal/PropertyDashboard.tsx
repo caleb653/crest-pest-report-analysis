@@ -1717,26 +1717,24 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-        {/* HOA mode: surface the site map inline with each service so the
-            common areas treated are the visual focus of the report. */}
+        {/* HOA mode (past service): site map is the FOCAL POINT of the report
+            — bigger, top of the page. The per-unit/area table is demoted into
+            a small "Specific Homes Treated" collapsible below the narrative. */}
         {isHOA && !isUpcoming && (mapUrl || property.map_data) && (
-          <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50/40 overflow-hidden">
-            <div className="px-3 py-2 bg-emerald-100/60 border-b border-emerald-200 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-700" />
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                Common Areas Treated — Site Map
+          <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-emerald-700" />
+              <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
+                Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background" style={{ height: 280 }}>
+            <div className="bg-background" style={{ height: 480 }}>
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : mapUrl ? (
                 <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
               ) : null}
             </div>
-            <p className="px-3 py-1.5 text-[11px] text-emerald-900/80 italic border-t border-emerald-200">
-              Reference the map above for which community areas were serviced on this visit.
-            </p>
           </div>
         )}
 
