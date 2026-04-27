@@ -3207,21 +3207,116 @@ const PropertyDashboard = ({
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-xs ml-1">{pastServices.length}</Badge>
           </h3>
-          <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-            <button
-              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setPastViewMode("date")}
-            >By Date</button>
-            <button
-              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setPastViewMode("unit")}
-            >By Unit</button>
-          </div>
+          {isHOA ? (
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("date")}
+              >Service Reports</button>
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("quarterly")}
+              >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("date")}
+              >By Date</button>
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("unit")}
+              >By Unit</button>
+            </div>
+          )}
         </div>
 
 
 
-        {pastViewMode === "date" ? (
+        {pastViewMode === "quarterly" ? (
+          <div className="space-y-5">
+            {/* Inline upload form so admins can post a quarterly update without leaving the tab */}
+            <Card className="border-primary/60 shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-primary" />Upload Quarterly Update
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Share a video walkthrough or update with this community.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-sm">Title (optional)</Label>
+                  <Input value={quTitle} onChange={(e) => setQuTitle(e.target.value)} placeholder="e.g., Q1 2026 Walkthrough" />
+                </div>
+                <div>
+                  <Label className="text-sm">Comment</Label>
+                  <Textarea value={quComment} onChange={(e) => setQuComment(e.target.value)} rows={3} placeholder="What we covered, what to look for…" />
+                </div>
+                <div>
+                  <Label className="text-sm">Uploaded by (optional)</Label>
+                  <Input value={quUploadedBy} onChange={(e) => setQuUploadedBy(e.target.value)} placeholder="Your name" />
+                </div>
+                <div>
+                  <Label className="text-sm">Video file</Label>
+                  <Input type="file" accept="video/*" onChange={(e) => setQuFile(e.target.files?.[0] || null)} />
+                  {quFile && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {quFile.name} ({(quFile.size / (1024 * 1024)).toFixed(1)} MB)
+                    </p>
+                  )}
+                </div>
+                <Button onClick={uploadQuarterlyUpdate} disabled={quUploading || !quFile} className="w-full">
+                  {quUploading ? "Uploading…" : (<><Upload className="w-4 h-4 mr-2" />Upload Update</>)}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {quarterlyUpdates.length === 0 ? (
+              <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
+                <Video className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                No quarterly updates uploaded yet.
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-4">
+                {quarterlyUpdates.map((q) => (
+                  <Card key={q.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Video className="w-4 h-4 text-primary" />
+                            {q.title || "Quarterly Update"}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(q.created_at).toLocaleString("en-US", {
+                              month: "short", day: "numeric", year: "numeric",
+                              hour: "numeric", minute: "2-digit",
+                            })}
+                            {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => deleteQuarterlyUpdate(q.id, q.video_url)} title="Delete">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {q.video_url && (
+                        <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
+                      )}
+                      {q.comment && (
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : pastViewMode === "date" ? (
           pastServices.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
           ) : (
