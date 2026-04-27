@@ -324,7 +324,6 @@ const AppointmentReport = () => {
 
         const unitsPlanned = Array.isArray(data.units_planned) ? (data.units_planned as string[]) : [];
         const followUps: string[] = [];
-        const recentUnits: string[] = [];
         const pestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
 
         const details = Array.isArray(recentCompleted?.unit_details) ? (recentCompleted.unit_details as any[]) : [];
@@ -332,14 +331,15 @@ const AppointmentReport = () => {
           const unitNumber = normalizeUnit(unit?.unit_number);
           if (!unitNumber) return;
 
-          recentUnits.push(unitNumber);
           pestData[unitNumber] = {
             findings: unit.findings || "",
             pest_activity: unit.pest_activity || "",
             products_used: unit.products_used || "",
           };
 
-          if (unit.status === "Treated - Follow Up" || unit.status === "Needs Follow-up" || unit.follow_up_recommended) {
+          // Follow-up must be explicitly checked on the prior service. Status
+          // text alone must never roll a unit into a future service.
+          if (unit.follow_up_needed === true) {
             followUps.push(unitNumber);
           }
         });
@@ -357,10 +357,9 @@ const AppointmentReport = () => {
             pest_activity: existing.pest_activity || request.pest_type || "",
             products_used: existing.products_used || "",
           };
-          recentUnits.push(unitNumber);
         });
 
-        const mergedUnits = Array.from(new Set([...unitsPlanned, ...recentUnits, ...followUps]))
+        const mergedUnits = Array.from(new Set([...unitsPlanned, ...followUps]))
           .map((unit) => normalizeUnit(unit))
           .filter(Boolean)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -715,7 +714,7 @@ const AppointmentReport = () => {
                             onValueChange={v => setUnitRows(prev => prev.map((r, j) => j === i ? {
                               ...r,
                               status: v,
-                              followUp: v === "Treated - Follow Up" ? "Yes" : r.followUp,
+                              followUp: r.followUp,
                             } : r))}
                           >
                             <SelectTrigger className="h-9 text-xs border-0 px-1.5"><SelectValue /></SelectTrigger>

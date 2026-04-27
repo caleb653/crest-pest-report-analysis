@@ -117,7 +117,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
               </p>
               <div className="space-y-3">
                 {(service.unit_details as any[]).map((unit: any, i: number) => {
-                  const isFollowUp = unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+                  const isFollowUp = unit.follow_up_needed === true;
                   const productsText = Array.isArray(unit.products_used)
                     ? (unit.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
                     : unit.products_used;

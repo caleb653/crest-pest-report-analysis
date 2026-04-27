@@ -393,28 +393,28 @@ const PortalAdmin = () => {
     // Planned units stored on this service (already merged from past + follow-ups by dashboard)
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
 
-    // Units flagged for follow-up from most recent past service
+    // Units flagged for follow-up from most recent past service.
+    // The checkbox is the ONLY valid trigger; status text alone must never
+    // roll a unit into a future service.
     const followUpUnits: string[] = [];
     if (pastCompleted.length > 0) {
       const recent = pastCompleted[0];
       if (Array.isArray(recent.unit_details)) {
         (recent.unit_details as any[]).forEach((u: any) => {
-          if (u.unit_number && (u.status === "Treated - Follow Up" || u.status === "Needs Follow-up" || u.follow_up_recommended)) {
+          if (u.unit_number && u.follow_up_needed === true) {
             followUpUnits.push(u.unit_number);
           }
         });
       }
     }
 
-    // Units + pest data from most recent past service (default carry-over)
-    const recentUnits: string[] = [];
+    // Pest data from most recent past service (context only; not scheduling).
     const recentPestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
     if (pastCompleted.length > 0) {
       const recent = pastCompleted[0];
       if (Array.isArray(recent.unit_details)) {
         (recent.unit_details as any[]).forEach((u: any) => {
           if (u.unit_number) {
-            recentUnits.push(u.unit_number);
             recentPestData[u.unit_number] = {
               findings: u.findings || "",
               pest_activity: u.pest_activity || "",
@@ -449,10 +449,10 @@ const PortalAdmin = () => {
       });
     }
 
-    // Merge all units (planned + recent + follow-ups + work orders), sort numerically
+    // Merge all actionable units. Do NOT add every recent unit — that would
+    // create accidental future follow-up work when the checkbox was not checked.
     const allUnitNumbers = Array.from(new Set([
       ...unitsPlanned,
-      ...recentUnits,
       ...followUpUnits,
       ...workOrderUnits,
     ])).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));

@@ -68,7 +68,7 @@ serve(async (req) => {
     const unitCards = Array.isArray(unitDetails) && unitDetails.length > 0
       ? unitDetails.map((u: any, i: number) => {
           const status = String(u.status || "");
-          const isFollowUp = status === "Treated - Follow Up";
+          const isFollowUp = u.follow_up_needed === true;
           const statusColor = isFollowUp ? "#c2410c" : "#166534";
           const statusBg = isFollowUp ? "#fff7ed" : "#f0fdf4";
           const statusBorder = isFollowUp ? "#fdba74" : "#bbf7d0";

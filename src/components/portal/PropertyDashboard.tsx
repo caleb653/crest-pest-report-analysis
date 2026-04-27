@@ -46,6 +46,7 @@ interface PortalService {
   scheduling_status: string | null; prep_required: boolean | null; prep_notes: string | null;
   unit_details: any; special_notes: string | null; units_planned: any;
   frequency_days?: number | null;
+  report_data?: any;
 }
 interface PortalLink {
   id: string; client_id: string; token: string; link_type: string; label: string | null;
@@ -843,10 +844,9 @@ const PropertyDashboard = ({
     const sourceFromCtx = (unit: string, s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
       if (pendingRequests.some(r => String(r.unit_number) === String(unit))) return "new-work-order";
-      // Only mark as follow-up if the most-recent past service explicitly
-      // flagged this unit as "Treated - Follow Up". A unit that was simply
-      // treated last visit (or carried forward) is NOT a follow-up — it
-      // should render as a normal planned area.
+      // Only mark as follow-up if computeUpcomingUnits says the unit came
+      // from an explicitly checked follow_up_needed flag. Planned / carried
+      // units must NEVER be relabeled as follow-ups.
       if (s === "follow_up") return "follow-up";
       return "planned";
     };
@@ -896,6 +896,9 @@ const PropertyDashboard = ({
     // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
     // is NOT enough — the user must check the box.
     const flagged = unitRows.filter((r: any) => r.follow_up_needed === true).map((r: any) => r.unit_number);
+    const followUpNotes = flagged.length > 0
+      ? `Follow-up units from ${today}: ${flagged.join(", ")}`
+      : null;
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
@@ -919,6 +922,8 @@ const PropertyDashboard = ({
       technician: data?.technician || null,
       products_used: aggregatedProducts as any,
       photos: photosToSave,
+      follow_up_recommended: flagged.length > 0,
+      follow_up_notes: followUpNotes,
     }).eq("id", serviceId);
 
     // ─── Close any open work-order requests for the units we just treated ───
@@ -975,7 +980,7 @@ const PropertyDashboard = ({
           service_type: svc?.service_type || "General Pest Control",
           service_date: nextDate, status: "scheduled",
           units_planned: flagged,
-          special_notes: `Follow-up units from ${today}: ${flagged.join(", ")}`,
+          special_notes: followUpNotes,
         });
       }
     }
@@ -1357,8 +1362,7 @@ const PropertyDashboard = ({
             {unitDetails.map((unit: any, j: number) => {
               const kind = unit.kind || "service";
               const isInspection = kind === "inspection";
-              const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
-                || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+              const isFollowUp = unit.follow_up_needed === true;
               const productsText = Array.isArray(unit.products_used)
                 ? (unit.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
                 : (unit.products_used || "");
@@ -1486,8 +1490,7 @@ const PropertyDashboard = ({
           {unitDetails.map((unit: any, j: number) => {
             const kind = unit.kind || "service";
             const isInspection = kind === "inspection";
-            const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
-              || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+            const isFollowUp = unit.follow_up_needed === true;
             const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
             const unitKey = `pd-past:${s.id}:${j}`;
             const isUnitOpen = expandedUnitKeys.has(unitKey);
@@ -2098,7 +2101,11 @@ const PropertyDashboard = ({
           const latestSourceByUnit = new Map(
             merged.unitContexts.map((uc) => [
               String(uc.unit_number),
-              uc.source === "work_order" ? "new-work-order" : "follow-up",
+              uc.source === "work_order"
+                ? "new-work-order"
+                : uc.source === "follow_up"
+                  ? "follow-up"
+                  : uc.source,
             ])
           );
           const hasSourceDrift = cd.unitRows.some((row: any) => {
@@ -2159,7 +2166,11 @@ const PropertyDashboard = ({
                       products_used: [] as ProductUsage[],
                       status: "To Be Treated",
                       notes: ctx.notes || "",
-                      source: ctx.source === "work_order" ? "new-work-order" : "follow-up",
+                      source: ctx.source === "work_order"
+                        ? "new-work-order"
+                        : ctx.source === "follow_up"
+                          ? "follow-up"
+                          : ctx.source,
                     };
                   });
                 if (additions.length === 0) return prev;
@@ -2331,7 +2342,7 @@ const PropertyDashboard = ({
                   </div>
                   <div className="space-y-6">
                     {cd.unitRows.map((row: any, idx: number) => {
-                      const isFollowUp = row.source === "follow-up" || row.status === "Treated - Follow Up";
+                      const isFollowUp = row.source === "follow-up";
                       const isWorkOrder = row.source === "new-work-order";
                       // Look up the work-order kind (Inspection vs Treatment) so the
                       // header badge + context label match what was actually requested.
@@ -2440,7 +2451,7 @@ const PropertyDashboard = ({
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
                                   <SelectTrigger className={`h-9 text-sm w-[230px] font-semibold border-2 ${
-                                    row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found"
+                                    row.status === "Inspected: Activity Found"
                                       ? "text-orange-700 border-orange-500 bg-orange-50"
                                       : row.status === "To Be Treated"
                                         ? "text-primary-foreground border-primary bg-primary"
