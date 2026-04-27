@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -837,6 +837,18 @@ const PropertyDashboard = ({
   // Debounced lightly via local state in the editor; this just persists what's passed in.
   const updateServiceProducts = async (serviceId: string, products: ProductUsage[]) => {
     await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+    onRefresh();
+  };
+
+  // Save HOA "Visit Notes / Findings" — single combined editable field in the
+  // HOA layout. We persist into `summary` and clear `findings` + `notes` so
+  // the read-back (`s.summary || s.findings || s.notes`) shows exactly what
+  // the admin typed without duplication.
+  const updateServiceFindings = async (serviceId: string, value: string) => {
+    await supabase
+      .from("portal_services")
+      .update({ summary: value, findings: null, notes: null })
+      .eq("id", serviceId);
     onRefresh();
   };
 
@@ -1925,6 +1937,7 @@ const PropertyDashboard = ({
             technician={s.technician}
             products={products}
             units={hoaUnits}
+            onChangeFindings={(next) => updateServiceFindings(s.id, next)}
           />
           {!isProjected && (
             <div className="flex gap-1.5 pt-1 border-t border-border mt-2">

@@ -9,7 +9,7 @@ import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug } fr
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * HOAServiceView — dedicated layout for HOA past + upcoming services.
@@ -92,14 +92,36 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   const canEditMap = mode === "admin" && !!onSaveMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
 
+  // Local copy of findings so admin typing is instant; we debounce-persist
+  // upstream via onChangeFindings (which writes to the DB).
+  const [localFindings, setLocalFindings] = useState(findings);
+  const lastSyncedRef = useRef(findings);
+  useEffect(() => {
+    // If the upstream value changed (e.g. another tab refreshed) and we
+    // haven't got pending edits, mirror it locally.
+    if (findings !== lastSyncedRef.current) {
+      setLocalFindings(findings);
+      lastSyncedRef.current = findings;
+    }
+  }, [findings]);
+  useEffect(() => {
+    if (!canEditFindings) return;
+    if (localFindings === lastSyncedRef.current) return;
+    const t = setTimeout(() => {
+      lastSyncedRef.current = localFindings;
+      onChangeFindings!(localFindings);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [localFindings, canEditFindings, onChangeFindings]);
+
   const productList = normalizeUsageList(products);
 
   return (
     <div className="space-y-4">
       {/* ─── Top zone: Map (left) + Findings (right) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
-        {/* LEFT — Community site map (3/5 width) */}
-        <div className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        {/* LEFT — Community site map (1/2 width) */}
+        <div>
           <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
             <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
@@ -230,7 +252,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
         </div>
 
         {/* RIGHT — Findings + Products (2/5 width) */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3">
           <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-2">
               <ClipboardList className="w-4 h-4 text-primary" />
@@ -241,8 +263,8 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             </div>
             {canEditFindings ? (
               <Textarea
-                value={findings}
-                onChange={(e) => onChangeFindings!(e.target.value)}
+                value={localFindings}
+                onChange={(e) => setLocalFindings(e.target.value)}
                 placeholder={
                   isUpcoming
                     ? "Notes for this upcoming community visit…"
