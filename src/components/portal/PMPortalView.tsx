@@ -28,6 +28,7 @@ import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
+import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 
 const PEST_TYPES = [
   "General Pests",
@@ -1053,6 +1054,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </Card>
 
           {/* Top row: Property Plan + Customer Preference (left column) and Property Map (right column) */}
+          <PreApplicationNoticeCard propertyId={property.id} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
             <div className="space-y-5">
             <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">

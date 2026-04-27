@@ -27,6 +27,7 @@ const AppointmentReport    = lazy(() => import("./pages/AppointmentReport"));
 const RightToTreat         = lazy(() => import("./pages/RightToTreat"));
 const SurveyTake           = lazy(() => import("./pages/SurveyTake"));
 const Notifications        = lazy(() => import("./pages/Notifications"));
+const PreApplicationNoticePage = lazy(() => import("./pages/PreApplicationNoticePage"));
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/portal-admin" element={<PortalAdmin />} />
             <Route path="/right-to-treat/:token" element={<RightToTreat />} />
             <Route path="/survey/:token" element={<SurveyTake />} />
+            <Route path="/pre-application/:propertyId" element={<PreApplicationNoticePage />} />
             {/* All other routes require PIN */}
             <Route path="*" element={
               <PinGate>

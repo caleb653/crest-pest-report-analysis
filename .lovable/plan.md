@@ -16,3 +16,11 @@
 - Polish and mobile optimization
 
 **Shall I proceed with Phase 1?**
+
+## Phase 4 — Compliance documents
+- **Pesticide Pre-Application Notice**: auto-generated, per-property digital version
+  of the California-required notice. Customized with property name, address, service
+  frequency, and target pests pulled from `portal_properties.customer_preferences`.
+  - Public route: `/pre-application/:propertyId`
+  - Surfaced in Admin (PropertyDashboard) and PM Portal as a "Pesticide Pre-Application
+    Notice" card with View / Download (PDF) and Copy Link actions.
