@@ -828,24 +828,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           if (products.length === 0) return null;
           return (
             <div>
-              <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Products Used (this service)</p>
+              <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2">Products Used (this service)</p>
               <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-[11px]">
+                <table className="w-full text-[14px]">
                   <thead className="bg-muted/60">
                     <tr>
-                      <th className="text-left px-2 py-1 font-semibold">Product</th>
-                      <th className="text-left px-2 py-1 font-semibold">Applied (diluted)</th>
-                      <th className="text-left px-2 py-1 font-semibold">Undiluted (concentrate)</th>
+                      <th className="text-left px-3 py-2 font-bold">Product</th>
+                      <th className="text-left px-3 py-2 font-bold">Applied (diluted)</th>
+                      <th className="text-left px-3 py-2 font-bold">Undiluted (concentrate)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {products.map((p, i) => (
                       <tr key={i} className="border-t border-border">
-                        <td className="px-2 py-1 font-medium">{p.name}</td>
-                        <td className="px-2 py-1 text-muted-foreground">
+                        <td className="px-3 py-2 font-semibold">{p.name}</td>
+                        <td className="px-3 py-2 text-muted-foreground">
                           {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
                         </td>
-                        <td className="px-2 py-1 text-muted-foreground">
+                        <td className="px-3 py-2 text-muted-foreground">
                           {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
                         </td>
                       </tr>
