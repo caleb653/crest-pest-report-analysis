@@ -1717,18 +1717,18 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-        {/* HOA mode (past service): site map is the FOCAL POINT of the report
-            — bigger, top of the page. The per-unit/area table is demoted into
-            a small "Specific Homes Treated" collapsible below the narrative. */}
+        {/* HOA mode (past service): MAP + SUMMARY are ~90% of the report.
+            Everything else (per-unit/area table, products) is collapsed into
+            a tiny "Visit Details" twirl-down underneath the narrative. */}
         {isHOA && !isUpcoming && (mapUrl || property.map_data) && (
-          <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-sm">
+          <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
             <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-emerald-700" />
+              <MapPin className="w-5 h-5 text-emerald-700" />
               <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
                 Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background" style={{ height: 480 }}>
+            <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : mapUrl ? (
@@ -1772,38 +1772,47 @@ const PropertyDashboard = ({
             before so per-unit data entry stays primary. */}
         {!isUpcoming && isHOA && (
           <>
-            {/* Robust Technician Findings / Summary / Notes — main story */}
+            {/* Technician Report — large, prominent narrative (the "summary"
+                half of the 90/10 split with the map). */}
             {(s.summary || s.findings || s.notes) && (
-              <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-5 shadow-sm">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <ClipboardList className="w-4 h-4 text-primary" />
-                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+              <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-6 shadow-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  <p className="text-sm font-bold uppercase tracking-wide text-primary">
                     Technician Report{s.technician ? ` — ${s.technician}` : ""}
                   </p>
                 </div>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+                <p className="text-base whitespace-pre-wrap leading-relaxed font-medium text-foreground">
                   {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
                 </p>
               </div>
             )}
-            {/* Robust Products Used — emphasized for HOA reports */}
-            {products.length > 0 && (
-              <div className="rounded-xl border-2 border-primary/40 bg-card p-3.5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 flex items-center gap-1.5">
-                  <FlaskConical className="w-4 h-4" />
-                  Products Used (this visit)
-                </p>
-                <ProductUsageSummary entries={products} />
-              </div>
-            )}
-            {/* Specific Homes Treated — small, collapsible, secondary */}
-            <details className="rounded-lg border border-border bg-muted/20 px-3 py-2 group">
-              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
-                <span>Specific Homes Treated ({Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0})</span>
+            {/* Visit Details — collapsed by default. Holds products + the
+                editable per-unit table so techs can still enter data, but
+                visually it's an afterthought. */}
+            <details className="rounded-lg border border-border bg-muted/30 px-3 py-2 group">
+              <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
+                <span>
+                  Visit Details
+                  {products.length > 0 && ` · ${products.length} product${products.length === 1 ? "" : "s"}`}
+                  {Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0 && ` · ${(s.unit_details as any[]).length} home${(s.unit_details as any[]).length === 1 ? "" : "s"}`}
+                </span>
                 <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
               </summary>
-              <div className="mt-2">
-                {renderEditableUnitTable(s)}
+              <div className="mt-3 space-y-3">
+                {products.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <FlaskConical className="w-3 h-3 text-primary" />
+                      Products Used
+                    </p>
+                    <ProductUsageSummary entries={products} />
+                  </div>
+                )}
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Specific Homes Treated</p>
+                  {renderEditableUnitTable(s)}
+                </div>
               </div>
             </details>
           </>
