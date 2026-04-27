@@ -2191,7 +2191,7 @@ const PropertyDashboard = ({
                 Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background mx-auto" style={{ aspectRatio: "3 / 4", width: "100%", maxWidth: 560 }}>
+            <div className="bg-background mx-auto" style={{ aspectRatio: "3 / 4", height: 720, width: "auto", maxWidth: "100%" }}>
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : mapUrl ? (
