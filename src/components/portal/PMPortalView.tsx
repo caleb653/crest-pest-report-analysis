@@ -184,6 +184,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [tenantEmail, setTenantEmail] = useState("");
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
+  // Photos attached to the new work order — uploaded to the public
+  // `report-images` bucket and persisted into portal_requests.photos.
+  const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
+  const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
 
   // Survey state
   const [surveys, setSurveys] = useState<any[]>([]);
