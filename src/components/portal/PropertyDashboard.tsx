@@ -1360,15 +1360,28 @@ const PropertyDashboard = ({
 
   const quickAddService = async () => {
     if (!addingServiceDate) return;
-    await supabase.from("portal_services").insert({
-      property_id: property.id,
-      service_type: addingServiceType,
-      service_date: addingServiceDate,
-      status: "scheduled",
-      units_planned: allUnits,
-      frequency_days: SERVICE_FREQUENCY_MAP[addingServiceType] || 30,
-    });
-    toast({ title: "Service added" });
+    // Persist the manually added appointment as its OWN standalone row.
+    // We tag it `manually_added: true` in report_data so the dedupe pass in
+    // completeService never wipes it out — manual entries are first-class
+    // and must survive any nearby completions.
+    const { data: inserted, error } = await supabase
+      .from("portal_services")
+      .insert({
+        property_id: property.id,
+        service_type: addingServiceType,
+        service_date: addingServiceDate,
+        status: "scheduled",
+        units_planned: allUnits,
+        frequency_days: SERVICE_FREQUENCY_MAP[addingServiceType] || 30,
+        report_data: { manually_added: true } as any,
+      } as any)
+      .select("id")
+      .single();
+    if (error) {
+      toast({ title: "Failed to add service", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Service added", description: `Saved for ${formatDate(addingServiceDate)}` });
     setShowQuickAdd(false);
     setAddingServiceDate("");
     onRefresh();
