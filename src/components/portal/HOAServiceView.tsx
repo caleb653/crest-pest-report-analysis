@@ -9,7 +9,7 @@ import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug } fr
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * HOAServiceView — dedicated layout for HOA past + upcoming services.
@@ -91,6 +91,28 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   const [isEditingMap, setIsEditingMap] = useState(false);
   const canEditMap = mode === "admin" && !!onSaveMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
+
+  // Local copy of findings so admin typing is instant; we debounce-persist
+  // upstream via onChangeFindings (which writes to the DB).
+  const [localFindings, setLocalFindings] = useState(findings);
+  const lastSyncedRef = useRef(findings);
+  useEffect(() => {
+    // If the upstream value changed (e.g. another tab refreshed) and we
+    // haven't got pending edits, mirror it locally.
+    if (findings !== lastSyncedRef.current) {
+      setLocalFindings(findings);
+      lastSyncedRef.current = findings;
+    }
+  }, [findings]);
+  useEffect(() => {
+    if (!canEditFindings) return;
+    if (localFindings === lastSyncedRef.current) return;
+    const t = setTimeout(() => {
+      lastSyncedRef.current = localFindings;
+      onChangeFindings!(localFindings);
+    }, 600);
+    return () => clearTimeout(t);
+  }, [localFindings, canEditFindings, onChangeFindings]);
 
   const productList = normalizeUsageList(products);
 
@@ -241,8 +263,8 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             </div>
             {canEditFindings ? (
               <Textarea
-                value={findings}
-                onChange={(e) => onChangeFindings!(e.target.value)}
+                value={localFindings}
+                onChange={(e) => setLocalFindings(e.target.value)}
                 placeholder={
                   isUpcoming
                     ? "Notes for this upcoming community visit…"
