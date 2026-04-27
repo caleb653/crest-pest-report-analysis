@@ -6,32 +6,58 @@ import {
   ProductUsage,
   normalizeUsageList,
   aggregateUsage,
+  findEpaNumber,
+  computeDilution,
 } from "@/lib/productCatalog";
 
-// ─── Display a list of products + amounts on a single service card ───
+// ─── Display a list of products + full liability detail on a single service card ───
 export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) => {
   if (!entries || entries.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="rounded-md border border-border/60 overflow-hidden">
+      <div className="grid grid-cols-12 gap-1 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40 border-b border-border/60">
+        <div className="col-span-3">Product</div>
+        <div className="col-span-2">Diluted</div>
+        <div className="col-span-2">Concentrated</div>
+        <div className="col-span-2">Dilution Rate</div>
+        <div className="col-span-2">Mix Ratio</div>
+        <div className="col-span-1 text-right">EPA #</div>
+      </div>
       {entries.map((u, j) => {
-        const hasAmt = u.applied_amount || u.undiluted_amount;
+        const epa = findEpaNumber(u.name);
+        const { ratePct, mixRatioPerGal, mixRatioUnit } = computeDilution(u);
         return (
-          <Badge
+          <div
             key={`${u.name}-${j}`}
-            variant="outline"
-            className="text-[10px] flex items-center gap-1 py-0.5"
-            title={hasAmt ? `Applied: ${u.applied_amount ?? "—"} ${u.applied_unit} · Undiluted: ${u.undiluted_amount ?? "—"} ${u.undiluted_unit}` : ""}
+            className={`grid grid-cols-12 gap-1 px-2 py-1.5 text-[11px] items-center ${j % 2 === 1 ? "bg-muted/20" : ""}`}
           >
-            <span className="font-medium">{u.name}</span>
-            {hasAmt && (
-              <span className="text-muted-foreground">
-                {u.applied_amount != null && <span> · {u.applied_amount}{u.applied_unit}</span>}
-                {u.undiluted_amount != null && (
-                  <span className="text-primary"> ({u.undiluted_amount}{u.undiluted_unit})</span>
-                )}
-              </span>
-            )}
-          </Badge>
+            <div className="col-span-3 font-semibold truncate" title={u.name}>{u.name}</div>
+            <div className="col-span-2">
+              {u.applied_amount != null
+                ? <span><span className="font-medium">{u.applied_amount}</span> <span className="text-muted-foreground">{u.applied_unit}</span></span>
+                : <span className="text-muted-foreground">—</span>}
+            </div>
+            <div className="col-span-2">
+              {u.undiluted_amount != null
+                ? <span className="text-primary"><span className="font-medium">{u.undiluted_amount}</span> <span className="opacity-80">{u.undiluted_unit}</span></span>
+                : <span className="text-muted-foreground">—</span>}
+            </div>
+            <div className="col-span-2">
+              {ratePct != null
+                ? <span className="font-medium">{ratePct.toFixed(2)}%</span>
+                : <span className="text-muted-foreground">—</span>}
+            </div>
+            <div className="col-span-2">
+              {mixRatioPerGal != null && mixRatioUnit
+                ? <span><span className="font-medium">{mixRatioPerGal}</span> <span className="text-muted-foreground">{mixRatioUnit} / 1 gal</span></span>
+                : <span className="text-muted-foreground">—</span>}
+            </div>
+            <div className="col-span-1 text-right text-[10px] font-mono">
+              {epa
+                ? <span title={`EPA Reg # ${epa}`}>{epa}</span>
+                : <span className="text-muted-foreground">—</span>}
+            </div>
+          </div>
         );
       })}
     </div>
