@@ -37,6 +37,10 @@ const TenantPortal = () => {
   const [error, setError] = useState("");
   const [linkData, setLinkData] = useState<any>(null);
   const [propertyName, setPropertyName] = useState("");
+  const [isHOA, setIsHOA] = useState(false);
+  // HOA-only request scope: "individual" (a service call for this resident's home)
+  // vs "community" (a sighting somewhere in the community for the board to triage).
+  const [hoaScope, setHoaScope] = useState<"individual" | "community">("individual");
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -78,10 +82,14 @@ const TenantPortal = () => {
       const propId = String(link.assigned_property_ids[0]);
       const { data: prop } = await supabase
         .from("portal_properties")
-        .select("name")
+        .select("name, customer_preferences")
         .eq("id", propId)
         .single();
-      if (prop) setPropertyName(prop.name);
+      if (prop) {
+        setPropertyName(prop.name);
+        const ptype = (prop as any).customer_preferences?.property_type;
+        setIsHOA(ptype === "hoa");
+      }
 
       // Discover units from past services
       const { data: svcs } = await supabase
