@@ -459,7 +459,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                 Saved to this service only. Add what was (or will be) applied during the visit.
               </p>
             </div>
-          ) : !isUpcoming && productList.length > 0 && (
+          ) : !isUpcoming && displayList.length > 0 && (
             <div>
               <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
                 <FlaskConical className="w-3.5 h-3.5 text-primary" />
@@ -475,7 +475,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {productList.map((p, i) => (
+                    {displayList.map((p, i) => (
                       <tr key={i} className="border-t border-border">
                         <td className="px-3 py-2 font-semibold">{p.name}</td>
                         <td className="px-3 py-2 text-muted-foreground">
