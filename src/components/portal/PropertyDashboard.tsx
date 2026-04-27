@@ -3151,6 +3151,12 @@ const PropertyDashboard = ({
                                             : "Last Service Context"}
                                         </Label>
                                       </div>
+                                      {isWorkOrder && uc.request && (() => {
+                                        const contact = parseResidentContact(uc.request as any);
+                                        return contact.hasAny ? (
+                                          <ResidentContactCard contact={contact} className="mb-2" />
+                                        ) : null;
+                                      })()}
                                       <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
                                         {uc.context}
                                       </p>
