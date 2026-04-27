@@ -1906,11 +1906,13 @@ const PropertyDashboard = ({
         ? merged.unitContexts.map((uc) => ({
             unit_number: String(uc.unit_number || "").trim(),
             follow_up_needed: uc.source === "follow_up",
+            target_pest: uc.target_pest || (uc as any)?.request?.pest_type || "",
           }))
         : (Array.isArray(s.unit_details) ? (s.unit_details as any[]) : []).map((u: any) => ({
             unit_number: String(u.unit_number || "").trim(),
             status: u.status || undefined,
             follow_up_needed: !!u.follow_up_needed,
+            target_pest: u.target_pest || "",
           }))
       ).filter((u) => u.unit_number);
       const findingsCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
