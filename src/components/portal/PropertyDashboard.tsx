@@ -76,14 +76,13 @@ const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 // filtering / follow-up logic keeps working.
 const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Completed" },
-  { value: "Treated - Follow Up", label: "Treated - Follow Up Needed" },
+  { value: "Treated - Complete",  label: "Treated - Free and Clear" },
   { value: "Not Treated",         label: "Not Treated" },
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
   { value: "Inspected: Free and Clear",  label: "Free and Clear" },
-  { value: "Inspected: Activity Found",  label: "Activity Found - Follow Up Needed" },
+  { value: "Inspected: Activity Found",  label: "Follow Up" },
   { value: "Not Treated",                label: "Not Inspected" },
 ];
 
