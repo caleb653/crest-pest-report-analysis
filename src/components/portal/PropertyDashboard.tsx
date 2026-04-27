@@ -282,6 +282,61 @@ const PropertyDashboard = ({
   const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
   const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
 
+  // ── Autosave the in-progress completion form into
+  //    `portal_services.report_data.completion_draft` so any products,
+  //    findings, or per-unit notes typed on an UPCOMING service survive a
+  //    page refresh / nav-away. Debounced 800ms per service. The draft is
+  //    cleared on completeService() so it never bleeds into past records. ──
+  const completionDraftTimers = useRef<Record<string, any>>({});
+  const completionDraftLast = useRef<Record<string, string>>({});
+  useEffect(() => {
+    Object.entries(completionData).forEach(([serviceId, data]) => {
+      if (!data) return;
+      const svc = services.find(s => s.id === serviceId);
+      // Only autosave for real, not-yet-completed services. Projected
+      // (synthetic) rows have no DB id; completed services should never
+      // mutate their stored draft.
+      if (!svc || svc.status === "completed") return;
+      const serialized = JSON.stringify(data);
+      if (completionDraftLast.current[serviceId] === serialized) return;
+      completionDraftLast.current[serviceId] = serialized;
+      if (completionDraftTimers.current[serviceId]) {
+        clearTimeout(completionDraftTimers.current[serviceId]);
+      }
+      completionDraftTimers.current[serviceId] = setTimeout(async () => {
+        try {
+          // Strip transient upload flags before persisting.
+          const cleanRows = (data.unitRows || []).map((r: any) => ({
+            ...r,
+            photos: Array.isArray(r.photos)
+              ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+              : [],
+          }));
+          const cleanPhotos = (data.photos || []).filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }));
+          const existing = (svc as any).report_data && typeof (svc as any).report_data === "object"
+            ? (svc as any).report_data
+            : {};
+          const next = {
+            ...existing,
+            completion_draft: {
+              ...data,
+              unitRows: cleanRows,
+              photos: cleanPhotos,
+              _saved_at: new Date().toISOString(),
+            },
+          };
+          await supabase.from("portal_services").update({ report_data: next }).eq("id", serviceId);
+        } catch (e) {
+          console.warn("completion draft autosave failed", e);
+        }
+      }, 800);
+    });
+    return () => {
+      // Don't clear timers on unmount — they're fine to fire after unmount
+      // since they only hit the DB.
+    };
+  }, [completionData, services]);
+
   // Survey state — mirrors PMPortalView so admin has full survey workflow
   const [surveys, setSurveys] = useState<any[]>([]);
 
@@ -984,6 +1039,43 @@ const PropertyDashboard = ({
   ) => {
     if (completionData[serviceId]) return; // already initialized
 
+    // ── Hydrate from a previously-saved draft (so products, findings,
+    //    and per-unit notes typed on an upcoming service survive a page
+    //    refresh / navigation away and come back). The draft lives in
+    //    `portal_services.report_data.completion_draft` and is updated
+    //    automatically while the admin types. It's wiped on completion. ──
+    const svcRow = propServices.find(s => s.id === serviceId) as any;
+    const draft = svcRow?.report_data?.completion_draft;
+    if (draft && Array.isArray(draft.unitRows)) {
+      setCompletionData(prev => ({
+        ...prev,
+        [serviceId]: {
+          unitRows: draft.unitRows.map((r: any) => ({
+            unit_number: r.unit_number || "",
+            target_pest: r.target_pest || "",
+            findings: r.findings || "",
+            pest_activity: r.pest_activity || "None",
+            products_used: normalizeUsageList(r.products_used) || [],
+            status: r.status || "To Be Treated",
+            notes: r.notes || "",
+            source: r.source || "planned",
+            follow_up_needed: r.follow_up_needed === true,
+            sanitization_concern: r.sanitization_concern === true,
+            photos: Array.isArray(r.photos) ? r.photos : [],
+          })),
+          summary: draft.summary || "",
+          findings: draft.findings || "",
+          notes: draft.notes || "",
+          technician: draft.technician || "",
+          time_in: draft.time_in || "",
+          time_out: draft.time_out || "",
+          photos: Array.isArray(draft.photos) ? draft.photos : [],
+          products: normalizeUsageList(draft.products) || [],
+        },
+      }));
+      return;
+    }
+
     // Prefer the unified contexts from computeUpcomingUnits — guarantees the
     // admin's pre-fill (source / target pest / findings) matches EXACTLY what
     // the PM portal shows for the same upcoming service.
@@ -1074,6 +1166,15 @@ const PropertyDashboard = ({
       if (label) appointmentLabel = label;
     }
 
+    // Strip the autosaved completion_draft now that the real fields are
+    // being persisted — it has served its purpose.
+    const svcRowForDraft = propServices.find(p => p.id === serviceId) as any;
+    const existingReport =
+      svcRowForDraft?.report_data && typeof svcRowForDraft.report_data === "object"
+        ? { ...svcRowForDraft.report_data }
+        : {};
+    delete (existingReport as any).completion_draft;
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
@@ -1088,7 +1189,11 @@ const PropertyDashboard = ({
       follow_up_recommended: flagged.length > 0,
       follow_up_notes: followUpNotes,
       appointment_service: appointmentLabel,
+      report_data: existingReport,
     }).eq("id", serviceId);
+    // Forget the local "last serialized" snapshot so a re-open of this
+    // service id (rare) doesn't think there's nothing to save.
+    delete completionDraftLast.current[serviceId];
 
     // ─── Close any open work-order requests for the units we just treated ───
     // Without this, a pending request keeps bleeding into the NEXT upcoming
