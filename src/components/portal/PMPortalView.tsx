@@ -151,7 +151,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Per-prep-sheet "email this PDF" form state.
   const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
   const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  // For non-HOA portals: "date" / "unit" (existing behavior).
+  // For HOA portals: "date" (= Service Reports) / "quarterly" (= Quarterly Updates).
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
   const toggleUnitKey = (key: string) =>
