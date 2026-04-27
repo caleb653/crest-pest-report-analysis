@@ -92,7 +92,6 @@ serve(async (req) => {
       <p style="margin:0 0 14px;">Hi there,</p>
       <p style="margin:0 0 14px;">Crest Pest Control has been scheduled to service <strong>${unitLabel}</strong> at <strong>${propertyName}</strong>.</p>
       ${reqRow.pest_type ? `<p style="margin:0 0 14px;"><strong>Reason:</strong> ${reqRow.pest_type}${reqRow.location_type ? ` (${reqRow.location_type})` : ""}</p>` : ""}
-      ${reqRow.preferred_date ? `<p style="margin:0 0 14px;"><strong>Preferred date:</strong> ${reqRow.preferred_date}</p>` : ""}
 
       ${prep ? `
       <p style="margin:14px 0;font-size:14px;">Please review the attached prep sheet <strong>${escapeHtml(prep.title)}</strong> before your appointment.</p>` : ""}

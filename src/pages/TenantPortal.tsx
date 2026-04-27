@@ -29,7 +29,6 @@ interface RequestData {
   created_at: string;
   pest_type?: string | null;
   location_type?: string | null;
-  preferred_date?: string | null;
 }
 
 const TenantPortal = () => {
@@ -47,7 +46,6 @@ const TenantPortal = () => {
   const [locationType, setLocationType] = useState("");
   const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
   const [description, setDescription] = useState("");
-  const [preferredDate, setPreferredDate] = useState("");
 
   // Known units from this property
   const [knownUnits, setKnownUnits] = useState<string[]>([]);
@@ -125,7 +123,6 @@ const TenantPortal = () => {
       pest_type: pestType,
       location_type: locationType || null,
       occupancy_status: occupancyStatus || null,
-      preferred_date: preferredDate || null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
@@ -142,7 +139,6 @@ const TenantPortal = () => {
       setLocationType("");
       setOccupancyStatus("");
       setDescription("");
-      setPreferredDate("");
       loadPortal();
     } else {
       toast({ title: "Error", description: "Could not submit request.", variant: "destructive" });
@@ -281,17 +277,6 @@ const TenantPortal = () => {
                   >{loc}</button>
                 ))}
               </div>
-            </div>
-
-            {/* When ready — free-text */}
-            <div>
-              <Label className="text-sm">Preferred Day</Label>
-              <Input
-                placeholder="e.g. Next service, next few weeks, Tuesday afternoon, ASAP…"
-                value={preferredDate}
-                onChange={e => setPreferredDate(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-0.5">Leave blank if any time works</p>
             </div>
 
             {/* Additional comments */}

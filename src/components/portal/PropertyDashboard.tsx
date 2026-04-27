@@ -183,7 +183,7 @@ const PropertyDashboard = ({
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
   const [workOrder, setWorkOrder] = useState({
-    unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
+    unit_number: "", pest_type: "", location_type: "", comments: "",
     request_type: "" as "" | "treatment" | "inspection",
     occupancy_status: "" as "" | "Occupied" | "Vacant",
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
@@ -1213,7 +1213,6 @@ const PropertyDashboard = ({
       description: `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
       pest_type: workOrder.pest_type || null,
       location_type: workOrder.location_type || null,
-      preferred_date: workOrder.preferred_date || null,
       occupancy_status: workOrder.occupancy_status || null,
       tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
@@ -1246,7 +1245,7 @@ const PropertyDashboard = ({
       }
     }
     setWorkOrder({
-      unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
+      unit_number: "", pest_type: "", location_type: "", comments: "",
       request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
       customer_name: "", customer_phone: "",
@@ -3246,31 +3245,6 @@ const PropertyDashboard = ({
                     onClick={() => setWorkOrder(wo => ({ ...wo, location_type: loc }))}>{loc}</button>
                 ))}
               </div>
-            </div>
-
-            {/* Preferred Day */}
-            <div>
-              <Label className="text-sm">Preferred Day</Label>
-              <div className="grid grid-cols-3 gap-2 mt-1">
-                {([
-                  { key: "Next Service", label: "Next service" },
-                  { key: "Next Few Weeks", label: "Next few weeks" },
-                  { key: "__other", label: "Other" },
-                ] as const).map(opt => {
-                  const isPreset = ["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date);
-                  const active = opt.key === "__other" ? (workOrder.preferred_date !== "" && !isPreset) : workOrder.preferred_date === opt.key;
-                  return (
-                    <button key={opt.key} type="button"
-                      className={`px-3 py-2 rounded-lg text-xs border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
-                      onClick={() => setWorkOrder(wo => ({ ...wo, preferred_date: opt.key === "__other" ? " " : opt.key }))}>{opt.label}</button>
-                  );
-                })}
-              </div>
-              {workOrder.preferred_date !== "" && !["Next Service", "Next Few Weeks"].includes(workOrder.preferred_date) && (
-                <Input className="mt-2" placeholder="Tell us when works (e.g. Tuesday afternoon, after the 15th)"
-                  value={workOrder.preferred_date.trim()}
-                  onChange={e => setWorkOrder(wo => ({ ...wo, preferred_date: e.target.value || " " }))} />
-              )}
             </div>
 
             {/* Additional Details */}

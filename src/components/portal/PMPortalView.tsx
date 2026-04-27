@@ -175,8 +175,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [pestType, setPestType] = useState("");
   const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
-  const [preferredDateChoice, setPreferredDateChoice] = useState<"" | "next" | "few-weeks" | "other">("");
-  const [preferredDateCustom, setPreferredDateCustom] = useState("");
   const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
   const [emailTenant, setEmailTenant] = useState(false);
   const [tenantEmail, setTenantEmail] = useState("");
@@ -324,16 +322,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setLoading(false);
   };
 
-  const computePreferredDate = (): string | null => {
-    // Save the human-friendly label exactly as chosen on the form so the PM
-    // (and admin) sees the same wording back ("Next service", "Next few weeks",
-    // or whatever they typed) instead of a computed calendar date.
-    if (preferredDateChoice === "") return null;
-    if (preferredDateChoice === "next") return "Next service";
-    if (preferredDateChoice === "few-weeks") return "Next few weeks";
-    return preferredDateCustom.trim() || null;
-  };
-
   const submitRequest = async () => {
     if (!unitNumber.trim() || !pestType) return;
     setSubmitting(true);
@@ -350,7 +338,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       description: `[${requestKind === "inspection" ? "INSPECTION" : "TREATMENT"}] ${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
-      preferred_date: computePreferredDate(),
       occupancy_status: occupancyStatus || null,
       tenant_email: emailTenant ? tenantEmail.trim() || null : null,
       prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
@@ -396,8 +383,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setRequestKind("treatment");
       setPestType("");
       setDescription("");
-      setPreferredDateChoice("next");
-      setPreferredDateCustom("");
       setOccupancyStatus("");
       setEmailTenant(false);
       setTenantEmail("");
@@ -1539,25 +1524,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 )}
 
                 <div>
-                  <Label className="text-sm">Preferred Day</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    {([
-                      { key: "next", label: "Next service" },
-                      { key: "few-weeks", label: "Next few weeks" },
-                      { key: "other", label: "Other" },
-                    ] as const).map(opt => (
-                      <button key={opt.key} type="button"
-                        className={`px-3 py-2 rounded-lg text-xs border transition-colors ${preferredDateChoice === opt.key ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
-                        onClick={() => setPreferredDateChoice(opt.key)}>{opt.label}</button>
-                    ))}
-                  </div>
-                  {preferredDateChoice === "other" && (
-                    <Input className="mt-2" placeholder="Tell us when works (e.g. Tuesday afternoon, after the 15th)"
-                      value={preferredDateCustom} onChange={e => setPreferredDateCustom(e.target.value)} />
-                  )}
-                </div>
-
-                <div>
                   <Label className="text-sm">Additional Details</Label>
                   <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
                     value={description} onChange={e => setDescription(e.target.value)} rows={3} />
@@ -1684,7 +1650,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-medium">{r.unit_number}</Badge>
                               {r.location_type && <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>}
-                              {r.preferred_date && <span className="text-[10px] text-muted-foreground">• Wants: {r.preferred_date}</span>}
                               {r.occupancy_status && <span className="text-[10px] text-muted-foreground">• {r.occupancy_status}</span>}
                             </div>
                           )}

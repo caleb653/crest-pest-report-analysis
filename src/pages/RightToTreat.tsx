@@ -143,7 +143,6 @@ const RightToTreat = () => {
               {property?.address && <p><span className="text-muted-foreground">Address:</span> {property.address}</p>}
               {request?.unit_number && <p><span className="text-muted-foreground">Unit:</span> <span className="font-semibold">{request.unit_number}</span></p>}
               {request?.pest_type && <p><span className="text-muted-foreground">Reason:</span> {request.pest_type}{request.location_type ? ` (${request.location_type})` : ""}</p>}
-              {request?.preferred_date && <p><span className="text-muted-foreground">Preferred date:</span> {request.preferred_date}</p>}
             </div>
 
             <div className="rounded-md border bg-muted/40 p-3 text-xs leading-relaxed">
