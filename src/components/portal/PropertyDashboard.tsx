@@ -4033,7 +4033,7 @@ const PropertyDashboard = ({
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Calendar className="w-3 h-3" />
-                              Reschedule
+                              {propertyType === "apartments" && isProjected ? "Schedule" : "Reschedule"}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
