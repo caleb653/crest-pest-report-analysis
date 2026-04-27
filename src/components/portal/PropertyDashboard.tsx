@@ -4252,7 +4252,7 @@ const PropertyDashboard = ({
         <div className="space-y-2 max-w-4xl mx-auto">
           <div className="border-b-2 border-primary/70 pb-3 mb-3">
             <h3 className="text-xl font-bold flex items-center gap-2">
-              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
+              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets & Signed Authorizations
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
             </h3>
             <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
