@@ -4379,7 +4379,12 @@ const PropertyDashboard = ({
                     submittingHoaRequest ||
                     !hoaLocation.trim() ||
                     !hoaPests.trim() ||
-                    (hoaRequestKind === "service" && !hoaAddress.trim())
+                    (hoaRequestKind === "service" && (
+                      !hoaAddress.trim() ||
+                      !hoaResidentName.trim() ||
+                      !hoaResidentEmail.trim() ||
+                      !hoaResidentPhone.trim()
+                    ))
                   }
                 >
                   <Send className="w-4 h-4 mr-2" />
