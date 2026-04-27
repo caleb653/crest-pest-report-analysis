@@ -3929,9 +3929,14 @@ const PropertyDashboard = ({
               {futureProjectedDates.map((d, idx) => {
                 const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                 const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
-                // Visit-of-cycle index — the "next" visit (allUpcoming[0]) is index 0 of the rotation.
-                const visitInCycle = ((idx + 1) % cycleLength) + 1;
-                const note = cycleLength > 1 ? (planArr[visitInCycle - 1] || "").trim() : "";
+                // Cadence rotation index: the "next" visit (allUpcoming[0])
+                // is at rotation slot (pastServices.length % cycleLength).
+                // Each future-projected visit is one step further around the
+                // rotation. (visitInCycle is 1-based for display.)
+                const nextRotIdx = pastServices.length % cycleLength;
+                const slot = (nextRotIdx + (idx + 1)) % cycleLength;
+                const visitInCycle = slot + 1;
+                const note = cycleLength > 1 ? (planArr[slot] || "").trim() : "";
                 return (
                   <div
                     key={`future-${idx}`}
