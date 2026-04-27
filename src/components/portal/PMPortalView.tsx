@@ -2452,7 +2452,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           <img src={crestLogo} alt="Crest Pest Control" className="h-9" />
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-base truncate">{property.name}</h1>
-            <p className="text-xs text-muted-foreground">Property Manager Portal</p>
+            <p className="text-xs text-muted-foreground">{portalRoleLabel}</p>
           </div>
         </div>
       </div>
