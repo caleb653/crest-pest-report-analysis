@@ -4236,12 +4236,12 @@ const PropertyDashboard = ({
             if (link) {
               const url = `${window.location.origin}/tenant/${link.token}`;
               navigator.clipboard.writeText(url);
-              toast({ title: "Link copied!", description: "Share this with the tenant so they can submit requests." });
+              toast({ title: "Link copied!", description: `Share this with the ${residentTerm} so they can submit requests.` });
             } else {
               toast({ title: "No portal link", description: "A share link will be auto-generated.", variant: "destructive" });
             }
           }}>
-          <ExternalLink className="w-4 h-4 mr-1.5" />Copy Tenant Request Link
+          <ExternalLink className="w-4 h-4 mr-1.5" />Copy {ResidentTerm} Request Link
         </Button>
         </div>
       </TabsContent>
