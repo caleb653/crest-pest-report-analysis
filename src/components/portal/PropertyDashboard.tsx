@@ -2321,7 +2321,7 @@ const PropertyDashboard = ({
               });
             }
           };
-          const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
+          const flaggedCount = cd.unitRows.filter((r: any) => r.follow_up_needed === true).length;
 
           return (
             <div className="space-y-3 pt-2 border-t border-border mt-2">
@@ -2740,7 +2740,7 @@ const PropertyDashboard = ({
                 {flaggedCount > 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                     <p className="text-xs font-medium text-orange-700">
-                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Treated - Follow Up" — will auto-add to next service
+                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Follow Up Needed" — will auto-add to next service
                     </p>
                   </div>
                 )}
