@@ -1911,8 +1911,12 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format) */}
-        {isUpcoming && !isProjected && (() => {
+        {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format).
+            Also shown for PROJECTED services (no date scheduled yet) so the
+            technician / admin can preview the merged "Units to be Treated"
+            and pre-fill notes before a date is locked in. Completion is
+            blocked until a real date is saved. */}
+        {isUpcoming && (() => {
           // Auto-init completion data on first render for this expanded upcoming service
           if (!completionData[s.id]) {
             setTimeout(() => initCompletionData(s.id, displayUnits, merged.unitContexts), 0);
