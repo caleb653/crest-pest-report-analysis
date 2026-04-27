@@ -1362,8 +1362,7 @@ const PropertyDashboard = ({
             {unitDetails.map((unit: any, j: number) => {
               const kind = unit.kind || "service";
               const isInspection = kind === "inspection";
-              const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
-                || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+              const isFollowUp = unit.follow_up_needed === true;
               const productsText = Array.isArray(unit.products_used)
                 ? (unit.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
                 : (unit.products_used || "");
@@ -1491,8 +1490,7 @@ const PropertyDashboard = ({
           {unitDetails.map((unit: any, j: number) => {
             const kind = unit.kind || "service";
             const isInspection = kind === "inspection";
-            const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
-              || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+            const isFollowUp = unit.follow_up_needed === true;
             const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
             const unitKey = `pd-past:${s.id}:${j}`;
             const isUnitOpen = expandedUnitKeys.has(unitKey);
