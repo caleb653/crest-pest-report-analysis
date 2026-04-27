@@ -911,6 +911,20 @@ const PropertyDashboard = ({
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
 
+    // Compute the cadence-rotation visit label for this completion so the
+    // past service preserves the correct title (e.g. "1st Weekly Visit
+    // (Focus on Zone #A)") instead of falling back to the generic
+    // "General Pest Service". Falls back to whatever was already saved on
+    // the row, then to the rotation, then to nothing.
+    const svcRow = propServices.find(p => p.id === serviceId);
+    let appointmentLabel: string | null = (svcRow as any)?.appointment_service || null;
+    if (!appointmentLabel && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
+      // pastServices already excludes this service (status was scheduled),
+      // so its length is the correct rotation index for THIS completion.
+      const label = getCadenceVisitLabel(pastServices.length, cadencePlanDraft[propertyFrequency]);
+      if (label) appointmentLabel = label;
+    }
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
@@ -924,6 +938,7 @@ const PropertyDashboard = ({
       photos: photosToSave,
       follow_up_recommended: flagged.length > 0,
       follow_up_notes: followUpNotes,
+      appointment_service: appointmentLabel,
     }).eq("id", serviceId);
 
     // ─── Close any open work-order requests for the units we just treated ───
