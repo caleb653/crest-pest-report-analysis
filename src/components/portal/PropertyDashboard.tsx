@@ -15,7 +15,7 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -213,7 +213,7 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-  const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string }[]>([]);
+  const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string; file_url: string | null }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
 
