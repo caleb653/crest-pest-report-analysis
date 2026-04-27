@@ -24,7 +24,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
-import { computeUpcomingUnits } from "@/lib/upcomingUnits";
+import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
