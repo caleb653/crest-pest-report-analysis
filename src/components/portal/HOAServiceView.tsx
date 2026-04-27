@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug } from "lucide-react";
-import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { useState, useEffect, useRef } from "react";
@@ -36,6 +35,8 @@ export interface HOAUnitItem {
   unit_number: string;
   status?: string;
   follow_up_needed?: boolean;
+  /** Pest the home is being serviced for (shown next to the unit number). */
+  target_pest?: string;
 }
 
 export interface HOAServiceViewProps {
@@ -286,12 +287,35 @@ export function HOAServiceView(props: HOAServiceViewProps) {
           </div>
 
           {!isUpcoming && productList.length > 0 && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+            <div>
+              <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
                 <FlaskConical className="w-3.5 h-3.5 text-primary" />
-                Products Used
+                Products Used (this service)
               </p>
-              <ProductUsageSummary entries={productList} />
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-[13px]">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-bold">Product</th>
+                      <th className="text-left px-3 py-2 font-bold">Applied (diluted)</th>
+                      <th className="text-left px-3 py-2 font-bold">Undiluted (concentrate)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productList.map((p, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-3 py-2 font-semibold">{p.name}</td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -330,6 +354,11 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                     <span className="text-xs font-semibold">
                       {u.unit_number || "—"}
                     </span>
+                    {u.target_pest && (
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        · {u.target_pest}
+                      </span>
+                    )}
                     <Select
                       value={u.status || "To Be Treated"}
                       onValueChange={(v) =>
@@ -359,12 +388,12 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                       ? "border-orange-500 text-orange-700 bg-orange-50"
                       : "border-primary/60 bg-background"
                   }`}
-                  title={u.status || undefined}
+                  title={u.target_pest || u.status || undefined}
                 >
                   {u.unit_number || "—"}
-                  {u.status && !isUpcoming ? (
+                  {u.target_pest ? (
                     <span className="ml-1 font-normal text-muted-foreground">
-                      · {u.status}
+                      · {u.target_pest}
                     </span>
                   ) : null}
                 </Badge>
