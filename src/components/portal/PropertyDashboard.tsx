@@ -773,7 +773,9 @@ const PropertyDashboard = ({
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
-      .filter((u: any) => u.status === "Treated - Follow Up" && u.unit_number)
+      // ONLY units the technician explicitly checked "Follow Up Needed" on.
+      // Status alone never qualifies — the explicit checkbox must be set.
+      .filter((u: any) => u.follow_up_needed === true && u.unit_number)
       .map((u: any) => ({
         unit_number: String(u.unit_number),
         pest_activity: u.pest_activity || "",
