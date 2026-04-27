@@ -3157,7 +3157,7 @@ const PropertyDashboard = ({
                 </div>
               </div>
               <p className="text-xs text-muted-foreground -mt-1">
-                Each service is billed at the base price and includes the listed number of interior units. Any units treated beyond that are billed at the additional-unit price.
+                Each service is billed at the base price and includes the listed number of treatments or inspections. Any treatments or inspections beyond that are billed at the additional-unit price.
               </p>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
