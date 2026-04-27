@@ -1166,6 +1166,15 @@ const PropertyDashboard = ({
       if (label) appointmentLabel = label;
     }
 
+    // Strip the autosaved completion_draft now that the real fields are
+    // being persisted — it has served its purpose.
+    const svcRowForDraft = propServices.find(p => p.id === serviceId) as any;
+    const existingReport =
+      svcRowForDraft?.report_data && typeof svcRowForDraft.report_data === "object"
+        ? { ...svcRowForDraft.report_data }
+        : {};
+    delete (existingReport as any).completion_draft;
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
@@ -1180,7 +1189,11 @@ const PropertyDashboard = ({
       follow_up_recommended: flagged.length > 0,
       follow_up_notes: followUpNotes,
       appointment_service: appointmentLabel,
+      report_data: existingReport,
     }).eq("id", serviceId);
+    // Forget the local "last serialized" snapshot so a re-open of this
+    // service id (rare) doesn't think there's nothing to save.
+    delete completionDraftLast.current[serviceId];
 
     // ─── Close any open work-order requests for the units we just treated ───
     // Without this, a pending request keeps bleeding into the NEXT upcoming
