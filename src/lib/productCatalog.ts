@@ -10,25 +10,26 @@ export interface StandardProduct {
   perGallon: number;     // amount of concentrate per 1 gallon of finished mix
   unit: string;          // unit of the per-gallon measurement (oz, mL, grams)
   appliedUnit: string;   // default unit for "applied amount" (gallons for these)
+  epa?: string;          // EPA Registration # (or "25B Exempt" / "None")
 }
 
 export const STANDARD_PRODUCTS: StandardProduct[] = [
   // Pinned to top in this order
-  { id: "Temprid FX",                     name: "Temprid FX",                     perGallon: 8.00, unit: "mL",    appliedUnit: "gal" },
-  { id: "Alpine WSG",                     name: "Alpine WSG",                     perGallon: 10.00, unit: "grams", appliedUnit: "gal" },
-  { id: "MasterLine / Bifen I/T",         name: "MasterLine / Bifen I/T",         perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "Termidor SC",                    name: "Termidor SC",                    perGallon: 0.04, unit: "oz",    appliedUnit: "gal" },
-  { id: "Delta Dust",                     name: "Delta Dust",                     perGallon: 0,    unit: "grams", appliedUnit: "grams" },
-  { id: "Advion Ant Gel Bait",            name: "Advion Ant Gel Bait",            perGallon: 0,    unit: "grams", appliedUnit: "grams" },
-  { id: "Advion Cockroach Gel Bait",      name: "Advion Cockroach Gel Bait",      perGallon: 0,    unit: "grams", appliedUnit: "grams" },
+  { id: "Temprid FX",                     name: "Temprid FX",                     perGallon: 8.00, unit: "mL",    appliedUnit: "gal", epa: "101563-165" },
+  { id: "Alpine WSG",                     name: "Alpine WSG",                     perGallon: 10.00, unit: "grams", appliedUnit: "gal", epa: "499-561" },
+  { id: "MasterLine / Bifen I/T",         name: "MasterLine / Bifen I/T",         perGallon: 1.00, unit: "oz",    appliedUnit: "gal", epa: "279-3206-73748 / 53883-118" },
+  { id: "Termidor SC",                    name: "Termidor SC",                    perGallon: 0.04, unit: "oz",    appliedUnit: "gal", epa: "7969-210" },
+  { id: "Delta Dust",                     name: "Delta Dust",                     perGallon: 0,    unit: "grams", appliedUnit: "grams", epa: "432-772" },
+  { id: "Advion Ant Gel Bait",            name: "Advion Ant Gel Bait",            perGallon: 0,    unit: "grams", appliedUnit: "grams", epa: "100-1498" },
+  { id: "Advion Cockroach Gel Bait",      name: "Advion Cockroach Gel Bait",      perGallon: 0,    unit: "grams", appliedUnit: "grams", epa: "100-1484" },
   // Remaining standard products
-  { id: "Essentria IC Pro",               name: "Essentria IC Pro",               perGallon: 2.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "Phantom",                        name: "Phantom",                        perGallon: 3.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "OptiGard Flex Liquid",           name: "OptiGard Flex Liquid",           perGallon: 0.41, unit: "oz",    appliedUnit: "gal" },
-  { id: "Onslaught FastCap Spider/Scorp", name: "Onslaught FastCap Spider/Scorp", perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "OneGuard Multi MoA",             name: "OneGuard Multi MoA",             perGallon: 1.50, unit: "oz",    appliedUnit: "gal" },
-  { id: "Gentrol IGR Concentrate",        name: "Gentrol IGR Concentrate",        perGallon: 1.00, unit: "oz",    appliedUnit: "gal" },
-  { id: "Nyguard IGR Concentrate",        name: "Nyguard IGR Concentrate",        perGallon: 5.50, unit: "mL",    appliedUnit: "gal" },
+  { id: "Essentria IC Pro",               name: "Essentria IC Pro",               perGallon: 2.00, unit: "oz",    appliedUnit: "gal", epa: "25B Exempt" },
+  { id: "Phantom",                        name: "Phantom",                        perGallon: 3.00, unit: "oz",    appliedUnit: "gal", epa: "241-392" },
+  { id: "OptiGard Flex Liquid",           name: "OptiGard Flex Liquid",           perGallon: 0.41, unit: "oz",    appliedUnit: "gal", epa: "100-1306" },
+  { id: "Onslaught FastCap Spider/Scorp", name: "Onslaught FastCap Spider/Scorp", perGallon: 1.00, unit: "oz",    appliedUnit: "gal", epa: "1021-2574" },
+  { id: "OneGuard Multi MoA",             name: "OneGuard Multi MoA",             perGallon: 1.50, unit: "oz",    appliedUnit: "gal", epa: "1021-2807" },
+  { id: "Gentrol IGR Concentrate",        name: "Gentrol IGR Concentrate",        perGallon: 1.00, unit: "oz",    appliedUnit: "gal", epa: "2724-351" },
+  { id: "Nyguard IGR Concentrate",        name: "Nyguard IGR Concentrate",        perGallon: 5.50, unit: "mL",    appliedUnit: "gal", epa: "1021-1603" },
   { id: "ExciteR",                        name: "ExciteR",                        perGallon: 1.56, unit: "oz",    appliedUnit: "gal" },
 ];
 
