@@ -26,6 +26,7 @@ import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestio
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
+import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 
 const PEST_TYPES = [
   "General Pests",
