@@ -20,6 +20,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
+import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
