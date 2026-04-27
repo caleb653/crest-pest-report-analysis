@@ -2536,13 +2536,25 @@ const PropertyDashboard = ({
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button size="sm" className="h-9 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold" onClick={() => completeService(s.id)}>
+                  <Button
+                    size="sm"
+                    className="h-9 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-60"
+                    onClick={() => completeService(s.id)}
+                    disabled={isProjected}
+                    title={isProjected ? "Schedule a date first to complete this service" : undefined}
+                  >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {flaggedCount > 0 ? `Complete & Flag ${flaggedCount} Follow-up${flaggedCount > 1 ? "s" : ""}` : "Complete Service"}
+                    {isProjected
+                      ? "Schedule a date to complete"
+                      : flaggedCount > 0
+                        ? `Complete & Flag ${flaggedCount} Follow-up${flaggedCount > 1 ? "s" : ""}`
+                        : "Complete Service"}
                   </Button>
+                  {!isProjected && (
                   <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={() => onDeleteService(s.id)} title="Delete service">
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
+                  )}
                 </div>
               </div>
             </div>
