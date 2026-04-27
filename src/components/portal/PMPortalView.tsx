@@ -1791,30 +1791,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               when this is the next visit. */}
                           {isHOA ? (
                             <>
-                              {isFirst && (
-                                <div>
-                                  <div className="flex items-center justify-between mb-2">
-                                    <Label htmlFor={`pm-notes-${s.id}`} className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                                      <ClipboardList className="w-4 h-4" />
-                                      Notes for the Technician
-                                    </Label>
-                                    <span className="text-xs text-muted-foreground italic">
-                                      {pmNoteSaving
-                                        ? "Saving…"
-                                        : pmNoteSavedDate === s.service_date
-                                          ? "Saved"
-                                          : "Auto-saves"}
-                                    </span>
-                                  </div>
-                                  <Textarea
-                                    id={`pm-notes-${s.id}`}
-                                    value={pmNoteDraft}
-                                    onChange={(e) => setPmNoteDraft(e.target.value)}
-                                    placeholder="Add notes for Crest about this upcoming community visit…"
-                                    className="text-sm min-h-[60px] bg-background"
-                                  />
-                                </div>
-                              )}
                               <HOAServiceView
                                 mode="pm"
                                 isUpcoming
@@ -1903,32 +1879,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 )}
                                 {" "}will be addressed during this visit.
                               </p>
-                            </div>
-                          )}
-
-                          {/* PM-editable note for the technician */}
-                          {isFirst && (
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <Label htmlFor={`pm-notes-${s.id}`} className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                                  <ClipboardList className="w-4 h-4" />
-                                  Notes for the Technician
-                                </Label>
-                                <span className="text-xs text-muted-foreground italic">
-                                  {pmNoteSaving
-                                    ? "Saving…"
-                                    : pmNoteSavedDate === s.service_date
-                                      ? "Saved"
-                                      : "Auto-saves"}
-                                </span>
-                              </div>
-                              <Textarea
-                                id={`pm-notes-${s.id}`}
-                                value={pmNoteDraft}
-                                onChange={(e) => setPmNoteDraft(e.target.value)}
-                                placeholder="Add notes for Crest about this upcoming visit (e.g., units to focus on, access codes, tenant concerns)…"
-                                className="text-sm min-h-[80px] bg-background"
-                              />
                             </div>
                           )}
 
