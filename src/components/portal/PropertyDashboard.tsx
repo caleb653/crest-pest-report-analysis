@@ -1509,13 +1509,12 @@ const PropertyDashboard = ({
     // Past-service status dropdowns mirror the upcoming-visit options so the
     // technician sees the same vocabulary regardless of which tab they're in.
     const SERVICE_STATUSES: { value: string; label: string }[] = [
-      { value: "Complete",          label: "Completed" },
-      { value: "Needs Follow Up",   label: "Treated - Follow Up Needed" },
+      { value: "Complete",          label: "Treated - Free and Clear" },
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
       { value: "Free and Clear",  label: "Free and Clear" },
-      { value: "Activity Found",  label: "Activity Found - Follow Up Needed" },
+      { value: "Activity Found",  label: "Follow Up" },
       { value: "Not Serviced",    label: "Not Inspected" },
     ];
     const isInspectionUnit = (u: any) => (u?.kind || "service") === "inspection";
