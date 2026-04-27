@@ -687,129 +687,30 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
     const products = normalizeUsageList(s.products_used);
 
-    // ─── HOA mode: map-first, narrative-driven service report ───
-    // For HOA properties the community is the focal point — not the unit list.
-    // We surface the site map BIG up top, then a robust Findings + Products
-    // block, and demote per-unit details into a small collapsible "Specific
-    // Homes Treated" section underneath. Apartment + commercial views are
-    // intentionally untouched.
-    if (isHOA) {
-      return (
-        <div className="px-3 pb-3 border-t pt-3 space-y-4 text-xs">
-          {/* ── HOA report = MAP + SUMMARY ≈ 90% of the page ── */}
-          {/* Site map — dominant visual */}
-          {(mapUrl || property.map_data) && (
-            <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
-              <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
-                <MapPin className="w-5 h-5 text-emerald-700" />
-                <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
-                  Community Site Map — Areas Treated
-                </p>
-              </div>
-              <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
-                {property.map_data ? (
-                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
-                ) : mapUrl ? (
-                  <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
-                ) : null}
-              </div>
-            </div>
-          )}
-
-          {/* Technician Report — large, prominent narrative */}
-          {summaryCombined && (
-            <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-6 shadow-md">
-              <div className="flex items-center gap-2 mb-3">
-                <ClipboardList className="w-5 h-5 text-primary" />
-                <p className="text-sm font-bold uppercase tracking-wide text-primary">
-                  Technician Report{s.technician ? ` — ${s.technician}` : ""}
-                </p>
-              </div>
-              <p className="text-base whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
-            </div>
-          )}
-
-          {/* Everything else — compact afterthought (~10% of the page) */}
-          {(products.length > 0 || unitDetails.length > 0 || s.special_notes) && (
-            <details className="rounded-lg border border-border bg-muted/30 px-3 py-2 group">
-              <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
-                <span>
-                  Visit Details
-                  {products.length > 0 && ` · ${products.length} product${products.length === 1 ? "" : "s"}`}
-                  {unitDetails.length > 0 && ` · ${unitDetails.length} home${unitDetails.length === 1 ? "" : "s"}`}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="mt-3 space-y-3">
-                {products.length > 0 && (
-                  <div>
-                    <p className="text-[13px] font-bold text-foreground uppercase tracking-wide mb-2">Products Used</p>
-                    <div className="border rounded-md overflow-hidden">
-                      <table className="w-full text-[14px]">
-                        <thead className="bg-muted/60">
-                          <tr>
-                            <th className="text-left px-3 py-2 font-bold">Product</th>
-                            <th className="text-left px-3 py-2 font-bold">Applied</th>
-                            <th className="text-left px-3 py-2 font-bold">Undiluted</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {products.map((p, i) => (
-                            <tr key={i} className="border-t border-border">
-                              <td className="px-3 py-2 font-semibold">{p.name}</td>
-                              <td className="px-3 py-2 text-muted-foreground">
-                                {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground">
-                                {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-                {unitDetails.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Specific Homes Treated</p>
-                    <div className="flex flex-wrap gap-1">
-                      {unitDetails.map((u: any, i: number) => {
-                        const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
-                        return (
-                          <Badge
-                            key={i}
-                            variant="outline"
-                            className={`text-[10px] ${
-                              isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/60 bg-background"
-                            }`}
-                          >
-                            {u.unit_number || "—"}
-                            {u.status ? ` · ${u.status}` : ""}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                {s.special_notes && (
-                  <div className="rounded border border-amber-300 bg-amber-50/60 p-2 text-amber-900">
-                    <p className="font-semibold uppercase text-[10px] tracking-wide mb-0.5">Special Notes</p>
-                    <p className="whitespace-pre-wrap text-[11px]">{s.special_notes}</p>
-                  </div>
-                )}
-              </div>
-            </details>
-          )}
-
-          {/* HOA past-service comments block intentionally removed —
-              residents/board don't engage with this section per product. */}
-        </div>
-      );
-    }
-
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
+        {/* For HOA: prepend the community site map so it's the dominant
+            visual at the top of the report (matches admin layout). The
+            rest of the report (Summary → Products → Unit Summary →
+            Pesticide Notice) renders identically for HOA and non-HOA
+            so PMs see the same rich layout admins do — just read-only. */}
+        {isHOA && (mapUrl || property.map_data) && (
+          <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
+            <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
+              <MapPin className="w-5 h-5 text-emerald-700" />
+              <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
+                Community Site Map — Areas Treated
+              </p>
+            </div>
+            <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
+              {property.map_data ? (
+                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+              ) : mapUrl ? (
+                <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
+              ) : null}
+            </div>
+          </div>
+        )}
         {summaryCombined && (
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
