@@ -1232,6 +1232,52 @@ const PropertyDashboard = ({
     }));
   };
 
+  const ensureCompletionDraft = (
+    service: PortalService | any,
+    unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
+  ): CompletionDraft => {
+    const existing = completionDataRef.current[service.id];
+    if (existing) return existing;
+    const units = unitContexts.map(c => String(c.unit_number || "").trim()).filter(Boolean);
+    const rows = units.length > 0
+      ? units.map((u) => {
+          const ctx = unitContexts.find(c => String(c.unit_number || "").trim() === u);
+          return {
+            unit_number: u,
+            target_pest: ctx?.target_pest || "",
+            findings: ctx?.findings || "",
+            pest_activity: ctx?.follow_up?.pest_activity || ctx?.last_unit_detail?.pest_activity || "None",
+            products_used: [] as ProductUsage[],
+            status: "To Be Treated",
+            notes: ctx?.notes || "",
+            source: ctx?.source === "work_order" ? "new-work-order" : ctx?.source === "follow_up" ? "follow-up" : "planned",
+          };
+        })
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }];
+    const draft = {
+      unitRows: rows,
+      summary: service.summary || "",
+      findings: service.findings || "",
+      notes: service.notes || "",
+      technician: service.technician || "",
+      time_in: "",
+      time_out: "",
+      photos: [],
+      products: normalizeUsageList(service.products_used) || [],
+    };
+    completionDataRef.current = { ...completionDataRef.current, [service.id]: draft };
+    setCompletionData(prev => ({ ...prev, [service.id]: draft }));
+    return draft;
+  };
+
+  const patchCompletionDraft = (serviceId: string, patch: Partial<CompletionDraft>) => {
+    const current = completionDataRef.current[serviceId];
+    if (!current) return;
+    const next = { ...current, ...patch };
+    completionDataRef.current = { ...completionDataRef.current, [serviceId]: next };
+    setCompletionData(prev => ({ ...prev, [serviceId]: { ...(prev[serviceId] || current), ...patch } }));
+  };
+
   const completeService = async (serviceId: string) => {
     const data = completionData[serviceId];
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
