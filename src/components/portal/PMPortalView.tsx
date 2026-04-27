@@ -2493,6 +2493,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </div>
         </TabsContent>
 
+        {isHOA && (
+          <TabsContent value="quarterly" className="mt-0">
+            <QuarterlyVideoTab propertyId={property.id} mode="pm" />
+          </TabsContent>
+        )}
+
       </Tabs>
     </div>
   );
