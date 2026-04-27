@@ -1064,6 +1064,15 @@ const PropertyDashboard = ({
     productsSaveTimers.current[serviceId] = setTimeout(async () => {
       await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
       onRefresh();
+      // Clear the override slightly after refresh so the next render reads
+      // the freshly-loaded value from props.
+      setTimeout(() => {
+        setProductsOverride(prev => {
+          const next = { ...prev };
+          delete next[serviceId];
+          return next;
+        });
+      }, 400);
     }, 600);
   };
 
