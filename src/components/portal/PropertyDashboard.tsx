@@ -3333,7 +3333,7 @@ const PropertyDashboard = ({
               <p className="text-[11px] font-semibold text-amber-700 italic -mt-2">
                 * Pricing reflects the units serviced on the day of a scheduled service.
               </p>
-              {!isHOA && (<div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3">
+              {propertyType === "commercial" && (<div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3">
                 <Label className="text-xs font-bold uppercase tracking-wide text-amber-800 mb-1.5 block flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   Required Time per Treatment
