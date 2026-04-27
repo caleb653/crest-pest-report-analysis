@@ -3392,7 +3392,6 @@ const PropertyDashboard = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      {/* Property-type mode banner — makes the active view obvious to admins. */}
       {(propertyType === "hoa" || propertyType === "apartments") && (
         <div className={`mb-3 rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold ${
           propertyType === "hoa"
@@ -3401,11 +3400,6 @@ const PropertyDashboard = ({
         }`}>
           <span className="px-1.5 py-0.5 rounded bg-white/70 border border-current/30 text-[10px] uppercase tracking-wider">
             {propertyType === "hoa" ? "HOA Portal" : "Apartment Portal"}
-          </span>
-          <span className="font-normal">
-            {propertyType === "hoa"
-              ? "Community-focused view — common areas are the focal point of each service. Per-unit treatment details are minimized."
-              : "Unit-focused view — each unit shows full treatment detail. Common areas are summarized."}
           </span>
         </div>
       )}
