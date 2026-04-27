@@ -216,6 +216,11 @@ const PropertyDashboard = ({
   const [hoaLocation, setHoaLocation] = useState("");
   const [hoaPests, setHoaPests] = useState("");
   const [hoaDetails, setHoaDetails] = useState("");
+  // Resident contact for HOA Service Requests — mirrors the PM portal so the
+  // homeowner's name/phone/email are always captured with the work order.
+  const [hoaResidentName, setHoaResidentName] = useState("");
+  const [hoaResidentPhone, setHoaResidentPhone] = useState("");
+  const [hoaResidentEmail, setHoaResidentEmail] = useState("");
   const [submittingHoaRequest, setSubmittingHoaRequest] = useState(false);
   const submitHoaRequest = async () => {
     if (!hoaRequestKind) return;
@@ -223,12 +228,22 @@ const PropertyDashboard = ({
     if (isCommunity) {
       if (!hoaLocation.trim() || !hoaPests.trim()) return;
     } else {
-      if (!hoaAddress.trim() || !hoaLocation.trim() || !hoaPests.trim()) return;
+      if (
+        !hoaAddress.trim() ||
+        !hoaLocation.trim() ||
+        !hoaPests.trim() ||
+        !hoaResidentName.trim() ||
+        !hoaResidentEmail.trim() ||
+        !hoaResidentPhone.trim()
+      ) return;
     }
     setSubmittingHoaRequest(true);
     const requestType = isCommunity ? "Community Pest Sighting" : "Service Request";
     const tag = isCommunity ? "[COMMUNITY SIGHTING]" : "[HOA SERVICE REQUEST]";
     const descParts = [
+      !isCommunity ? `Resident: ${hoaResidentName.trim()}` : null,
+      !isCommunity ? `Phone: ${hoaResidentPhone.trim()}` : null,
+      !isCommunity ? `Email: ${hoaResidentEmail.trim()}` : null,
       `Pests: ${hoaPests.trim()}`,
       `Location: ${hoaLocation.trim()}`,
       hoaDetails.trim() ? `Details: ${hoaDetails.trim()}` : null,
@@ -241,6 +256,7 @@ const PropertyDashboard = ({
       pest_type: hoaPests.trim(),
       location_type: hoaLocation.trim(),
       photos: workOrderPhotos,
+      tenant_email: !isCommunity ? hoaResidentEmail.trim() : null,
     } as any).select("id").maybeSingle();
     if (err) {
       toast({ title: "Could not submit request", description: err.message, variant: "destructive" });
@@ -265,6 +281,9 @@ const PropertyDashboard = ({
     setHoaLocation("");
     setHoaPests("");
     setHoaDetails("");
+    setHoaResidentName("");
+    setHoaResidentPhone("");
+    setHoaResidentEmail("");
     setWorkOrderPhotos([]);
     const { data: reqs } = await supabase
       .from("portal_requests")
