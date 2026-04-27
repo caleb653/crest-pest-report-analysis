@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Send, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Send, Clock, CheckCircle, AlertCircle, Bug, ClipboardList, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
@@ -199,13 +199,45 @@ const TenantPortal = () => {
         {/* ─── Request Form ─── */}
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Submit a Service Request</CardTitle>
-            <p className="text-xs text-muted-foreground">Tell us what you're dealing with and we'll schedule service</p>
+            <CardTitle className="text-base flex items-center gap-1.5">
+              <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Request Type — Treatment vs Inspection */}
+            <div>
+              <Label className="text-sm">Request Type *</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {[
+                  { v: "treatment" as const, label: "Treatment", desc: "Active pest treatment", Icon: Bug },
+                  { v: "inspection" as const, label: "Inspection", desc: "Assess & investigate", Icon: FileText },
+                ].map(opt => {
+                  const active = requestKind === opt.v;
+                  const Icon = opt.Icon;
+                  return (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setRequestKind(opt.v)}
+                      className={`px-3 py-3 rounded-lg border-2 text-center transition-colors ${
+                        active
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 mx-auto mb-1" />
+                      <div className="text-sm font-bold">{opt.label}</div>
+                      <div className="text-[11px] text-muted-foreground">{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Unit Number — free-text, case-insensitive match against known units */}
             <div>
-              <Label className="text-sm">Unit Number / Area *</Label>
+              <Label className="text-sm">Unit, Property, or Area *</Label>
               {linkData?.unit_number ? (
                 <Input value={unitNumber} disabled className="bg-muted" />
               ) : (
@@ -252,9 +284,9 @@ const TenantPortal = () => {
 
             {/* When ready — free-text */}
             <div>
-              <Label className="text-sm">When are you available for service?</Label>
+              <Label className="text-sm">Preferred Day</Label>
               <Input
-                placeholder="e.g. Tuesday afternoon, after the 15th, ASAP"
+                placeholder="e.g. Next service, next few weeks, Tuesday afternoon, ASAP…"
                 value={preferredDate}
                 onChange={e => setPreferredDate(e.target.value)}
               />
@@ -265,16 +297,37 @@ const TenantPortal = () => {
             <div>
               <Label className="text-sm">Additional Details</Label>
               <Textarea
-                placeholder="Where exactly are you seeing the issue? Any other details..."
+                placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={3}
               />
             </div>
 
+            {/* Vacant or Occupied */}
+            <div>
+              <Label className="text-sm">Vacant or Occupied Unit</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {(["Occupied", "Vacant"] as const).map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}
+                    className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
+                      occupancyStatus === opt
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background hover:bg-muted border-border"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <Button className="w-full" size="lg" onClick={submitRequest}
               disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-              <Send className="w-4 h-4 mr-2" />Submit Request
+              <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>
