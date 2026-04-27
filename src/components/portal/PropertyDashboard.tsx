@@ -1937,6 +1937,7 @@ const PropertyDashboard = ({
             technician={s.technician}
             products={products}
             units={hoaUnits}
+            onChangeFindings={(next) => updateServiceFindings(s.id, next)}
           />
           {!isProjected && (
             <div className="flex gap-1.5 pt-1 border-t border-border mt-2">
