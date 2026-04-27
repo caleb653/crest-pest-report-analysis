@@ -4031,7 +4031,7 @@ const PropertyDashboard = ({
             </div>
 
             {/* Occupancy — hidden for "General Request" */}
-            {workOrder.request_type !== "general" && (
+            {workOrder.request_type !== "general" && !isHOA && (
             <div>
               <Label className="text-sm">Vacant or Occupied Unit</Label>
               <div className="flex gap-2 mt-1">
