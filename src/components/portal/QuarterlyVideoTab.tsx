@@ -111,7 +111,7 @@ export function QuarterlyVideoTab({ propertyId, mode, uploaderName }: Props) {
   };
 
   const handleDelete = async (item: QuarterlyUpdate) => {
-    if (!window.confirm("Delete this quarterly video review? This cannot be undone.")) return;
+    if (!window.confirm("Delete this video review? This cannot be undone.")) return;
     try {
       // Best-effort storage cleanup — derive object path from public URL.
       if (item.video_url) {
@@ -138,7 +138,7 @@ export function QuarterlyVideoTab({ propertyId, mode, uploaderName }: Props) {
           <CardContent className="p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2">
               <Video className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-base">Upload Quarterly Video Review</h3>
+              <h3 className="font-bold text-base">Upload Video Review</h3>
             </div>
             <p className="text-xs text-muted-foreground">
               Record a short walk-through summarizing the past quarter's pest
@@ -185,7 +185,7 @@ export function QuarterlyVideoTab({ propertyId, mode, uploaderName }: Props) {
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-base flex items-center gap-2">
             <Video className="w-5 h-5 text-primary" />
-            Quarterly Video Reviews
+            Video Reviews
             <Badge variant="secondary" className="ml-1">{items.length}</Badge>
           </h3>
         </div>
@@ -195,7 +195,7 @@ export function QuarterlyVideoTab({ propertyId, mode, uploaderName }: Props) {
         ) : items.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
-              No quarterly video reviews yet.
+              No video reviews yet.
               {mode === "admin" && " Upload the first one above."}
             </CardContent>
           </Card>

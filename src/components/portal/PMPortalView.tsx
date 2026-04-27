@@ -999,7 +999,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           {isHOA && (
             <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
               <Video className="w-5 h-5" />
-              <span>Quarterly Video</span>
+              <span>Video Reviews</span>
             </TabsTrigger>
           )}
         </TabsList>
