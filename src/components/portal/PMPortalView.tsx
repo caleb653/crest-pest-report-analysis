@@ -2069,7 +2069,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
+              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "homeowners" : "tenants"}.</p>
             </div>
             {prepSheets.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available yet</CardContent></Card>
@@ -2152,10 +2152,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Community Pest Survey" : "Send Tenant Pest Survey"}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Tenants get a short 5-question form. Results aggregate below as they respond.
+                  {isHOA
+                    ? "Homeowners get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
+                    : "Tenants get a short 5-question form. Results aggregate below as they respond."}
                 </p>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2168,15 +2170,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-sm">Tenant Emails</Label>
+                  <Label className="text-sm">{isHOA ? "Homeowner Emails" : "Tenant Emails"}</Label>
                   <Textarea
                     rows={4}
-                    placeholder="Paste tenant emails — one per line, or comma-separated"
+                    placeholder={isHOA
+                      ? "Paste homeowner emails — one per line, or comma-separated"
+                      : "Paste tenant emails — one per line, or comma-separated"}
                     value={surveyEmails}
                     onChange={(e) => setSurveyEmails(e.target.value)}
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Each tenant gets their own unique link so you can see who responded.
+                    Each {residentTerm} gets their own unique link so you can see who responded.
                   </p>
                 </div>
                 <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
@@ -2202,7 +2206,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   if (submitted.length === 0) {
                     return (
                       <p className="text-sm text-muted-foreground text-center py-6">
-                        No responses yet. Once tenants submit, their answers will roll up here.
+                        No responses yet. Once {residentTerm}s submit, their answers will roll up here.
                       </p>
                     );
                   }
