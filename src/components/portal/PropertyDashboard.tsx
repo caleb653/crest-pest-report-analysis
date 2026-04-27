@@ -46,6 +46,7 @@ interface PortalService {
   scheduling_status: string | null; prep_required: boolean | null; prep_notes: string | null;
   unit_details: any; special_notes: string | null; units_planned: any;
   frequency_days?: number | null;
+  report_data?: any;
 }
 interface PortalLink {
   id: string; client_id: string; token: string; link_type: string; label: string | null;
@@ -843,10 +844,9 @@ const PropertyDashboard = ({
     const sourceFromCtx = (unit: string, s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
       if (pendingRequests.some(r => String(r.unit_number) === String(unit))) return "new-work-order";
-      // Only mark as follow-up if the most-recent past service explicitly
-      // flagged this unit as "Treated - Follow Up". A unit that was simply
-      // treated last visit (or carried forward) is NOT a follow-up — it
-      // should render as a normal planned area.
+      // Only mark as follow-up if computeUpcomingUnits says the unit came
+      // from an explicitly checked follow_up_needed flag. Planned / carried
+      // units must NEVER be relabeled as follow-ups.
       if (s === "follow_up") return "follow-up";
       return "planned";
     };
@@ -896,6 +896,9 @@ const PropertyDashboard = ({
     // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
     // is NOT enough — the user must check the box.
     const flagged = unitRows.filter((r: any) => r.follow_up_needed === true).map((r: any) => r.unit_number);
+    const followUpNotes = flagged.length > 0
+      ? `Follow-up units from ${today}: ${flagged.join(", ")}`
+      : null;
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
@@ -919,6 +922,8 @@ const PropertyDashboard = ({
       technician: data?.technician || null,
       products_used: aggregatedProducts as any,
       photos: photosToSave,
+      follow_up_recommended: flagged.length > 0,
+      follow_up_notes: followUpNotes,
     }).eq("id", serviceId);
 
     // ─── Close any open work-order requests for the units we just treated ───
@@ -975,7 +980,7 @@ const PropertyDashboard = ({
           service_type: svc?.service_type || "General Pest Control",
           service_date: nextDate, status: "scheduled",
           units_planned: flagged,
-          special_notes: `Follow-up units from ${today}: ${flagged.join(", ")}`,
+          special_notes: followUpNotes,
         });
       }
     }
