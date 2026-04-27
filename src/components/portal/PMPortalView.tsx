@@ -989,19 +989,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
-            <span>Site Map and Plan</span>
+            <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Calendar className="w-5 h-5" />
-            <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
+            <span>{isHOA ? "Community Visits" : "Previous Services"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Bug className="w-5 h-5" />
-            <span>Request Work Order</span>
+            <span>{isHOA ? "Request Service Call" : "Request Work Order"}</span>
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <ClipboardList className="w-5 h-5" />
-            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
+            <span>{isHOA ? "Upcoming Visits" : "Upcoming Services"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileDown className="w-5 h-5" />
@@ -1009,7 +1009,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </TabsTrigger>
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <BarChart3 className="w-5 h-5" />
-            <span>Survey Results <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
+            <span>{isHOA ? "Resident Survey" : "Survey Results"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Video className="w-5 h-5" />
