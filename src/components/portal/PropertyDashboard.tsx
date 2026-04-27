@@ -85,7 +85,7 @@ const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
-  { value: "Inspected: Free and Clear",  label: "Free and Clear" },
+  { value: "Inspected: Free and Clear",  label: "No Activity Found" },
   { value: "Inspected: Activity Found",  label: "Activity Found" },
   { value: "Not Treated",                label: "Not Inspected" },
 ];
@@ -1595,7 +1595,7 @@ const PropertyDashboard = ({
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
-      { value: "Free and Clear",  label: "Free and Clear" },
+      { value: "Free and Clear",  label: "No Activity Found" },
       { value: "Activity Found",  label: "Activity Found" },
       { value: "Not Serviced",    label: "Not Inspected" },
     ];
