@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,6 @@ import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/un
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
-import { useRef as _useRef } from "react";
 
 // ─── Types ───
 interface PortalProperty {
