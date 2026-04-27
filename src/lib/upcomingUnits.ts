@@ -266,9 +266,6 @@ export function computeUpcomingUnits(args: {
       if (request.tenant_email) {
         contextParts.push(`Tenant contact: ${request.tenant_email}`);
       }
-      if (request.preferred_date) {
-        contextParts.push(`Preferred date: ${request.preferred_date}`);
-      }
     } else {
       const priorDetail = followUp || lastDetail;
       if (priorDetail?.pest_activity && priorDetail.pest_activity !== "None") {
@@ -289,7 +286,6 @@ export function computeUpcomingUnits(args: {
       : "";
 
     const notes =
-      (request?.preferred_date ? `Preferred: ${request.preferred_date}` : "") ||
       followUp?.notes ||
       "";
 

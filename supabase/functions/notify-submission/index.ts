@@ -105,7 +105,6 @@ serve(async (req) => {
             <tr><td style="padding:6px 8px;font-weight:600;color:#555;">Unit / Area:</td><td style="padding:6px 8px;">${escapeHtml(reqRow.unit_number || "—")}</td></tr>
             <tr><td style="padding:6px 8px;font-weight:600;color:#555;">Type:</td><td style="padding:6px 8px;">${escapeHtml(reqRow.request_type)}</td></tr>
             ${reqRow.pest_type ? `<tr><td style="padding:6px 8px;font-weight:600;color:#555;">Pest:</td><td style="padding:6px 8px;">${escapeHtml(reqRow.pest_type)}${reqRow.location_type ? ` (${escapeHtml(reqRow.location_type)})` : ""}</td></tr>` : ""}
-            ${reqRow.preferred_date ? `<tr><td style="padding:6px 8px;font-weight:600;color:#555;">Preferred:</td><td style="padding:6px 8px;">${escapeHtml(String(reqRow.preferred_date))}</td></tr>` : ""}
             ${reqRow.tenant_email ? `<tr><td style="padding:6px 8px;font-weight:600;color:#555;">Contact email:</td><td style="padding:6px 8px;">${escapeHtml(reqRow.tenant_email)}</td></tr>` : ""}
             ${ownerTech ? `<tr><td style="padding:6px 8px;font-weight:600;color:#555;">Client owner:</td><td style="padding:6px 8px;">${escapeHtml(ownerTech)}</td></tr>` : ""}
           </table>
