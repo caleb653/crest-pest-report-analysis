@@ -958,7 +958,10 @@ const PropertyDashboard = ({
         ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
         : undefined,
     }));
-    const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
+    // ONLY auto-add a follow-up when the technician explicitly checked
+    // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
+    // is NOT enough — the user must check the box.
+    const flagged = unitRows.filter((r: any) => r.follow_up_needed === true).map((r: any) => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
