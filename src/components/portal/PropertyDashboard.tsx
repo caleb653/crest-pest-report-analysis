@@ -984,6 +984,24 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
+    // ─── Dedupe: delete any OTHER scheduled service rows for this property
+    //     dated today (or earlier) so the just-completed visit can never
+    //     keep showing up in the Upcoming Services list. Without this,
+    //     duplicate "scheduled" rows (created via Quick Add, projection
+    //     hydration, or earlier auto-creates) survive completion and the
+    //     finished visit appears in BOTH Past + Upcoming. ────────────────
+    try {
+      await supabase
+        .from("portal_services")
+        .delete()
+        .eq("property_id", property.id)
+        .eq("status", "scheduled")
+        .lte("service_date", today)
+        .neq("id", serviceId);
+    } catch (e) {
+      console.warn("dedupe scheduled services failed", e);
+    }
+
     // Auto-schedule follow-ups to next service
     if (flagged.length > 0) {
       const nextService = allUpcoming.find(s => s.id !== serviceId && !s.isProjected);
@@ -1893,8 +1911,12 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format) */}
-        {isUpcoming && !isProjected && (() => {
+        {/* Inline service report form for upcoming services — always visible (mirrors Previous Services format).
+            Also shown for PROJECTED services (no date scheduled yet) so the
+            technician / admin can preview the merged "Units to be Treated"
+            and pre-fill notes before a date is locked in. Completion is
+            blocked until a real date is saved. */}
+        {isUpcoming && (() => {
           // Auto-init completion data on first render for this expanded upcoming service
           if (!completionData[s.id]) {
             setTimeout(() => initCompletionData(s.id, displayUnits, merged.unitContexts), 0);
@@ -2514,13 +2536,25 @@ const PropertyDashboard = ({
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button size="sm" className="h-9 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold" onClick={() => completeService(s.id)}>
+                  <Button
+                    size="sm"
+                    className="h-9 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-60"
+                    onClick={() => completeService(s.id)}
+                    disabled={isProjected}
+                    title={isProjected ? "Schedule a date first to complete this service" : undefined}
+                  >
                     <CheckCircle className="w-4 h-4 mr-1" />
-                    {flaggedCount > 0 ? `Complete & Flag ${flaggedCount} Follow-up${flaggedCount > 1 ? "s" : ""}` : "Complete Service"}
+                    {isProjected
+                      ? "Schedule a date to complete"
+                      : flaggedCount > 0
+                        ? `Complete & Flag ${flaggedCount} Follow-up${flaggedCount > 1 ? "s" : ""}`
+                        : "Complete Service"}
                   </Button>
+                  {!isProjected && (
                   <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={() => onDeleteService(s.id)} title="Delete service">
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
+                  )}
                 </div>
               </div>
             </div>
