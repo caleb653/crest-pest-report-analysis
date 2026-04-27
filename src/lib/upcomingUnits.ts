@@ -38,6 +38,13 @@ export type ServiceRow = {
   units_planned?: any;
   unit_details?: any;
   service_date?: string | null;
+  /**
+   * Optional: when set, contains `report_data.dismissed_units` — unit numbers
+   * that an admin explicitly removed from this upcoming visit. These units
+   * are filtered out of the merged "Units to be Treated" list so a deleted
+   * unit cannot reappear via the work-order / follow-up auto-merge.
+   */
+  report_data?: any;
 };
 
 const sortNumeric = (arr: string[]) =>
@@ -169,13 +176,45 @@ export function computeUpcomingUnits(args: {
   allPastServices?: ServiceRow[];
 }) {
   const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices } = args;
+  // Units the admin explicitly removed from THIS upcoming service. We keep
+  // them in `report_data.dismissed_units` so they survive page refreshes
+  // and never re-enter the merged set from work orders / follow-ups that
+  // were already known at the time of dismissal.
+  //
+  // Each entry is either a string (legacy) or `{ unit, at }` where `at` is
+  // the dismissal ISO timestamp. A NEW work order created AFTER the
+  // dismissal will still surface — only existing-at-dismissal-time items
+  // are suppressed for that unit.
+  const dismissedRaw = Array.isArray((service?.report_data as any)?.dismissed_units)
+    ? ((service!.report_data as any).dismissed_units as unknown[])
+    : [];
+  const dismissedAtByUnit = new Map<string, string>();
+  dismissedRaw.forEach((entry) => {
+    if (typeof entry === "string") {
+      const u = normalizeUnit(entry);
+      if (u && !dismissedAtByUnit.has(u)) dismissedAtByUnit.set(u, "");
+    } else if (entry && typeof entry === "object") {
+      const u = normalizeUnit((entry as any).unit);
+      const at = String((entry as any).at || "");
+      if (u && !dismissedAtByUnit.has(u)) dismissedAtByUnit.set(u, at);
+    }
+  });
+  const isDismissedForPlanned = (u: string) => dismissedAtByUnit.has(u);
+  const isDismissedForRequest = (u: string, createdAt?: string | null) => {
+    if (!dismissedAtByUnit.has(u)) return false;
+    const at = dismissedAtByUnit.get(u) || "";
+    if (!at) return true; // legacy: no timestamp → suppress
+    if (!createdAt) return true;
+    // Suppress only requests that existed BEFORE the dismissal.
+    return new Date(createdAt).getTime() <= new Date(at).getTime();
+  };
   // Normalize + dedupe planned units up front so "5" / " 5" / "5 " never count twice.
   const ownPlanned = Array.isArray(service?.units_planned)
     ? Array.from(
         new Set(
           (service.units_planned as unknown[])
             .map(normalizeUnit)
-            .filter(Boolean)
+            .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
         )
       )
     : [];
@@ -183,25 +222,32 @@ export function computeUpcomingUnits(args: {
 
   const openRequests = getOpenRequests(requests);
   const openRequestUnits = new Set(
-    openRequests.map(r => normalizeUnit(r.unit_number)).filter(Boolean)
+    openRequests
+      .filter(r => {
+        const u = normalizeUnit(r.unit_number);
+        return Boolean(u) && !isDismissedForRequest(u, r.created_at || null);
+      })
+      .map(r => normalizeUnit(r.unit_number))
   );
   const followUpDetails = getFollowUpDetailsFromPast(mostRecentPast);
   const followUpUnits = new Set(
-    followUpDetails.map(u => normalizeUnit(u.unit_number)).filter(Boolean)
+    followUpDetails
+      .map(u => normalizeUnit(u.unit_number))
+      .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
   );
   const followUpByUnit = new Map<string, UnitDetailRow>();
   followUpDetails.forEach(u => {
     const k = normalizeUnit(u.unit_number);
-    if (k) followUpByUnit.set(k, u);
+    if (k && !isDismissedForPlanned(k)) followUpByUnit.set(k, u);
   });
   const requestByUnit = new Map<string, RequestRow>();
   openRequests.forEach(r => {
     const k = normalizeUnit(r.unit_number);
-    if (k) requestByUnit.set(k, r);
+    if (k && !isDismissedForRequest(k, r.created_at || null)) requestByUnit.set(k, r);
   });
   const lastPastUnits = getUnitsFromMostRecentPast(mostRecentPast)
     .map(normalizeUnit)
-    .filter(Boolean);
+    .filter((u) => Boolean(u) && !isDismissedForPlanned(u));
 
   // For each unit, find the most-recent unit_detail from any past service (used as
   // a fallback to pre-fill findings/products/target_pest for the technician).

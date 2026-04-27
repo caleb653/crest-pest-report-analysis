@@ -1987,11 +1987,83 @@ const PropertyDashboard = ({
               return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
             });
           };
-          const removeRow = (idx: number) => {
+          const removeRow = async (idx: number) => {
+            const row = cd.unitRows[idx];
+            const unitLabel = String(row?.unit_number || "").trim();
+            const ok = window.confirm(
+              unitLabel
+                ? `Remove ${unitLabel} from this upcoming service? This won't delete past records — it just takes the unit off the list of areas to be treated on this visit.`
+                : "Remove this area from the upcoming service?"
+            );
+            if (!ok) return;
+
+            // Drop the row from the on-screen editor immediately.
             setCompletionData(prev => ({
               ...prev,
               [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
             }));
+
+            // For real (non-projected) services, persist the deletion so the
+            // unit doesn't reappear from the work-order / follow-up auto-merge.
+            // We do this by:
+            //   (a) adding the unit_number to report_data.dismissed_units, and
+            //   (b) stripping it from units_planned if present.
+            if (!unitLabel || (s as any).isProjected || !s.id) return;
+            try {
+              const existingReportData =
+                (s as any).report_data && typeof (s as any).report_data === "object"
+                  ? { ...((s as any).report_data as any) }
+                  : {};
+              const existingDismissed = Array.isArray(existingReportData.dismissed_units)
+                ? (existingReportData.dismissed_units as any[])
+                : [];
+              // Normalize legacy string entries → object form, then append the
+              // new dismissal with a timestamp so future work orders for the
+              // same unit will still surface on this service.
+              const normalizedExisting = existingDismissed
+                .map((entry) => {
+                  if (typeof entry === "string") {
+                    const u = String(entry).trim();
+                    return u ? { unit: u, at: "" } : null;
+                  }
+                  if (entry && typeof entry === "object") {
+                    const u = String((entry as any).unit || "").trim();
+                    if (!u) return null;
+                    return { unit: u, at: String((entry as any).at || "") };
+                  }
+                  return null;
+                })
+                .filter(Boolean) as { unit: string; at: string }[];
+              // Replace any prior entry for this unit with the latest timestamp.
+              const filtered = normalizedExisting.filter(e => e.unit !== unitLabel);
+              const nextDismissed = [
+                ...filtered,
+                { unit: unitLabel, at: new Date().toISOString() },
+              ];
+              const nextReportData = { ...existingReportData, dismissed_units: nextDismissed };
+
+              const existingPlanned = Array.isArray(s.units_planned)
+                ? (s.units_planned as string[]).map(u => String(u).trim()).filter(Boolean)
+                : [];
+              const nextPlanned = existingPlanned.filter(u => u !== unitLabel);
+
+              const { error } = await supabase
+                .from("portal_services")
+                .update({
+                  units_planned: nextPlanned,
+                  report_data: nextReportData,
+                })
+                .eq("id", s.id);
+              if (error) throw error;
+              toast({ title: `Removed ${unitLabel} from this service` });
+              onRefresh();
+            } catch (err: any) {
+              toast({
+                title: "Could not save removal",
+                description: err?.message || "Unknown error",
+                variant: "destructive",
+              });
+            }
           };
           const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
 
