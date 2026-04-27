@@ -3570,6 +3570,41 @@ const PropertyDashboard = ({
                         </Popover>
                       )}
                       {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
+                      {!isProjected && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/40"
+                          title="Delete this upcoming service"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const dateLabel = s.service_date ? formatDate(s.service_date) : "this service";
+                            const ok = window.confirm(
+                              `Are you sure you want to delete this upcoming service${s.service_date ? ` on ${dateLabel}` : ""}? This cannot be undone.`
+                            );
+                            if (!ok) return;
+                            try {
+                              const { error } = await supabase
+                                .from("portal_services")
+                                .delete()
+                                .eq("id", s.id);
+                              if (error) throw error;
+                              toast({ title: "Upcoming service deleted" });
+                              if (expandedUpcomingId === s.id) setExpandedUpcomingId(null);
+                              onRefresh();
+                            } catch (err: any) {
+                              toast({
+                                title: "Delete failed",
+                                description: err?.message || "Unknown error",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </button>
                   {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
