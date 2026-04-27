@@ -957,8 +957,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </CardContent>
           </Card>
 
-          {/* Property Plan + Customer Preference (top of page, read-only for PM) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Top row: Property Plan + Customer Preference (left column) and Property Map (right column) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <div className="space-y-5">
             <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
               <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
                 <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -1065,6 +1066,26 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
               </CardContent>
             </Card>
+            </div>
+
+            {/* Property Map — top right */}
+            <div>
+              {mapUrl ? (
+                <Card className="overflow-hidden shadow-sm">
+                  <div className="relative bg-muted max-w-[520px] mx-auto" style={{ aspectRatio: "3 / 4" }}>
+                    {property.map_data ? (
+                      <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                    ) : (
+                      <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                </Card>
+              ) : (
+                <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />No site map yet
+                </CardContent></Card>
+              )}
+            </div>
           </div>
 
           {/* Property Point of Contact (PM-editable) */}
@@ -1187,45 +1208,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             );
           })()}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div>
-              {mapUrl ? (
-                <Card className="overflow-hidden shadow-sm">
-                  <div className="relative bg-muted max-w-[520px] mx-auto" style={{ aspectRatio: "3 / 4" }}>
-                    {property.map_data ? (
-                      <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
-                    ) : (
-                      <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
-                    )}
-                  </div>
-                </Card>
-              ) : (
-                <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">
-                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />No site map yet
-                </CardContent></Card>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {equipment.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
-                    <Wrench className="w-4 h-4 text-muted-foreground" />Equipment on Site
-                  </CardTitle></CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-1.5">
-                      {equipment.map((eq, i) => (
-                        <div key={`${eq.name}-${i}`} className="flex items-center gap-2.5">
-                          <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                          <span className="text-sm">{eq.name}{eq.count > 1 ? ` ×${eq.count}` : ""}</span>
-                        </div>
-                      ))}
+          {equipment.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-muted-foreground" />Equipment on Site
+              </CardTitle></CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-1.5">
+                  {equipment.map((eq, i) => (
+                    <div key={`${eq.name}-${i}`} className="flex items-center gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                      <span className="text-sm">{eq.name}{eq.count > 1 ? ` ×${eq.count}` : ""}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ════════ TAB 2: PAST SERVICES (read-only) ════════ */}
