@@ -85,7 +85,7 @@ const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
-  { value: "Inspected: Free and Clear",  label: "Free and Clear" },
+  { value: "Inspected: Free and Clear",  label: "No Activity Found" },
   { value: "Inspected: Activity Found",  label: "Activity Found" },
   { value: "Not Treated",                label: "Not Inspected" },
 ];
@@ -1595,7 +1595,7 @@ const PropertyDashboard = ({
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
-      { value: "Free and Clear",  label: "Free and Clear" },
+      { value: "Free and Clear",  label: "No Activity Found" },
       { value: "Activity Found",  label: "Activity Found" },
       { value: "Not Serviced",    label: "Not Inspected" },
     ];
@@ -1847,9 +1847,9 @@ const PropertyDashboard = ({
                   onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
                 >
                   {(((newUnitData as any).kind === "inspection")
-                    ? ["Free and Clear", "Activity Found"]
-                    : ["Complete", "Not Serviced"]
-                  ).map(a => <option key={a} value={a}>{a}</option>)}
+                    ? [{ v: "Free and Clear", l: "No Activity Found" }, { v: "Activity Found", l: "Activity Found" }]
+                    : [{ v: "Complete", l: "Complete" }, { v: "Not Serviced", l: "Not Serviced" }]
+                  ).map(a => <option key={a.v} value={a.v}>{a.l}</option>)}
                 </select>
               </div>
               {/* Service / Inspection toggle for the new area */}
