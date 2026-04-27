@@ -2527,6 +2527,9 @@ const PropertyDashboard = ({
           );
         })()}
 
+        {/* Required pesticide notice — shown at the bottom of every completed service report */}
+        {!isUpcoming && !isProjected && <PesticideNotice />}
+
       </div>
     );
   };
