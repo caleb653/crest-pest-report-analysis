@@ -1957,7 +1957,15 @@ const PropertyDashboard = ({
                       );
                       const reqTypeLower = (ucForRow?.request?.request_type || "").toLowerCase();
                       const isInspectionWO = isWorkOrder && reqTypeLower.includes("inspection");
-                      const woLabel = isInspectionWO ? "Inspection" : "Treatment";
+                      // Allow the technician to flip the visit kind (Treatment <->
+                      // Inspection) per row. Falls back to whatever the work order
+                      // requested, otherwise defaults to "treatment".
+                      const rowKind: "treatment" | "inspection" =
+                        row.kind === "treatment" || row.kind === "inspection"
+                          ? row.kind
+                          : (isInspectionWO ? "inspection" : "treatment");
+                      const isInspection = rowKind === "inspection";
+                      const woLabel = isInspection ? "Inspection" : "Treatment";
                       const unitKey = `pd-up:${s.id}:${idx}`;
                       const isUnitOpen = expandedUnitKeys.has(unitKey);
                       return (
@@ -2007,9 +2015,28 @@ const PropertyDashboard = ({
                                 value={row.unit_number}
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
                               />
-                              {isWorkOrder && (
-                                <span className="text-xs font-semibold uppercase tracking-wide text-primary bg-background border border-primary/60 px-2 py-0.5 rounded">{woLabel}</span>
-                              )}
+                              {/* Visit kind toggle — click to flip Treatment <-> Inspection.
+                                  Always shown so any area can be reclassified, not just
+                                  rows that came from a work order. */}
+                              <button
+                                type="button"
+                                data-no-toggle
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const next = isInspection ? "treatment" : "inspection";
+                                  updateRow(idx, "kind", next);
+                                  // Reset the status so it lines up with the new option set.
+                                  updateRow(idx, "status", "To Be Treated");
+                                }}
+                                title="Click to switch between Treatment and Inspection"
+                                className={`text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded border-2 transition-colors ${
+                                  isInspection
+                                    ? "text-sky-900 bg-sky-100 border-sky-600 hover:bg-sky-200"
+                                    : "text-primary-foreground bg-primary border-primary hover:bg-primary/90"
+                                }`}
+                              >
+                                {woLabel}
+                              </button>
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
@@ -2029,11 +2056,19 @@ const PropertyDashboard = ({
                             <div className="flex items-center gap-2">
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
-                                  <SelectTrigger className={`h-9 text-sm w-[210px] ${row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                  <SelectTrigger className={`h-9 text-sm w-[230px] font-semibold border-2 ${
+                                    row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found"
+                                      ? "text-orange-700 border-orange-500 bg-orange-50"
+                                      : row.status === "To Be Treated"
+                                        ? "text-primary-foreground border-primary bg-primary"
+                                        : row.status === "Not Treated"
+                                          ? "text-muted-foreground border-border bg-background"
+                                          : "text-foreground border-primary/70 bg-background"
+                                  }`}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {(isInspectionWO ? INSPECTION_STATUS_OPTIONS : TREATMENT_STATUS_OPTIONS).map(a => (
+                                    {(isInspection ? INSPECTION_STATUS_OPTIONS : TREATMENT_STATUS_OPTIONS).map(a => (
                                       <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
                                     ))}
                                   </SelectContent>
