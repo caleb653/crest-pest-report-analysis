@@ -2191,11 +2191,11 @@ const PropertyDashboard = ({
                 Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background w-full mx-auto" style={{ aspectRatio: "3 / 4", maxWidth: 720, minHeight: 640 }}>
+            <div className="bg-background mx-auto" style={{ aspectRatio: "3 / 4", width: "100%", maxWidth: 560 }}>
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : mapUrl ? (
-                <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
+                <img src={mapUrl} alt="Site map" className="w-full h-full object-cover" />
               ) : null}
             </div>
           </div>
