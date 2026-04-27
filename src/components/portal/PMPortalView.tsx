@@ -994,6 +994,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         )}
         {/* Pesticide / safety disclaimer — last item in past service report */}
         <PesticideNotice />
+        {/* Apartment-specific inspection disclaimer (non-HOA only) */}
+        {!isHOA && <ApartmentInspectionDisclaimer />}
       </div>
     );
   };
