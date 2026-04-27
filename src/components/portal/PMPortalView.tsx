@@ -1374,20 +1374,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             );
           })()}
 
-          {equipment.length > 0 && (
+          {(equipment.length > 0 || isHOA) && (
             <Card>
               <CardHeader className="pb-2 py-4"><CardTitle className="text-sm flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-muted-foreground" />Equipment on Site
               </CardTitle></CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-1.5">
-                  {equipment.map((eq, i) => (
-                    <div key={`${eq.name}-${i}`} className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
-                      <span className="text-sm">{eq.name}{eq.count > 1 ? ` ×${eq.count}` : ""}</span>
-                    </div>
-                  ))}
-                </div>
+                {equipment.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {equipment.map((eq, i) => (
+                      <div key={`${eq.name}-${i}`} className="flex items-center gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                        <span className="text-sm">{eq.name}{eq.count > 1 ? ` ×${eq.count}` : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">No equipment recorded for this community yet.</p>
+                )}
               </CardContent>
             </Card>
           )}
