@@ -220,6 +220,10 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  // Per-service local set of units the admin just removed, applied immediately
+  // so the auto-merge effect doesn't re-add the unit between the local state
+  // update and the DB refresh that picks up the persisted dismissal.
+  const [recentlyDismissedUnits, setRecentlyDismissedUnits] = useState<Record<string, Set<string>>>({});
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string; file_url: string | null }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
@@ -1932,8 +1936,14 @@ const PropertyDashboard = ({
           const existingUnitSet = new Set(
             cd.unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean)
           );
+          // Also exclude any unit the admin JUST removed (before the DB refresh
+          // has propagated dismissed_units back through `merged.unitContexts`).
+          const localDismissed = recentlyDismissedUnits[s.id] || new Set<string>();
           const missingContexts = merged.unitContexts.filter(
-            (uc) => !existingUnitSet.has(String(uc.unit_number).trim())
+            (uc) => {
+              const u = String(uc.unit_number).trim();
+              return !existingUnitSet.has(u) && !localDismissed.has(u);
+            }
           );
           if (missingContexts.length > 0) {
             setTimeout(() => {
@@ -2002,6 +2012,18 @@ const PropertyDashboard = ({
               ...prev,
               [s.id]: { ...prev[s.id], unitRows: prev[s.id].unitRows.filter((_, i) => i !== idx) },
             }));
+
+            // Seed the local-dismissed set so the auto-merge effect doesn't
+            // re-add this unit before the DB refresh propagates the persisted
+            // dismissed_units list. This is what was causing the unit to
+            // "disappear for a second then come back".
+            if (unitLabel) {
+              setRecentlyDismissedUnits(prev => {
+                const next = new Set(prev[s.id] || []);
+                next.add(unitLabel);
+                return { ...prev, [s.id]: next };
+              });
+            }
 
             // For real (non-projected) services, persist the deletion so the
             // unit doesn't reappear from the work-order / follow-up auto-merge.
