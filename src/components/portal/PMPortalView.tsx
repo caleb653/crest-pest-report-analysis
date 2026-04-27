@@ -29,6 +29,8 @@ import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspecti
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
+import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
+import { parseResidentContact } from "@/lib/residentContact";
 
 const PEST_TYPES = [
   "General Pests",
