@@ -2813,7 +2813,7 @@ const PropertyDashboard = ({
               </p>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-                className="min-h-[360px] text-sm resize-y leading-relaxed"
+                className="min-h-[640px] text-sm resize-y leading-relaxed"
                 value={planDraft}
                 onChange={(e) => setPlanDraft(e.target.value)}
               />
@@ -2827,43 +2827,31 @@ const PropertyDashboard = ({
           <div className="space-y-5">
             {/* Property Point of Contact */}
             <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
+          <CardHeader className="pb-2 pt-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
               Property Point of Contact
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              The property manager / on-site contact for this location.
-            </p>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="grid grid-cols-1 gap-3">
+          <CardContent className="pt-3 pb-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                   PM / Contact Name
                 </Label>
                 <Input
+                  className="h-8 text-sm"
                   placeholder="Full name"
                   value={pocName}
                   onChange={(e) => setPocName(e.target.value)}
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  PM Email
-                </Label>
-                <Input
-                  type="email"
-                  placeholder="email@example.com"
-                  value={pocEmail}
-                  onChange={(e) => setPocEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                   PM Phone
                 </Label>
                 <Input
+                  className="h-8 text-sm"
                   type="tel"
                   inputMode="tel"
                   placeholder="(555) 123-4567"
@@ -2871,52 +2859,49 @@ const PropertyDashboard = ({
                   onChange={(e) => setPocPhone(e.target.value)}
                 />
               </div>
+              <div className="col-span-2">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                  PM Email
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={pocEmail}
+                  onChange={(e) => setPocEmail(e.target.value)}
+                />
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              PM info auto-saves a moment after you stop typing.
-            </p>
           </CardContent>
         </Card>
 
         {/* Crest Point of Contact — the Crest staff member the PM should contact */}
         <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-          <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-            <CardTitle className="text-base font-bold flex items-center gap-2">
+          <CardHeader className="pb-2 pt-3 border-b bg-primary/[0.06]">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
               Crest Point of Contact
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-1">
-              The Crest staff member that the property manager should reach out to. Visible in the PM portal.
-            </p>
           </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="grid grid-cols-1 gap-3">
+          <CardContent className="pt-3 pb-3 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                   Crest Contact Name
                 </Label>
                 <Input
+                  className="h-8 text-sm"
                   placeholder="Full name"
                   value={crestName}
                   onChange={(e) => setCrestName(e.target.value)}
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                  Crest Email
-                </Label>
-                <Input
-                  type="email"
-                  placeholder="email@crestpestcontrol.com"
-                  value={crestEmail}
-                  onChange={(e) => setCrestEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                   Crest Phone
                 </Label>
                 <Input
+                  className="h-8 text-sm"
                   type="tel"
                   inputMode="tel"
                   placeholder="(555) 123-4567"
@@ -2924,14 +2909,26 @@ const PropertyDashboard = ({
                   onChange={(e) => setCrestPhone(e.target.value)}
                 />
               </div>
+              <div className="col-span-2">
+                <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                  Crest Email
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  type="email"
+                  placeholder="email@crestpestcontrol.com"
+                  value={crestEmail}
+                  onChange={(e) => setCrestEmail(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="pt-3 border-t border-border">
-              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+            <div className="pt-2 border-t border-border">
+              <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                 Crest Client Owner (internal)
               </Label>
               <div>
                 <Select value={ownerTechDraft || "__none__"} onValueChange={saveOwnerTech}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue placeholder="Assign Crest staff…" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2942,8 +2939,8 @@ const PropertyDashboard = ({
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                The Client Owner is notified (alongside the office) any time a work order or message is submitted on this property. Internal — not shown in the PM portal.
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                Notified (alongside the office) on any work order or message. Internal — not shown in the PM portal.
               </p>
             </div>
           </CardContent>
