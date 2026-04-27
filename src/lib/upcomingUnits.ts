@@ -38,6 +38,13 @@ export type ServiceRow = {
   units_planned?: any;
   unit_details?: any;
   service_date?: string | null;
+  /**
+   * Optional: when set, contains `report_data.dismissed_units` — unit numbers
+   * that an admin explicitly removed from this upcoming visit. These units
+   * are filtered out of the merged "Units to be Treated" list so a deleted
+   * unit cannot reappear via the work-order / follow-up auto-merge.
+   */
+  report_data?: any;
 };
 
 const sortNumeric = (arr: string[]) =>
@@ -169,13 +176,22 @@ export function computeUpcomingUnits(args: {
   allPastServices?: ServiceRow[];
 }) {
   const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices } = args;
+  // Units the admin explicitly removed from THIS upcoming service. We keep
+  // them in `report_data.dismissed_units` so they survive page refreshes
+  // and never re-enter the merged set from work orders / follow-ups.
+  const dismissedRaw = Array.isArray((service?.report_data as any)?.dismissed_units)
+    ? ((service!.report_data as any).dismissed_units as unknown[])
+    : [];
+  const dismissedSet = new Set(
+    dismissedRaw.map(normalizeUnit).filter(Boolean)
+  );
   // Normalize + dedupe planned units up front so "5" / " 5" / "5 " never count twice.
   const ownPlanned = Array.isArray(service?.units_planned)
     ? Array.from(
         new Set(
           (service.units_planned as unknown[])
             .map(normalizeUnit)
-            .filter(Boolean)
+            .filter((u) => Boolean(u) && !dismissedSet.has(u))
         )
       )
     : [];
@@ -183,25 +199,29 @@ export function computeUpcomingUnits(args: {
 
   const openRequests = getOpenRequests(requests);
   const openRequestUnits = new Set(
-    openRequests.map(r => normalizeUnit(r.unit_number)).filter(Boolean)
+    openRequests
+      .map(r => normalizeUnit(r.unit_number))
+      .filter((u) => Boolean(u) && !dismissedSet.has(u))
   );
   const followUpDetails = getFollowUpDetailsFromPast(mostRecentPast);
   const followUpUnits = new Set(
-    followUpDetails.map(u => normalizeUnit(u.unit_number)).filter(Boolean)
+    followUpDetails
+      .map(u => normalizeUnit(u.unit_number))
+      .filter((u) => Boolean(u) && !dismissedSet.has(u))
   );
   const followUpByUnit = new Map<string, UnitDetailRow>();
   followUpDetails.forEach(u => {
     const k = normalizeUnit(u.unit_number);
-    if (k) followUpByUnit.set(k, u);
+    if (k && !dismissedSet.has(k)) followUpByUnit.set(k, u);
   });
   const requestByUnit = new Map<string, RequestRow>();
   openRequests.forEach(r => {
     const k = normalizeUnit(r.unit_number);
-    if (k) requestByUnit.set(k, r);
+    if (k && !dismissedSet.has(k)) requestByUnit.set(k, r);
   });
   const lastPastUnits = getUnitsFromMostRecentPast(mostRecentPast)
     .map(normalizeUnit)
-    .filter(Boolean);
+    .filter((u) => Boolean(u) && !dismissedSet.has(u));
 
   // For each unit, find the most-recent unit_detail from any past service (used as
   // a fallback to pre-fill findings/products/target_pest for the technician).
