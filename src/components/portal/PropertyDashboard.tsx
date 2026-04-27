@@ -1256,8 +1256,18 @@ const PropertyDashboard = ({
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
-    const SERVICE_STATUSES = ["Complete", "Needs Follow Up", "Not Serviced"];
-    const INSPECTION_STATUSES = ["Free and Clear", "Activity Found"];
+    // Past-service status dropdowns mirror the upcoming-visit options so the
+    // technician sees the same vocabulary regardless of which tab they're in.
+    const SERVICE_STATUSES: { value: string; label: string }[] = [
+      { value: "Complete",          label: "Completed" },
+      { value: "Needs Follow Up",   label: "Treated - Follow Up Needed" },
+      { value: "Not Serviced",      label: "Not Treated" },
+    ];
+    const INSPECTION_STATUSES: { value: string; label: string }[] = [
+      { value: "Free and Clear",  label: "Free and Clear" },
+      { value: "Activity Found",  label: "Activity Found - Follow Up Needed" },
+      { value: "Not Serviced",    label: "Not Inspected" },
+    ];
     const isInspectionUnit = (u: any) => (u?.kind || "service") === "inspection";
     const statusOptionsFor = (u: any) => isInspectionUnit(u) ? INSPECTION_STATUSES : SERVICE_STATUSES;
     const defaultStatusFor = (kind: string) => kind === "inspection" ? "Free and Clear" : "Complete";
