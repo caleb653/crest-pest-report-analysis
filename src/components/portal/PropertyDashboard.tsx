@@ -840,6 +840,18 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  // Save HOA "Visit Notes / Findings" — single combined editable field in the
+  // HOA layout. We persist into `summary` and clear `findings` + `notes` so
+  // the read-back (`s.summary || s.findings || s.notes`) shows exactly what
+  // the admin typed without duplication.
+  const updateServiceFindings = async (serviceId: string, value: string) => {
+    await supabase
+      .from("portal_services")
+      .update({ summary: value, findings: null, notes: null })
+      .eq("id", serviceId);
+    onRefresh();
+  };
+
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
