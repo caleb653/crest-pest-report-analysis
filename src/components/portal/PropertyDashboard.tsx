@@ -865,8 +865,14 @@ const PropertyDashboard = ({
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
+    // Guard against accidentally appending a blank/whitespace-only row.
+    const unitLabel = String(newUnitData?.unit_number || "").trim();
+    if (!unitLabel) {
+      toast({ title: "Enter a unit / area name", variant: "destructive" });
+      return;
+    }
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
-    details.push({ ...newUnitData });
+    details.push({ ...newUnitData, unit_number: unitLabel });
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
     setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
