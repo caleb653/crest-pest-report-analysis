@@ -203,6 +203,18 @@ const PropertyDashboard = ({
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
+  // Past services are READ-ONLY by default — admins must explicitly opt in to
+  // editing a specific past service to prevent accidental edits (e.g. clicking
+  // a status dropdown auto-promoting a unit to "Needs Follow Up").
+  const [editingPastIds, setEditingPastIds] = useState<Set<string>>(new Set());
+  const isPastEditing = (id: string) => editingPastIds.has(id);
+  const togglePastEditing = (id: string) => {
+    setEditingPastIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
@@ -1375,8 +1387,115 @@ const PropertyDashboard = ({
   const propertyLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
 
   // ─── Render inline-editable unit table for past services ───
-  const renderEditableUnitTable = (s: PortalService) => {
+  const renderEditableUnitTable = (s: PortalService, editable: boolean = true) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    // ── READ-ONLY VIEW ──
+    // Past services are locked unless the admin clicks "Edit". When locked,
+    // we render a compact summary so accidental clicks can never mutate
+    // status / findings / products. Mirrors what PMs see in the PM portal.
+    if (!editable) {
+      if (unitDetails.length === 0) {
+        return (
+          <div className="text-xs text-muted-foreground italic px-2 py-3">
+            No areas / units recorded for this service.
+          </div>
+        );
+      }
+      return (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2">
+            {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
+          </p>
+          <div className="space-y-3">
+            {unitDetails.map((unit: any, j: number) => {
+              const kind = unit.kind || "service";
+              const isInspection = kind === "inspection";
+              const isFollowUp = unit.status === "Needs Follow Up" || unit.status === "Activity Found"
+                || unit.status === "Treated - Follow Up" || unit.status === "Activity Found - Follow Up";
+              const productsText = Array.isArray(unit.products_used)
+                ? (unit.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
+                : (unit.products_used || "");
+              return (
+                <div
+                  key={j}
+                  className={`rounded-lg border-2 bg-card overflow-hidden ${isFollowUp ? "border-orange-500" : "border-primary/40"}`}
+                >
+                  <div className={`px-3 py-2 flex items-center justify-between gap-2 flex-wrap ${
+                    isFollowUp ? "bg-orange-100 border-b-2 border-orange-500" : "bg-primary/10 border-b-2 border-primary/40"
+                  }`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"}`}>
+                        {j + 1}
+                      </div>
+                      <span className="text-sm font-bold">{unit.unit_number || "—"}</span>
+                      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                        isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
+                      }`}>{isInspection ? "Inspection" : "Service"}</span>
+                      {unit.target_pest && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide bg-background border border-border px-2 py-0.5 rounded">
+                          {unit.target_pest}
+                        </span>
+                      )}
+                    </div>
+                    {unit.status && (
+                      <Badge variant="outline" className={`text-[11px] font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
+                        {unit.status}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="md:col-span-2 space-y-2">
+                      {unit.pest_activity && unit.pest_activity !== "None" && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Activity Level</p>
+                          <p>{unit.pest_activity}</p>
+                        </div>
+                      )}
+                      {productsText && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Products</p>
+                          <p className="whitespace-pre-wrap">{productsText}</p>
+                        </div>
+                      )}
+                      {unit.findings && (
+                        <div className="rounded-md border border-amber-400 bg-amber-50/60 p-2.5">
+                          <p className="text-[10px] font-bold text-amber-900 uppercase tracking-wide mb-1">Technician Findings</p>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{unit.findings}</p>
+                        </div>
+                      )}
+                      {unit.notes && (
+                        <div>
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
+                          <p className="whitespace-pre-wrap leading-relaxed">{unit.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                    {Array.isArray(unit.photos) && unit.photos.length > 0 && (
+                      <div className="md:col-span-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                          Photos ({unit.photos.length})
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {(unit.photos as any[]).map((p: any, pIdx: number) => {
+                            const url = typeof p === "string" ? p : p?.url;
+                            if (!url) return null;
+                            return (
+                              <a key={pIdx} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border border-border">
+                                <img src={url} alt={`Unit photo ${pIdx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
     // Past-service status dropdowns mirror the upcoming-visit options so the
     // technician sees the same vocabulary regardless of which tab they're in.
     const SERVICE_STATUSES: { value: string; label: string }[] = [
@@ -1790,6 +1909,65 @@ const PropertyDashboard = ({
             small collapsible "Specific Homes Treated" section underneath.
             Apartment / commercial views render the editable table inline as
             before so per-unit data entry stays primary. */}
+        {/* Read-only / Edit toggle for past services (admin-only).
+            Past services are LOCKED by default to prevent accidental edits
+            (e.g. status dropdowns auto-promoting units to "Needs Follow Up"). */}
+        {!isUpcoming && !isProjected && (
+          <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
+            <div className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+              {isPastEditing(s.id) ? "Editing this past service" : "Past service — read-only"}
+            </div>
+            <Button
+              variant={isPastEditing(s.id) ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => togglePastEditing(s.id)}
+            >
+              {isPastEditing(s.id) ? "Done editing" : "Edit Previous Service"}
+            </Button>
+          </div>
+        )}
+
+        {/* ─── NEW ORDER for past services ───
+            1) Summary (Technician Findings)
+            2) Products
+            3) Unit Summary (per-unit cards — read-only by default)
+            4) Pesticide Notice (rendered later in the function)
+            Crest/PM service-level comment thread is removed. */}
+        {!isUpcoming && !isHOA && (
+          <>
+            {/* 1) Summary */}
+            {(s.summary || s.findings || s.notes) && (
+              <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <ClipboardList className="w-3.5 h-3.5 text-primary" />
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                    Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+                  </p>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+                  {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+                </p>
+              </div>
+            )}
+            {/* 2) Products */}
+            {products.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                  Products Used (this service date)
+                </p>
+                <ProductUsageSummary entries={products} />
+              </div>
+            )}
+            {/* 3) Unit Summary — editable only when admin opted in */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
+              {renderEditableUnitTable(s, isPastEditing(s.id))}
+            </div>
+          </>
+        )}
+
         {!isUpcoming && isHOA && (
           <>
             {/* Technician Report — large, prominent narrative (the "summary"
@@ -1831,27 +2009,11 @@ const PropertyDashboard = ({
                 )}
                 <div>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Specific Homes Treated</p>
-                  {renderEditableUnitTable(s)}
+                  {renderEditableUnitTable(s, isPastEditing(s.id))}
                 </div>
               </div>
             </details>
           </>
-        )}
-
-        {/* Past service (apartments / commercial): inline-editable unit table */}
-        {!isUpcoming && !isHOA && renderEditableUnitTable(s)}
-
-        {/* Past service (apartments / commercial): service-level products
-            (with Applied / Undiluted amounts). HOA renders products in the
-            robust block above, so we skip this in HOA mode. */}
-        {!isUpcoming && !isHOA && products.length > 0 && (
-          <div className="mt-2">
-            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
-              <FlaskConical className="w-3.5 h-3.5 text-primary" />
-              Products Used (this service date)
-            </p>
-            <ProductUsageSummary entries={products} />
-          </div>
         )}
 
         {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
@@ -1881,9 +2043,10 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {/* Skip the duplicate findings block in HOA past-service mode — the
-            robust block above already shows it as the focal narrative. */}
-        {!(isHOA && !isUpcoming) && (s.summary || s.findings || s.notes) && (
+        {/* Findings block for UPCOMING services only — past-service findings
+            are rendered above (in the new ordered block) so we skip them here
+            to avoid duplication. */}
+        {isUpcoming && (s.summary || s.findings || s.notes) && (
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
@@ -1942,44 +2105,6 @@ const PropertyDashboard = ({
             <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
               <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
-          </div>
-        )}
-
-        {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
-        {!isProjected && !isUpcoming && (
-          <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(() => {
-              const allComments = Array.isArray(((s as any).report_data || {}).comments)
-                ? ((s as any).report_data.comments as ServiceComment[])
-                : [];
-              return (
-                <>
-                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="crest"
-                      filterSender="crest"
-                      title="Service Comments: Crest"
-                      defaultAuthor={s.technician || ""}
-                      onChange={onRefresh}
-                    />
-                  </div>
-                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="pm"
-                      filterSender="pm"
-                      title="Service Comments: Property Manager"
-                      onChange={onRefresh}
-                    />
-                  </div>
-                </>
-              );
-            })()}
           </div>
         )}
 

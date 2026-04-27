@@ -24,6 +24,7 @@ import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
+import { PesticideNotice } from "@/components/portal/PesticideNotice";
 
 const PEST_TYPES = [
   "General Pests",
@@ -820,9 +821,44 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
+        {/* Products — sits right under the summary so PMs see chemistry
+            before drilling into per-unit detail. */}
+        {(() => {
+          const products = normalizeUsageList(s.products_used);
+          if (products.length === 0) return null;
+          return (
+            <div>
+              <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Products Used (this service)</p>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-[11px]">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="text-left px-2 py-1 font-semibold">Product</th>
+                      <th className="text-left px-2 py-1 font-semibold">Applied (diluted)</th>
+                      <th className="text-left px-2 py-1 font-semibold">Undiluted (concentrate)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((p, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-2 py-1 font-medium">{p.name}</td>
+                        <td className="px-2 py-1 text-muted-foreground">
+                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
+                        </td>
+                        <td className="px-2 py-1 text-muted-foreground">
+                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
         {unitDetails.length > 0 && (
           <div>
-            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Areas Treated ({unitDetails.length})</p>
+            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Unit Summary ({unitDetails.length})</p>
             <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
                 const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
@@ -946,39 +982,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           </div>
         )}
-        {(() => {
-          const products = normalizeUsageList(s.products_used);
-          if (products.length === 0) return null;
-          return (
-            <div>
-              <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Products Used (this service)</p>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-[11px]">
-                  <thead className="bg-muted/60">
-                    <tr>
-                      <th className="text-left px-2 py-1 font-semibold">Product</th>
-                      <th className="text-left px-2 py-1 font-semibold">Applied (diluted)</th>
-                      <th className="text-left px-2 py-1 font-semibold">Undiluted (concentrate)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p, i) => (
-                      <tr key={i} className="border-t border-border">
-                        <td className="px-2 py-1 font-medium">{p.name}</td>
-                        <td className="px-2 py-1 text-muted-foreground">
-                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
-                        </td>
-                        <td className="px-2 py-1 text-muted-foreground">
-                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })()}
         {unitsPlanned.length > 0 && unitDetails.length === 0 && (
           <div>
             <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Planned Units</p>
@@ -1005,41 +1008,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-orange-800 whitespace-pre-wrap">{s.follow_up_notes}</p>
           </div>
         )}
-        {/* Service-level comment thread (PM ↔ Crest) */}
-        <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
-          {(() => {
-            const allComments = Array.isArray(((s as any).report_data || {}).comments)
-              ? ((s as any).report_data.comments as ServiceComment[])
-              : [];
-            return (
-              <>
-                <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                  <ServiceComments
-                    serviceId={s.id}
-                    reportData={(s as any).report_data}
-                    comments={allComments}
-                    sender="crest"
-                    filterSender="crest"
-                    title="Service Comments: Crest"
-                    readOnly
-                    onChange={loadAll}
-                  />
-                </div>
-                <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                  <ServiceComments
-                    serviceId={s.id}
-                    reportData={(s as any).report_data}
-                    comments={allComments}
-                    sender="pm"
-                    filterSender="pm"
-                    title="Service Comments: Property Manager"
-                    onChange={loadAll}
-                  />
-                </div>
-              </>
-            );
-          })()}
-        </div>
+        {/* Pesticide / safety disclaimer — last item in past service report */}
+        <PesticideNotice />
       </div>
     );
   };
