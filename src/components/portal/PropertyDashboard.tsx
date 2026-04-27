@@ -426,12 +426,32 @@ const PropertyDashboard = ({
   // each visit (e.g. visit 1 = full exterior, visit 2 = spot-treat hotspots).
   // Stored at customer_preferences.cadence_visit_plan as { weekly: string[4], "bi-weekly": string[2] }.
   // Length matches the cycle so each upcoming visit can show its planned focus.
+  // Default rotation pre-filled for weekly clients so techs see a starting plan
+  // instead of empty boxes. They can overwrite anytime.
+  const WEEKLY_DEFAULT_PLAN: string[] = [
+    "1st Weekly Visit (Focus on Zone #A)",
+    "2nd Weekly Visit (Focus on Zone #B)",
+    "3rd Weekly Visit (Focus on Zone #C)",
+    "4th Weekly Visit (Focus on Rodent Bait Stations)",
+  ];
   const initialCadencePlan: Record<string, string[]> =
     ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
   const [cadencePlanDraft, setCadencePlanDraft] = useState<Record<string, string[]>>(initialCadencePlan);
   useEffect(() => {
     setCadencePlanDraft(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
   }, [property.id, property.customer_preferences]);
+
+  // Auto-seed the weekly default plan if the property is on weekly cadence
+  // and no plan (or all-blank entries) has been saved yet.
+  useEffect(() => {
+    if (propertyFrequency !== "weekly") return;
+    const existing = cadencePlanDraft.weekly || [];
+    const hasAnyContent = existing.slice(0, 4).some(v => (v || "").trim().length > 0);
+    if (hasAnyContent) return;
+    setCadencePlanDraft(prev => ({ ...prev, weekly: [...WEEKLY_DEFAULT_PLAN] }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyFrequency, property.id]);
+
   useEffect(() => {
     const current = JSON.stringify(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
     if (current === JSON.stringify(cadencePlanDraft)) return;
