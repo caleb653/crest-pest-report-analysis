@@ -984,6 +984,43 @@ const PropertyDashboard = ({
   ) => {
     if (completionData[serviceId]) return; // already initialized
 
+    // ── Hydrate from a previously-saved draft (so products, findings,
+    //    and per-unit notes typed on an upcoming service survive a page
+    //    refresh / navigation away and come back). The draft lives in
+    //    `portal_services.report_data.completion_draft` and is updated
+    //    automatically while the admin types. It's wiped on completion. ──
+    const svcRow = propServices.find(s => s.id === serviceId) as any;
+    const draft = svcRow?.report_data?.completion_draft;
+    if (draft && Array.isArray(draft.unitRows)) {
+      setCompletionData(prev => ({
+        ...prev,
+        [serviceId]: {
+          unitRows: draft.unitRows.map((r: any) => ({
+            unit_number: r.unit_number || "",
+            target_pest: r.target_pest || "",
+            findings: r.findings || "",
+            pest_activity: r.pest_activity || "None",
+            products_used: normalizeUsageList(r.products_used) || [],
+            status: r.status || "To Be Treated",
+            notes: r.notes || "",
+            source: r.source || "planned",
+            follow_up_needed: r.follow_up_needed === true,
+            sanitization_concern: r.sanitization_concern === true,
+            photos: Array.isArray(r.photos) ? r.photos : [],
+          })),
+          summary: draft.summary || "",
+          findings: draft.findings || "",
+          notes: draft.notes || "",
+          technician: draft.technician || "",
+          time_in: draft.time_in || "",
+          time_out: draft.time_out || "",
+          photos: Array.isArray(draft.photos) ? draft.photos : [],
+          products: normalizeUsageList(draft.products) || [],
+        },
+      }));
+      return;
+    }
+
     // Prefer the unified contexts from computeUpcomingUnits — guarantees the
     // admin's pre-fill (source / target pest / findings) matches EXACTLY what
     // the PM portal shows for the same upcoming service.
