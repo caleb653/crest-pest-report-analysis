@@ -4761,15 +4761,23 @@ const PropertyDashboard = ({
             ) : (
               <div className="space-y-2">
                 {signedAuthorizations.map((r) => (
-                  <Card key={r.id} className="shadow-sm">
-                    <CardContent className="p-3 flex items-start gap-3">
+                  <details key={r.id} className="rounded-lg border bg-card shadow-sm group">
+                    <summary className="flex items-center justify-between gap-3 cursor-pointer p-3 list-none">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate">{r.right_to_treat_signer_name || r.tenant_email || "—"}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {r.unit_number ? <>Unit <span className="font-medium text-foreground">{r.unit_number}</span> · </> : null}
+                          Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleDateString() : "—"}
+                        </p>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="px-3 pb-3 border-t pt-3 flex items-start gap-3">
                       {r.right_to_treat_signature && (
                         <img src={r.right_to_treat_signature} alt="Signature" className="w-28 h-16 rounded border bg-white object-contain shrink-0" />
                       )}
                       <div className="flex-1 min-w-0 text-xs space-y-0.5">
-                        <p className="text-sm font-semibold">{r.right_to_treat_signer_name || r.tenant_email || "—"}</p>
                         <p className="text-muted-foreground">
-                          {r.unit_number ? <>Unit <span className="font-medium text-foreground">{r.unit_number}</span> · </> : null}
                           {r.pest_type || r.request_type || "Service"}
                           {r.location_type ? ` (${r.location_type})` : ""}
                         </p>
@@ -4778,8 +4786,8 @@ const PropertyDashboard = ({
                           Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
                         </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </details>
                 ))}
               </div>
             )}
