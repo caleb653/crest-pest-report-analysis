@@ -1693,15 +1693,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
                             <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
-                              // For weekly/bi-weekly properties, the first upcoming visit auto-aligns
-                              // with Visit #1 from the Site Map cadence plan so PMs see the same
-                              // rotation label here as in the site map tab.
+                              // Prefer a saved label on the row first.
+                              const savedLabel = (s as any).appointment_service;
+                              if (savedLabel) return savedLabel;
+                              // Auto-rotate the cadence visit label by past-visit count
+                              // so visits roll forward (1 → 2 → 3 → 4 → 1) automatically.
                               if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
                                 const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
-                                const firstVisitLabel = (planMap[propertyFrequency]?.[0] || "").trim();
-                                if (firstVisitLabel) return firstVisitLabel;
+                                const label = getCadenceVisitLabel(pastServices.length, planMap[propertyFrequency]);
+                                if (label) return label;
                               }
-                              return (s as any).appointment_service || s.service_type;
+                              return s.service_type;
                             })()}</p>
                             {!isFirst && <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>}
                           </div>
