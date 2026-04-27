@@ -959,6 +959,26 @@ const PropertyDashboard = ({
       photos: photosToSave,
     }).eq("id", serviceId);
 
+    // ─── Close any open work-order requests for the units we just treated ───
+    // Without this, a pending request keeps bleeding into the NEXT upcoming
+    // service via computeUpcomingUnits, which is why a unit can appear on
+    // both the just-completed service AND the next upcoming one.
+    try {
+      const treatedUnits = Array.from(
+        new Set(unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean))
+      );
+      if (treatedUnits.length > 0) {
+        await supabase
+          .from("portal_requests")
+          .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+          .eq("property_id", property.id)
+          .in("status", ["pending", "in_progress"])
+          .in("unit_number", treatedUnits);
+      }
+    } catch (e) {
+      console.warn("auto-resolve work orders failed", e);
+    }
+
     // Auto-schedule follow-ups to next service
     if (flagged.length > 0) {
       const nextService = allUpcoming.find(s => s.id !== serviceId && !s.isProjected);
