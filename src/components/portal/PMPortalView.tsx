@@ -1092,9 +1092,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   // HOA mode: skip the per-unit footnote — irrelevant for boards.
                   if (isHOA) return null;
                   return (
-                    <p className="text-[11px] text-muted-foreground italic">
-                      Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
-                    </p>
+                    <>
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
+                      </p>
+                      <p className="text-[11px] font-semibold text-amber-700 italic">
+                        * Pricing reflects the units serviced on the day of a scheduled service.
+                      </p>
+                    </>
                   );
                 })()}
                 {(() => {
