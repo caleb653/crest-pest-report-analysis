@@ -97,9 +97,9 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   return (
     <div className="space-y-4">
       {/* ─── Top zone: Map (left) + Findings (right) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
-        {/* LEFT — Community site map (3/5 width) */}
-        <div className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        {/* LEFT — Community site map (1/2 width) */}
+        <div>
           <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
             <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
@@ -230,7 +230,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
         </div>
 
         {/* RIGHT — Findings + Products (2/5 width) */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3">
           <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-2">
               <ClipboardList className="w-4 h-4 text-primary" />
