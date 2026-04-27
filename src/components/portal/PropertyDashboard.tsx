@@ -2088,6 +2088,15 @@ const PropertyDashboard = ({
       })) as any;
       return (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {redNotesValue && (
+            <div className="rounded-lg border-2 border-red-500 bg-red-50 p-3 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-red-800 mb-1 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                RED NOTES — Admin Only (not shown to PM)
+              </p>
+              <p className="text-sm whitespace-pre-wrap font-medium text-red-900">{redNotesValue}</p>
+            </div>
+          )}
           {pmNoteForThis && (
             <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
               <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
@@ -2127,6 +2136,15 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+        {redNotesValue && (
+          <div className="rounded-lg border-2 border-red-500 bg-red-50 p-3 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-red-800 mb-1 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              RED NOTES — Admin Only (not shown to PM)
+            </p>
+            <p className="text-sm whitespace-pre-wrap font-medium text-red-900">{redNotesValue}</p>
+          </div>
+        )}
         {/* HOA mode (past service): MAP + SUMMARY are ~90% of the report.
             Everything else (per-unit/area table, products) is collapsed into
             a tiny "Visit Details" twirl-down underneath the narrative. */}
