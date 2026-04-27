@@ -37,6 +37,10 @@ const TenantPortal = () => {
   const [error, setError] = useState("");
   const [linkData, setLinkData] = useState<any>(null);
   const [propertyName, setPropertyName] = useState("");
+  const [isHOA, setIsHOA] = useState(false);
+  // HOA-only request scope: "individual" (a service call for this resident's home)
+  // vs "community" (a sighting somewhere in the community for the board to triage).
+  const [hoaScope, setHoaScope] = useState<"individual" | "community">("individual");
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -78,10 +82,14 @@ const TenantPortal = () => {
       const propId = String(link.assigned_property_ids[0]);
       const { data: prop } = await supabase
         .from("portal_properties")
-        .select("name")
+        .select("name, customer_preferences")
         .eq("id", propId)
         .single();
-      if (prop) setPropertyName(prop.name);
+      if (prop) {
+        setPropertyName(prop.name);
+        const ptype = (prop as any).customer_preferences?.property_type;
+        setIsHOA(ptype === "hoa");
+      }
 
       // Discover units from past services
       const { data: svcs } = await supabase
@@ -118,15 +126,27 @@ const TenantPortal = () => {
       link_id: linkData.id,
       property_id: propertyId,
       unit_number: canonical,
-      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
-      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
+      request_type: isHOA && hoaScope === "community"
+        ? "Community Pest Sighting"
+        : (requestKind === "inspection" ? "Inspection Request" : "Service Request"),
+      description: `${isHOA ? (hoaScope === "community" ? "[Community Sighting] " : "[Resident Service Call] ") : ""}${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
       occupancy_status: occupancyStatus || null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
-      toast({ title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted", description: "We'll get back to you soon." });
+      const successTitle = isHOA
+        ? (hoaScope === "community"
+            ? "Thanks — your community sighting was sent to the HOA board"
+            : "Service call request submitted")
+        : (requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted");
+      const successBody = isHOA
+        ? (hoaScope === "community"
+            ? "The board will review and decide on next steps. No appointment will be scheduled for your home."
+            : "Crest will reach out to schedule a visit for your home.")
+        : "We'll get back to you soon.";
+      toast({ title: successTitle, description: successBody });
       if (inserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -135,6 +155,7 @@ const TenantPortal = () => {
         } catch (e) { console.error("notify-submission failed", e); }
       }
       setRequestKind("treatment");
+      setHoaScope("individual");
       setPestType("");
       setLocationType("");
       setOccupancyStatus("");
@@ -183,7 +204,7 @@ const TenantPortal = () => {
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
           <div>
-            <h1 className="text-lg font-bold">Service Request Form</h1>
+            <h1 className="text-lg font-bold">{isHOA ? "Resident Request Form" : "Service Request Form"}</h1>
             {propertyName && <p className="text-sm text-muted-foreground">{propertyName}</p>}
             {linkData?.unit_number && (
               <p className="text-xs text-muted-foreground">Unit {linkData.unit_number}</p>
@@ -197,12 +218,55 @@ const TenantPortal = () => {
         <Card className="border-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-1.5">
-              <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+              <ClipboardList className="w-4 h-4 text-primary" />
+              {isHOA ? "Submit to the HOA" : "Submit a Work Order"}
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
+            <p className="text-xs text-muted-foreground">
+              {isHOA
+                ? "Choose whether you're reporting a sighting in the community or requesting a service call for your own home."
+                : "Tell us what's going on and we'll schedule service."}
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* HOA scope: Community sighting vs Individual service call */}
+            {isHOA && (
+              <div>
+                <Label className="text-sm">What is this about? *</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {[
+                    { v: "community" as const, label: "Community Sighting", desc: "I saw something in a shared/common area", Icon: Bug },
+                    { v: "individual" as const, label: "Service Request", desc: "I need treatment at my own home", Icon: ClipboardList },
+                  ].map(opt => {
+                    const active = hoaScope === opt.v;
+                    const Icon = opt.Icon;
+                    return (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => setHoaScope(opt.v)}
+                        className={`px-3 py-3 rounded-lg border-2 text-center transition-colors ${
+                          active
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-background border-border hover:bg-muted"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5 mx-auto mb-1" />
+                        <div className="text-sm font-bold">{opt.label}</div>
+                        <div className="text-[11px] text-muted-foreground">{opt.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1.5 italic">
+                  {hoaScope === "community"
+                    ? "Sightings are sent to the HOA board to review — no appointment will be scheduled for your home."
+                    : "Service requests come directly to Crest to schedule a visit at your home."}
+                </p>
+              </div>
+            )}
+
             {/* Request Type — Treatment vs Inspection */}
+            {!(isHOA && hoaScope === "community") && (
             <div>
               <Label className="text-sm">Request Type *</Label>
               <div className="grid grid-cols-2 gap-2 mt-1">
@@ -231,17 +295,30 @@ const TenantPortal = () => {
                 })}
               </div>
             </div>
+            )}
 
             {/* Unit Number — free-text, case-insensitive match against known units */}
             <div>
-              <Label className="text-sm">Unit, Property, or Area *</Label>
+              <Label className="text-sm">
+                {isHOA && hoaScope === "community"
+                  ? "Where in the community? *"
+                  : isHOA
+                    ? "Your home / lot # *"
+                    : "Unit, Property, or Area *"}
+              </Label>
               {linkData?.unit_number ? (
                 <Input value={unitNumber} disabled className="bg-muted" />
               ) : (
                 <>
                   <Input
                     list="tenant-known-units"
-                    placeholder="Type unit or area (e.g. 204, Lobby, Pool deck)"
+                    placeholder={
+                      isHOA && hoaScope === "community"
+                        ? "e.g. Pool area, mailroom, between Lots 12 & 13"
+                        : isHOA
+                          ? "e.g. 204, Lot 12"
+                          : "Type unit or area (e.g. 204, Lobby, Pool deck)"
+                    }
                     value={unitNumber}
                     onChange={e => setUnitNumber(e.target.value)}
                     autoComplete="off"
@@ -313,7 +390,12 @@ const TenantPortal = () => {
 
             <Button className="w-full" size="lg" onClick={submitRequest}
               disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-              <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
+              <Send className="w-4 h-4 mr-2" />
+              {isHOA && hoaScope === "community"
+                ? "Submit Community Sighting"
+                : isHOA
+                  ? "Submit Service Request"
+                  : `Submit ${requestKind === "inspection" ? "Inspection Request" : "Work Order"}`}
             </Button>
           </CardContent>
         </Card>

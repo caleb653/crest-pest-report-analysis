@@ -169,7 +169,11 @@ const PropertyDashboard = ({
   propertyType = "apartments",
 }: Props) => {
   const isHOA = propertyType === "hoa";
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  // For HOA: "date" = Service Reports, "quarterly" = Quarterly Updates.
+  // For apartments: "date" / "unit" toggle stays unchanged.
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
+  const residentTerm = isHOA ? "resident" : "tenant";
+  const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
@@ -2655,7 +2659,7 @@ const PropertyDashboard = ({
           </span>
         </div>
       )}
-      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-7"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -2672,18 +2676,22 @@ const PropertyDashboard = ({
           <ClipboardList className="w-5 h-5" />
           <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{allUpcoming.length}</Badge></span>
         </TabsTrigger>
-        <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-          <FileDown className="w-5 h-5" />
-          <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
-        </TabsTrigger>
+        {!isHOA && (
+          <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <FileDown className="w-5 h-5" />
+            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
+          </TabsTrigger>
+        )}
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <BarChart3 className="w-5 h-5" />
-          <span>Tenant Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
+          <span>{isHOA ? "Resident Survey" : "Tenant Survey"} <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
-        <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-          <Video className="w-5 h-5" />
-          <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-xs h-4">{quarterlyUpdates.length}</Badge></span>
-        </TabsTrigger>
+        {!isHOA && (
+          <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <Video className="w-5 h-5" />
+            <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-xs h-4">{quarterlyUpdates.length}</Badge></span>
+          </TabsTrigger>
+        )}
       </TabsList>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
@@ -3199,21 +3207,116 @@ const PropertyDashboard = ({
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-xs ml-1">{pastServices.length}</Badge>
           </h3>
-          <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-            <button
-              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setPastViewMode("date")}
-            >By Date</button>
-            <button
-              className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              onClick={() => setPastViewMode("unit")}
-            >By Unit</button>
-          </div>
+          {isHOA ? (
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("date")}
+              >Service Reports</button>
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("quarterly")}
+              >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("date")}
+              >By Date</button>
+              <button
+                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setPastViewMode("unit")}
+              >By Unit</button>
+            </div>
+          )}
         </div>
 
 
 
-        {pastViewMode === "date" ? (
+        {pastViewMode === "quarterly" ? (
+          <div className="space-y-5">
+            {/* Inline upload form so admins can post a quarterly update without leaving the tab */}
+            <Card className="border-primary/60 shadow-md">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-primary" />Upload Quarterly Update
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Share a video walkthrough or update with this community.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-sm">Title (optional)</Label>
+                  <Input value={quTitle} onChange={(e) => setQuTitle(e.target.value)} placeholder="e.g., Q1 2026 Walkthrough" />
+                </div>
+                <div>
+                  <Label className="text-sm">Comment</Label>
+                  <Textarea value={quComment} onChange={(e) => setQuComment(e.target.value)} rows={3} placeholder="What we covered, what to look for…" />
+                </div>
+                <div>
+                  <Label className="text-sm">Uploaded by (optional)</Label>
+                  <Input value={quUploadedBy} onChange={(e) => setQuUploadedBy(e.target.value)} placeholder="Your name" />
+                </div>
+                <div>
+                  <Label className="text-sm">Video file</Label>
+                  <Input type="file" accept="video/*" onChange={(e) => setQuFile(e.target.files?.[0] || null)} />
+                  {quFile && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {quFile.name} ({(quFile.size / (1024 * 1024)).toFixed(1)} MB)
+                    </p>
+                  )}
+                </div>
+                <Button onClick={uploadQuarterlyUpdate} disabled={quUploading || !quFile} className="w-full">
+                  {quUploading ? "Uploading…" : (<><Upload className="w-4 h-4 mr-2" />Upload Update</>)}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {quarterlyUpdates.length === 0 ? (
+              <Card><CardContent className="py-10 text-center text-sm text-muted-foreground">
+                <Video className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                No quarterly updates uploaded yet.
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-4">
+                {quarterlyUpdates.map((q) => (
+                  <Card key={q.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Video className="w-4 h-4 text-primary" />
+                            {q.title || "Quarterly Update"}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(q.created_at).toLocaleString("en-US", {
+                              month: "short", day: "numeric", year: "numeric",
+                              hour: "numeric", minute: "2-digit",
+                            })}
+                            {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => deleteQuarterlyUpdate(q.id, q.video_url)} title="Delete">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {q.video_url && (
+                        <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
+                      )}
+                      {q.comment && (
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : pastViewMode === "date" ? (
           pastServices.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
           ) : (
@@ -3949,10 +4052,12 @@ const PropertyDashboard = ({
           <Card className="border-primary/60 shadow-md">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+                <Send className="w-4 h-4 text-primary" />Send {ResidentTerm} Pest Survey
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Tenants get a short 5-question form. Results aggregate below as they respond.
+                {isHOA
+                  ? "Residents get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below."
+                  : "Tenants get a short 5-question form. Results aggregate below as they respond."}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -3965,15 +4070,15 @@ const PropertyDashboard = ({
                 <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
               </div>
               <div>
-                <Label className="text-sm">Tenant Emails</Label>
+                <Label className="text-sm">{ResidentTerm} Emails</Label>
                 <Textarea
                   rows={4}
-                  placeholder="Paste tenant emails — one per line, or comma-separated"
+                  placeholder={`Paste ${residentTerm} emails — one per line, or comma-separated`}
                   value={surveyEmails}
                   onChange={(e) => setSurveyEmails(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Each tenant gets their own unique link so you can see who responded.
+                  Each {residentTerm} gets their own unique link so you can see who responded.
                 </p>
               </div>
               <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
@@ -3983,13 +4088,82 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
 
+          {/* HOA: Group past surveys into "Survey — Month YYYY" collapsible summaries */}
+          {isHOA && surveys.length > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />Past Survey Summaries
+                  <Badge variant="secondary" className="ml-1 text-xs">{surveys.length}</Badge>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Each entry rolls up everything sent in that month.</p>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  // Group surveys by Month YYYY of created_at
+                  const groups = new Map<string, { label: string; date: Date; surveys: any[] }>();
+                  surveys.forEach((s: any) => {
+                    const d = new Date(s.created_at);
+                    const key = `${d.getFullYear()}-${d.getMonth()}`;
+                    const label = `Survey — ${d.toLocaleString("en-US", { month: "long", year: "numeric" })}`;
+                    if (!groups.has(key)) groups.set(key, { label, date: new Date(d.getFullYear(), d.getMonth(), 1), surveys: [] });
+                    groups.get(key)!.surveys.push(s);
+                  });
+                  const ordered = Array.from(groups.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+                  return (
+                    <div className="space-y-2">
+                      {ordered.map((g) => {
+                        const ids = new Set(g.surveys.map((s: any) => s.id));
+                        const responses = surveyResponses.filter((r: any) => ids.has(r.survey_id));
+                        const submitted = responses.filter((r: any) => r.submitted_at).length;
+                        const recipientsTotal = g.surveys.reduce(
+                          (acc: number, s: any) => acc + (Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0),
+                          0
+                        );
+                        return (
+                          <details key={g.label} className="rounded-lg border bg-muted/20 group">
+                            <summary className="flex items-center justify-between gap-3 cursor-pointer p-3 list-none">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold truncate">{g.label}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {g.surveys.length} send{g.surveys.length === 1 ? "" : "s"} • {submitted}/{recipientsTotal} responded
+                                </p>
+                              </div>
+                              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                            </summary>
+                            <div className="px-3 pb-3 border-t pt-2 space-y-2">
+                              {g.surveys.map((s: any) => {
+                                const resps = surveyResponses.filter((r: any) => r.survey_id === s.id);
+                                const sub = resps.filter((r: any) => r.submitted_at).length;
+                                const rec = Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0;
+                                return (
+                                  <div key={s.id} className="text-xs flex items-center justify-between gap-2 bg-background rounded p-2 border">
+                                    <span className="truncate">
+                                      <span className="font-semibold">{s.title || "Pest Activity Survey"}</span>{" "}
+                                      <span className="text-muted-foreground">— {new Date(s.created_at).toLocaleDateString()}</span>
+                                    </span>
+                                    <Badge variant="outline" className="text-[10px]">{sub}/{rec}</Badge>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" />Survey Questions Preview
                 <Badge variant="secondary" className="ml-1 text-xs">{DEFAULT_PEST_SURVEY_QUESTIONS.length} questions</Badge>
               </CardTitle>
-              <p className="text-xs text-muted-foreground">This is exactly what tenants will see.</p>
+              <p className="text-xs text-muted-foreground">This is exactly what {residentTerm}s will see.</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -4048,7 +4222,7 @@ const PropertyDashboard = ({
                 if (submitted.length === 0) {
                   return (
                     <p className="text-sm text-muted-foreground text-center py-6">
-                      No responses yet. Once tenants submit, their answers will roll up here.
+                      No responses yet. Once {residentTerm}s submit, their answers will roll up here.
                     </p>
                   );
                 }
