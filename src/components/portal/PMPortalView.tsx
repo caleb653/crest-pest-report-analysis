@@ -1756,6 +1756,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
                           <p className="text-sm mt-1">{r.description}</p>
+                          {Array.isArray((r as any).photos) && (r as any).photos.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {((r as any).photos as string[]).map((url, i) => (
+                                <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
                           {matchedUpcoming && (
                             <div className="mt-2 bg-primary/5 border border-primary/15 rounded-md p-2">
                               <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Scheduled for</p>
