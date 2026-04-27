@@ -3519,7 +3519,7 @@ const PropertyDashboard = ({
               <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
             </h3>
-            <p className="text-xs text-muted-foreground mt-1">Easy-to-send instructions for customers before treatment.</p>
+            <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
           </div>
           {prepSheets.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
