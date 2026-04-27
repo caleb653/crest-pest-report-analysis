@@ -3994,7 +3994,7 @@ const PropertyDashboard = ({
                  {([
                    { v: "treatment", label: "Treatment\n(units)", icon: Bug, desc: "Active pest treatment" },
                    { v: "inspection", label: "Inspections\n(units)", icon: FileText, desc: "Assess & investigate" },
-                   { v: "general", label: "Common Areas and\nGeneral Requests", icon: ClipboardList, desc: "Just leave a comment" },
+                   { v: "general", label: "General\nRequest", icon: ClipboardList, desc: "Just leave a comment" },
                  ] as const).map(opt => {
                   const Icon = opt.icon;
                   const active = workOrder.request_type === opt.v;
@@ -4018,10 +4018,10 @@ const PropertyDashboard = ({
             {workOrder.request_type !== "general" && (
             <div>
               <div className="flex items-center gap-3">
-                <Label className="text-sm whitespace-nowrap shrink-0">Unit, Property, or Area *</Label>
+                 <Label className="text-sm whitespace-nowrap shrink-0">Unit or Property *</Label>
                 <Input
                   list="admin-wo-known-units"
-                  placeholder="UNIT204, LOBBY, POOLDECK"
+                  placeholder="UNIT204, 1234MAINST"
                   value={workOrder.unit_number}
                   onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value.toUpperCase().replace(/\s+/g, "") }))}
                   onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
