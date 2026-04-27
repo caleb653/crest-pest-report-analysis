@@ -1478,6 +1478,16 @@ const PropertyDashboard = ({
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{unit.findings}</p>
                         </div>
                       )}
+                      {(unit.follow_up_needed || unit.sanitization_concern) && (
+                        <div className="flex flex-wrap gap-2">
+                          {unit.follow_up_needed && (
+                            <Badge className="text-[11px] bg-orange-500 text-white">Follow Up Needed</Badge>
+                          )}
+                          {unit.sanitization_concern && (
+                            <Badge className="text-[11px] bg-amber-600 text-white">Sanitization Concern</Badge>
+                          )}
+                        </div>
+                      )}
                       {unit.notes && (
                         <div>
                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
