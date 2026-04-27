@@ -3449,7 +3449,16 @@ const PropertyDashboard = ({
                         <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
                           <div className="flex items-center justify-between">
-                            <span className="font-medium">{service.service_type}</span>
+                            <span className="font-medium">{(() => {
+                              if ((service as any).appointment_service) return (service as any).appointment_service;
+                              const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                              if (cycleLen <= 1) return service.service_type;
+                              const idx = pastServices.findIndex(p => p.id === service.id);
+                              if (idx < 0) return service.service_type;
+                              const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
+                              const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+                              return (planArr[rotIdx] || "").trim() || service.service_type;
+                            })()}</span>
                             <span className="text-muted-foreground">{formatShortDate(service.service_date)}</span>
                           </div>
                           {unitDetail && (
