@@ -612,7 +612,14 @@ const PropertyDashboard = ({
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
     .filter(s => s.status === "completed")
-    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+    .sort((a, b) => {
+      // Primary: most recent service date first.
+      const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
+      if (dateCmp !== 0) return dateCmp;
+      // Tiebreaker: most recently completed/updated first (when several
+      // visits share the same date, the one finished latest is "most recent").
+      return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
+    });
   const scheduledServices = propServices
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
