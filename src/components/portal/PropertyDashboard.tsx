@@ -4064,6 +4064,39 @@ const PropertyDashboard = ({
                 rows={workOrder.request_type === "general" ? 5 : 3} />
             </div>
 
+            {/* Photo attachments — available on every work order type */}
+            <div>
+              <Label className="text-sm">Photos (optional)</Label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {workOrderPhotos.map((url, idx) => (
+                  <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border bg-muted group">
+                    <img src={url} alt={`Work order photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <button
+                      type="button"
+                      onClick={() => setWorkOrderPhotos(prev => prev.filter(u => u !== url))}
+                      className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 shadow border hover:bg-background"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-muted text-muted-foreground text-[10px]">
+                  <Image className="w-4 h-4" />
+                  {uploadingWorkOrderPhotos ? "Uploading..." : "Add Photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploadingWorkOrderPhotos}
+                    onChange={(e) => { handleWorkOrderPhotoUpload(e.target.files); e.target.value = ""; }}
+                  />
+                </label>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Attach any number of photos to give context for the technician.</p>
+            </div>
+
             {/* Occupancy — hidden for "General Request" */}
             {workOrder.request_type !== "general" && !isHOA && (
             <div>
