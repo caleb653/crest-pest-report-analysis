@@ -955,6 +955,10 @@ const PropertyDashboard = ({
     const data = completionData[serviceId];
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
       ...r,
+      // Explicitly coerce the two follow-up booleans so they NEVER drop out
+      // of the persisted payload due to type-stripping or undefined values.
+      follow_up_needed: r.follow_up_needed === true,
+      sanitization_concern: r.sanitization_concern === true,
       // Persist any per-unit photos uploaded during completion (strip uploading flags)
       photos: Array.isArray(r.photos)
         ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
