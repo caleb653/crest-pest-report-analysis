@@ -684,7 +684,7 @@ const PropertyDashboard = ({
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
       } else {
         toast({ title: "Survey created", description: "Email send may have failed — check logs." });
       }
@@ -1437,7 +1437,7 @@ const PropertyDashboard = ({
         toast({ title: "Tenant notified", description: `Email sent to ${workOrder.tenant_email.trim()}` });
       } catch (e) {
         console.error("send-tenant-work-order failed", e);
-        toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+        toast({ title: `${ResidentTerm} email failed`, description: "Work order saved, but email could not be sent.", variant: "destructive" });
       }
     }
     setWorkOrder({
@@ -2158,6 +2158,28 @@ const PropertyDashboard = ({
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
+            communityFeedback={isUpcoming && isFirstUpcoming ? (() => {
+              // Community pest sightings submitted since the most recent
+              // completed visit. Briefs the tech for the next service.
+              const lastDate = pastServices[0]?.service_date ? new Date(pastServices[0].service_date).getTime() : 0;
+              return (pendingRequests as any[])
+                .filter((r) => {
+                  if (r.status === "resolved") return false;
+                  const isCommunity = r.request_type === "Community Pest Sighting" ||
+                    /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                  if (!isCommunity) return false;
+                  if (!lastDate) return true;
+                  const created = new Date(r.created_at).getTime();
+                  return created >= lastDate;
+                })
+                .map((r) => ({
+                  id: r.id,
+                  created_at: r.created_at,
+                  pest_type: r.pest_type,
+                  location_type: r.location_type,
+                  description: r.description,
+                }));
+            })() : []}
           />
           {/* HOA upcoming: full-width Complete Service action.
               Flips status -> "completed", auto-rolls flagged units into a
@@ -4214,12 +4236,12 @@ const PropertyDashboard = ({
             if (link) {
               const url = `${window.location.origin}/tenant/${link.token}`;
               navigator.clipboard.writeText(url);
-              toast({ title: "Link copied!", description: "Share this with the tenant so they can submit requests." });
+              toast({ title: "Link copied!", description: `Share this with the ${residentTerm} so they can submit requests.` });
             } else {
               toast({ title: "No portal link", description: "A share link will be auto-generated.", variant: "destructive" });
             }
           }}>
-          <ExternalLink className="w-4 h-4 mr-1.5" />Copy Tenant Request Link
+          <ExternalLink className="w-4 h-4 mr-1.5" />Copy {ResidentTerm} Request Link
         </Button>
         </div>
       </TabsContent>
@@ -4599,7 +4621,7 @@ const PropertyDashboard = ({
               <FileDown className="w-6 h-6 text-secondary" />Prep Sheets & Signed Authorizations
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
             </h3>
-            <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
+            <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {residentTerm}s.</p>
           </div>
           {prepSheets.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
@@ -4728,7 +4750,7 @@ const PropertyDashboard = ({
                 <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
                 <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+              <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property.</p>
             </div>
             {signedAuthorizations.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>

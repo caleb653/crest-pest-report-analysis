@@ -416,7 +416,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           }
         } catch (e) {
           console.error("send-tenant-work-order failed", e);
-          toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+          toast({ title: `${ResidentTerm} email failed`, description: "Work order saved, but email could not be sent.", variant: "destructive" });
         }
       }
       setUnitNumber("");
@@ -541,7 +541,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
         setSurveyEmails("");
         loadAll();
       } else {
@@ -2093,6 +2093,29 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
                                 findings={[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
                                 technician={s.technician}
+                                communityFeedback={isFirst ? (() => {
+                                  // Community pest sightings submitted since
+                                  // the most recent completed visit. Used to
+                                  // brief the tech for the next service.
+                                  const lastDate = lastPast?.service_date ? new Date(lastPast.service_date).getTime() : 0;
+                                  return (requests as any[])
+                                    .filter((r) => {
+                                      if (r.status === "resolved") return false;
+                                      const isCommunity = r.request_type === "Community Pest Sighting" ||
+                                        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                                      if (!isCommunity) return false;
+                                      if (!lastDate) return true;
+                                      const created = new Date(r.created_at).getTime();
+                                      return created >= lastDate;
+                                    })
+                                    .map((r) => ({
+                                      id: r.id,
+                                      created_at: r.created_at,
+                                      pest_type: r.pest_type,
+                                      location_type: r.location_type,
+                                      description: r.description,
+                                    }));
+                                })() : []}
                                 units={(unitContexts.length > 0
                                   ? unitContexts.map((uc) => ({
                                       unit_number: String(uc.unit_number || "").trim(),
@@ -2531,7 +2554,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
                       <Badge variant="secondary" className="text-xs ml-1">{signed.length}</Badge>
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property.</p>
                   </div>
                   {signed.length === 0 ? (
                     <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>

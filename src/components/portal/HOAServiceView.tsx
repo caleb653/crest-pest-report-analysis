@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2 } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { normalizeUsageList, type ProductUsage } from "@/lib/productCatalog";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -81,6 +82,19 @@ export interface HOAServiceViewProps {
   /** Admin-only file picker handler for replacing the map background. */
   onUploadMapImage?: (file: File) => void;
   uploadingMap?: boolean;
+
+  /**
+   * Community Pest Sightings submitted since the last completed visit.
+   * Rendered as the "Feedback from Community" card on upcoming visits so the
+   * board (and assigned tech) sees what to incorporate into the next service.
+   */
+  communityFeedback?: Array<{
+    id: string;
+    created_at: string;
+    pest_type?: string | null;
+    location_type?: string | null;
+    description?: string | null;
+  }>;
 }
 
 export function HOAServiceView(props: HOAServiceViewProps) {
@@ -101,6 +115,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onUploadMapImage,
     uploadingMap,
     onChangeProducts,
+    communityFeedback = [],
   } = props;
 
   const [isEditingMap, setIsEditingMap] = useState(false);
@@ -352,6 +367,44 @@ export function HOAServiceView(props: HOAServiceViewProps) {
 
         {/* RIGHT — Findings + Products (2/5 width) */}
         <div className="space-y-3">
+          {isUpcoming && communityFeedback.length > 0 && (
+            <div className="rounded-xl border-2 border-amber-500/70 bg-amber-50/60 dark:bg-amber-500/[0.06] p-4 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-2">
+                <MessageSquare className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">
+                  Feedback from Community ({communityFeedback.length})
+                </p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
+                Community pest sightings submitted since the last visit. Incorporate these into this upcoming service.
+              </p>
+              <ul className="space-y-2">
+                {communityFeedback.map((f) => {
+                  const dateStr = (() => {
+                    try { return new Date(f.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+                    catch { return ""; }
+                  })();
+                  // Strip the "[COMMUNITY SIGHTING] " tag the form prepends.
+                  const cleanDesc = (f.description || "").replace(/^\[COMMUNITY SIGHTING\]\s*/i, "").trim();
+                  return (
+                    <li key={f.id} className="rounded-md border border-amber-300/60 bg-background/70 p-2">
+                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                        <p className="text-[13px] font-semibold text-foreground">
+                          {f.pest_type || "Pest activity"}
+                          {f.location_type ? <span className="text-muted-foreground font-normal"> — {f.location_type}</span> : null}
+                        </p>
+                        {dateStr && <span className="text-[10px] text-muted-foreground shrink-0">{dateStr}</span>}
+                      </div>
+                      {cleanDesc && (
+                        <p className="text-[12px] text-muted-foreground leading-snug whitespace-pre-wrap">{cleanDesc}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-2">
               <ClipboardList className="w-4 h-4 text-primary" />
