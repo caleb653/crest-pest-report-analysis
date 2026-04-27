@@ -3393,7 +3393,7 @@ const PropertyDashboard = ({
 
 
 
-        {pastViewMode === "quarterly" ? (
+        {(!isHOA && pastViewMode === "quarterly") ? (
           <div className="space-y-5">
             {/* Inline upload form so admins can post a quarterly update without leaving the tab */}
             <Card className="border-primary/60 shadow-md">
