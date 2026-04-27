@@ -1052,16 +1052,18 @@ const PropertyDashboard = ({
 
   // Save service-level products_used (per service date — not per unit).
   // Debounced — every keystroke in the ProductUsageEditor calls this, so we
-  // batch writes and skip onRefresh() between strokes (which would otherwise
-  // race with typing and reset half-typed amounts).
+  // batch DB writes (~600ms) and skip onRefresh() between strokes (which
+  // would otherwise race with typing and reset half-typed amounts). The
+  // local override map keeps the editor reflecting the user's input
+  // immediately, even before the parent's `services` prop has reloaded.
   const productsSaveTimers = useRef<Record<string, any>>({});
+  const [productsOverride, setProductsOverride] = useState<Record<string, ProductUsage[]>>({});
   const updateServiceProducts = (serviceId: string, products: ProductUsage[]) => {
-    // Optimistically update local state so the editor reflects the keystroke
-    // immediately without waiting on Supabase.
-    setServices(prev => prev.map(s => s.id === serviceId ? { ...s, products_used: products as any } : s));
+    setProductsOverride(prev => ({ ...prev, [serviceId]: products }));
     if (productsSaveTimers.current[serviceId]) clearTimeout(productsSaveTimers.current[serviceId]);
     productsSaveTimers.current[serviceId] = setTimeout(async () => {
       await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+      onRefresh();
     }, 600);
   };
 
