@@ -4151,6 +4151,20 @@ const PropertyDashboard = ({
                               });
                               if (expandedUpcomingId === s.id) setExpandedUpcomingId(null);
                               onRefresh();
+                              // Reload local pending-requests cache so the
+                              // deleted general/work/inspection requests
+                              // disappear from the next-service breakdown
+                              // immediately (it's keyed off `property.id`
+                              // which didn't change).
+                              try {
+                                const { data: freshReqs } = await supabase
+                                  .from("portal_requests")
+                                  .select("*")
+                                  .eq("property_id", property.id)
+                                  .in("status", ["pending", "in_progress"])
+                                  .order("created_at", { ascending: false });
+                                setPendingRequests(freshReqs || []);
+                              } catch {}
                             } catch (err: any) {
                               toast({
                                 title: "Delete failed",
