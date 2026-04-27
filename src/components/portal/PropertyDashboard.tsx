@@ -753,6 +753,35 @@ const PropertyDashboard = ({
     if (allUpcoming.length > 0) setExpandedUpcomingId(allUpcoming[0].id);
   }, [property.id]);
 
+  // Back-fill `appointment_service` on legacy past services that were
+  // completed before we started persisting the cadence visit label, so the
+  // correct title is stored in the DB (and shows up in emails, exports, etc).
+  // Runs once whenever the past list / cadence plan changes — safe to no-op.
+  useEffect(() => {
+    const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+    if (cycleLen <= 1) return;
+    const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+    if (!planArr.some(p => (p || "").trim())) return;
+    const updates: Array<{ id: string; appointment_service: string }> = [];
+    pastServices.forEach((s, i) => {
+      if ((s as any).appointment_service) return;
+      const rotIdx = (pastServices.length - 1 - i) % cycleLen;
+      const label = (planArr[rotIdx] || "").trim();
+      if (label) updates.push({ id: s.id, appointment_service: label });
+    });
+    if (updates.length === 0) return;
+    (async () => {
+      try {
+        await Promise.all(
+          updates.map(u =>
+            supabase.from("portal_services").update({ appointment_service: u.appointment_service }).eq("id", u.id)
+          )
+        );
+      } catch (e) { console.warn("backfill appointment_service failed", e); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pastServices.length, propertyFrequency, JSON.stringify(cadencePlanDraft[propertyFrequency] || [])]);
+
   const allUnits = (() => {
     const units = new Set<string>();
     propServices.forEach(s => {
