@@ -1047,13 +1047,24 @@ const PropertyDashboard = ({
     //     hydration, or earlier auto-creates) survive completion and the
     //     finished visit appears in BOTH Past + Upcoming. ────────────────
     try {
-      await supabase
+      // Only dedupe sibling scheduled rows for the SAME date as the just-
+      // completed visit. Older logic deleted everything <= today which would
+      // wipe out manually-added appointments dated for earlier today. We also
+      // skip any row tagged `manually_added` so admin-entered visits always
+      // survive.
+      const { data: sameDay } = await supabase
         .from("portal_services")
-        .delete()
+        .select("id, report_data")
         .eq("property_id", property.id)
         .eq("status", "scheduled")
-        .lte("service_date", today)
+        .eq("service_date", today)
         .neq("id", serviceId);
+      const idsToDelete = (sameDay || [])
+        .filter((r: any) => !(r?.report_data && r.report_data.manually_added === true))
+        .map((r: any) => r.id);
+      if (idsToDelete.length > 0) {
+        await supabase.from("portal_services").delete().in("id", idsToDelete);
+      }
     } catch (e) {
       console.warn("dedupe scheduled services failed", e);
     }
