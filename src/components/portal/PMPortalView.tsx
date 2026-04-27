@@ -1861,9 +1861,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     ? (isInspectionWO ? "Inspection" : "Treatment")
                                     : isFU
                                       ? "Follow-up"
-                                      : uc.source === "carried"
-                                        ? "Carried"
-                                        : "Planned";
+                                      : "Planned";
                                   const ucKey = `up:${s.id}:${uc.unit_number}`;
                                   const isUcOpen = expandedUnitKeys.has(ucKey);
                                   return (
