@@ -4836,23 +4836,30 @@ const PropertyDashboard = ({
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses
+                <BarChart3 className="w-4 h-4 text-primary" />Aggregated Responses by Send Date
                 <Badge variant="secondary" className="ml-1 text-xs">
                   {surveyResponses.filter((r) => r.submitted_at).length} submitted
                 </Badge>
               </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Each section below is a cohort of responses from one survey send date.
+              </p>
             </CardHeader>
             <CardContent>
               {(() => {
-                const submitted = surveyResponses.filter((r) => r.submitted_at);
-                if (submitted.length === 0) {
+                const allSubmitted = surveyResponses.filter((r) => r.submitted_at);
+                if (allSubmitted.length === 0) {
                   return (
                     <p className="text-sm text-muted-foreground text-center py-6">
                       No responses yet. Once {residentTerm}s submit, their answers will roll up here.
                     </p>
                   );
                 }
-                const tally: Record<string, Record<string, number>> = {};
+
+                // Reusable renderer — produces the full aggregated breakdown
+                // for a given subset of submitted responses.
+                const renderAggregate = (submitted: any[]) => {
+                  const tally: Record<string, Record<string, number>> = {};
                 const openText: Record<string, string[]> = {};
                 const ratingSums: Record<string, { sum: number; count: number }> = {};
                 submitted.forEach((r) => {
@@ -4967,6 +4974,66 @@ const PropertyDashboard = ({
                         </div>
                       );
                     })}
+                  </div>
+                );
+                };
+
+                // Cohort responses by the parent survey's send date.
+                // Each cohort = all responses tied to surveys sent on the same calendar day.
+                const surveyById = new Map<string, any>();
+                surveys.forEach((s: any) => surveyById.set(s.id, s));
+                const cohorts = new Map<string, { label: string; date: Date; responses: any[]; recipients: number; surveyIds: Set<string> }>();
+                allSubmitted.forEach((r: any) => {
+                  const parent = surveyById.get(r.survey_id);
+                  if (!parent) return;
+                  const sentRaw = parent.sent_at || parent.created_at;
+                  const d = new Date(sentRaw);
+                  if (!Number.isFinite(d.getTime())) return;
+                  const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                  if (!cohorts.has(key)) {
+                    cohorts.set(key, {
+                      label: d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+                      date: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
+                      responses: [],
+                      recipients: 0,
+                      surveyIds: new Set<string>(),
+                    });
+                  }
+                  const c = cohorts.get(key)!;
+                  c.responses.push(r);
+                  c.surveyIds.add(parent.id);
+                });
+                // Add recipient totals per cohort
+                cohorts.forEach((c) => {
+                  c.recipients = Array.from(c.surveyIds).reduce((acc, id) => {
+                    const s = surveyById.get(id);
+                    return acc + (Array.isArray(s?.recipient_emails) ? s.recipient_emails.length : 0);
+                  }, 0);
+                });
+                const ordered = Array.from(cohorts.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+                if (ordered.length === 0) return renderAggregate(allSubmitted);
+
+                return (
+                  <div className="space-y-2">
+                    {ordered.map((c, i) => (
+                      <details key={c.label} className="rounded-lg border-2 border-primary/40 bg-background group" open={i === 0}>
+                        <summary className="flex items-center justify-between gap-3 cursor-pointer list-none p-3 bg-primary/[0.06] rounded-t-lg">
+                          <div className="min-w-0 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-primary shrink-0" />
+                            <div>
+                              <p className="text-sm font-bold">Sent {c.label}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {c.responses.length}/{c.recipients} responded • {c.surveyIds.size} send{c.surveyIds.size === 1 ? "" : "s"}
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="p-4 border-t">
+                          {renderAggregate(c.responses)}
+                        </div>
+                      </details>
+                    ))}
                   </div>
                 );
               })()}
