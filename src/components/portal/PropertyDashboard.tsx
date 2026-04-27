@@ -3725,13 +3725,19 @@ const PropertyDashboard = ({
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(() => {
-                          // First upcoming visit auto-aligns with Visit #1 of the Site Map
-                          // cadence rotation (weekly / bi-weekly only). Keeps admin + PM views in sync.
+                          // If a label was already saved on the row (e.g. via completion or
+                          // manual edit), prefer it so the displayed title is stable.
+                          const savedLabel = (s as any).appointment_service;
+                          if (savedLabel) return savedLabel;
+                          // First upcoming visit auto-rotates through the Site Map cadence
+                          // plan (weekly = 4-visit rotation, bi-weekly = 2-visit rotation).
+                          // Past-visit count is the index into the rotation, so once the 1st
+                          // visit completes the next upcoming becomes the 2nd visit, etc.
                           if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
-                            const firstVisitLabel = ((cadencePlanDraft[propertyFrequency] || [])[0] || "").trim();
-                            if (firstVisitLabel) return firstVisitLabel;
+                            const label = getCadenceVisitLabel(pastServices.length, cadencePlanDraft[propertyFrequency]);
+                            if (label) return label;
                           }
-                          return (s as any).appointment_service || s.service_type;
+                          return s.service_type;
                         })()}</p>
                         {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
