@@ -15,7 +15,7 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -341,6 +341,57 @@ const PropertyDashboard = ({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pocName, pocEmail, pocPhone]);
+
+  // ─── Required Time per Treatment (visible to PM + Admin) ───
+  // Stored on customer_preferences.required_treatment_time as a free-form string
+  // (e.g. "45 minutes", "1.5 hours") so techs/PMs can plan around it.
+  const initialRequiredTime = (property.customer_preferences as any)?.required_treatment_time || "";
+  const [requiredTimeDraft, setRequiredTimeDraft] = useState<string>(initialRequiredTime);
+  useEffect(() => {
+    setRequiredTimeDraft((property.customer_preferences as any)?.required_treatment_time || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.required_treatment_time || "";
+    if (current === requiredTimeDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), required_treatment_time: requiredTimeDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (!error) {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requiredTimeDraft]);
+
+  // ─── RED NOTES (ADMIN-ONLY — NEVER shown in PM portal) ───
+  // Confidential admin-only notes. Stored on customer_preferences.red_notes.
+  // PMPortalView.tsx must NEVER read this field.
+  const initialRedNotes = (property.customer_preferences as any)?.red_notes || "";
+  const [redNotesDraft, setRedNotesDraft] = useState<string>(initialRedNotes);
+  useEffect(() => {
+    setRedNotesDraft((property.customer_preferences as any)?.red_notes || "");
+  }, [property.id, property.customer_preferences]);
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.red_notes || "";
+    if (current === redNotesDraft) return;
+    const t = setTimeout(async () => {
+      const updated = { ...(property.customer_preferences || {}), red_notes: redNotesDraft };
+      const { error } = await supabase
+        .from("portal_properties")
+        .update({ customer_preferences: updated })
+        .eq("id", property.id);
+      if (!error) {
+        (property as any).customer_preferences = updated;
+      }
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redNotesDraft]);
+  const redNotesValue = (property.customer_preferences as any)?.red_notes || "";
 
   // Crest Client Owner — which staff member owns this property
   const [ownerTechDraft, setOwnerTechDraft] = useState<string>(property.owner_tech || "");
@@ -2037,6 +2088,15 @@ const PropertyDashboard = ({
       })) as any;
       return (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+          {redNotesValue && (
+            <div className="rounded-lg border-2 border-red-500 bg-red-50 p-3 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-red-800 mb-1 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                RED NOTES — Admin Only (not shown to PM)
+              </p>
+              <p className="text-sm whitespace-pre-wrap font-medium text-red-900">{redNotesValue}</p>
+            </div>
+          )}
           {pmNoteForThis && (
             <div className="bg-primary/10 border-2 border-primary/70 rounded-lg p-3">
               <p className="text-xs font-bold uppercase tracking-wide text-primary mb-1 flex items-center gap-1.5">
@@ -2076,6 +2136,15 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+        {redNotesValue && (
+          <div className="rounded-lg border-2 border-red-500 bg-red-50 p-3 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-red-800 mb-1 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              RED NOTES — Admin Only (not shown to PM)
+            </p>
+            <p className="text-sm whitespace-pre-wrap font-medium text-red-900">{redNotesValue}</p>
+          </div>
+        )}
         {/* HOA mode (past service): MAP + SUMMARY are ~90% of the report.
             Everything else (per-unit/area table, products) is collapsed into
             a tiny "Visit Details" twirl-down underneath the narrative. */}
@@ -3212,6 +3281,21 @@ const PropertyDashboard = ({
               <p className="text-xs text-muted-foreground -mt-1">
                 Each service is billed at the base price and includes the listed number of treatments or inspections. Any treatments or inspections beyond that are billed at the additional-unit price.
               </p>
+              <div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3">
+                <Label className="text-xs font-bold uppercase tracking-wide text-amber-800 mb-1.5 block flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  Required Time per Treatment
+                </Label>
+                <Input
+                  className="h-9 text-sm bg-background"
+                  placeholder='e.g. "45 minutes", "1.5 hours", "2-3 hours per visit"'
+                  value={requiredTimeDraft}
+                  onChange={(e) => setRequiredTimeDraft(e.target.value)}
+                />
+                <p className="text-[11px] text-amber-900/80 mt-1.5">
+                  Visible to the property manager and Crest admin so visits can be scheduled with enough time on-site.
+                </p>
+              </div>
               <Textarea
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
                 className="min-h-[640px] text-sm resize-y leading-relaxed"
@@ -3220,6 +3304,31 @@ const PropertyDashboard = ({
               />
               <p className="text-xs text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ⚠️ RED NOTES — ADMIN-ONLY. NEVER expose in PM portal. */}
+          <Card className="shadow-sm border-2 border-red-500 bg-red-50/60">
+            <CardHeader className="pb-3 pt-4 border-b-2 border-red-500 bg-red-100/70">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-red-800">
+                <AlertTriangle className="w-5 h-5 text-red-700" />
+                RED NOTES — Internal / Admin Only
+              </CardTitle>
+              <p className="text-xs font-semibold text-red-700 mt-1">
+                Confidential. Visible ONLY in the admin portal — never shown to the property manager.
+                These notes appear at the top of every appointment in the admin portal.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Textarea
+                placeholder="Internal admin-only notes — billing flags, account warnings, sensitive context techs need to know before each visit."
+                className="min-h-[160px] text-sm resize-y leading-relaxed bg-background border-red-300 focus-visible:ring-red-400"
+                value={redNotesDraft}
+                onChange={(e) => setRedNotesDraft(e.target.value)}
+              />
+              <p className="text-[11px] text-red-700 mt-1.5 font-medium">
+                Auto-saves a moment after you stop typing. NEVER visible to the PM portal.
               </p>
             </CardContent>
           </Card>
