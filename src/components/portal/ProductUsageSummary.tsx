@@ -115,6 +115,7 @@ export const ProductUsageTotalsCard = ({ services }: { services: ServiceLike[] }
         <thead className="bg-muted/40">
           <tr>
             <th className="text-left px-3 py-1.5 font-semibold">Product</th>
+            <th className="text-left px-3 py-1.5 font-semibold">EPA #</th>
             <th className="text-right px-3 py-1.5 font-semibold">Total Applied</th>
             <th className="text-right px-3 py-1.5 font-semibold">Total Undiluted</th>
           </tr>
@@ -123,6 +124,7 @@ export const ProductUsageTotalsCard = ({ services }: { services: ServiceLike[] }
           {totals.map((t, i) => (
             <tr key={`${t.name}-${i}`} className={i % 2 === 1 ? "bg-muted/20" : ""}>
               <td className="px-3 py-1.5 font-medium">{t.name}</td>
+              <td className="px-3 py-1.5 font-mono text-[11px]">{findEpaNumber(t.name) || <span className="text-muted-foreground">—</span>}</td>
               <td className="px-3 py-1.5 text-right">
                 {t.appliedTotal > 0 ? `${+t.appliedTotal.toFixed(2)} ${t.appliedUnit}` : <span className="text-muted-foreground">—</span>}
               </td>
