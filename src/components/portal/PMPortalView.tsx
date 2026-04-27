@@ -989,7 +989,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           {!isHOA && (
             <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
               <FileDown className="w-5 h-5" />
-              <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+              <span>Prep & Auth <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
             </TabsTrigger>
           )}
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
@@ -1102,29 +1102,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 ) : (
                   <p className="text-xs text-muted-foreground italic">No property plan set yet.</p>
                 )}
-              </CardContent>
-            </Card>
-            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-primary" />
-                  Customer Preference
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div>
-                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
-                    Notes for Crest
-                  </Label>
-                  <Textarea
-                    placeholder="Add or update preferences (e.g. dog park to be treated every visit, gate code, access notes)…"
-                    value={pmPrefDraft}
-                    onChange={e => setPmPrefDraft(e.target.value)}
-                    rows={3}
-                    className="text-sm"
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1">Saves automatically.</p>
-                </div>
               </CardContent>
             </Card>
             </div>
@@ -2109,7 +2086,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           <div className="space-y-2 max-w-4xl mx-auto">
             <div className="border-b-2 border-primary/70 pb-3 mb-3">
               <h3 className="text-xl font-bold flex items-center gap-2">
-                <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
+                <FileDown className="w-6 h-6 text-secondary" />Prep Sheets & Signed Authorizations
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
               </h3>
               <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "residents" : "tenants"}.</p>
@@ -2238,6 +2215,55 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 })}
               </div>
             )}
+
+            {/* Signed Right-to-Treat Authorizations — full archive for this property */}
+            {(() => {
+              const signed = (requests as any[])
+                .filter(r => !!r.right_to_treat_signature)
+                .sort((a, b) => {
+                  const ad = a.right_to_treat_signed_at || a.created_at;
+                  const bd = b.right_to_treat_signed_at || b.created_at;
+                  return new Date(bd).getTime() - new Date(ad).getTime();
+                });
+              return (
+                <div className="mt-8">
+                  <div className="border-b-2 border-primary/70 pb-3 mb-3">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                      <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
+                      <Badge variant="secondary" className="text-xs ml-1">{signed.length}</Badge>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+                  </div>
+                  {signed.length === 0 ? (
+                    <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
+                  ) : (
+                    <div className="space-y-2">
+                      {signed.map((r) => (
+                        <Card key={r.id} className="shadow-sm">
+                          <CardContent className="p-3 flex items-start gap-3">
+                            {r.right_to_treat_signature && (
+                              <img src={r.right_to_treat_signature} alt="Signature" className="w-28 h-16 rounded border bg-white object-contain shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                              <p className="text-sm font-semibold">{r.right_to_treat_signer_name || r.tenant_email || "—"}</p>
+                              <p className="text-muted-foreground">
+                                {r.unit_number ? <>Unit <span className="font-medium text-foreground">{r.unit_number}</span> · </> : null}
+                                {r.pest_type || r.request_type || "Service"}
+                                {r.location_type ? ` (${r.location_type})` : ""}
+                              </p>
+                              {r.tenant_email && <p className="text-muted-foreground truncate">{r.tenant_email}</p>}
+                              <p className="text-muted-foreground">
+                                Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </TabsContent>
 

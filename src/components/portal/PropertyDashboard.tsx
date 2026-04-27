@@ -15,7 +15,7 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -239,6 +239,7 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [signedAuthorizations, setSignedAuthorizations] = useState<any[]>([]);
   // Per-service local set of units the admin just removed, applied immediately
   // so the auto-merge effect doesn't re-add the unit between the local state
   // update and the DB refresh that picks up the persisted dismissal.
@@ -511,6 +512,14 @@ const PropertyDashboard = ({
         .order("created_at", { ascending: false });
       if (data) setPendingRequests(data);
     };
+    const loadSignedAuthorizations = async () => {
+      const { data } = await supabase.from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .not("right_to_treat_signature", "is", null)
+        .order("right_to_treat_signed_at", { ascending: false });
+      if (data) setSignedAuthorizations(data);
+    };
     const loadPrepSheets = async () => {
       const { data } = await supabase.from("portal_prep_sheets")
         .select("*")
@@ -518,6 +527,7 @@ const PropertyDashboard = ({
       if (data) setPrepSheets(data);
     };
     loadRequests();
+    loadSignedAuthorizations();
     loadPrepSheets();
   }, [property.id]);
 
@@ -3027,7 +3037,7 @@ const PropertyDashboard = ({
         {!isHOA && (
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileDown className="w-5 h-5" />
-            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
+            <span>Prep & Auth <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
           </TabsTrigger>
         )}
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
@@ -4242,7 +4252,7 @@ const PropertyDashboard = ({
         <div className="space-y-2 max-w-4xl mx-auto">
           <div className="border-b-2 border-primary/70 pb-3 mb-3">
             <h3 className="text-xl font-bold flex items-center gap-2">
-              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
+              <FileDown className="w-6 h-6 text-secondary" />Prep Sheets & Signed Authorizations
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
             </h3>
             <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
@@ -4366,6 +4376,44 @@ const PropertyDashboard = ({
             ))}
           </div>
           )}
+
+          {/* Signed Right-to-Treat Authorizations — full archive for this property */}
+          <div className="mt-8">
+            <div className="border-b-2 border-primary/70 pb-3 mb-3">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
+                <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length}</Badge>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+            </div>
+            {signedAuthorizations.length === 0 ? (
+              <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {signedAuthorizations.map((r) => (
+                  <Card key={r.id} className="shadow-sm">
+                    <CardContent className="p-3 flex items-start gap-3">
+                      {r.right_to_treat_signature && (
+                        <img src={r.right_to_treat_signature} alt="Signature" className="w-28 h-16 rounded border bg-white object-contain shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                        <p className="text-sm font-semibold">{r.right_to_treat_signer_name || r.tenant_email || "—"}</p>
+                        <p className="text-muted-foreground">
+                          {r.unit_number ? <>Unit <span className="font-medium text-foreground">{r.unit_number}</span> · </> : null}
+                          {r.pest_type || r.request_type || "Service"}
+                          {r.location_type ? ` (${r.location_type})` : ""}
+                        </p>
+                        {r.tenant_email && <p className="text-muted-foreground truncate">{r.tenant_email}</p>}
+                        <p className="text-muted-foreground">
+                          Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </TabsContent>
 
