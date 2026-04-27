@@ -3362,7 +3362,7 @@ const PropertyDashboard = ({
                           onOpenChange={(open) => {
                             if (open) {
                               setReschedulingId(s.id);
-                              setRescheduleDate(s.service_date || today);
+                              setRescheduleDate(isProjected ? "" : (s.service_date || today));
                             } else {
                               setReschedulingId(null);
                             }
