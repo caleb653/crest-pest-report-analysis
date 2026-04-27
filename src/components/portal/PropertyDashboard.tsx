@@ -1341,14 +1341,6 @@ const PropertyDashboard = ({
                       />
                     </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
-                    <Textarea
-                      className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug whitespace-normal mt-1"
-                      defaultValue={unit.notes || ""}
-                      onBlur={e => { if (e.target.value !== (unit.notes || "")) updateUnitField(s.id, j, "notes", e.target.value); }}
-                    />
-                  </div>
                   {/* FINDINGS — its own visually distinct box */}
                   <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -1500,13 +1492,6 @@ const PropertyDashboard = ({
                       onChange={(next) => setNewUnitData(d => ({ ...d, products_used: next }))}
                     />
                   </div>
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes</Label>
-                  <Textarea className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug mt-1" placeholder="Admin-only notes…"
-                    value={newUnitData.notes}
-                    onChange={e => setNewUnitData(d => ({ ...d, notes: e.target.value }))}
-                  />
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
@@ -2091,14 +2076,6 @@ const PropertyDashboard = ({
                                   onChange={(next) => updateRow(idx, "products_used", next as any)}
                                 />
                               </div>
-                            </div>
-                            <div className="md:col-span-2">
-                              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Internal Notes (admin only)</Label>
-                              <Textarea
-                                className="text-sm w-full px-2.5 py-2 min-h-[4rem] leading-snug whitespace-normal mt-1"
-                                value={row.notes || ""}
-                                onChange={e => updateRow(idx, "notes", e.target.value)}
-                              />
                             </div>
                             {/* FINDINGS — highlighted amber box (visible to customer) */}
                             <div className="md:col-span-2 rounded-lg border-2 border-amber-500 bg-amber-50/60 p-3">
