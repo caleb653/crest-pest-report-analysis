@@ -282,6 +282,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (Array.isArray(svys)) setSurveys(svys);
     if (Array.isArray(respRows)) setSurveyResponses(respRows);
 
+    // Quarterly updates (videos + comments uploaded by Crest/PM for this property)
+    const { data: quRows } = await (supabase as any)
+      .from("portal_quarterly_updates")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false });
+    if (Array.isArray(quRows)) setQuarterlyUpdates(quRows);
+
     if (prop) {
       setProperty(prop as PropertyData);
       // Hydrate editable POC + customer-pref-notes drafts from the latest property row
