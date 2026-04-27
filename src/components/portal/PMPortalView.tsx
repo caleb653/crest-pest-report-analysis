@@ -188,6 +188,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
+  // Quarterly Updates state — videos + comments uploaded for this property
+  const [quarterlyUpdates, setQuarterlyUpdates] = useState<any[]>([]);
+  const [quTitle, setQuTitle] = useState("");
+  const [quComment, setQuComment] = useState("");
+  const [quUploadedBy, setQuUploadedBy] = useState("");
+  const [quFile, setQuFile] = useState<File | null>(null);
+  const [quUploading, setQuUploading] = useState(false);
+
   useEffect(() => {
     loadAll();
 
