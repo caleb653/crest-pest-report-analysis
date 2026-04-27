@@ -3840,11 +3840,11 @@ const PropertyDashboard = ({
             <div>
               <Label className="text-sm">Request Type *</Label>
               <div className="grid grid-cols-3 gap-2 mt-1">
-                {([
-                  { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
-                  { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
-                  { v: "general", label: "General Request", icon: ClipboardList, desc: "Just leave a comment" },
-                ] as const).map(opt => {
+                 {([
+                   { v: "treatment", label: "Treatment\n(units)", icon: Bug, desc: "Active pest treatment" },
+                   { v: "inspection", label: "Inspections\n(units)", icon: FileText, desc: "Assess & investigate" },
+                   { v: "general", label: "Common Areas and\nGeneral Requests", icon: ClipboardList, desc: "Just leave a comment" },
+                 ] as const).map(opt => {
                   const Icon = opt.icon;
                   const active = workOrder.request_type === opt.v;
                   return (
@@ -3854,9 +3854,9 @@ const PropertyDashboard = ({
                       onClick={() => setWorkOrder(wo => ({ ...wo, request_type: opt.v }))}
                       className={`flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="text-sm font-semibold">{opt.label}</span>
-                      <span className={`text-xs ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                       <Icon className="w-5 h-5" />
+                       <span className="text-sm font-semibold text-center whitespace-pre-line leading-tight">{opt.label}</span>
+                       <span className={`text-xs text-center ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
                     </button>
                   );
                 })}
@@ -3866,14 +3866,18 @@ const PropertyDashboard = ({
             {/* Unit or Area — hidden for "General Request" */}
             {workOrder.request_type !== "general" && (
             <div>
-              <Label className="text-sm">Unit, Property, or Area *</Label>
-              <Input
-                list="admin-wo-known-units"
-                placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
-                value={workOrder.unit_number}
-                onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value }))}
-                autoComplete="off"
-              />
+              <div className="flex items-center gap-3">
+                <Label className="text-sm whitespace-nowrap shrink-0">Unit, Property, or Area *</Label>
+                <Input
+                  list="admin-wo-known-units"
+                  placeholder="UNIT204, LOBBY, POOLDECK"
+                  value={workOrder.unit_number}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, unit_number: e.target.value.toUpperCase().replace(/\s+/g, "") }))}
+                  onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
+                  autoComplete="off"
+                  className="flex-1 uppercase"
+                />
+              </div>
               {allUnits.length > 0 && (
                 <datalist id="admin-wo-known-units">
                   {allUnits.map(u => <option key={u} value={u} />)}
