@@ -865,8 +865,14 @@ const PropertyDashboard = ({
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
+    // Guard against accidentally appending a blank/whitespace-only row.
+    const unitLabel = String(newUnitData?.unit_number || "").trim();
+    if (!unitLabel) {
+      toast({ title: "Enter a unit / area name", variant: "destructive" });
+      return;
+    }
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
-    details.push({ ...newUnitData });
+    details.push({ ...newUnitData, unit_number: unitLabel });
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
     setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
@@ -4083,15 +4089,46 @@ const PropertyDashboard = ({
                                     if (isProjected) {
                                       // No DB row yet — create a real scheduled service so
                                       // the projection anchors on this confirmed date.
-                                      await supabase.from("portal_services").insert({
+                                      // CRITICAL: carry over any in-progress edits the user
+                                      // already typed into the projected card (unit rows,
+                                      // products, technician, summary, etc.) so scheduling a
+                                      // date NEVER wipes data the admin already filled out.
+                                      const inProgress = completionData[s.id];
+                                      const carriedUnitDetails = Array.isArray(inProgress?.unitRows)
+                                        ? inProgress!.unitRows
+                                            .filter((r: any) => String(r?.unit_number || "").trim())
+                                            .map((r: any) => ({ ...r }))
+                                        : (Array.isArray((s as any).unit_details) ? (s as any).unit_details : []);
+                                      const carriedProducts = Array.isArray(inProgress?.products) && inProgress!.products.length > 0
+                                        ? inProgress!.products
+                                        : (Array.isArray((s as any).products_used) ? (s as any).products_used : []);
+                                      const inserted = await supabase.from("portal_services").insert({
                                         property_id: property.id,
                                         service_type: s.service_type || "General Pest Control",
                                         service_date: rescheduleDate,
-                                        technician: (s as any).technician || null,
+                                        technician: inProgress?.technician || (s as any).technician || null,
                                         status: "scheduled",
                                         units_planned: Array.isArray(s.units_planned) ? s.units_planned : [],
+                                        unit_details: carriedUnitDetails,
+                                        products_used: carriedProducts,
+                                        summary: inProgress?.summary || null,
+                                        findings: inProgress?.findings || null,
+                                        notes: inProgress?.notes || null,
                                         frequency_days: propertyFrequencyDays,
-                                      } as any);
+                                      } as any).select("id").single();
+
+                                      // Migrate the in-progress completion buffer from the
+                                      // projected key to the new real service id so the form
+                                      // doesn't appear "empty" after refresh.
+                                      const newId = (inserted as any)?.data?.id;
+                                      if (newId && inProgress) {
+                                        setCompletionData(prev => {
+                                          const next = { ...prev };
+                                          next[newId] = inProgress;
+                                          delete next[s.id];
+                                          return next;
+                                        });
+                                      }
                                     } else {
                                       await supabase
                                         .from("portal_services")
