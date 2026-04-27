@@ -77,6 +77,8 @@ export interface HOAServiceViewProps {
   displayProducts?: any[];
   /** Admin-only — edit products used for this service (works for upcoming + past). */
   onChangeProducts?: (next: ProductUsage[]) => void;
+  /** Admin-only immediate draft mirror so completing a visit never misses fast typing. */
+  onDraftChange?: (draft: { findings?: string; products?: ProductUsage[] }) => void;
 
   /** Units / homes scheduled or treated on this visit. */
   units: HOAUnitItem[];
@@ -120,6 +122,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onUploadMapImage,
     uploadingMap,
     onChangeProducts,
+    onDraftChange,
     communityFeedback = [],
   } = props;
 
@@ -422,7 +425,11 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             {canEditFindings ? (
               <Textarea
                 value={localFindings}
-                onChange={(e) => setLocalFindings(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setLocalFindings(next);
+                  onDraftChange?.({ findings: next });
+                }}
                 placeholder={
                   isUpcoming
                     ? "Notes for this upcoming community visit…"
@@ -452,7 +459,10 @@ export function HOAServiceView(props: HOAServiceViewProps) {
               <div className="rounded-md border bg-background p-2">
                 <ProductUsageEditor
                   value={productList}
-                  onChange={(next) => onChangeProducts!(next)}
+                  onChange={(next) => {
+                    onDraftChange?.({ products: next });
+                    onChangeProducts!(next);
+                  }}
                 />
               </div>
             </div>

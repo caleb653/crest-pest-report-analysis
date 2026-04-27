@@ -347,13 +347,16 @@ const PropertyDashboard = ({
   const [rescheduleDate, setRescheduleDate] = useState<string>("");
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
-  const [completionData, setCompletionData] = useState<Record<string, {
+  type CompletionDraft = {
     unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
     products: ProductUsage[];
-  }>>({});
+  };
+  const [completionData, setCompletionData] = useState<Record<string, CompletionDraft>>({});
+  const completionDataRef = useRef<Record<string, CompletionDraft>>({});
+  useEffect(() => { completionDataRef.current = completionData; }, [completionData]);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Tracks per-unit photo uploads:  `${serviceId}:${unitIndex}` while uploading
   const [uploadingUnitPhotoFor, setUploadingUnitPhotoFor] = useState<string | null>(null);
@@ -1229,8 +1232,59 @@ const PropertyDashboard = ({
     }));
   };
 
-  const completeService = async (serviceId: string) => {
-    const data = completionData[serviceId];
+  const ensureCompletionDraft = (
+    service: PortalService | any,
+    unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
+  ): CompletionDraft => {
+    const existing = completionDataRef.current[service.id];
+    if (existing) return existing;
+    const units = unitContexts.map(c => String(c.unit_number || "").trim()).filter(Boolean);
+    const rows = units.length > 0
+      ? units.map((u) => {
+          const ctx = unitContexts.find(c => String(c.unit_number || "").trim() === u);
+          return {
+            unit_number: u,
+            target_pest: ctx?.target_pest || "",
+            findings: ctx?.findings || "",
+            pest_activity: ctx?.follow_up?.pest_activity || ctx?.last_unit_detail?.pest_activity || "None",
+            products_used: [] as ProductUsage[],
+            status: "To Be Treated",
+            notes: ctx?.notes || "",
+            source: ctx?.source === "work_order" ? "new-work-order" : ctx?.source === "follow_up" ? "follow-up" : "planned",
+          };
+        })
+      : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }];
+    const draft = {
+      unitRows: rows,
+      summary: service.summary || "",
+      findings: service.findings || "",
+      notes: service.notes || "",
+      technician: service.technician || "",
+      time_in: "",
+      time_out: "",
+      photos: [],
+      products: normalizeUsageList(service.products_used) || [],
+    };
+    completionDataRef.current = { ...completionDataRef.current, [service.id]: draft };
+    setCompletionData(prev => ({ ...prev, [service.id]: draft }));
+    return draft;
+  };
+
+  const patchCompletionDraft = (serviceId: string, patch: Partial<CompletionDraft>) => {
+    const current = completionDataRef.current[serviceId];
+    if (!current) return;
+    const next = { ...current, ...patch };
+    completionDataRef.current = { ...completionDataRef.current, [serviceId]: next };
+    setCompletionData(prev => ({ ...prev, [serviceId]: { ...(prev[serviceId] || current), ...patch } }));
+  };
+
+  const completeService = async (
+    serviceId: string,
+    service?: PortalService | any,
+    unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
+  ) => {
+    const serviceForDraft = service || propServices.find(p => p.id === serviceId);
+    const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
       ...r,
       // Explicitly coerce the two follow-up booleans so they NEVER drop out
@@ -2395,6 +2449,13 @@ const PropertyDashboard = ({
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
+            onDraftChange={(draft) => {
+              if (!completionDataRef.current[s.id]) ensureCompletionDraft(s, merged.unitContexts);
+              patchCompletionDraft(s.id, {
+                ...(draft.findings !== undefined ? { summary: draft.findings, findings: "", notes: "" } : {}),
+                ...(draft.products !== undefined ? { products: draft.products } : {}),
+              });
+            }}
             communityFeedback={isUpcoming && isFirstUpcoming ? (() => {
               // Community pest sightings submitted since the most recent
               // completed visit. Briefs the tech for the next service.
@@ -2426,7 +2487,7 @@ const PropertyDashboard = ({
             <Button
               size="sm"
               className="w-full h-10 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-60"
-              onClick={() => completeService(s.id)}
+              onClick={() => completeService(s.id, s, merged.unitContexts)}
               disabled={isProjected}
               title={isProjected ? "Schedule a date first to complete this service" : undefined}
             >
