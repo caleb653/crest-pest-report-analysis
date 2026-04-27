@@ -1797,6 +1797,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 isUpcoming
                                 mapUrl={mapUrl}
                                 mapData={property.map_data}
+                                serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
                                 findings={[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
                                 technician={s.technician}
                                 units={(unitContexts.length > 0
