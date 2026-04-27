@@ -44,8 +44,11 @@ serve(async (req) => {
       ? productsList.map((p: any) => `
         <tr>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600;">${p.name || ""}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;">${p.epa || "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit || ""}` : "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#2A2A2A;">${p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit || ""}` : "—"}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.dilution_rate_pct != null ? `${Number(p.dilution_rate_pct).toFixed(2)}%` : "—"}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.mix_ratio_per_gal != null && p.mix_ratio_unit ? `${p.mix_ratio_per_gal} ${p.mix_ratio_unit} / 1 gal` : "—"}</td>
         </tr>`).join("")
       : "";
 
@@ -68,12 +71,15 @@ serve(async (req) => {
           </table>
           ${summary ? `<div style="background:#f9fafb;border-left:3px solid #2A2A2A;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${summary}</p></div>` : ""}
           ${safeProductsRows ? `
-            <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used</p>
+            <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used (with EPA Reg # &amp; dilution detail)</p>
             <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1f2937;border:1px solid #eee;border-radius:6px;overflow:hidden;margin-bottom:16px;">
               <thead style="background:#f3f4f6;"><tr>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Product</th>
-                <th style="text-align:left;padding:6px 10px;font-weight:700;">Applied</th>
-                <th style="text-align:left;padding:6px 10px;font-weight:700;">Undiluted</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">EPA #</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">Diluted</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">Concentrated</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">Dilution Rate</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">Mix Ratio</th>
               </tr></thead>
               <tbody>${safeProductsRows}</tbody>
             </table>` : ""}
