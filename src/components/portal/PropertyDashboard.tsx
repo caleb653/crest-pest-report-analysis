@@ -4163,7 +4163,7 @@ const PropertyDashboard = ({
                 <ClipboardList className="w-4 h-4 text-primary" />Survey Questions Preview
                 <Badge variant="secondary" className="ml-1 text-xs">{DEFAULT_PEST_SURVEY_QUESTIONS.length} questions</Badge>
               </CardTitle>
-              <p className="text-xs text-muted-foreground">This is exactly what tenants will see.</p>
+              <p className="text-xs text-muted-foreground">This is exactly what {residentTerm}s will see.</p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -4222,7 +4222,7 @@ const PropertyDashboard = ({
                 if (submitted.length === 0) {
                   return (
                     <p className="text-sm text-muted-foreground text-center py-6">
-                      No responses yet. Once tenants submit, their answers will roll up here.
+                      No responses yet. Once {residentTerm}s submit, their answers will roll up here.
                     </p>
                   );
                 }
