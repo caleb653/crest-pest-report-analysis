@@ -385,7 +385,23 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             )}
           </div>
 
-          {!isUpcoming && productList.length > 0 && (
+          {canEditProducts ? (
+            <div>
+              <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
+                <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                Products Used (this service)
+              </p>
+              <div className="rounded-md border bg-background p-2">
+                <ProductUsageEditor
+                  value={productList}
+                  onChange={(next) => onChangeProducts!(next)}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Saved to this service only. Add what was (or will be) applied during the visit.
+              </p>
+            </div>
+          ) : !isUpcoming && productList.length > 0 && (
             <div>
               <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
                 <FlaskConical className="w-3.5 h-3.5 text-primary" />
