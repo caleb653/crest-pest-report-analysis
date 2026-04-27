@@ -2019,11 +2019,13 @@ const PropertyDashboard = ({
                             <div className="flex items-center gap-2">
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
-                                  <SelectTrigger className={`h-9 text-sm w-[170px] ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                  <SelectTrigger className={`h-9 text-sm w-[210px] ${row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                    {(isInspectionWO ? INSPECTION_STATUS_OPTIONS : TREATMENT_STATUS_OPTIONS).map(a => (
+                                      <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
