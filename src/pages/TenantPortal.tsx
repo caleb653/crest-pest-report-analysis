@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 
 const PEST_TYPES = [
+  "General Pests",
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
   "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps",
   "Silverfish", "Drain Flies", "Pantry Pests", "Other",
