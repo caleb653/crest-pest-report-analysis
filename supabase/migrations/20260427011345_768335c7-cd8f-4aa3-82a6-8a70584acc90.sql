@@ -1,0 +1,1 @@
+ALTER TABLE public.portal_requests ALTER COLUMN preferred_date TYPE text USING preferred_date::text;
