@@ -957,8 +957,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </CardContent>
           </Card>
 
-          {/* Property Plan + Customer Preference (top of page, read-only for PM) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Top row: Property Plan + Customer Preference (left column) and Property Map (right column) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <div className="space-y-5">
             <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
               <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
                 <CardTitle className="text-base font-bold flex items-center gap-2">
