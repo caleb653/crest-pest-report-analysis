@@ -3668,10 +3668,71 @@ const PropertyDashboard = ({
           servicesByUnit.size === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No service history</CardContent></Card>
           ) : (
-            <Accordion type="multiple" defaultValue={Array.from(servicesByUnit.keys()).slice(0, 1)}>
-              {Array.from(servicesByUnit.entries())
-                .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-                .map(([unitNum, entries]) => (
+            <>
+              {/* Search across unit numbers, technician, products, findings, notes, summary */}
+              <div className="relative mb-2">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="h-8 text-xs pl-8 pr-8"
+                  placeholder="Search by unit, tech, product, findings…"
+                  value={byUnitSearch}
+                  onChange={(e) => setByUnitSearch(e.target.value)}
+                />
+                {byUnitSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setByUnitSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {(() => {
+                const q = byUnitSearch.trim().toLowerCase();
+                const filteredEntries = Array.from(servicesByUnit.entries())
+                  .map(([unitNum, entries]) => {
+                    if (!q) return [unitNum, entries] as const;
+                    const matchUnit = unitNum.toLowerCase().includes(q);
+                    const filtered = entries.filter(({ service, unitDetail }) => {
+                      if (matchUnit) return true;
+                      const haystack = [
+                        unitNum,
+                        service.technician,
+                        service.summary,
+                        service.findings,
+                        service.notes,
+                        (service as any).appointment_service,
+                        service.service_type,
+                        unitDetail?.findings,
+                        unitDetail?.pest_activity,
+                        unitDetail?.products_used,
+                        unitDetail?.notes,
+                        Array.isArray(service.products_used)
+                          ? (service.products_used as any[]).map((p: any) => p?.name || p?.product || "").join(" ")
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .toLowerCase();
+                      return haystack.includes(q);
+                    });
+                    return [unitNum, filtered] as const;
+                  })
+                  .filter(([, entries]) => entries.length > 0)
+                  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+                if (filteredEntries.length === 0) {
+                  return (
+                    <Card className="shadow-sm"><CardContent className="p-6 text-center text-muted-foreground text-xs">No results for “{byUnitSearch}”</CardContent></Card>
+                  );
+                }
+                const defaultOpen = q
+                  ? filteredEntries.map(([k]) => k)
+                  : filteredEntries.slice(0, 1).map(([k]) => k);
+                return (
+                  <Accordion type="multiple" defaultValue={defaultOpen} key={q || "all"}>
+                    {filteredEntries.map(([unitNum, entries]) => (
                   <AccordionItem key={unitNum} value={unitNum} className="border rounded-lg mb-2 px-0 shadow-sm">
                     <AccordionTrigger className="px-3 py-2.5 text-sm hover:no-underline bg-muted/20 rounded-t-lg">
                       <div className="flex items-center gap-2">
@@ -3709,8 +3770,11 @@ const PropertyDashboard = ({
                       ))}
                     </AccordionContent>
                   </AccordionItem>
-                ))}
-            </Accordion>
+                    ))}
+                  </Accordion>
+                );
+              })()}
+            </>
           )
         )}
       </div>
