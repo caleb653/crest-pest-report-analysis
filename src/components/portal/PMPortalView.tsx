@@ -1066,6 +1066,26 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
               </CardContent>
             </Card>
+            </div>
+
+            {/* Property Map — top right */}
+            <div>
+              {mapUrl ? (
+                <Card className="overflow-hidden shadow-sm">
+                  <div className="relative bg-muted max-w-[520px] mx-auto" style={{ aspectRatio: "3 / 4" }}>
+                    {property.map_data ? (
+                      <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                    ) : (
+                      <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                </Card>
+              ) : (
+                <Card><CardContent className="p-8 text-center text-muted-foreground text-sm">
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-40" />No site map yet
+                </CardContent></Card>
+              )}
+            </div>
           </div>
 
           {/* Property Point of Contact (PM-editable) */}
