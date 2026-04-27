@@ -2823,29 +2823,10 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-primary" />
-                Customer Preference
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Textarea
-                placeholder="Customer preferences — product choices, scheduling preferences, access notes, communication preferences, etc."
-                className="min-h-[120px] text-sm resize-y"
-                value={prefDraft}
-                onChange={(e) => setPrefDraft(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Auto-saves a moment after you stop typing. Visible to technicians and property managers.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Property Point of Contact */}
-        <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+          {/* Right column: stack POCs + Cadence Plan in the space the Customer Preference card used to occupy. */}
+          <div className="space-y-5">
+            {/* Property Point of Contact */}
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
           <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
             <CardTitle className="text-base font-bold flex items-center gap-2">
               <User className="w-5 h-5 text-primary" />
@@ -2856,7 +2837,7 @@ const PropertyDashboard = ({
             </p>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                   PM / Contact Name
@@ -2909,7 +2890,7 @@ const PropertyDashboard = ({
             </p>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                   Crest Contact Name
@@ -2948,7 +2929,7 @@ const PropertyDashboard = ({
               <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
                 Crest Client Owner (internal)
               </Label>
-              <div className="max-w-xs">
+              <div>
                 <Select value={ownerTechDraft || "__none__"} onValueChange={saveOwnerTech}>
                   <SelectTrigger>
                     <SelectValue placeholder="Assign Crest staff…" />
@@ -2988,7 +2969,7 @@ const PropertyDashboard = ({
                   Describe what the {cycleLength === 4 ? "1st, 2nd, 3rd, and 4th" : "1st and 2nd"} visit of the cycle will cover.
                   Future projected services on this property will display the matching focus.
                 </p>
-                <div className={`grid grid-cols-1 sm:grid-cols-2 ${cycleLength === 4 ? "lg:grid-cols-4" : ""} gap-3`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3`}>
                   {Array.from({ length: cycleLength }).map((_, idx) => (
                     <div key={idx} className="space-y-1.5">
                       <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
@@ -3024,6 +3005,8 @@ const PropertyDashboard = ({
             </Card>
           );
         })()}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="space-y-4">
