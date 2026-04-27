@@ -205,6 +205,75 @@ const PropertyDashboard = ({
   // persisted into portal_requests.photos on submit.
   const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
   const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
+  // ─── HOA work-order form (mirrors PM portal exactly) ───
+  // The HOA admin form is a simpler 2-button picker (Community Pest Sighting
+  // vs Service Request) with its own field set, identical to the PM HOA UI.
+  // Lives next to the apartment workOrder state so admin and PM stay in sync.
+  const [hoaRequestKind, setHoaRequestKind] = useState<"" | "community" | "service">("");
+  const [hoaAddress, setHoaAddress] = useState("");
+  const [hoaLocation, setHoaLocation] = useState("");
+  const [hoaPests, setHoaPests] = useState("");
+  const [hoaDetails, setHoaDetails] = useState("");
+  const [submittingHoaRequest, setSubmittingHoaRequest] = useState(false);
+  const submitHoaRequest = async () => {
+    if (!hoaRequestKind) return;
+    const isCommunity = hoaRequestKind === "community";
+    if (isCommunity) {
+      if (!hoaLocation.trim() || !hoaPests.trim()) return;
+    } else {
+      if (!hoaAddress.trim() || !hoaLocation.trim() || !hoaPests.trim()) return;
+    }
+    setSubmittingHoaRequest(true);
+    const requestType = isCommunity ? "Community Pest Sighting" : "Service Request";
+    const tag = isCommunity ? "[COMMUNITY SIGHTING]" : "[HOA SERVICE REQUEST]";
+    const descParts = [
+      `Pests: ${hoaPests.trim()}`,
+      `Location: ${hoaLocation.trim()}`,
+      hoaDetails.trim() ? `Details: ${hoaDetails.trim()}` : null,
+    ].filter(Boolean).join(" — ");
+    const { data: inserted, error: err } = await supabase.from("portal_requests").insert({
+      property_id: property.id,
+      unit_number: isCommunity ? null : hoaAddress.trim().toUpperCase(),
+      request_type: requestType,
+      description: `${tag} ${descParts}`,
+      pest_type: hoaPests.trim(),
+      location_type: hoaLocation.trim(),
+      photos: workOrderPhotos,
+    } as any).select("id").maybeSingle();
+    if (err) {
+      toast({ title: "Could not submit request", description: err.message, variant: "destructive" });
+      setSubmittingHoaRequest(false);
+      return;
+    }
+    toast({
+      title: isCommunity ? "Sighting submitted" : "Service request submitted",
+      description: isCommunity
+        ? "Thank you for the heads up. We will be sure to incorporate this into our next community treatment."
+        : "Thank you. We will be calling you shortly to walk through treatment options and pricing.",
+    });
+    if (inserted?.id) {
+      try {
+        await supabase.functions.invoke("notify-submission", {
+          body: { kind: "work_order", requestId: inserted.id },
+        });
+      } catch (e) { console.error("notify-submission failed", e); }
+    }
+    setHoaRequestKind("");
+    setHoaAddress("");
+    setHoaLocation("");
+    setHoaPests("");
+    setHoaDetails("");
+    setWorkOrderPhotos([]);
+    const { data: reqs } = await supabase
+      .from("portal_requests")
+      .select("*")
+      .eq("property_id", property.id)
+      .in("status", ["pending", "in_progress"])
+      .order("created_at", { ascending: false });
+    if (reqs) setPendingRequests(reqs);
+    setSubmittingHoaRequest(false);
+    onRefresh();
+  };
   const handleWorkOrderPhotoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploadingWorkOrderPhotos(true);
