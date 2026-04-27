@@ -223,6 +223,9 @@ const PropertyDashboard = ({
   const [prepSheets, setPrepSheets] = useState<{ id: string; title: string; description: string | null; treatment_type: string; file_url: string | null }[]>([]);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
+  // Per-prep-sheet "email this PDF" form state.
+  const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
+  const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
 
   // Survey state — mirrors PMPortalView so admin has full survey workflow
   const [surveys, setSurveys] = useState<any[]>([]);
