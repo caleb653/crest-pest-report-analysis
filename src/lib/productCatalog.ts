@@ -269,6 +269,25 @@ export const aggregateUsage = (entries: ProductUsage[]): AggregateRow[] => {
   return Array.from(byKey.values()).sort((a, b) => a.name.localeCompare(b.name));
 };
 
+// Collect every product usage entry from a service: the service-level
+// `products_used` PLUS each unit's `unit_details[].products_used`.
+// Used by HOA views so technicians who only logged products per-unit still
+// see a complete "Products Used" table at the service level.
+export const collectServiceProductUsage = (service: any): ProductUsage[] => {
+  const out: ProductUsage[] = [];
+  if (Array.isArray(service?.products_used)) {
+    out.push(...normalizeUsageList(service.products_used));
+  }
+  if (Array.isArray(service?.unit_details)) {
+    for (const u of service.unit_details as any[]) {
+      if (Array.isArray(u?.products_used)) {
+        out.push(...normalizeUsageList(u.products_used));
+      }
+    }
+  }
+  return out;
+};
+
 // ─── EPA Registration # lookup (standard products first, then catalog) ───
 export const findEpaNumber = (name: string): string | undefined => {
   if (!name) return undefined;

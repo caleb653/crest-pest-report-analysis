@@ -18,7 +18,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
-import { normalizeUsageList } from "@/lib/productCatalog";
+import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
@@ -698,6 +698,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             })).filter((u) => u.unit_number)
           : unitsPlanned.map((u) => ({ unit_number: String(u || "").trim() }))
               .filter((u) => u.unit_number);
+      // Roll up all chemicals used across the visit (service-level + each
+      // unit's products_used) so the HOA board sees the full breakdown
+      // even when product totals were entered per home.
+      const hoaProducts = aggregateUsage(collectServiceProductUsage(s)).map((row) => ({
+        name: row.name,
+        applied_amount: row.appliedTotal || null,
+        applied_unit: row.appliedUnit,
+        undiluted_amount: row.undilutedTotal || null,
+        undiluted_unit: row.undilutedUnit,
+      })) as any;
       return (
         <div className="px-3 pb-3 border-t pt-3">
           <HOAServiceView
@@ -708,7 +718,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
             findings={summaryCombined}
             technician={s.technician}
-            products={products}
+            products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
           />
         </div>

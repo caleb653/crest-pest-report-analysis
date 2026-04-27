@@ -23,7 +23,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
-import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
+import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
@@ -1971,6 +1971,16 @@ const PropertyDashboard = ({
           }))
       ).filter((u) => u.unit_number);
       const findingsCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
+      // Roll up products from BOTH the service-level field and each
+      // unit_details[].products_used so HOA boards see the full chemical
+      // total even when techs logged products per home.
+      const hoaProducts: ProductUsage[] = aggregateUsage(collectServiceProductUsage(s)).map((row) => ({
+        name: row.name,
+        applied_amount: row.appliedTotal || null,
+        applied_unit: row.appliedUnit,
+        undiluted_amount: row.undilutedTotal || null,
+        undiluted_unit: row.undilutedUnit,
+      })) as any;
       return (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
           {pmNoteForThis && (
@@ -1994,7 +2004,7 @@ const PropertyDashboard = ({
             uploadingMap={uploadingPropertyImage}
             findings={findingsCombined}
             technician={s.technician}
-            products={products}
+            products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
           />
