@@ -1495,7 +1495,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     {([
                       { v: "treatment", label: "Treatment\n(units)", desc: "Active pest treatment" },
                       { v: "inspection", label: "Inspections\n(units)", desc: "Assess & investigate" },
-                      { v: "general", label: "Common Areas and\nGeneral Requests", desc: "Just leave a comment" },
+                      { v: "general", label: "General\nRequest", desc: "Just leave a comment" },
                     ] as const).map(opt => {
                       const active = requestKind === opt.v;
                       return (
@@ -1516,10 +1516,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {requestKind !== "general" && (
                 <div>
                   <div className="flex items-center gap-3">
-                    <Label className="text-sm whitespace-nowrap shrink-0">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
+                    <Label className="text-sm whitespace-nowrap shrink-0">Unit or Property *</Label>
                     <Input
                       list="pm-known-units"
-                      placeholder={isHOA ? "CLUBHOUSE, LOT27" : "UNIT204, LOBBY"}
+                      placeholder={isHOA ? "1234MAINST, LOT27" : "UNIT204, 1234MAINST"}
                       value={unitNumber}
                       onChange={e => setUnitNumber(e.target.value.toUpperCase().replace(/\s+/g, ""))}
                       onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
