@@ -1909,6 +1909,65 @@ const PropertyDashboard = ({
             small collapsible "Specific Homes Treated" section underneath.
             Apartment / commercial views render the editable table inline as
             before so per-unit data entry stays primary. */}
+        {/* Read-only / Edit toggle for past services (admin-only).
+            Past services are LOCKED by default to prevent accidental edits
+            (e.g. status dropdowns auto-promoting units to "Needs Follow Up"). */}
+        {!isUpcoming && !isProjected && (
+          <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
+            <div className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+              {isPastEditing(s.id) ? "Editing this past service" : "Past service — read-only"}
+            </div>
+            <Button
+              variant={isPastEditing(s.id) ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => togglePastEditing(s.id)}
+            >
+              {isPastEditing(s.id) ? "Done editing" : "Edit Previous Service"}
+            </Button>
+          </div>
+        )}
+
+        {/* ─── NEW ORDER for past services ───
+            1) Summary (Technician Findings)
+            2) Products
+            3) Unit Summary (per-unit cards — read-only by default)
+            4) Pesticide Notice (rendered later in the function)
+            Crest/PM service-level comment thread is removed. */}
+        {!isUpcoming && !isHOA && (
+          <>
+            {/* 1) Summary */}
+            {(s.summary || s.findings || s.notes) && (
+              <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <ClipboardList className="w-3.5 h-3.5 text-primary" />
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                    Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+                  </p>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+                  {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+                </p>
+              </div>
+            )}
+            {/* 2) Products */}
+            {products.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                  Products Used (this service date)
+                </p>
+                <ProductUsageSummary entries={products} />
+              </div>
+            )}
+            {/* 3) Unit Summary — editable only when admin opted in */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
+              {renderEditableUnitTable(s, isPastEditing(s.id))}
+            </div>
+          </>
+        )}
+
         {!isUpcoming && isHOA && (
           <>
             {/* Technician Report — large, prominent narrative (the "summary"
@@ -1950,27 +2009,11 @@ const PropertyDashboard = ({
                 )}
                 <div>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5">Specific Homes Treated</p>
-                  {renderEditableUnitTable(s)}
+                  {renderEditableUnitTable(s, isPastEditing(s.id))}
                 </div>
               </div>
             </details>
           </>
-        )}
-
-        {/* Past service (apartments / commercial): inline-editable unit table */}
-        {!isUpcoming && !isHOA && renderEditableUnitTable(s)}
-
-        {/* Past service (apartments / commercial): service-level products
-            (with Applied / Undiluted amounts). HOA renders products in the
-            robust block above, so we skip this in HOA mode. */}
-        {!isUpcoming && !isHOA && products.length > 0 && (
-          <div className="mt-2">
-            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
-              <FlaskConical className="w-3.5 h-3.5 text-primary" />
-              Products Used (this service date)
-            </p>
-            <ProductUsageSummary entries={products} />
-          </div>
         )}
 
         {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
@@ -2000,9 +2043,10 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {/* Skip the duplicate findings block in HOA past-service mode — the
-            robust block above already shows it as the focal narrative. */}
-        {!(isHOA && !isUpcoming) && (s.summary || s.findings || s.notes) && (
+        {/* Findings block for UPCOMING services only — past-service findings
+            are rendered above (in the new ordered block) so we skip them here
+            to avoid duplication. */}
+        {isUpcoming && (s.summary || s.findings || s.notes) && (
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
@@ -2061,44 +2105,6 @@ const PropertyDashboard = ({
             <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
               <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
-          </div>
-        )}
-
-        {/* Service-level comment thread (Crest ↔ PM) — applies to entire service */}
-        {!isProjected && !isUpcoming && (
-          <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(() => {
-              const allComments = Array.isArray(((s as any).report_data || {}).comments)
-                ? ((s as any).report_data.comments as ServiceComment[])
-                : [];
-              return (
-                <>
-                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="crest"
-                      filterSender="crest"
-                      title="Service Comments: Crest"
-                      defaultAuthor={s.technician || ""}
-                      onChange={onRefresh}
-                    />
-                  </div>
-                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      reportData={(s as any).report_data}
-                      comments={allComments}
-                      sender="pm"
-                      filterSender="pm"
-                      title="Service Comments: Property Manager"
-                      onChange={onRefresh}
-                    />
-                  </div>
-                </>
-              );
-            })()}
           </div>
         )}
 
