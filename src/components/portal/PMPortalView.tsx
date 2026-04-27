@@ -2340,11 +2340,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-sm">{isHOA ? "Homeowner Emails" : "Tenant Emails"}</Label>
+                  <Label className="text-sm">{isHOA ? "Resident Emails" : "Tenant Emails"}</Label>
                   <Textarea
                     rows={4}
                     placeholder={isHOA
-                      ? "Paste homeowner emails — one per line, or comma-separated"
+                      ? "Paste resident emails — one per line, or comma-separated"
                       : "Paste tenant emails — one per line, or comma-separated"}
                     value={surveyEmails}
                     onChange={(e) => setSurveyEmails(e.target.value)}
