@@ -3606,6 +3606,35 @@ Crest Pest Control`;
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Clear-signature confirmation (admin password 18444) */}
+      <Dialog open={clearSigDialog.open} onOpenChange={(o) => { if (!o) { setClearSigDialog({ open: false, index: null }); setClearSigPassword(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Clear this signature?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              This will permanently remove the customer's signature on this proposal so it can be re-signed. Enter the admin password to confirm.
+            </p>
+            <Input
+              type="password"
+              autoFocus
+              placeholder="Admin password"
+              value={clearSigPassword}
+              onChange={(e) => setClearSigPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmClearSignature(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setClearSigDialog({ open: false, index: null }); setClearSigPassword(""); }}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmClearSignature} disabled={clearSigSaving || !clearSigPassword}>
+              {clearSigSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Clear Signature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
