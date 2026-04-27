@@ -126,15 +126,27 @@ const TenantPortal = () => {
       link_id: linkData.id,
       property_id: propertyId,
       unit_number: canonical,
-      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
-      description: `${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
+      request_type: isHOA && hoaScope === "community"
+        ? "Community Pest Sighting"
+        : (requestKind === "inspection" ? "Inspection Request" : "Service Request"),
+      description: `${isHOA ? (hoaScope === "community" ? "[Community Sighting] " : "[Resident Service Call] ") : ""}${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
       pest_type: pestType,
       location_type: locationType || null,
       occupancy_status: occupancyStatus || null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
-      toast({ title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted", description: "We'll get back to you soon." });
+      const successTitle = isHOA
+        ? (hoaScope === "community"
+            ? "Thanks — your community sighting was sent to the HOA board"
+            : "Service call request submitted")
+        : (requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted");
+      const successBody = isHOA
+        ? (hoaScope === "community"
+            ? "The board will review and decide on next steps. No appointment will be scheduled for your home."
+            : "Crest will reach out to schedule a visit for your home.")
+        : "We'll get back to you soon.";
+      toast({ title: successTitle, description: successBody });
       if (inserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -143,6 +155,7 @@ const TenantPortal = () => {
         } catch (e) { console.error("notify-submission failed", e); }
       }
       setRequestKind("treatment");
+      setHoaScope("individual");
       setPestType("");
       setLocationType("");
       setOccupancyStatus("");
