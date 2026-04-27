@@ -1673,10 +1673,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                   // Carry-over notes from the most recent past service when this upcoming has none
                   const ownHasNotes = Boolean(s.summary || s.findings || s.notes || s.special_notes);
+                  const lastPastHasCheckedFollowUps = getFollowUpDetailsFromPast(lastPast).length > 0;
                   const carryNotes = !ownHasNotes && lastPast
                     ? [
                         lastPast.special_notes,
-                        lastPast.follow_up_recommended ? lastPast.follow_up_notes : null,
+                        lastPast.follow_up_recommended && lastPastHasCheckedFollowUps ? lastPast.follow_up_notes : null,
                       ].filter(Boolean).join("\n\n")
                     : "";
 
