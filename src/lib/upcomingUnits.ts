@@ -160,6 +160,26 @@ export function getUnitsFromMostRecentPast(mostRecentPast: ServiceRow | null | u
   return details.map(u => u?.unit_number).filter((u): u is string => Boolean(u));
 }
 
+/**
+ * Pick the next visit label from a cadence rotation plan based on how many
+ * past services the property already has on the books. Visits roll forward
+ * automatically: visit 1 → visit 2 → visit 3 → visit 4 → back to visit 1.
+ *
+ * `pastCount` is the count of COMPLETED past services (used as the index).
+ * `cyclePlan`  is the ordered visit-label rotation (e.g. weekly = 4 entries).
+ *
+ * Returns the label for the NEXT upcoming visit, or "" if no plan is set.
+ */
+export function getCadenceVisitLabel(
+  pastCount: number,
+  cyclePlan: string[] | null | undefined
+): string {
+  const plan = (cyclePlan || []).map(s => (s || "").trim()).filter(Boolean);
+  if (plan.length === 0) return "";
+  const safeCount = Math.max(0, Math.floor(pastCount));
+  return plan[safeCount % plan.length] || "";
+}
+
 export type UnitSource = "work_order" | "follow_up" | "planned" | "carried";
 
 export interface UpcomingUnitContext {
