@@ -4052,10 +4052,12 @@ const PropertyDashboard = ({
           <Card className="border-primary/60 shadow-md">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+                <Send className="w-4 h-4 text-primary" />Send {ResidentTerm} Pest Survey
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Tenants get a short 5-question form. Results aggregate below as they respond.
+                {isHOA
+                  ? "Residents get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below."
+                  : "Tenants get a short 5-question form. Results aggregate below as they respond."}
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -4068,15 +4070,15 @@ const PropertyDashboard = ({
                 <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
               </div>
               <div>
-                <Label className="text-sm">Tenant Emails</Label>
+                <Label className="text-sm">{ResidentTerm} Emails</Label>
                 <Textarea
                   rows={4}
-                  placeholder="Paste tenant emails — one per line, or comma-separated"
+                  placeholder={`Paste ${residentTerm} emails — one per line, or comma-separated`}
                   value={surveyEmails}
                   onChange={(e) => setSurveyEmails(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Each tenant gets their own unique link so you can see who responded.
+                  Each {residentTerm} gets their own unique link so you can see who responded.
                 </p>
               </div>
               <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
@@ -4085,6 +4087,75 @@ const PropertyDashboard = ({
               </Button>
             </CardContent>
           </Card>
+
+          {/* HOA: Group past surveys into "Survey — Month YYYY" collapsible summaries */}
+          {isHOA && surveys.length > 0 && (
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />Past Survey Summaries
+                  <Badge variant="secondary" className="ml-1 text-xs">{surveys.length}</Badge>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Each entry rolls up everything sent in that month.</p>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  // Group surveys by Month YYYY of created_at
+                  const groups = new Map<string, { label: string; date: Date; surveys: any[] }>();
+                  surveys.forEach((s: any) => {
+                    const d = new Date(s.created_at);
+                    const key = `${d.getFullYear()}-${d.getMonth()}`;
+                    const label = `Survey — ${d.toLocaleString("en-US", { month: "long", year: "numeric" })}`;
+                    if (!groups.has(key)) groups.set(key, { label, date: new Date(d.getFullYear(), d.getMonth(), 1), surveys: [] });
+                    groups.get(key)!.surveys.push(s);
+                  });
+                  const ordered = Array.from(groups.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+                  return (
+                    <div className="space-y-2">
+                      {ordered.map((g) => {
+                        const ids = new Set(g.surveys.map((s: any) => s.id));
+                        const responses = surveyResponses.filter((r: any) => ids.has(r.survey_id));
+                        const submitted = responses.filter((r: any) => r.submitted_at).length;
+                        const recipientsTotal = g.surveys.reduce(
+                          (acc: number, s: any) => acc + (Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0),
+                          0
+                        );
+                        return (
+                          <details key={g.label} className="rounded-lg border bg-muted/20 group">
+                            <summary className="flex items-center justify-between gap-3 cursor-pointer p-3 list-none">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold truncate">{g.label}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {g.surveys.length} send{g.surveys.length === 1 ? "" : "s"} • {submitted}/{recipientsTotal} responded
+                                </p>
+                              </div>
+                              <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                            </summary>
+                            <div className="px-3 pb-3 border-t pt-2 space-y-2">
+                              {g.surveys.map((s: any) => {
+                                const resps = surveyResponses.filter((r: any) => r.survey_id === s.id);
+                                const sub = resps.filter((r: any) => r.submitted_at).length;
+                                const rec = Array.isArray(s.recipient_emails) ? s.recipient_emails.length : 0;
+                                return (
+                                  <div key={s.id} className="text-xs flex items-center justify-between gap-2 bg-background rounded p-2 border">
+                                    <span className="truncate">
+                                      <span className="font-semibold">{s.title || "Pest Activity Survey"}</span>{" "}
+                                      <span className="text-muted-foreground">— {new Date(s.created_at).toLocaleDateString()}</span>
+                                    </span>
+                                    <Badge variant="outline" className="text-[10px]">{sub}/{rec}</Badge>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
