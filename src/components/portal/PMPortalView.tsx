@@ -1519,13 +1519,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {requestKind !== "general" && (
                 <div>
                   <div className="flex items-center gap-3">
-                    <Label className="text-sm whitespace-nowrap shrink-0">Unit or Property *</Label>
+                    <Label className="text-sm whitespace-nowrap shrink-0">Property *</Label>
                     <Input
                       list="pm-known-units"
-                      placeholder={isHOA ? "1234MAINST" : "UNIT204, 1234MAINST"}
+                      placeholder={isHOA ? "1234 MAIN ST" : "UNIT 204, 1234 MAIN ST"}
                       value={unitNumber}
-                      onChange={e => setUnitNumber(e.target.value.toUpperCase().replace(/\s+/g, ""))}
-                      onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
+                      onChange={e => setUnitNumber(e.target.value.toUpperCase())}
                       autoComplete="off"
                       className="flex-1 uppercase"
                     />
