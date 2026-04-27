@@ -1177,6 +1177,10 @@ const PropertyDashboard = ({
     setFollowUpUnits([]);
     toast({ title: "Service completed", description: "Moved to Previous Services." });
     setActiveTab("past");
+    // Refresh parent state immediately so the just-completed service drops
+    // out of the Upcoming Services list without waiting for the realtime
+    // subscription to round-trip.
+    onRefresh();
 
     // ─── Email the property manager / client contact a completion summary ───
     // Best-effort: failures here must not block the completion itself.
