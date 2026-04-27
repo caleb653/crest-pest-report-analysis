@@ -2591,6 +2591,24 @@ const PropertyDashboard = ({
                                 onChange={e => updateRow(idx, "findings", e.target.value)}
                               />
                             </div>
+                            {/* Follow-up + Sanitization checkboxes — must be CHECKED to auto-add to next service */}
+                            <div className="md:col-span-2 rounded-lg border-2 border-orange-400 bg-orange-50/50 p-3 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                  checked={!!row.follow_up_needed}
+                                  onCheckedChange={(v) => updateRow(idx, "follow_up_needed" as any, !!v)}
+                                />
+                                <span className="text-sm font-semibold text-orange-900">Follow Up Needed</span>
+                                <span className="text-[11px] text-muted-foreground">(auto-adds to next service)</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                  checked={!!row.sanitization_concern}
+                                  onCheckedChange={(v) => updateRow(idx, "sanitization_concern" as any, !!v)}
+                                />
+                                <span className="text-sm font-semibold text-orange-900">Sanitization Concern</span>
+                              </label>
+                            </div>
                             </div>
                             {/* Per-unit photos — right 1/3 */}
                             <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
