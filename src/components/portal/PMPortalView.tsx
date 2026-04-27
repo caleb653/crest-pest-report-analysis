@@ -1007,6 +1007,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-orange-800 whitespace-pre-wrap">{s.follow_up_notes}</p>
           </div>
         )}
+        {/* Pesticide / safety disclaimer — last item in past service report */}
+        <PesticideNotice />
       </div>
     );
   };
