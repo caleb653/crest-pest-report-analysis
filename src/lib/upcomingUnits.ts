@@ -27,6 +27,10 @@ export type UnitDetailRow = {
   status?: string | null;
   pest_activity?: string | null;
   followUp?: string | null;
+  /** Explicit "Follow Up Needed" checkbox set by the technician. */
+  follow_up_needed?: boolean | null;
+  /** Explicit "Sanitization Concern" checkbox. */
+  sanitization_concern?: boolean | null;
   findings?: string | null;
   target_pest?: string | null;
   products_used?: any;
@@ -94,20 +98,12 @@ export function getFollowUpDetailsFromPast(
     : [];
   return details.filter(u => {
     if (!u?.unit_number) return false;
-    const status = u.status || "";
-    // ONLY flag a unit as needing a follow-up when the technician
-    // EXPLICITLY chose a follow-up status. If they marked the unit as
-    // "Completed" / "Complete" — even with High/Moderate activity noted —
-    // we respect that choice and do NOT auto-roll it into the next service.
-    return (
-      status === "Treated - Follow Up" ||
-      status === "Treated - Follow Up Needed" ||
-      status === "Needs Follow-up" ||
-      status === "Needs Follow Up" ||
-      status === "Activity Found - Follow Up Needed" ||
-      status === "Inspected: Activity Found" ||
-      u.followUp === "Yes"
-    );
+    // ONLY flag a unit as needing a follow-up when the technician explicitly
+    // CHECKED the "Follow Up Needed" checkbox on the unit. Status alone (even
+    // "Activity Found" or "Treated - Follow Up") is NOT enough — the explicit
+    // checkbox must be set. If the box isn't checked, do not roll the unit
+    // forward to the next service under any circumstances.
+    return u.follow_up_needed === true;
   });
 }
 

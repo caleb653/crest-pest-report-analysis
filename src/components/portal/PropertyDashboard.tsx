@@ -76,14 +76,13 @@ const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 // filtering / follow-up logic keeps working.
 const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Completed" },
-  { value: "Treated - Follow Up", label: "Treated - Follow Up Needed" },
+  { value: "Treated - Complete",  label: "Treated - Free and Clear" },
   { value: "Not Treated",         label: "Not Treated" },
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
   { value: "Inspected: Free and Clear",  label: "Free and Clear" },
-  { value: "Inspected: Activity Found",  label: "Activity Found - Follow Up Needed" },
+  { value: "Inspected: Activity Found",  label: "Follow Up" },
   { value: "Not Treated",                label: "Not Inspected" },
 ];
 
@@ -189,7 +188,7 @@ const PropertyDashboard = ({
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
   const [workOrder, setWorkOrder] = useState({
     unit_number: "", pest_type: "", location_type: "", comments: "",
-    request_type: "" as "" | "treatment" | "inspection",
+    request_type: "" as "" | "treatment" | "inspection" | "general",
     occupancy_status: "" as "" | "Occupied" | "Vacant",
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
     // HOA-mode customer contact (homeowner submitting the request).
@@ -774,7 +773,9 @@ const PropertyDashboard = ({
     const mostRecent = pastServices[0];
     const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
     return details
-      .filter((u: any) => u.status === "Treated - Follow Up" && u.unit_number)
+      // ONLY units the technician explicitly checked "Follow Up Needed" on.
+      // Status alone never qualifies — the explicit checkbox must be set.
+      .filter((u: any) => u.follow_up_needed === true && u.unit_number)
       .map((u: any) => ({
         unit_number: String(u.unit_number),
         pest_activity: u.pest_activity || "",
@@ -959,7 +960,10 @@ const PropertyDashboard = ({
         ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
         : undefined,
     }));
-    const flagged = unitRows.filter(r => r.status === "Treated - Follow Up").map(r => r.unit_number);
+    // ONLY auto-add a follow-up when the technician explicitly checked
+    // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
+    // is NOT enough — the user must check the box.
+    const flagged = unitRows.filter((r: any) => r.follow_up_needed === true).map((r: any) => r.unit_number);
 
     // Build service_time string from time_in / time_out if provided
     const serviceTime = data?.time_in && data?.time_out
@@ -1240,13 +1244,18 @@ const PropertyDashboard = ({
   };
 
   const submitWorkOrder = async () => {
-    if (!workOrder.unit_number && !workOrder.comments) return;
+    const isGeneral = workOrder.request_type === "general";
+    if (isGeneral) {
+      if (!workOrder.comments.trim()) return;
+    } else if (!workOrder.unit_number && !workOrder.comments) return;
     setSubmittingWorkOrder(true);
     // Case-insensitive normalization against existing units for this property
     const typed = (workOrder.unit_number || "").trim();
-    const canonical = typed
+    const canonical = isGeneral
+      ? null
+      : (typed
       ? (allUnits.find(u => u.toLowerCase() === typed.toLowerCase()) || typed)
-      : "Facility";
+      : "Facility");
     // HOA mode: prepend the homeowner contact info to the description so it's
     // visible everywhere the work order is rendered (no schema change needed).
     const customerHeader = isHOA && (workOrder.customer_name.trim() || workOrder.customer_phone.trim() || workOrder.tenant_email.trim())
@@ -1264,11 +1273,15 @@ const PropertyDashboard = ({
     const { data: inserted, error: insertErr } = await supabase.from("portal_requests").insert({
       property_id: property.id,
       unit_number: canonical,
-      request_type: workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
-      description: `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
-      pest_type: workOrder.pest_type || null,
-      location_type: workOrder.location_type || null,
-      occupancy_status: workOrder.occupancy_status || null,
+      request_type: isGeneral
+        ? "General Request"
+        : workOrder.request_type === "inspection" ? "Inspection Request" : "Service Request",
+      description: isGeneral
+        ? `${customerHeader}[GENERAL] ${workOrder.comments.trim()}`
+        : `${customerHeader}[${workOrder.request_type === "inspection" ? "INSPECTION" : "TREATMENT"}] ${workOrder.pest_type || "General"}${workOrder.location_type ? ` - ${workOrder.location_type}` : ""}${workOrder.comments ? ` - ${workOrder.comments}` : ""}`,
+      pest_type: isGeneral ? null : (workOrder.pest_type || null),
+      location_type: isGeneral ? null : (workOrder.location_type || null),
+      occupancy_status: isGeneral ? null : (workOrder.occupancy_status || null),
       tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
@@ -1278,7 +1291,9 @@ const PropertyDashboard = ({
       setSubmittingWorkOrder(false);
       return;
     }
-    toast({ title: workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
+    toast({ title: isGeneral
+      ? "General request submitted"
+      : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
     // Fire-and-forget staff notification (office + Carmen + client owner)
     if (inserted?.id) {
       try {
@@ -1463,6 +1478,16 @@ const PropertyDashboard = ({
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{unit.findings}</p>
                         </div>
                       )}
+                      {(unit.follow_up_needed || unit.sanitization_concern) && (
+                        <div className="flex flex-wrap gap-2">
+                          {unit.follow_up_needed && (
+                            <Badge className="text-[11px] bg-orange-500 text-white">Follow Up Needed</Badge>
+                          )}
+                          {unit.sanitization_concern && (
+                            <Badge className="text-[11px] bg-amber-600 text-white">Sanitization Concern</Badge>
+                          )}
+                        </div>
+                      )}
                       {unit.notes && (
                         <div>
                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
@@ -1499,13 +1524,12 @@ const PropertyDashboard = ({
     // Past-service status dropdowns mirror the upcoming-visit options so the
     // technician sees the same vocabulary regardless of which tab they're in.
     const SERVICE_STATUSES: { value: string; label: string }[] = [
-      { value: "Complete",          label: "Completed" },
-      { value: "Needs Follow Up",   label: "Treated - Follow Up Needed" },
+      { value: "Complete",          label: "Treated - Free and Clear" },
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
       { value: "Free and Clear",  label: "Free and Clear" },
-      { value: "Activity Found",  label: "Activity Found - Follow Up Needed" },
+      { value: "Activity Found",  label: "Follow Up" },
       { value: "Not Serviced",    label: "Not Inspected" },
     ];
     const isInspectionUnit = (u: any) => (u?.kind || "service") === "inspection";
@@ -1668,6 +1692,23 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
                   </div>
+                  {/* Follow-up + Sanitization checkboxes — must be CHECKED to flag for next service */}
+                  <div className="md:col-span-2 rounded-lg border-2 border-orange-400 bg-orange-50/50 p-3 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <Checkbox
+                        checked={!!unit.follow_up_needed}
+                        onCheckedChange={(v) => updateUnitField(s.id, j, "follow_up_needed", !!v)}
+                      />
+                      <span className="text-sm font-semibold text-orange-900">Follow Up Needed</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <Checkbox
+                        checked={!!unit.sanitization_concern}
+                        onCheckedChange={(v) => updateUnitField(s.id, j, "sanitization_concern", !!v)}
+                      />
+                      <span className="text-sm font-semibold text-orange-900">Sanitization Concern</span>
+                    </label>
+                  </div>
                   </div>
                   {/* UNIT PHOTOS — right 1/3 column */}
                   <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
@@ -1741,7 +1782,7 @@ const PropertyDashboard = ({
                 >
                   {(((newUnitData as any).kind === "inspection")
                     ? ["Free and Clear", "Activity Found"]
-                    : ["Complete", "Needs Follow Up", "Not Serviced"]
+                    : ["Complete", "Not Serviced"]
                   ).map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
@@ -2197,7 +2238,7 @@ const PropertyDashboard = ({
               });
             }, 0);
           }
-          const updateRow = (idx: number, field: string, value: string) => {
+          const updateRow = (idx: number, field: string, value: any) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
@@ -2307,7 +2348,7 @@ const PropertyDashboard = ({
               });
             }
           };
-          const flaggedCount = cd.unitRows.filter(r => r.status === "Treated - Follow Up").length;
+          const flaggedCount = cd.unitRows.filter((r: any) => r.follow_up_needed === true).length;
 
           return (
             <div className="space-y-3 pt-2 border-t border-border mt-2">
@@ -2577,6 +2618,24 @@ const PropertyDashboard = ({
                                 onChange={e => updateRow(idx, "findings", e.target.value)}
                               />
                             </div>
+                            {/* Follow-up + Sanitization checkboxes — must be CHECKED to auto-add to next service */}
+                            <div className="md:col-span-2 rounded-lg border-2 border-orange-400 bg-orange-50/50 p-3 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                  checked={!!row.follow_up_needed}
+                                  onCheckedChange={(v) => updateRow(idx, "follow_up_needed" as any, !!v)}
+                                />
+                                <span className="text-sm font-semibold text-orange-900">Follow Up Needed</span>
+                                <span className="text-[11px] text-muted-foreground">(auto-adds to next service)</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <Checkbox
+                                  checked={!!row.sanitization_concern}
+                                  onCheckedChange={(v) => updateRow(idx, "sanitization_concern" as any, !!v)}
+                                />
+                                <span className="text-sm font-semibold text-orange-900">Sanitization Concern</span>
+                              </label>
+                            </div>
                             </div>
                             {/* Per-unit photos — right 1/3 */}
                             <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
@@ -2726,7 +2785,7 @@ const PropertyDashboard = ({
                 {flaggedCount > 0 && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
                     <p className="text-xs font-medium text-orange-700">
-                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Treated - Follow Up" — will auto-add to next service
+                      ⚠️ {flaggedCount} unit{flaggedCount > 1 ? "s" : ""} marked "Follow Up Needed" — will auto-add to next service
                     </p>
                   </div>
                 )}
@@ -3570,10 +3629,11 @@ const PropertyDashboard = ({
             {/* Request Type (admin-only enhancement, kept compact) */}
             <div>
               <Label className="text-sm">Request Type *</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-3 gap-2 mt-1">
                 {([
                   { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
                   { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
+                  { v: "general", label: "General Request", icon: ClipboardList, desc: "Just leave a comment" },
                 ] as const).map(opt => {
                   const Icon = opt.icon;
                   const active = workOrder.request_type === opt.v;
@@ -3593,7 +3653,8 @@ const PropertyDashboard = ({
               </div>
             </div>
 
-            {/* Unit or Area — free-text with case-insensitive suggestion list */}
+            {/* Unit or Area — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Unit, Property, or Area *</Label>
               <Input
@@ -3609,8 +3670,10 @@ const PropertyDashboard = ({
                 </datalist>
               )}
             </div>
+            )}
 
-            {/* Pest Type */}
+            {/* Pest Type — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">What are you dealing with? *</Label>
               <Select value={workOrder.pest_type} onValueChange={v => setWorkOrder(wo => ({ ...wo, pest_type: v }))}>
@@ -3620,8 +3683,10 @@ const PropertyDashboard = ({
                 </SelectContent>
               </Select>
             </div>
+            )}
 
-            {/* Location */}
+            {/* Location — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Where is the issue?</Label>
               <div className="flex gap-2 mt-1">
@@ -3632,15 +3697,22 @@ const PropertyDashboard = ({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Additional Details */}
             <div>
-              <Label className="text-sm">Additional Details</Label>
-              <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
-                value={workOrder.comments} onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} rows={3} />
+              <Label className="text-sm">{workOrder.request_type === "general" ? "Your Comment *" : "Additional Details"}</Label>
+              <Textarea
+                placeholder={workOrder.request_type === "general"
+                  ? "Share anything for the Crest team — questions, scheduling notes, follow-ups, etc."
+                  : "Any extra context — where exactly you're seeing the issue, severity, etc."}
+                value={workOrder.comments}
+                onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))}
+                rows={workOrder.request_type === "general" ? 5 : 3} />
             </div>
 
-            {/* Occupancy */}
+            {/* Occupancy — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Vacant or Occupied Unit</Label>
               <div className="flex gap-2 mt-1">
@@ -3651,9 +3723,10 @@ const PropertyDashboard = ({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Tenant Notification — full PM-portal parity */}
-            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA ? "hidden" : ""}`}>
+            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA || workOrder.request_type === "general" ? "hidden" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
                 <span className="text-sm font-medium">Email tenant?</span>
@@ -3704,12 +3777,16 @@ const PropertyDashboard = ({
               size="lg"
               onClick={submitWorkOrder}
               disabled={
-                !workOrder.unit_number ||
+                (workOrder.request_type === "general"
+                  ? !workOrder.comments.trim()
+                  : !workOrder.unit_number) ||
                 submittingWorkOrder ||
                 (isHOA && (!workOrder.customer_name.trim() || !workOrder.customer_phone.trim() || !workOrder.tenant_email.trim()))
               }
             >
-              <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
+              <Send className="w-4 h-4 mr-2" />Submit {workOrder.request_type === "general"
+                ? "General Request"
+                : workOrder.request_type === "inspection" ? "Inspection Request" : "Work Order"}
             </Button>
           </CardContent>
         </Card>

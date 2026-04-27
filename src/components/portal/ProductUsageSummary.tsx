@@ -15,7 +15,7 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
   if (!entries || entries.length === 0) return null;
   return (
     <div className="rounded-md border border-border/60 overflow-hidden">
-      <div className="grid grid-cols-12 gap-1 px-2 py-1.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40 border-b border-border/60">
+      <div className="grid grid-cols-12 gap-1 px-3 py-2 text-[12px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40 border-b border-border/60">
         <div className="col-span-3">Product</div>
         <div className="col-span-2">Diluted</div>
         <div className="col-span-2">Concentrated</div>
@@ -29,7 +29,7 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
         return (
           <div
             key={`${u.name}-${j}`}
-            className={`grid grid-cols-12 gap-1 px-2 py-1.5 text-[11px] items-center ${j % 2 === 1 ? "bg-muted/20" : ""}`}
+            className={`grid grid-cols-12 gap-1 px-3 py-2 text-[14px] items-center ${j % 2 === 1 ? "bg-muted/20" : ""}`}
           >
             <div className="col-span-3 font-semibold truncate" title={u.name}>{u.name}</div>
             <div className="col-span-2">
@@ -52,7 +52,7 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
                 ? <span><span className="font-medium">{mixRatioPerGal}</span> <span className="text-muted-foreground">{mixRatioUnit} / 1 gal</span></span>
                 : <span className="text-muted-foreground">—</span>}
             </div>
-            <div className="col-span-1 text-right text-[10px] font-mono">
+            <div className="col-span-1 text-right text-[12px] font-mono">
               {epa
                 ? <span title={`EPA Reg # ${epa}`}>{epa}</span>
                 : <span className="text-muted-foreground">—</span>}
