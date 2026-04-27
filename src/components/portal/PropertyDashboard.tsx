@@ -2158,6 +2158,28 @@ const PropertyDashboard = ({
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
+            communityFeedback={isUpcoming && isFirstUpcoming ? (() => {
+              // Community pest sightings submitted since the most recent
+              // completed visit. Briefs the tech for the next service.
+              const lastDate = pastServices[0]?.service_date ? new Date(pastServices[0].service_date).getTime() : 0;
+              return (pendingRequests as any[])
+                .filter((r) => {
+                  if (r.status === "resolved") return false;
+                  const isCommunity = r.request_type === "Community Pest Sighting" ||
+                    /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                  if (!isCommunity) return false;
+                  if (!lastDate) return true;
+                  const created = new Date(r.created_at).getTime();
+                  return created >= lastDate;
+                })
+                .map((r) => ({
+                  id: r.id,
+                  created_at: r.created_at,
+                  pest_type: r.pest_type,
+                  location_type: r.location_type,
+                  description: r.description,
+                }));
+            })() : []}
           />
           {/* HOA upcoming: full-width Complete Service action.
               Flips status -> "completed", auto-rolls flagged units into a
