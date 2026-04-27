@@ -4254,6 +4254,50 @@ const PropertyDashboard = ({
             {hoaRequestKind && (
               <div className="space-y-3 pt-2 border-t">
                 {hoaRequestKind === "service" && (
+                  <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                      <ClipboardList className="w-3.5 h-3.5" />Resident Contact
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Name *</Label>
+                        <Input
+                          placeholder="Resident full name"
+                          value={hoaResidentName}
+                          onChange={e => setHoaResidentName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Phone *</Label>
+                        <Input
+                          type="tel"
+                          placeholder="(555) 123-4567"
+                          value={hoaResidentPhone}
+                          onChange={e => setHoaResidentPhone(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Email *</Label>
+                        <Input
+                          type="email"
+                          placeholder="resident@example.com"
+                          value={hoaResidentEmail}
+                          onChange={e => setHoaResidentEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Home Address *</Label>
+                        <Input
+                          placeholder="1234 Main St"
+                          value={hoaAddress}
+                          onChange={e => setHoaAddress(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {false && hoaRequestKind === "service" && (
                   <div>
                     <Label className="text-sm">What is your address? *</Label>
                     <Input
