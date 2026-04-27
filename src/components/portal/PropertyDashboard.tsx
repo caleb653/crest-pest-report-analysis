@@ -20,6 +20,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
+import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
@@ -3005,7 +3006,7 @@ const PropertyDashboard = ({
           </span>
         </div>
       )}
-      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-5" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-6" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -3032,6 +3033,12 @@ const PropertyDashboard = ({
           <BarChart3 className="w-5 h-5" />
           <span>{isHOA ? "Resident Survey" : "Tenant Survey"} <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
+        {isHOA && (
+          <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <Video className="w-5 h-5" />
+            <span>Quarterly Video</span>
+          </TabsTrigger>
+        )}
       </TabsList>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
@@ -4678,6 +4685,12 @@ const PropertyDashboard = ({
           )}
         </div>
       </TabsContent>
+
+      {isHOA && (
+        <TabsContent value="quarterly" className="mt-0">
+          <QuarterlyVideoTab propertyId={property.id} mode="admin" uploaderName="Crest Admin" />
+        </TabsContent>
+      )}
 
     </Tabs>
   );
