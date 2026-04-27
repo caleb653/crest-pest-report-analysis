@@ -239,6 +239,7 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [signedAuthorizations, setSignedAuthorizations] = useState<any[]>([]);
   // Per-service local set of units the admin just removed, applied immediately
   // so the auto-merge effect doesn't re-add the unit between the local state
   // update and the DB refresh that picks up the persisted dismissal.
