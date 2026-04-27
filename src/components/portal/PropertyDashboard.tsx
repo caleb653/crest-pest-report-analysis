@@ -4784,7 +4784,14 @@ const PropertyDashboard = ({
               <p className="text-xs text-muted-foreground">This is exactly what {residentTerm}s will see.</p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <details className="group">
+                <summary className="flex items-center justify-between gap-3 cursor-pointer list-none rounded-md border bg-muted/30 px-3 py-2 hover:bg-muted/50">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Show question preview
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="space-y-4 mt-3">
                 {DEFAULT_PEST_SURVEY_QUESTIONS.map((q: SurveyQuestion, idx) => (
                   <div key={q.id} className="border rounded-md p-3 bg-muted/30">
                     <p className="text-sm font-semibold mb-2">
@@ -4821,7 +4828,8 @@ const PropertyDashboard = ({
                     )}
                   </div>
                 ))}
-              </div>
+                </div>
+              </details>
             </CardContent>
           </Card>
 
