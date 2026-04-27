@@ -2349,7 +2349,7 @@ const PropertyDashboard = ({
           </span>
         </div>
       )}
-      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+      <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -2373,6 +2373,10 @@ const PropertyDashboard = ({
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <BarChart3 className="w-5 h-5" />
           <span>Tenant Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
+        </TabsTrigger>
+        <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Video className="w-5 h-5" />
+          <span>Quarterly Updates <Badge variant="secondary" className="ml-1 text-xs h-4">{quarterlyUpdates.length}</Badge></span>
         </TabsTrigger>
       </TabsList>
 
