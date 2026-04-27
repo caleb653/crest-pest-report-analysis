@@ -1609,15 +1609,52 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {hoaRequestKind && (
                   <div className="space-y-3 pt-2 border-t">
                     {hoaRequestKind === "service" && (
-                      <div>
-                        <Label className="text-sm">What is your address? *</Label>
-                        <Input
-                          placeholder="1234 Main St"
-                          value={hoaAddress}
-                          onChange={e => setHoaAddress(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
+                      <>
+                        <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                          <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                            <ClipboardList className="w-3.5 h-3.5" />Resident Contact
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Name *</Label>
+                              <Input
+                                placeholder="Resident full name"
+                                value={hoaResidentName}
+                                onChange={e => setHoaResidentName(e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Phone *</Label>
+                              <Input
+                                type="tel"
+                                placeholder="(555) 123-4567"
+                                value={hoaResidentPhone}
+                                onChange={e => setHoaResidentPhone(e.target.value)}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label className="text-xs">Email *</Label>
+                              <Input
+                                type="email"
+                                placeholder="resident@example.com"
+                                value={hoaResidentEmail}
+                                onChange={e => setHoaResidentEmail(e.target.value)}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label className="text-xs">Home Address *</Label>
+                              <Input
+                                placeholder="1234 Main St"
+                                value={hoaAddress}
+                                onChange={e => setHoaAddress(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-snug">
+                            This is the resident submitting the request — saved with the work order so Crest can reach them directly.
+                          </p>
+                        </div>
+                      </>
                     )}
 
                     <div>
@@ -1690,7 +1727,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         submitting ||
                         !hoaLocation.trim() ||
                         !hoaPests.trim() ||
-                        (hoaRequestKind === "service" && !hoaAddress.trim())
+                        (hoaRequestKind === "service" && (
+                          !hoaAddress.trim() ||
+                          !hoaResidentName.trim() ||
+                          !hoaResidentEmail.trim() ||
+                          !hoaResidentPhone.trim()
+                        ))
                       }
                     >
                       <Send className="w-4 h-4 mr-2" />
