@@ -188,6 +188,29 @@ export function HOAServiceView(props: HOAServiceViewProps) {
 
   const productList = normalizeUsageList(products);
   const displayList = normalizeUsageList(displayProducts ?? products);
+  const onChangeFindingsRef = useRef(onChangeFindings);
+  const onDraftChangeRef = useRef(onDraftChange);
+  const findingsTimerRef = useRef<number | null>(null);
+  const findingsDirtyRef = useRef(false);
+
+  useEffect(() => { onChangeFindingsRef.current = onChangeFindings; }, [onChangeFindings]);
+  useEffect(() => { onDraftChangeRef.current = onDraftChange; }, [onDraftChange]);
+
+  useEffect(() => {
+    if (!canEditFindings) return;
+    if (localFindings === lastSyncedRef.current) return;
+    findingsDirtyRef.current = true;
+    if (findingsTimerRef.current) window.clearTimeout(findingsTimerRef.current);
+    findingsTimerRef.current = window.setTimeout(async () => {
+      const next = localFindings;
+      lastSyncedRef.current = next;
+      await onChangeFindingsRef.current?.(next);
+      findingsDirtyRef.current = false;
+    }, 350);
+    return () => {
+      if (findingsTimerRef.current) window.clearTimeout(findingsTimerRef.current);
+    };
+  }, [localFindings, canEditFindings]);
 
   return (
     <div className="space-y-4">
