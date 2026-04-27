@@ -996,6 +996,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <BarChart3 className="w-5 h-5" />
             <span>{isHOA ? "Resident Survey" : "Survey Results"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
+          {isHOA && (
+            <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <Video className="w-5 h-5" />
+              <span>Quarterly Video</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ════════ TAB 1: PROPERTY / MAP ════════ */}
