@@ -3334,8 +3334,8 @@ const PropertyDashboard = ({
               tabIndex={0}
             >
               <div
-                className="relative bg-muted max-w-[520px] mx-auto"
-                style={{ aspectRatio: "3 / 4" }}
+                className={`relative bg-muted mx-auto ${isHOA ? "max-w-[600px]" : "max-w-[520px]"}`}
+                style={{ aspectRatio: isHOA ? "3 / 4.4" : "3 / 4" }}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={(e) => {
                   e.preventDefault();
