@@ -416,7 +416,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           }
         } catch (e) {
           console.error("send-tenant-work-order failed", e);
-          toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+          toast({ title: `${ResidentTerm} email failed`, description: "Work order saved, but email could not be sent.", variant: "destructive" });
         }
       }
       setUnitNumber("");
@@ -541,7 +541,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
         setSurveyEmails("");
         loadAll();
       } else {
