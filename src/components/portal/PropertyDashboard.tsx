@@ -2486,7 +2486,8 @@ const PropertyDashboard = ({
               </div>
               <ul className="space-y-1.5">
                 {generalReqs.map((r) => {
-                  const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  const contact = parseResidentContact(r as any);
+                  const text = contact.cleanedDescription.replace(/^Customer:.*?\n/, "").trim();
                   const photos: string[] = Array.isArray((r as any).photos) ? (r as any).photos : [];
                   return (
                     <li key={r.id} className="text-sm leading-snug">
@@ -2494,6 +2495,7 @@ const PropertyDashboard = ({
                         <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
                         <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
                       </div>
+                      {contact.hasAny && <ResidentContactCard contact={contact} className="mt-1.5 ml-1" />}
                       {photos.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5 ml-1">
                           {photos.map((url, i) => (
