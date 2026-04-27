@@ -148,6 +148,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
   const [expandedPrepSheet, setExpandedPrepSheet] = useState<string | null>(null);
   const [copyingPrepSheet, setCopyingPrepSheet] = useState<string | null>(null);
+  // Per-prep-sheet "email this PDF" form state.
+  const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
+  const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
