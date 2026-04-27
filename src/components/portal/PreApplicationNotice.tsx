@@ -100,9 +100,19 @@ function getInitialServiceDate(property: PreApplicationProperty): string {
   return prefs.initial_service_date || "";
 }
 
-const Box = ({ checked }: { checked: boolean }) => (
+const Box = ({
+  checked,
+  editable,
+  onClick,
+}: {
+  checked: boolean;
+  editable?: boolean;
+  onClick?: () => void;
+}) => (
   <span
-    className="inline-block align-middle mr-2"
+    role={editable ? "button" : undefined}
+    onClick={editable ? onClick : undefined}
+    className={`inline-block align-middle mr-2 ${editable ? "cursor-pointer hover:ring-2 hover:ring-primary/40" : ""}`}
     style={{
       width: 12, height: 12, border: "1.5px solid #2A2A2A",
       background: checked ? "#2A2A2A" : "transparent",
@@ -114,14 +124,44 @@ interface PreApplicationNoticeProps {
   property: PreApplicationProperty;
   /** Optional explicit notice date (YYYY-MM-DD); defaults to today. */
   noticeDate?: string;
+  /** When true, frequency / pests / dates become editable in-place. */
+  editable?: boolean;
+  /** Receives the next set of values when the user edits. */
+  onChange?: (next: {
+    frequency: string;
+    checkedPests: string[];
+    noticeDate: string;
+    initialDate: string;
+  }) => void;
 }
 
 export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNoticeProps>(
-  ({ property, noticeDate }, ref) => {
+  ({ property, noticeDate, editable, onChange }, ref) => {
     const checked = getCheckedPests(property);
     const frequency = getFrequency(property);
     const today = noticeDate || new Date().toISOString().slice(0, 10);
     const initialDate = getInitialServiceDate(property);
+
+    const emit = (patch: Partial<{
+      frequency: string;
+      checkedPests: string[];
+      noticeDate: string;
+      initialDate: string;
+    }>) => {
+      onChange?.({
+        frequency,
+        checkedPests: Array.from(checked),
+        noticeDate: today,
+        initialDate,
+        ...patch,
+      });
+    };
+
+    const togglePest = (pest: string) => {
+      const next = new Set(checked);
+      if (next.has(pest)) next.delete(pest); else next.add(pest);
+      emit({ checkedPests: Array.from(next) });
+    };
 
     return (
       <div
@@ -161,7 +201,17 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
               </td>
               <td className="py-1 pl-3 align-top">
                 <span className="font-semibold">Notice Date: </span>
-                <span className="border-b border-[#2A2A2A] inline-block min-w-[160px]">{today}</span>
+                {editable ? (
+                  <input
+                    type="date"
+                    value={today}
+                    onChange={(e) => emit({ noticeDate: e.target.value })}
+                    className="border-b border-[#2A2A2A] bg-transparent outline-none focus:bg-primary/10 px-1"
+                    style={{ fontSize: "11px" }}
+                  />
+                ) : (
+                  <span className="border-b border-[#2A2A2A] inline-block min-w-[160px]">{today}</span>
+                )}
               </td>
             </tr>
             <tr>
@@ -171,7 +221,17 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
               </td>
               <td className="py-1 pl-3 align-top">
                 <span className="font-semibold">Initial Service Date: </span>
-                <span className="border-b border-[#2A2A2A] inline-block min-w-[160px]">{initialDate}</span>
+                {editable ? (
+                  <input
+                    type="date"
+                    value={initialDate}
+                    onChange={(e) => emit({ initialDate: e.target.value })}
+                    className="border-b border-[#2A2A2A] bg-transparent outline-none focus:bg-primary/10 px-1"
+                    style={{ fontSize: "11px" }}
+                  />
+                ) : (
+                  <span className="border-b border-[#2A2A2A] inline-block min-w-[160px]">{initialDate}</span>
+                )}
               </td>
             </tr>
           </tbody>
@@ -182,7 +242,14 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
           <div className="font-bold mb-1" style={{ fontSize: "12px" }}>Service Frequency:</div>
           <div className="flex gap-6" style={{ fontSize: "11px" }}>
             {(["weekly", "bi-weekly", "monthly", "bi-monthly"] as const).map((k) => (
-              <span key={k}><Box checked={frequency === k} />{FREQ_LABELS[k]}</span>
+              <span
+                key={k}
+                className={editable ? "cursor-pointer select-none" : ""}
+                onClick={editable ? () => emit({ frequency: k }) : undefined}
+              >
+                <Box checked={frequency === k} editable={editable} onClick={() => emit({ frequency: k })} />
+                {FREQ_LABELS[k]}
+              </span>
             ))}
           </div>
         </div>
@@ -192,8 +259,13 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
           <div className="font-bold mb-1" style={{ fontSize: "12px" }}>Target Pests (check all that apply)</div>
           <div className="grid grid-cols-3 gap-y-1" style={{ fontSize: "11px" }}>
             {ALL_PESTS.map((pest) => (
-              <div key={pest}>
-                <Box checked={checked.has(pest)} />{pest}
+              <div
+                key={pest}
+                className={editable ? "cursor-pointer select-none" : ""}
+                onClick={editable ? () => togglePest(pest) : undefined}
+              >
+                <Box checked={checked.has(pest)} editable={editable} onClick={() => togglePest(pest)} />
+                {pest}
               </div>
             ))}
           </div>
