@@ -2004,7 +2004,7 @@ const PropertyDashboard = ({
             uploadingMap={uploadingPropertyImage}
             findings={findingsCombined}
             technician={s.technician}
-            products={products}
+            products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
           />
