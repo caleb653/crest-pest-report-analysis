@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
-  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat, ExternalLink, Video, Upload,
+  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat, ExternalLink, Video, Upload, X,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -184,6 +184,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [tenantEmail, setTenantEmail] = useState("");
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
+  // Photos attached to the new work order — uploaded to the public
+  // `report-images` bucket and persisted into portal_requests.photos.
+  const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
+  const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
 
   // Survey state
   const [surveys, setSurveys] = useState<any[]>([]);
@@ -311,6 +315,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setLoading(false);
   };
 
+  const handleWorkOrderPhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !propertyId) return;
+    setUploadingWorkOrderPhotos(true);
+    const urls: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `work-order-photos/${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("report-images")
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+        if (upErr) {
+          toast({ title: "Photo upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+        if (pub?.publicUrl) urls.push(pub.publicUrl);
+      }
+      if (urls.length) setWorkOrderPhotos(prev => [...prev, ...urls]);
+    } finally {
+      setUploadingWorkOrderPhotos(false);
+    }
+  };
+
   const submitRequest = async () => {
     const isGeneral = requestKind === "general";
     if (isGeneral) {
@@ -338,6 +367,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       tenant_email: emailTenant ? tenantEmail.trim() || null : null,
       prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
       right_to_treat_requested: emailTenant ? requestRightToTreat : false,
+      photos: workOrderPhotos,
     } as any).select("id, right_to_treat_token").maybeSingle();
 
     if (!err) {
@@ -386,6 +416,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setTenantEmail("");
       setSelectedPrepSheetId("");
       setRequestRightToTreat(false);
+      setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
         .select("*")
@@ -1555,6 +1586,39 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   />
                 </div>
 
+                {/* Photo attachments — available on every work order type */}
+                <div>
+                  <Label className="text-sm">Photos (optional)</Label>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {workOrderPhotos.map((url, idx) => (
+                      <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border bg-muted">
+                        <img src={url} alt={`Work order photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                        <button
+                          type="button"
+                          onClick={() => setWorkOrderPhotos(prev => prev.filter(u => u !== url))}
+                          className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 shadow border hover:bg-background"
+                          aria-label="Remove photo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-muted text-muted-foreground text-[10px]">
+                      <ImageIcon className="w-4 h-4" />
+                      {uploadingWorkOrderPhotos ? "Uploading..." : "Add Photo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        disabled={uploadingWorkOrderPhotos}
+                        onChange={(e) => { handleWorkOrderPhotoUpload(e.target.files); e.target.value = ""; }}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">Attach any number of photos to give context for the technician.</p>
+                </div>
+
                 {/* Tenant Notification Section */}
                 {requestKind !== "general" && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
@@ -1692,6 +1756,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
                           <p className="text-sm mt-1">{r.description}</p>
+                          {Array.isArray((r as any).photos) && (r as any).photos.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {((r as any).photos as string[]).map((url, i) => (
+                                <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                                  <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                </a>
+                              ))}
+                            </div>
+                          )}
                           {matchedUpcoming && (
                             <div className="mt-2 bg-primary/5 border border-primary/15 rounded-md p-2">
                               <p className="text-[10px] font-semibold text-primary uppercase tracking-wide mb-0.5">Scheduled for</p>

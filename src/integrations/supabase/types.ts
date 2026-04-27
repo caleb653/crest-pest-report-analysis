@@ -357,6 +357,7 @@ export type Database = {
           location_type: string | null
           occupancy_status: string | null
           pest_type: string | null
+          photos: Json
           preferred_date: string | null
           prep_sheet_id: string | null
           property_id: string
@@ -381,6 +382,7 @@ export type Database = {
           location_type?: string | null
           occupancy_status?: string | null
           pest_type?: string | null
+          photos?: Json
           preferred_date?: string | null
           prep_sheet_id?: string | null
           property_id: string
@@ -405,6 +407,7 @@ export type Database = {
           location_type?: string | null
           occupancy_status?: string | null
           pest_type?: string | null
+          photos?: Json
           preferred_date?: string | null
           prep_sheet_id?: string | null
           property_id?: string

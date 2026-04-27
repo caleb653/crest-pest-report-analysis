@@ -198,6 +198,35 @@ const PropertyDashboard = ({
     customer_name: "", customer_phone: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
+  // Photos attached to the new work order (any number, all optional).
+  // Stored as an array of public URLs from the `report-images` bucket and
+  // persisted into portal_requests.photos on submit.
+  const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
+  const [uploadingWorkOrderPhotos, setUploadingWorkOrderPhotos] = useState(false);
+  const handleWorkOrderPhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingWorkOrderPhotos(true);
+    const urls: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith("image/")) continue;
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `work-order-photos/${property.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("report-images")
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+        if (upErr) {
+          toast({ title: "Photo upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+        if (pub?.publicUrl) urls.push(pub.publicUrl);
+      }
+      if (urls.length) setWorkOrderPhotos(prev => [...prev, ...urls]);
+    } finally {
+      setUploadingWorkOrderPhotos(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState<string>("map");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
@@ -1379,6 +1408,7 @@ const PropertyDashboard = ({
       tenant_email: tenantEmailToSave,
       prep_sheet_id: workOrder.email_tenant && workOrder.prep_sheet_id ? workOrder.prep_sheet_id : null,
       right_to_treat_requested: workOrder.email_tenant ? workOrder.right_to_treat : false,
+      photos: workOrderPhotos,
     } as any).select("id").maybeSingle();
     if (insertErr) {
       toast({ title: "Could not submit work order", description: insertErr.message, variant: "destructive" });
@@ -1414,6 +1444,7 @@ const PropertyDashboard = ({
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
       customer_name: "", customer_phone: "",
     });
+    setWorkOrderPhotos([]);
     // Refresh requests
     const { data: reqs } = await supabase.from("portal_requests").select("*").eq("property_id", property.id).in("status", ["pending", "in_progress"]).order("created_at", { ascending: false });
     if (reqs) setPendingRequests(reqs);
@@ -2198,10 +2229,22 @@ const PropertyDashboard = ({
               <ul className="space-y-1.5">
                 {generalReqs.map((r) => {
                   const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  const photos: string[] = Array.isArray((r as any).photos) ? (r as any).photos : [];
                   return (
-                    <li key={r.id} className="text-sm leading-snug flex gap-2">
-                      <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
-                      <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                    <li key={r.id} className="text-sm leading-snug">
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                        <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                      </div>
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 ml-1">
+                          {photos.map((url, i) => (
+                            <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                              <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
@@ -4031,6 +4074,39 @@ const PropertyDashboard = ({
                 value={workOrder.comments}
                 onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))}
                 rows={workOrder.request_type === "general" ? 5 : 3} />
+            </div>
+
+            {/* Photo attachments — available on every work order type */}
+            <div>
+              <Label className="text-sm">Photos (optional)</Label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {workOrderPhotos.map((url, idx) => (
+                  <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border bg-muted group">
+                    <img src={url} alt={`Work order photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <button
+                      type="button"
+                      onClick={() => setWorkOrderPhotos(prev => prev.filter(u => u !== url))}
+                      className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 shadow border hover:bg-background"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <label className="w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-muted text-muted-foreground text-[10px]">
+                  <Image className="w-4 h-4" />
+                  {uploadingWorkOrderPhotos ? "Uploading..." : "Add Photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={uploadingWorkOrderPhotos}
+                    onChange={(e) => { handleWorkOrderPhotoUpload(e.target.files); e.target.value = ""; }}
+                  />
+                </label>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Attach any number of photos to give context for the technician.</p>
             </div>
 
             {/* Occupancy — hidden for "General Request" */}
