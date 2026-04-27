@@ -24,7 +24,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage } from "@/lib/productCatalog";
-import { computeUpcomingUnits } from "@/lib/upcomingUnits";
+import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
@@ -911,6 +911,20 @@ const PropertyDashboard = ({
     // Persist photo URLs (strip uploading flags)
     const photosToSave = (data?.photos || []).filter(p => !p.uploading && p.url).map(p => ({ url: p.url }));
 
+    // Compute the cadence-rotation visit label for this completion so the
+    // past service preserves the correct title (e.g. "1st Weekly Visit
+    // (Focus on Zone #A)") instead of falling back to the generic
+    // "General Pest Service". Falls back to whatever was already saved on
+    // the row, then to the rotation, then to nothing.
+    const svcRow = propServices.find(p => p.id === serviceId);
+    let appointmentLabel: string | null = (svcRow as any)?.appointment_service || null;
+    if (!appointmentLabel && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
+      // pastServices already excludes this service (status was scheduled),
+      // so its length is the correct rotation index for THIS completion.
+      const label = getCadenceVisitLabel(pastServices.length, cadencePlanDraft[propertyFrequency]);
+      if (label) appointmentLabel = label;
+    }
+
     await supabase.from("portal_services").update({
       status: "completed",
       service_date: today,
@@ -924,6 +938,7 @@ const PropertyDashboard = ({
       photos: photosToSave,
       follow_up_recommended: flagged.length > 0,
       follow_up_notes: followUpNotes,
+      appointment_service: appointmentLabel,
     }).eq("id", serviceId);
 
     // ─── Close any open work-order requests for the units we just treated ───
@@ -1863,6 +1878,36 @@ const PropertyDashboard = ({
             <p className="text-xs whitespace-pre-wrap font-medium">{pmNoteForThis}</p>
           </div>
         )}
+
+        {/* General Requests — work orders submitted without a specific unit
+            (e.g. "the front gate is broken"). NEVER counted toward the unit
+            total, but ALWAYS shown so they're not lost. Only on the next
+            upcoming service. */}
+        {isUpcoming && isFirstUpcoming && (() => {
+          const generalReqs = getOpenGeneralRequests(pendingRequests);
+          if (generalReqs.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                  General Request{generalReqs.length === 1 ? "" : "s"} ({generalReqs.length})
+                </p>
+              </div>
+              <ul className="space-y-1.5">
+                {generalReqs.map((r) => {
+                  const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  return (
+                    <li key={r.id} className="text-sm leading-snug flex gap-2">
+                      <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                      <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
 
         {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
         {overage.hasOverage && (
@@ -3725,13 +3770,19 @@ const PropertyDashboard = ({
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
                         <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(() => {
-                          // First upcoming visit auto-aligns with Visit #1 of the Site Map
-                          // cadence rotation (weekly / bi-weekly only). Keeps admin + PM views in sync.
+                          // If a label was already saved on the row (e.g. via completion or
+                          // manual edit), prefer it so the displayed title is stable.
+                          const savedLabel = (s as any).appointment_service;
+                          if (savedLabel) return savedLabel;
+                          // First upcoming visit auto-rotates through the Site Map cadence
+                          // plan (weekly = 4-visit rotation, bi-weekly = 2-visit rotation).
+                          // Past-visit count is the index into the rotation, so once the 1st
+                          // visit completes the next upcoming becomes the 2nd visit, etc.
                           if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
-                            const firstVisitLabel = ((cadencePlanDraft[propertyFrequency] || [])[0] || "").trim();
-                            if (firstVisitLabel) return firstVisitLabel;
+                            const label = getCadenceVisitLabel(pastServices.length, cadencePlanDraft[propertyFrequency]);
+                            if (label) return label;
                           }
-                          return (s as any).appointment_service || s.service_type;
+                          return s.service_type;
                         })()}</p>
                         {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
@@ -3908,9 +3959,14 @@ const PropertyDashboard = ({
               {futureProjectedDates.map((d, idx) => {
                 const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                 const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
-                // Visit-of-cycle index — the "next" visit (allUpcoming[0]) is index 0 of the rotation.
-                const visitInCycle = ((idx + 1) % cycleLength) + 1;
-                const note = cycleLength > 1 ? (planArr[visitInCycle - 1] || "").trim() : "";
+                // Cadence rotation index: the "next" visit (allUpcoming[0])
+                // is at rotation slot (pastServices.length % cycleLength).
+                // Each future-projected visit is one step further around the
+                // rotation. (visitInCycle is 1-based for display.)
+                const nextRotIdx = pastServices.length % cycleLength;
+                const slot = (nextRotIdx + (idx + 1)) % cycleLength;
+                const visitInCycle = slot + 1;
+                const note = cycleLength > 1 ? (planArr[slot] || "").trim() : "";
                 return (
                   <div
                     key={`future-${idx}`}

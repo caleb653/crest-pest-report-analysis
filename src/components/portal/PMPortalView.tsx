@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
-import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast } from "@/lib/upcomingUnits";
+import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
@@ -1693,15 +1693,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
                             <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
-                              // For weekly/bi-weekly properties, the first upcoming visit auto-aligns
-                              // with Visit #1 from the Site Map cadence plan so PMs see the same
-                              // rotation label here as in the site map tab.
+                              // Prefer a saved label on the row first.
+                              const savedLabel = (s as any).appointment_service;
+                              if (savedLabel) return savedLabel;
+                              // Auto-rotate the cadence visit label by past-visit count
+                              // so visits roll forward (1 → 2 → 3 → 4 → 1) automatically.
                               if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
                                 const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
-                                const firstVisitLabel = (planMap[propertyFrequency]?.[0] || "").trim();
-                                if (firstVisitLabel) return firstVisitLabel;
+                                const label = getCadenceVisitLabel(pastServices.length, planMap[propertyFrequency]);
+                                if (label) return label;
                               }
-                              return (s as any).appointment_service || s.service_type;
+                              return s.service_type;
                             })()}</p>
                             {!isFirst && <Badge variant="secondary" className="text-xs">{s.scheduling_status || "confirmed"}</Badge>}
                           </div>
@@ -1735,6 +1737,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               </div>
                             </div>
                           )}
+
+                          {/* General Requests — work orders without a specific
+                              unit. Shown as their own line items, NEVER counted
+                              toward unit totals. Only on the next upcoming. */}
+                          {isFirst && (() => {
+                            const generalReqs = getOpenGeneralRequests(requests);
+                            if (generalReqs.length === 0) return null;
+                            return (
+                              <div className="rounded-xl border-2 border-sky-500 bg-sky-50/60 p-4">
+                                <div className="flex items-center gap-1.5 mb-2.5">
+                                  <ClipboardList className="w-4 h-4 text-sky-700" />
+                                  <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                                    General Request{generalReqs.length === 1 ? "" : "s"} ({generalReqs.length})
+                                  </p>
+                                </div>
+                                <ul className="space-y-2">
+                                  {generalReqs.map((r) => {
+                                    const text = (r.description || "")
+                                      .replace(/^Customer:.*?\n/, "")
+                                      .replace(/^\[GENERAL\]\s*/i, "")
+                                      .trim();
+                                    return (
+                                      <li key={r.id} className="text-sm leading-snug flex gap-2.5">
+                                        <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                                        <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })()}
 
                           {/* HOA: Replace work-order chips with a community feedback summary.
                               The community is the focal point, not per-unit counts. */}
@@ -1998,21 +2032,34 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   Following {futureProjectedDates.length} visits ({FREQUENCY_LABELS[propertyFrequency]})
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {futureProjectedDates.map((d, idx) => (
-                    <div
-                      key={`future-${idx}`}
-                      className="flex items-center gap-2.5 bg-muted/40 border border-border rounded-lg px-4 py-3"
-                    >
-                      <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0">
-                        {idx + 2}
-                      </span>
-                      <span className="text-sm font-medium">
-                        {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")
-                          ? formatWeekOfMonth(d)
-                          : formatDate(d)}
-                      </span>
-                    </div>
-                  ))}
+                  {futureProjectedDates.map((d, idx) => {
+                    const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                    const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+                    const planArr = (planMap[propertyFrequency] || []) as string[];
+                    const nextRotIdx = pastServices.length % cycleLength;
+                    const slot = (nextRotIdx + (idx + 1)) % cycleLength;
+                    const note = cycleLength > 1 ? (planArr[slot] || "").trim() : "";
+                    return (
+                      <div
+                        key={`future-${idx}`}
+                        className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-lg px-4 py-3"
+                      >
+                        <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 2}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm font-medium block">
+                            {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")
+                              ? formatWeekOfMonth(d)
+                              : formatDate(d)}
+                          </span>
+                          {note && (
+                            <span className="text-xs text-primary font-semibold block mt-0.5 leading-snug">{note}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <p className="text-xs text-muted-foreground italic mt-2.5">
                   Projected dates only — service details are confirmed closer to each visit.
