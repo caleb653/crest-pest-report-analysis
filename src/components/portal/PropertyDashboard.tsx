@@ -69,14 +69,21 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 };
 
 const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
-// Mirrors the AppointmentReport unit status set so admin + field stay in sync.
-const STATUS_OPTIONS = [
-  "To Be Treated",
-  "Treated - Complete",
-  "Treated - Follow Up",
-  "Inspected: Activity Found",
-  "Inspected: Free and Clear",
-  "Not Treated",
+// Status option sets are now context-aware: technicians only see the choices
+// that make sense for the kind of visit they're filling out (treatment vs.
+// inspection). The underlying canonical values are preserved so existing
+// filtering / follow-up logic keeps working.
+const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "To Be Treated",       label: "To Be Treated" },
+  { value: "Treated - Complete",  label: "Completed" },
+  { value: "Treated - Follow Up", label: "Treated - Follow Up Needed" },
+  { value: "Not Treated",         label: "Not Treated" },
+];
+const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: "To Be Treated",              label: "To Be Inspected" },
+  { value: "Inspected: Free and Clear",  label: "Free and Clear" },
+  { value: "Inspected: Activity Found",  label: "Activity Found - Follow Up Needed" },
+  { value: "Not Treated",                label: "Not Inspected" },
 ];
 
 const TECHNICIAN_OPTIONS = [
@@ -1249,8 +1256,18 @@ const PropertyDashboard = ({
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
-    const SERVICE_STATUSES = ["Complete", "Needs Follow Up", "Not Serviced"];
-    const INSPECTION_STATUSES = ["Free and Clear", "Activity Found"];
+    // Past-service status dropdowns mirror the upcoming-visit options so the
+    // technician sees the same vocabulary regardless of which tab they're in.
+    const SERVICE_STATUSES: { value: string; label: string }[] = [
+      { value: "Complete",          label: "Completed" },
+      { value: "Needs Follow Up",   label: "Treated - Follow Up Needed" },
+      { value: "Not Serviced",      label: "Not Treated" },
+    ];
+    const INSPECTION_STATUSES: { value: string; label: string }[] = [
+      { value: "Free and Clear",  label: "Free and Clear" },
+      { value: "Activity Found",  label: "Activity Found - Follow Up Needed" },
+      { value: "Not Serviced",    label: "Not Inspected" },
+    ];
     const isInspectionUnit = (u: any) => (u?.kind || "service") === "inspection";
     const statusOptionsFor = (u: any) => isInspectionUnit(u) ? INSPECTION_STATUSES : SERVICE_STATUSES;
     const defaultStatusFor = (kind: string) => kind === "inspection" ? "Free and Clear" : "Complete";
@@ -1363,7 +1380,7 @@ const PropertyDashboard = ({
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
+                      {statusOptionsFor(unit).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                     </select>
                     {!isHOA && <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />}
                   </div>
@@ -2012,11 +2029,13 @@ const PropertyDashboard = ({
                             <div className="flex items-center gap-2">
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
-                                  <SelectTrigger className={`h-9 text-sm w-[170px] ${row.status === "Treated - Follow Up" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
+                                  <SelectTrigger className={`h-9 text-sm w-[210px] ${row.status === "Treated - Follow Up" || row.status === "Inspected: Activity Found" ? "text-orange-600 font-semibold" : row.status === "To Be Treated" ? "text-primary font-semibold" : row.status === "Not Treated" ? "text-muted-foreground" : ""}`}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {STATUS_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                                    {(isInspectionWO ? INSPECTION_STATUS_OPTIONS : TREATMENT_STATUS_OPTIONS).map(a => (
+                                      <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
