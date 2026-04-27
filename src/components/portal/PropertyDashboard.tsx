@@ -2303,14 +2303,16 @@ const PropertyDashboard = ({
               Flips status -> "completed", auto-rolls flagged units into a
               follow-up, and dedupes other scheduled rows for today so the
               visit immediately moves into Previous Services. */}
-          {isUpcoming && !isProjected && (
+          {isUpcoming && (
             <Button
               size="sm"
-              className="w-full h-10 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold"
+              className="w-full h-10 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold disabled:opacity-60"
               onClick={() => completeService(s.id)}
+              disabled={isProjected}
+              title={isProjected ? "Schedule a date first to complete this service" : undefined}
             >
               <CheckCircle className="w-4 h-4 mr-1.5" />
-              Complete Service
+              {isProjected ? "Schedule a date to complete" : "Complete Service"}
             </Button>
           )}
           {!isProjected && (
