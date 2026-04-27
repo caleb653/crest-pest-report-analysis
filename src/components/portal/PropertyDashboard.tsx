@@ -33,6 +33,7 @@ import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
+import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 
 // ─── Types ───
 interface PortalProperty {
@@ -3216,6 +3217,7 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0 space-y-5">
         {/* Top row: Property Plan (left) + Property Map (right) */}
+        <PreApplicationNoticeCard propertyId={property.id} />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
             <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
