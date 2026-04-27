@@ -2229,10 +2229,22 @@ const PropertyDashboard = ({
               <ul className="space-y-1.5">
                 {generalReqs.map((r) => {
                   const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  const photos: string[] = Array.isArray((r as any).photos) ? (r as any).photos : [];
                   return (
-                    <li key={r.id} className="text-sm leading-snug flex gap-2">
-                      <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
-                      <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                    <li key={r.id} className="text-sm leading-snug">
+                      <div className="flex gap-2">
+                        <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                        <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                      </div>
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5 ml-1">
+                          {photos.map((url, i) => (
+                            <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                              <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   );
                 })}
