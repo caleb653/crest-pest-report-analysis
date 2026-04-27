@@ -4621,7 +4621,7 @@ const PropertyDashboard = ({
               <FileDown className="w-6 h-6 text-secondary" />Prep Sheets & Signed Authorizations
               <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
             </h3>
-            <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
+            <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {residentTerm}s.</p>
           </div>
           {prepSheets.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available</CardContent></Card>
@@ -4750,7 +4750,7 @@ const PropertyDashboard = ({
                 <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
                 <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+              <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property.</p>
             </div>
             {signedAuthorizations.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
