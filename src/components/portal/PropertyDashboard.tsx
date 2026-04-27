@@ -347,13 +347,16 @@ const PropertyDashboard = ({
   const [rescheduleDate, setRescheduleDate] = useState<string>("");
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
-  const [completionData, setCompletionData] = useState<Record<string, {
+  type CompletionDraft = {
     unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
     products: ProductUsage[];
-  }>>({});
+  };
+  const [completionData, setCompletionData] = useState<Record<string, CompletionDraft>>({});
+  const completionDataRef = useRef<Record<string, CompletionDraft>>({});
+  useEffect(() => { completionDataRef.current = completionData; }, [completionData]);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Tracks per-unit photo uploads:  `${serviceId}:${unitIndex}` while uploading
   const [uploadingUnitPhotoFor, setUploadingUnitPhotoFor] = useState<string | null>(null);
