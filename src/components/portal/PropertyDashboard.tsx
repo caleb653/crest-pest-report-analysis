@@ -2159,6 +2159,20 @@ const PropertyDashboard = ({
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
           />
+          {/* HOA upcoming: full-width Complete Service action.
+              Flips status -> "completed", auto-rolls flagged units into a
+              follow-up, and dedupes other scheduled rows for today so the
+              visit immediately moves into Previous Services. */}
+          {isUpcoming && !isProjected && (
+            <Button
+              size="sm"
+              className="w-full h-10 text-sm bg-green-600 hover:bg-green-700 text-white font-semibold"
+              onClick={() => completeService(s.id)}
+            >
+              <CheckCircle className="w-4 h-4 mr-1.5" />
+              Complete Service
+            </Button>
+          )}
           {!isProjected && (
             <div className="flex gap-1.5 pt-1 border-t border-border mt-2">
               <Button variant="ghost" size="sm" className="h-7 text-xs ml-auto" onClick={() => onDeleteService(s.id)}>
