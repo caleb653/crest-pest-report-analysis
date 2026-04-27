@@ -2765,6 +2765,19 @@ Crest Pest Control`;
                                 </Button>
                               </div>
                             )}
+                            {isReadOnly && (
+                              <div className="flex gap-1 no-print shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => requestClearSignature(proposalIndex)}
+                                  className="h-7 text-xs text-destructive hover:text-destructive"
+                                  title="Clear this signature (admin password required)"
+                                >
+                                  <X className="w-3 h-3 mr-1" /> Clear
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <>
