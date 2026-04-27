@@ -462,13 +462,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (isCommunity) {
       if (!hoaLocation.trim() || !hoaPests.trim()) return;
     } else {
-      if (!hoaAddress.trim() || !hoaLocation.trim() || !hoaPests.trim()) return;
+      if (
+        !hoaAddress.trim() ||
+        !hoaLocation.trim() ||
+        !hoaPests.trim() ||
+        !hoaResidentName.trim() ||
+        !hoaResidentEmail.trim() ||
+        !hoaResidentPhone.trim()
+      ) return;
     }
     setSubmitting(true);
 
     const requestType = isCommunity ? "Community Pest Sighting" : "Service Request";
     const tag = isCommunity ? "[COMMUNITY SIGHTING]" : "[HOA SERVICE REQUEST]";
     const descParts = [
+      !isCommunity ? `Resident: ${hoaResidentName.trim()}` : null,
+      !isCommunity ? `Phone: ${hoaResidentPhone.trim()}` : null,
+      !isCommunity ? `Email: ${hoaResidentEmail.trim()}` : null,
       `Pests: ${hoaPests.trim()}`,
       `Location: ${hoaLocation.trim()}`,
       hoaDetails.trim() ? `Details: ${hoaDetails.trim()}` : null,
@@ -483,6 +493,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       pest_type: hoaPests.trim(),
       location_type: hoaLocation.trim(),
       photos: workOrderPhotos,
+      tenant_email: !isCommunity ? hoaResidentEmail.trim() : null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
@@ -504,6 +515,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setHoaLocation("");
       setHoaPests("");
       setHoaDetails("");
+      setHoaResidentName("");
+      setHoaResidentEmail("");
+      setHoaResidentPhone("");
       setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
