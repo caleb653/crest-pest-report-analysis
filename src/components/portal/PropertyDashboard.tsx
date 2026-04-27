@@ -684,7 +684,7 @@ const PropertyDashboard = ({
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} tenant(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
       } else {
         toast({ title: "Survey created", description: "Email send may have failed — check logs." });
       }
@@ -1437,7 +1437,7 @@ const PropertyDashboard = ({
         toast({ title: "Tenant notified", description: `Email sent to ${workOrder.tenant_email.trim()}` });
       } catch (e) {
         console.error("send-tenant-work-order failed", e);
-        toast({ title: "Tenant email failed", description: "Work order saved, but email could not be sent.", variant: "destructive" });
+        toast({ title: `${ResidentTerm} email failed`, description: "Work order saved, but email could not be sent.", variant: "destructive" });
       }
     }
     setWorkOrder({
