@@ -325,7 +325,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   };
 
   const submitRequest = async () => {
-    if (!unitNumber.trim() || !pestType) return;
+    const isGeneral = requestKind === "general";
+    if (isGeneral) {
+      if (!description.trim()) return;
+    } else if (!unitNumber.trim() || !pestType) return;
     setSubmitting(true);
 
     // Case-insensitive normalization against known units
@@ -335,12 +338,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     const { data: pmInserted, error: err } = await supabase.from("portal_requests").insert({
       link_id: linkId,
       property_id: propertyId,
-      unit_number: canonical,
-      request_type: requestKind === "inspection" ? "Inspection Request" : "Service Request",
-      description: `[${requestKind === "inspection" ? "INSPECTION" : "TREATMENT"}] ${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
-      pest_type: pestType,
-      location_type: locationType || null,
-      occupancy_status: occupancyStatus || null,
+      unit_number: isGeneral ? null : canonical,
+      request_type: isGeneral
+        ? "General Request"
+        : requestKind === "inspection" ? "Inspection Request" : "Service Request",
+      description: isGeneral
+        ? `[GENERAL] ${description.trim()}`
+        : `[${requestKind === "inspection" ? "INSPECTION" : "TREATMENT"}] ${pestType}${locationType ? ` - ${locationType}` : ""}${description ? ` - ${description}` : ""}`,
+      pest_type: isGeneral ? null : pestType,
+      location_type: isGeneral ? null : (locationType || null),
+      occupancy_status: isGeneral ? null : (occupancyStatus || null),
       tenant_email: emailTenant ? tenantEmail.trim() || null : null,
       prep_sheet_id: emailTenant && selectedPrepSheetId ? selectedPrepSheetId : null,
       right_to_treat_requested: emailTenant ? requestRightToTreat : false,
@@ -348,7 +355,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
     if (!err) {
       toast({
-        title: requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
+        title: isGeneral
+          ? "General request submitted"
+          : requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
         description: "Crest will reach out shortly.",
       });
       if (pmInserted?.id) {
