@@ -25,6 +25,7 @@ import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
+import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 
 const PEST_TYPES = [
   "General Pests",
