@@ -2891,7 +2891,7 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0 space-y-5">
-        {/* Property Plan + Customer Preference (top of page) */}
+        {/* Top row: Property Plan (left) + Property Map (right) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
             <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
@@ -3018,7 +3018,89 @@ const PropertyDashboard = ({
             </CardContent>
           </Card>
 
-          {/* Right column: stack POCs + Cadence Plan in the space the Customer Preference card used to occupy. */}
+          {/* Right column: Property Map — sized down with paste support */}
+          <div className="space-y-4">
+            <Card
+              className="overflow-hidden shadow-sm"
+              onPaste={async (e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (const item of Array.from(items)) {
+                  if (item.type.startsWith("image/")) {
+                    const file = item.getAsFile();
+                    if (file) {
+                      const renamed = new File([file], `pasted-map-${Date.now()}.png`, { type: file.type });
+                      onUpdatePropertyImage(property.id, renamed);
+                      toast({ title: "Pasted image uploading...", duration: 1500 });
+                      e.preventDefault();
+                      break;
+                    }
+                  }
+                }
+              }}
+              tabIndex={0}
+            >
+              <div
+                className="relative bg-muted max-w-[520px] mx-auto"
+                style={{ aspectRatio: "3 / 4" }}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer?.files?.[0];
+                  if (file && file.type.startsWith("image/")) {
+                    onUpdatePropertyImage(property.id, file);
+                    toast({ title: "Dropped image uploading...", duration: 1500 });
+                  }
+                }}
+              >
+                {mapUrl ? (
+                  isEditingMap ? (
+                    <MapCanvas
+                      mapUrl={mapUrl}
+                      onSave={handleSaveMapData}
+                      initialData={property.map_data ? (typeof property.map_data === 'string' ? property.map_data : JSON.stringify(property.map_data)) : undefined}
+                    />
+                  ) : property.map_data ? (
+                    <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                  ) : (
+                    <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
+                  )
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 p-4 text-center">
+                    <Image className="w-8 h-8 opacity-40" />
+                    <p className="text-xs">No property image</p>
+                    <p className="text-xs opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
+                  </div>
+                )}
+                {mapUrl && (
+                  <Button
+                    size="sm"
+                    variant={isEditingMap ? "default" : "secondary"}
+                    className="absolute top-2 right-2 h-7 px-2 text-xs shadow-sm"
+                    onClick={() => setIsEditingMap(v => !v)}
+                    disabled={savingMap}
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    {isEditingMap ? (savingMap ? "Saving…" : "Done") : "Edit Map"}
+                  </Button>
+                )}
+                <label className="absolute bottom-2 right-2 bg-background/90 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1 shadow-sm border">
+                  <Image className="w-3.5 h-3.5" />
+                  {uploadingPropertyImage ? "Uploading..." : mapUrl ? "Change" : "Upload"}
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingPropertyImage}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) onUpdatePropertyImage(property.id, f); }} />
+                </label>
+              </div>
+              <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
+                {isEditingMap ? "Add icons, draw, or erase. Changes save automatically." : "Tip: paste a screenshot (⌘/Ctrl + V) or drag & drop an image to replace the site map"}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Below top row: POCs + Cadence Plan + Equipment */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
           <div className="space-y-5">
             {/* Property Point of Contact */}
             <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
@@ -3197,88 +3279,6 @@ const PropertyDashboard = ({
             </Card>
           );
         })()}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="space-y-4">
-            {/* Property Map - sized down with paste support */}
-        <Card
-          className="overflow-hidden shadow-sm"
-          onPaste={async (e) => {
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            for (const item of Array.from(items)) {
-              if (item.type.startsWith("image/")) {
-                const file = item.getAsFile();
-                if (file) {
-                  const renamed = new File([file], `pasted-map-${Date.now()}.png`, { type: file.type });
-                  onUpdatePropertyImage(property.id, renamed);
-                  toast({ title: "Pasted image uploading...", duration: 1500 });
-                  e.preventDefault();
-                  break;
-                }
-              }
-            }
-          }}
-          tabIndex={0}
-        >
-          <div
-            className="relative bg-muted max-w-[520px] mx-auto"
-            style={{ aspectRatio: "3 / 4" }}
-            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const file = e.dataTransfer?.files?.[0];
-              if (file && file.type.startsWith("image/")) {
-                onUpdatePropertyImage(property.id, file);
-                toast({ title: "Dropped image uploading...", duration: 1500 });
-              }
-            }}
-          >
-            {mapUrl ? (
-              isEditingMap ? (
-                <MapCanvas
-                  mapUrl={mapUrl}
-                  onSave={handleSaveMapData}
-                  initialData={property.map_data ? (typeof property.map_data === 'string' ? property.map_data : JSON.stringify(property.map_data)) : undefined}
-                />
-              ) : property.map_data ? (
-                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
-              ) : (
-                <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
-              )
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 p-4 text-center">
-                <Image className="w-8 h-8 opacity-40" />
-                <p className="text-xs">No property image</p>
-                <p className="text-xs opacity-70">Click Upload, drop a file, or paste (⌘V)</p>
-              </div>
-            )}
-            {mapUrl && (
-              <Button
-                size="sm"
-                variant={isEditingMap ? "default" : "secondary"}
-                className="absolute top-2 right-2 h-7 px-2 text-xs shadow-sm"
-                onClick={() => setIsEditingMap(v => !v)}
-                disabled={savingMap}
-              >
-                <Edit className="w-3 h-3 mr-1" />
-                {isEditingMap ? (savingMap ? "Saving…" : "Done") : "Edit Map"}
-              </Button>
-            )}
-            <label className="absolute bottom-2 right-2 bg-background/90 rounded px-2 py-1.5 cursor-pointer hover:bg-background text-xs flex items-center gap-1 shadow-sm border">
-              <Image className="w-3.5 h-3.5" />
-              {uploadingPropertyImage ? "Uploading..." : mapUrl ? "Change" : "Upload"}
-              <input type="file" accept="image/*" className="hidden" disabled={uploadingPropertyImage}
-                onChange={e => { const f = e.target.files?.[0]; if (f) onUpdatePropertyImage(property.id, f); }} />
-            </label>
-          </div>
-          <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
-            {isEditingMap ? "Add icons, draw, or erase. Changes save automatically." : "Tip: paste a screenshot (⌘/Ctrl + V) or drag & drop an image to replace the site map"}
-          </div>
-        </Card>
           </div>
           <div className="space-y-4">
         {/* Equipment */}
