@@ -95,11 +95,7 @@ serve(async (req) => {
       ${reqRow.preferred_date ? `<p style="margin:0 0 14px;"><strong>Preferred date:</strong> ${reqRow.preferred_date}</p>` : ""}
 
       ${prep ? `
-      <div style="margin:18px 0;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
-        <p style="margin:0 0 6px;font-weight:600;">Prep Sheet: ${prep.title}</p>
-        ${prep.description ? `<div style="margin:0 0 10px;font-size:13px;color:#555;line-height:1.55;white-space:pre-wrap;">${formatMultiline(prep.description)}</div>` : ""}
-        ${prep.file_url ? `<a href="${prep.file_url}" style="display:inline-block;background:#95A197;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;font-weight:600;font-size:13px;">View Prep Sheet</a>` : ""}
-      </div>` : ""}
+      <p style="margin:14px 0;font-size:14px;">Please review the attached prep sheet <strong>${escapeHtml(prep.title)}</strong> before your appointment.</p>` : ""}
 
       ${showRtt ? `
       <div style="margin:18px 0;padding:16px;background:#fff8e1;border:1px solid #f0c674;border-radius:8px;">
@@ -119,6 +115,32 @@ serve(async (req) => {
 
     const subject = `Upcoming Pest Service — ${propertyName}${reqRow.unit_number ? ` (Unit ${reqRow.unit_number})` : ""}`;
 
+    // ─── Build PDF attachment from the prep sheet's file_url (if any) ───
+    const attachments: { filename: string; content: string }[] = [];
+    if (prep?.file_url) {
+      try {
+        const fileRes = await fetch(prep.file_url);
+        if (fileRes.ok) {
+          const buf = new Uint8Array(await fileRes.arrayBuffer());
+          let binary = "";
+          const chunkSize = 0x8000;
+          for (let i = 0; i < buf.length; i += chunkSize) {
+            binary += String.fromCharCode.apply(
+              null,
+              Array.from(buf.subarray(i, i + chunkSize)),
+            );
+          }
+          const base64 = btoa(binary);
+          const safeTitle = (prep.title || "prep-sheet").replace(/[^\w\-. ]+/g, "_").trim() || "prep-sheet";
+          attachments.push({ filename: `${safeTitle}.pdf`, content: base64 });
+        } else {
+          console.error("prep file fetch failed:", fileRes.status);
+        }
+      } catch (e) {
+        console.error("prep file fetch threw:", e);
+      }
+    }
+
     const emailRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
@@ -127,6 +149,7 @@ serve(async (req) => {
         to: [tenantEmail],
         subject,
         html,
+        ...(attachments.length > 0 ? { attachments } : {}),
       }),
     });
 
