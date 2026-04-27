@@ -1418,34 +1418,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <Calendar className="w-5 h-5 text-secondary" />Previous Services
                 <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
               </h3>
-              <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-                {isHOA ? (
-                  <>
-                    <button
-                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setPastViewMode("date")}
-                    >Service Reports</button>
-                    <button
-                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setPastViewMode("quarterly")}
-                    >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setPastViewMode("date")}
-                    >By Date</button>
-                    <button
-                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                      onClick={() => setPastViewMode("unit")}
-                    >By Unit</button>
-                  </>
-                )}
-              </div>
+              {isHOA ? null : (
+                <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+                  <button
+                    className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setPastViewMode("date")}
+                  >By Date</button>
+                  <button
+                    className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setPastViewMode("unit")}
+                  >By Unit</button>
+                </div>
+              )}
             </div>
 
-            {pastViewMode === "quarterly" ? (
+            {(!isHOA && pastViewMode === "quarterly") ? (
               quarterlyUpdates.length === 0 ? (
                 <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No quarterly updates uploaded yet</CardContent></Card>
               ) : (

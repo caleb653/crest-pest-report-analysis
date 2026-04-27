@@ -955,6 +955,10 @@ const PropertyDashboard = ({
     const data = completionData[serviceId];
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
       ...r,
+      // Explicitly coerce the two follow-up booleans so they NEVER drop out
+      // of the persisted payload due to type-stripping or undefined values.
+      follow_up_needed: r.follow_up_needed === true,
+      sanitization_concern: r.sanitization_concern === true,
       // Persist any per-unit photos uploaded during completion (strip uploading flags)
       photos: Array.isArray(r.photos)
         ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
@@ -3372,16 +3376,7 @@ const PropertyDashboard = ({
             <Badge variant="secondary" className="text-xs ml-1">{pastServices.length}</Badge>
           </h3>
           {isHOA ? (
-            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-              <button
-                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                onClick={() => setPastViewMode("date")}
-              >Service Reports</button>
-              <button
-                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                onClick={() => setPastViewMode("quarterly")}
-              >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
-            </div>
+            null
           ) : (
             <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
               <button
@@ -3398,7 +3393,7 @@ const PropertyDashboard = ({
 
 
 
-        {pastViewMode === "quarterly" ? (
+        {(!isHOA && pastViewMode === "quarterly") ? (
           <div className="space-y-5">
             {/* Inline upload form so admins can post a quarterly update without leaving the tab */}
             <Card className="border-primary/60 shadow-md">
