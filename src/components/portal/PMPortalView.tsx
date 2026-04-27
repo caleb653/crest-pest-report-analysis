@@ -485,7 +485,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // This must mirror the `nextService` derivation below but only depends on raw state.
   const _propertyForHook = property; // capture latest reference
   const _scheduled = services.filter(s => s.status !== "completed").sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
-  const _past = services.filter(s => s.status === "completed").sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+  const _past = services.filter(s => s.status === "completed").sort((a, b) => {
+    const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
+    if (dateCmp !== 0) return dateCmp;
+    return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
+  });
   const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly" | "monthly" | "bi-monthly") || "bi-weekly";
   const _freqDays = ({ "weekly": 7, "bi-weekly": 14, "monthly": 30, "bi-monthly": 60 } as const)[_freqKey] ?? 14;
   const _nextDateKey: string = (() => {
@@ -560,7 +564,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Match admin portal logic exactly: past = completed, upcoming = everything else
   const pastServices = services
     .filter(s => s.status === "completed")
-    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
+    .sort((a, b) => {
+      // Primary: most recent service date first.
+      const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
+      if (dateCmp !== 0) return dateCmp;
+      // Tiebreaker: most recently completed/updated first (when several
+      // visits share the same date, the one finished latest is "most recent").
+      return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
+    });
   const scheduledServices = services
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
