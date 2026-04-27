@@ -1389,7 +1389,11 @@ const PropertyDashboard = ({
                   </div>
                 </div>
                 {/* HOA mode: hide ALL per-unit treatment details — show only the area name + service type + status. */}
-                {!isHOA && isUnitOpen && (<>
+                {/* In HOA mode we still want past services to show what was treated in
+                    each common area (products, findings) so the report doesn't look
+                    blank after the tech hits Complete. We only hide the body for HOA
+                    on UPCOMING work. Past services always render the full body. */}
+                {isUnitOpen && (<>
                 {/* Card body — left 2/3 fields, right 1/3 unit photos */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
