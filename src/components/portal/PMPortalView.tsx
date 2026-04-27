@@ -29,6 +29,8 @@ import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspecti
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
+import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
+import { parseResidentContact } from "@/lib/residentContact";
 
 const PEST_TYPES = [
   "General Pests",
@@ -2024,7 +2026,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               {r.occupancy_status && <span className="text-[10px] text-muted-foreground">• {r.occupancy_status}</span>}
                             </div>
                           )}
-                          <p className="text-sm mt-1">{r.description}</p>
+                          {(() => {
+                            const contact = parseResidentContact(r);
+                            return (
+                              <>
+                                {contact.hasAny && <ResidentContactCard contact={contact} className="mt-1.5" />}
+                                {contact.cleanedDescription && (
+                                  <p className="text-sm mt-1.5 whitespace-pre-wrap">{contact.cleanedDescription}</p>
+                                )}
+                              </>
+                            );
+                          })()}
                           {Array.isArray((r as any).photos) && (r as any).photos.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {((r as any).photos as string[]).map((url, i) => (

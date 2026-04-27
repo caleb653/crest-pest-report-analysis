@@ -34,6 +34,8 @@ import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
+import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
+import { parseResidentContact } from "@/lib/residentContact";
 
 // ─── Types ───
 interface PortalProperty {
@@ -2484,7 +2486,8 @@ const PropertyDashboard = ({
               </div>
               <ul className="space-y-1.5">
                 {generalReqs.map((r) => {
-                  const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  const contact = parseResidentContact(r as any);
+                  const text = contact.cleanedDescription.replace(/^Customer:.*?\n/, "").trim();
                   const photos: string[] = Array.isArray((r as any).photos) ? (r as any).photos : [];
                   return (
                     <li key={r.id} className="text-sm leading-snug">
@@ -2492,6 +2495,7 @@ const PropertyDashboard = ({
                         <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
                         <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
                       </div>
+                      {contact.hasAny && <ResidentContactCard contact={contact} className="mt-1.5 ml-1" />}
                       {photos.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mt-1.5 ml-1">
                           {photos.map((url, i) => (
@@ -3149,6 +3153,12 @@ const PropertyDashboard = ({
                                             : "Last Service Context"}
                                         </Label>
                                       </div>
+                                      {isWorkOrder && uc.request && (() => {
+                                        const contact = parseResidentContact(uc.request as any);
+                                        return contact.hasAny ? (
+                                          <ResidentContactCard contact={contact} className="mb-2" />
+                                        ) : null;
+                                      })()}
                                       <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
                                         {uc.context}
                                       </p>
