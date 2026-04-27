@@ -820,9 +820,44 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
+        {/* Products — sits right under the summary so PMs see chemistry
+            before drilling into per-unit detail. */}
+        {(() => {
+          const products = normalizeUsageList(s.products_used);
+          if (products.length === 0) return null;
+          return (
+            <div>
+              <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Products Used (this service)</p>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-[11px]">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="text-left px-2 py-1 font-semibold">Product</th>
+                      <th className="text-left px-2 py-1 font-semibold">Applied (diluted)</th>
+                      <th className="text-left px-2 py-1 font-semibold">Undiluted (concentrate)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((p, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-2 py-1 font-medium">{p.name}</td>
+                        <td className="px-2 py-1 text-muted-foreground">
+                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
+                        </td>
+                        <td className="px-2 py-1 text-muted-foreground">
+                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })()}
         {unitDetails.length > 0 && (
           <div>
-            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Areas Treated ({unitDetails.length})</p>
+            <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">Unit Summary ({unitDetails.length})</p>
             <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
                 const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
@@ -946,39 +981,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           </div>
         )}
-        {(() => {
-          const products = normalizeUsageList(s.products_used);
-          if (products.length === 0) return null;
-          return (
-            <div>
-              <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Products Used (this service)</p>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-[11px]">
-                  <thead className="bg-muted/60">
-                    <tr>
-                      <th className="text-left px-2 py-1 font-semibold">Product</th>
-                      <th className="text-left px-2 py-1 font-semibold">Applied (diluted)</th>
-                      <th className="text-left px-2 py-1 font-semibold">Undiluted (concentrate)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p, i) => (
-                      <tr key={i} className="border-t border-border">
-                        <td className="px-2 py-1 font-medium">{p.name}</td>
-                        <td className="px-2 py-1 text-muted-foreground">
-                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
-                        </td>
-                        <td className="px-2 py-1 text-muted-foreground">
-                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })()}
         {unitsPlanned.length > 0 && unitDetails.length === 0 && (
           <div>
             <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Planned Units</p>
