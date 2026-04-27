@@ -1971,6 +1971,16 @@ const PropertyDashboard = ({
           }))
       ).filter((u) => u.unit_number);
       const findingsCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
+      // Roll up products from BOTH the service-level field and each
+      // unit_details[].products_used so HOA boards see the full chemical
+      // total even when techs logged products per home.
+      const hoaProducts: ProductUsage[] = aggregateUsage(collectServiceProductUsage(s)).map((row) => ({
+        name: row.name,
+        applied_amount: row.appliedTotal || null,
+        applied_unit: row.appliedUnit,
+        undiluted_amount: row.undilutedTotal || null,
+        undiluted_unit: row.undilutedUnit,
+      })) as any;
       return (
         <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
           {pmNoteForThis && (
