@@ -444,13 +444,14 @@ const PropertyDashboard = ({
   // Auto-seed the weekly default plan if the property is on weekly cadence
   // and no plan (or all-blank entries) has been saved yet.
   useEffect(() => {
-    if (propertyFrequency !== "weekly") return;
+    const freq = ((property.customer_preferences as any)?.service_frequency as string) || "bi-weekly";
+    if (freq !== "weekly") return;
     const existing = cadencePlanDraft.weekly || [];
     const hasAnyContent = existing.slice(0, 4).some(v => (v || "").trim().length > 0);
     if (hasAnyContent) return;
     setCadencePlanDraft(prev => ({ ...prev, weekly: [...WEEKLY_DEFAULT_PLAN] }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [propertyFrequency, property.id]);
+  }, [property.id, property.customer_preferences]);
 
   useEffect(() => {
     const current = JSON.stringify(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
