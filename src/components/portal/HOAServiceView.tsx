@@ -455,9 +455,6 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                   onChange={(next) => onChangeProducts!(next)}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                Saved to this service only. Add what was (or will be) applied during the visit.
-              </p>
             </div>
           ) : !isUpcoming && displayList.length > 0 && (
             <div>

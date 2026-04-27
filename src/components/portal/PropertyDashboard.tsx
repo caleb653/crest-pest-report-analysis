@@ -1051,10 +1051,29 @@ const PropertyDashboard = ({
   };
 
   // Save service-level products_used (per service date — not per unit).
-  // Debounced lightly via local state in the editor; this just persists what's passed in.
-  const updateServiceProducts = async (serviceId: string, products: ProductUsage[]) => {
-    await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
-    onRefresh();
+  // Debounced — every keystroke in the ProductUsageEditor calls this, so we
+  // batch DB writes (~600ms) and skip onRefresh() between strokes (which
+  // would otherwise race with typing and reset half-typed amounts). The
+  // local override map keeps the editor reflecting the user's input
+  // immediately, even before the parent's `services` prop has reloaded.
+  const productsSaveTimers = useRef<Record<string, any>>({});
+  const [productsOverride, setProductsOverride] = useState<Record<string, ProductUsage[]>>({});
+  const updateServiceProducts = (serviceId: string, products: ProductUsage[]) => {
+    setProductsOverride(prev => ({ ...prev, [serviceId]: products }));
+    if (productsSaveTimers.current[serviceId]) clearTimeout(productsSaveTimers.current[serviceId]);
+    productsSaveTimers.current[serviceId] = setTimeout(async () => {
+      await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+      onRefresh();
+      // Clear the override slightly after refresh so the next render reads
+      // the freshly-loaded value from props.
+      setTimeout(() => {
+        setProductsOverride(prev => {
+          const next = { ...prev };
+          delete next[serviceId];
+          return next;
+        });
+      }, 400);
+    }, 600);
   };
 
   // Save HOA "Visit Notes / Findings" — single combined editable field in the
@@ -2255,7 +2274,9 @@ const PropertyDashboard = ({
   const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-    const products: ProductUsage[] = normalizeUsageList(s.products_used);
+    const products: ProductUsage[] = productsOverride[s.id]
+      ? productsOverride[s.id]
+      : normalizeUsageList(s.products_used);
 
     // Use the SAME merge helper the PM portal uses so admin + PM can never
     // disagree about which units will be treated on the next service.
@@ -3392,7 +3413,6 @@ const PropertyDashboard = ({
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      {/* Property-type mode banner — makes the active view obvious to admins. */}
       {(propertyType === "hoa" || propertyType === "apartments") && (
         <div className={`mb-3 rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold ${
           propertyType === "hoa"
@@ -3401,11 +3421,6 @@ const PropertyDashboard = ({
         }`}>
           <span className="px-1.5 py-0.5 rounded bg-white/70 border border-current/30 text-[10px] uppercase tracking-wider">
             {propertyType === "hoa" ? "HOA Portal" : "Apartment Portal"}
-          </span>
-          <span className="font-normal">
-            {propertyType === "hoa"
-              ? "Community-focused view — common areas are the focal point of each service. Per-unit treatment details are minimized."
-              : "Unit-focused view — each unit shows full treatment detail. Common areas are summarized."}
           </span>
         </div>
       )}
