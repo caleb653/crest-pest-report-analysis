@@ -898,7 +898,12 @@ const PropertyDashboard = ({
     const sourceFromCtx = (unit: string, s: string | undefined): string => {
       if (s === "work_order") return "new-work-order";
       if (pendingRequests.some(r => String(r.unit_number) === String(unit))) return "new-work-order";
-      return "follow-up";
+      // Only mark as follow-up if the most-recent past service explicitly
+      // flagged this unit as "Treated - Follow Up". A unit that was simply
+      // treated last visit (or carried forward) is NOT a follow-up — it
+      // should render as a normal planned area.
+      if (s === "follow_up") return "follow-up";
+      return "planned";
     };
 
     const rows = displayUnits.length > 0
@@ -1074,6 +1079,17 @@ const PropertyDashboard = ({
             summary,
             unitsCount,
             productsList: enrichedProducts,
+            // Full per-unit details so the PM never needs to click into the
+            // portal — the email itself contains everything that happened.
+            unitDetails: unitRows,
+            // Service-level technician findings/notes (kept separate from
+            // the summary so the email can render them as their own blocks).
+            findings: data?.findings || "",
+            notes: data?.notes || "",
+            // Service-level photos uploaded during completion.
+            photos: photosToSave,
+            timeIn: data?.time_in || null,
+            timeOut: data?.time_out || null,
             portalUrl,
           },
         });

@@ -22,6 +22,12 @@ serve(async (req) => {
       summary,
       unitsCount,
       productsList,
+      unitDetails,
+      findings,
+      notes,
+      photos,
+      timeIn,
+      timeOut,
       portalUrl,
     } = await req.json();
 
@@ -52,6 +58,61 @@ serve(async (req) => {
         </tr>`).join("")
       : "";
 
+    const esc = (v: any) => String(v ?? "")
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+    // Per-unit detail cards — one block per area treated, with everything
+    // the PM needs (status, target pest, findings, notes, products, photos)
+    // so they never need to click into the portal.
+    const unitCards = Array.isArray(unitDetails) && unitDetails.length > 0
+      ? unitDetails.map((u: any, i: number) => {
+          const status = String(u.status || "");
+          const isFollowUp = status === "Treated - Follow Up";
+          const statusColor = isFollowUp ? "#c2410c" : "#166534";
+          const statusBg = isFollowUp ? "#fff7ed" : "#f0fdf4";
+          const statusBorder = isFollowUp ? "#fdba74" : "#bbf7d0";
+          const unitProducts = Array.isArray(u.products_used) && u.products_used.length > 0
+            ? `<p style="margin:8px 0 4px;font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.04em;">Products applied here</p>
+               <ul style="margin:0 0 6px 18px;padding:0;font-size:12px;color:#1f2937;">
+                 ${u.products_used.map((p: any) => `<li style="margin:0 0 2px;"><strong>${esc(p.name)}</strong>${p.applied_amount != null ? ` — ${esc(p.applied_amount)} ${esc(p.applied_unit || "")}` : ""}</li>`).join("")}
+               </ul>`
+            : "";
+          const unitPhotos = Array.isArray(u.photos) && u.photos.length > 0
+            ? `<div style="margin-top:8px;">
+                 ${u.photos.map((p: any) => p?.url ? `<img src="${esc(p.url)}" alt="" style="max-width:160px;max-height:160px;border-radius:6px;margin:0 6px 6px 0;border:1px solid #e5e7eb;" />` : "").join("")}
+               </div>`
+            : "";
+          return `
+            <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;margin:0 0 10px;background:#ffffff;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="display:inline-block;background:#2A2A2A;color:#fff;font-weight:700;font-size:12px;padding:2px 8px;border-radius:999px;">${i + 1}</span>
+                <strong style="font-size:14px;color:#111827;">${esc(u.unit_number || "—")}</strong>
+                <span style="margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;color:${statusColor};background:${statusBg};border:1px solid ${statusBorder};padding:2px 8px;border-radius:999px;">${esc(status || "Treated")}</span>
+              </div>
+              <table style="width:100%;font-size:12px;color:#374151;border-collapse:collapse;">
+                ${u.target_pest ? `<tr><td style="padding:2px 0;color:#6b7280;width:120px;">Target pest</td><td style="padding:2px 0;font-weight:600;">${esc(u.target_pest)}</td></tr>` : ""}
+                ${u.pest_activity && u.pest_activity !== "None" ? `<tr><td style="padding:2px 0;color:#6b7280;">Pest activity</td><td style="padding:2px 0;">${esc(u.pest_activity)}</td></tr>` : ""}
+                ${u.findings ? `<tr><td style="padding:2px 0;color:#6b7280;vertical-align:top;">Findings</td><td style="padding:2px 0;white-space:pre-wrap;">${esc(u.findings)}</td></tr>` : ""}
+                ${u.notes ? `<tr><td style="padding:2px 0;color:#6b7280;vertical-align:top;">Notes</td><td style="padding:2px 0;white-space:pre-wrap;">${esc(u.notes)}</td></tr>` : ""}
+              </table>
+              ${unitProducts}
+              ${unitPhotos}
+            </div>`;
+        }).join("")
+      : "";
+
+    const servicePhotos = Array.isArray(photos) && photos.length > 0
+      ? `<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">Service photos</p>
+         <div style="margin-bottom:16px;">
+           ${photos.map((p: any) => p?.url ? `<img src="${esc(p.url)}" alt="" style="max-width:200px;max-height:200px;border-radius:6px;margin:0 8px 8px 0;border:1px solid #e5e7eb;" />` : "").join("")}
+         </div>`
+      : "";
+
+    const timeRange = timeIn && timeOut
+      ? `${timeIn} - ${timeOut}`
+      : (timeIn || timeOut || "");
+
     const html = `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;">
         <div style="background:#2A2A2A;color:#fff;padding:18px 24px;border-radius:8px 8px 0 0;">
@@ -59,19 +120,23 @@ serve(async (req) => {
           <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">Crest Pest Control</p>
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;padding:22px 24px;border-radius:0 0 8px 8px;">
-          <p style="margin:0 0 12px;font-size:14px;color:#374151;">Hello${clientName ? ` ${clientName}` : ""},</p>
+          <p style="margin:0 0 12px;font-size:14px;color:#374151;">Hello${clientName ? ` ${esc(clientName)}` : ""},</p>
           <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.55;">
-            We've completed a service at <strong>${propertyName || "your property"}</strong>. A summary is below.
+            We've completed a service at <strong>${esc(propertyName || "your property")}</strong>. The full report is below — everything that was done is included in this email so you don't need to click through.
           </p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1f2937;margin-bottom:16px;">
-            ${serviceType ? `<tr><td style="padding:6px 0;color:#6b7280;width:140px;">Service</td><td style="padding:6px 0;font-weight:600;">${serviceType}</td></tr>` : ""}
-            ${serviceDate ? `<tr><td style="padding:6px 0;color:#6b7280;">Date</td><td style="padding:6px 0;font-weight:600;">${serviceDate}</td></tr>` : ""}
-            ${technician ? `<tr><td style="padding:6px 0;color:#6b7280;">Technician</td><td style="padding:6px 0;font-weight:600;">${technician}</td></tr>` : ""}
+            ${serviceType ? `<tr><td style="padding:6px 0;color:#6b7280;width:140px;">Service</td><td style="padding:6px 0;font-weight:600;">${esc(serviceType)}</td></tr>` : ""}
+            ${serviceDate ? `<tr><td style="padding:6px 0;color:#6b7280;">Date</td><td style="padding:6px 0;font-weight:600;">${esc(serviceDate)}</td></tr>` : ""}
+            ${technician ? `<tr><td style="padding:6px 0;color:#6b7280;">Technician</td><td style="padding:6px 0;font-weight:600;">${esc(technician)}</td></tr>` : ""}
+            ${timeRange ? `<tr><td style="padding:6px 0;color:#6b7280;">On site</td><td style="padding:6px 0;font-weight:600;">${esc(timeRange)}</td></tr>` : ""}
             ${unitsCount != null ? `<tr><td style="padding:6px 0;color:#6b7280;">Areas serviced</td><td style="padding:6px 0;font-weight:600;">${unitsCount}</td></tr>` : ""}
           </table>
-          ${summary ? `<div style="background:#f9fafb;border-left:3px solid #2A2A2A;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${summary}</p></div>` : ""}
+          ${summary ? `<div style="background:#f9fafb;border-left:3px solid #2A2A2A;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Summary</p><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${esc(summary)}</p></div>` : ""}
+          ${findings ? `<div style="background:#f9fafb;border-left:3px solid #95A197;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Technician Findings</p><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${esc(findings)}</p></div>` : ""}
+          ${notes ? `<div style="background:#f9fafb;border-left:3px solid #95A197;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Service Notes</p><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${esc(notes)}</p></div>` : ""}
+          ${unitCards ? `<p style="margin:18px 0 8px;font-size:13px;font-weight:700;color:#111827;">Areas Treated</p>${unitCards}` : ""}
           ${safeProductsRows ? `
-            <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used (with EPA Reg # &amp; dilution detail)</p>
+            <p style="margin:18px 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used (with EPA Reg # &amp; dilution detail)</p>
             <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1f2937;border:1px solid #eee;border-radius:6px;overflow:hidden;margin-bottom:16px;">
               <thead style="background:#f3f4f6;"><tr>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Product</th>
@@ -83,11 +148,12 @@ serve(async (req) => {
               </tr></thead>
               <tbody>${safeProductsRows}</tbody>
             </table>` : ""}
+          ${servicePhotos}
           ${portalUrl ? `
             <div style="text-align:center;margin:22px 0 8px;">
-              <a href="${portalUrl}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">View Full Report</a>
+              <a href="${esc(portalUrl)}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">Open Portal (optional)</a>
             </div>
-            <p style="text-align:center;margin:0;font-size:12px;color:#6b7280;">Or open: <a href="${portalUrl}" style="color:#2A2A2A;">${portalUrl}</a></p>
+            <p style="text-align:center;margin:0;font-size:12px;color:#6b7280;">All details are included above — the portal is just for history &amp; messaging.</p>
           ` : ""}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:22px 0 12px;" />
           <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:12px 14px;margin:0 0 14px;">
