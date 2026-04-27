@@ -168,9 +168,8 @@ const PropertyDashboard = ({
   propertyType = "apartments",
 }: Props) => {
   const isHOA = propertyType === "hoa";
-  // For HOA: "date" = Service Reports, "quarterly" = Quarterly Updates.
-  // For apartments: "date" / "unit" toggle stays unchanged.
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
+  // For apartments: "date" / "unit" toggle. HOA shows only "date".
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   const residentTerm = isHOA ? "resident" : "tenant";
   const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
@@ -250,13 +249,6 @@ const PropertyDashboard = ({
   // Survey state — mirrors PMPortalView so admin has full survey workflow
   const [surveys, setSurveys] = useState<any[]>([]);
 
-  // Quarterly Updates (videos + comments)
-  const [quarterlyUpdates, setQuarterlyUpdates] = useState<any[]>([]);
-  const [quTitle, setQuTitle] = useState("");
-  const [quComment, setQuComment] = useState("");
-  const [quUploadedBy, setQuUploadedBy] = useState("");
-  const [quFile, setQuFile] = useState<File | null>(null);
-  const [quUploading, setQuUploading] = useState(false);
   const [surveyResponses, setSurveyResponses] = useState<any[]>([]);
   const [surveyTitle, setSurveyTitle] = useState("Pest Activity Survey");
   const [surveyIntro, setSurveyIntro] = useState(DEFAULT_SURVEY_INTRO);
