@@ -26,6 +26,7 @@ import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestio
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 
 const PEST_TYPES = [
+  "General Pests",
   "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets",
   "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps",
   "Silverfish", "Drain Flies", "Pantry Pests", "Other",

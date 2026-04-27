@@ -53,7 +53,7 @@ interface PortalLink {
 
 // ─── Constants ───
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
-const PEST_TYPES = ["Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets", "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps", "Silverfish", "Other"];
+const PEST_TYPES = ["General Pests", "Ants", "Spiders", "American Roaches", "German Cockroaches", "Crickets", "Earwigs", "Rodents", "Bed Bugs", "Fleas", "Mosquitoes", "Wasps", "Silverfish", "Other"];
 const SERVICE_TYPES = [
   "Commercial General Pest Control", "General Pest Control", "Rodent Trapping",
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
