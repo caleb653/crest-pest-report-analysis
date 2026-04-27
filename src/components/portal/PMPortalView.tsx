@@ -683,6 +683,36 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
     const products = normalizeUsageList(s.products_used);
 
+    // ─── HOA past-service layout ───
+    // Boards care about "what was treated across the community" — not a
+    // dense per-unit grid. Render the dedicated HOA layout (map + findings
+    // + small unit chips) instead of the apartment-style report.
+    if (isHOA) {
+      const hoaUnits: HOAUnitItem[] =
+        unitDetails.length > 0
+          ? unitDetails.map((u: any) => ({
+              unit_number: String(u.unit_number || "").trim(),
+              status: u.status || undefined,
+              follow_up_needed: !!u.follow_up_needed,
+            })).filter((u) => u.unit_number)
+          : unitsPlanned.map((u) => ({ unit_number: String(u || "").trim() }))
+              .filter((u) => u.unit_number);
+      return (
+        <div className="px-3 pb-3 border-t pt-3">
+          <HOAServiceView
+            mode="pm"
+            isUpcoming={false}
+            mapUrl={mapUrl}
+            mapData={property.map_data}
+            findings={summaryCombined}
+            technician={s.technician}
+            products={products}
+            units={hoaUnits}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
         {/* For HOA: prepend the community site map so it's the dominant
