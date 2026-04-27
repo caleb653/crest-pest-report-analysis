@@ -55,6 +55,23 @@ const sortNumeric = (arr: string[]) =>
   arr.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
 /**
+ * Detect a "General Request" — a work order submitted without a specific
+ * unit (e.g. "the front gate is broken", "spider webs around the pool").
+ * General requests must NEVER be merged into the unit list (they have no
+ * unit number) but MUST be surfaced as their own line item on the next
+ * upcoming service so they don't get lost.
+ */
+export const isGeneralRequest = (r: RequestRow | null | undefined): boolean => {
+  if (!r) return false;
+  const type = (r.request_type || "").toLowerCase();
+  if (type.includes("general")) return true;
+  // Legacy fallback: missing unit_number AND description tagged [GENERAL]
+  const unit = (r.unit_number || "").toString().trim();
+  if (!unit && (r.description || "").toUpperCase().includes("[GENERAL]")) return true;
+  return false;
+};
+
+/**
  * Normalize a unit number for set/dedupe purposes.
  * Ensures "5", " 5 ", "5 " all collapse to a single unique unit.
  * Returns "" for empty/nullish input so callers can filter it out.
@@ -71,7 +88,11 @@ export function getOpenRequests(requests: RequestRow[] | null | undefined): Requ
   (requests || [])
     .filter(r => {
       const status = (r?.status || "").toLowerCase();
-      return status === "pending" || status === "in_progress";
+      if (status !== "pending" && status !== "in_progress") return false;
+      // General requests are surfaced separately (see getOpenGeneralRequests)
+      // — they never count as a unit and must never enter the merged unit list.
+      if (isGeneralRequest(r)) return false;
+      return true;
     })
     // Most recent first so we pick the latest detail when a unit has multiple open requests.
     .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""))
@@ -82,6 +103,25 @@ export function getOpenRequests(requests: RequestRow[] | null | undefined): Requ
       result.push(r);
     });
   return result;
+}
+
+/**
+ * Open GENERAL requests — work orders without a specific unit. Each one
+ * is shown as its own line on the next upcoming service so the technician
+ * + PM see the request, but they are NEVER merged into the unit list and
+ * NEVER added to the "units to treat" count.
+ * Most-recent first.
+ */
+export function getOpenGeneralRequests(
+  requests: RequestRow[] | null | undefined
+): RequestRow[] {
+  return (requests || [])
+    .filter(r => {
+      const status = (r?.status || "").toLowerCase();
+      if (status !== "pending" && status !== "in_progress") return false;
+      return isGeneralRequest(r);
+    })
+    .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
 }
 
 /** Open work-order units (pending or in-progress requests). */
