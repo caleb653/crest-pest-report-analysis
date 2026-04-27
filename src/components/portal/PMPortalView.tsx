@@ -1323,7 +1323,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               >
                                 {/* Header row: service type + date */}
                                 <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border">
-                                  <span className="font-semibold text-sm">{(service as any).appointment_service || service.service_type}</span>
+                                  <span className="font-semibold text-sm">{(() => {
+                                    if ((service as any).appointment_service) return (service as any).appointment_service;
+                                    const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                                    if (cycleLen <= 1) return service.service_type;
+                                    const idx = pastServices.findIndex(p => p.id === service.id);
+                                    if (idx < 0) return service.service_type;
+                                    const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
+                                    const planMap2 = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
+                                    const planArr2 = (planMap2[propertyFrequency] || []) as string[];
+                                    return (planArr2[rotIdx] || "").trim() || service.service_type;
+                                  })()}</span>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                                     {formatShortDate(service.service_date)}
                                   </span>
