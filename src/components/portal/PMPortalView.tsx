@@ -598,6 +598,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
   const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
+  // HOA mode reframes the entire portal away from "units / tenants" toward
+  // "common areas / homeowners / community" wording. Apartment portals are
+  // unaffected so we don't disturb that flow.
+  const isHOA = ((property.customer_preferences as any)?.property_type) === "hoa";
+  const portalRoleLabel = isHOA ? "HOA Board Portal" : "Property Manager Portal";
+  const residentTerm = isHOA ? "homeowner" : "tenant";
+  const ResidentTerm = isHOA ? "Homeowner" : "Tenant";
+
   // Show ONE detailed "next service" + 5 future date-only projections.
   // Rule: take the soonest scheduled service as the next visit (ignore far-future scheduled rows
   // beyond #1). Then project the following 5 visits = next.date + N * frequency.
@@ -981,19 +989,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
-            <span>Site Map and Plan</span>
+            <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Calendar className="w-5 h-5" />
-            <span>Previous Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
+            <span>{isHOA ? "Community Visits" : "Previous Services"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{pastServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Bug className="w-5 h-5" />
-            <span>Request Work Order</span>
+            <span>{isHOA ? "Request Service Call" : "Request Work Order"}</span>
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <ClipboardList className="w-5 h-5" />
-            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
+            <span>{isHOA ? "Upcoming Visits" : "Upcoming Services"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upcomingServices.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileDown className="w-5 h-5" />
@@ -1001,7 +1009,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           </TabsTrigger>
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <BarChart3 className="w-5 h-5" />
-            <span>Survey Results <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
+            <span>{isHOA ? "Resident Survey" : "Survey Results"} <Badge variant="secondary" className="ml-1 text-[10px] h-4">{surveyResponses.filter(r => r.submitted_at).length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Video className="w-5 h-5" />
@@ -1044,6 +1052,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
                   if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
+                  // HOA mode: hide per-unit economics — boards care about the
+                  // community-wide service fee, not which homes get included.
+                  if (isHOA) {
+                    if (!cfg.base_service_price) return null;
+                    return (
+                      <div className="grid grid-cols-1 gap-2 pt-1">
+                        <div className="rounded-lg border border-border bg-background p-2.5">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                            Community Service Fee / Visit
+                          </p>
+                          <p className="text-base font-bold mt-0.5">
+                            {formatOverageMoney(cfg.base_service_price!)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                       <div className="rounded-lg border border-border bg-background p-2.5">
@@ -1076,6 +1101,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
                   if (!cfg.included_units) return null;
+                  // HOA mode: skip the per-unit footnote — irrelevant for boards.
+                  if (isHOA) return null;
                   return (
                     <p className="text-[11px] text-muted-foreground italic">
                       Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
@@ -1419,9 +1446,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+                  <ClipboardList className="w-4 h-4 text-primary" />{isHOA ? "Request a Service Call" : "Submit a Work Order"}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
+                <p className="text-xs text-muted-foreground">
+                  {isHOA
+                    ? "Tell us what's happening in the community and we'll get a tech out."
+                    : "Tell us what's going on and we'll schedule service."}
+                </p>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Inspection vs Treatment — must come first so the rest of the
@@ -1451,10 +1482,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
 
                 <div>
-                  <Label className="text-sm">Unit, Property, or Area *</Label>
+                  <Label className="text-sm">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
                   <Input
                     list="pm-known-units"
-                    placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                    placeholder={isHOA
+                      ? "e.g. Clubhouse, Pool deck, 142 Maple Ln, Lot 27"
+                      : "Type unit or area (e.g. Unit 204, Lobby, Pool deck)"}
                     value={unitNumber}
                     onChange={e => setUnitNumber(e.target.value)}
                     autoComplete="off"
@@ -1487,16 +1520,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-sm">Vacant or Occupied Unit</Label>
-                  <div className="flex gap-2 mt-1">
-                    {(["Occupied", "Vacant"] as const).map(opt => (
-                      <button key={opt} type="button"
-                        className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
-                        onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
-                    ))}
+                {/* Vacant / Occupied is unit-focused — not relevant for HOA common areas / homes. */}
+                {!isHOA && (
+                  <div>
+                    <Label className="text-sm">Vacant or Occupied Unit</Label>
+                    <div className="flex gap-2 mt-1">
+                      {(["Occupied", "Vacant"] as const).map(opt => (
+                        <button key={opt} type="button"
+                          className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                          onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <Label className="text-sm">Preferred Day</Label>
@@ -1527,15 +1563,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
-                    <span className="text-sm font-medium">Email tenant?</span>
+                    <span className="text-sm font-medium">{isHOA ? "Email homeowner?" : "Email tenant?"}</span>
                   </label>
 
                   <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
                     <div>
-                      <Label className="text-xs">Tenant Email</Label>
+                      <Label className="text-xs">{isHOA ? "Homeowner Email" : "Tenant Email"}</Label>
                       <Input
                         type="email"
-                        placeholder="tenant@example.com"
+                        placeholder={isHOA ? "homeowner@example.com" : "tenant@example.com"}
                         value={tenantEmail}
                         onChange={e => setTenantEmail(e.target.value)}
                         disabled={!emailTenant}
@@ -1567,7 +1603,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       />
                       <span className="text-xs leading-snug">
                         Send <strong>"Right to Treat"</strong> signature page<br />
-                        <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                        <span className="text-muted-foreground">Includes a small signable link in the email so the {residentTerm} can authorize entry & treatment of their {isHOA ? "home" : "unit"}.</span>
                       </span>
                     </label>
                   </div>
@@ -1575,7 +1611,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
+                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : (isHOA ? "Service Call Request" : "Work Order")}
                 </Button>
               </CardContent>
             </Card>
@@ -1586,11 +1622,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="flex items-start gap-2">
                   <ExternalLink className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">Tenant Request Link</p>
+                    <p className="text-sm font-semibold">{isHOA ? "Resident Request Link" : "Tenant Request Link"}</p>
                     <p className="text-xs text-muted-foreground">
-                      Share this with a tenant or community member so they can submit a single
-                      service request. They won't see anyone else's history — it just gets added
-                      to the next service.
+                      {isHOA
+                        ? "Share this with any homeowner or resident so they can flag an issue in the community. They won't see anyone else's submissions — their request gets folded into the next visit."
+                        : "Share this with a tenant or community member so they can submit a single service request. They won't see anyone else's history — it just gets added to the next service."}
                     </p>
                   </div>
                 </div>
@@ -1603,11 +1639,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     if (!linkToken) return;
                     const url = `${window.location.origin}/tenant/${linkToken}`;
                     navigator.clipboard.writeText(url);
-                    toast({ title: "Link copied", description: "Send this to your tenant or resident." });
+                    toast({ title: "Link copied", description: isHOA ? "Send this to a homeowner or resident." : "Send this to your tenant or resident." });
                   }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  Copy Tenant Request Link
+                  {isHOA ? "Copy Resident Request Link" : "Copy Tenant Request Link"}
                 </Button>
               </CardContent>
             </Card>
@@ -2033,7 +2069,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <FileDown className="w-6 h-6 text-secondary" />Prep Sheets
                 <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with tenants.</p>
+              <p className="text-xs text-muted-foreground mt-1">View, download, or copy a link to share with {isHOA ? "homeowners" : "tenants"}.</p>
             </div>
             {prepSheets.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No prep sheets available yet</CardContent></Card>
@@ -2116,10 +2152,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Send className="w-4 h-4 text-primary" />Send Tenant Pest Survey
+                  <Send className="w-4 h-4 text-primary" />{isHOA ? "Send Community Pest Survey" : "Send Tenant Pest Survey"}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  Tenants get a short 5-question form. Results aggregate below as they respond.
+                  {isHOA
+                    ? "Homeowners get a short 5-question form so the board can spot community-wide pest trends. Results aggregate below as they respond."
+                    : "Tenants get a short 5-question form. Results aggregate below as they respond."}
                 </p>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2132,15 +2170,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   <Textarea rows={3} value={surveyIntro} onChange={(e) => setSurveyIntro(e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-sm">Tenant Emails</Label>
+                  <Label className="text-sm">{isHOA ? "Homeowner Emails" : "Tenant Emails"}</Label>
                   <Textarea
                     rows={4}
-                    placeholder="Paste tenant emails — one per line, or comma-separated"
+                    placeholder={isHOA
+                      ? "Paste homeowner emails — one per line, or comma-separated"
+                      : "Paste tenant emails — one per line, or comma-separated"}
                     value={surveyEmails}
                     onChange={(e) => setSurveyEmails(e.target.value)}
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Each tenant gets their own unique link so you can see who responded.
+                    Each {residentTerm} gets their own unique link so you can see who responded.
                   </p>
                 </div>
                 <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
@@ -2166,7 +2206,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   if (submitted.length === 0) {
                     return (
                       <p className="text-sm text-muted-foreground text-center py-6">
-                        No responses yet. Once tenants submit, their answers will roll up here.
+                        No responses yet. Once {residentTerm}s submit, their answers will roll up here.
                       </p>
                     );
                   }
@@ -2444,7 +2484,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           <img src={crestLogo} alt="Crest Pest Control" className="h-9" />
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-base truncate">{property.name}</h1>
-            <p className="text-xs text-muted-foreground">Property Manager Portal</p>
+            <p className="text-xs text-muted-foreground">{portalRoleLabel}</p>
           </div>
         </div>
       </div>
