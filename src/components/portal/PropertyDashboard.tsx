@@ -753,6 +753,35 @@ const PropertyDashboard = ({
     if (allUpcoming.length > 0) setExpandedUpcomingId(allUpcoming[0].id);
   }, [property.id]);
 
+  // Back-fill `appointment_service` on legacy past services that were
+  // completed before we started persisting the cadence visit label, so the
+  // correct title is stored in the DB (and shows up in emails, exports, etc).
+  // Runs once whenever the past list / cadence plan changes — safe to no-op.
+  useEffect(() => {
+    const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+    if (cycleLen <= 1) return;
+    const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+    if (!planArr.some(p => (p || "").trim())) return;
+    const updates: Array<{ id: string; appointment_service: string }> = [];
+    pastServices.forEach((s, i) => {
+      if ((s as any).appointment_service) return;
+      const rotIdx = (pastServices.length - 1 - i) % cycleLen;
+      const label = (planArr[rotIdx] || "").trim();
+      if (label) updates.push({ id: s.id, appointment_service: label });
+    });
+    if (updates.length === 0) return;
+    (async () => {
+      try {
+        await Promise.all(
+          updates.map(u =>
+            supabase.from("portal_services").update({ appointment_service: u.appointment_service }).eq("id", u.id)
+          )
+        );
+      } catch (e) { console.warn("backfill appointment_service failed", e); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pastServices.length, propertyFrequency, JSON.stringify(cadencePlanDraft[propertyFrequency] || [])]);
+
   const allUnits = (() => {
     const units = new Set<string>();
     propServices.forEach(s => {
@@ -3379,13 +3408,24 @@ const PropertyDashboard = ({
               {pastServices.map((s, i) => {
                 const isFirst = i === 0;
                 const isExpanded = expandedPastId === s.id;
+                // Back-fill the cadence visit label for legacy past services that
+                // were completed before appointment_service was being persisted.
+                // pastServices is ordered most-recent first → rotation index for
+                // entry i is (pastServices.length - 1 - i) % cycleLength.
+                const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
+                const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+                const cadenceLabel =
+                  rotIdx >= 0 ? ((planArr[rotIdx] || "").trim()) : "";
+                const displayTitle =
+                  (s as any).appointment_service || cadenceLabel || s.service_type;
                 return (
                   <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                     <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-xs bg-primary text-primary-foreground">Most Recent</Badge>}
-                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
+                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{displayTitle}</p>
                           <Badge variant="default" className="text-xs">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
                           {(() => {
@@ -3438,7 +3478,16 @@ const PropertyDashboard = ({
                         <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
                           <div className="flex items-center justify-between">
-                            <span className="font-medium">{service.service_type}</span>
+                            <span className="font-medium">{(() => {
+                              if ((service as any).appointment_service) return (service as any).appointment_service;
+                              const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                              if (cycleLen <= 1) return service.service_type;
+                              const idx = pastServices.findIndex(p => p.id === service.id);
+                              if (idx < 0) return service.service_type;
+                              const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
+                              const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+                              return (planArr[rotIdx] || "").trim() || service.service_type;
+                            })()}</span>
                             <span className="text-muted-foreground">{formatShortDate(service.service_date)}</span>
                           </div>
                           {unitDetail && (
