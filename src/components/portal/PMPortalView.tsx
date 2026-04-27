@@ -598,6 +598,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";
   const propertyFrequencyDays = FREQUENCY_DAYS[propertyFrequency] ?? 14;
 
+  // HOA mode reframes the entire portal away from "units / tenants" toward
+  // "common areas / homeowners / community" wording. Apartment portals are
+  // unaffected so we don't disturb that flow.
+  const isHOA = ((property.customer_preferences as any)?.property_type) === "hoa";
+  const portalRoleLabel = isHOA ? "HOA Board Portal" : "Property Manager Portal";
+  const residentTerm = isHOA ? "homeowner" : "tenant";
+  const ResidentTerm = isHOA ? "Homeowner" : "Tenant";
+
   // Show ONE detailed "next service" + 5 future date-only projections.
   // Rule: take the soonest scheduled service as the next visit (ignore far-future scheduled rows
   // beyond #1). Then project the following 5 visits = next.date + N * frequency.
