@@ -1023,6 +1023,17 @@ const PropertyDashboard = ({
           .in("status", ["pending", "in_progress"])
           .in("unit_number", treatedUnits);
       }
+      // Also auto-close any open GENERAL requests (work orders without a
+      // unit_number, e.g. "front gate is broken"). Without this they would
+      // bleed into EVERY following upcoming service forever, which is what
+      // makes general requests appear on multiple services in a row.
+      // A general request shown on a completed visit is considered handled.
+      await supabase
+        .from("portal_requests")
+        .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+        .eq("property_id", property.id)
+        .in("status", ["pending", "in_progress"])
+        .eq("request_type", "general_request");
     } catch (e) {
       console.warn("auto-resolve work orders failed", e);
     }
