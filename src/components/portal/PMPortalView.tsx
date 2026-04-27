@@ -1104,29 +1104,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 )}
               </CardContent>
             </Card>
-            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
-              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-primary" />
-                  Customer Preference
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div>
-                  <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
-                    Notes for Crest
-                  </Label>
-                  <Textarea
-                    placeholder="Add or update preferences (e.g. dog park to be treated every visit, gate code, access notes)…"
-                    value={pmPrefDraft}
-                    onChange={e => setPmPrefDraft(e.target.value)}
-                    rows={3}
-                    className="text-sm"
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1">Saves automatically.</p>
-                </div>
-              </CardContent>
-            </Card>
             </div>
 
             {/* Property Map — top right */}
