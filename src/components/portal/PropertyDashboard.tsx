@@ -3379,13 +3379,24 @@ const PropertyDashboard = ({
               {pastServices.map((s, i) => {
                 const isFirst = i === 0;
                 const isExpanded = expandedPastId === s.id;
+                // Back-fill the cadence visit label for legacy past services that
+                // were completed before appointment_service was being persisted.
+                // pastServices is ordered most-recent first → rotation index for
+                // entry i is (pastServices.length - 1 - i) % cycleLength.
+                const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
+                const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
+                const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
+                const cadenceLabel =
+                  rotIdx >= 0 ? ((planArr[rotIdx] || "").trim()) : "";
+                const displayTitle =
+                  (s as any).appointment_service || cadenceLabel || s.service_type;
                 return (
                   <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                     <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-xs bg-primary text-primary-foreground">Most Recent</Badge>}
-                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
+                          <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{displayTitle}</p>
                           <Badge variant="default" className="text-xs">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
                           {(() => {
