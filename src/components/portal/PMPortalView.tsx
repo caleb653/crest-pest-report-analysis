@@ -1826,6 +1826,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                   ? unitContexts.map((uc) => ({
                                       unit_number: String(uc.unit_number || "").trim(),
                                       follow_up_needed: uc.source === "follow_up",
+                                      target_pest: uc.target_pest || (uc as any)?.request?.pest_type || "",
                                     }))
                                   : (Array.isArray(s.units_planned) ? (s.units_planned as string[]) : [])
                                       .map((u) => ({ unit_number: String(u || "").trim() }))
