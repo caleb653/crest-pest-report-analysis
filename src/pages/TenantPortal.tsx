@@ -283,17 +283,6 @@ const TenantPortal = () => {
               </div>
             </div>
 
-            {/* When ready — free-text */}
-            <div>
-              <Label className="text-sm">Preferred Day</Label>
-              <Input
-                placeholder="e.g. Next service, next few weeks, Tuesday afternoon, ASAP…"
-                value={preferredDate}
-                onChange={e => setPreferredDate(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-0.5">Leave blank if any time works</p>
-            </div>
-
             {/* Additional comments */}
             <div>
               <Label className="text-sm">Additional Details</Label>
