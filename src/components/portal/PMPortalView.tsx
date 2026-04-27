@@ -1064,7 +1064,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       </div>
                       <div className="rounded-lg border border-border bg-background p-2.5">
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                          Base Price / Service
+                          Base Price / Every 4 Weeks
                         </p>
                         <p className="text-base font-bold mt-0.5">
                           {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}

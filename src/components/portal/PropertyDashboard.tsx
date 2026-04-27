@@ -2424,7 +2424,7 @@ const PropertyDashboard = ({
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                    Base Price / Service
+                    Base Price / Every 4 Weeks
                   </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
