@@ -153,8 +153,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [prepEmailDraft, setPrepEmailDraft] = useState<Record<string, string>>({});
   const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
   // For non-HOA portals: "date" / "unit" (existing behavior).
-  // For HOA portals: "date" (= Service Reports) / "quarterly" (= Quarterly Updates).
-  const [pastViewMode, setPastViewMode] = useState<"date" | "unit" | "quarterly">("date");
+  const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
   const toggleUnitKey = (key: string) =>
@@ -193,13 +192,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
-  // Quarterly Updates state — videos + comments uploaded for this property
-  const [quarterlyUpdates, setQuarterlyUpdates] = useState<any[]>([]);
-  const [quTitle, setQuTitle] = useState("");
-  const [quComment, setQuComment] = useState("");
-  const [quUploadedBy, setQuUploadedBy] = useState("");
-  const [quFile, setQuFile] = useState<File | null>(null);
-  const [quUploading, setQuUploading] = useState(false);
 
   useEffect(() => {
     loadAll();
