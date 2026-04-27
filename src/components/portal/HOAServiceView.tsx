@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2 } from "lucide-react";
-import { normalizeUsageList } from "@/lib/productCatalog";
+import { normalizeUsageList, type ProductUsage } from "@/lib/productCatalog";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { useState, useEffect, useRef } from "react";
 
@@ -68,8 +69,10 @@ export interface HOAServiceViewProps {
   /** Called by admin to persist updated findings. PM does not pass this. */
   onChangeFindings?: (next: string) => void;
 
-  /** Products used on this visit (ignored when isUpcoming). */
+  /** Products used on this visit. */
   products?: any[];
+  /** Admin-only — edit products used for this service (works for upcoming + past). */
+  onChangeProducts?: (next: ProductUsage[]) => void;
 
   /** Units / homes scheduled or treated on this visit. */
   units: HOAUnitItem[];
@@ -98,11 +101,13 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onChangeUnitStatus,
     onUploadMapImage,
     uploadingMap,
+    onChangeProducts,
   } = props;
 
   const [isEditingMap, setIsEditingMap] = useState(false);
   const canEditMap = mode === "admin" && !!onSaveServiceMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
+  const canEditProducts = mode === "admin" && !!onChangeProducts;
 
   // Tracks autosave state for the inline map editor so the admin gets a
   // clear "Saving… / Saved" pill instead of having to wonder whether their
@@ -380,7 +385,23 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             )}
           </div>
 
-          {!isUpcoming && productList.length > 0 && (
+          {canEditProducts ? (
+            <div>
+              <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
+                <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                Products Used (this service)
+              </p>
+              <div className="rounded-md border bg-background p-2">
+                <ProductUsageEditor
+                  value={productList}
+                  onChange={(next) => onChangeProducts!(next)}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Saved to this service only. Add what was (or will be) applied during the visit.
+              </p>
+            </div>
+          ) : !isUpcoming && productList.length > 0 && (
             <div>
               <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2 flex items-center gap-1.5">
                 <FlaskConical className="w-3.5 h-3.5 text-primary" />

@@ -2008,6 +2008,7 @@ const PropertyDashboard = ({
             products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
+            onChangeProducts={(next) => updateServiceProducts(s.id, next)}
           />
           {!isProjected && (
             <div className="flex gap-1.5 pt-1 border-t border-border mt-2">
