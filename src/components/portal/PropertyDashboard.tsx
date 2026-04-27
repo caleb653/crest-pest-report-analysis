@@ -1028,12 +1028,14 @@ const PropertyDashboard = ({
       // bleed into EVERY following upcoming service forever, which is what
       // makes general requests appear on multiple services in a row.
       // A general request shown on a completed visit is considered handled.
+      // Match the same predicate as isGeneralRequest(): request_type contains
+      // "general" OR (no unit_number AND description tagged [GENERAL]).
       await supabase
         .from("portal_requests")
         .update({ status: "completed", updated_at: new Date().toISOString() } as any)
         .eq("property_id", property.id)
         .in("status", ["pending", "in_progress"])
-        .eq("request_type", "general_request");
+        .or("request_type.ilike.%general%,description.ilike.%[GENERAL]%");
     } catch (e) {
       console.warn("auto-resolve work orders failed", e);
     }
