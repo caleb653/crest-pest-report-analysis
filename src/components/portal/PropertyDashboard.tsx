@@ -1415,36 +1415,6 @@ const PropertyDashboard = ({
                   )}
                 </div>
                 </div>
-                {/* Two separate comment boxes — Crest team + Property Manager */}
-                <div className="px-4 pb-4 pt-3 border-t-2 border-dashed border-border bg-muted/20 grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      unitIndex={j}
-                      unitDetails={unitDetails}
-                      comments={allComments}
-                      sender="crest"
-                      filterSender="crest"
-                      title="Crest Team Comments"
-                      defaultAuthor={s.technician || ""}
-                      compact
-                      onChange={onRefresh}
-                    />
-                  </div>
-                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
-                    <ServiceComments
-                      serviceId={s.id}
-                      unitIndex={j}
-                      unitDetails={unitDetails}
-                      comments={allComments}
-                      sender="pm"
-                      filterSender="pm"
-                      title="Property Manager Comments"
-                      compact
-                      onChange={onRefresh}
-                    />
-                  </div>
-                </div>
                 </>)}
               </div>
             );
