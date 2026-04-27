@@ -1052,6 +1052,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
                   if (!cfg.included_units && !cfg.overage_price_per_unit && !cfg.base_service_price) return null;
+                  // HOA mode: hide per-unit economics — boards care about the
+                  // community-wide service fee, not which homes get included.
+                  if (isHOA) {
+                    if (!cfg.base_service_price) return null;
+                    return (
+                      <div className="grid grid-cols-1 gap-2 pt-1">
+                        <div className="rounded-lg border border-border bg-background p-2.5">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                            Community Service Fee / Visit
+                          </p>
+                          <p className="text-base font-bold mt-0.5">
+                            {formatOverageMoney(cfg.base_service_price!)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
                       <div className="rounded-lg border border-border bg-background p-2.5">
@@ -1084,6 +1101,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {(() => {
                   const cfg = readUnitPlanConfig(property.customer_preferences);
                   if (!cfg.included_units) return null;
+                  // HOA mode: skip the per-unit footnote — irrelevant for boards.
+                  if (isHOA) return null;
                   return (
                     <p className="text-[11px] text-muted-foreground italic">
                       Each visit covers up to {cfg.included_units} interior unit{cfg.included_units === 1 ? "" : "s"} at the base price. Any additional units are billed at the per-unit price above.
