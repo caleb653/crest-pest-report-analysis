@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug } from "lucide-react";
+import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw } from "lucide-react";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { useState, useEffect, useRef } from "react";
@@ -47,10 +47,19 @@ export interface HOAServiceViewProps {
 
   /** Map background image URL (community site plan). */
   mapUrl: string | null;
-  /** Persisted map annotations / drawings, if any. */
+  /** PERMANENT site map annotations from the property profile (Site Map page).
+   *  Acts as the default emblem layer for every service. */
   mapData: any;
-  /** Called by admin to persist map edits. PM does not pass this. */
-  onSaveMapData?: (canvasData: string) => Promise<void> | void;
+  /** OPTIONAL per-service map overlay. When present, this is shown for the
+   *  service instead of the property base map (so per-visit drawings stay
+   *  scoped to that single service and do NOT leak into future services). */
+  serviceMapData?: any;
+  /** Called by admin to persist per-service map edits to this single service.
+   *  PM does not pass this. Saves into the service, NEVER the property. */
+  onSaveServiceMapData?: (canvasData: string) => Promise<void> | void;
+  /** Called by admin to clear the per-service overlay and revert to the
+   *  permanent site map. PM does not pass this. */
+  onResetServiceMapData?: () => Promise<void> | void;
 
   /** Combined technician findings text (summary + findings + notes). */
   findings: string;
@@ -78,7 +87,9 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     isUpcoming,
     mapUrl,
     mapData,
-    onSaveMapData,
+    serviceMapData,
+    onSaveServiceMapData,
+    onResetServiceMapData,
     findings,
     technician,
     onChangeFindings,
@@ -90,8 +101,18 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   } = props;
 
   const [isEditingMap, setIsEditingMap] = useState(false);
-  const canEditMap = mode === "admin" && !!onSaveMapData;
+  const canEditMap = mode === "admin" && !!onSaveServiceMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
+
+  // Per-service overlay takes precedence over the permanent site map.
+  const hasServiceOverlay =
+    serviceMapData != null &&
+    !(typeof serviceMapData === "string" && serviceMapData.trim() === "");
+  const effectiveMapData = hasServiceOverlay ? serviceMapData : mapData;
+  // When admin opens the editor, seed the canvas with the per-service overlay
+  // if one exists, otherwise start from the permanent site map so they don't
+  // lose the existing emblems.
+  const editorSeedData = effectiveMapData;
 
   // Local copy of findings so admin typing is instant; we debounce-persist
   // upstream via onChangeFindings (which writes to the DB).
@@ -129,19 +150,46 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                 <MapPin className="w-5 h-5 text-emerald-700" />
                 <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
                   Community Site Map
+                  {hasServiceOverlay && (
+                    <span className="ml-2 text-[10px] font-semibold text-emerald-700/80 normal-case tracking-normal">
+                      (this visit's edits)
+                    </span>
+                  )}
                 </p>
               </div>
               {canEditMap && (
-                <Button
-                  size="sm"
-                  variant={isEditingMap ? "default" : "secondary"}
-                  className="h-7 px-2 text-xs shadow-sm"
-                  onClick={() => setIsEditingMap((v) => !v)}
-                  disabled={!mapUrl}
-                >
-                  <Edit className="w-3 h-3 mr-1" />
-                  {isEditingMap ? "Done" : "Edit Map"}
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  {hasServiceOverlay && !isEditingMap && onResetServiceMapData && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            "Clear this visit's map edits and revert to the permanent site map?"
+                          )
+                        ) {
+                          onResetServiceMapData();
+                        }
+                      }}
+                      title="Revert this service's map back to the permanent site map"
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Revert
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant={isEditingMap ? "default" : "secondary"}
+                    className="h-7 px-2 text-xs shadow-sm"
+                    onClick={() => setIsEditingMap((v) => !v)}
+                    disabled={!mapUrl}
+                  >
+                    <Edit className="w-3 h-3 mr-1" />
+                    {isEditingMap ? "Done" : "Edit Map"}
+                  </Button>
+                </div>
               )}
             </div>
             <div
@@ -196,17 +244,17 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                 isEditingMap && canEditMap ? (
                   <MapCanvas
                     mapUrl={mapUrl}
-                    onSave={onSaveMapData}
+                    onSave={onSaveServiceMapData}
                     initialData={
-                      mapData
-                        ? typeof mapData === "string"
-                          ? mapData
-                          : JSON.stringify(mapData)
+                      editorSeedData
+                        ? typeof editorSeedData === "string"
+                          ? editorSeedData
+                          : JSON.stringify(editorSeedData)
                         : undefined
                     }
                   />
-                ) : mapData ? (
-                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={mapData} />
+                ) : effectiveMapData ? (
+                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={effectiveMapData} />
                 ) : (
                   <img
                     src={mapUrl}
@@ -245,8 +293,10 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             {canEditMap && (
               <div className="px-3 py-2 border-t bg-muted/30 text-[10.5px] text-muted-foreground text-center">
                 {isEditingMap
-                  ? "Add icons, draw, or erase. Changes save automatically."
-                  : "Tip: paste a screenshot (⌘/Ctrl + V) or drag & drop an image to update the site map."}
+                  ? "Add icons, draw, or erase. Edits save to THIS service only — they won't carry over to future visits."
+                  : hasServiceOverlay
+                    ? "This service has its own map edits. The permanent site map (used by future visits) is unchanged."
+                    : "Edits made here apply only to this service. Update the permanent site map from the Site Map / Plan page."}
               </div>
             )}
           </div>
