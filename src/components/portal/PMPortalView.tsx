@@ -1738,6 +1738,38 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
 
+                          {/* General Requests — work orders without a specific
+                              unit. Shown as their own line items, NEVER counted
+                              toward unit totals. Only on the next upcoming. */}
+                          {isFirst && (() => {
+                            const generalReqs = getOpenGeneralRequests(requests);
+                            if (generalReqs.length === 0) return null;
+                            return (
+                              <div className="rounded-xl border-2 border-sky-500 bg-sky-50/60 p-4">
+                                <div className="flex items-center gap-1.5 mb-2.5">
+                                  <ClipboardList className="w-4 h-4 text-sky-700" />
+                                  <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                                    General Request{generalReqs.length === 1 ? "" : "s"} ({generalReqs.length})
+                                  </p>
+                                </div>
+                                <ul className="space-y-2">
+                                  {generalReqs.map((r) => {
+                                    const text = (r.description || "")
+                                      .replace(/^Customer:.*?\n/, "")
+                                      .replace(/^\[GENERAL\]\s*/i, "")
+                                      .trim();
+                                    return (
+                                      <li key={r.id} className="text-sm leading-snug flex gap-2.5">
+                                        <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                                        <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })()}
+
                           {/* HOA: Replace work-order chips with a community feedback summary.
                               The community is the focal point, not per-unit counts. */}
                           {isHOA && (woCount > 0 || fuCount > 0) && (
