@@ -2042,40 +2042,10 @@ const PropertyDashboard = ({
                               if (!uc) return null;
                               return (
                                 <>
-                                  {/* Surface the structured work-order fields (location,
-                                      occupancy, tenant, preferred date) so admin gets the
-                                      same actionable detail the PM submitted. */}
-                                  {isWorkOrder && uc.request && (
-                                    (uc.request.location_type || uc.request.occupancy_status ||
-                                     uc.request.tenant_email || uc.request.preferred_date) && (
-                                      <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                                        {uc.request.location_type && (
-                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
-                                            <p className="text-xs font-medium">{uc.request.location_type}</p>
-                                          </div>
-                                        )}
-                                        {uc.request.occupancy_status && (
-                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Unit Status</p>
-                                            <p className="text-xs font-medium">{uc.request.occupancy_status}</p>
-                                          </div>
-                                        )}
-                                        {uc.request.preferred_date && (
-                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Preferred</p>
-                                            <p className="text-xs font-medium">{uc.request.preferred_date}</p>
-                                          </div>
-                                        )}
-                                        {uc.request.tenant_email && (
-                                          <div className="rounded-md border border-border bg-muted/20 px-2.5 py-1.5">
-                                            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Tenant</p>
-                                            <p className="text-xs font-medium break-all">{uc.request.tenant_email}</p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )
-                                  )}
+                                  {/* Structured work-order pills intentionally omitted —
+                                      the same fields are already surfaced inside the
+                                      Treatment Request Context block below to avoid
+                                      redundancy. */}
                                   {uc.context && (
                                     <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
                                       <div className="flex items-center gap-1.5 mb-1.5">
