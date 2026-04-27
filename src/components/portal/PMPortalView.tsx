@@ -1891,6 +1891,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </Button>
               </CardContent>
             </Card>
+            )}
 
             {/* Shareable Tenant Request Link — community-style, no history visible */}
             <Card className="border-secondary/40 bg-secondary/[0.04]">
