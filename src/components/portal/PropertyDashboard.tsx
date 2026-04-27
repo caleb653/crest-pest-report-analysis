@@ -984,6 +984,24 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
+    // ─── Dedupe: delete any OTHER scheduled service rows for this property
+    //     dated today (or earlier) so the just-completed visit can never
+    //     keep showing up in the Upcoming Services list. Without this,
+    //     duplicate "scheduled" rows (created via Quick Add, projection
+    //     hydration, or earlier auto-creates) survive completion and the
+    //     finished visit appears in BOTH Past + Upcoming. ────────────────
+    try {
+      await supabase
+        .from("portal_services")
+        .delete()
+        .eq("property_id", property.id)
+        .eq("status", "scheduled")
+        .lte("service_date", today)
+        .neq("id", serviceId);
+    } catch (e) {
+      console.warn("dedupe scheduled services failed", e);
+    }
+
     // Auto-schedule follow-ups to next service
     if (flagged.length > 0) {
       const nextService = allUpcoming.find(s => s.id !== serviceId && !s.isProjected);
