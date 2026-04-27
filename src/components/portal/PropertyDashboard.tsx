@@ -31,6 +31,7 @@ import { ServiceComments, type ServiceComment } from "@/components/portal/Servic
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
+import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 
 // ─── Types ───
@@ -3151,6 +3152,8 @@ const PropertyDashboard = ({
 
         {/* Required pesticide notice — shown at the bottom of every completed service report */}
         {!isUpcoming && !isProjected && <PesticideNotice />}
+        {/* Apartment-specific inspection disclaimer */}
+        {!isUpcoming && !isProjected && propertyType === "apartments" && <ApartmentInspectionDisclaimer />}
 
       </div>
     );
