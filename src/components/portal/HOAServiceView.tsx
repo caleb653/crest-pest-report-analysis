@@ -27,8 +27,7 @@ import { useState, useEffect, useRef } from "react";
 
 const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Treated - Free and Clear" },
-  { value: "Complete",            label: "Complete" },
+  { value: "Treated - Complete",  label: "Treated" },
   { value: "Not Treated",         label: "Not Treated" },
 ];
 
