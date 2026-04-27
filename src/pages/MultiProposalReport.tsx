@@ -782,6 +782,65 @@ const Report = () => {
   const [savedCustomerEmail, setSavedCustomerEmail] = useState<string | null>(null);
   const [isSavingSignature, setIsSavingSignature] = useState(false);
   const isReadOnly = !!signatureWasSaved;
+  // Clear-signature-after-submit flow: gated behind the same 18444 password
+  // used elsewhere for protected admin actions. State tracks WHICH proposal's
+  // signature is being cleared so we can scope the wipe to a single option.
+  const [clearSigDialog, setClearSigDialog] = useState<{ open: boolean; index: number | null }>({ open: false, index: null });
+  const [clearSigPassword, setClearSigPassword] = useState("");
+  const [clearSigSaving, setClearSigSaving] = useState(false);
+
+  const requestClearSignature = (proposalIndex: number) => {
+    setClearSigPassword("");
+    setClearSigDialog({ open: true, index: proposalIndex });
+  };
+
+  const confirmClearSignature = async () => {
+    if (clearSigPassword !== "18444") {
+      toast.error("Incorrect password");
+      return;
+    }
+    const idx = clearSigDialog.index;
+    if (idx === null) return;
+    setClearSigSaving(true);
+    try {
+      // Build the next per-proposal signatures map with this slot cleared.
+      const nextSigs: Record<number, string | null> = { ...perProposalSignatures, [idx]: null };
+      setPerProposalSignatures(nextSigs);
+
+      // Determine if ANY signatures remain — if not, also clear the legacy
+      // top-level customer_signature so the report flips back out of read-only.
+      const anyRemain = Object.values(nextSigs).some((v) => !!v);
+      const payloadSig = anyRemain
+        ? JSON.stringify({
+            _perProposal: true,
+            signatures: Object.fromEntries(
+              Object.entries(nextSigs).filter(([, v]) => !!v)
+            ),
+          })
+        : null;
+
+      if (reportId) {
+        const { error } = await supabase
+          .from("reports")
+          .update({ customer_signature: payloadSig })
+          .eq("id", reportId);
+        if (error) throw error;
+      }
+      if (!anyRemain) {
+        setCustomerSignature(null);
+        setSignatureWasSaved(false);
+      }
+      toast.success("Signature cleared");
+      setClearSigDialog({ open: false, index: null });
+      setClearSigPassword("");
+    } catch (err: any) {
+      console.error("Failed to clear signature:", err);
+      toast.error("Failed to clear signature");
+    } finally {
+      setClearSigSaving(false);
+    }
+  };
+
   const hasSchedulingInfo = [preferredServiceDay, preferredServiceTime, mainPointOfContact, contactPhone]
     .some((value) => value.trim().length > 0 && value.trim() !== "-");
   const showSchedulingSection = !isReadOnly || hasSchedulingInfo;
@@ -2706,6 +2765,19 @@ Crest Pest Control`;
                                 </Button>
                               </div>
                             )}
+                            {isReadOnly && (
+                              <div className="flex gap-1 no-print shrink-0">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => requestClearSignature(proposalIndex)}
+                                  className="h-7 text-xs text-destructive hover:text-destructive"
+                                  title="Clear this signature (admin password required)"
+                                >
+                                  <X className="w-3 h-3 mr-1" /> Clear
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <>
@@ -3530,6 +3602,35 @@ Crest Pest Control`;
             <Button onClick={handleSendEmail} disabled={isSendingEmail || !customerEmail || !reportId}>
               {isSendingEmail ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
               Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear-signature confirmation (admin password 18444) */}
+      <Dialog open={clearSigDialog.open} onOpenChange={(o) => { if (!o) { setClearSigDialog({ open: false, index: null }); setClearSigPassword(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Clear this signature?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              This will permanently remove the customer's signature on this proposal so it can be re-signed. Enter the admin password to confirm.
+            </p>
+            <Input
+              type="password"
+              autoFocus
+              placeholder="Admin password"
+              value={clearSigPassword}
+              onChange={(e) => setClearSigPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmClearSignature(); }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setClearSigDialog({ open: false, index: null }); setClearSigPassword(""); }}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmClearSignature} disabled={clearSigSaving || !clearSigPassword}>
+              {clearSigSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Clear Signature
             </Button>
           </DialogFooter>
         </DialogContent>
