@@ -3081,28 +3081,6 @@ const PropertyDashboard = ({
           </CardContent>
         </Card>
 
-        {/* Share Link */}
-        {propertyLink && (
-          <Card className="shadow-sm">
-          <CardHeader className="pb-2 py-3.5 border-b bg-primary/[0.08]">
-            <CardTitle className="text-base font-bold flex items-center gap-2"><Link2 className="w-4.5 h-4.5 text-secondary" />PM Share Link</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3">
-              <div className="flex items-center gap-1.5">
-                {onCopyLink && (
-                  <Button variant="outline" size="sm" className="flex-1 h-7 text-xs" onClick={() => onCopyLink(propertyLink.token, "sub")}>
-                    <Copy className="w-3 h-3 mr-1" />Copy Link
-                  </Button>
-                )}
-                {onOpenPortal && (
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onOpenPortal(propertyLink.token, "sub")}>
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
           </div>
         </div>
       </TabsContent>
