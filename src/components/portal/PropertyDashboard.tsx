@@ -203,6 +203,18 @@ const PropertyDashboard = ({
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
+  // Past services are READ-ONLY by default — admins must explicitly opt in to
+  // editing a specific past service to prevent accidental edits (e.g. clicking
+  // a status dropdown auto-promoting a unit to "Needs Follow Up").
+  const [editingPastIds, setEditingPastIds] = useState<Set<string>>(new Set());
+  const isPastEditing = (id: string) => editingPastIds.has(id);
+  const togglePastEditing = (id: string) => {
+    setEditingPastIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   // Inline add-unit for upcoming
   const [addingPlannedUnit, setAddingPlannedUnit] = useState<string | null>(null);
   const [newPlannedUnit, setNewPlannedUnit] = useState("");
