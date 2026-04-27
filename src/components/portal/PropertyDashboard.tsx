@@ -1682,6 +1682,23 @@ const PropertyDashboard = ({
                       onBlur={e => { if (e.target.value !== (unit.findings || "")) updateUnitField(s.id, j, "findings", e.target.value); }}
                     />
                   </div>
+                  {/* Follow-up + Sanitization checkboxes — must be CHECKED to flag for next service */}
+                  <div className="md:col-span-2 rounded-lg border-2 border-orange-400 bg-orange-50/50 p-3 flex flex-col sm:flex-row gap-3 sm:gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <Checkbox
+                        checked={!!unit.follow_up_needed}
+                        onCheckedChange={(v) => updateUnitField(s.id, j, "follow_up_needed", !!v)}
+                      />
+                      <span className="text-sm font-semibold text-orange-900">Follow Up Needed</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <Checkbox
+                        checked={!!unit.sanitization_concern}
+                        onCheckedChange={(v) => updateUnitField(s.id, j, "sanitization_concern", !!v)}
+                      />
+                      <span className="text-sm font-semibold text-orange-900">Sanitization Concern</span>
+                    </label>
+                  </div>
                   </div>
                   {/* UNIT PHOTOS — right 1/3 column */}
                   <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
