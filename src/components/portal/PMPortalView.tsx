@@ -2000,7 +2000,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           )}
 
                           {/* Per-unit detailed breakdown — same data admin sees */}
-                          {unitContexts.length > 0 && (
+                          {unitContexts.length > 0 && !isHOA && (
                             <div>
                               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
                                 <Bug className="w-4 h-4" />
