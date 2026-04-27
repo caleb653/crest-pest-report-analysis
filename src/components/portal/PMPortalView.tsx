@@ -2440,7 +2440,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     <div className="min-h-screen bg-background">
       {/* Header — NO back/home button (PMs cannot navigate to other properties) */}
       <div className="bg-card border-b px-4 py-3 sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-9" />
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-base truncate">{property.name}</h1>
