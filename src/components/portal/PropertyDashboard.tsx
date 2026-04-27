@@ -15,7 +15,7 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -173,6 +173,7 @@ const PropertyDashboard = ({
   const isHOA = propertyType === "hoa";
   // For apartments: "date" / "unit" toggle. HOA shows only "date".
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  const [byUnitSearch, setByUnitSearch] = useState("");
   const residentTerm = isHOA ? "resident" : "tenant";
   const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
@@ -1047,13 +1048,24 @@ const PropertyDashboard = ({
     //     hydration, or earlier auto-creates) survive completion and the
     //     finished visit appears in BOTH Past + Upcoming. ────────────────
     try {
-      await supabase
+      // Only dedupe sibling scheduled rows for the SAME date as the just-
+      // completed visit. Older logic deleted everything <= today which would
+      // wipe out manually-added appointments dated for earlier today. We also
+      // skip any row tagged `manually_added` so admin-entered visits always
+      // survive.
+      const { data: sameDay } = await supabase
         .from("portal_services")
-        .delete()
+        .select("id, report_data")
         .eq("property_id", property.id)
         .eq("status", "scheduled")
-        .lte("service_date", today)
+        .eq("service_date", today)
         .neq("id", serviceId);
+      const idsToDelete = (sameDay || [])
+        .filter((r: any) => !(r?.report_data && r.report_data.manually_added === true))
+        .map((r: any) => r.id);
+      if (idsToDelete.length > 0) {
+        await supabase.from("portal_services").delete().in("id", idsToDelete);
+      }
     } catch (e) {
       console.warn("dedupe scheduled services failed", e);
     }
@@ -1360,15 +1372,28 @@ const PropertyDashboard = ({
 
   const quickAddService = async () => {
     if (!addingServiceDate) return;
-    await supabase.from("portal_services").insert({
-      property_id: property.id,
-      service_type: addingServiceType,
-      service_date: addingServiceDate,
-      status: "scheduled",
-      units_planned: allUnits,
-      frequency_days: SERVICE_FREQUENCY_MAP[addingServiceType] || 30,
-    });
-    toast({ title: "Service added" });
+    // Persist the manually added appointment as its OWN standalone row.
+    // We tag it `manually_added: true` in report_data so the dedupe pass in
+    // completeService never wipes it out — manual entries are first-class
+    // and must survive any nearby completions.
+    const { data: inserted, error } = await supabase
+      .from("portal_services")
+      .insert({
+        property_id: property.id,
+        service_type: addingServiceType,
+        service_date: addingServiceDate,
+        status: "scheduled",
+        units_planned: allUnits,
+        frequency_days: SERVICE_FREQUENCY_MAP[addingServiceType] || 30,
+        report_data: { manually_added: true } as any,
+      } as any)
+      .select("id")
+      .single();
+    if (error) {
+      toast({ title: "Failed to add service", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Service added", description: `Saved for ${formatDate(addingServiceDate)}` });
     setShowQuickAdd(false);
     setAddingServiceDate("");
     onRefresh();
@@ -3643,10 +3668,71 @@ const PropertyDashboard = ({
           servicesByUnit.size === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No service history</CardContent></Card>
           ) : (
-            <Accordion type="multiple" defaultValue={Array.from(servicesByUnit.keys()).slice(0, 1)}>
-              {Array.from(servicesByUnit.entries())
-                .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-                .map(([unitNum, entries]) => (
+            <>
+              {/* Search across unit numbers, technician, products, findings, notes, summary */}
+              <div className="relative mb-2">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="h-8 text-xs pl-8 pr-8"
+                  placeholder="Search by unit, tech, product, findings…"
+                  value={byUnitSearch}
+                  onChange={(e) => setByUnitSearch(e.target.value)}
+                />
+                {byUnitSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setByUnitSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {(() => {
+                const q = byUnitSearch.trim().toLowerCase();
+                const filteredEntries = Array.from(servicesByUnit.entries())
+                  .map(([unitNum, entries]) => {
+                    if (!q) return [unitNum, entries] as const;
+                    const matchUnit = unitNum.toLowerCase().includes(q);
+                    const filtered = entries.filter(({ service, unitDetail }) => {
+                      if (matchUnit) return true;
+                      const haystack = [
+                        unitNum,
+                        service.technician,
+                        service.summary,
+                        service.findings,
+                        service.notes,
+                        (service as any).appointment_service,
+                        service.service_type,
+                        unitDetail?.findings,
+                        unitDetail?.pest_activity,
+                        unitDetail?.products_used,
+                        unitDetail?.notes,
+                        Array.isArray(service.products_used)
+                          ? (service.products_used as any[]).map((p: any) => p?.name || p?.product || "").join(" ")
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .toLowerCase();
+                      return haystack.includes(q);
+                    });
+                    return [unitNum, filtered] as const;
+                  })
+                  .filter(([, entries]) => entries.length > 0)
+                  .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+                if (filteredEntries.length === 0) {
+                  return (
+                    <Card className="shadow-sm"><CardContent className="p-6 text-center text-muted-foreground text-xs">No results for “{byUnitSearch}”</CardContent></Card>
+                  );
+                }
+                const defaultOpen = q
+                  ? filteredEntries.map(([k]) => k)
+                  : filteredEntries.slice(0, 1).map(([k]) => k);
+                return (
+                  <Accordion type="multiple" defaultValue={defaultOpen} key={q || "all"}>
+                    {filteredEntries.map(([unitNum, entries]) => (
                   <AccordionItem key={unitNum} value={unitNum} className="border rounded-lg mb-2 px-0 shadow-sm">
                     <AccordionTrigger className="px-3 py-2.5 text-sm hover:no-underline bg-muted/20 rounded-t-lg">
                       <div className="flex items-center gap-2">
@@ -3684,8 +3770,11 @@ const PropertyDashboard = ({
                       ))}
                     </AccordionContent>
                   </AccordionItem>
-                ))}
-            </Accordion>
+                    ))}
+                  </Accordion>
+                );
+              })()}
+            </>
           )
         )}
       </div>
