@@ -1750,7 +1750,7 @@ const PropertyDashboard = ({
                 >
                   {(((newUnitData as any).kind === "inspection")
                     ? ["Free and Clear", "Activity Found"]
-                    : ["Complete", "Needs Follow Up", "Not Serviced"]
+                    : ["Complete", "Not Serviced"]
                   ).map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
