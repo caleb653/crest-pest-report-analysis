@@ -1879,6 +1879,36 @@ const PropertyDashboard = ({
           </div>
         )}
 
+        {/* General Requests — work orders submitted without a specific unit
+            (e.g. "the front gate is broken"). NEVER counted toward the unit
+            total, but ALWAYS shown so they're not lost. Only on the next
+            upcoming service. */}
+        {isUpcoming && isFirstUpcoming && (() => {
+          const generalReqs = getOpenGeneralRequests(pendingRequests);
+          if (generalReqs.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                  General Request{generalReqs.length === 1 ? "" : "s"} ({generalReqs.length})
+                </p>
+              </div>
+              <ul className="space-y-1.5">
+                {generalReqs.map((r) => {
+                  const text = (r.description || "").replace(/^Customer:.*?\n/, "").replace(/^\[GENERAL\]\s*/i, "").trim();
+                  return (
+                    <li key={r.id} className="text-sm leading-snug flex gap-2">
+                      <span className="text-xs font-bold text-sky-700 uppercase tracking-wide shrink-0 mt-0.5">General Request:</span>
+                      <span className="whitespace-pre-wrap">{text || "(no details)"}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
+
         {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
         {overage.hasOverage && (
           <div className="border-2 border-amber-500/70 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
