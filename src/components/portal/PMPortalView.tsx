@@ -1935,7 +1935,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       {isExpanded && (
                         <div className="px-5 pb-5 space-y-5">
                           {/* Big summary chips */}
-                          {(woCount > 0 || fuCount > 0) && (
+                          {!isHOA && (woCount > 0 || fuCount > 0) && (
                             <div className="grid grid-cols-2 gap-3">
                               <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-3 text-center">
                                 <p className="text-3xl font-bold text-orange-700 leading-none">{woCount}</p>
@@ -1945,6 +1945,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 <p className="text-3xl font-bold text-amber-700 leading-none">{fuCount}</p>
                                 <p className="text-xs font-semibold text-amber-900 mt-1.5 uppercase tracking-wide">Follow-up{fuCount === 1 ? "" : "s"}</p>
                               </div>
+                            </div>
+                          )}
+
+                          {/* HOA: Replace work-order chips with a community feedback summary.
+                              The community is the focal point, not per-unit counts. */}
+                          {isHOA && (woCount > 0 || fuCount > 0) && (
+                            <div className="rounded-xl border-2 border-primary/40 bg-primary/[0.04] p-4">
+                              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                <ClipboardList className="w-4 h-4" />
+                                Feedback from the Community
+                              </p>
+                              <p className="text-sm leading-relaxed">
+                                {woCount > 0 && (
+                                  <>
+                                    <span className="font-semibold">{woCount}</span> resident request{woCount === 1 ? "" : "s"}
+                                  </>
+                                )}
+                                {woCount > 0 && fuCount > 0 && " and "}
+                                {fuCount > 0 && (
+                                  <>
+                                    <span className="font-semibold">{fuCount}</span> follow-up{fuCount === 1 ? "" : "s"} from the last visit
+                                  </>
+                                )}
+                                {" "}will be addressed during this visit.
+                              </p>
                             </div>
                           )}
 
