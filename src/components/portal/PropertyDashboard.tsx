@@ -4125,7 +4125,30 @@ const PropertyDashboard = ({
                                 .delete()
                                 .eq("id", s.id);
                               if (error) throw error;
-                              toast({ title: "Upcoming service deleted" });
+                              // Apartments only: also remove any open work orders /
+                              // inspection / general requests that were scheduled to
+                              // be addressed on this upcoming visit. These requests
+                              // merge onto the FIRST upcoming service via
+                              // computeUpcomingUnits, so when the admin deletes that
+                              // service the requests must go with it (otherwise they
+                              // silently roll onto the next visit).
+                              let cascaded = 0;
+                              if (propertyType === "apartments" && isFirst) {
+                                const { data: del } = await supabase
+                                  .from("portal_requests")
+                                  .delete()
+                                  .eq("property_id", property.id)
+                                  .in("status", ["pending", "in_progress"])
+                                  .select("id");
+                                cascaded = Array.isArray(del) ? del.length : 0;
+                              }
+                              toast({
+                                title: "Upcoming service deleted",
+                                description:
+                                  cascaded > 0
+                                    ? `Also removed ${cascaded} open request${cascaded === 1 ? "" : "s"} tied to this date.`
+                                    : undefined,
+                              });
                               if (expandedUpcomingId === s.id) setExpandedUpcomingId(null);
                               onRefresh();
                             } catch (err: any) {
