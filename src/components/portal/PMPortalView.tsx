@@ -705,6 +705,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             isUpcoming={false}
             mapUrl={mapUrl}
             mapData={property.map_data}
+            serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
             findings={summaryCombined}
             technician={s.technician}
             products={products}
