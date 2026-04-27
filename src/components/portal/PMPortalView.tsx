@@ -1443,9 +1443,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   <Label className="text-sm">What do you need? *</Label>
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {([
-                      { v: "treatment", label: "Treatment", desc: "Active pest treatment" },
-                      { v: "inspection", label: "Inspection", desc: "Assess & investigate" },
-                      { v: "general", label: "General Request", desc: "Just leave a comment" },
+                      { v: "treatment", label: "Treatment\n(units)", desc: "Active pest treatment" },
+                      { v: "inspection", label: "Inspections\n(units)", desc: "Assess & investigate" },
+                      { v: "general", label: "Common Areas and\nGeneral Requests", desc: "Just leave a comment" },
                     ] as const).map(opt => {
                       const active = requestKind === opt.v;
                       return (
@@ -1455,8 +1455,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           onClick={() => setRequestKind(opt.v)}
                           className={`flex flex-col items-center gap-0.5 p-3 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
                         >
-                          <span className="text-sm font-semibold">{opt.label}</span>
-                          <span className={`text-xs ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                          <span className="text-sm font-semibold text-center whitespace-pre-line leading-tight">{opt.label}</span>
+                          <span className={`text-xs text-center ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
                         </button>
                       );
                     })}
@@ -1465,16 +1465,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 {requestKind !== "general" && (
                 <div>
-                  <Label className="text-sm">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
-                  <Input
-                    list="pm-known-units"
-                    placeholder={isHOA
-                      ? "e.g. Clubhouse, Pool deck, 142 Maple Ln, Lot 27"
-                      : "Type unit or area (e.g. Unit 204, Lobby, Pool deck)"}
-                    value={unitNumber}
-                    onChange={e => setUnitNumber(e.target.value)}
-                    autoComplete="off"
-                  />
+                  <div className="flex items-center gap-3">
+                    <Label className="text-sm whitespace-nowrap shrink-0">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
+                    <Input
+                      list="pm-known-units"
+                      placeholder={isHOA ? "CLUBHOUSE, LOT27" : "UNIT204, LOBBY"}
+                      value={unitNumber}
+                      onChange={e => setUnitNumber(e.target.value.toUpperCase().replace(/\s+/g, ""))}
+                      onKeyDown={e => { if (e.key === " ") e.preventDefault(); }}
+                      autoComplete="off"
+                      className="flex-1 uppercase"
+                    />
+                  </div>
                   {knownUnits.length > 0 && (
                     <datalist id="pm-known-units">
                       {knownUnits.map(u => <option key={u} value={u} />)}
