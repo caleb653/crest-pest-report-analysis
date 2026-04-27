@@ -3581,10 +3581,11 @@ const PropertyDashboard = ({
             {/* Request Type (admin-only enhancement, kept compact) */}
             <div>
               <Label className="text-sm">Request Type *</Label>
-              <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="grid grid-cols-3 gap-2 mt-1">
                 {([
                   { v: "treatment", label: "Treatment", icon: Bug, desc: "Active pest treatment" },
                   { v: "inspection", label: "Inspection", icon: FileText, desc: "Assess & investigate" },
+                  { v: "general", label: "General Request", icon: ClipboardList, desc: "Just leave a comment" },
                 ] as const).map(opt => {
                   const Icon = opt.icon;
                   const active = workOrder.request_type === opt.v;
@@ -3604,7 +3605,8 @@ const PropertyDashboard = ({
               </div>
             </div>
 
-            {/* Unit or Area — free-text with case-insensitive suggestion list */}
+            {/* Unit or Area — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Unit, Property, or Area *</Label>
               <Input
@@ -3620,8 +3622,10 @@ const PropertyDashboard = ({
                 </datalist>
               )}
             </div>
+            )}
 
-            {/* Pest Type */}
+            {/* Pest Type — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">What are you dealing with? *</Label>
               <Select value={workOrder.pest_type} onValueChange={v => setWorkOrder(wo => ({ ...wo, pest_type: v }))}>
@@ -3631,8 +3635,10 @@ const PropertyDashboard = ({
                 </SelectContent>
               </Select>
             </div>
+            )}
 
-            {/* Location */}
+            {/* Location — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Where is the issue?</Label>
               <div className="flex gap-2 mt-1">
@@ -3643,15 +3649,22 @@ const PropertyDashboard = ({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Additional Details */}
             <div>
-              <Label className="text-sm">Additional Details</Label>
-              <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
-                value={workOrder.comments} onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))} rows={3} />
+              <Label className="text-sm">{workOrder.request_type === "general" ? "Your Comment *" : "Additional Details"}</Label>
+              <Textarea
+                placeholder={workOrder.request_type === "general"
+                  ? "Share anything for the Crest team — questions, scheduling notes, follow-ups, etc."
+                  : "Any extra context — where exactly you're seeing the issue, severity, etc."}
+                value={workOrder.comments}
+                onChange={e => setWorkOrder(wo => ({ ...wo, comments: e.target.value }))}
+                rows={workOrder.request_type === "general" ? 5 : 3} />
             </div>
 
-            {/* Occupancy */}
+            {/* Occupancy — hidden for "General Request" */}
+            {workOrder.request_type !== "general" && (
             <div>
               <Label className="text-sm">Vacant or Occupied Unit</Label>
               <div className="flex gap-2 mt-1">
@@ -3662,9 +3675,10 @@ const PropertyDashboard = ({
                 ))}
               </div>
             </div>
+            )}
 
             {/* Tenant Notification — full PM-portal parity */}
-            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA ? "hidden" : ""}`}>
+            <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA || workOrder.request_type === "general" ? "hidden" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox checked={workOrder.email_tenant} onCheckedChange={(v) => setWorkOrder(wo => ({ ...wo, email_tenant: !!v }))} />
                 <span className="text-sm font-medium">Email tenant?</span>
