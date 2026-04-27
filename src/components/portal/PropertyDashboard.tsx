@@ -4169,7 +4169,136 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 3: REQUEST WORK ORDER ══════════ */}
       <TabsContent value="request" className="mt-0">
         <div className="max-w-2xl mx-auto space-y-4">
-        {/* Work Order Form — mirrors PM portal layout */}
+        {/* Work Order Form — mirrors PM portal layout exactly. HOA properties
+            get the same 2-button "Community Pest Sighting / Service Request"
+            picker as the PM HOA portal so admin and PM views stay 1:1. */}
+        {isHOA ? (
+        <Card className="border-primary/60 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              Community Pest Sighting or Service Request?
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Are you reporting a community pest sighting or submitting a service request for your unit?
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {([
+                { v: "community", label: "Community Pest Sighting", desc: "Report activity in the community" },
+                { v: "service",   label: "Service Request",         desc: "Request service for my unit" },
+              ] as const).map(opt => {
+                const active = hoaRequestKind === opt.v;
+                return (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setHoaRequestKind(opt.v)}
+                    className={`flex flex-col items-center gap-1 p-4 rounded-lg border-2 transition-all ${active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-background border-border hover:border-primary/70 hover:bg-muted/50"}`}
+                  >
+                    <span className="text-sm font-semibold text-center">{opt.label}</span>
+                    <span className={`text-xs text-center ${active ? "opacity-90" : "text-muted-foreground"}`}>{opt.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {hoaRequestKind && (
+              <div className="space-y-3 pt-2 border-t">
+                {hoaRequestKind === "service" && (
+                  <div>
+                    <Label className="text-sm">What is your address? *</Label>
+                    <Input
+                      placeholder="1234 Main St"
+                      value={hoaAddress}
+                      onChange={e => setHoaAddress(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <Label className="text-sm">Where are you seeing activity? *</Label>
+                  <Input
+                    placeholder={hoaRequestKind === "community" ? "e.g. clubhouse, pool area, mailboxes" : "e.g. kitchen, garage, backyard"}
+                    value={hoaLocation}
+                    onChange={e => setHoaLocation(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm">What pests are you seeing? *</Label>
+                  <Input
+                    placeholder="e.g. Ants, Spiders, Rodents"
+                    value={hoaPests}
+                    onChange={e => setHoaPests(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm">Additional details</Label>
+                  <Textarea
+                    placeholder="Any extra context — severity, when you noticed it, etc."
+                    value={hoaDetails}
+                    onChange={e => setHoaDetails(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                {/* Photo attachments — shared workOrderPhotos state */}
+                <div>
+                  <Label className="text-sm">Photos (optional)</Label>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {workOrderPhotos.map((url, idx) => (
+                      <div key={url} className="relative w-20 h-20 rounded-lg overflow-hidden border bg-muted">
+                        <img src={url} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                        <button
+                          type="button"
+                          onClick={() => setWorkOrderPhotos(prev => prev.filter(u => u !== url))}
+                          className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 shadow border hover:bg-background"
+                          aria-label="Remove photo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-muted text-muted-foreground text-[10px]">
+                      <Image className="w-4 h-4" />
+                      {uploadingWorkOrderPhotos ? "Uploading..." : "Add Photo"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        disabled={uploadingWorkOrderPhotos}
+                        onChange={(e) => { handleWorkOrderPhotoUpload(e.target.files); e.target.value = ""; }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={submitHoaRequest}
+                  disabled={
+                    submittingHoaRequest ||
+                    !hoaLocation.trim() ||
+                    !hoaPests.trim() ||
+                    (hoaRequestKind === "service" && !hoaAddress.trim())
+                  }
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit {hoaRequestKind === "community" ? "Pest Sighting" : "Service Request"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        ) : (
         <Card className="border-primary/60 shadow-md">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
