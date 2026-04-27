@@ -1446,9 +1446,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-primary" />Submit a Work Order
+                  <ClipboardList className="w-4 h-4 text-primary" />{isHOA ? "Request a Service Call" : "Submit a Work Order"}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground">Tell us what's going on and we'll schedule service.</p>
+                <p className="text-xs text-muted-foreground">
+                  {isHOA
+                    ? "Tell us what's happening in the community and we'll get a tech out."
+                    : "Tell us what's going on and we'll schedule service."}
+                </p>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Inspection vs Treatment — must come first so the rest of the
@@ -1478,10 +1482,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
 
                 <div>
-                  <Label className="text-sm">Unit, Property, or Area *</Label>
+                  <Label className="text-sm">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
                   <Input
                     list="pm-known-units"
-                    placeholder="Type unit or area (e.g. Unit 204, Lobby, Pool deck)"
+                    placeholder={isHOA
+                      ? "e.g. Clubhouse, Pool deck, 142 Maple Ln, Lot 27"
+                      : "Type unit or area (e.g. Unit 204, Lobby, Pool deck)"}
                     value={unitNumber}
                     onChange={e => setUnitNumber(e.target.value)}
                     autoComplete="off"
@@ -1514,16 +1520,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-sm">Vacant or Occupied Unit</Label>
-                  <div className="flex gap-2 mt-1">
-                    {(["Occupied", "Vacant"] as const).map(opt => (
-                      <button key={opt} type="button"
-                        className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
-                        onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
-                    ))}
+                {/* Vacant / Occupied is unit-focused — not relevant for HOA common areas / homes. */}
+                {!isHOA && (
+                  <div>
+                    <Label className="text-sm">Vacant or Occupied Unit</Label>
+                    <div className="flex gap-2 mt-1">
+                      {(["Occupied", "Vacant"] as const).map(opt => (
+                        <button key={opt} type="button"
+                          className={`px-4 py-2 rounded-lg text-sm border transition-colors flex-1 ${occupancyStatus === opt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+                          onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <Label className="text-sm">Preferred Day</Label>
@@ -1554,15 +1563,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
-                    <span className="text-sm font-medium">Email tenant?</span>
+                    <span className="text-sm font-medium">{isHOA ? "Email homeowner?" : "Email tenant?"}</span>
                   </label>
 
                   <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
                     <div>
-                      <Label className="text-xs">Tenant Email</Label>
+                      <Label className="text-xs">{isHOA ? "Homeowner Email" : "Tenant Email"}</Label>
                       <Input
                         type="email"
-                        placeholder="tenant@example.com"
+                        placeholder={isHOA ? "homeowner@example.com" : "tenant@example.com"}
                         value={tenantEmail}
                         onChange={e => setTenantEmail(e.target.value)}
                         disabled={!emailTenant}
@@ -1594,7 +1603,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       />
                       <span className="text-xs leading-snug">
                         Send <strong>"Right to Treat"</strong> signature page<br />
-                        <span className="text-muted-foreground">Includes a small signable link in the email so the tenant can authorize entry & treatment of their unit.</span>
+                        <span className="text-muted-foreground">Includes a small signable link in the email so the {residentTerm} can authorize entry & treatment of their {isHOA ? "home" : "unit"}.</span>
                       </span>
                     </label>
                   </div>
@@ -1602,7 +1611,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
                   disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : "Work Order"}
+                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : (isHOA ? "Service Call Request" : "Work Order")}
                 </Button>
               </CardContent>
             </Card>
@@ -1613,11 +1622,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="flex items-start gap-2">
                   <ExternalLink className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">Tenant Request Link</p>
+                    <p className="text-sm font-semibold">{isHOA ? "Resident Request Link" : "Tenant Request Link"}</p>
                     <p className="text-xs text-muted-foreground">
-                      Share this with a tenant or community member so they can submit a single
-                      service request. They won't see anyone else's history — it just gets added
-                      to the next service.
+                      {isHOA
+                        ? "Share this with any homeowner or resident so they can flag an issue in the community. They won't see anyone else's submissions — their request gets folded into the next visit."
+                        : "Share this with a tenant or community member so they can submit a single service request. They won't see anyone else's history — it just gets added to the next service."}
                     </p>
                   </div>
                 </div>
@@ -1630,11 +1639,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     if (!linkToken) return;
                     const url = `${window.location.origin}/tenant/${linkToken}`;
                     navigator.clipboard.writeText(url);
-                    toast({ title: "Link copied", description: "Send this to your tenant or resident." });
+                    toast({ title: "Link copied", description: isHOA ? "Send this to a homeowner or resident." : "Send this to your tenant or resident." });
                   }}
                 >
                   <Copy className="w-3.5 h-3.5 mr-1.5" />
-                  Copy Tenant Request Link
+                  {isHOA ? "Copy Resident Request Link" : "Copy Tenant Request Link"}
                 </Button>
               </CardContent>
             </Card>
