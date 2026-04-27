@@ -2211,7 +2211,7 @@ const PropertyDashboard = ({
               });
             }, 0);
           }
-          const updateRow = (idx: number, field: string, value: string) => {
+          const updateRow = (idx: number, field: string, value: any) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
