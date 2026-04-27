@@ -1690,15 +1690,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
-                    <span className="text-sm font-medium">{isHOA ? "Email homeowner?" : "Email tenant?"}</span>
+                    <span className="text-sm font-medium">{isHOA ? "Email resident?" : "Email tenant?"}</span>
                   </label>
 
                   <div className={`space-y-3 transition-opacity ${emailTenant ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
                     <div>
-                      <Label className="text-xs">{isHOA ? "Homeowner Email" : "Tenant Email"}</Label>
+                      <Label className="text-xs">{isHOA ? "Resident Email" : "Tenant Email"}</Label>
                       <Input
                         type="email"
-                        placeholder={isHOA ? "homeowner@example.com" : "tenant@example.com"}
+                        placeholder={isHOA ? "resident@example.com" : "tenant@example.com"}
                         value={tenantEmail}
                         onChange={e => setTenantEmail(e.target.value)}
                         disabled={!emailTenant}
