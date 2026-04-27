@@ -694,6 +694,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               unit_number: String(u.unit_number || "").trim(),
               status: u.status || undefined,
               follow_up_needed: !!u.follow_up_needed,
+              target_pest: u.target_pest || "",
             })).filter((u) => u.unit_number)
           : unitsPlanned.map((u) => ({ unit_number: String(u || "").trim() }))
               .filter((u) => u.unit_number);
