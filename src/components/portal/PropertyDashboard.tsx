@@ -1007,6 +1007,19 @@ const PropertyDashboard = ({
         const unitsCount = Array.isArray(unitRows) ? unitRows.length : 0;
         const summary = [data?.summary, data?.findings, data?.notes].filter(Boolean).join("\n\n");
 
+        // Enrich each product with EPA # and dilution math for liability documentation
+        const { findEpaNumber, computeDilution } = await import("@/lib/productCatalog");
+        const enrichedProducts = (aggregatedProducts as any[]).map((p: any) => {
+          const dil = computeDilution(p);
+          return {
+            ...p,
+            epa: findEpaNumber(p.name) || null,
+            dilution_rate_pct: dil.ratePct ?? null,
+            mix_ratio_per_gal: dil.mixRatioPerGal ?? null,
+            mix_ratio_unit: dil.mixRatioUnit ?? null,
+          };
+        });
+
         await supabase.functions.invoke("send-service-completed", {
           body: {
             to: recipient,
@@ -1017,7 +1030,7 @@ const PropertyDashboard = ({
             technician: data?.technician || svc?.technician || "",
             summary,
             unitsCount,
-            productsList: aggregatedProducts,
+            productsList: enrichedProducts,
             portalUrl,
           },
         });
