@@ -216,6 +216,11 @@ const PropertyDashboard = ({
   const [hoaLocation, setHoaLocation] = useState("");
   const [hoaPests, setHoaPests] = useState("");
   const [hoaDetails, setHoaDetails] = useState("");
+  // Resident contact for HOA Service Requests — mirrors the PM portal so the
+  // homeowner's name/phone/email are always captured with the work order.
+  const [hoaResidentName, setHoaResidentName] = useState("");
+  const [hoaResidentPhone, setHoaResidentPhone] = useState("");
+  const [hoaResidentEmail, setHoaResidentEmail] = useState("");
   const [submittingHoaRequest, setSubmittingHoaRequest] = useState(false);
   const submitHoaRequest = async () => {
     if (!hoaRequestKind) return;
@@ -223,12 +228,22 @@ const PropertyDashboard = ({
     if (isCommunity) {
       if (!hoaLocation.trim() || !hoaPests.trim()) return;
     } else {
-      if (!hoaAddress.trim() || !hoaLocation.trim() || !hoaPests.trim()) return;
+      if (
+        !hoaAddress.trim() ||
+        !hoaLocation.trim() ||
+        !hoaPests.trim() ||
+        !hoaResidentName.trim() ||
+        !hoaResidentEmail.trim() ||
+        !hoaResidentPhone.trim()
+      ) return;
     }
     setSubmittingHoaRequest(true);
     const requestType = isCommunity ? "Community Pest Sighting" : "Service Request";
     const tag = isCommunity ? "[COMMUNITY SIGHTING]" : "[HOA SERVICE REQUEST]";
     const descParts = [
+      !isCommunity ? `Resident: ${hoaResidentName.trim()}` : null,
+      !isCommunity ? `Phone: ${hoaResidentPhone.trim()}` : null,
+      !isCommunity ? `Email: ${hoaResidentEmail.trim()}` : null,
       `Pests: ${hoaPests.trim()}`,
       `Location: ${hoaLocation.trim()}`,
       hoaDetails.trim() ? `Details: ${hoaDetails.trim()}` : null,
@@ -241,6 +256,7 @@ const PropertyDashboard = ({
       pest_type: hoaPests.trim(),
       location_type: hoaLocation.trim(),
       photos: workOrderPhotos,
+      tenant_email: !isCommunity ? hoaResidentEmail.trim() : null,
     } as any).select("id").maybeSingle();
     if (err) {
       toast({ title: "Could not submit request", description: err.message, variant: "destructive" });
@@ -265,6 +281,9 @@ const PropertyDashboard = ({
     setHoaLocation("");
     setHoaPests("");
     setHoaDetails("");
+    setHoaResidentName("");
+    setHoaResidentPhone("");
+    setHoaResidentEmail("");
     setWorkOrderPhotos([]);
     const { data: reqs } = await supabase
       .from("portal_requests")
@@ -4235,6 +4254,50 @@ const PropertyDashboard = ({
             {hoaRequestKind && (
               <div className="space-y-3 pt-2 border-t">
                 {hoaRequestKind === "service" && (
+                  <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                      <ClipboardList className="w-3.5 h-3.5" />Resident Contact
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Name *</Label>
+                        <Input
+                          placeholder="Resident full name"
+                          value={hoaResidentName}
+                          onChange={e => setHoaResidentName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Phone *</Label>
+                        <Input
+                          type="tel"
+                          placeholder="(555) 123-4567"
+                          value={hoaResidentPhone}
+                          onChange={e => setHoaResidentPhone(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Email *</Label>
+                        <Input
+                          type="email"
+                          placeholder="resident@example.com"
+                          value={hoaResidentEmail}
+                          onChange={e => setHoaResidentEmail(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-xs">Home Address *</Label>
+                        <Input
+                          placeholder="1234 Main St"
+                          value={hoaAddress}
+                          onChange={e => setHoaAddress(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {false && hoaRequestKind === "service" && (
                   <div>
                     <Label className="text-sm">What is your address? *</Label>
                     <Input
@@ -4316,7 +4379,12 @@ const PropertyDashboard = ({
                     submittingHoaRequest ||
                     !hoaLocation.trim() ||
                     !hoaPests.trim() ||
-                    (hoaRequestKind === "service" && !hoaAddress.trim())
+                    (hoaRequestKind === "service" && (
+                      !hoaAddress.trim() ||
+                      !hoaResidentName.trim() ||
+                      !hoaResidentEmail.trim() ||
+                      !hoaResidentPhone.trim()
+                    ))
                   }
                 >
                   <Send className="w-4 h-4 mr-2" />
