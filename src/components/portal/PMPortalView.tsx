@@ -672,6 +672,156 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     const unitDetails = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
+    const products = normalizeUsageList(s.products_used);
+
+    // ─── HOA mode: map-first, narrative-driven service report ───
+    // For HOA properties the community is the focal point — not the unit list.
+    // We surface the site map BIG up top, then a robust Findings + Products
+    // block, and demote per-unit details into a small collapsible "Specific
+    // Homes Treated" section underneath. Apartment + commercial views are
+    // intentionally untouched.
+    if (isHOA) {
+      return (
+        <div className="px-3 pb-3 border-t pt-3 space-y-3 text-xs">
+          {/* Site map — focal point for HOA service reports */}
+          {(mapUrl || property.map_data) && (
+            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50/40 overflow-hidden shadow-sm">
+              <div className="px-3 py-2 bg-emerald-100/60 border-b border-emerald-200 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-emerald-700" />
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                  Community Site Map — Areas Treated
+                </p>
+              </div>
+              <div className="bg-background" style={{ height: 460 }}>
+                {property.map_data ? (
+                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                ) : mapUrl ? (
+                  <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* Robust Technician Findings / Summary / Notes — the main story */}
+          {summaryCombined && (
+            <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-5 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-4 h-4 text-primary" />
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                  Technician Report{s.technician ? ` — ${s.technician}` : ""}
+                </p>
+              </div>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
+            </div>
+          )}
+
+          {/* Products Used — robust display */}
+          {products.length > 0 && (
+            <div className="rounded-xl border-2 border-primary/40 bg-card p-3.5 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4" />
+                Products Used (this visit)
+              </p>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-[12px]">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      <th className="text-left px-2.5 py-1.5 font-semibold">Product</th>
+                      <th className="text-left px-2.5 py-1.5 font-semibold">Applied (diluted)</th>
+                      <th className="text-left px-2.5 py-1.5 font-semibold">Undiluted (concentrate)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((p, i) => (
+                      <tr key={i} className="border-t border-border">
+                        <td className="px-2.5 py-1.5 font-medium">{p.name}</td>
+                        <td className="px-2.5 py-1.5 text-muted-foreground">
+                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
+                        </td>
+                        <td className="px-2.5 py-1.5 text-muted-foreground">
+                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Specific Homes Treated — small, demoted */}
+          {unitDetails.length > 0 && (
+            <details className="rounded-lg border border-border bg-muted/20 px-3 py-2 group">
+              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
+                <span>Specific Homes Treated ({unitDetails.length})</span>
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {unitDetails.map((u: any, i: number) => {
+                  const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
+                  return (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className={`text-[11px] ${
+                        isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/60 bg-background"
+                      }`}
+                    >
+                      {u.unit_number || "—"}
+                      {u.status ? ` · ${u.status}` : ""}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+
+          {s.special_notes && (
+            <div className="rounded-md border border-amber-300 bg-amber-50/60 p-2.5 text-amber-900">
+              <p className="font-semibold uppercase text-[10px] tracking-wide mb-0.5">Special Notes</p>
+              <p className="whitespace-pre-wrap">{s.special_notes}</p>
+            </div>
+          )}
+
+          {/* PM ↔ Crest service-level comments — unchanged for HOA */}
+          <div className="pt-2 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(() => {
+              const allComments = Array.isArray(((s as any).report_data || {}).comments)
+                ? ((s as any).report_data.comments as ServiceComment[])
+                : [];
+              return (
+                <>
+                  <div className="rounded-lg border-2 border-primary/60 bg-primary/5 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      reportData={(s as any).report_data}
+                      comments={allComments}
+                      sender="crest"
+                      filterSender="crest"
+                      title="Service Comments: Crest"
+                      readOnly
+                      onChange={loadAll}
+                    />
+                  </div>
+                  <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-2.5">
+                    <ServiceComments
+                      serviceId={s.id}
+                      reportData={(s as any).report_data}
+                      comments={allComments}
+                      sender="pm"
+                      filterSender="pm"
+                      title="Service Comments: Property Manager"
+                      onChange={loadAll}
+                    />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
         {summaryCombined && (

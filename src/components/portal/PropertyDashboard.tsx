@@ -1717,26 +1717,24 @@ const PropertyDashboard = ({
 
     return (
       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-        {/* HOA mode: surface the site map inline with each service so the
-            common areas treated are the visual focus of the report. */}
+        {/* HOA mode (past service): site map is the FOCAL POINT of the report
+            — bigger, top of the page. The per-unit/area table is demoted into
+            a small "Specific Homes Treated" collapsible below the narrative. */}
         {isHOA && !isUpcoming && (mapUrl || property.map_data) && (
-          <div className="rounded-lg border-2 border-emerald-300 bg-emerald-50/40 overflow-hidden">
-            <div className="px-3 py-2 bg-emerald-100/60 border-b border-emerald-200 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-700" />
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                Common Areas Treated — Site Map
+          <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-sm">
+            <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-emerald-700" />
+              <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
+                Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background" style={{ height: 280 }}>
+            <div className="bg-background" style={{ height: 480 }}>
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
               ) : mapUrl ? (
                 <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
               ) : null}
             </div>
-            <p className="px-3 py-1.5 text-[11px] text-emerald-900/80 italic border-t border-emerald-200">
-              Reference the map above for which community areas were serviced on this visit.
-            </p>
           </div>
         )}
 
@@ -1767,14 +1765,57 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Past service: inline-editable unit table */}
-        {!isUpcoming && renderEditableUnitTable(s)}
+        {/* Past service body — for HOA, the narrative (findings + products)
+            comes FIRST and the per-unit editable table is demoted into a
+            small collapsible "Specific Homes Treated" section underneath.
+            Apartment / commercial views render the editable table inline as
+            before so per-unit data entry stays primary. */}
+        {!isUpcoming && isHOA && (
+          <>
+            {/* Robust Technician Findings / Summary / Notes — main story */}
+            {(s.summary || s.findings || s.notes) && (
+              <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-5 shadow-sm">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <ClipboardList className="w-4 h-4 text-primary" />
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                    Technician Report{s.technician ? ` — ${s.technician}` : ""}
+                  </p>
+                </div>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
+                  {[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+                </p>
+              </div>
+            )}
+            {/* Robust Products Used — emphasized for HOA reports */}
+            {products.length > 0 && (
+              <div className="rounded-xl border-2 border-primary/40 bg-card p-3.5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 flex items-center gap-1.5">
+                  <FlaskConical className="w-4 h-4" />
+                  Products Used (this visit)
+                </p>
+                <ProductUsageSummary entries={products} />
+              </div>
+            )}
+            {/* Specific Homes Treated — small, collapsible, secondary */}
+            <details className="rounded-lg border border-border bg-muted/20 px-3 py-2 group">
+              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
+                <span>Specific Homes Treated ({Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0})</span>
+                <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-2">
+                {renderEditableUnitTable(s)}
+              </div>
+            </details>
+          </>
+        )}
 
-        {/* Past service: service-level products (with Applied / Undiluted amounts).
-            These are saved at completion time via the ProductUsageEditor but
-            previously had no display, so the technician's amounts looked "lost"
-            after they hit Complete. */}
-        {!isUpcoming && products.length > 0 && (
+        {/* Past service (apartments / commercial): inline-editable unit table */}
+        {!isUpcoming && !isHOA && renderEditableUnitTable(s)}
+
+        {/* Past service (apartments / commercial): service-level products
+            (with Applied / Undiluted amounts). HOA renders products in the
+            robust block above, so we skip this in HOA mode. */}
+        {!isUpcoming && !isHOA && products.length > 0 && (
           <div className="mt-2">
             <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
               <FlaskConical className="w-3.5 h-3.5 text-primary" />
@@ -1811,7 +1852,9 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {(s.summary || s.findings || s.notes) && (
+        {/* Skip the duplicate findings block in HOA past-service mode — the
+            robust block above already shows it as the focal narrative. */}
+        {!(isHOA && !isUpcoming) && (s.summary || s.findings || s.notes) && (
           <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
