@@ -1097,6 +1097,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     </p>
                   );
                 })()}
+                {(() => {
+                  // Required Time per Treatment — read-only for PMs.
+                  // NOTE: red_notes is admin-only and is intentionally NOT read here.
+                  const reqTime = (property.customer_preferences as any)?.required_treatment_time;
+                  if (!reqTime || !String(reqTime).trim()) return null;
+                  return (
+                    <div className="rounded-lg border-2 border-amber-400 bg-amber-50/60 p-3 mt-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-800 mb-0.5">
+                        Required Time per Treatment
+                      </p>
+                      <p className="text-sm font-semibold text-amber-900">{String(reqTime)}</p>
+                    </div>
+                  );
+                })()}
                 {property.notes ? (
                   <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
                 ) : (
