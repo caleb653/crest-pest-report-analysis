@@ -984,6 +984,49 @@ const PropertyDashboard = ({
     setFollowUpUnits([]);
     toast({ title: "Service completed", description: "Moved to Previous Services." });
     setActiveTab("past");
+
+    // ─── Email the property manager / client contact a completion summary ───
+    // Best-effort: failures here must not block the completion itself.
+    try {
+      const { data: client } = await supabase
+        .from("portal_clients")
+        .select("name, email")
+        .eq("id", clientId)
+        .maybeSingle();
+      const recipient = (client as any)?.email || null;
+      if (recipient) {
+        // Prefer the property-scoped PM link; fall back to any active link.
+        const propertyLink =
+          links.find(l => l.link_type === "sub" && Array.isArray(l.assigned_property_ids) && (l.assigned_property_ids as string[]).includes(property.id))
+          || links.find(l => l.is_active);
+        const portalUrl = propertyLink
+          ? `${window.location.origin}/pm/${propertyLink.token}`
+          : window.location.origin;
+
+        const svc = propServices.find(s => s.id === serviceId);
+        const unitsCount = Array.isArray(unitRows) ? unitRows.length : 0;
+        const summary = [data?.summary, data?.findings, data?.notes].filter(Boolean).join("\n\n");
+
+        await supabase.functions.invoke("send-service-completed", {
+          body: {
+            to: recipient,
+            propertyName: property.name,
+            clientName: (client as any)?.name || clientName || "",
+            serviceType: svc?.service_type || "",
+            serviceDate: today,
+            technician: data?.technician || svc?.technician || "",
+            summary,
+            unitsCount,
+            productsList: aggregatedProducts,
+            portalUrl,
+          },
+        });
+        toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
+      }
+    } catch (e) {
+      console.warn("send-service-completed failed", e);
+    }
+
     onRefresh();
   };
 
