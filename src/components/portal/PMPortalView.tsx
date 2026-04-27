@@ -2093,6 +2093,29 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
                                 findings={[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
                                 technician={s.technician}
+                                communityFeedback={isFirst ? (() => {
+                                  // Community pest sightings submitted since
+                                  // the most recent completed visit. Used to
+                                  // brief the tech for the next service.
+                                  const lastDate = lastPast?.service_date ? new Date(lastPast.service_date).getTime() : 0;
+                                  return (requests as any[])
+                                    .filter((r) => {
+                                      if (r.status === "resolved") return false;
+                                      const isCommunity = r.request_type === "Community Pest Sighting" ||
+                                        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                                      if (!isCommunity) return false;
+                                      if (!lastDate) return true;
+                                      const created = new Date(r.created_at).getTime();
+                                      return created >= lastDate;
+                                    })
+                                    .map((r) => ({
+                                      id: r.id,
+                                      created_at: r.created_at,
+                                      pest_type: r.pest_type,
+                                      location_type: r.location_type,
+                                      description: r.description,
+                                    }));
+                                })() : []}
                                 units={(unitContexts.length > 0
                                   ? unitContexts.map((uc) => ({
                                       unit_number: String(uc.unit_number || "").trim(),
