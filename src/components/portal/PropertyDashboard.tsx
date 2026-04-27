@@ -2265,7 +2265,9 @@ const PropertyDashboard = ({
   const renderServiceDetails = (s: PortalService | any, isUpcoming: boolean, isProjected: boolean, isFirstUpcoming: boolean = false) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
-    const products: ProductUsage[] = normalizeUsageList(s.products_used);
+    const products: ProductUsage[] = productsOverride[s.id]
+      ? productsOverride[s.id]
+      : normalizeUsageList(s.products_used);
 
     // Use the SAME merge helper the PM portal uses so admin + PM can never
     // disagree about which units will be treated on the next service.
