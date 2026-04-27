@@ -1380,7 +1380,7 @@ const PropertyDashboard = ({
                       onChange={e => updateUnitField(s.id, j, "status", e.target.value)}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {statusOptionsFor(unit).map(a => <option key={a} value={a}>{a}</option>)}
+                      {statusOptionsFor(unit).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                     </select>
                     {!isHOA && <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />}
                   </div>
