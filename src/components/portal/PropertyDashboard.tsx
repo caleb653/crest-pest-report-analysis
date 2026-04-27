@@ -3302,7 +3302,15 @@ const PropertyDashboard = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
-                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(s as any).appointment_service || s.service_type}</p>
+                        <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{(() => {
+                          // First upcoming visit auto-aligns with Visit #1 of the Site Map
+                          // cadence rotation (weekly / bi-weekly only). Keeps admin + PM views in sync.
+                          if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
+                            const firstVisitLabel = ((cadencePlanDraft[propertyFrequency] || [])[0] || "").trim();
+                            if (firstVisitLabel) return firstVisitLabel;
+                          }
+                          return (s as any).appointment_service || s.service_type;
+                        })()}</p>
                         {isProjected && <Badge variant="outline" className="text-xs">Projected</Badge>}
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-xs bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
