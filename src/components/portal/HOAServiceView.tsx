@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2 } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import { normalizeUsageList, type ProductUsage } from "@/lib/productCatalog";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -81,6 +82,19 @@ export interface HOAServiceViewProps {
   /** Admin-only file picker handler for replacing the map background. */
   onUploadMapImage?: (file: File) => void;
   uploadingMap?: boolean;
+
+  /**
+   * Community Pest Sightings submitted since the last completed visit.
+   * Rendered as the "Feedback from Community" card on upcoming visits so the
+   * board (and assigned tech) sees what to incorporate into the next service.
+   */
+  communityFeedback?: Array<{
+    id: string;
+    created_at: string;
+    pest_type?: string | null;
+    location_type?: string | null;
+    description?: string | null;
+  }>;
 }
 
 export function HOAServiceView(props: HOAServiceViewProps) {
@@ -101,6 +115,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onUploadMapImage,
     uploadingMap,
     onChangeProducts,
+    communityFeedback = [],
   } = props;
 
   const [isEditingMap, setIsEditingMap] = useState(false);
