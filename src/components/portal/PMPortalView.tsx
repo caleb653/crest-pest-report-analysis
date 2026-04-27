@@ -1782,6 +1782,57 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                       {isExpanded && (
                         <div className="px-5 pb-5 space-y-5">
+                          {/* ─── HOA upcoming layout — totally different from
+                              apartments. Big map (read-only annotations) on
+                              the left, technician notes / context on the
+                              right, small chips of homes scheduled at the
+                              bottom. PM note still rendered above the layout
+                              when this is the next visit. */}
+                          {isHOA ? (
+                            <>
+                              {isFirst && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <Label htmlFor={`pm-notes-${s.id}`} className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                                      <ClipboardList className="w-4 h-4" />
+                                      Notes for the Technician
+                                    </Label>
+                                    <span className="text-xs text-muted-foreground italic">
+                                      {pmNoteSaving
+                                        ? "Saving…"
+                                        : pmNoteSavedDate === s.service_date
+                                          ? "Saved"
+                                          : "Auto-saves"}
+                                    </span>
+                                  </div>
+                                  <Textarea
+                                    id={`pm-notes-${s.id}`}
+                                    value={pmNoteDraft}
+                                    onChange={(e) => setPmNoteDraft(e.target.value)}
+                                    placeholder="Add notes for Crest about this upcoming community visit…"
+                                    className="text-sm min-h-[60px] bg-background"
+                                  />
+                                </div>
+                              )}
+                              <HOAServiceView
+                                mode="pm"
+                                isUpcoming
+                                mapUrl={mapUrl}
+                                mapData={property.map_data}
+                                findings={[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
+                                technician={s.technician}
+                                units={(unitContexts.length > 0
+                                  ? unitContexts.map((uc) => ({
+                                      unit_number: String(uc.unit_number || "").trim(),
+                                      follow_up_needed: uc.source === "follow_up",
+                                    }))
+                                  : (Array.isArray(s.units_planned) ? (s.units_planned as string[]) : [])
+                                      .map((u) => ({ unit_number: String(u || "").trim() }))
+                                ).filter((u) => u.unit_number)}
+                              />
+                            </>
+                          ) : (
+                          <>
                           {/* Big summary chips */}
                           {!isHOA && (woCount > 0 || fuCount > 0) && (
                             <div className="grid grid-cols-2 gap-3">
@@ -2027,6 +2078,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                           {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
 
+                          </>
+                          )}
                         </div>
                       )}
                     </Card>
