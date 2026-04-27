@@ -2450,7 +2450,7 @@ const PropertyDashboard = ({
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
             onDraftChange={(draft) => {
-              const current = completionDataRef.current[s.id] || ensureCompletionDraft(s, merged.unitContexts);
+              if (!completionDataRef.current[s.id]) ensureCompletionDraft(s, merged.unitContexts);
               patchCompletionDraft(s.id, {
                 ...(draft.findings !== undefined ? { summary: draft.findings, findings: "", notes: "" } : {}),
                 ...(draft.products !== undefined ? { products: draft.products } : {}),
