@@ -1459,18 +1459,64 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <Badge variant="secondary" className="text-[11px] ml-1">{pastServices.length}</Badge>
               </h3>
               <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-                <button
-                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setPastViewMode("date")}
-                >By Date</button>
-                <button
-                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setPastViewMode("unit")}
-                >By Unit</button>
+                {isHOA ? (
+                  <>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("date")}
+                    >Service Reports</button>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "quarterly" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("quarterly")}
+                    >Quarterly Updates <Badge variant="secondary" className="ml-1 text-[10px] h-4">{quarterlyUpdates.length}</Badge></button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("date")}
+                    >By Date</button>
+                    <button
+                      className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => setPastViewMode("unit")}
+                    >By Unit</button>
+                  </>
+                )}
               </div>
             </div>
 
-            {pastViewMode === "date" ? (
+            {pastViewMode === "quarterly" ? (
+              quarterlyUpdates.length === 0 ? (
+                <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No quarterly updates uploaded yet</CardContent></Card>
+              ) : (
+                <div className="space-y-4">
+                  {quarterlyUpdates.map((q) => (
+                    <Card key={q.id} className="overflow-hidden shadow-sm">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Video className="w-4 h-4 text-primary" />
+                          {q.title || "Quarterly Update"}
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(q.created_at).toLocaleString("en-US", {
+                            month: "short", day: "numeric", year: "numeric",
+                          })}
+                          {q.uploaded_by ? ` • ${q.uploaded_by}` : ""}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {q.video_url && (
+                          <video src={q.video_url} controls className="w-full rounded-md bg-black" preload="metadata" />
+                        )}
+                        {q.comment && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.comment}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )
+            ) : pastViewMode === "date" ? (
               pastServices.length === 0 ? (
                 <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
               ) : (
