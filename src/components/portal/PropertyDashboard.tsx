@@ -1051,10 +1051,18 @@ const PropertyDashboard = ({
   };
 
   // Save service-level products_used (per service date — not per unit).
-  // Debounced lightly via local state in the editor; this just persists what's passed in.
-  const updateServiceProducts = async (serviceId: string, products: ProductUsage[]) => {
-    await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
-    onRefresh();
+  // Debounced — every keystroke in the ProductUsageEditor calls this, so we
+  // batch writes and skip onRefresh() between strokes (which would otherwise
+  // race with typing and reset half-typed amounts).
+  const productsSaveTimers = useRef<Record<string, any>>({});
+  const updateServiceProducts = (serviceId: string, products: ProductUsage[]) => {
+    // Optimistically update local state so the editor reflects the keystroke
+    // immediately without waiting on Supabase.
+    setServices(prev => prev.map(s => s.id === serviceId ? { ...s, products_used: products as any } : s));
+    if (productsSaveTimers.current[serviceId]) clearTimeout(productsSaveTimers.current[serviceId]);
+    productsSaveTimers.current[serviceId] = setTimeout(async () => {
+      await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
+    }, 600);
   };
 
   // Save HOA "Visit Notes / Findings" — single combined editable field in the
