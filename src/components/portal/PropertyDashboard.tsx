@@ -2272,7 +2272,12 @@ const PropertyDashboard = ({
             uploadingMap={uploadingPropertyImage}
             findings={findingsCombined}
             technician={s.technician}
-            products={hoaProducts.length > 0 ? hoaProducts : products}
+            // Editor (admin) needs the raw service-level products list so
+            // edits round-trip cleanly to portal_services.products_used.
+            // The rolled-up `hoaProducts` (service + per-unit) is only for
+            // the PM read-only display, passed separately below.
+            products={products}
+            displayProducts={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
