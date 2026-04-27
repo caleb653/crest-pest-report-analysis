@@ -2015,9 +2015,31 @@ const PropertyDashboard = ({
                   ? { ...((s as any).report_data as any) }
                   : {};
               const existingDismissed = Array.isArray(existingReportData.dismissed_units)
-                ? (existingReportData.dismissed_units as string[]).map(u => String(u).trim()).filter(Boolean)
+                ? (existingReportData.dismissed_units as any[])
                 : [];
-              const nextDismissed = Array.from(new Set([...existingDismissed, unitLabel]));
+              // Normalize legacy string entries → object form, then append the
+              // new dismissal with a timestamp so future work orders for the
+              // same unit will still surface on this service.
+              const normalizedExisting = existingDismissed
+                .map((entry) => {
+                  if (typeof entry === "string") {
+                    const u = String(entry).trim();
+                    return u ? { unit: u, at: "" } : null;
+                  }
+                  if (entry && typeof entry === "object") {
+                    const u = String((entry as any).unit || "").trim();
+                    if (!u) return null;
+                    return { unit: u, at: String((entry as any).at || "") };
+                  }
+                  return null;
+                })
+                .filter(Boolean) as { unit: string; at: string }[];
+              // Replace any prior entry for this unit with the latest timestamp.
+              const filtered = normalizedExisting.filter(e => e.unit !== unitLabel);
+              const nextDismissed = [
+                ...filtered,
+                { unit: unitLabel, at: new Date().toISOString() },
+              ];
               const nextReportData = { ...existingReportData, dismissed_units: nextDismissed };
 
               const existingPlanned = Array.isArray(s.units_planned)
