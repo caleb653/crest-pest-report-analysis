@@ -2134,6 +2134,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
 
+                          {/* HOA: single-line summary of homes treated (community is the focal point) */}
+                          {isHOA && unitContexts.length > 0 && (
+                            <div className="text-xs text-muted-foreground border-t border-border pt-3">
+                              <span className="font-semibold text-foreground">Homes scheduled:</span>{" "}
+                              {unitContexts.map((u) => u.unit_number).join(", ")}
+                            </div>
+                          )}
+
                           {/* Carry-over notes from previous service */}
                           {carryNotes && (
                             <div className="bg-muted/40 border border-border rounded-lg p-3">
@@ -2146,7 +2154,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                           {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
 
-                          {/* Service-level comment thread (PM ↔ Crest) for upcoming visit */}
+                          {/* Service-level comment thread (PM ↔ Crest) for upcoming visit.
+                              Hidden in HOA mode — the community map and feedback summary
+                              are the focal point; PM still has the technician notes box above. */}
+                          {!isHOA && (
                           <div className="pt-3 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-3">
                             {(() => {
                               const allComments = Array.isArray(((s as any).report_data || {}).comments)
@@ -2182,6 +2193,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               );
                             })()}
                           </div>
+                          )}
                         </div>
                       )}
                     </Card>
