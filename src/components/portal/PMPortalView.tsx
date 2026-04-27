@@ -1634,10 +1634,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     correct request kind. Mirrors the admin work-order form. */}
                 <div>
                   <Label className="text-sm">What do you need? *</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="grid grid-cols-3 gap-2 mt-1">
                     {([
                       { v: "treatment", label: "Treatment", desc: "Active pest treatment" },
                       { v: "inspection", label: "Inspection", desc: "Assess & investigate" },
+                      { v: "general", label: "General Request", desc: "Just leave a comment" },
                     ] as const).map(opt => {
                       const active = requestKind === opt.v;
                       return (
@@ -1655,6 +1656,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   </div>
                 </div>
 
+                {requestKind !== "general" && (
                 <div>
                   <Label className="text-sm">{isHOA ? "Common Area, Address, or Lot # *" : "Unit, Property, or Area *"}</Label>
                   <Input
@@ -1672,7 +1674,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     </datalist>
                   )}
                 </div>
+                )}
 
+                {requestKind !== "general" && (
                 <div>
                   <Label className="text-sm">What are you dealing with? *</Label>
                   <Select value={pestType} onValueChange={setPestType}>
@@ -1682,7 +1686,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     </SelectContent>
                   </Select>
                 </div>
+                )}
 
+                {requestKind !== "general" && (
                 <div>
                   <Label className="text-sm">Where is the issue?</Label>
                   <div className="flex gap-2 mt-1">
@@ -1693,9 +1699,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     ))}
                   </div>
                 </div>
+                )}
 
                 {/* Vacant / Occupied is unit-focused — not relevant for HOA common areas / homes. */}
-                {!isHOA && (
+                {!isHOA && requestKind !== "general" && (
                   <div>
                     <Label className="text-sm">Vacant or Occupied Unit</Label>
                     <div className="flex gap-2 mt-1">
@@ -1709,12 +1716,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 )}
 
                 <div>
-                  <Label className="text-sm">Additional Details</Label>
-                  <Textarea placeholder="Any extra context — where exactly you're seeing the issue, severity, etc."
-                    value={description} onChange={e => setDescription(e.target.value)} rows={3} />
+                  <Label className="text-sm">{requestKind === "general" ? "Your Comment *" : "Additional Details"}</Label>
+                  <Textarea
+                    placeholder={requestKind === "general"
+                      ? "Share anything for the Crest team — questions, scheduling notes, follow-ups, etc."
+                      : "Any extra context — where exactly you're seeing the issue, severity, etc."}
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={requestKind === "general" ? 5 : 3}
+                  />
                 </div>
 
                 {/* Tenant Notification Section */}
+                {requestKind !== "general" && (
                 <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox checked={emailTenant} onCheckedChange={(v) => setEmailTenant(!!v)} />
@@ -1763,10 +1777,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     </label>
                   </div>
                 </div>
+                )}
 
                 <Button className="w-full" size="lg" onClick={submitRequest}
-                  disabled={!unitNumber.trim() || unitNumber === "__other" || !pestType || submitting}>
-                  <Send className="w-4 h-4 mr-2" />Submit {requestKind === "inspection" ? "Inspection Request" : (isHOA ? "Service Call Request" : "Work Order")}
+                  disabled={
+                    submitting ||
+                    (requestKind === "general"
+                      ? !description.trim()
+                      : (!unitNumber.trim() || unitNumber === "__other" || !pestType))
+                  }>
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit {requestKind === "general"
+                    ? "General Request"
+                    : requestKind === "inspection"
+                      ? "Inspection Request"
+                      : (isHOA ? "Service Call Request" : "Work Order")}
                 </Button>
               </CardContent>
             </Card>
