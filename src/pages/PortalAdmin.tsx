@@ -408,15 +408,13 @@ const PortalAdmin = () => {
       }
     }
 
-    // Units + pest data from most recent past service (default carry-over)
-    const recentUnits: string[] = [];
+    // Pest data from most recent past service (context only; not scheduling).
     const recentPestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
     if (pastCompleted.length > 0) {
       const recent = pastCompleted[0];
       if (Array.isArray(recent.unit_details)) {
         (recent.unit_details as any[]).forEach((u: any) => {
           if (u.unit_number) {
-            recentUnits.push(u.unit_number);
             recentPestData[u.unit_number] = {
               findings: u.findings || "",
               pest_activity: u.pest_activity || "",
