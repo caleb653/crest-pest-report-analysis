@@ -9,6 +9,8 @@ import {
   makeDefaultUsage,
   autoCalcUndiluted,
   findStandardProduct,
+  findEpaNumber,
+  computeDilution,
 } from "@/lib/productCatalog";
 
 interface Props {
@@ -140,6 +142,8 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
           </div>
           {value.map((u, idx) => {
             const std = findStandardProduct(u.name);
+            const epa = findEpaNumber(u.name);
+            const dil = computeDilution(u);
             return (
               <div key={`${u.name}-${idx}`} className="grid grid-cols-12 gap-1 px-2 py-1.5 items-center">
                 <div className="col-span-4 text-[11px] font-medium truncate" title={u.name}>
@@ -147,6 +151,14 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
                   {std && (
                     <span className="block text-[9px] text-muted-foreground font-normal">
                       {std.perGallon} {std.unit}/gal
+                    </span>
+                  )}
+                  {epa && (
+                    <span className="block text-[9px] text-muted-foreground font-mono">EPA {epa}</span>
+                  )}
+                  {(dil.ratePct != null) && (
+                    <span className="block text-[9px] text-primary/80 font-normal">
+                      {dil.ratePct.toFixed(2)}% dilution
                     </span>
                   )}
                 </div>
