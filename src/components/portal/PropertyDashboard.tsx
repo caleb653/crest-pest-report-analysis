@@ -1465,7 +1465,10 @@ const PropertyDashboard = ({
       if (error) {
         toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Site map saved", duration: 1500 });
+        // Mutate local prop so ReadOnlyMapCanvas reflects the new emblems
+        // immediately when the user clicks Done — without this, the saved
+        // data only appears after a full parent refresh.
+        (property as any).map_data = parsed;
       }
     } catch (e: any) {
       toast({ title: "Failed to save map", description: e?.message, variant: "destructive" });
