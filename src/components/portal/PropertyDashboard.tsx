@@ -495,6 +495,36 @@ const PropertyDashboard = ({
     loadPrepSheets();
   }, [property.id]);
 
+  // Prep sheet helpers — mirror PMPortalView so admin gets the exact same
+  // View / Download PDF / Copy Link experience.
+  const downloadPrep = async (sheet: { title: string; file_url: string | null }) => {
+    if (!sheet.file_url) return;
+    try {
+      const res = await fetch(sheet.file_url);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${sheet.title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (err) {
+      console.error("Download failed", err);
+      window.open(sheet.file_url, "_blank", "noopener,noreferrer");
+    }
+  };
+  const copyPrepLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copied!", description: "Share it with the customer." });
+    } catch {
+      toast({ title: "Could not copy link", variant: "destructive" });
+    }
+  };
+
   // Load surveys + responses for this property
   useEffect(() => {
     const loadSurveys = async () => {
@@ -3509,39 +3539,47 @@ const PropertyDashboard = ({
                     <div className="bg-muted/30 rounded-lg p-3 max-h-[400px] overflow-y-auto">
                       <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
                     </div>
-                    <div className="flex gap-1.5">
-                      <Button
-                        size="sm"
-                        className="flex-1 h-9 text-sm"
-                        onClick={async () => {
-                          if (ps.description) {
-                            await navigator.clipboard.writeText(ps.description);
-                            setCopyingPrepSheet(ps.id);
-                            toast({ title: "Prep sheet copied!", description: "Paste it into a text or email to send to the customer." });
-                            setTimeout(() => setCopyingPrepSheet(null), 2000);
-                          }
-                        }}
-                      >
-                        {copyingPrepSheet === ps.id ? (
-                          <><CheckCircle className="w-3.5 h-3.5 mr-1" />Copied!</>
-                        ) : (
-                          <><Copy className="w-3.5 h-3.5 mr-1" />Copy to Clipboard</>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 text-sm"
-                        onClick={() => {
-                          if (ps.description) {
-                            const subject = encodeURIComponent(ps.title);
-                            const body = encodeURIComponent(ps.description);
-                            window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
-                          }
-                        }}
-                      >
-                        <Send className="w-3.5 h-3.5 mr-1" />Email
-                      </Button>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ps.file_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 text-sm"
+                          onClick={() => window.open(ps.file_url!, "_blank", "noopener,noreferrer")}
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1" />View
+                        </Button>
+                      )}
+                      {ps.file_url && (
+                        <Button size="sm" variant="outline" className="h-9 text-sm" onClick={() => downloadPrep(ps)}>
+                          <Download className="w-3.5 h-3.5 mr-1" />Download PDF
+                        </Button>
+                      )}
+                      {ps.file_url && (
+                        <Button size="sm" variant="outline" className="h-9 text-sm" onClick={() => copyPrepLink(ps.file_url!)}>
+                          <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
+                        </Button>
+                      )}
+                      {ps.description && (
+                        <Button
+                          size="sm"
+                          className="h-9 text-sm"
+                          onClick={async () => {
+                            if (ps.description) {
+                              await navigator.clipboard.writeText(ps.description);
+                              setCopyingPrepSheet(ps.id);
+                              toast({ title: "Prep sheet copied!" });
+                              setTimeout(() => setCopyingPrepSheet(null), 2000);
+                            }
+                          }}
+                        >
+                          {copyingPrepSheet === ps.id ? (
+                            <><CheckCircle className="w-3.5 h-3.5 mr-1" />Copied!</>
+                          ) : (
+                            <><Copy className="w-3.5 h-3.5 mr-1" />Copy Text</>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
