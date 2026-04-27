@@ -200,6 +200,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [hoaLocation, setHoaLocation] = useState("");
   const [hoaPests, setHoaPests] = useState("");
   const [hoaDetails, setHoaDetails] = useState("");
+  // Resident contact (Service Request only — community sightings are board-level)
+  const [hoaResidentName, setHoaResidentName] = useState("");
+  const [hoaResidentEmail, setHoaResidentEmail] = useState("");
+  const [hoaResidentPhone, setHoaResidentPhone] = useState("");
 
   // Survey state
   const [surveys, setSurveys] = useState<any[]>([]);
