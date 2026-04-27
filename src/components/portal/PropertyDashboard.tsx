@@ -31,6 +31,7 @@ import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/un
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
+import { useRef as _useRef } from "react";
 
 // ─── Types ───
 interface PortalProperty {
