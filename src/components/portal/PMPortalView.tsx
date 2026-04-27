@@ -200,6 +200,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [hoaLocation, setHoaLocation] = useState("");
   const [hoaPests, setHoaPests] = useState("");
   const [hoaDetails, setHoaDetails] = useState("");
+  // Resident contact (Service Request only — community sightings are board-level)
+  const [hoaResidentName, setHoaResidentName] = useState("");
+  const [hoaResidentEmail, setHoaResidentEmail] = useState("");
+  const [hoaResidentPhone, setHoaResidentPhone] = useState("");
 
   // Survey state
   const [surveys, setSurveys] = useState<any[]>([]);
@@ -458,13 +462,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (isCommunity) {
       if (!hoaLocation.trim() || !hoaPests.trim()) return;
     } else {
-      if (!hoaAddress.trim() || !hoaLocation.trim() || !hoaPests.trim()) return;
+      if (
+        !hoaAddress.trim() ||
+        !hoaLocation.trim() ||
+        !hoaPests.trim() ||
+        !hoaResidentName.trim() ||
+        !hoaResidentEmail.trim() ||
+        !hoaResidentPhone.trim()
+      ) return;
     }
     setSubmitting(true);
 
     const requestType = isCommunity ? "Community Pest Sighting" : "Service Request";
     const tag = isCommunity ? "[COMMUNITY SIGHTING]" : "[HOA SERVICE REQUEST]";
     const descParts = [
+      !isCommunity ? `Resident: ${hoaResidentName.trim()}` : null,
+      !isCommunity ? `Phone: ${hoaResidentPhone.trim()}` : null,
+      !isCommunity ? `Email: ${hoaResidentEmail.trim()}` : null,
       `Pests: ${hoaPests.trim()}`,
       `Location: ${hoaLocation.trim()}`,
       hoaDetails.trim() ? `Details: ${hoaDetails.trim()}` : null,
@@ -479,6 +493,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       pest_type: hoaPests.trim(),
       location_type: hoaLocation.trim(),
       photos: workOrderPhotos,
+      tenant_email: !isCommunity ? hoaResidentEmail.trim() : null,
     } as any).select("id").maybeSingle();
 
     if (!err) {
@@ -500,6 +515,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setHoaLocation("");
       setHoaPests("");
       setHoaDetails("");
+      setHoaResidentName("");
+      setHoaResidentEmail("");
+      setHoaResidentPhone("");
       setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
@@ -1591,15 +1609,52 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 {hoaRequestKind && (
                   <div className="space-y-3 pt-2 border-t">
                     {hoaRequestKind === "service" && (
-                      <div>
-                        <Label className="text-sm">What is your address? *</Label>
-                        <Input
-                          placeholder="1234 Main St"
-                          value={hoaAddress}
-                          onChange={e => setHoaAddress(e.target.value)}
-                          className="mt-1"
-                        />
-                      </div>
+                      <>
+                        <div className="rounded-lg border-2 border-primary/60 bg-primary/[0.05] p-3 space-y-3">
+                          <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+                            <ClipboardList className="w-3.5 h-3.5" />Resident Contact
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Name *</Label>
+                              <Input
+                                placeholder="Resident full name"
+                                value={hoaResidentName}
+                                onChange={e => setHoaResidentName(e.target.value)}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Phone *</Label>
+                              <Input
+                                type="tel"
+                                placeholder="(555) 123-4567"
+                                value={hoaResidentPhone}
+                                onChange={e => setHoaResidentPhone(e.target.value)}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label className="text-xs">Email *</Label>
+                              <Input
+                                type="email"
+                                placeholder="resident@example.com"
+                                value={hoaResidentEmail}
+                                onChange={e => setHoaResidentEmail(e.target.value)}
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label className="text-xs">Home Address *</Label>
+                              <Input
+                                placeholder="1234 Main St"
+                                value={hoaAddress}
+                                onChange={e => setHoaAddress(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-snug">
+                            This is the resident submitting the request — saved with the work order so Crest can reach them directly.
+                          </p>
+                        </div>
+                      </>
                     )}
 
                     <div>
@@ -1672,7 +1727,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         submitting ||
                         !hoaLocation.trim() ||
                         !hoaPests.trim() ||
-                        (hoaRequestKind === "service" && !hoaAddress.trim())
+                        (hoaRequestKind === "service" && (
+                          !hoaAddress.trim() ||
+                          !hoaResidentName.trim() ||
+                          !hoaResidentEmail.trim() ||
+                          !hoaResidentPhone.trim()
+                        ))
                       }
                     >
                       <Send className="w-4 h-4 mr-2" />
