@@ -1936,8 +1936,14 @@ const PropertyDashboard = ({
           const existingUnitSet = new Set(
             cd.unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean)
           );
+          // Also exclude any unit the admin JUST removed (before the DB refresh
+          // has propagated dismissed_units back through `merged.unitContexts`).
+          const localDismissed = recentlyDismissedUnits[s.id] || new Set<string>();
           const missingContexts = merged.unitContexts.filter(
-            (uc) => !existingUnitSet.has(String(uc.unit_number).trim())
+            (uc) => {
+              const u = String(uc.unit_number).trim();
+              return !existingUnitSet.has(u) && !localDismissed.has(u);
+            }
           );
           if (missingContexts.length > 0) {
             setTimeout(() => {
