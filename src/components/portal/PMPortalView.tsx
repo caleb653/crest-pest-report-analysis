@@ -682,17 +682,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // intentionally untouched.
     if (isHOA) {
       return (
-        <div className="px-3 pb-3 border-t pt-3 space-y-3 text-xs">
-          {/* Site map — focal point for HOA service reports */}
+        <div className="px-3 pb-3 border-t pt-3 space-y-4 text-xs">
+          {/* ── HOA report = MAP + SUMMARY ≈ 90% of the page ── */}
+          {/* Site map — dominant visual */}
           {(mapUrl || property.map_data) && (
-            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50/40 overflow-hidden shadow-sm">
-              <div className="px-3 py-2 bg-emerald-100/60 border-b border-emerald-200 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-emerald-700" />
-                <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+            <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/40 overflow-hidden shadow-md">
+              <div className="px-3 py-2 bg-emerald-100/70 border-b-2 border-emerald-300 flex items-center gap-1.5">
+                <MapPin className="w-5 h-5 text-emerald-700" />
+                <p className="text-sm font-bold uppercase tracking-wide text-emerald-800">
                   Community Site Map — Areas Treated
                 </p>
               </div>
-              <div className="bg-background" style={{ height: 460 }}>
+              <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
                 {property.map_data ? (
                   <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
                 ) : mapUrl ? (
@@ -702,85 +703,90 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           )}
 
-          {/* Robust Technician Findings / Summary / Notes — the main story */}
+          {/* Technician Report — large, prominent narrative */}
           {summaryCombined && (
-            <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-5 shadow-sm">
-              <div className="flex items-center gap-1.5 mb-2">
-                <ClipboardList className="w-4 h-4 text-primary" />
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">
+            <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.08] to-transparent p-6 shadow-md">
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                <p className="text-sm font-bold uppercase tracking-wide text-primary">
                   Technician Report{s.technician ? ` — ${s.technician}` : ""}
                 </p>
               </div>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
+              <p className="text-base whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
             </div>
           )}
 
-          {/* Products Used — robust display */}
-          {products.length > 0 && (
-            <div className="rounded-xl border-2 border-primary/40 bg-card p-3.5 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-primary mb-2 flex items-center gap-1.5">
-                <ClipboardList className="w-4 h-4" />
-                Products Used (this visit)
-              </p>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-[12px]">
-                  <thead className="bg-muted/60">
-                    <tr>
-                      <th className="text-left px-2.5 py-1.5 font-semibold">Product</th>
-                      <th className="text-left px-2.5 py-1.5 font-semibold">Applied (diluted)</th>
-                      <th className="text-left px-2.5 py-1.5 font-semibold">Undiluted (concentrate)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p, i) => (
-                      <tr key={i} className="border-t border-border">
-                        <td className="px-2.5 py-1.5 font-medium">{p.name}</td>
-                        <td className="px-2.5 py-1.5 text-muted-foreground">
-                          {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
-                        </td>
-                        <td className="px-2.5 py-1.5 text-muted-foreground">
-                          {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Specific Homes Treated — small, demoted */}
-          {unitDetails.length > 0 && (
-            <details className="rounded-lg border border-border bg-muted/20 px-3 py-2 group">
-              <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
-                <span>Specific Homes Treated ({unitDetails.length})</span>
+          {/* Everything else — compact afterthought (~10% of the page) */}
+          {(products.length > 0 || unitDetails.length > 0 || s.special_notes) && (
+            <details className="rounded-lg border border-border bg-muted/30 px-3 py-2 group">
+              <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground select-none flex items-center justify-between">
+                <span>
+                  Visit Details
+                  {products.length > 0 && ` · ${products.length} product${products.length === 1 ? "" : "s"}`}
+                  {unitDetails.length > 0 && ` · ${unitDetails.length} home${unitDetails.length === 1 ? "" : "s"}`}
+                </span>
                 <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
               </summary>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {unitDetails.map((u: any, i: number) => {
-                  const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
-                  return (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className={`text-[11px] ${
-                        isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/60 bg-background"
-                      }`}
-                    >
-                      {u.unit_number || "—"}
-                      {u.status ? ` · ${u.status}` : ""}
-                    </Badge>
-                  );
-                })}
+              <div className="mt-3 space-y-3">
+                {products.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Products Used</p>
+                    <div className="border rounded-md overflow-hidden">
+                      <table className="w-full text-[11px]">
+                        <thead className="bg-muted/60">
+                          <tr>
+                            <th className="text-left px-2 py-1 font-semibold">Product</th>
+                            <th className="text-left px-2 py-1 font-semibold">Applied</th>
+                            <th className="text-left px-2 py-1 font-semibold">Undiluted</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {products.map((p, i) => (
+                            <tr key={i} className="border-t border-border">
+                              <td className="px-2 py-1 font-medium">{p.name}</td>
+                              <td className="px-2 py-1 text-muted-foreground">
+                                {p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—"}
+                              </td>
+                              <td className="px-2 py-1 text-muted-foreground">
+                                {p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                {unitDetails.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">Specific Homes Treated</p>
+                    <div className="flex flex-wrap gap-1">
+                      {unitDetails.map((u: any, i: number) => {
+                        const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
+                        return (
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className={`text-[10px] ${
+                              isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/60 bg-background"
+                            }`}
+                          >
+                            {u.unit_number || "—"}
+                            {u.status ? ` · ${u.status}` : ""}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {s.special_notes && (
+                  <div className="rounded border border-amber-300 bg-amber-50/60 p-2 text-amber-900">
+                    <p className="font-semibold uppercase text-[10px] tracking-wide mb-0.5">Special Notes</p>
+                    <p className="whitespace-pre-wrap text-[11px]">{s.special_notes}</p>
+                  </div>
+                )}
               </div>
             </details>
-          )}
-
-          {s.special_notes && (
-            <div className="rounded-md border border-amber-300 bg-amber-50/60 p-2.5 text-amber-900">
-              <p className="font-semibold uppercase text-[10px] tracking-wide mb-0.5">Special Notes</p>
-              <p className="whitespace-pre-wrap">{s.special_notes}</p>
-            </div>
           )}
 
           {/* PM ↔ Crest service-level comments — unchanged for HOA */}
