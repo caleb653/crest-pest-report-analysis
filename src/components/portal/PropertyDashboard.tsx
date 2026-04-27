@@ -4376,6 +4376,44 @@ const PropertyDashboard = ({
             ))}
           </div>
           )}
+
+          {/* Signed Right-to-Treat Authorizations — full archive for this property */}
+          <div className="mt-8">
+            <div className="border-b-2 border-primary/70 pb-3 mb-3">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
+                <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length}</Badge>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">Every signed tenant authorization recorded for this property.</p>
+            </div>
+            {signedAuthorizations.length === 0 ? (
+              <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {signedAuthorizations.map((r) => (
+                  <Card key={r.id} className="shadow-sm">
+                    <CardContent className="p-3 flex items-start gap-3">
+                      {r.right_to_treat_signature && (
+                        <img src={r.right_to_treat_signature} alt="Signature" className="w-28 h-16 rounded border bg-white object-contain shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0 text-xs space-y-0.5">
+                        <p className="text-sm font-semibold">{r.right_to_treat_signer_name || r.tenant_email || "—"}</p>
+                        <p className="text-muted-foreground">
+                          {r.unit_number ? <>Unit <span className="font-medium text-foreground">{r.unit_number}</span> · </> : null}
+                          {r.pest_type || r.request_type || "Service"}
+                          {r.location_type ? ` (${r.location_type})` : ""}
+                        </p>
+                        {r.tenant_email && <p className="text-muted-foreground truncate">{r.tenant_email}</p>}
+                        <p className="text-muted-foreground">
+                          Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </TabsContent>
 
