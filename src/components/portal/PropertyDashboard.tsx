@@ -29,6 +29,7 @@ import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestio
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 import { STAFF_NAMES } from "@/lib/staffRoster";
+import { PesticideNotice } from "@/components/portal/PesticideNotice";
 
 // ─── Types ───
 interface PortalProperty {
@@ -2525,6 +2526,9 @@ const PropertyDashboard = ({
             </div>
           );
         })()}
+
+        {/* Required pesticide notice — shown at the bottom of every completed service report */}
+        {!isUpcoming && !isProjected && <PesticideNotice />}
 
       </div>
     );
