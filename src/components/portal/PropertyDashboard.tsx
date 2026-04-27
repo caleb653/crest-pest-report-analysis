@@ -78,6 +78,7 @@ const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",       label: "To Be Treated" },
   { value: "Treated - Complete",  label: "Treated - Free and Clear" },
+  { value: "Complete",            label: "Complete" },
   { value: "Not Treated",         label: "Not Treated" },
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
