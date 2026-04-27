@@ -1265,7 +1265,10 @@ const PropertyDashboard = ({
 
     await supabase.from("portal_services").update({
       status: "completed",
-      service_date: today,
+      // Preserve any existing service_date the tech set; only fall back to
+      // today when the row truly has no date yet. Completing a service must
+      // NEVER overwrite a date that's already on the record.
+      service_date: (svcRow as any)?.service_date || today,
       service_time: serviceTime,
       unit_details: unitRows as any,
       summary: data?.summary || null,
