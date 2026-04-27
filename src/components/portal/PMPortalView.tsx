@@ -175,8 +175,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [pestType, setPestType] = useState("");
   const [locationType, setLocationType] = useState("");
   const [description, setDescription] = useState("");
-  const [preferredDateChoice, setPreferredDateChoice] = useState<"" | "next" | "few-weeks" | "other">("");
-  const [preferredDateCustom, setPreferredDateCustom] = useState("");
   const [occupancyStatus, setOccupancyStatus] = useState<"" | "Occupied" | "Vacant">("");
   const [emailTenant, setEmailTenant] = useState(false);
   const [tenantEmail, setTenantEmail] = useState("");
@@ -324,16 +322,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     setLoading(false);
   };
 
-  const computePreferredDate = (): string | null => {
-    // Save the human-friendly label exactly as chosen on the form so the PM
-    // (and admin) sees the same wording back ("Next service", "Next few weeks",
-    // or whatever they typed) instead of a computed calendar date.
-    if (preferredDateChoice === "") return null;
-    if (preferredDateChoice === "next") return "Next service";
-    if (preferredDateChoice === "few-weeks") return "Next few weeks";
-    return preferredDateCustom.trim() || null;
-  };
-
   const submitRequest = async () => {
     if (!unitNumber.trim() || !pestType) return;
     setSubmitting(true);
@@ -395,8 +383,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setRequestKind("treatment");
       setPestType("");
       setDescription("");
-      setPreferredDateChoice("next");
-      setPreferredDateCustom("");
       setOccupancyStatus("");
       setEmailTenant(false);
       setTenantEmail("");
