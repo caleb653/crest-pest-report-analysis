@@ -4551,6 +4551,7 @@ const PropertyDashboard = ({
             </Button>
           </CardContent>
         </Card>
+        )}
 
         {/* Tenant Service Request Link (admin-only) */}
         <Button className="w-full h-10 text-xs font-semibold bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
