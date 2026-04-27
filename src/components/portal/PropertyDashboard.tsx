@@ -183,7 +183,7 @@ const PropertyDashboard = ({
   const [completingServiceId, setCompletingServiceId] = useState<string | null>(null);
   const [followUpUnits, setFollowUpUnits] = useState<string[]>([]);
   const [workOrder, setWorkOrder] = useState({
-    unit_number: "", pest_type: "", location_type: "", comments: "", preferred_date: "",
+    unit_number: "", pest_type: "", location_type: "", comments: "",
     request_type: "" as "" | "treatment" | "inspection",
     occupancy_status: "" as "" | "Occupied" | "Vacant",
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
