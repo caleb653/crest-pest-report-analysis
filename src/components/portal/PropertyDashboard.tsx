@@ -1983,7 +1983,9 @@ const PropertyDashboard = ({
             isUpcoming={isUpcoming}
             mapUrl={mapUrl}
             mapData={property.map_data}
-            onSaveMapData={handleSaveMapData}
+            serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
+            onSaveServiceMapData={(canvasData) => saveServiceMapData(s.id, canvasData)}
+            onResetServiceMapData={() => resetServiceMapData(s.id)}
             onUploadMapImage={(file) => onUpdatePropertyImage(property.id, file)}
             uploadingMap={uploadingPropertyImage}
             findings={findingsCombined}
