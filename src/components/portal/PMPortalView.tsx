@@ -748,7 +748,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </p>
             <div className="space-y-6">
               {unitDetails.map((u: any, i: number) => {
-                const isFollowUp = u.status === "Treated - Follow Up" || u.status === "Activity Found - Follow Up";
+                const isFollowUp = u.follow_up_needed === true;
                 const productsText = Array.isArray(u.products_used)
                   ? (u.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean).join(", ")
                   : u.products_used;
