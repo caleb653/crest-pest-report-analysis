@@ -984,6 +984,49 @@ const PropertyDashboard = ({
     setFollowUpUnits([]);
     toast({ title: "Service completed", description: "Moved to Previous Services." });
     setActiveTab("past");
+
+    // ─── Email the property manager / client contact a completion summary ───
+    // Best-effort: failures here must not block the completion itself.
+    try {
+      const { data: client } = await supabase
+        .from("portal_clients")
+        .select("name, email")
+        .eq("id", clientId)
+        .maybeSingle();
+      const recipient = (client as any)?.email || null;
+      if (recipient) {
+        // Prefer the property-scoped PM link; fall back to any active link.
+        const propertyLink =
+          links.find(l => l.link_type === "sub" && Array.isArray(l.assigned_property_ids) && (l.assigned_property_ids as string[]).includes(property.id))
+          || links.find(l => l.is_active);
+        const portalUrl = propertyLink
+          ? `${window.location.origin}/pm/${propertyLink.token}`
+          : window.location.origin;
+
+        const svc = propServices.find(s => s.id === serviceId);
+        const unitsCount = Array.isArray(unitRows) ? unitRows.length : 0;
+        const summary = [data?.summary, data?.findings, data?.notes].filter(Boolean).join("\n\n");
+
+        await supabase.functions.invoke("send-service-completed", {
+          body: {
+            to: recipient,
+            propertyName: property.name,
+            clientName: (client as any)?.name || clientName || "",
+            serviceType: svc?.service_type || "",
+            serviceDate: today,
+            technician: data?.technician || svc?.technician || "",
+            summary,
+            unitsCount,
+            productsList: aggregatedProducts,
+            portalUrl,
+          },
+        });
+        toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
+      }
+    } catch (e) {
+      console.warn("send-service-completed failed", e);
+    }
+
     onRefresh();
   };
 
@@ -1389,7 +1432,11 @@ const PropertyDashboard = ({
                   </div>
                 </div>
                 {/* HOA mode: hide ALL per-unit treatment details — show only the area name + service type + status. */}
-                {!isHOA && isUnitOpen && (<>
+                {/* In HOA mode we still want past services to show what was treated in
+                    each common area (products, findings) so the report doesn't look
+                    blank after the tech hits Complete. We only hide the body for HOA
+                    on UPCOMING work. Past services always render the full body. */}
+                {isUnitOpen && (<>
                 {/* Card body — left 2/3 fields, right 1/3 unit photos */}
                 <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1667,6 +1714,20 @@ const PropertyDashboard = ({
 
         {/* Past service: inline-editable unit table */}
         {!isUpcoming && renderEditableUnitTable(s)}
+
+        {/* Past service: service-level products (with Applied / Undiluted amounts).
+            These are saved at completion time via the ProductUsageEditor but
+            previously had no display, so the technician's amounts looked "lost"
+            after they hit Complete. */}
+        {!isUpcoming && products.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+              <FlaskConical className="w-3.5 h-3.5 text-primary" />
+              Products Used (this service date)
+            </p>
+            <ProductUsageSummary entries={products} />
+          </div>
+        )}
 
         {/* Upcoming service: prominent unique-units count (units listed in Service Report table below) */}
         {isUpcoming && isFirstUpcoming && merged.units.length > 0 && (() => {
