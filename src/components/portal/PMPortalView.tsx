@@ -954,6 +954,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{u.findings}</p>
                           </div>
                         )}
+                        {(u.follow_up_needed || u.sanitization_concern) && (
+                          <div className="flex flex-wrap gap-2">
+                            {u.follow_up_needed && (
+                              <Badge className="text-[11px] bg-orange-500 text-white">Follow Up Needed</Badge>
+                            )}
+                            {u.sanitization_concern && (
+                              <Badge className="text-[11px] bg-amber-600 text-white">Sanitization Concern</Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
                       {/* Unit photos — right 1/3 */}
                       {Array.isArray(u.photos) && u.photos.length > 0 && (
