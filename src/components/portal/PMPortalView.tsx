@@ -284,6 +284,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pmPrefDraft]);
 
+  const renameProperty = async (next: string) => {
+    if (!property) return;
+    const { error } = await supabase.from("portal_properties").update({ name: next }).eq("id", property.id);
+    if (error) {
+      toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProperty({ ...property, name: next } as PropertyData);
+    toast({ title: "Property renamed", duration: 1500 });
+  };
+
   const loadAll = async () => {
     setLoading(true);
 
