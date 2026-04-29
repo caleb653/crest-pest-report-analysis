@@ -346,6 +346,22 @@ const PortalAdmin = () => {
     if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, name } : prev);
     toast({ title: "Property renamed", duration: 1500 });
   };
+  /**
+   * Rename the client/owner shown under the property name. We update the field
+   * that `getClientName` reads from first (`company` if it exists, otherwise
+   * `name`) so the change is reflected everywhere the helper is used.
+   */
+  const renameClient = async (clientId: string, next: string) => {
+    const c = clients.find(cl => cl.id === clientId);
+    if (!c) return;
+    const patch: { company?: string; name?: string } = c.company
+      ? { company: next }
+      : { name: next };
+    const { error } = await supabase.from("portal_clients").update(patch).eq("id", clientId);
+    if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); return; }
+    setClients(prev => prev.map(cl => cl.id === clientId ? { ...cl, ...patch } : cl));
+    toast({ title: "Owner renamed", duration: 1500 });
+  };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); loadAll(); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
   
