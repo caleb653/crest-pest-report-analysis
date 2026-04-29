@@ -701,7 +701,13 @@ const PortalAdmin = () => {
                             <div className="flex items-center gap-3">
                               {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
                               <div>
-                                <p className="font-medium">{p.name}</p>
+                                <p className="font-medium" onClick={(e) => e.stopPropagation()}>
+                                  <InlineEditableText
+                                    value={p.name}
+                                    onSave={(next) => renameProperty(p.id, next)}
+                                    inputClassName="text-sm font-medium"
+                                  />
+                                </p>
                                 <p className="text-sm text-muted-foreground">{getClientName(p.client_id)}</p>
                                 {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
                               </div>
@@ -873,7 +879,13 @@ const PortalAdmin = () => {
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-foreground font-medium">{selectedProperty.name}</span>
               </div>
-              <h1 className="text-xl font-bold">{selectedProperty.name}</h1>
+                <h1 className="text-xl font-bold">
+                  <InlineEditableText
+                    value={selectedProperty.name}
+                    onSave={(next) => renameProperty(selectedProperty.id, next)}
+                    inputClassName="text-xl font-bold h-9"
+                  />
+                </h1>
               {selectedProperty.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
               <p className="text-xs text-muted-foreground">Owner: {getClientName(selectedProperty.client_id)}</p>
             </div>
