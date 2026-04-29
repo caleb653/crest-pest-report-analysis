@@ -20,6 +20,7 @@ import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import { STAFF_NAMES } from "@/lib/staffRoster";
+import { InlineEditableText } from "@/components/portal/InlineEditableText";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -337,6 +338,14 @@ const PortalAdmin = () => {
 
   const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
   const deleteProperty = async (id: string) => { await supabase.from("portal_properties").delete().eq("id", id); if (selectedProperty?.id === id) setSelectedProperty(null); loadAll(); toast({ title: "Property deleted" }); };
+  const renameProperty = async (id: string, name: string) => {
+    const { error } = await supabase.from("portal_properties").update({ name }).eq("id", id);
+    if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); return; }
+    // optimistic local update so the header / list reflect the change immediately
+    setAllProperties(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+    if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, name } : prev);
+    toast({ title: "Property renamed", duration: 1500 });
+  };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); loadAll(); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
   
@@ -692,7 +701,13 @@ const PortalAdmin = () => {
                             <div className="flex items-center gap-3">
                               {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
                               <div>
-                                <p className="font-medium">{p.name}</p>
+                                <p className="font-medium" onClick={(e) => e.stopPropagation()}>
+                                  <InlineEditableText
+                                    value={p.name}
+                                    onSave={(next) => renameProperty(p.id, next)}
+                                    inputClassName="text-sm font-medium"
+                                  />
+                                </p>
                                 <p className="text-sm text-muted-foreground">{getClientName(p.client_id)}</p>
                                 {p.address && <p className="text-xs text-muted-foreground">{p.address}</p>}
                               </div>
@@ -864,7 +879,13 @@ const PortalAdmin = () => {
                 <ChevronRight className="w-3 h-3" />
                 <span className="text-foreground font-medium">{selectedProperty.name}</span>
               </div>
-              <h1 className="text-xl font-bold">{selectedProperty.name}</h1>
+                <h1 className="text-xl font-bold">
+                  <InlineEditableText
+                    value={selectedProperty.name}
+                    onSave={(next) => renameProperty(selectedProperty.id, next)}
+                    inputClassName="text-xl font-bold h-9"
+                  />
+                </h1>
               {selectedProperty.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
               <p className="text-xs text-muted-foreground">Owner: {getClientName(selectedProperty.client_id)}</p>
             </div>

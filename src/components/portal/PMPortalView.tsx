@@ -31,6 +31,7 @@ import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
+import { InlineEditableText } from "@/components/portal/InlineEditableText";
 
 const PEST_TYPES = [
   "General Pests",
@@ -282,6 +283,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pmPrefDraft]);
+
+  const renameProperty = async (next: string) => {
+    if (!property) return;
+    const { error } = await supabase.from("portal_properties").update({ name: next }).eq("id", property.id);
+    if (error) {
+      toast({ title: "Rename failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setProperty({ ...property, name: next } as PropertyData);
+    toast({ title: "Property renamed", duration: 1500 });
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -1140,7 +1152,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <img src={property.image_url} alt={property.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-base truncate">{property.name}</h2>
+                <h2 className="font-bold text-base truncate">
+                  <InlineEditableText
+                    value={property.name}
+                    onSave={renameProperty}
+                    inputClassName="text-base font-bold h-8"
+                  />
+                </h2>
                 {property.address && <p className="text-xs text-muted-foreground truncate">{property.address}</p>}
               </div>
             </CardContent>
@@ -2938,7 +2956,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-9" />
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-base truncate">{property.name}</h1>
+            <h1 className="font-bold text-base truncate">
+              <InlineEditableText
+                value={property.name}
+                onSave={renameProperty}
+                inputClassName="text-base font-bold h-8"
+              />
+            </h1>
             <p className="text-xs text-muted-foreground">{portalRoleLabel}</p>
           </div>
         </div>
