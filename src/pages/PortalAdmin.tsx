@@ -346,6 +346,13 @@ const PortalAdmin = () => {
     if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, name } : prev);
     toast({ title: "Property renamed", duration: 1500 });
   };
+  const updatePropertyAddress = async (id: string, address: string) => {
+    const { error } = await supabase.from("portal_properties").update({ address }).eq("id", id);
+    if (error) { toast({ title: "Address update failed", description: error.message, variant: "destructive" }); return; }
+    setAllProperties(prev => prev.map(p => p.id === id ? { ...p, address } : p));
+    if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, address } : prev);
+    toast({ title: "Address updated", duration: 1500 });
+  };
   /**
    * Rename the client/owner shown under the property name. We update the field
    * that `getClientName` reads from first (`company` if it exists, otherwise
