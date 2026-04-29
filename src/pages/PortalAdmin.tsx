@@ -346,6 +346,29 @@ const PortalAdmin = () => {
     if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, name } : prev);
     toast({ title: "Property renamed", duration: 1500 });
   };
+  const updatePropertyAddress = async (id: string, address: string) => {
+    const { error } = await supabase.from("portal_properties").update({ address }).eq("id", id);
+    if (error) { toast({ title: "Address update failed", description: error.message, variant: "destructive" }); return; }
+    setAllProperties(prev => prev.map(p => p.id === id ? { ...p, address } : p));
+    if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, address } : prev);
+    toast({ title: "Address updated", duration: 1500 });
+  };
+  /**
+   * Rename the client/owner shown under the property name. We update the field
+   * that `getClientName` reads from first (`company` if it exists, otherwise
+   * `name`) so the change is reflected everywhere the helper is used.
+   */
+  const renameClient = async (clientId: string, next: string) => {
+    const c = clients.find(cl => cl.id === clientId);
+    if (!c) return;
+    const patch: { company?: string; name?: string } = c.company
+      ? { company: next }
+      : { name: next };
+    const { error } = await supabase.from("portal_clients").update(patch).eq("id", clientId);
+    if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); return; }
+    setClients(prev => prev.map(cl => cl.id === clientId ? { ...cl, ...patch } : cl));
+    toast({ title: "Owner renamed", duration: 1500 });
+  };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); loadAll(); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
   
@@ -886,8 +909,23 @@ const PortalAdmin = () => {
                     inputClassName="text-xl font-bold h-9"
                   />
                 </h1>
-              {selectedProperty.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
-              <p className="text-xs text-muted-foreground">Owner: {getClientName(selectedProperty.client_id)}</p>
+              <p className="text-sm text-muted-foreground">
+                <InlineEditableText
+                  value={selectedProperty.address || ""}
+                  onSave={(next) => updatePropertyAddress(selectedProperty.id, next)}
+                  placeholder="Add address"
+                  inputClassName="text-sm h-7"
+                />
+              </p>
+              <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <span>Owner:</span>
+                <InlineEditableText
+                  value={getClientName(selectedProperty.client_id)}
+                  onSave={(next) => renameClient(selectedProperty.client_id, next)}
+                  placeholder="Owner"
+                  inputClassName="text-xs h-6"
+                />
+              </p>
             </div>
           </div>
         </div>
