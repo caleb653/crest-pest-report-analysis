@@ -2956,7 +2956,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         <div className="max-w-7xl mx-auto flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-9" />
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-base truncate">{property.name}</h1>
+            <h1 className="font-bold text-base truncate">
+              <InlineEditableText
+                value={property.name}
+                onSave={renameProperty}
+                inputClassName="text-base font-bold h-8"
+              />
+            </h1>
             <p className="text-xs text-muted-foreground">{portalRoleLabel}</p>
           </div>
         </div>
