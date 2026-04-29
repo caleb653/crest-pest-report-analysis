@@ -20,6 +20,7 @@ import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
 import NotificationBell from "@/components/NotificationBell";
 import { STAFF_NAMES } from "@/lib/staffRoster";
+import { InlineEditableText } from "@/components/portal/InlineEditableText";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -337,6 +338,14 @@ const PortalAdmin = () => {
 
   const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
   const deleteProperty = async (id: string) => { await supabase.from("portal_properties").delete().eq("id", id); if (selectedProperty?.id === id) setSelectedProperty(null); loadAll(); toast({ title: "Property deleted" }); };
+  const renameProperty = async (id: string, name: string) => {
+    const { error } = await supabase.from("portal_properties").update({ name }).eq("id", id);
+    if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); return; }
+    // optimistic local update so the header / list reflect the change immediately
+    setAllProperties(prev => prev.map(p => p.id === id ? { ...p, name } : p));
+    if (selectedProperty?.id === id) setSelectedProperty(prev => prev ? { ...prev, name } : prev);
+    toast({ title: "Property renamed", duration: 1500 });
+  };
   const deleteService = async (id: string) => { await supabase.from("portal_services").delete().eq("id", id); loadAll(); toast({ title: "Service deleted" }); };
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
   
