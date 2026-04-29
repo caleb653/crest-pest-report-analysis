@@ -31,6 +31,7 @@ import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
+import { InlineEditableText } from "@/components/portal/InlineEditableText";
 
 const PEST_TYPES = [
   "General Pests",
