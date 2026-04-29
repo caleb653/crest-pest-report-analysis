@@ -1152,7 +1152,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <img src={property.image_url} alt={property.name} className="w-16 h-16 rounded-lg object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-base truncate">{property.name}</h2>
+                <h2 className="font-bold text-base truncate">
+                  <InlineEditableText
+                    value={property.name}
+                    onSave={renameProperty}
+                    inputClassName="text-base font-bold h-8"
+                  />
+                </h2>
                 {property.address && <p className="text-xs text-muted-foreground truncate">{property.address}</p>}
               </div>
             </CardContent>
