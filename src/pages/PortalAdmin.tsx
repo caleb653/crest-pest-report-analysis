@@ -909,8 +909,23 @@ const PortalAdmin = () => {
                     inputClassName="text-xl font-bold h-9"
                   />
                 </h1>
-              {selectedProperty.address && <p className="text-sm text-muted-foreground">{selectedProperty.address}</p>}
-              <p className="text-xs text-muted-foreground">Owner: {getClientName(selectedProperty.client_id)}</p>
+              <p className="text-sm text-muted-foreground">
+                <InlineEditableText
+                  value={selectedProperty.address || ""}
+                  onSave={(next) => updatePropertyAddress(selectedProperty.id, next)}
+                  placeholder="Add address"
+                  inputClassName="text-sm h-7"
+                />
+              </p>
+              <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <span>Owner:</span>
+                <InlineEditableText
+                  value={getClientName(selectedProperty.client_id)}
+                  onSave={(next) => renameClient(selectedProperty.client_id, next)}
+                  placeholder="Owner"
+                  inputClassName="text-xs h-6"
+                />
+              </p>
             </div>
           </div>
         </div>
