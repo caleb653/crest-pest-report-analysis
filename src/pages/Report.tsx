@@ -639,6 +639,9 @@ const Report = () => {
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
+  const modalSignatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11); // in pixels - compact default for fitting content
   const [showSignature, setShowSignature] = useState(true);
