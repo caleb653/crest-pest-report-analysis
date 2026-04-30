@@ -15,6 +15,7 @@ interface SaveSignatureRequest {
   signatureData: string;
   notifyOffice?: boolean;
   proposalIndex?: number; // For per-proposal signatures
+  appBaseUrl?: string; // Origin of the app the customer signed from (e.g. https://crest-app.web.app)
 }
 
 serve(async (req) => {
@@ -24,7 +25,7 @@ serve(async (req) => {
 
   try {
     const body = (await req.json().catch(() => ({}))) as SaveSignatureRequest;
-    const { reportId, signatureData, notifyOffice, proposalIndex } = body;
+    const { reportId, signatureData, notifyOffice, proposalIndex, appBaseUrl } = body;
 
     console.log("save-customer-signature request:", { 
       reportId, 
@@ -104,7 +105,14 @@ serve(async (req) => {
     // Send notification email to office if requested
     if (notifyOffice && RESEND_API_KEY) {
       try {
-        const reportUrl = `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/view-report/${reportId}`;
+        // Build a real, openable link to the signed report. Prefer the
+        // origin the customer signed from; fall back to the public site.
+        const sanitizedBase = (() => {
+          const raw = (appBaseUrl || "").trim().replace(/\/$/, "");
+          if (raw && /^https?:\/\//i.test(raw)) return raw;
+          return "https://crestpestco.com";
+        })();
+        const reportUrl = `${sanitizedBase}/view-report/${reportId}`;
         
         const emailHtml = `
 <!DOCTYPE html>

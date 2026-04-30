@@ -296,6 +296,7 @@ export default function CustomerReportView() {
           reportId,
           signatureData,
           notifyOffice: true,
+          appBaseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
           ...(proposalIndex !== undefined ? { proposalIndex } : {}),
         },
       });
