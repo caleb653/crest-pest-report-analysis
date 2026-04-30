@@ -2784,16 +2784,16 @@ Crest Pest Control`;
                           </div>
                         ) : (
                           <>
-                            <SignatureCanvas
-                              ref={(ref) => { proposalSignatureRefs.current[proposalIndex] = ref; }}
-                              onSave={(data) => {
-                                setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: data }));
-                                // Also set legacy signature for persistence
-                                if (data) setCustomerSignature(data);
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalSignatureDraft(null);
+                                setSignatureModalIndex(proposalIndex);
                               }}
-                              initialData={null}
-                              label=""
-                            />
+                              className="no-print w-full h-full border-2 border-dashed border-muted-foreground/40 rounded bg-muted/20 hover:bg-muted/40 transition flex items-center justify-center text-xs font-medium text-muted-foreground"
+                            >
+                              ✍️ Tap to Sign {sigLabel}
+                            </button>
                             {isSavingSignature && (
                               <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
                                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
