@@ -3246,6 +3246,46 @@ Crest Pest Control`;
 
 
 
+      {/* Signature Modal — large signing area */}
+      <Dialog open={showSignatureModal} onOpenChange={setShowSignatureModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Customer Signature</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-xs text-muted-foreground mb-2">
+              Sign below. You can lift the pen between strokes — your signature won't be saved until you tap Done.
+            </p>
+            <div className="border-2 rounded-md bg-white" style={{ height: "60vh", minHeight: 360 }}>
+              <SignatureCanvas
+                ref={modalSignatureRef}
+                onSave={(data) => setModalSignatureDraft(data)}
+                initialData={null}
+                label=""
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSignatureModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const sig = modalSignatureRef.current?.forceSave() ?? modalSignatureDraft;
+                if (!sig) {
+                  toast.error("Please sign before saving");
+                  return;
+                }
+                handleSignatureSave(sig);
+                setShowSignatureModal(false);
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
