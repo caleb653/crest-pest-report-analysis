@@ -586,6 +586,9 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
+  const [signatureModalIndex, setSignatureModalIndex] = useState<number | null>(null);
+  const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
+  const modalSignatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12);
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11);
   const [showSignature, setShowSignature] = useState(true);
