@@ -17,14 +17,24 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);
+    const saveTimerRef = useRef<number | null>(null);
+    const onSaveRef = useRef(onSave);
+    useEffect(() => { onSaveRef.current = onSave; }, [onSave]);
+    useEffect(() => () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    }, []);
 
     // Expose forceSave method to parent
     useImperativeHandle(ref, () => ({
       forceSave: () => {
         const canvas = canvasRef.current;
         if (!canvas || !hasSignature) return null;
+        if (saveTimerRef.current) {
+          window.clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
+        }
         const dataUrl = canvas.toDataURL("image/png");
-        onSave(dataUrl);
+        onSaveRef.current?.(dataUrl);
         return dataUrl;
       },
     }));
@@ -108,7 +118,13 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
       }
       
       setIsDrawing(false);
-      saveSignature();
+      // Debounce save so users can lift the pen mid-signature without
+      // prematurely finalizing. Save 1.2s after the last stroke ends.
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = window.setTimeout(() => {
+        saveTimerRef.current = null;
+        saveSignature();
+      }, 1200);
     };
 
     const saveSignature = () => {
@@ -116,7 +132,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
       if (!canvas) return;
 
       const dataUrl = canvas.toDataURL("image/png");
-      onSave(dataUrl);
+      onSaveRef.current?.(dataUrl);
     };
 
     const clearSignature = () => {
@@ -127,6 +143,10 @@ export const SignatureCanvas = forwardRef<SignatureCanvasRef, SignatureCanvasPro
       const rect = canvas.getBoundingClientRect();
       ctx.clearRect(0, 0, rect.width, rect.height);
       setHasSignature(false);
+      if (saveTimerRef.current) {
+        window.clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
       onSave(null);
     };
 
