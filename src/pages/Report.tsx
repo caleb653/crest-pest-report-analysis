@@ -639,6 +639,9 @@ const Report = () => {
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+  const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
+  const modalSignatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12); // in pixels
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11); // in pixels - compact default for fitting content
   const [showSignature, setShowSignature] = useState(true);
@@ -2585,7 +2588,20 @@ Crest Pest Control`;
                           </div>
                         ) : (
                           <>
-                            <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalSignatureDraft(null);
+                                setShowSignatureModal(true);
+                              }}
+                              className="no-print w-full h-full border-2 border-dashed border-muted-foreground/40 rounded bg-muted/20 hover:bg-muted/40 transition flex items-center justify-center text-xs font-medium text-muted-foreground"
+                            >
+                              ✍️ Tap to Sign
+                            </button>
+                            {/* Hidden canvas kept for print/PDF parity if needed */}
+                            <div className="hidden">
+                              <SignatureCanvas ref={signatureRef} onSave={handleSignatureSave} initialData={customerSignature} label="" />
+                            </div>
                             {isSavingSignature && (
                               <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
                                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -3229,6 +3245,46 @@ Crest Pest Control`;
 
 
 
+
+      {/* Signature Modal — large signing area */}
+      <Dialog open={showSignatureModal} onOpenChange={setShowSignatureModal}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Customer Signature</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-xs text-muted-foreground mb-2">
+              Sign below. You can lift the pen between strokes — your signature won't be saved until you tap Done.
+            </p>
+            <div className="border-2 rounded-md bg-white" style={{ height: "60vh", minHeight: 360 }}>
+              <SignatureCanvas
+                ref={modalSignatureRef}
+                onSave={(data) => setModalSignatureDraft(data)}
+                initialData={null}
+                label=""
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSignatureModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const sig = modalSignatureRef.current?.forceSave() ?? modalSignatureDraft;
+                if (!sig) {
+                  toast.error("Please sign before saving");
+                  return;
+                }
+                handleSignatureSave(sig);
+                setShowSignatureModal(false);
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
