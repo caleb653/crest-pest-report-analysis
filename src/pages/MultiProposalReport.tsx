@@ -586,6 +586,9 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
+  const [signatureModalIndex, setSignatureModalIndex] = useState<number | null>(null);
+  const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
+  const modalSignatureRef = useRef<SignatureCanvasRef>(null);
   const [proposedServicesFontSize, setProposedServicesFontSize] = useState(12);
   const [additionalDetailsFontSize, setAdditionalDetailsFontSize] = useState(11);
   const [showSignature, setShowSignature] = useState(true);
@@ -2781,16 +2784,16 @@ Crest Pest Control`;
                           </div>
                         ) : (
                           <>
-                            <SignatureCanvas
-                              ref={(ref) => { proposalSignatureRefs.current[proposalIndex] = ref; }}
-                              onSave={(data) => {
-                                setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: data }));
-                                // Also set legacy signature for persistence
-                                if (data) setCustomerSignature(data);
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setModalSignatureDraft(null);
+                                setSignatureModalIndex(proposalIndex);
                               }}
-                              initialData={null}
-                              label=""
-                            />
+                              className="no-print w-full h-full border-2 border-dashed border-muted-foreground/40 rounded bg-muted/20 hover:bg-muted/40 transition flex items-center justify-center text-xs font-medium text-muted-foreground"
+                            >
+                              ✍️ Tap to Sign {sigLabel}
+                            </button>
                             {isSavingSignature && (
                               <div className="absolute inset-0 bg-background/60 flex items-center justify-center rounded">
                                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -3499,6 +3502,53 @@ Crest Pest Control`;
           )}
         </div>
       </div>
+
+      {/* Signature Modal — large signing area for the active proposal */}
+      <Dialog
+        open={signatureModalIndex !== null}
+        onOpenChange={(o) => { if (!o) setSignatureModalIndex(null); }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Customer Signature</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-xs text-muted-foreground mb-2">
+              Sign below. You can lift the pen between strokes — your signature won't be saved until you tap Done.
+            </p>
+            <div className="border-2 rounded-md bg-white" style={{ height: "60vh", minHeight: 360 }}>
+              <SignatureCanvas
+                ref={modalSignatureRef}
+                onSave={(data) => setModalSignatureDraft(data)}
+                initialData={null}
+                label=""
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSignatureModalIndex(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const sig = modalSignatureRef.current?.forceSave() ?? modalSignatureDraft;
+                if (!sig) {
+                  toast.error("Please sign before saving");
+                  return;
+                }
+                const idx = signatureModalIndex;
+                if (idx === null) return;
+                setPerProposalSignatures(prev => ({ ...prev, [idx]: sig }));
+                setCustomerSignature(sig);
+                pendingAutoSaveRef.current = true;
+                setSignatureModalIndex(null);
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
