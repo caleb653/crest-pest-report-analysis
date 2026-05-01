@@ -630,8 +630,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (dateCmp !== 0) return dateCmp;
     return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
   });
-  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly" | "monthly" | "bi-monthly") || "bi-weekly";
-  const _freqDays = ({ "weekly": 7, "bi-weekly": 14, "monthly": 30, "bi-monthly": 60 } as const)[_freqKey] ?? 14;
+  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as string) || "bi-weekly";
+  const _freqDays = ({
+    "weekly": 7, "bi-weekly": 14, "monthly": 30,
+    "8-weekly": 56, "bi-monthly": 60, "12-weekly": 84, "quarterly": 90,
+  } as Record<string, number>)[_freqKey] ?? 14;
   const _nextDateKey: string = (() => {
     if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
     const anchor = _past[0]?.service_date || todayISO();
