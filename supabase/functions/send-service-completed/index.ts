@@ -63,19 +63,38 @@ serve(async (req) => {
       .replace(/"/g, "&quot;");
 
     // Map raw stored status values to the friendly labels customers should see.
-    const friendlyStatus = (raw: string): string => {
+    // Mirrors src/lib/unitStatus.ts so emails always agree with what the
+    // PM / customer sees in the portal.
+    const friendlyStatus = (raw: string, kind?: string): string => {
       const s = String(raw || "").trim();
-      const map: Record<string, string> = {
+      if (!s) return "Treated";
+      const isInspection = kind === "inspection";
+      const TREATMENT: Record<string, string> = {
         "To Be Treated": "Treated",
         "Treated - Complete": "Treated",
+        "Treated - Follow Up": "Treated",
         "Complete": "Treated",
         "Not Treated": "Not Treated",
         "Not Serviced": "Not Treated",
         "Inspected: Free and Clear": "No Activity Found",
         "Inspected: Activity Found": "Activity Found",
+        "Inspection: Not Performed": "Not Inspected",
         "Free and Clear": "No Activity Found",
       };
-      return map[s] || s || "Treated";
+      const INSPECTION: Record<string, string> = {
+        "To Be Treated": "To Be Inspected",
+        "Treated - Complete": "Inspected",
+        "Treated - Follow Up": "Inspected",
+        "Complete": "Inspected",
+        "Not Treated": "Not Inspected",
+        "Not Serviced": "Not Inspected",
+        "Inspection: Not Performed": "Not Inspected",
+        "Inspected: Free and Clear": "No Activity Found",
+        "Inspected: Activity Found": "Activity Found",
+        "Free and Clear": "No Activity Found",
+      };
+      const map = isInspection ? INSPECTION : TREATMENT;
+      return map[s] || s;
     };
 
     // Per-unit detail cards — one block per area treated, with everything
