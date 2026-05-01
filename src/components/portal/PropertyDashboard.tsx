@@ -912,12 +912,14 @@ const PropertyDashboard = ({
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
-  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "quarterly";
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "8-weekly" | "bi-monthly" | "12-weekly" | "quarterly";
   const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
     "weekly": 7,
     "bi-weekly": 14,
     "monthly": 30,
+    "8-weekly": 56,
     "bi-monthly": 60,
+    "12-weekly": 84,
     "quarterly": 90,
   };
   const propertyFrequency: FrequencyKey =
