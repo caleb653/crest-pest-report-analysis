@@ -26,6 +26,7 @@ import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
+import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
