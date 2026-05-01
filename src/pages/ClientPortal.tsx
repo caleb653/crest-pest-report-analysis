@@ -12,6 +12,24 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 
+// Map raw stored unit-status values onto the friendly labels customers see.
+// Internal codes like "Treated - Complete" / "To Be Treated" / "Not Serviced"
+// must NEVER leak to the resident-facing report.
+const friendlyUnitStatus = (raw: unknown): string => {
+  const s = String(raw ?? "").trim();
+  const map: Record<string, string> = {
+    "To Be Treated": "Treated",
+    "Treated - Complete": "Treated",
+    "Complete": "Treated",
+    "Not Treated": "Not Treated",
+    "Not Serviced": "Not Treated",
+    "Inspected: Free and Clear": "No Activity Found",
+    "Inspected: Activity Found": "Activity Found",
+    "Free and Clear": "No Activity Found",
+  };
+  return map[s] || s;
+};
+
 interface LinkData {
   id: string;
   client_id: string;
