@@ -3602,7 +3602,9 @@ const PropertyDashboard = ({
                     { key: "weekly", label: "Weekly" },
                     { key: "bi-weekly", label: "Bi-Weekly" },
                     { key: "monthly", label: "Monthly" },
+                    { key: "8-weekly", label: "Every 8 Weeks" },
                     { key: "bi-monthly", label: "Bi-Monthly" },
+                    { key: "12-weekly", label: "Every 12 Weeks" },
                     { key: "quarterly", label: "Quarterly" },
                   ] as const).map(opt => {
                     const active = propertyFrequency === opt.key;
