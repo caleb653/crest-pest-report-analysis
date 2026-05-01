@@ -1667,8 +1667,12 @@ const PropertyDashboard = ({
       if (!workOrder.comments.trim()) return;
     } else if (!workOrder.unit_number && !workOrder.comments) return;
     setSubmittingWorkOrder(true);
-    // Case-insensitive normalization against existing units for this property
-    const typed = (workOrder.unit_number || "").trim();
+    // Strip leading "Unit " / "Apt " / "#" prefixes so we don't end up with
+    // "Unit Unit 5" when the user types "Unit 5" in a portal that already
+    // prepends the word "Unit" everywhere it displays the number.
+    const stripUnitPrefix = (s: string) =>
+      s.replace(/^\s*(unit|apt\.?|apartment|#)\s+/i, "").trim();
+    const typed = stripUnitPrefix((workOrder.unit_number || "").trim());
     const canonical = isGeneral
       ? null
       : (typed
