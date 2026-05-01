@@ -29,6 +29,7 @@ import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAServiceView";
 import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
+import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
