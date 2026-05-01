@@ -300,7 +300,9 @@ const FREQUENCY_OPTIONS = [
   { label: "Every 4 Weeks", days: 28 },
   { label: "30 days", days: 30 },
   { label: "60 days", days: 60 },
+  { label: "8 Weeks", days: 56 },
   { label: "90 days", days: 90 },
+  { label: "12 Weeks", days: 84 },
 ];
 
 const formatScheduleChip = (date: Date, isHighFreq: boolean) => {

@@ -62,12 +62,29 @@ serve(async (req) => {
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
+    // Map raw stored status values to the friendly labels customers should see.
+    const friendlyStatus = (raw: string): string => {
+      const s = String(raw || "").trim();
+      const map: Record<string, string> = {
+        "To Be Treated": "Treated",
+        "Treated - Complete": "Treated",
+        "Complete": "Treated",
+        "Not Treated": "Not Treated",
+        "Not Serviced": "Not Treated",
+        "Inspected: Free and Clear": "No Activity Found",
+        "Inspected: Activity Found": "Activity Found",
+        "Free and Clear": "No Activity Found",
+      };
+      return map[s] || s || "Treated";
+    };
+
     // Per-unit detail cards — one block per area treated, with everything
     // the PM needs (status, target pest, findings, notes, products, photos)
     // so they never need to click into the portal.
     const unitCards = Array.isArray(unitDetails) && unitDetails.length > 0
       ? unitDetails.map((u: any, i: number) => {
-          const status = String(u.status || "");
+          const rawStatus = String(u.status || "");
+          const status = friendlyStatus(rawStatus);
           const isFollowUp = u.follow_up_needed === true;
           const statusColor = isFollowUp ? "#c2410c" : "#166534";
           const statusBg = isFollowUp ? "#fff7ed" : "#f0fdf4";
@@ -88,7 +105,7 @@ serve(async (req) => {
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                 <span style="display:inline-block;background:#2A2A2A;color:#fff;font-weight:700;font-size:12px;padding:2px 8px;border-radius:999px;">${i + 1}</span>
                 <strong style="font-size:14px;color:#111827;">${esc(u.unit_number || "—")}</strong>
-                <span style="margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;color:${statusColor};background:${statusBg};border:1px solid ${statusBorder};padding:2px 8px;border-radius:999px;">${esc(status || "Treated")}</span>
+                <span style="margin-left:auto;font-size:11px;font-weight:700;text-transform:uppercase;color:${statusColor};background:${statusBg};border:1px solid ${statusBorder};padding:2px 8px;border-radius:999px;">${esc(status)}</span>
               </div>
               <table style="width:100%;font-size:12px;color:#374151;border-collapse:collapse;">
                 ${u.target_pest ? `<tr><td style="padding:2px 0;color:#6b7280;width:120px;">Target pest</td><td style="padding:2px 0;font-weight:600;">${esc(u.target_pest)}</td></tr>` : ""}

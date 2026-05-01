@@ -20,7 +20,10 @@ const FREQ_LABELS: Record<string, string> = {
   weekly: "Weekly",
   "bi-weekly": "Bi-Weekly",
   monthly: "Monthly",
+  "8-weekly": "Every 8 Weeks",
   "bi-monthly": "Bi-Monthly",
+  "12-weekly": "Every 12 Weeks",
+  quarterly: "Quarterly",
 };
 
 const ALL_PESTS = [
@@ -241,7 +244,7 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
         <div className="mb-4">
           <div className="font-bold mb-1" style={{ fontSize: "12px" }}>Service Frequency:</div>
           <div className="flex gap-6" style={{ fontSize: "11px" }}>
-            {(["weekly", "bi-weekly", "monthly", "bi-monthly"] as const).map((k) => (
+            {(["weekly", "bi-weekly", "monthly", "8-weekly", "bi-monthly", "12-weekly", "quarterly"] as const).map((k) => (
               <span
                 key={k}
                 className={editable ? "cursor-pointer select-none" : ""}

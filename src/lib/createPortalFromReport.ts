@@ -156,12 +156,15 @@ export async function createPortalFromReport(
 
   // Map the most-frequent recurring cadence (in days) to the PM portal's frequency key.
   // Defaults to bi-weekly when no recurring service exists.
-  const frequencyKey: "weekly" | "bi-weekly" | "monthly" | "bi-monthly" = (() => {
+  const frequencyKey: "weekly" | "bi-weekly" | "monthly" | "8-weekly" | "bi-monthly" | "12-weekly" | "quarterly" = (() => {
     if (mostFrequentDays === null) return "bi-weekly";
     if (mostFrequentDays <= 7) return "weekly";
     if (mostFrequentDays <= 14) return "bi-weekly";
     if (mostFrequentDays <= 30) return "monthly";
-    return "bi-monthly";
+    if (mostFrequentDays <= 56) return "8-weekly";
+    if (mostFrequentDays <= 60) return "bi-monthly";
+    if (mostFrequentDays <= 84) return "12-weekly";
+    return "quarterly";
   })();
 
   // 4) Create portal_property — populate address + map + plan summary; leave preferences empty

@@ -630,8 +630,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (dateCmp !== 0) return dateCmp;
     return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
   });
-  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as "weekly" | "bi-weekly" | "monthly" | "bi-monthly") || "bi-weekly";
-  const _freqDays = ({ "weekly": 7, "bi-weekly": 14, "monthly": 30, "bi-monthly": 60 } as const)[_freqKey] ?? 14;
+  const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as string) || "bi-weekly";
+  const _freqDays = ({
+    "weekly": 7, "bi-weekly": 14, "monthly": 30,
+    "8-weekly": 56, "bi-monthly": 60, "12-weekly": 84, "quarterly": 90,
+  } as Record<string, number>)[_freqKey] ?? 14;
   const _nextDateKey: string = (() => {
     if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
     const anchor = _past[0]?.service_date || todayISO();
@@ -717,18 +720,24 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level frequency toggle (managed by admin). Default bi-weekly.
-  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly";
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "8-weekly" | "bi-monthly" | "12-weekly" | "quarterly";
   const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
     "weekly": 7,
     "bi-weekly": 14,
     "monthly": 30,
+    "8-weekly": 56,
     "bi-monthly": 60,
+    "12-weekly": 84,
+    "quarterly": 90,
   };
   const FREQUENCY_LABELS: Record<FrequencyKey, string> = {
     "weekly": "Weekly",
     "bi-weekly": "Bi-Weekly",
     "monthly": "Monthly",
+    "8-weekly": "Every 8 Weeks",
     "bi-monthly": "Bi-Monthly",
+    "12-weekly": "Every 12 Weeks",
+    "quarterly": "Quarterly",
   };
   const propertyFrequency: FrequencyKey =
     ((property.customer_preferences as any)?.service_frequency as FrequencyKey) || "bi-weekly";

@@ -912,12 +912,14 @@ const PropertyDashboard = ({
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.
-  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "quarterly";
+  type FrequencyKey = "weekly" | "bi-weekly" | "monthly" | "8-weekly" | "bi-monthly" | "12-weekly" | "quarterly";
   const FREQUENCY_DAYS: Record<FrequencyKey, number> = {
     "weekly": 7,
     "bi-weekly": 14,
     "monthly": 30,
+    "8-weekly": 56,
     "bi-monthly": 60,
+    "12-weekly": 84,
     "quarterly": 90,
   };
   const propertyFrequency: FrequencyKey =
@@ -1294,17 +1296,30 @@ const PropertyDashboard = ({
   ) => {
     const serviceForDraft = service || propServices.find(p => p.id === serviceId);
     const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
-    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
-      ...r,
-      // Explicitly coerce the two follow-up booleans so they NEVER drop out
-      // of the persisted payload due to type-stripping or undefined values.
-      follow_up_needed: r.follow_up_needed === true,
-      sanitization_concern: r.sanitization_concern === true,
-      // Persist any per-unit photos uploaded during completion (strip uploading flags)
-      photos: Array.isArray(r.photos)
-        ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
-        : undefined,
-    }));
+    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => {
+      // When a tech completes a visit, any unit still flagged "To Be Treated"
+      // should be promoted to its completed equivalent so the customer-facing
+      // report and email don't show "To Be Treated" / "Not Treated" badges
+      // for work that was actually performed.
+      const kind = (r.kind || "service");
+      const rawStatus = String(r.status || "").trim();
+      let status = rawStatus;
+      if (rawStatus === "" || rawStatus === "To Be Treated") {
+        status = kind === "inspection" ? "Inspected: Free and Clear" : "Treated - Complete";
+      }
+      return {
+        ...r,
+        status,
+        // Explicitly coerce the two follow-up booleans so they NEVER drop out
+        // of the persisted payload due to type-stripping or undefined values.
+        follow_up_needed: r.follow_up_needed === true,
+        sanitization_concern: r.sanitization_concern === true,
+        // Persist any per-unit photos uploaded during completion (strip uploading flags)
+        photos: Array.isArray(r.photos)
+          ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+          : undefined,
+      };
+    });
     // ONLY auto-add a follow-up when the technician explicitly checked
     // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
     // is NOT enough — the user must check the box.
@@ -1667,8 +1682,12 @@ const PropertyDashboard = ({
       if (!workOrder.comments.trim()) return;
     } else if (!workOrder.unit_number && !workOrder.comments) return;
     setSubmittingWorkOrder(true);
-    // Case-insensitive normalization against existing units for this property
-    const typed = (workOrder.unit_number || "").trim();
+    // Strip leading "Unit " / "Apt " / "#" prefixes so we don't end up with
+    // "Unit Unit 5" when the user types "Unit 5" in a portal that already
+    // prepends the word "Unit" everywhere it displays the number.
+    const stripUnitPrefix = (s: string) =>
+      s.replace(/^\s*(unit|apt\.?|apartment|#)\s+/i, "").trim();
+    const typed = stripUnitPrefix((workOrder.unit_number || "").trim());
     const canonical = isGeneral
       ? null
       : (typed
@@ -3583,7 +3602,9 @@ const PropertyDashboard = ({
                     { key: "weekly", label: "Weekly" },
                     { key: "bi-weekly", label: "Bi-Weekly" },
                     { key: "monthly", label: "Monthly" },
+                    { key: "8-weekly", label: "Every 8 Weeks" },
                     { key: "bi-monthly", label: "Bi-Monthly" },
+                    { key: "12-weekly", label: "Every 12 Weeks" },
                     { key: "quarterly", label: "Quarterly" },
                   ] as const).map(opt => {
                     const active = propertyFrequency === opt.key;
