@@ -1294,17 +1294,30 @@ const PropertyDashboard = ({
   ) => {
     const serviceForDraft = service || propServices.find(p => p.id === serviceId);
     const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
-    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => ({
-      ...r,
-      // Explicitly coerce the two follow-up booleans so they NEVER drop out
-      // of the persisted payload due to type-stripping or undefined values.
-      follow_up_needed: r.follow_up_needed === true,
-      sanitization_concern: r.sanitization_concern === true,
-      // Persist any per-unit photos uploaded during completion (strip uploading flags)
-      photos: Array.isArray(r.photos)
-        ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
-        : undefined,
-    }));
+    const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => {
+      // When a tech completes a visit, any unit still flagged "To Be Treated"
+      // should be promoted to its completed equivalent so the customer-facing
+      // report and email don't show "To Be Treated" / "Not Treated" badges
+      // for work that was actually performed.
+      const kind = (r.kind || "service");
+      const rawStatus = String(r.status || "").trim();
+      let status = rawStatus;
+      if (rawStatus === "" || rawStatus === "To Be Treated") {
+        status = kind === "inspection" ? "Inspected: Free and Clear" : "Treated - Complete";
+      }
+      return {
+        ...r,
+        status,
+        // Explicitly coerce the two follow-up booleans so they NEVER drop out
+        // of the persisted payload due to type-stripping or undefined values.
+        follow_up_needed: r.follow_up_needed === true,
+        sanitization_concern: r.sanitization_concern === true,
+        // Persist any per-unit photos uploaded during completion (strip uploading flags)
+        photos: Array.isArray(r.photos)
+          ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+          : undefined,
+      };
+    });
     // ONLY auto-add a follow-up when the technician explicitly checked
     // "Follow Up Needed" on the unit. Status alone (e.g. "Activity Found")
     // is NOT enough — the user must check the box.
