@@ -2739,6 +2739,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </CardContent>
             </Card>
 
+            {/* So PMs can see EXACTLY what the resident/tenant will be asked
+                before hitting Send. Mirrors the admin portal preview. */}
+            <SurveyQuestionsPreview residentTerm={residentTerm} />
+
             {/* Aggregated results across all surveys for this property */}
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
