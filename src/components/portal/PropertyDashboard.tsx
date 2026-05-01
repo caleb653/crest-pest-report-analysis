@@ -1306,11 +1306,7 @@ const PropertyDashboard = ({
       // report and email don't show "To Be Treated" / "Not Treated" badges
       // for work that was actually performed.
       const kind = (r.kind || "service");
-      const rawStatus = String(r.status || "").trim();
-      let status = rawStatus;
-      if (rawStatus === "" || rawStatus === "To Be Treated") {
-        status = kind === "inspection" ? "Inspected: Free and Clear" : "Treated - Complete";
-      }
+      const status = promoteStatusOnCompletion(r.status, kind);
       return {
         ...r,
         status,
