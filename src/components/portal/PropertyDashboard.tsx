@@ -1967,7 +1967,7 @@ const PropertyDashboard = ({
                     </div>
                     {unit.status && (
                       <Badge variant="outline" className={`text-[11px] font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
-                        {unit.status}
+                        {friendlyUnitStatus(unit.status, (unit as any).kind)}
                       </Badge>
                     )}
                   </div>
