@@ -29,6 +29,7 @@ import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } fr
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
+import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
