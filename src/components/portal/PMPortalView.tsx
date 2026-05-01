@@ -20,6 +20,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
+import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
@@ -998,7 +999,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       <div className="flex items-center gap-2">
                         {u.status && (
                           <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
-                            {u.status}
+                            {friendlyUnitStatus(u.status, (u as any).kind)}
                           </Badge>
                         )}
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />

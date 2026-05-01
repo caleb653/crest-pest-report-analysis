@@ -26,6 +26,7 @@ import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
+import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
 import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
@@ -90,7 +91,10 @@ const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
   { value: "Inspected: Free and Clear",  label: "No Activity Found" },
   { value: "Inspected: Activity Found",  label: "Activity Found" },
-  { value: "Not Treated",                label: "Not Inspected" },
+  // Use a distinct canonical value so an inspection that wasn't performed
+  // never collides with a treatment row's "Not Treated" status (which would
+  // make a treated row render as "Not Treated" on customer reports/email).
+  { value: "Inspection: Not Performed",  label: "Not Inspected" },
 ];
 
 const TECHNICIAN_OPTIONS = [
@@ -1302,11 +1306,7 @@ const PropertyDashboard = ({
       // report and email don't show "To Be Treated" / "Not Treated" badges
       // for work that was actually performed.
       const kind = (r.kind || "service");
-      const rawStatus = String(r.status || "").trim();
-      let status = rawStatus;
-      if (rawStatus === "" || rawStatus === "To Be Treated") {
-        status = kind === "inspection" ? "Inspected: Free and Clear" : "Treated - Complete";
-      }
+      const status = promoteStatusOnCompletion(r.status, kind);
       return {
         ...r,
         status,
@@ -1963,7 +1963,7 @@ const PropertyDashboard = ({
                     </div>
                     {unit.status && (
                       <Badge variant="outline" className={`text-[11px] font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
-                        {unit.status}
+                        {friendlyUnitStatus(unit.status, (unit as any).kind)}
                       </Badge>
                     )}
                   </div>
