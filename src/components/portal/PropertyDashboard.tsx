@@ -90,7 +90,10 @@ const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
   { value: "Inspected: Free and Clear",  label: "No Activity Found" },
   { value: "Inspected: Activity Found",  label: "Activity Found" },
-  { value: "Not Treated",                label: "Not Inspected" },
+  // Use a distinct canonical value so an inspection that wasn't performed
+  // never collides with a treatment row's "Not Treated" status (which would
+  // make a treated row render as "Not Treated" on customer reports/email).
+  { value: "Inspection: Not Performed",  label: "Not Inspected" },
 ];
 
 const TECHNICIAN_OPTIONS = [
