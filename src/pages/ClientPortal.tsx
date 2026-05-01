@@ -150,7 +150,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
                         <span className="text-sm font-bold">Unit {unit.unit_number || i + 1}</span>
                         {unit.status && (
                           <Badge variant="outline" className={`text-[10px] ${isFollowUp ? "border-orange-300 text-orange-700 bg-orange-50" : ""}`}>
-                            {unit.status}
+                            {friendlyUnitStatus(unit.status)}
                           </Badge>
                         )}
                       </div>
