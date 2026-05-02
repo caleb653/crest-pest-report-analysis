@@ -941,7 +941,7 @@ const PortalAdmin = () => {
             links={propLinks as any}
             clientName={client?.company || client?.name || ""}
             onOpenServiceReport={openServiceReport}
-            onEditService={(s) => openServiceDialog(s)}
+            onEditService={(s) => openServiceDialog(s as any)}
             onDeleteService={deleteService}
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
