@@ -408,6 +408,10 @@ const Report = () => {
   // Video upload
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoUrl2, setVideoUrl2] = useState<string | null>(null);
+  // Client Portal walkthrough video — when true, renders the canned
+  // /videos/client-portal-video.mp4 at the VERY bottom of the proposal
+  // (after property images). Toggled from the bottom of the media page.
+  const [portalVideoAttached, setPortalVideoAttached] = useState<boolean>(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingVideo2, setUploadingVideo2] = useState(false);
 
