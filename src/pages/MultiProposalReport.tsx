@@ -1253,6 +1253,7 @@ const Report = () => {
       recommendedProposal,
       videoUrl,
       videoUrl2,
+      portalVideoAttached,
       duplicatedPages,
       duplicateMapData: options?.duplicateMapDataOverride ?? duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
