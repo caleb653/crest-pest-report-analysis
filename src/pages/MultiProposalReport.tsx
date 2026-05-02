@@ -2921,15 +2921,6 @@ Crest Pest Control`;
                     className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={() => setVideoUrl2('/videos/client-portal-video.mp4')}
-                >
-                  <Video className="w-4 h-4 mr-2" />
-                  Attach Client Portal Video
-                </Button>
                 {uploadingVideo2 && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span className="text-xs text-muted-foreground">Customer can click to play</span>
               </div>
