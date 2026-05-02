@@ -1333,6 +1333,26 @@ export default function CustomerReportView() {
         </div>
       )}
 
+      {portalVideoAttached && (
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+          {renderHeader("Client Portal Walkthrough")}
+          <main className="p-4">
+            <div className="max-w-3xl mx-auto">
+              <video
+                src="/videos/client-portal-video.mp4"
+                controls
+                preload="metadata"
+                playsInline
+                className="w-full rounded-lg border-2 border-border"
+              />
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                A short walkthrough of your Client Portal.
+              </p>
+            </div>
+          </main>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto mt-8 px-4">
         <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
           <h3 className="text-sm font-bold text-foreground mb-2">The Crest Guarantee</h3>
