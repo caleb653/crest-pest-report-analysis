@@ -145,6 +145,43 @@ serve(async (req) => {
          </div>`
       : "";
 
+    // ─── Prominent follow-up banner ───
+    // When ANY unit was flagged as follow-up needed by the technician, surface
+    // it at the very top of the email (above everything else) with the exact
+    // unit numbers + each unit's notes — so PMs / customers can't miss it.
+    const followUpUnits = Array.isArray(unitDetails)
+      ? unitDetails.filter((u: any) => u && u.follow_up_needed === true)
+      : [];
+    const followUpBanner = followUpUnits.length > 0
+      ? `
+        <div style="background:#fff1f2;border:2px solid #dc2626;border-radius:10px;padding:16px 18px;margin:0 0 18px;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:0.06em;">
+            ⚠ Follow-up Needed — ${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}
+          </p>
+          <p style="margin:0 0 10px;font-size:13px;color:#7f1d1d;line-height:1.55;">
+            The technician flagged the following ${followUpUnits.length === 1 ? "unit" : "units"} for a return visit. Please review the notes below and coordinate access for the next service.
+          </p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1f2937;background:#ffffff;border-radius:6px;overflow:hidden;border:1px solid #fecaca;">
+            <thead style="background:#fee2e2;">
+              <tr>
+                <th style="text-align:left;padding:8px 10px;font-weight:700;color:#7f1d1d;width:120px;">Unit</th>
+                <th style="text-align:left;padding:8px 10px;font-weight:700;color:#7f1d1d;">Pest / Reason</th>
+                <th style="text-align:left;padding:8px 10px;font-weight:700;color:#7f1d1d;">Tech Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${followUpUnits.map((u: any) => `
+                <tr style="border-top:1px solid #fee2e2;">
+                  <td style="padding:8px 10px;font-weight:700;color:#991b1b;vertical-align:top;">${esc(u.unit_number || "—")}</td>
+                  <td style="padding:8px 10px;vertical-align:top;">${esc(u.target_pest || u.pest_activity || "—")}</td>
+                  <td style="padding:8px 10px;vertical-align:top;white-space:pre-wrap;">${esc(u.findings || u.notes || "Return visit recommended.")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>`
+      : "";
+
     const timeRange = timeIn && timeOut
       ? `${timeIn} - ${timeOut}`
       : (timeIn || timeOut || "");
@@ -157,6 +194,7 @@ serve(async (req) => {
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;padding:22px 24px;border-radius:0 0 8px 8px;">
           <p style="margin:0 0 12px;font-size:14px;color:#374151;">Hello${clientName ? ` ${esc(clientName)}` : ""},</p>
+          ${followUpBanner}
           <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.55;">
             We've completed a service at <strong>${esc(propertyName || "your property")}</strong>. The full report is below — everything that was done is included in this email so you don't need to click through.
           </p>
@@ -208,7 +246,9 @@ serve(async (req) => {
         </div>
       </div>`;
 
-    const subject = `Service Completed${propertyName ? ` — ${propertyName}` : ""}${serviceDate ? ` (${serviceDate})` : ""}`;
+    const subject = followUpUnits.length > 0
+      ? `⚠ Follow-up Needed (${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}) — ${propertyName || "Service Completed"}${serviceDate ? ` (${serviceDate})` : ""}`
+      : `Service Completed${propertyName ? ` — ${propertyName}` : ""}${serviceDate ? ` (${serviceDate})` : ""}`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PropertyDashboard from "@/components/portal/PropertyDashboard";
+import CommercialDashboardView from "@/components/portal/CommercialDashboardView";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -933,6 +934,20 @@ const PortalAdmin = () => {
 
       {/* Main content */}
       <div className="max-w-[1600px] mx-auto px-4 py-4">
+        {getPropertyType(selectedProperty) === "commercial" ? (
+          <CommercialDashboardView
+            property={selectedProperty as any}
+            services={propServices as any}
+            links={propLinks as any}
+            clientName={client?.company || client?.name || ""}
+            onOpenServiceReport={openServiceReport}
+            onEditService={(s) => openServiceDialog(s as any)}
+            onDeleteService={deleteService}
+            onCopyLink={copyLink}
+            onOpenPortal={openPortal}
+            onAddUpcomingService={() => createAndOpenReport("scheduled")}
+          />
+        ) : (
         <PropertyDashboard
           property={selectedProperty}
           services={propServices}
@@ -950,6 +965,7 @@ const PortalAdmin = () => {
           onAddUpcomingService={() => createAndOpenReport("scheduled")}
           propertyType={getPropertyType(selectedProperty)}
         />
+        )}
       </div>
 
       {/* Service Detail Modal */}
