@@ -252,6 +252,8 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
           /* Hide noise */
           .pdf-export-root .no-print,
+          .pdf-export-root .no-pdf-export,
+          .no-pdf-export,
           .pdf-export-root button:not(.print-keep),
           .pdf-export-root [role="status"],
           .pdf-export-root .sonner,
