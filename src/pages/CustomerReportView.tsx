@@ -75,6 +75,7 @@ interface StructuredNotes {
   recommendedProposal?: number;
   videoUrl?: string | null;
   videoUrl2?: string | null;
+  portalVideoAttached?: boolean;
   duplicatedPages?: number[];
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
@@ -408,6 +409,7 @@ export default function CustomerReportView() {
   const recommendedProposalIndex = structuredNotes?.recommendedProposal ?? 0;
   const videoUrl = structuredNotes?.videoUrl || null;
   const videoUrl2 = structuredNotes?.videoUrl2 || null;
+  const portalVideoAttached = structuredNotes?.portalVideoAttached === true;
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
   const proposalFindingsMap = structuredNotes?.proposalFindings || {};
@@ -1326,6 +1328,26 @@ export default function CustomerReportView() {
                   </div>
                 );
               })}
+            </div>
+          </main>
+        </div>
+      )}
+
+      {portalVideoAttached && (
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+          {renderHeader("Client Portal Walkthrough")}
+          <main className="p-4">
+            <div className="max-w-3xl mx-auto">
+              <video
+                src="/videos/client-portal-video.mp4"
+                controls
+                preload="metadata"
+                playsInline
+                className="w-full rounded-lg border-2 border-border"
+              />
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                A short walkthrough of your Client Portal.
+              </p>
             </div>
           </main>
         </div>
