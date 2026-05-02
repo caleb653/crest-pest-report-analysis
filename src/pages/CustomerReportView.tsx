@@ -75,6 +75,7 @@ interface StructuredNotes {
   recommendedProposal?: number;
   videoUrl?: string | null;
   videoUrl2?: string | null;
+  portalVideoAttached?: boolean;
   duplicatedPages?: number[];
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
