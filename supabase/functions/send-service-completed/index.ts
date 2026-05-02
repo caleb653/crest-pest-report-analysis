@@ -246,7 +246,9 @@ serve(async (req) => {
         </div>
       </div>`;
 
-    const subject = `Service Completed${propertyName ? ` — ${propertyName}` : ""}${serviceDate ? ` (${serviceDate})` : ""}`;
+    const subject = followUpUnits.length > 0
+      ? `⚠ Follow-up Needed (${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}) — ${propertyName || "Service Completed"}${serviceDate ? ` (${serviceDate})` : ""}`
+      : `Service Completed${propertyName ? ` — ${propertyName}` : ""}${serviceDate ? ` (${serviceDate})` : ""}`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
