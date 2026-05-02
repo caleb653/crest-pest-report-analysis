@@ -1334,7 +1334,7 @@ export default function CustomerReportView() {
       )}
 
       {portalVideoAttached && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8 no-pdf-export no-print">
           {renderHeader("Client Portal Walkthrough")}
           <main className="p-4">
             <div className="max-w-3xl mx-auto">
