@@ -3499,6 +3499,60 @@ Crest Pest Control`;
               </p>
             </div>
           )}
+
+          {/* Client Portal Walkthrough Video — toggle button + render area
+              live at the VERY bottom of the proposal (below all photos). */}
+          {!isReadOnly && (
+            <div className="no-print mt-8 pt-6 border-t border-border flex items-center gap-3">
+              {!portalVideoAttached ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => setPortalVideoAttached(true)}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Attach Client Portal Walkthrough Video
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  type="button"
+                  onClick={() => setPortalVideoAttached(false)}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Remove Client Portal Walkthrough Video
+                </Button>
+              )}
+              <span className="text-xs text-muted-foreground">
+                When attached, the walkthrough video appears at the very bottom of the proposal — below all photos.
+              </span>
+            </div>
+          )}
+
+          {portalVideoAttached && (
+            <div className="mt-6 no-pdf-export">
+              <h2 className="text-lg font-semibold text-foreground mb-3">Client Portal Walkthrough</h2>
+              <div className="max-w-3xl mx-auto relative group">
+                <video
+                  id="portal-walkthrough-video"
+                  src="/videos/client-portal-video.mp4"
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-lg border-2 border-border relative"
+                  poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                  onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                  onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                />
+                <div data-portal-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+                  <p className="text-2xl font-bold text-foreground tracking-wide">Client Portal Walkthrough</p>
+                  <p className="text-sm text-muted-foreground mt-2">Click to play</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
