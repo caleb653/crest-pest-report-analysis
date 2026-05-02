@@ -409,6 +409,7 @@ export default function CustomerReportView() {
   const recommendedProposalIndex = structuredNotes?.recommendedProposal ?? 0;
   const videoUrl = structuredNotes?.videoUrl || null;
   const videoUrl2 = structuredNotes?.videoUrl2 || null;
+  const portalVideoAttached = structuredNotes?.portalVideoAttached === true;
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
   const proposalFindingsMap = structuredNotes?.proposalFindings || {};
