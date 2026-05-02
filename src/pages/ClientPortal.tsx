@@ -78,9 +78,36 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
   isExpanded: boolean;
   onToggle: () => void;
   onViewFull: () => void;
-}) => (
-  <Card className={`transition-all ${isExpanded ? "border-primary/40 shadow-md" : "hover:border-primary/20"}`}>
+}) => {
+  // Surface follow-up units extremely prominently — pull every unit the
+  // technician explicitly flagged so the customer sees exactly which
+  // units still need attention without expanding the unit list.
+  const followUpUnits: any[] = Array.isArray(service.unit_details)
+    ? (service.unit_details as any[]).filter((u: any) => u?.follow_up_needed === true)
+    : [];
+  const hasFollowUp = followUpUnits.length > 0 || !!service.follow_up_recommended;
+  return (
+  <Card className={`transition-all ${
+    hasFollowUp
+      ? "border-2 border-orange-500 ring-2 ring-orange-300/60 shadow-lg"
+      : isExpanded ? "border-primary/40 shadow-md" : "hover:border-primary/20"
+  }`}>
     <CardContent className="p-0">
+      {hasFollowUp && (
+        <div className="bg-orange-500 text-white px-4 py-2.5 flex items-start gap-2 rounded-t-lg">
+          <span className="text-lg leading-none">⚠️</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm uppercase tracking-wide leading-tight">
+              Follow-up Needed{followUpUnits.length > 0 ? ` — ${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}` : ""}
+            </p>
+            {followUpUnits.length > 0 && (
+              <p className="text-xs mt-0.5 text-white/95 break-words">
+                Units: {followUpUnits.map(u => u.unit_number).filter(Boolean).join(", ")}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       <button className="w-full text-left p-4 flex items-center justify-between" onClick={onToggle}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -197,6 +224,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
     </CardContent>
   </Card>
 );
+};
 
 // ─── Floating Chat Widget ───
 const FloatingChat = ({ messages, input, setInput, onSend, sending }: {
