@@ -1,16 +1,11 @@
 /**
  * CommercialPMView — Client-side portal for commercial accounts (e.g.
- * restaurants). Mobile-first, intentionally stripped down compared to the
- * apartment / HOA PM portals:
+ * restaurants). Mobile-first. Intentionally has NO units / sub-locations,
+ * NO surveys, NO videos, NO unit pricing — but DOES include site map,
+ * upcoming/past visits, scope-of-work descriptions, and a simple
+ * Requests tab (no work-orders/units, just location-level requests).
  *
- *   • NO units / sub-locations of any kind. The location is the location.
- *   • NO work-order workflow. A simple "Send a message" form replaces it.
- *   • NO surveys, NO video tab, NO resident / tenant references.
- *   • NO per-unit pricing or overage display anywhere.
- *
- * This file deliberately does NOT touch the existing apartment or HOA
- * portals — it's a sibling component PortalAdmin / PMPortalView delegate
- * to when the property's `property_type === "commercial"`.
+ * Sibling to PMPortalView — the apartment / HOA portals are untouched.
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock, ChevronDown, FlaskConical, Camera } from "lucide-react";
+import {
+  Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
+  ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -60,20 +58,75 @@ interface ServiceData {
   frequency_days?: number | null;
 }
 
+interface RequestData {
+  id: string;
+  request_type: string;
+  description: string;
+  status: string;
+  response_notes: string | null;
+  created_at: string;
+  pest_type?: string | null;
+  location_type?: string | null;
+}
+
 interface CommercialPMViewProps {
   propertyId: string;
   linkId: string;
 }
 
+// Commercial-specific scope-of-work descriptions. Used to render a "Services"
+// tab so customers know what each visit type covers. Keys match the
+// service_type strings used elsewhere in the app.
+const COMMERCIAL_SERVICE_DESCRIPTIONS: Record<string, string[]> = {
+  "Commercial General Pest": [
+    "Inspect interior and exterior areas (kitchens, dining, restrooms, break rooms, storage) for pest activity",
+    "Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed",
+    "Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management",
+  ],
+  "Rodent Bait Boxes": [
+    "Install rodent bait boxes around the property to maintain consistent control of rodent populations",
+    "Strategically move bait boxes depending on ongoing rodent activity",
+  ],
+  "Rodent Trapping": [
+    "Eliminate active rodent populations through targeted trapping inside and around the property",
+    "Strategically place traps in areas of highest activity to quickly reduce populations",
+    "Monitor and adjust trap placement as needed to ensure effective control",
+  ],
+  "Rodent Exclusion": [
+    "Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials",
+    "Customize every exclusion to the structure to prevent future rodent entry",
+  ],
+  "Mosquito Service": [
+    "Set up mosquito buckets, which interrupt breeding cycles and neutralize future generations",
+    "Target adult mosquitoes and larvae with long-lasting products",
+  ],
+  "De-webbing": [
+    "Thoroughly de-web the entire exterior of the property including eaves and high-visibility areas",
+  ],
+};
+
 const todayISO = () => new Date().toISOString().split("T")[0];
+const fmtDate = (iso: string | null) =>
+  iso
+    ? new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "short", month: "short", day: "numeric", year: "numeric",
+      })
+    : "—";
+
+const REQUEST_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
+  pending: "secondary",
+  scheduled: "default",
+  completed: "outline",
+};
 
 export default function CommercialPMView({ propertyId, linkId }: CommercialPMViewProps) {
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
+  const [requests, setRequests] = useState<RequestData[]>([]);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
 
-  // Message form state — replaces the apartment "work order" flow.
+  // Message form state.
   const [msgSubject, setMsgSubject] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [msgFrom, setMsgFrom] = useState("");
@@ -81,25 +134,34 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [msgPhone, setMsgPhone] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Request form state — location-level only, no units.
+  const [reqDescription, setReqDescription] = useState("");
+  const [reqPest, setReqPest] = useState("");
+  const [reqLocation, setReqLocation] = useState("");
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  const loadAll = async () => {
+    const [{ data: prop }, { data: svcs }, { data: reqs }] = await Promise.all([
+      supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
+      supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
+      supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+    ]);
+    if (prop) setProperty(prop as any);
+    if (Array.isArray(svcs)) setServices(svcs as any);
+    if (Array.isArray(reqs)) setRequests(reqs as any);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const { data: prop } = await supabase
-          .from("portal_properties")
-          .select("*")
-          .eq("id", propertyId)
-          .single();
-        if (prop) setProperty(prop as any);
-        const { data: svcs } = await supabase
-          .from("portal_services")
-          .select("*")
-          .eq("property_id", propertyId)
-          .order("service_date", { ascending: false });
-        if (svcs) setServices(svcs as any);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadAll();
+    const channel = supabase
+      .channel(`commercial-portal-${propertyId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, () => loadAll())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 
   const today = todayISO();
@@ -107,8 +169,11 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const upcoming = services
     .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
-
   const mapUrl = property?.map_image_url || property?.image_url || null;
+
+  // Build the scope of work — service types we've actually got on this
+  // property, falling back to any commercial-specific defaults we know.
+  const scopeTypes = Array.from(new Set(services.map(s => s.service_type).filter(Boolean)));
 
   const sendMessage = async () => {
     if (!msgSubject.trim() || !msgBody.trim()) {
@@ -131,8 +196,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         ].filter(Boolean).join(""),
       } as any);
       if (error) throw error;
-      // Try to notify office, but don't block the success path if the edge
-      // function is unavailable.
       try {
         await supabase.functions.invoke("send-portal-message", {
           body: {
@@ -146,13 +209,54 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         });
       } catch { /* non-fatal */ }
       toast({ title: "Message sent", description: "We'll be in touch shortly." });
-      setMsgSubject("");
-      setMsgBody("");
-      setMsgPhone("");
+      setMsgSubject(""); setMsgBody(""); setMsgPhone("");
     } catch (e: any) {
       toast({ title: "Couldn't send", description: e?.message, variant: "destructive" });
     } finally {
       setSending(false);
+    }
+  };
+
+  const submitRequest = async () => {
+    if (!reqDescription.trim()) {
+      toast({ title: "Add a description", variant: "destructive" });
+      return;
+    }
+    setSubmittingRequest(true);
+    try {
+      const { error } = await supabase.from("portal_requests").insert({
+        property_id: propertyId,
+        link_id: linkId,
+        request_type: "Service Request",
+        description: reqDescription.trim(),
+        pest_type: reqPest.trim() || null,
+        location_type: reqLocation.trim() || null,
+        status: "pending",
+        photos: [],
+      } as any);
+      if (error) throw error;
+      // Notify office (non-fatal).
+      try {
+        await supabase.functions.invoke("send-portal-message", {
+          body: {
+            propertyName: property?.name || "Commercial Portal",
+            subject: `New Service Request — ${property?.name || "Commercial"}`,
+            message: [
+              reqDescription.trim(),
+              reqPest.trim() ? `\nPest: ${reqPest.trim()}` : "",
+              reqLocation.trim() ? `\nArea: ${reqLocation.trim()}` : "",
+            ].filter(Boolean).join(""),
+            senderName: "Commercial Portal",
+          },
+        });
+      } catch { /* non-fatal */ }
+      toast({ title: "Request submitted", description: "Our team will follow up shortly." });
+      setReqDescription(""); setReqPest(""); setReqLocation("");
+      loadAll();
+    } catch (e: any) {
+      toast({ title: "Couldn't submit", description: e?.message, variant: "destructive" });
+    } finally {
+      setSubmittingRequest(false);
     }
   };
 
@@ -174,7 +278,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      {/* Sticky header — large tap targets, single line on mobile */}
       <div className="sticky top-0 z-30 bg-card border-b border-border shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <img src={crestLogo} alt="Crest Pest Control" className="h-8 w-auto" />
@@ -188,50 +291,48 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-        {/* Location card */}
+        {/* Location summary */}
         <Card>
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <div className="flex items-start gap-2">
               <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                  Location
-                </p>
-                <p className="text-sm font-medium">{property.address || "—"}</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+                <p className="font-medium truncate">{property.address || "—"}</p>
               </div>
             </div>
-            {property.notes && (
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap pt-1 border-t border-border/60">
-                {property.notes}
-              </p>
-            )}
+            <div className="flex items-start gap-2">
+              <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Last Visit</p>
+                <p className="font-medium">{past[0] ? fmtDate(past[0].service_date) : "—"}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <Clock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Next Visit</p>
+                <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date) : "—"}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Tabs — mobile-first 3-column grid, full-width tap targets */}
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-11">
-            <TabsTrigger value="visits" className="text-xs gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              Visits
-            </TabsTrigger>
-            <TabsTrigger value="map" className="text-xs gap-1.5">
-              <MapPin className="w-3.5 h-3.5" />
-              Site Map
-            </TabsTrigger>
-            <TabsTrigger value="contact" className="text-xs gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Contact
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-11">
+            <TabsTrigger value="visits" className="text-[11px] gap-1"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
+            <TabsTrigger value="map" className="text-[11px] gap-1"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
+            <TabsTrigger value="services" className="text-[11px] gap-1"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
+            <TabsTrigger value="requests" className="text-[11px] gap-1"><ClipboardList className="w-3.5 h-3.5" />Requests</TabsTrigger>
+            <TabsTrigger value="contact" className="text-[11px] gap-1"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
           {/* ─── VISITS ─── */}
-          <TabsContent value="visits" className="space-y-3 mt-3">
+          <TabsContent value="visits" className="space-y-4 mt-3">
             {/* Upcoming */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <Clock className="w-3 h-3" />
-                Upcoming
+                <Clock className="w-3 h-3" /> Upcoming Visits
               </p>
               {upcoming.length === 0 ? (
                 <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
@@ -239,18 +340,15 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 </CardContent></Card>
               ) : (
                 <div className="space-y-2">
-                  {upcoming.slice(0, 6).map(s => (
+                  {upcoming.slice(0, 12).map(s => (
                     <Card key={s.id}>
                       <CardContent className="p-3 flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="font-bold text-sm truncate">{s.service_type}</p>
                           <p className="text-xs text-muted-foreground">
-                            {s.service_date
-                              ? new Date(s.service_date + "T00:00:00").toLocaleDateString("en-US", {
-                                  weekday: "short", month: "short", day: "numeric",
-                                })
-                              : "Date TBD"}
+                            {fmtDate(s.service_date)}
                             {s.service_time && ` • ${s.service_time}`}
+                            {s.technician && ` • ${s.technician}`}
                           </p>
                         </div>
                         <Badge variant="secondary" className="text-[10px]">Scheduled</Badge>
@@ -264,8 +362,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             {/* Past */}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <ClipboardList className="w-3 h-3" />
-                Past Visits
+                <ClipboardList className="w-3 h-3" /> Past Visits
               </p>
               {past.length === 0 ? (
                 <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
@@ -273,23 +370,18 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 </CardContent></Card>
               ) : (
                 <div className="space-y-2">
-                  {past.slice(0, 25).map(s => {
+                  {past.slice(0, 30).map(s => {
                     const isOpen = openServiceId === s.id;
                     const products = normalizeUsageList(s.products_used);
                     const hasFollowUp = !!s.follow_up_recommended;
                     const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                     return (
-                      <Card
-                        key={s.id}
-                        className={hasFollowUp ? "border-2 border-orange-400 ring-2 ring-orange-200/60" : ""}
-                      >
+                      <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400 ring-2 ring-orange-200/60" : ""}>
                         <CardContent className="p-0">
                           {hasFollowUp && (
                             <div className="bg-orange-500 text-white px-3 py-2 rounded-t-lg flex items-center gap-2">
                               <span className="text-base leading-none">⚠️</span>
-                              <p className="font-bold text-xs uppercase tracking-wide">
-                                Follow-up Needed
-                              </p>
+                              <p className="font-bold text-xs uppercase tracking-wide">Follow-up Needed</p>
                             </div>
                           )}
                           <button
@@ -300,12 +392,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             <div className="min-w-0">
                               <p className="font-bold text-sm truncate">{s.service_type}</p>
                               <p className="text-xs text-muted-foreground">
-                                {s.service_date
-                                  ? new Date(s.service_date + "T00:00:00").toLocaleDateString("en-US", {
-                                      month: "short", day: "numeric", year: "numeric",
-                                    })
-                                  : "—"}
-                                {s.technician && ` • ${s.technician}`}
+                                {fmtDate(s.service_date)}{s.technician && ` • ${s.technician}`}
                               </p>
                             </div>
                             <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -314,9 +401,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/60">
                               {hasFollowUp && s.follow_up_notes && (
                                 <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
-                                  <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">
-                                    Follow-up Notes
-                                  </p>
+                                  <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">Follow-up Notes</p>
                                   <p className="text-sm text-orange-900 whitespace-pre-wrap leading-relaxed">{s.follow_up_notes}</p>
                                 </div>
                               )}
@@ -341,8 +426,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {products.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                                    <FlaskConical className="w-3 h-3" />
-                                    Products Used
+                                    <FlaskConical className="w-3 h-3" /> Products Used
                                   </p>
                                   <ProductUsageSummary entries={products} />
                                 </div>
@@ -350,21 +434,14 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {photos.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                                    <Camera className="w-3 h-3" />
-                                    Photos
+                                    <Camera className="w-3 h-3" /> Photos
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
                                     {photos.map((p: any, i: number) => {
                                       const url = typeof p === "string" ? p : p?.url;
                                       if (!url) return null;
                                       return (
-                                        <a
-                                          key={i}
-                                          href={url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="block w-20 h-20 rounded-md border border-border overflow-hidden bg-muted"
-                                        >
+                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-md border border-border overflow-hidden bg-muted">
                                           <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                                         </a>
                                       );
@@ -397,7 +474,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     ) : null}
                   </div>
                 ) : (
-                  <div className="text-center py-10 text-sm text-muted-foreground">
+                  <div className="text-center py-10 text-sm text-muted-foreground flex flex-col items-center gap-2">
+                    <ImageIcon className="w-6 h-6 opacity-40" />
                     No site map uploaded yet.
                   </div>
                 )}
@@ -405,7 +483,128 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             </Card>
           </TabsContent>
 
-          {/* ─── CONTACT / MESSAGE ─── */}
+          {/* ─── SERVICES (Scope of Work) ─── */}
+          <TabsContent value="services" className="space-y-3 mt-3">
+            <Card>
+              <CardContent className="p-4 space-y-1">
+                <p className="text-sm font-bold flex items-center gap-2"><Wrench className="w-4 h-4 text-primary" /> Scope of Work</p>
+                <p className="text-xs text-muted-foreground">What's included on each visit at this location.</p>
+              </CardContent>
+            </Card>
+            {scopeTypes.length === 0 ? (
+              <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
+                No services on file yet.
+              </CardContent></Card>
+            ) : (
+              scopeTypes.map(type => {
+                const bullets = COMMERCIAL_SERVICE_DESCRIPTIONS[type];
+                return (
+                  <Card key={type}>
+                    <CardContent className="p-4 space-y-2">
+                      <p className="font-bold text-sm">{type}</p>
+                      {bullets ? (
+                        <ul className="space-y-1.5 list-disc pl-5">
+                          {bullets.map((b, i) => (
+                            <li key={i} className="text-sm leading-relaxed text-muted-foreground">{b}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Performed at this location on the regular service cadence. Reach out via the Contact tab for details.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+
+          {/* ─── REQUESTS ─── */}
+          <TabsContent value="requests" className="space-y-3 mt-3">
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-bold">Submit a Request</p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Use this to report new pest activity or request an extra visit. Our team will review and follow up.
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Pest type (e.g. ants, rodents, flies)"
+                    value={reqPest}
+                    onChange={e => setReqPest(e.target.value)}
+                    className="h-11 text-base"
+                  />
+                  <Input
+                    placeholder="Area / location (e.g. kitchen, dish pit, patio)"
+                    value={reqLocation}
+                    onChange={e => setReqLocation(e.target.value)}
+                    className="h-11 text-base"
+                  />
+                  <Textarea
+                    placeholder="Describe what you're seeing…"
+                    value={reqDescription}
+                    onChange={e => setReqDescription(e.target.value)}
+                    rows={4}
+                    className="text-base"
+                  />
+                </div>
+                <Button type="button" onClick={submitRequest} disabled={submittingRequest} className="w-full h-11 text-sm gap-2">
+                  <Send className="w-4 h-4" />
+                  {submittingRequest ? "Submitting…" : "Submit Request"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                <FileText className="w-3 h-3" /> Recent Requests
+              </p>
+              {requests.length === 0 ? (
+                <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
+                  No requests yet.
+                </CardContent></Card>
+              ) : (
+                <div className="space-y-2">
+                  {requests.slice(0, 20).map(r => (
+                    <Card key={r.id}>
+                      <CardContent className="p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold text-sm truncate">
+                            {r.pest_type || r.request_type}
+                            {r.location_type ? ` — ${r.location_type}` : ""}
+                          </p>
+                          <Badge
+                            variant={REQUEST_STATUS_VARIANT[r.status] || "secondary"}
+                            className="text-[10px] capitalize shrink-0"
+                          >
+                            {r.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                        {r.description && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
+                        )}
+                        {r.response_notes && (
+                          <div className="mt-1 pt-1.5 border-t border-border/60">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Response from Crest</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.response_notes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ─── CONTACT ─── */}
           <TabsContent value="contact" className="space-y-3 mt-3">
             <Card>
               <CardContent className="p-4 space-y-3">
@@ -413,10 +612,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                   <Phone className="w-4 h-4 text-primary" />
                   <p className="text-sm font-bold">Need something faster?</p>
                 </div>
-                <a
-                  href="tel:9494245000"
-                  className="block w-full bg-primary text-primary-foreground rounded-lg py-3 px-4 text-center font-semibold text-sm shadow-sm active:opacity-90"
-                >
+                <a href="tel:9494245000" className="block w-full bg-primary text-primary-foreground rounded-lg py-3 px-4 text-center font-semibold text-sm shadow-sm active:opacity-90">
                   Call Crest — (949) 424-5000
                 </a>
               </CardContent>
@@ -429,53 +625,16 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                   <p className="text-sm font-bold">Send Crest a Message</p>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Use this for service questions, scheduling tweaks, or anything you'd like our office to know.
+                  For service questions, scheduling tweaks, or anything you'd like our office to know.
                 </p>
                 <div className="space-y-2">
-                  <Input
-                    placeholder="Your name"
-                    value={msgFrom}
-                    onChange={e => setMsgFrom(e.target.value)}
-                    className="h-11 text-base"
-                  />
-                  <Input
-                    type="email"
-                    placeholder="Your email (optional)"
-                    value={msgEmail}
-                    onChange={e => setMsgEmail(e.target.value)}
-                    className="h-11 text-base"
-                    autoComplete="email"
-                    inputMode="email"
-                  />
-                  <Input
-                    type="tel"
-                    placeholder="Callback phone (optional)"
-                    value={msgPhone}
-                    onChange={e => setMsgPhone(e.target.value)}
-                    className="h-11 text-base"
-                    autoComplete="tel"
-                    inputMode="tel"
-                  />
-                  <Input
-                    placeholder="Subject"
-                    value={msgSubject}
-                    onChange={e => setMsgSubject(e.target.value)}
-                    className="h-11 text-base"
-                  />
-                  <Textarea
-                    placeholder="Your message"
-                    value={msgBody}
-                    onChange={e => setMsgBody(e.target.value)}
-                    rows={5}
-                    className="text-base"
-                  />
+                  <Input placeholder="Your name" value={msgFrom} onChange={e => setMsgFrom(e.target.value)} className="h-11 text-base" />
+                  <Input type="email" placeholder="Your email (optional)" value={msgEmail} onChange={e => setMsgEmail(e.target.value)} className="h-11 text-base" autoComplete="email" inputMode="email" />
+                  <Input type="tel" placeholder="Callback phone (optional)" value={msgPhone} onChange={e => setMsgPhone(e.target.value)} className="h-11 text-base" autoComplete="tel" inputMode="tel" />
+                  <Input placeholder="Subject" value={msgSubject} onChange={e => setMsgSubject(e.target.value)} className="h-11 text-base" />
+                  <Textarea placeholder="Your message" value={msgBody} onChange={e => setMsgBody(e.target.value)} rows={5} className="text-base" />
                 </div>
-                <Button
-                  type="button"
-                  onClick={sendMessage}
-                  disabled={sending}
-                  className="w-full h-11 text-sm gap-2"
-                >
+                <Button type="button" onClick={sendMessage} disabled={sending} className="w-full h-11 text-sm gap-2">
                   <Send className="w-4 h-4" />
                   {sending ? "Sending…" : "Send Message"}
                 </Button>
