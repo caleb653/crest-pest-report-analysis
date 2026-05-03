@@ -411,7 +411,12 @@ const AppointmentReport = () => {
         if (rd.license_number) setLicenseNumber(rd.license_number);
         if (rd.service_date) setServiceDate(rd.service_date);
         if (rd.target_pests) setTargetPests(rd.target_pests);
-        if (rd.products_used) setProductsUsed(rd.products_used);
+        if (rd.products_used) {
+          setProductsUsed(Array.isArray(rd.products_used)
+            ? rd.products_used.map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean)
+            : []);
+          setCommercialProducts(normalizeUsageList(rd.products_used));
+        }
         if (rd.equipment) setEquipment(rd.equipment);
         if (rd.customer_key_areas) {
           setCustomerKeyAreas(rd.customer_key_areas.areas || []);
@@ -458,7 +463,11 @@ const AppointmentReport = () => {
         setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
-        if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
+        if (data.products_used) {
+          const arr = Array.isArray(data.products_used) ? data.products_used as any[] : [];
+          setProductsUsed(arr.map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean));
+          setCommercialProducts(normalizeUsageList(data.products_used));
+        }
         if (data.findings) setTodaysFindings(data.findings);
       }
       if ((data as any).appointment_service && !appointmentService) {
