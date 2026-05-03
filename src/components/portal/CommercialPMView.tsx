@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
   ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
+  Download, Eye, Copy, FileDown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -67,6 +68,14 @@ interface RequestData {
   created_at: string;
   pest_type?: string | null;
   location_type?: string | null;
+}
+
+interface PrepSheet {
+  id: string;
+  title: string;
+  description: string | null;
+  treatment_type: string;
+  file_url: string | null;
 }
 
 interface CommercialPMViewProps {
@@ -123,6 +132,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
+  const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
+  const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
 
@@ -141,14 +152,16 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const loadAll = async () => {
-    const [{ data: prop }, { data: svcs }, { data: reqs }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      supabase.from("portal_prep_sheets").select("*").order("title"),
     ]);
     if (prop) setProperty(prop as any);
     if (Array.isArray(svcs)) setServices(svcs as any);
     if (Array.isArray(reqs)) setRequests(reqs as any);
+    if (Array.isArray(ps)) setPrepSheets(ps as any);
     setLoading(false);
   };
 
@@ -319,11 +332,12 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         </Card>
 
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-11">
+          <TabsList className="grid w-full grid-cols-6 h-11">
             <TabsTrigger value="visits" className="text-[11px] gap-1"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
             <TabsTrigger value="map" className="text-[11px] gap-1"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
             <TabsTrigger value="services" className="text-[11px] gap-1"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
             <TabsTrigger value="requests" className="text-[11px] gap-1"><ClipboardList className="w-3.5 h-3.5" />Requests</TabsTrigger>
+            <TabsTrigger value="prep" className="text-[11px] gap-1"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
             <TabsTrigger value="contact" className="text-[11px] gap-1"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
