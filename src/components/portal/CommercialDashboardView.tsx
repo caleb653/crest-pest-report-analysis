@@ -27,10 +27,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
-  CheckCircle2, AlertTriangle, Send,
+  CheckCircle2, AlertTriangle, Send, Upload, Save,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -81,6 +85,9 @@ interface Props {
   onCopyLink: (token: string) => void;
   onOpenPortal: (token: string) => void;
   onAddUpcomingService: () => void;
+  onRefresh?: () => void;
+  onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
+  uploadingPropertyImage?: boolean;
 }
 
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -103,14 +110,64 @@ const FREQUENCY_OPTIONS = [
   { key: "one-time",   label: "One-Time" },
 ] as const;
 
+const COMMERCIAL_SERVICE_TYPES = [
+  "Commercial General Pest",
+  "General Pest Control",
+  "Mosquito Service",
+  "Rodent Trapping",
+  "Rodent Exclusion",
+  "Rodent Trapping & Exclusion",
+  "Rodent Bait Boxes",
+  "Dewebbing",
+  "Other",
+];
+
+const STATUS_OPTIONS = [
+  { value: "scheduled", label: "Scheduled" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
+  onRefresh, onUpdatePropertyImage, uploadingPropertyImage,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
   const [requests, setRequests] = useState<any[]>([]);
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
+  const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
+  const [savingProp, setSavingProp] = useState(false);
+  const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
+  // Per-service local edit state (so inputs don't lose focus on rerenders)
+  const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
+  const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
+    edits[s.id]?.[k] !== undefined ? edits[s.id]![k] : (s[k] as any) ?? "";
+  const setField = (id: string, k: keyof ServiceData, v: any) =>
+    setEdits(e => ({ ...e, [id]: { ...(e[id] || {}), [k]: v } }));
+
+  const saveServiceField = async (id: string, patch: Record<string, any>) => {
+    const { error } = await supabase.from("portal_services").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    onRefresh?.();
+  };
+
+  const flushEdits = async (id: string) => {
+    const patch = edits[id];
+    if (!patch || Object.keys(patch).length === 0) return;
+    // Normalize empty strings to null for nullable columns
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      out[k] = v === "" ? null : v;
+    }
+    await saveServiceField(id, out);
+    setEdits(e => { const n = { ...e }; delete n[id]; return n; });
+  };
+
   const today = todayISO();
   const past = services
     .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
@@ -122,6 +179,56 @@ export default function CommercialDashboardView({
   const followUpCount = past.filter(s => !!s.follow_up_recommended).length;
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
+
+  useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id, property.notes]);
+
+  const savePropertyNotes = async () => {
+    if ((property.notes || "") === propertyNotes) return;
+    setSavingProp(true);
+    const { error } = await supabase.from("portal_properties")
+      .update({ notes: propertyNotes || null }).eq("id", property.id);
+    setSavingProp(false);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    (property as any).notes = propertyNotes;
+    toast({ title: "Notes saved", duration: 1200 });
+    onRefresh?.();
+  };
+
+  const quickAddVisit = async (status: "scheduled" | "completed") => {
+    const { error } = await supabase.from("portal_services").insert({
+      property_id: property.id,
+      service_type: "Commercial General Pest",
+      status,
+      service_date: status === "completed" ? today : null,
+    } as any);
+    if (error) {
+      toast({ title: "Couldn't add visit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: status === "completed" ? "Past visit added" : "Upcoming visit added" });
+    onRefresh?.();
+  };
+
+  const submitNewRequest = async () => {
+    if (!newReq.description.trim()) return;
+    const { error } = await supabase.from("portal_requests").insert({
+      property_id: property.id,
+      request_type: "Service Request",
+      pest_type: newReq.pest || null,
+      location_type: newReq.location || null,
+      description: newReq.description.trim(),
+    } as any);
+    if (error) {
+      toast({ title: "Couldn't add request", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewReq({ pest: "", location: "", description: "" });
+    toast({ title: "Request added" });
+    loadRequests();
+  };
 
   // Only show portal links that are actually targeted at this property.
   const propertyLinks = links.filter(l => {
