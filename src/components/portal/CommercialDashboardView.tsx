@@ -27,10 +27,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
-  CheckCircle2, AlertTriangle, Send,
+  CheckCircle2, AlertTriangle, Send, Upload, Save,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -81,6 +85,9 @@ interface Props {
   onCopyLink: (token: string) => void;
   onOpenPortal: (token: string) => void;
   onAddUpcomingService: () => void;
+  onRefresh?: () => void;
+  onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
+  uploadingPropertyImage?: boolean;
 }
 
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -103,14 +110,64 @@ const FREQUENCY_OPTIONS = [
   { key: "one-time",   label: "One-Time" },
 ] as const;
 
+const COMMERCIAL_SERVICE_TYPES = [
+  "Commercial General Pest",
+  "General Pest Control",
+  "Mosquito Service",
+  "Rodent Trapping",
+  "Rodent Exclusion",
+  "Rodent Trapping & Exclusion",
+  "Rodent Bait Boxes",
+  "Dewebbing",
+  "Other",
+];
+
+const STATUS_OPTIONS = [
+  { value: "scheduled", label: "Scheduled" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
+  onRefresh, onUpdatePropertyImage, uploadingPropertyImage,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
   const [requests, setRequests] = useState<any[]>([]);
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
+  const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
+  const [savingProp, setSavingProp] = useState(false);
+  const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
+  // Per-service local edit state (so inputs don't lose focus on rerenders)
+  const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
+  const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
+    edits[s.id]?.[k] !== undefined ? edits[s.id]![k] : (s[k] as any) ?? "";
+  const setField = (id: string, k: keyof ServiceData, v: any) =>
+    setEdits(e => ({ ...e, [id]: { ...(e[id] || {}), [k]: v } }));
+
+  const saveServiceField = async (id: string, patch: Record<string, any>) => {
+    const { error } = await supabase.from("portal_services").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    onRefresh?.();
+  };
+
+  const flushEdits = async (id: string) => {
+    const patch = edits[id];
+    if (!patch || Object.keys(patch).length === 0) return;
+    // Normalize empty strings to null for nullable columns
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(patch)) {
+      out[k] = v === "" ? null : v;
+    }
+    await saveServiceField(id, out);
+    setEdits(e => { const n = { ...e }; delete n[id]; return n; });
+  };
+
   const today = todayISO();
   const past = services
     .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
@@ -122,6 +179,56 @@ export default function CommercialDashboardView({
   const followUpCount = past.filter(s => !!s.follow_up_recommended).length;
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
+
+  useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id, property.notes]);
+
+  const savePropertyNotes = async () => {
+    if ((property.notes || "") === propertyNotes) return;
+    setSavingProp(true);
+    const { error } = await supabase.from("portal_properties")
+      .update({ notes: propertyNotes || null }).eq("id", property.id);
+    setSavingProp(false);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    (property as any).notes = propertyNotes;
+    toast({ title: "Notes saved", duration: 1200 });
+    onRefresh?.();
+  };
+
+  const quickAddVisit = async (status: "scheduled" | "completed") => {
+    const { error } = await supabase.from("portal_services").insert({
+      property_id: property.id,
+      service_type: "Commercial General Pest",
+      status,
+      service_date: status === "completed" ? today : null,
+    } as any);
+    if (error) {
+      toast({ title: "Couldn't add visit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: status === "completed" ? "Past visit added" : "Upcoming visit added" });
+    onRefresh?.();
+  };
+
+  const submitNewRequest = async () => {
+    if (!newReq.description.trim()) return;
+    const { error } = await supabase.from("portal_requests").insert({
+      property_id: property.id,
+      request_type: "Service Request",
+      pest_type: newReq.pest || null,
+      location_type: newReq.location || null,
+      description: newReq.description.trim(),
+    } as any);
+    if (error) {
+      toast({ title: "Couldn't add request", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewReq({ pest: "", location: "", description: "" });
+    toast({ title: "Request added" });
+    loadRequests();
+  };
 
   // Only show portal links that are actually targeted at this property.
   const propertyLinks = links.filter(l => {
@@ -328,14 +435,30 @@ export default function CommercialDashboardView({
                     How often this location is serviced.
                   </p>
                 </div>
-                {property.notes && (
-                  <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
-                      Notes
-                    </Label>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{property.notes}</p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                    Property Notes
+                  </Label>
+                  <Textarea
+                    value={propertyNotes}
+                    onChange={e => setPropertyNotes(e.target.value)}
+                    onBlur={savePropertyNotes}
+                    placeholder="Account notes, gate codes, manager contact, access instructions, hot spots…"
+                    rows={4}
+                    className="text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {savingProp ? "Saving…" : "Saves automatically when you tap away."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Button size="sm" onClick={() => quickAddVisit("scheduled")} className="h-11 text-sm gap-1.5">
+                    <Plus className="w-4 h-4" /> Add Upcoming Visit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-11 text-sm gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" /> Log Past Visit
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -361,6 +484,30 @@ export default function CommercialDashboardView({
                     No site map uploaded yet.
                   </div>
                 )}
+                {onUpdatePropertyImage && (
+                  <div className="mt-3">
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          await onUpdatePropertyImage(property.id, f);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      <span className="inline-flex items-center justify-center gap-1.5 h-11 w-full rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent cursor-pointer">
+                        <Upload className="w-4 h-4" />
+                        {uploadingPropertyImage ? "Uploading…" : (mapUrl ? "Replace Site Map" : "Upload Site Map")}
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-muted-foreground mt-1 text-center">
+                      Upload a floor plan or property photo. JPG / PNG.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -368,6 +515,12 @@ export default function CommercialDashboardView({
 
         {/* ════════ TAB 2: Previous Services ════════ */}
         <TabsContent value="past" className="mt-0">
+          <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Past Visits</p>
+            <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
+              <Plus className="w-3.5 h-3.5" /> Log Past Visit
+            </Button>
+          </div>
           {past.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
               No past visits yet.
@@ -406,9 +559,6 @@ export default function CommercialDashboardView({
                         <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
                           <FileText className="w-3 h-3" /> Report
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onEditService(s)} className="h-8 w-8">
-                          <Edit className="w-3.5 h-3.5" />
-                        </Button>
                         <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -416,28 +566,111 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
+                        {/* Inline editable core fields — phone friendly */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Date</Label>
+                            <Input
+                              type="date"
+                              value={getField(s, "service_date") || ""}
+                              onChange={e => setField(s.id, "service_date", e.target.value)}
+                              onBlur={() => flushEdits(s.id)}
+                              className="h-11 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Technician</Label>
+                            <Input
+                              value={getField(s, "technician") || ""}
+                              onChange={e => setField(s.id, "technician", e.target.value)}
+                              onBlur={() => flushEdits(s.id)}
+                              placeholder="Tech name"
+                              className="h-11 text-sm"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
+                            <Select
+                              value={getField(s, "service_type") || ""}
+                              onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
+                            >
+                              <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {COMMERCIAL_SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                {!COMMERCIAL_SERVICE_TYPES.includes(getField(s, "service_type")) && getField(s, "service_type") && (
+                                  <SelectItem value={getField(s, "service_type")}>{getField(s, "service_type")}</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
+                          <Textarea
+                            value={getField(s, "summary") || ""}
+                            onChange={e => setField(s.id, "summary", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="What was performed during this visit…"
+                            rows={3}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Findings</Label>
+                          <Textarea
+                            value={getField(s, "findings") || ""}
+                            onChange={e => setField(s.id, "findings", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Pest activity, conditions found, problem areas…"
+                            rows={3}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Internal Notes</Label>
+                          <Textarea
+                            value={getField(s, "notes") || ""}
+                            onChange={e => setField(s.id, "notes", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Office-only notes (not shown to client)…"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
+                        <div className="rounded-md border border-border p-2.5 space-y-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4"
+                              checked={!!getField(s, "follow_up_recommended")}
+                              onChange={e => {
+                                setField(s.id, "follow_up_recommended", e.target.checked);
+                                saveServiceField(s.id, { follow_up_recommended: e.target.checked });
+                              }}
+                            />
+                            <span className="text-sm font-semibold">Follow-up needed</span>
+                          </label>
+                          {getField(s, "follow_up_recommended") && (
+                            <Textarea
+                              value={getField(s, "follow_up_notes") || ""}
+                              onChange={e => setField(s.id, "follow_up_notes", e.target.value)}
+                              onBlur={() => flushEdits(s.id)}
+                              placeholder="What needs to happen on the follow-up…"
+                              rows={2}
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button size="sm" variant="outline" onClick={() => onEditService(s)} className="h-9 text-xs gap-1">
+                            <Edit className="w-3 h-3" /> Full Editor (products / photos)
+                          </Button>
+                        </div>
+
                         {hasFollowUp && s.follow_up_notes && (
                           <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
                             <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">Follow-up Notes</p>
                             <p className="text-sm text-orange-900 whitespace-pre-wrap">{s.follow_up_notes}</p>
-                          </div>
-                        )}
-                        {s.summary && (
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
-                            <p className="text-sm whitespace-pre-wrap">{s.summary}</p>
-                          </div>
-                        )}
-                        {s.findings && (
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings</p>
-                            <p className="text-sm whitespace-pre-wrap">{s.findings}</p>
-                          </div>
-                        )}
-                        {s.notes && (
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
-                            <p className="text-sm whitespace-pre-wrap">{s.notes}</p>
                           </div>
                         )}
                         {products.length > 0 && (
@@ -493,22 +726,74 @@ export default function CommercialDashboardView({
               <div className="space-y-2">
                 {upcoming.map(s => (
                   <Card key={s.id}>
-                    <CardContent className="p-3 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm truncate">{s.service_type}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {fmtDate(s.service_date)}{s.service_time ? ` • ${s.service_time}` : ""}{s.technician ? ` • ${s.technician}` : ""}
-                        </p>
+                    <CardContent className="p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
+                          <Select
+                            value={getField(s, "service_type") || ""}
+                            onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
+                          >
+                            <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {COMMERCIAL_SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                              {!COMMERCIAL_SERVICE_TYPES.includes(getField(s, "service_type")) && getField(s, "service_type") && (
+                                <SelectItem value={getField(s, "service_type")}>{getField(s, "service_type")}</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Date</Label>
+                          <Input
+                            type="date"
+                            value={getField(s, "service_date") || ""}
+                            onChange={e => setField(s.id, "service_date", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Time</Label>
+                          <Input
+                            value={getField(s, "service_time") || ""}
+                            onChange={e => setField(s.id, "service_time", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="e.g. 9:00 AM"
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
+                          <Input
+                            value={getField(s, "technician") || ""}
+                            onChange={e => setField(s.id, "technician", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Tech name"
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
+                          <Textarea
+                            value={getField(s, "special_notes") || ""}
+                            onChange={e => setField(s.id, "special_notes", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Access info, prep, things to look for…"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Report
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
+                          <FileText className="w-3 h-3" /> Open Report
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onEditService(s)} className="h-8 w-8">
-                          <Edit className="w-3.5 h-3.5" />
+                        <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
+                          <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
+                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-9 gap-1 text-xs text-destructive">
+                          <Trash2 className="w-3 h-3" /> Delete
                         </Button>
                       </div>
                     </CardContent>
@@ -522,6 +807,19 @@ export default function CommercialDashboardView({
         {/* ════════ TAB 4: Requests ════════ */}
         <TabsContent value="requests" className="mt-0">
           <div className="max-w-3xl mx-auto space-y-4">
+            <Card className="border-2 border-primary/30 bg-primary/[0.03]">
+              <CardContent className="p-3 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Request</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={newReq.pest} onChange={e => setNewReq(r => ({ ...r, pest: e.target.value }))} placeholder="Pest (e.g. Ants)" className="h-11 text-sm" />
+                  <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
+                </div>
+                <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
+                <Button size="sm" onClick={submitNewRequest} disabled={!newReq.description.trim()} className="h-11 text-sm gap-1.5 w-full">
+                  <Plus className="w-4 h-4" /> Add Request
+                </Button>
+              </CardContent>
+            </Card>
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3 h-3" /> Open Requests
