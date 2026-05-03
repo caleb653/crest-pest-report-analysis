@@ -618,6 +618,77 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             </div>
           </TabsContent>
 
+          {/* ─── PREP SHEETS ─── */}
+          <TabsContent value="prep" className="space-y-3 mt-3">
+            <div className="border-b-2 border-primary/70 pb-2 mb-2">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <FileDown className="w-5 h-5 text-primary" />Prep Sheets
+                <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Treatment prep instructions you can view, download, or share.
+              </p>
+            </div>
+            {prepSheets.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">
+                No prep sheets available yet.
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {prepSheets.map(ps => {
+                  const open = expandedPrep === ps.id;
+                  return (
+                    <Card key={ps.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left p-3 flex items-center justify-between"
+                        onClick={() => setExpandedPrep(open ? null : ps.id)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{ps.title}</p>
+                          <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                      {open && (
+                        <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
+                          {ps.description && (
+                            <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
+                              <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={() => window.open(ps.file_url!, "_blank", "noopener,noreferrer")}>
+                                <Eye className="w-3.5 h-3.5 mr-1" />View
+                              </Button>
+                            )}
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={() => { window.open(ps.file_url!, "_blank"); }}>
+                                <Download className="w-3.5 h-3.5 mr-1" />Download
+                              </Button>
+                            )}
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(ps.file_url!);
+                                  toast({ title: "Link copied" });
+                                }}>
+                                <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
           {/* ─── CONTACT ─── */}
           <TabsContent value="contact" className="space-y-3 mt-3">
             <Card>
