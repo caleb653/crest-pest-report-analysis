@@ -58,6 +58,17 @@ const UNIT_PEST_OPTIONS = [
 
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
+const COMMERCIAL_CONCERNS = [
+  "Sanitation concerns",
+  "Harborage / clutter",
+  "Exclusion gaps",
+  "Moisture issues",
+  "Food storage issues",
+  "Trash / dumpster issues",
+  "Structural deficiencies",
+  "Conducive conditions",
+];
+
 const AppointmentReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -186,6 +197,14 @@ const AppointmentReport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [annotatingImageIndex, setAnnotatingImageIndex] = useState<number | null>(null);
 
+  // Commercial-specific simplified state
+  const [isCommercial, setIsCommercial] = useState(false);
+  const [serviceNotes, setServiceNotes] = useState("");
+  const [concerns, setConcerns] = useState<string[]>([]);
+  const [otherConcerns, setOtherConcerns] = useState("");
+  const toggleConcern = (c: string) =>
+    setConcerns(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
+
   // Unit overview table
   const [unitRows, setUnitRows] = useState<UnitRow[]>(() => buildInitialPrefilledUnitRows());
   const [commonAreaPests, setCommonAreaPests] = useState("");
@@ -206,7 +225,7 @@ const AppointmentReport = () => {
   // Load property map data (persistent across appointments)
   useEffect(() => {
     if (!propertyId) return;
-    supabase.from("portal_properties").select("map_data, map_image_url, name, address").eq("id", propertyId).single()
+    supabase.from("portal_properties").select("map_data, map_image_url, name, address, customer_preferences").eq("id", propertyId).single()
       .then(({ data }) => {
         if (data) {
           if (data.map_data) {
@@ -214,6 +233,8 @@ const AppointmentReport = () => {
           }
           if (data.map_image_url) setCustomMapImage(data.map_image_url);
           if (data.name && !propertyName) setPropertyName(data.name);
+          const ptype = (data.customer_preferences as any)?.property_type;
+          setIsCommercial(ptype === "commercial");
         }
       });
   }, [propertyId]);
