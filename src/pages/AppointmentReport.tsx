@@ -657,41 +657,10 @@ const AppointmentReport = () => {
                 {/* Products Used (commercial) */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Products Used</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between font-normal h-11 text-sm">
-                        <span className="text-left line-clamp-1 flex-1">
-                          {productsUsed.length > 0 ? productsUsed.join(", ") : "Select products applied…"}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search products..." />
-                        <CommandList className="max-h-64">
-                          <CommandEmpty>No match.</CommandEmpty>
-                          <CommandGroup>
-                            {PRODUCT_OPTIONS.map(p => (
-                              <CommandItem key={p} value={p} onSelect={() => toggleProduct(p)}>
-                                <Check className={cn("mr-2 h-4 w-4", productsUsed.includes(p) ? "opacity-100" : "opacity-0")} />
-                                {p}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {productsUsed.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {productsUsed.map(p => (
-                        <Badge key={p} variant="default" className="text-xs cursor-pointer" onClick={() => toggleProduct(p)}>
-                          {p} ×
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                  <p className="text-[10px] text-muted-foreground -mt-1">
+                    Add each product applied today with the diluted amount; concentrate auto-calculates for standard products.
+                  </p>
+                  <ProductUsageEditor value={commercialProducts} onChange={setCommercialProducts} />
                 </div>
 
                 {/* Equipment (commercial) */}
