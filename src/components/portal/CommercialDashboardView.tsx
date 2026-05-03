@@ -435,14 +435,30 @@ export default function CommercialDashboardView({
                     How often this location is serviced.
                   </p>
                 </div>
-                {property.notes && (
-                  <div>
-                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
-                      Notes
-                    </Label>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{property.notes}</p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                    Property Notes
+                  </Label>
+                  <Textarea
+                    value={propertyNotes}
+                    onChange={e => setPropertyNotes(e.target.value)}
+                    onBlur={savePropertyNotes}
+                    placeholder="Account notes, gate codes, manager contact, access instructions, hot spots…"
+                    rows={4}
+                    className="text-sm"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {savingProp ? "Saving…" : "Saves automatically when you tap away."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Button size="sm" onClick={() => quickAddVisit("scheduled")} className="h-11 text-sm gap-1.5">
+                    <Plus className="w-4 h-4" /> Add Upcoming Visit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-11 text-sm gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" /> Log Past Visit
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -466,6 +482,30 @@ export default function CommercialDashboardView({
                   <div className="text-center py-12 text-sm text-muted-foreground flex flex-col items-center gap-2">
                     <ImageIcon className="w-6 h-6 opacity-40" />
                     No site map uploaded yet.
+                  </div>
+                )}
+                {onUpdatePropertyImage && (
+                  <div className="mt-3">
+                    <label className="block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          await onUpdatePropertyImage(property.id, f);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                      <span className="inline-flex items-center justify-center gap-1.5 h-11 w-full rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent cursor-pointer">
+                        <Upload className="w-4 h-4" />
+                        {uploadingPropertyImage ? "Uploading…" : (mapUrl ? "Replace Site Map" : "Upload Site Map")}
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-muted-foreground mt-1 text-center">
+                      Upload a floor plan or property photo. JPG / PNG.
+                    </p>
                   </div>
                 )}
               </CardContent>
