@@ -1018,12 +1018,14 @@ const AppointmentReport = () => {
                 <Textarea placeholder="Notes about key areas..." value={customerKeyAreasNotes} onChange={e => setCustomerKeyAreasNotes(e.target.value)} rows={2} className="text-xs" />
               </div>
             </Card>
+            )}
 
-            {/* Today's Findings */}
-            <Card className="p-4 space-y-2">
-              <Label className="font-semibold">Summary of Resident and Common Area Services</Label>
-              <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
-            </Card>
+            {!isCommercial && (
+              <Card className="p-4 space-y-2">
+                <Label className="font-semibold">Summary of Resident and Common Area Services</Label>
+                <Textarea placeholder="What was found during today's service..." value={todaysFindings} onChange={e => setTodaysFindings(e.target.value)} rows={4} />
+              </Card>
+            )}
 
 
             {/* Property Images */}
