@@ -726,22 +726,74 @@ export default function CommercialDashboardView({
               <div className="space-y-2">
                 {upcoming.map(s => (
                   <Card key={s.id}>
-                    <CardContent className="p-3 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm truncate">{s.service_type}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {fmtDate(s.service_date)}{s.service_time ? ` • ${s.service_time}` : ""}{s.technician ? ` • ${s.technician}` : ""}
-                        </p>
+                    <CardContent className="p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
+                          <Select
+                            value={getField(s, "service_type") || ""}
+                            onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
+                          >
+                            <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {COMMERCIAL_SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                              {!COMMERCIAL_SERVICE_TYPES.includes(getField(s, "service_type")) && getField(s, "service_type") && (
+                                <SelectItem value={getField(s, "service_type")}>{getField(s, "service_type")}</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Date</Label>
+                          <Input
+                            type="date"
+                            value={getField(s, "service_date") || ""}
+                            onChange={e => setField(s.id, "service_date", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Time</Label>
+                          <Input
+                            value={getField(s, "service_time") || ""}
+                            onChange={e => setField(s.id, "service_time", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="e.g. 9:00 AM"
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
+                          <Input
+                            value={getField(s, "technician") || ""}
+                            onChange={e => setField(s.id, "technician", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Tech name"
+                            className="h-11 text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
+                          <Textarea
+                            value={getField(s, "special_notes") || ""}
+                            onChange={e => setField(s.id, "special_notes", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Access info, prep, things to look for…"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Report
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
+                          <FileText className="w-3 h-3" /> Open Report
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onEditService(s)} className="h-8 w-8">
-                          <Edit className="w-3.5 h-3.5" />
+                        <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
+                          <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
-                        <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
+                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-9 gap-1 text-xs text-destructive">
+                          <Trash2 className="w-3 h-3" /> Delete
                         </Button>
                       </div>
                     </CardContent>
@@ -755,6 +807,19 @@ export default function CommercialDashboardView({
         {/* ════════ TAB 4: Requests ════════ */}
         <TabsContent value="requests" className="mt-0">
           <div className="max-w-3xl mx-auto space-y-4">
+            <Card className="border-2 border-primary/30 bg-primary/[0.03]">
+              <CardContent className="p-3 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Request</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={newReq.pest} onChange={e => setNewReq(r => ({ ...r, pest: e.target.value }))} placeholder="Pest (e.g. Ants)" className="h-11 text-sm" />
+                  <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
+                </div>
+                <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
+                <Button size="sm" onClick={submitNewRequest} disabled={!newReq.description.trim()} className="h-11 text-sm gap-1.5 w-full">
+                  <Plus className="w-4 h-4" /> Add Request
+                </Button>
+              </CardContent>
+            </Card>
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3 h-3" /> Open Requests
