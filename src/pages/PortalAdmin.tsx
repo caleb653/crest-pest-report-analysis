@@ -946,6 +946,9 @@ const PortalAdmin = () => {
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
             onAddUpcomingService={() => createAndOpenReport("scheduled")}
+            onRefresh={loadAll}
+            onUpdatePropertyImage={updatePropertyImage}
+            uploadingPropertyImage={uploadingPropertyImage}
           />
         ) : (
         <PropertyDashboard
