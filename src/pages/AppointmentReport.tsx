@@ -302,6 +302,9 @@ const AppointmentReport = () => {
       common_area_pests: commonAreaPests, common_area_notes: commonAreaNotes,
       tech_observations: techObservations,
       appointment_service: appointmentService,
+      service_notes: serviceNotes,
+      concerns,
+      other_concerns: otherConcerns,
     };
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
@@ -438,6 +441,9 @@ const AppointmentReport = () => {
         if (rd.time_in) setTimeIn(rd.time_in);
         if (rd.time_out) setTimeOut(rd.time_out);
         if (rd.appointment_service) setAppointmentService(rd.appointment_service);
+        if (rd.service_notes) setServiceNotes(rd.service_notes);
+        if (Array.isArray(rd.concerns)) setConcerns(rd.concerns);
+        if (rd.other_concerns) setOtherConcerns(rd.other_concerns);
       } else {
         setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
