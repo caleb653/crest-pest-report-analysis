@@ -3,23 +3,34 @@
  * (e.g. restaurants). Sibling to PropertyDashboard; PortalAdmin delegates
  * to this when property_type === "commercial".
  *
- * Differences from PropertyDashboard (apartments / HOA):
- *   • NO units, sub-locations, or unit pricing concepts.
- *   • NO work-order workflow, NO surveys, NO video tab.
- *   • Per service we only show: date, type, technician, summary/findings/notes,
- *     products used, and photos. Service editing reuses the existing admin
- *     service dialog via the same callbacks PropertyDashboard uses.
+ * Tabbed layout matching the look-and-feel of the HOA / apartment admin
+ * (`PropertyDashboard`) but scaled for a SINGLE-LOCATION property. There
+ * are no units, no sub-locations, no per-unit pricing, no work orders, no
+ * surveys, no quarterly video tab. Tabs:
+ *   1. Site Map        — property plan + map + service frequency
+ *   2. Past Visits     — completed services with summary / findings /
+ *                        products / photos (expandable)
+ *   3. Upcoming Visits — scheduled services with quick actions
+ *   4. Requests        — location-level service requests submitted from
+ *                        the commercial PM portal, with admin response /
+ *                        mark-complete / delete controls
  *
  * NOTE: We deliberately do not import or reuse PropertyDashboard so the
  * apartment + HOA flows stay completely untouched.
  */
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
-  Calendar, ClipboardList, MapPin, Edit, Trash2, FileText,
+  Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
+  CheckCircle2, AlertTriangle, Send,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -77,18 +88,41 @@ const fmtDate = (iso: string | null) =>
   iso ? new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
   }) : "—";
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "numeric", minute: "2-digit",
+  });
+
+const FREQUENCY_OPTIONS = [
+  { key: "weekly",     label: "Weekly" },
+  { key: "bi-weekly",  label: "Bi-Weekly" },
+  { key: "monthly",    label: "Monthly" },
+  { key: "bi-monthly", label: "Bi-Monthly" },
+  { key: "quarterly",  label: "Quarterly" },
+  { key: "one-time",   label: "One-Time" },
+] as const;
 
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("map");
+  const [requests, setRequests] = useState<any[]>([]);
+  const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const today = todayISO();
-  const past = services.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const past = services
+    .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
+    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcoming = services
     .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property.map_image_url || property.image_url || null;
+  const followUpCount = past.filter(s => !!s.follow_up_recommended).length;
+  const propertyFrequency: string =
+    (property.customer_preferences as any)?.service_frequency || "monthly";
+
   // Only show portal links that are actually targeted at this property.
   const propertyLinks = links.filter(l => {
     const ids: any = l.assigned_property_ids;
@@ -96,8 +130,92 @@ export default function CommercialDashboardView({
     return ids.includes(property.id);
   });
 
+  const loadRequests = async () => {
+    const { data } = await supabase
+      .from("portal_requests")
+      .select("*")
+      .eq("property_id", property.id)
+      .order("created_at", { ascending: false });
+    setRequests(Array.isArray(data) ? data : []);
+  };
+
+  useEffect(() => {
+    loadRequests();
+    const channel = supabase
+      .channel(`commercial-admin-${property.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${property.id}` }, () => loadRequests())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property.id]);
+
+  const openRequests = requests.filter(r => r.status === "pending" || r.status === "in_progress");
+  const closedRequests = requests.filter(r => r.status === "completed" || r.status === "cancelled");
+
+  const setFrequency = async (key: string) => {
+    const next = { ...(property.customer_preferences || {}), service_frequency: key };
+    const { error } = await supabase
+      .from("portal_properties")
+      .update({ customer_preferences: next })
+      .eq("id", property.id);
+    if (error) {
+      toast({ title: "Failed to save frequency", description: error.message, variant: "destructive" });
+      return;
+    }
+    (property as any).customer_preferences = next;
+    toast({ title: `Frequency set to ${key}`, duration: 1500 });
+  };
+
+  const sendResponse = async (id: string) => {
+    const note = (responseDraft[id] || "").trim();
+    if (!note) return;
+    const { error } = await supabase
+      .from("portal_requests")
+      .update({ response_notes: note, status: "in_progress", updated_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't save response", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Response saved" });
+    setResponseDraft(d => ({ ...d, [id]: "" }));
+    loadRequests();
+  };
+
+  const markRequestComplete = async (id: string) => {
+    const { error } = await supabase
+      .from("portal_requests")
+      .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't update", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Request marked complete" });
+    loadRequests();
+  };
+
+  const deleteRequest = async (id: string) => {
+    if (!window.confirm("Delete this request? This cannot be undone.")) return;
+    const { error } = await supabase.from("portal_requests").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Request deleted" });
+    loadRequests();
+  };
+
   return (
     <div className="space-y-4">
+      {/* Top tag — mirrors HOA / apartment portal badge */}
+      <div className="rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold bg-amber-50 border-amber-300 text-amber-900">
+        <span className="px-1.5 py-0.5 rounded bg-white/70 border border-current/30 text-[10px] uppercase tracking-wider">
+          Commercial Portal
+        </span>
+        <span className="text-amber-800/80">Single-location account · no units / sub-locations</span>
+      </div>
+
       {/* Location summary */}
       <Card>
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
@@ -147,81 +265,122 @@ export default function CommercialDashboardView({
         </Card>
       )}
 
-      {/* Site map */}
-      {(property.map_data || mapUrl) && (
-        <Card>
-          <CardContent className="p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-              <ImageIcon className="w-3 h-3" /> Site Map
-            </p>
-            <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "55vh", minHeight: 360 }}>
-              {property.map_data ? (
-                <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} />
-              ) : mapUrl ? (
-                <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+          <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <MapPin className="w-5 h-5" />
+            <span>Site Map and Plan</span>
+          </TabsTrigger>
+          <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <Calendar className="w-5 h-5" />
+            <span>
+              Previous Services
+              <Badge variant="secondary" className="ml-1 text-xs h-4">{past.length}</Badge>
+              {followUpCount > 0 && (
+                <Badge className="ml-1 text-xs h-4 bg-orange-500 hover:bg-orange-500 text-white">{followUpCount} follow-up</Badge>
+              )}
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <ClipboardList className="w-5 h-5" />
+            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
+          </TabsTrigger>
+          <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <Wrench className="w-5 h-5" />
+            <span>Requests <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Upcoming */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
-          <Button size="sm" variant="outline" onClick={onAddUpcomingService} className="h-7 text-xs gap-1">
-            <Plus className="w-3 h-3" /> Add Visit
-          </Button>
-        </div>
-        {upcoming.length === 0 ? (
-          <Card><CardContent className="p-4 text-sm text-muted-foreground text-center">
-            No upcoming visits scheduled.
-          </CardContent></Card>
-        ) : (
-          <div className="space-y-2">
-            {upcoming.map(s => (
-              <Card key={s.id}>
-                <CardContent className="p-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm truncate">{s.service_type}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {fmtDate(s.service_date)}{s.service_time ? ` • ${s.service_time}` : ""}{s.technician ? ` • ${s.technician}` : ""}
-                    </p>
+        {/* ════════ TAB 1: Site Map + Property Plan ════════ */}
+        <TabsContent value="map" className="mt-0 space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <Card className="shadow-sm border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent">
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-primary" />
+                  Property Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
+                    Service Frequency
+                  </Label>
+                  <div className="inline-flex flex-wrap rounded-lg border border-border bg-muted p-1 gap-0.5">
+                    {FREQUENCY_OPTIONS.map(opt => {
+                      const active = propertyFrequency === opt.key;
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                            active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                          onClick={() => !active && setFrequency(opt.key)}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                      <FileText className="w-3 h-3" /> Report
-                    </Button>
-                    <Button size="icon" variant="outline" onClick={() => onEditService(s)} className="h-8 w-8">
-                      <Edit className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    How often this location is serviced.
+                  </p>
+                </div>
+                {property.notes && (
+                  <div>
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
+                      Notes
+                    </Label>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{property.notes}</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 pt-4 border-b">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
+                  Site Map
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3">
+                {(property.map_data || mapUrl) ? (
+                  <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "55vh", minHeight: 360 }}>
+                    {property.map_data ? (
+                      <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} />
+                    ) : mapUrl ? (
+                      <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-sm text-muted-foreground flex flex-col items-center gap-2">
+                    <ImageIcon className="w-6 h-6 opacity-40" />
+                    No site map uploaded yet.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* Past */}
-      <div>
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Past Visits</p>
-        {past.length === 0 ? (
-          <Card><CardContent className="p-4 text-sm text-muted-foreground text-center">
-            No past visits yet.
-          </CardContent></Card>
-        ) : (
-          <div className="space-y-2">
-            {past.map(s => {
-              const isOpen = openId === s.id;
-              const products = normalizeUsageList(s.products_used);
-              const hasFollowUp = !!s.follow_up_recommended;
-              const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
-              return (
-                <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400" : ""}>
+        {/* ════════ TAB 2: Previous Services ════════ */}
+        <TabsContent value="past" className="mt-0">
+          {past.length === 0 ? (
+            <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
+              No past visits yet.
+            </CardContent></Card>
+          ) : (
+            <div className="space-y-2 max-w-4xl mx-auto">
+              {past.map(s => {
+                const isOpen = openId === s.id;
+                const products = normalizeUsageList(s.products_used);
+                const hasFollowUp = !!s.follow_up_recommended;
+                const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
+                return (
+                  <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400" : ""}>
                   <CardContent className="p-0">
                     {hasFollowUp && (
                       <div className="bg-orange-500 text-white px-3 py-1.5 rounded-t-lg flex items-center gap-2">
@@ -315,7 +474,144 @@ export default function CommercialDashboardView({
             })}
           </div>
         )}
-      </div>
+        </TabsContent>
+
+        {/* ════════ TAB 3: Upcoming Services ════════ */}
+        <TabsContent value="upcoming" className="mt-0">
+          <div className="max-w-4xl mx-auto space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
+              <Button size="sm" variant="outline" onClick={onAddUpcomingService} className="h-8 text-xs gap-1">
+                <Plus className="w-3 h-3" /> Add Visit
+              </Button>
+            </div>
+            {upcoming.length === 0 ? (
+              <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
+                No upcoming visits scheduled.
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {upcoming.map(s => (
+                  <Card key={s.id}>
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm truncate">{s.service_type}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {fmtDate(s.service_date)}{s.service_time ? ` • ${s.service_time}` : ""}{s.technician ? ` • ${s.technician}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
+                          <FileText className="w-3 h-3" /> Report
+                        </Button>
+                        <Button size="icon" variant="outline" onClick={() => onEditService(s)} className="h-8 w-8">
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB 4: Requests ════════ */}
+        <TabsContent value="requests" className="mt-0">
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3" /> Open Requests
+                <Badge variant="secondary" className="ml-1 text-[10px]">{openRequests.length}</Badge>
+              </p>
+              {openRequests.length === 0 ? (
+                <Card><CardContent className="p-5 text-sm text-muted-foreground text-center">
+                  No open requests. Submissions from the commercial portal will appear here.
+                </CardContent></Card>
+              ) : (
+                <div className="space-y-2">
+                  {openRequests.map(r => (
+                    <Card key={r.id} className="border-2 border-amber-300">
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm truncate">
+                              {r.pest_type || r.request_type}
+                              {r.location_type ? ` — ${r.location_type}` : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
+                          </div>
+                          <Badge variant="secondary" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
+                        </div>
+                        {r.description && (
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
+                        )}
+                        {r.response_notes && (
+                          <div className="rounded-md border border-border bg-muted/40 p-2">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Last Response</p>
+                            <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
+                          </div>
+                        )}
+                        <div className="space-y-2 pt-1">
+                          <Textarea
+                            placeholder="Reply to this request (saved on the request, visible to client)…"
+                            rows={2}
+                            value={responseDraft[r.id] || ""}
+                            onChange={e => setResponseDraft(d => ({ ...d, [r.id]: e.target.value }))}
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button size="sm" className="h-8 text-xs gap-1" onClick={() => sendResponse(r.id)} disabled={!(responseDraft[r.id] || "").trim()}>
+                              <Send className="w-3 h-3" /> Save Response
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => markRequestComplete(r.id)}>
+                              <CheckCircle2 className="w-3 h-3" /> Mark Complete
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1 text-destructive" onClick={() => deleteRequest(r.id)}>
+                              <Trash2 className="w-3 h-3" /> Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {closedRequests.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3 h-3" /> Closed Requests
+                  <Badge variant="secondary" className="ml-1 text-[10px]">{closedRequests.length}</Badge>
+                </p>
+                <div className="space-y-2">
+                  {closedRequests.slice(0, 20).map(r => (
+                    <Card key={r.id} className="opacity-80">
+                      <CardContent className="p-3 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-sm truncate">
+                            {r.pest_type || r.request_type}
+                            {r.location_type ? ` — ${r.location_type}` : ""}
+                          </p>
+                          <Badge variant="outline" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
+                        {r.description && <p className="text-xs whitespace-pre-wrap">{r.description}</p>}
+                        {r.response_notes && (
+                          <p className="text-xs italic text-muted-foreground"><span className="font-semibold">Response:</span> {r.response_notes}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
