@@ -585,7 +585,60 @@ const AppointmentReport = () => {
               </div>
             </Card>
 
-            {/* Property & Service Overview */}
+            {/* ─── Commercial: simplified single-location form ─── */}
+            {isCommercial && (
+              <Card className="p-5 space-y-5 border-2 border-primary/30 bg-gradient-to-br from-primary/[0.04] to-transparent shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.15em] font-bold text-primary/80">Commercial Service Visit</p>
+                    <h2 className="text-xl font-bold tracking-tight">Service Notes & Conditions</h2>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Service Notes</Label>
+                  <Textarea
+                    value={serviceNotes}
+                    onChange={e => setServiceNotes(e.target.value)}
+                    placeholder="What was inspected and treated, areas of focus, recommendations for management…"
+                    rows={6}
+                    className="text-sm leading-relaxed resize-y"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Concerns Observed</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {COMMERCIAL_CONCERNS.map(c => {
+                      const active = concerns.includes(c);
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          onClick={() => toggleConcern(c)}
+                          className={cn(
+                            "px-3.5 h-10 rounded-full text-sm font-medium border-2 transition-all",
+                            active
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                              : "bg-background text-foreground border-border hover:border-primary/50"
+                          )}
+                        >
+                          {active ? "✓ " : ""}{c}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <Textarea
+                    value={otherConcerns}
+                    onChange={e => setOtherConcerns(e.target.value)}
+                    placeholder="Other concerns or details to flag for the office…"
+                    rows={2}
+                    className="text-sm mt-1"
+                  />
+                </div>
+              </Card>
+            )}
+
+            {/* Property & Service Overview (apartments / HOA only) */}
+            {!isCommercial && (
             <Card className="p-4 space-y-4">
               <Label className="font-semibold text-base">Property & Service Overview</Label>
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -814,8 +867,10 @@ const AppointmentReport = () => {
 
               <p className="text-xs text-muted-foreground italic">Note: See full service report for details on pesticide usage and observations for exterior and common areas.</p>
             </Card>
+            )}
 
-            {/* Selections: Pests, Products, Equipment, Customer Info */}
+            {/* Selections: Pests, Products, Equipment, Customer Info (apartments / HOA only) */}
+            {!isCommercial && (
             <Card className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Target Pests */}
