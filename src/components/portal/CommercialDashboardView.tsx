@@ -34,7 +34,7 @@ import {
 import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
-  CheckCircle2, AlertTriangle, Send, Upload, Save,
+  CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -136,6 +136,8 @@ export default function CommercialDashboardView({
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
   const [requests, setRequests] = useState<any[]>([]);
+  const [prepSheets, setPrepSheets] = useState<any[]>([]);
+  const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
@@ -248,6 +250,9 @@ export default function CommercialDashboardView({
 
   useEffect(() => {
     loadRequests();
+    supabase.from("portal_prep_sheets").select("*").order("title").then(({ data }) => {
+      if (Array.isArray(data)) setPrepSheets(data);
+    });
     const channel = supabase
       .channel(`commercial-admin-${property.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${property.id}` }, () => loadRequests())
