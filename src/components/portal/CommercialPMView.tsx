@@ -296,7 +296,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           <img src={crestLogo} alt="Crest Pest Control" className="h-8 w-auto" />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold leading-tight">
-              Commercial Portal
+              Customer Portal
             </p>
             <h1 className="text-base font-bold leading-tight truncate">{property.name}</h1>
           </div>
