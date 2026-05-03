@@ -879,13 +879,13 @@ const PortalAdmin = () => {
               <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/pm/${propLinks[0].token}`);
-                  toast({ title: "PM portal link copied" });
+                  toast({ title: "Customer portal link copied" });
                 }}>
-                <Copy className="w-3.5 h-3.5 mr-1" />Copy PM Link
+                <Copy className="w-3.5 h-3.5 mr-1" />Copy Customer Link
               </Button>
               <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2"
                 onClick={() => window.open(`/pm/${propLinks[0].token}`, "_blank")}>
-                <ExternalLink className="w-3.5 h-3.5 mr-1" />Open PM Portal
+                <ExternalLink className="w-3.5 h-3.5 mr-1" />Open Customer Portal
               </Button>
             </>
           )}

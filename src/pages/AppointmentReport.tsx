@@ -20,6 +20,8 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 const SERVICE_STATUS_OPTIONS = ["Treated - Complete", "Treated - Follow Up"] as const;
 const INSPECTION_STATUS_OPTIONS = ["Activity Found - Follow Up", "Free and Clear*"] as const;
@@ -189,6 +191,11 @@ const AppointmentReport = () => {
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
   );
+  // Commercial path uses the structured ProductUsageEditor (with amounts/dilution),
+  // mirroring the apartment service-date table format.
+  const [commercialProducts, setCommercialProducts] = useState<ProductUsage[]>(
+    normalizeUsageList(serviceData?.products_used)
+  );
   const [equipment, setEquipment] = useState<string[]>(Array.isArray(propertyEquipment) ? propertyEquipment : []);
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
   const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState("");
@@ -308,9 +315,10 @@ const AppointmentReport = () => {
       concerns,
       other_concerns: otherConcerns,
     };
+    const productsToSave: any = isCommercial ? commercialProducts : productsUsed;
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
-      products_used: productsUsed, findings: todaysFindings || null,
+      products_used: productsToSave, findings: todaysFindings || null,
       appointment_service: appointmentService || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
@@ -403,7 +411,12 @@ const AppointmentReport = () => {
         if (rd.license_number) setLicenseNumber(rd.license_number);
         if (rd.service_date) setServiceDate(rd.service_date);
         if (rd.target_pests) setTargetPests(rd.target_pests);
-        if (rd.products_used) setProductsUsed(rd.products_used);
+        if (rd.products_used) {
+          setProductsUsed(Array.isArray(rd.products_used)
+            ? rd.products_used.map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean)
+            : []);
+          setCommercialProducts(normalizeUsageList(rd.products_used));
+        }
         if (rd.equipment) setEquipment(rd.equipment);
         if (rd.customer_key_areas) {
           setCustomerKeyAreas(rd.customer_key_areas.areas || []);
@@ -450,7 +463,11 @@ const AppointmentReport = () => {
         setUnitRows(prefilledRows);
         if (data.technician) setTechnicianName(data.technician);
         if (data.service_date) setServiceDate(data.service_date);
-        if (data.products_used && Array.isArray(data.products_used)) setProductsUsed(data.products_used as string[]);
+        if (data.products_used) {
+          const arr = Array.isArray(data.products_used) ? data.products_used as any[] : [];
+          setProductsUsed(arr.map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean));
+          setCommercialProducts(normalizeUsageList(data.products_used));
+        }
         if (data.findings) setTodaysFindings(data.findings);
       }
       if ((data as any).appointment_service && !appointmentService) {
@@ -640,41 +657,10 @@ const AppointmentReport = () => {
                 {/* Products Used (commercial) */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Products Used</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full justify-between font-normal h-11 text-sm">
-                        <span className="text-left line-clamp-1 flex-1">
-                          {productsUsed.length > 0 ? productsUsed.join(", ") : "Select products applied…"}
-                        </span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search products..." />
-                        <CommandList className="max-h-64">
-                          <CommandEmpty>No match.</CommandEmpty>
-                          <CommandGroup>
-                            {PRODUCT_OPTIONS.map(p => (
-                              <CommandItem key={p} value={p} onSelect={() => toggleProduct(p)}>
-                                <Check className={cn("mr-2 h-4 w-4", productsUsed.includes(p) ? "opacity-100" : "opacity-0")} />
-                                {p}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {productsUsed.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {productsUsed.map(p => (
-                        <Badge key={p} variant="default" className="text-xs cursor-pointer" onClick={() => toggleProduct(p)}>
-                          {p} ×
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                  <p className="text-[10px] text-muted-foreground -mt-1">
+                    Add each product applied today with the diluted amount; concentrate auto-calculates for standard products.
+                  </p>
+                  <ProductUsageEditor value={commercialProducts} onChange={setCommercialProducts} />
                 </div>
 
                 {/* Equipment (commercial) */}
