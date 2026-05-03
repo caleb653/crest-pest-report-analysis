@@ -18,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { MapCanvas } from "@/components/MapCanvas";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
+import { PesticideNotice } from "@/components/portal/PesticideNotice";
+import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
 
 const SERVICE_STATUS_OPTIONS = ["Treated - Complete", "Treated - Follow Up"] as const;
 const INSPECTION_STATUS_OPTIONS = ["Activity Found - Follow Up", "Free and Clear*"] as const;
@@ -634,6 +636,94 @@ const AppointmentReport = () => {
                     className="text-sm mt-1"
                   />
                 </div>
+
+                {/* Products Used (commercial) */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Products Used</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal h-11 text-sm">
+                        <span className="text-left line-clamp-1 flex-1">
+                          {productsUsed.length > 0 ? productsUsed.join(", ") : "Select products applied…"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search products..." />
+                        <CommandList className="max-h-64">
+                          <CommandEmpty>No match.</CommandEmpty>
+                          <CommandGroup>
+                            {PRODUCT_OPTIONS.map(p => (
+                              <CommandItem key={p} value={p} onSelect={() => toggleProduct(p)}>
+                                <Check className={cn("mr-2 h-4 w-4", productsUsed.includes(p) ? "opacity-100" : "opacity-0")} />
+                                {p}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {productsUsed.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {productsUsed.map(p => (
+                        <Badge key={p} variant="default" className="text-xs cursor-pointer" onClick={() => toggleProduct(p)}>
+                          {p} ×
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Equipment (commercial) */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Equipment Used</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {EQUIPMENT_OPTIONS.map(eq => (
+                      <Badge
+                        key={eq}
+                        variant={equipment.includes(eq) ? "default" : "outline"}
+                        className="cursor-pointer text-xs h-8 px-3"
+                        onClick={() => toggleEquipment(eq)}
+                      >
+                        {eq}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target Pests (commercial) */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Target Pests</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal h-11 text-sm">
+                        <span className="text-left line-clamp-1 flex-1">
+                          {targetPests.length > 0 ? targetPests.map(p => p.length > 40 ? "General Pests" : p).join(", ") : "Select pests…"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search pests..." />
+                        <CommandList className="max-h-64">
+                          <CommandEmpty>No match.</CommandEmpty>
+                          <CommandGroup>
+                            {PEST_OPTIONS.map(pest => (
+                              <CommandItem key={pest} value={pest} onSelect={() => togglePest(pest)}>
+                                <Check className={cn("mr-2 h-4 w-4", targetPests.includes(pest) ? "opacity-100" : "opacity-0")} />
+                                {pest.length > 40 ? "General Pests" : pest}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </Card>
             )}
 
@@ -1049,11 +1139,9 @@ const AppointmentReport = () => {
               )}
             </Card>
 
-            {/* Pesticide Notice */}
-            <div className="text-[8px] leading-[11px] text-muted-foreground space-y-1.5 px-1">
-              <p>Crest Pest Control is committed to the safety of our customers and our environment. All materials used by Crest Pest Control have been registered by the Environmental Protection Agency. Please avoid unnecessary contact with materials and comply with all instructions and recommendations from our technicians. Thanks for your patronage! National Emergency Poison Control: (800)222-1222</p>
-              <p>"State law requires that you be given the following information: CAUTION--PESTICIDES ARE TOXIC CHEMICALS. Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the United States Environmental Protection Agency. Registration is granted when the state finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree of exposure, so exposure should be minimized." "If within 24 hours following application you experience symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison control center (800-222-1222) and your pest control company immediately." (This statement shall be modified to include any other symptoms of overexposure which are not typical of influenza.) "For further information, contact any of the following: Crest Pest Control (949-424-5000); for Health Questions--the County Health Department (800-564-8448); for Application Information--the County Agricultural Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).</p>
-            </div>
+            {/* Disclaimers — match apartment portal */}
+            <PesticideNotice />
+            <ApartmentInspectionDisclaimer />
 
             {/* Save */}
             <Button className="w-full" size="lg" onClick={saveReport} disabled={isSaving}>

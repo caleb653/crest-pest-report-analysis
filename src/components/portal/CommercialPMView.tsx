@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
   ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
+  Download, Eye, Copy, FileDown,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -67,6 +68,14 @@ interface RequestData {
   created_at: string;
   pest_type?: string | null;
   location_type?: string | null;
+}
+
+interface PrepSheet {
+  id: string;
+  title: string;
+  description: string | null;
+  treatment_type: string;
+  file_url: string | null;
 }
 
 interface CommercialPMViewProps {
@@ -123,6 +132,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
+  const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
+  const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
 
@@ -141,14 +152,16 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const loadAll = async () => {
-    const [{ data: prop }, { data: svcs }, { data: reqs }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
+      supabase.from("portal_prep_sheets").select("*").order("title"),
     ]);
     if (prop) setProperty(prop as any);
     if (Array.isArray(svcs)) setServices(svcs as any);
     if (Array.isArray(reqs)) setRequests(reqs as any);
+    if (Array.isArray(ps)) setPrepSheets(ps as any);
     setLoading(false);
   };
 
@@ -319,11 +332,12 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         </Card>
 
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-11">
+          <TabsList className="grid w-full grid-cols-6 h-11">
             <TabsTrigger value="visits" className="text-[11px] gap-1"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
             <TabsTrigger value="map" className="text-[11px] gap-1"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
             <TabsTrigger value="services" className="text-[11px] gap-1"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
             <TabsTrigger value="requests" className="text-[11px] gap-1"><ClipboardList className="w-3.5 h-3.5" />Requests</TabsTrigger>
+            <TabsTrigger value="prep" className="text-[11px] gap-1"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
             <TabsTrigger value="contact" className="text-[11px] gap-1"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
@@ -602,6 +616,77 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* ─── PREP SHEETS ─── */}
+          <TabsContent value="prep" className="space-y-3 mt-3">
+            <div className="border-b-2 border-primary/70 pb-2 mb-2">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <FileDown className="w-5 h-5 text-primary" />Prep Sheets
+                <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Treatment prep instructions you can view, download, or share.
+              </p>
+            </div>
+            {prepSheets.length === 0 ? (
+              <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">
+                No prep sheets available yet.
+              </CardContent></Card>
+            ) : (
+              <div className="space-y-2">
+                {prepSheets.map(ps => {
+                  const open = expandedPrep === ps.id;
+                  return (
+                    <Card key={ps.id}>
+                      <button
+                        type="button"
+                        className="w-full text-left p-3 flex items-center justify-between"
+                        onClick={() => setExpandedPrep(open ? null : ps.id)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{ps.title}</p>
+                          <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                      {open && (
+                        <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
+                          {ps.description && (
+                            <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
+                              <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={() => window.open(ps.file_url!, "_blank", "noopener,noreferrer")}>
+                                <Eye className="w-3.5 h-3.5 mr-1" />View
+                              </Button>
+                            )}
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={() => { window.open(ps.file_url!, "_blank"); }}>
+                                <Download className="w-3.5 h-3.5 mr-1" />Download
+                              </Button>
+                            )}
+                            {ps.file_url && (
+                              <Button size="sm" variant="outline" className="h-9 text-xs"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText(ps.file_url!);
+                                  toast({ title: "Link copied" });
+                                }}>
+                                <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           {/* ─── CONTACT ─── */}
