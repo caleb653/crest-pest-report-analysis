@@ -20,6 +20,8 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { ProductUsage, normalizeUsageList } from "@/lib/productCatalog";
 
 const SERVICE_STATUS_OPTIONS = ["Treated - Complete", "Treated - Follow Up"] as const;
 const INSPECTION_STATUS_OPTIONS = ["Activity Found - Follow Up", "Free and Clear*"] as const;
@@ -189,6 +191,11 @@ const AppointmentReport = () => {
   const [productsUsed, setProductsUsed] = useState<string[]>(
     Array.isArray(serviceData?.products_used) ? serviceData.products_used : []
   );
+  // Commercial path uses the structured ProductUsageEditor (with amounts/dilution),
+  // mirroring the apartment service-date table format.
+  const [commercialProducts, setCommercialProducts] = useState<ProductUsage[]>(
+    normalizeUsageList(serviceData?.products_used)
+  );
   const [equipment, setEquipment] = useState<string[]>(Array.isArray(propertyEquipment) ? propertyEquipment : []);
   const [customerKeyAreas, setCustomerKeyAreas] = useState<string[]>([]);
   const [customerKeyAreasNotes, setCustomerKeyAreasNotes] = useState("");
@@ -308,9 +315,10 @@ const AppointmentReport = () => {
       concerns,
       other_concerns: otherConcerns,
     };
+    const productsToSave: any = isCommercial ? commercialProducts : productsUsed;
     const { error } = await supabase.from("portal_services").update({
       report_data: reportData as any, technician: technicianName, service_date: serviceDate,
-      products_used: productsUsed, findings: todaysFindings || null,
+      products_used: productsToSave, findings: todaysFindings || null,
       appointment_service: appointmentService || null,
     }).eq("id", serviceId);
     if (error) toast.error("Failed to save report");
