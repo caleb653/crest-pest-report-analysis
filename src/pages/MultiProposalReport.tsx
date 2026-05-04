@@ -126,24 +126,24 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 75,
-    defaultRecurring: 75,
+    defaultInitial: 85,
+    defaultRecurring: 85,
   },
   "Bi-Monthly Services": {
     frequency: 60,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
-    defaultInitial: 110,
-    defaultRecurring: 110,
+    defaultInitial: 120,
+    defaultRecurring: 120,
   },
   "Quarterly Services": {
     frequency: 90,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
-    defaultInitial: 135,
-    defaultRecurring: 135,
+    defaultInitial: 145,
+    defaultRecurring: 145,
   },
   "Commercial General Pest": {
     frequency: 30,
@@ -191,7 +191,7 @@ const SERVICE_CONFIG: Record<
     proposedServices:
       `<b>Mosquito Service:</b><br>• Set up mosquito buckets, which interrupt breeding cycle and neutralize future generations<br>• Target adult mosquitoes and larvae by treating with long lasting products`,
     defaultInitial: 150,
-    defaultRecurring: 75,
+    defaultRecurring: 85,
   },
   "Attic Services (see details below)": {
     frequency: 0,
@@ -206,8 +206,8 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
       `<b>General Pest Control:</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
-    defaultInitial: 75,
-    defaultRecurring: 75,
+    defaultInitial: 85,
+    defaultRecurring: 85,
   },
   "De-webbing": {
     frequency: 0,
@@ -222,7 +222,7 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Rodents"],
     proposedServices:
       `<b>Rodent Sanitation:</b><br>• Clean and sanitize areas affected by rodent activity<br>• Remove droppings, nesting materials, and contaminated insulation<br>• Disinfect affected areas to eliminate health hazards`,
-    defaultInitial: 0,
+    defaultInitial: 575,
     defaultRecurring: 0,
   },
   "Commercial Rodent": {
