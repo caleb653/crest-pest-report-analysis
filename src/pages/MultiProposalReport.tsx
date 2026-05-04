@@ -254,7 +254,7 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Fleas & Ticks"],
     proposedServices:
       `<b>Flea & Tick Treatment:</b><br>• Treat interior and exterior areas to eliminate active flea and tick populations<br>• Apply growth regulators to break the flea lifecycle and prevent re-infestation<br>• Focus on pet resting areas, carpeted zones, and yard perimeter`,
-    defaultInitial: 0,
+    defaultInitial: 399,
     defaultRecurring: 0,
   },
   "German Cockroach Treatment": {
@@ -262,7 +262,7 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Roaches"],
     proposedServices:
       `<b>German Cockroach Treatment:</b><br>• Apply gel baits, growth regulators, and residual products to eliminate German cockroach infestations<br>• Target kitchens, bathrooms, and other moisture-heavy areas where activity is concentrated<br>• Provide follow-up treatments to ensure full eradication of all life stages`,
-    defaultInitial: 0,
+    defaultInitial: 399,
     defaultRecurring: 0,
   },
   "Drain Fly Treatment": {
