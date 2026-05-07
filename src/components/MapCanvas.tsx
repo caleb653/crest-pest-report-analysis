@@ -1055,7 +1055,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         }
       }
     };
-  }, [mapUrl, legendItems, exportId]);
+  }, [mapUrl, legendItems, exportId, imageFit]);
 
   // Auto-save canvas data whenever it changes
   useEffect(() => {
@@ -1196,7 +1196,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
           <img
-            className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
+            className={`absolute inset-0 w-full h-full rounded-lg border-2 border-foreground bg-card ${imageFit === 'contain' ? 'object-contain' : 'object-cover'}`}
             style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',
