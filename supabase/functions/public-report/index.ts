@@ -60,6 +60,7 @@ serve(async (req) => {
           "next_steps",
           "customer_key_areas",
           "customer_preferences",
+          "customer_email",
         ].join(",")
       )
       .eq("id", reportId)
