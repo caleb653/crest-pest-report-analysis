@@ -394,7 +394,7 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs">Total Units</TableHead>
                   <TableHead className="text-xs border-r">Avg Mo Rent</TableHead>
                   <TableHead className="text-xs">Visits</TableHead>
-                  <TableHead className="text-xs">Unique Units</TableHead>
+                  <TableHead className="text-xs">Units Treated</TableHead>
                   <TableHead className="text-xs border-r">Avg/Visit</TableHead>
                   <TableHead className="text-xs">Prev</TableHead>
                   <TableHead className="text-xs">Curr</TableHead>
@@ -424,7 +424,7 @@ export default function RegionalManagersTab() {
                       <TableCell>{m.totalUnits != null ? <>{m.totalUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
                       <TableCell className="border-r">{m.rentalIncome != null ? <>${Math.round(m.rentalIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
                       <TableCell>{m.totalVisits}<span className="text-[10px] text-muted-foreground ml-1">visits</span></TableCell>
-                      <TableCell>{m.uniqueUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
+                      <TableCell>{m.totalUnitsTreated}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
                       <TableCell>{m.vacantPrev}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
                       <TableCell>{m.vacantCurr}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
