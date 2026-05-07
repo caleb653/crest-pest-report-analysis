@@ -3846,11 +3846,11 @@ const PropertyDashboard = ({
                   Visible to the property manager and Crest admin so visits can be scheduled with enough time on-site.
                 </p>
               </div>)}
-              <Textarea
+              <PlanRichEditor
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-                className="min-h-[640px] text-sm resize-y leading-relaxed"
                 value={planDraft}
-                onChange={(e) => setPlanDraft(e.target.value)}
+                onChange={(html) => setPlanDraft(html)}
+                minHeight={640}
               />
               <p className="text-xs text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
