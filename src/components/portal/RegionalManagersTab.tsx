@@ -414,19 +414,19 @@ export default function RegionalManagersTab() {
                           </a>
                         ) : p.name}
                       </TableCell>
-                      <TableCell>{m.totalUnits ?? "—"}</TableCell>
-                      <TableCell className="border-r">{m.rentalIncome != null ? `$${Math.round(m.rentalIncome).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell>{m.totalVisits}</TableCell>
-                      <TableCell>{m.uniqueUnits}</TableCell>
-                      <TableCell className="border-r">{m.avgUnitsPerVisit ? m.avgUnitsPerVisit.toFixed(1) : "—"}</TableCell>
-                      <TableCell>{m.vacantPrev}</TableCell>
-                      <TableCell>{m.vacantCurr}</TableCell>
+                      <TableCell>{m.totalUnits != null ? <>{m.totalUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
+                      <TableCell className="border-r">{m.rentalIncome != null ? <>${Math.round(m.rentalIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
+                      <TableCell>{m.totalVisits}<span className="text-[10px] text-muted-foreground ml-1">visits</span></TableCell>
+                      <TableCell>{m.uniqueUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
+                      <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
+                      <TableCell>{m.vacantPrev}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
+                      <TableCell>{m.vacantCurr}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
                       <TableCell className={m.vacantDiff > 0 ? "text-emerald-600 font-medium" : m.vacantDiff < 0 ? "text-destructive font-medium" : ""}>
-                        {m.vacantDiff > 0 ? `+${m.vacantDiff}` : m.vacantDiff}
+                        {m.vacantDiff > 0 ? `+${m.vacantDiff}` : m.vacantDiff}<span className="text-[10px] text-muted-foreground ml-1 font-normal">units</span>
                       </TableCell>
-                      <TableCell className="border-r">{m.gainedIncome > 0 ? `$${Math.round(m.gainedIncome).toLocaleString()}` : "—"}</TableCell>
-                      <TableCell className="border-r">{m.avgFollowUpsPerOccUnit ? m.avgFollowUpsPerOccUnit.toFixed(2) : "—"}</TableCell>
-                      <TableCell>{m.threePlusCount}</TableCell>
+                      <TableCell className="border-r">{m.gainedIncome > 0 ? <>${Math.round(m.gainedIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
+                      <TableCell className="border-r">{m.avgFollowUpsPerOccUnit ? <>{m.avgFollowUpsPerOccUnit.toFixed(2)}<span className="text-[10px] text-muted-foreground ml-1">per unit</span></> : "—"}</TableCell>
+                      <TableCell>{m.threePlusCount}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</TableCell>
                       <TableCell className="text-xs">{m.freeAndClear || "—"}</TableCell>
                     </TableRow>
