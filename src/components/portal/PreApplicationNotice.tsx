@@ -77,6 +77,9 @@ function getCheckedPests(property: PreApplicationProperty): Set<string> {
   const prefs = property.customer_preferences || {};
   const override = Array.isArray(prefs.notice_target_pests) ? prefs.notice_target_pests : null;
   if (override) return new Set(override);
+  // Apartments and HOAs always include Rodents in the default target pests.
+  const propType = String(prefs.property_type || "").toLowerCase();
+  const includeRodentsByType = propType === "apartments" || propType === "hoa";
   // If property has known target pests stored, intersect — otherwise use defaults
   const stored = Array.isArray(prefs.target_pests) ? prefs.target_pests : null;
   if (stored && stored.length > 0) {
@@ -86,9 +89,12 @@ function getCheckedPests(property: PreApplicationProperty): Set<string> {
       const key = pest.toLowerCase();
       if (lowered.has(key) || DEFAULT_CHECKED.has(pest)) result.add(pest);
     }
+    if (includeRodentsByType) result.add("Rodents");
     return result;
   }
-  return new Set(DEFAULT_CHECKED);
+  const result = new Set(DEFAULT_CHECKED);
+  if (includeRodentsByType) result.add("Rodents");
+  return result;
 }
 
 function getFrequency(property: PreApplicationProperty): string {
@@ -142,7 +148,8 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
   ({ property, noticeDate, editable, onChange }, ref) => {
     const checked = getCheckedPests(property);
     const frequency = getFrequency(property);
-    const today = noticeDate || new Date().toISOString().slice(0, 10);
+    // Notice date starts blank — only populated when explicitly set.
+    const today = noticeDate || "";
     const initialDate = getInitialServiceDate(property);
 
     const emit = (patch: Partial<{
