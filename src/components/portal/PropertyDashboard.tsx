@@ -3694,7 +3694,7 @@ const PropertyDashboard = ({
         )}
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <BarChart3 className="w-5 h-5" />
-          <span>{isHOA ? "Resident Survey" : "Tenant Survey"} <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
+          <span>Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
         {isHOA && (
           <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
