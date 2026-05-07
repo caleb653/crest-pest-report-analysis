@@ -167,13 +167,11 @@ export default function RegionalManagersTab() {
     const allUnitRows: any[] = [];
     propServices.forEach((sv) => {
       const rows = (sv.unit_details as any[]) || [];
-      const seen = new Map<string, any>();
       rows.forEach((u) => {
         const key = (u.unit_number || "").toString().trim();
         if (!key) return;
-        if (!seen.has(key)) seen.set(key, { ...u, _date: sv.service_date });
+        allUnitRows.push({ ...u, _date: sv.service_date });
       });
-      seen.forEach((u) => allUnitRows.push(u));
     });
     const uniqueUnits = new Set(allUnitRows.map((u) => u.unit_number).filter(Boolean));
     // Simple: total units serviced (across all visits) / visits
