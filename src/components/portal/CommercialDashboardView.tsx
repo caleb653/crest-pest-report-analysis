@@ -188,6 +188,14 @@ export default function CommercialDashboardView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id]);
 
+  // Debounced auto-save for property notes (rich text editor doesn't fire onBlur naturally)
+  useEffect(() => {
+    if ((property.notes || "") === propertyNotes) return;
+    const t = setTimeout(() => { savePropertyNotes(); }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyNotes]);
+
   const savePropertyNotes = async () => {
     if ((property.notes || "") === propertyNotes) return;
     setSavingProp(true);
