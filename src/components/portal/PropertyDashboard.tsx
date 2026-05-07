@@ -452,6 +452,14 @@ const PropertyDashboard = ({
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
+  // Onboarding survey state (separate inner tab) — mirrors PMPortalView
+  const [onbTitle, setOnbTitle] = useState(DEFAULT_ONBOARDING_SURVEY_TITLE);
+  const [onbIntro, setOnbIntro] = useState(DEFAULT_ONBOARDING_SURVEY_INTRO);
+  const [onbEmails, setOnbEmails] = useState("");
+  const [sendingOnb, setSendingOnb] = useState(false);
+  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding">("tenant");
+  const [generatingLink, setGeneratingLink] = useState<"tenant" | "onboarding" | null>(null);
+
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
   useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id, property.notes]);
