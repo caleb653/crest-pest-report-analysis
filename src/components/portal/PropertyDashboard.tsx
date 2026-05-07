@@ -27,7 +27,14 @@ import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
-import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import {
+  DEFAULT_PEST_SURVEY_QUESTIONS,
+  DEFAULT_SURVEY_INTRO,
+  DEFAULT_ONBOARDING_SURVEY_QUESTIONS,
+  DEFAULT_ONBOARDING_SURVEY_TITLE,
+  DEFAULT_ONBOARDING_SURVEY_INTRO,
+  type SurveyQuestion,
+} from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
