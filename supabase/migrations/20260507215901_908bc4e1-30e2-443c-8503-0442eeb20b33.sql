@@ -1,0 +1,1 @@
+UPDATE portal_properties SET map_image_url=(SELECT rendered_map_url FROM reports WHERE id='f28bf54c-97fe-4b3c-b084-28c9dae3ac29'), map_data=NULL WHERE id='96e29290-7c56-4e0c-8682-01d1c3fed455';
