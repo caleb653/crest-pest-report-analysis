@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ChevronRight, ArrowLeft, Mail, Building2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ExternalLink, Pencil } from "lucide-react";
 
 interface RegionalManager {
   id: string;
@@ -57,24 +59,38 @@ export default function RegionalManagersTab() {
   const [services, setServices] = useState<ServiceLite[]>([]);
   const [surveys, setSurveys] = useState<any[]>([]);
   const [responses, setResponses] = useState<any[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
   const [selected, setSelected] = useState<RegionalManager | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState<{ name: string; email: string; property_ids: string[] }>({ name: "", email: "", property_ids: [] });
 
   const loadAll = async () => {
-    const [{ data: rm }, { data: p }, { data: s }, { data: sv }, { data: rs }] = await Promise.all([
+    const [{ data: rm }, { data: p }, { data: s }, { data: sv }, { data: rs }, { data: lk }] = await Promise.all([
       (supabase as any).from("regional_managers").select("*").order("name"),
       supabase.from("portal_properties").select("id,name,client_id,customer_preferences").order("name"),
       supabase.from("portal_services").select("id,property_id,service_type,status,service_date,unit_details"),
       (supabase as any).from("portal_surveys").select("id,property_id,questions"),
       (supabase as any).from("portal_survey_responses").select("survey_id,property_id,answers,submitted_at"),
+      supabase.from("portal_links").select("id,token,link_type,assigned_property_ids,is_active"),
     ]);
     setManagers((rm || []).map((r: any) => ({ ...r, property_ids: Array.isArray(r.property_ids) ? r.property_ids : [] })));
     setProperties(p || []);
     setServices((s || []) as any);
     setSurveys(sv || []);
     setResponses(rs || []);
+    setLinks(lk || []);
+  };
+
+  // Find a portal link for a given property — prefers a sub link assigned to that property
+  const portalUrlForProperty = (propertyId: string): string | null => {
+    const link = links.find((l: any) =>
+      l.is_active !== false &&
+      Array.isArray(l.assigned_property_ids) &&
+      l.assigned_property_ids.includes(propertyId)
+    );
+    if (!link) return null;
+    return `/portal/${link.token}`;
   };
 
   useEffect(() => { loadAll(); }, []);
