@@ -167,15 +167,14 @@ export default function RegionalManagersTab() {
     const allUnitRows: any[] = [];
     propServices.forEach((sv) => {
       const rows = (sv.unit_details as any[]) || [];
-      const seen = new Map<string, any>();
       rows.forEach((u) => {
         const key = (u.unit_number || "").toString().trim();
         if (!key) return;
-        if (!seen.has(key)) seen.set(key, { ...u, _date: sv.service_date });
+        allUnitRows.push({ ...u, _date: sv.service_date });
       });
-      seen.forEach((u) => allUnitRows.push(u));
     });
     const uniqueUnits = new Set(allUnitRows.map((u) => u.unit_number).filter(Boolean));
+    const totalUnitsTreated = allUnitRows.length;
     // Simple: total units serviced (across all visits) / visits
     const avgUnitsPerVisit = totalVisits > 0 ? allUnitRows.length / totalVisits : 0;
 
@@ -205,6 +204,7 @@ export default function RegionalManagersTab() {
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
+      totalUnitsTreated,
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
       avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
@@ -394,7 +394,7 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs">Total Units</TableHead>
                   <TableHead className="text-xs border-r">Avg Mo Rent</TableHead>
                   <TableHead className="text-xs">Visits</TableHead>
-                  <TableHead className="text-xs">Unique Units</TableHead>
+                  <TableHead className="text-xs">Units Treated</TableHead>
                   <TableHead className="text-xs border-r">Avg/Visit</TableHead>
                   <TableHead className="text-xs">Prev</TableHead>
                   <TableHead className="text-xs">Curr</TableHead>
@@ -424,7 +424,7 @@ export default function RegionalManagersTab() {
                       <TableCell>{m.totalUnits != null ? <>{m.totalUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
                       <TableCell className="border-r">{m.rentalIncome != null ? <>${Math.round(m.rentalIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
                       <TableCell>{m.totalVisits}<span className="text-[10px] text-muted-foreground ml-1">visits</span></TableCell>
-                      <TableCell>{m.uniqueUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
+                      <TableCell>{m.totalUnitsTreated}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
                       <TableCell>{m.vacantPrev}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
                       <TableCell>{m.vacantCurr}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
