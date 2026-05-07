@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ChevronRight, ArrowLeft, Mail, Building2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ExternalLink, Pencil } from "lucide-react";
 
 interface RegionalManager {
   id: string;
@@ -57,24 +59,38 @@ export default function RegionalManagersTab() {
   const [services, setServices] = useState<ServiceLite[]>([]);
   const [surveys, setSurveys] = useState<any[]>([]);
   const [responses, setResponses] = useState<any[]>([]);
+  const [links, setLinks] = useState<any[]>([]);
   const [selected, setSelected] = useState<RegionalManager | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
   const [draft, setDraft] = useState<{ name: string; email: string; property_ids: string[] }>({ name: "", email: "", property_ids: [] });
 
   const loadAll = async () => {
-    const [{ data: rm }, { data: p }, { data: s }, { data: sv }, { data: rs }] = await Promise.all([
+    const [{ data: rm }, { data: p }, { data: s }, { data: sv }, { data: rs }, { data: lk }] = await Promise.all([
       (supabase as any).from("regional_managers").select("*").order("name"),
       supabase.from("portal_properties").select("id,name,client_id,customer_preferences").order("name"),
       supabase.from("portal_services").select("id,property_id,service_type,status,service_date,unit_details"),
       (supabase as any).from("portal_surveys").select("id,property_id,questions"),
       (supabase as any).from("portal_survey_responses").select("survey_id,property_id,answers,submitted_at"),
+      supabase.from("portal_links").select("id,token,link_type,assigned_property_ids,is_active"),
     ]);
     setManagers((rm || []).map((r: any) => ({ ...r, property_ids: Array.isArray(r.property_ids) ? r.property_ids : [] })));
     setProperties(p || []);
     setServices((s || []) as any);
     setSurveys(sv || []);
     setResponses(rs || []);
+    setLinks(lk || []);
+  };
+
+  // Find a portal link for a given property — prefers a sub link assigned to that property
+  const portalUrlForProperty = (propertyId: string): string | null => {
+    const link = links.find((l: any) =>
+      l.is_active !== false &&
+      Array.isArray(l.assigned_property_ids) &&
+      l.assigned_property_ids.includes(propertyId)
+    );
+    if (!link) return null;
+    return `/portal/${link.token}`;
   };
 
   useEffect(() => { loadAll(); }, []);
@@ -227,18 +243,44 @@ export default function RegionalManagersTab() {
           ) : (
             <div className="space-y-2">
               {managers.map((m) => (
-                <div key={m.id} className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors group"
-                  onClick={() => setSelected(m)}>
-                  <div>
-                    <p className="font-medium">{m.name}</p>
-                    {m.email && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3" />{m.email}</p>}
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Building2 className="w-3 h-3" />{m.property_ids.length} properties</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); deleteManager(m.id); }}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                <div key={m.id} className="border rounded-lg p-4 hover:border-primary/40 hover:bg-muted/30 transition-colors group">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setSelected(m)}>
+                      <p className="font-medium">{m.name}</p>
+                      {m.email && <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3" />{m.email}</p>}
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Building2 className="w-3 h-3" />{m.property_ids.length} properties</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                            <Pencil className="w-3.5 h-3.5 mr-1" />Edit Properties
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-3" onClick={(e) => e.stopPropagation()}>
+                          <p className="text-xs font-medium mb-2">Assigned Properties (admin only)</p>
+                          <div className="max-h-64 overflow-y-auto space-y-1.5">
+                            {properties.map((p) => {
+                              const checked = m.property_ids.includes(p.id);
+                              return (
+                                <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
+                                  <Checkbox checked={checked} onCheckedChange={(v) => {
+                                    const next = v ? [...m.property_ids, p.id] : m.property_ids.filter((id) => id !== p.id);
+                                    updateManagerProps(m.id, next);
+                                  }} />
+                                  <span className="flex-1">{p.name}</span>
+                                  <Badge variant="outline" className="text-[10px] capitalize">{propertyType(p)}</Badge>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); deleteManager(m.id); }}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground cursor-pointer" onClick={() => setSelected(m)} />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -291,21 +333,25 @@ export default function RegionalManagersTab() {
           </div>
         </div>
 
-        {/* Edit assigned properties */}
+        {/* Properties Managed list (read-only here; edit on main screen) */}
         <div>
           <Label className="text-sm">Properties Managed</Label>
           <div className="border rounded-md p-3 max-h-56 overflow-y-auto space-y-1.5 mt-1">
-            {properties.map((p) => {
-              const checked = selected.property_ids.includes(p.id);
+            {managedProps.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No properties assigned. Assign from the main Regional Managers screen.</p>
+            ) : managedProps.map((p) => {
+              const url = portalUrlForProperty(p.id);
               return (
-                <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                  <Checkbox checked={checked} onCheckedChange={(v) => {
-                    const next = v ? [...selected.property_ids, p.id] : selected.property_ids.filter((id) => id !== p.id);
-                    updateManagerProps(selected.id, next);
-                  }} />
-                  <span className="flex-1">{p.name}</span>
+                <div key={p.id} className="flex items-center gap-2 text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                  {url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex-1 text-primary hover:underline flex items-center gap-1">
+                      {p.name}<ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span className="flex-1">{p.name}</span>
+                  )}
                   <Badge variant="outline" className="text-[10px] capitalize">{propertyType(p)}</Badge>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -347,9 +393,16 @@ export default function RegionalManagersTab() {
                   <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
+                  const url = portalUrlForProperty(p.id);
                   return (
                     <TableRow key={p.id}>
-                      <TableCell className="font-medium border-r">{p.name}</TableCell>
+                      <TableCell className="font-medium border-r">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                            {p.name}<ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : p.name}
+                      </TableCell>
                       <TableCell>{m.totalUnits ?? "—"}</TableCell>
                       <TableCell className="border-r">{m.rentalIncome != null ? `$${Math.round(m.rentalIncome).toLocaleString()}` : "—"}</TableCell>
                       <TableCell>{m.totalVisits}</TableCell>
