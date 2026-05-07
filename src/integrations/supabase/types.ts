@@ -625,6 +625,36 @@ export type Database = {
         }
         Relationships: []
       }
+      regional_managers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          property_ids: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          property_ids?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          property_ids?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           address: string | null
