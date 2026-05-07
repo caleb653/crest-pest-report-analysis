@@ -824,8 +824,23 @@ const PropertyDashboard = ({
     loadSurveys();
   }, [property.id]);
 
-  const sendSurvey = async () => {
-    const emails = surveyEmails
+  const reloadSurveys = async () => {
+    const [{ data: svys }, { data: respRows }] = await Promise.all([
+      (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+    ]);
+    if (Array.isArray(svys)) setSurveys(svys);
+    if (Array.isArray(respRows)) setSurveyResponses(respRows);
+  };
+
+  const sendSurveyGeneric = async (kind: "tenant" | "onboarding") => {
+    const isOnb = kind === "onboarding";
+    const raw = isOnb ? onbEmails : surveyEmails;
+    const titleVal = isOnb ? onbTitle : surveyTitle;
+    const introVal = isOnb ? onbIntro : surveyIntro;
+    const questions = isOnb ? DEFAULT_ONBOARDING_SURVEY_QUESTIONS : DEFAULT_PEST_SURVEY_QUESTIONS;
+    const defaultTitle = isOnb ? DEFAULT_ONBOARDING_SURVEY_TITLE : "Pest Activity Survey";
+    const emails = raw
       .split(/[\s,;]+/)
       .map((e) => e.trim().toLowerCase())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
@@ -833,16 +848,16 @@ const PropertyDashboard = ({
       toast({ title: "Add at least one valid email", variant: "destructive" });
       return;
     }
-    setSendingSurvey(true);
+    if (isOnb) setSendingOnb(true); else setSendingSurvey(true);
     try {
       const { data: created, error } = await (supabase as any)
         .from("portal_surveys")
         .insert({
           property_id: property.id,
           client_id: clientId || null,
-          title: surveyTitle.trim() || "Pest Activity Survey",
-          intro: surveyIntro.trim() || null,
-          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          title: titleVal.trim() || defaultTitle,
+          intro: introVal.trim() || null,
+          questions,
           recipient_emails: emails,
         })
         .select("*")
@@ -852,22 +867,65 @@ const PropertyDashboard = ({
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} recipient(s).` });
       } else {
         toast({ title: "Survey created", description: "Email send may have failed — check logs." });
       }
-      setSurveyEmails("");
-      const [{ data: svys }, { data: respRows }] = await Promise.all([
-        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
-        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
-      ]);
-      if (Array.isArray(svys)) setSurveys(svys);
-      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+      if (isOnb) setOnbEmails(""); else setSurveyEmails("");
+      await reloadSurveys();
     } catch (e: any) {
       console.error("sendSurvey failed", e);
       toast({ title: "Send failed", description: e?.message || "Try again", variant: "destructive" });
     } finally {
-      setSendingSurvey(false);
+      if (isOnb) setSendingOnb(false); else setSendingSurvey(false);
+    }
+  };
+
+  const sendSurvey = () => sendSurveyGeneric("tenant");
+
+  const createShareableLink = async (kind: "tenant" | "onboarding") => {
+    const isOnb = kind === "onboarding";
+    const titleVal = isOnb ? onbTitle : surveyTitle;
+    const introVal = isOnb ? onbIntro : surveyIntro;
+    const questions = isOnb ? DEFAULT_ONBOARDING_SURVEY_QUESTIONS : DEFAULT_PEST_SURVEY_QUESTIONS;
+    const defaultTitle = isOnb ? DEFAULT_ONBOARDING_SURVEY_TITLE : "Pest Activity Survey";
+    setGeneratingLink(kind);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: property.id,
+          client_id: clientId || null,
+          title: titleVal.trim() || defaultTitle,
+          intro: introVal.trim() || null,
+          questions,
+          recipient_emails: [],
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !created?.id) throw new Error("create_failed");
+      const { data: resp, error: rErr } = await (supabase as any)
+        .from("portal_survey_responses")
+        .insert({
+          survey_id: created.id,
+          property_id: property.id,
+          recipient_email: null,
+        })
+        .select("token")
+        .maybeSingle();
+      if (rErr || !resp?.token) throw new Error("token_failed");
+      const url = `${window.location.origin}/survey/${resp.token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied", description: url });
+      } catch {
+        toast({ title: "Link generated", description: url });
+      }
+      await reloadSurveys();
+    } catch {
+      toast({ title: "Could not generate link", variant: "destructive" });
+    } finally {
+      setGeneratingLink(null);
     }
   };
 
