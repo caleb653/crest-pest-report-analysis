@@ -181,12 +181,18 @@ export async function createPortalFromReport(
   })();
 
   // 4) Create portal_property — populate address + map + plan summary; leave preferences empty
-  const propertyName = address || customerName;
-  const mapImageUrl =
-    (report as any).rendered_map_url ||
-    (report as any).custom_map_url ||
-    (report as any).map_url ||
-    null;
+  // Property name should reflect the property (customer name like "Stonebrook Apartments"),
+  // NOT the street address. Fall back to address only when no customer name exists.
+  const propertyName = customerName !== "Unnamed Customer" ? customerName : (address || "Unnamed Property");
+  // When map_data (annotations) exists, the portal's ReadOnlyMapCanvas needs the BASE map
+  // image (custom_map_url) so it can re-draw annotations on top. Using rendered_map_url
+  // here would double-render annotations. Without map_data we fall back to the rendered map.
+  const reportMapData = (report as any).map_data || null;
+  const customMapUrl = (report as any).custom_map_url || null;
+  const renderedMapUrl = (report as any).rendered_map_url || null;
+  const mapImageUrl = reportMapData
+    ? (customMapUrl || renderedMapUrl || (report as any).map_url || null)
+    : (renderedMapUrl || customMapUrl || (report as any).map_url || null);
   const propertyImage =
     Array.isArray((report as any).property_images) && (report as any).property_images.length > 0
       ? (report as any).property_images[0]
