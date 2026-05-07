@@ -750,7 +750,7 @@ export default function CustomerReportView() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" ref={reportRootRef}>
       {!isInitialReport && report.customer_signature && (
         <div className="bg-sage/50 border-b border-sage py-3 px-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
