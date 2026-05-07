@@ -462,7 +462,11 @@ const PropertyDashboard = ({
 
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
-  useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id, property.notes]);
+  // Only re-hydrate from props when the SELECTED PROPERTY changes. Re-hydrating on
+  // every `property.notes` change caused characters to disappear while typing —
+  // a parent refresh would overwrite the in-flight draft mid-keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id]);
   useEffect(() => {
     if ((property.notes || "") === planDraft) return;
     const t = setTimeout(async () => {
