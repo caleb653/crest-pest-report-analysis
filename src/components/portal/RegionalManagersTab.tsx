@@ -174,6 +174,7 @@ export default function RegionalManagersTab() {
       });
     });
     const uniqueUnits = new Set(allUnitRows.map((u) => u.unit_number).filter(Boolean));
+    const totalUnitsTreated = allUnitRows.length;
     // Simple: total units serviced (across all visits) / visits
     const avgUnitsPerVisit = totalVisits > 0 ? allUnitRows.length / totalVisits : 0;
 
@@ -203,6 +204,7 @@ export default function RegionalManagersTab() {
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
+      totalUnitsTreated,
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
       avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
