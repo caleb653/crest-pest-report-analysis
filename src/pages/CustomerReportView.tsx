@@ -325,12 +325,48 @@ export default function CustomerReportView() {
         setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
         toast.success("Signature saved! Thank you for approving the proposal.");
       }
+
+      // Email the signed PDF to the customer (so they have a copy with their signature)
+      void emailSignedPdfToCustomer();
     } catch (err) {
       console.error("Error saving signature:", err);
       toast.error("Failed to save signature. Please try again.");
     } finally {
       setIsSaving(false);
       setSavingProposalIndex(null);
+    }
+  };
+
+  const emailSignedPdfToCustomer = async () => {
+    try {
+      const recipient = report?.customer_email;
+      if (!recipient || !reportRootRef.current) return;
+      // Wait for the signature image to render in the DOM
+      await new Promise((r) => setTimeout(r, 600));
+      toast.info("Emailing you a signed copy...", { id: "sign-email" });
+      const pdfBytes = await buildSignedReportPDF(reportRootRef.current);
+      const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
+      const pdfBase64 = btoa(binary);
+      const safeName = (report?.customer_name || "Customer").replace(/\s+/g, "_");
+      await supabase.functions.invoke("send-report-email", {
+        body: {
+          customerEmail: recipient,
+          customerName: report?.customer_name || "",
+          technicianName: report?.technician_name || "",
+          address: report?.address || "",
+          reportUrl: typeof window !== "undefined" ? window.location.href : "",
+          emailSubject: "Your Signed Proposal — Crest Pest Control",
+          emailMessage: `Hi ${report?.customer_name || "there"},\n\nThank you for signing your proposal! A copy with your signature is attached for your records.\n\nWe'll be in touch shortly to confirm next steps. If you have any questions, just reply to this email.\n\n— Crest Pest Control`,
+          buttonText: "View Signed Proposal",
+          reportType: "sales",
+          pdfBase64,
+          pdfFilename: `Crest_Signed_Proposal_${safeName}.pdf`,
+        },
+      });
+      toast.success(`Signed copy emailed to ${recipient}`, { id: "sign-email" });
+    } catch (err) {
+      console.error("Failed to email signed PDF:", err);
+      toast.dismiss("sign-email");
     }
   };
 
