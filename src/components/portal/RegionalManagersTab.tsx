@@ -333,21 +333,25 @@ export default function RegionalManagersTab() {
           </div>
         </div>
 
-        {/* Edit assigned properties */}
+        {/* Properties Managed list (read-only here; edit on main screen) */}
         <div>
           <Label className="text-sm">Properties Managed</Label>
           <div className="border rounded-md p-3 max-h-56 overflow-y-auto space-y-1.5 mt-1">
-            {properties.map((p) => {
-              const checked = selected.property_ids.includes(p.id);
+            {managedProps.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No properties assigned. Assign from the main Regional Managers screen.</p>
+            ) : managedProps.map((p) => {
+              const url = portalUrlForProperty(p.id);
               return (
-                <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                  <Checkbox checked={checked} onCheckedChange={(v) => {
-                    const next = v ? [...selected.property_ids, p.id] : selected.property_ids.filter((id) => id !== p.id);
-                    updateManagerProps(selected.id, next);
-                  }} />
-                  <span className="flex-1">{p.name}</span>
+                <div key={p.id} className="flex items-center gap-2 text-sm hover:bg-muted/50 rounded px-1 py-0.5">
+                  {url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex-1 text-primary hover:underline flex items-center gap-1">
+                      {p.name}<ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span className="flex-1">{p.name}</span>
+                  )}
                   <Badge variant="outline" className="text-[10px] capitalize">{propertyType(p)}</Badge>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -389,9 +393,16 @@ export default function RegionalManagersTab() {
                   <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
+                  const url = portalUrlForProperty(p.id);
                   return (
                     <TableRow key={p.id}>
-                      <TableCell className="font-medium border-r">{p.name}</TableCell>
+                      <TableCell className="font-medium border-r">
+                        {url ? (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                            {p.name}<ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : p.name}
+                      </TableCell>
                       <TableCell>{m.totalUnits ?? "—"}</TableCell>
                       <TableCell className="border-r">{m.rentalIncome != null ? `$${Math.round(m.rentalIncome).toLocaleString()}` : "—"}</TableCell>
                       <TableCell>{m.totalVisits}</TableCell>
