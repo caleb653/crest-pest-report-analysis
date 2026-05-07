@@ -152,14 +152,30 @@ export default function RegionalManagersTab() {
     const rentalIncome = parseMoney(onb.onb_rental_income);
     const freeAndClear = onb.onb_free_and_clear_time || null;
 
-    const propServices = services.filter((s) => s.property_id === prop.id && s.status === "completed");
+    // Only count visits that actually contain unit-level work
+    const propServices = services.filter(
+      (s) => s.property_id === prop.id && s.status === "completed" && Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0
+    );
     const totalVisits = propServices.length;
     const allUnitRows: any[] = [];
+    // Per-visit unique counts (deduped within a single visit) for a true avg-units-per-visit
+    const perVisitUniqueCounts: number[] = [];
     propServices.forEach((sv) => {
-      if (Array.isArray(sv.unit_details)) (sv.unit_details as any[]).forEach((u) => allUnitRows.push({ ...u, _date: sv.service_date }));
+      const rows = (sv.unit_details as any[]) || [];
+      const seen = new Map<string, any>();
+      rows.forEach((u) => {
+        const key = (u.unit_number || "").toString().trim();
+        if (!key) return;
+        // keep first row per unit per visit (avoids double-count from multi-pest entries)
+        if (!seen.has(key)) seen.set(key, { ...u, _date: sv.service_date });
+      });
+      seen.forEach((u) => allUnitRows.push(u));
+      perVisitUniqueCounts.push(seen.size);
     });
     const uniqueUnits = new Set(allUnitRows.map((u) => u.unit_number).filter(Boolean));
-    const avgUnitsPerVisit = totalVisits > 0 ? allUnitRows.length / totalVisits : 0;
+    const avgUnitsPerVisit = totalVisits > 0
+      ? perVisitUniqueCounts.reduce((a, b) => a + b, 0) / totalVisits
+      : 0;
 
     // Vacant/occupied breakdown across all unit rows
     const vacantRows = allUnitRows.filter((u) => /vacant/i.test(u.occupancy_status || u.status || ""));
