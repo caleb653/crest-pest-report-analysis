@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
+import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
 
 interface PropertyData {
@@ -182,7 +183,10 @@ export default function CommercialDashboardView({
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
 
-  useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id, property.notes]);
+  // Re-hydrate only when the property changes — not on every notes prop change,
+  // which can clobber characters mid-keystroke after a parent refresh.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id]);
 
   const savePropertyNotes = async () => {
     if ((property.notes || "") === propertyNotes) return;
@@ -448,13 +452,11 @@ export default function CommercialDashboardView({
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">
                     Property Notes
                   </Label>
-                  <Textarea
+                  <PlanRichEditor
                     value={propertyNotes}
-                    onChange={e => setPropertyNotes(e.target.value)}
-                    onBlur={savePropertyNotes}
+                    onChange={(html) => setPropertyNotes(html)}
                     placeholder="Account notes, gate codes, manager contact, access instructions, hot spots…"
-                    rows={4}
-                    className="text-sm"
+                    minHeight={120}
                   />
                   <p className="text-[11px] text-muted-foreground mt-1">
                     {savingProp ? "Saving…" : "Saves automatically when you tap away."}
