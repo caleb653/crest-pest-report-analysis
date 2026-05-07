@@ -23,6 +23,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
+import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
@@ -462,7 +463,11 @@ const PropertyDashboard = ({
 
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
-  useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id, property.notes]);
+  // Only re-hydrate from props when the SELECTED PROPERTY changes. Re-hydrating on
+  // every `property.notes` change caused characters to disappear while typing —
+  // a parent refresh would overwrite the in-flight draft mid-keystroke.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id]);
   useEffect(() => {
     if ((property.notes || "") === planDraft) return;
     const t = setTimeout(async () => {
@@ -3842,11 +3847,11 @@ const PropertyDashboard = ({
                   Visible to the property manager and Crest admin so visits can be scheduled with enough time on-site.
                 </p>
               </div>)}
-              <Textarea
+              <PlanRichEditor
                 placeholder="Enter the overall plan for this property — treatment strategy, special considerations, scheduling notes, etc."
-                className="min-h-[640px] text-sm resize-y leading-relaxed"
                 value={planDraft}
-                onChange={(e) => setPlanDraft(e.target.value)}
+                onChange={(html) => setPlanDraft(html)}
+                minHeight={640}
               />
               <p className="text-xs text-muted-foreground">
                 Auto-saves a moment after you stop typing. Visible to technicians and property managers.
