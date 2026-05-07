@@ -1,0 +1,1 @@
+UPDATE portal_properties SET map_image_url='https://dbalmswufjanxswboxxp.supabase.co/storage/v1/object/public/report-images/temp/custom-map/0.2991110158107836.jpg' WHERE id='96e29290-7c56-4e0c-8682-01d1c3fed455';
