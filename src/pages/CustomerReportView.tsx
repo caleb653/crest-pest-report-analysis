@@ -9,6 +9,7 @@ import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanva
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import crestLogoVideo from "@/assets/crest-logo-video.png";
+import { buildSignedReportPDF } from "@/lib/pdfExport";
 
 interface ServiceItem {
   serviceType: string;
@@ -87,6 +88,7 @@ interface ReportData {
   technician_name: string;
   customer_name: string | null;
   address: string | null;
+  customer_email: string | null;
   service_date: string | null;
   findings: string | string[] | null;
   notes: string | null;
@@ -177,6 +179,7 @@ export default function CustomerReportView() {
   const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
+  const reportRootRef = useRef<HTMLDivElement>(null);
 
   // Parse per-proposal signatures from the stored customer_signature field
   const getPerProposalSignatures = (): Record<string, string> => {
@@ -224,6 +227,7 @@ export default function CustomerReportView() {
         technician_name: reportRow.technician_name,
         customer_name: reportRow.customer_name,
         address: reportRow.address,
+        customer_email: (reportRow as any).customer_email ?? null,
         service_date: reportRow.service_date,
         findings: reportRow.findings || null,
         notes: reportRow.notes,
