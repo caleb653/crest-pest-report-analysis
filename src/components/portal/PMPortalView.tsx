@@ -3158,6 +3158,171 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   residentTerm="property manager"
                   questions={DEFAULT_ONBOARDING_SURVEY_QUESTIONS}
                 />
+
+                {/* Onboarding survey responses — aggregated + per-recipient */}
+                {(() => {
+                  const onbSurveyIds = new Set(
+                    surveys
+                      .filter((s: any) => {
+                        const qs = Array.isArray(s.questions) ? s.questions : [];
+                        return qs.some((q: any) => typeof q?.id === "string" && q.id.startsWith("onb_"));
+                      })
+                      .map((s: any) => s.id)
+                  );
+                  const onbResponses = surveyResponses.filter((r: any) => onbSurveyIds.has(r.survey_id));
+                  const submitted = onbResponses.filter((r: any) => r.submitted_at);
+
+                  return (
+                    <>
+                      <Card className="shadow-sm">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <BarChart3 className="w-4 h-4 text-primary" />Onboarding Responses
+                            <Badge variant="secondary" className="ml-1 text-xs">
+                              {submitted.length} submitted
+                            </Badge>
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground">
+                            Aggregated answers from property managers who completed the onboarding survey.
+                          </p>
+                        </CardHeader>
+                        <CardContent>
+                          {submitted.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-6">
+                              No onboarding responses yet.
+                            </p>
+                          ) : (() => {
+                            const tally: Record<string, Record<string, number>> = {};
+                            const openText: Record<string, string[]> = {};
+                            submitted.forEach((r: any) => {
+                              const ans = (r.answers || {}) as Record<string, any>;
+                              DEFAULT_ONBOARDING_SURVEY_QUESTIONS.forEach((q) => {
+                                const v = ans[q.id];
+                                if (v === undefined || v === null || v === "") return;
+                                if (q.type === "text") {
+                                  if (!openText[q.id]) openText[q.id] = [];
+                                  openText[q.id].push(String(v));
+                                } else {
+                                  if (!tally[q.id]) tally[q.id] = {};
+                                  const values = Array.isArray(v) ? v : [v];
+                                  values.forEach((val: any) => {
+                                    const key = String(val);
+                                    tally[q.id][key] = (tally[q.id][key] || 0) + 1;
+                                  });
+                                }
+                              });
+                            });
+                            return (
+                              <div className="space-y-5">
+                                {DEFAULT_ONBOARDING_SURVEY_QUESTIONS.map((q) => {
+                                  if (q.type === "text") {
+                                    const responses = openText[q.id] || [];
+                                    return (
+                                      <div key={q.id} className="border-l-2 border-primary/70 pl-3">
+                                        <p className="text-sm font-semibold mb-1.5">{q.label}</p>
+                                        {responses.length === 0 ? (
+                                          <p className="text-xs text-muted-foreground italic">No answers</p>
+                                        ) : (
+                                          <ul className="space-y-1.5">
+                                            {responses.map((c, i) => (
+                                              <li key={i} className="text-xs bg-muted/40 rounded px-2 py-1.5">"{c}"</li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                      </div>
+                                    );
+                                  }
+                                  const counts = tally[q.id] || {};
+                                  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+                                  const opts = q.options || Object.keys(counts);
+                                  return (
+                                    <div key={q.id} className="border-l-2 border-primary/70 pl-3">
+                                      <p className="text-sm font-semibold mb-2">{q.label}</p>
+                                      {total === 0 ? (
+                                        <p className="text-xs text-muted-foreground italic">No answers</p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {opts.map((opt) => {
+                                            const c = counts[opt] || 0;
+                                            const pct = total ? Math.round((c / total) * 100) : 0;
+                                            return (
+                                              <div key={opt} className="space-y-0.5">
+                                                <div className="flex justify-between text-xs">
+                                                  <span>{opt}</span>
+                                                  <span className="text-muted-foreground tabular-nums">
+                                                    {c} ({pct}%)
+                                                  </span>
+                                                </div>
+                                                <div className="h-2 bg-muted rounded overflow-hidden">
+                                                  <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </CardContent>
+                      </Card>
+
+                      {submitted.length > 0 && (
+                        <Card className="shadow-sm">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Individual Responses</CardTitle>
+                            <p className="text-xs text-muted-foreground">Click a respondent to see their full answers.</p>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-2">
+                              {submitted.map((r: any) => {
+                                const isExpanded = expandedSurveyId === `onb-${r.id}`;
+                                const ans = (r.answers || {}) as Record<string, any>;
+                                return (
+                                  <div key={r.id} className="border rounded-lg">
+                                    <button
+                                      className="w-full text-left p-3 flex items-center justify-between"
+                                      onClick={() => setExpandedSurveyId(isExpanded ? null : `onb-${r.id}`)}
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold truncate">
+                                          {r.respondent_name || r.recipient_email || "Anonymous"}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Submitted {r.submitted_at ? new Date(r.submitted_at).toLocaleString() : "—"}
+                                        </p>
+                                      </div>
+                                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                    </button>
+                                    {isExpanded && (
+                                      <div className="px-3 pb-3 border-t pt-3 space-y-2">
+                                        {DEFAULT_ONBOARDING_SURVEY_QUESTIONS.map((q) => {
+                                          const v = ans[q.id];
+                                          const display = Array.isArray(v) ? v.join(", ") : (v ?? "");
+                                          return (
+                                            <div key={q.id} className="text-xs">
+                                              <p className="font-semibold">{q.label}</p>
+                                              <p className="text-muted-foreground whitespace-pre-wrap">
+                                                {display === "" ? "—" : String(display)}
+                                              </p>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
+                  );
+                })()}
               </TabsContent>
             </Tabs>
           </div>
