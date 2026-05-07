@@ -158,24 +158,19 @@ export default function RegionalManagersTab() {
     );
     const totalVisits = propServices.length;
     const allUnitRows: any[] = [];
-    // Per-visit unique counts (deduped within a single visit) for a true avg-units-per-visit
-    const perVisitUniqueCounts: number[] = [];
     propServices.forEach((sv) => {
       const rows = (sv.unit_details as any[]) || [];
       const seen = new Map<string, any>();
       rows.forEach((u) => {
         const key = (u.unit_number || "").toString().trim();
         if (!key) return;
-        // keep first row per unit per visit (avoids double-count from multi-pest entries)
         if (!seen.has(key)) seen.set(key, { ...u, _date: sv.service_date });
       });
       seen.forEach((u) => allUnitRows.push(u));
-      perVisitUniqueCounts.push(seen.size);
     });
     const uniqueUnits = new Set(allUnitRows.map((u) => u.unit_number).filter(Boolean));
-    const avgUnitsPerVisit = totalVisits > 0
-      ? perVisitUniqueCounts.reduce((a, b) => a + b, 0) / totalVisits
-      : 0;
+    // Simple: total units serviced (across all visits) / visits
+    const avgUnitsPerVisit = totalVisits > 0 ? allUnitRows.length / totalVisits : 0;
 
     // Vacant/occupied breakdown across all unit rows
     const vacantRows = allUnitRows.filter((u) => /vacant/i.test(u.occupancy_status || u.status || ""));
