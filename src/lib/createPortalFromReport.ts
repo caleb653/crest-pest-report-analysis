@@ -119,6 +119,19 @@ export async function createPortalFromReport(
     }
   }
 
+  // If any chosen service references rodents, surface "Rodents" as a target pest
+  // so the Pesticide Pre-Application Notice auto-checks it for this property.
+  const includesRodents = serviceNames.some((n) => /rodent/i.test(n));
+  const reportTargetPests: string[] = Array.isArray((report as any).target_pests)
+    ? ((report as any).target_pests as string[])
+    : [];
+  const mergedTargetPests = Array.from(
+    new Set<string>([
+      ...reportTargetPests.map((p) => String(p)),
+      ...(includesRodents ? ["Rodents"] : []),
+    ])
+  );
+
   // Prefer the FULL "Proposed Services" text written on the sales report
   // (stored in `findings[0]` as HTML). Fall back to a bullet list of service
   // names if no findings exist. The portal renders this in a plain Textarea,
@@ -190,7 +203,13 @@ export async function createPortalFromReport(
       map_data: (report as any).map_data || null,
       notes: propertyPlan,
       // Only the service_frequency + property_type keys are set — no other customer preferences.
-      customer_preferences: { service_frequency: frequencyKey, property_type: propertyType },
+      // target_pests is included so the Pre-Application Notice auto-checks the right pests
+      // (e.g. Rodents when the proposal includes rodent work).
+      customer_preferences: {
+        service_frequency: frequencyKey,
+        property_type: propertyType,
+        ...(mergedTargetPests.length > 0 ? { target_pests: mergedTargetPests } : {}),
+      },
     })
     .select("id")
     .single();
