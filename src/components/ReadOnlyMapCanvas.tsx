@@ -14,6 +14,7 @@ interface ReadOnlyMapCanvasProps {
   mapUrl: string;
   mapData?: string | null;
   className?: string;
+  imageFit?: 'cover' | 'contain';
 }
 
 interface LegendItem {
@@ -49,7 +50,7 @@ const ICON_BADGE_COLORS = [
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
 
-export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCanvasProps) => {
+export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className, imageFit = 'cover' }: ReadOnlyMapCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -294,7 +295,7 @@ export const ReadOnlyMapCanvas = ({ mapUrl, mapData, className }: ReadOnlyMapCan
       <img
         src={mapUrl}
         alt="Property map"
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full ${imageFit === 'contain' ? 'object-contain' : 'object-cover'}`}
         onError={(e) => {
           console.error('Failed to load map image:', mapUrl);
         }}
