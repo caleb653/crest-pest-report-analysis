@@ -160,14 +160,24 @@ export const DEFAULT_ONBOARDING_SURVEY_QUESTIONS: SurveyQuestion[] = [
     type: "text",
   },
   {
+    id: "onb_total_units",
+    label: "5. How many total units are on your property?",
+    type: "text",
+  },
+  {
+    id: "onb_rental_income",
+    label: "6. What is a rough estimate for the average monthly rental income per unit?",
+    type: "text",
+  },
+  {
     id: "onb_payment_method",
-    label: "5. What is your preferred payment method?",
+    label: "7. What is your preferred payment method?",
     type: "single",
     options: ["ACH", "Credit Card", "Check", "Other"],
   },
   {
     id: "onb_upset_tenants_frequency",
-    label: "6. How often do you have upset tenants because pest issues are going unresolved?",
+    label: "8. How often do you have upset tenants because pest issues are going unresolved?",
     type: "single",
     options: [
       "Every day (all I do is deal with pest control issues)",
@@ -180,32 +190,20 @@ export const DEFAULT_ONBOARDING_SURVEY_QUESTIONS: SurveyQuestion[] = [
   },
   {
     id: "onb_free_and_clear_time",
-    label: "7. On average, how long does it take for a vacant unit to get the “free and clear” stamp?",
+    label: '9. On average, how many days pass between the initial treatment and a vacant unit being deemed "free and clear"?',
     type: "single",
     options: [
       "Less than 1 week",
-      "1-2 weeks",
-      "2-3 weeks",
-      "3-4 weeks",
-      "4+ weeks",
-    ],
-  },
-  {
-    id: "onb_rental_delay",
-    label: "8. On average, how long does pest control delay the rental of a vacant unit?",
-    type: "single",
-    options: [
-      "It doesn't",
-      "Less than 1 week",
-      "1-2 weeks",
-      "2-3 weeks",
-      "3-4 weeks",
-      "4+ weeks (am I ever going to get this unit rented?)",
+      "1 week",
+      "2 weeks",
+      "3 weeks",
+      "4 weeks",
+      "5+ weeks (am I ever going to get this unit rented?)",
     ],
   },
   {
     id: "onb_hours_per_month",
-    label: "9. Approximately how many hours per month do you spend on pest-control related activities (e.g., fielding requests from tenants, sending prep sheets, setting up follow-ups, etc.)?",
+    label: "10. Approximately how many hours per month do you spend on pest-control related activities (e.g., fielding requests from tenants, sending prep sheets, setting up follow-ups, etc.)?",
     type: "single",
     options: [
       "Less than 1 hour",
@@ -219,7 +217,7 @@ export const DEFAULT_ONBOARDING_SURVEY_QUESTIONS: SurveyQuestion[] = [
   },
   {
     id: "onb_emergency_response",
-    label: "10. If emergency pest issues arise, how quickly does your current pest control show up?",
+    label: "11. If emergency pest issues arise, how quickly does your current pest control show up?",
     type: "single",
     options: [
       "Within 2 hours",
