@@ -977,14 +977,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       let drawX = 0;
       let drawY = 0;
 
-      if (imgAspect > canvasAspect) {
-        drawHeight = exportHeight;
-        drawWidth = exportHeight * imgAspect;
-        drawX = (exportWidth - drawWidth) / 2;
-      } else {
+      const shouldContain = imageFit === 'contain';
+      if (shouldContain ? imgAspect > canvasAspect : imgAspect <= canvasAspect) {
         drawWidth = exportWidth;
         drawHeight = exportWidth / imgAspect;
         drawY = (exportHeight - drawHeight) / 2;
+      } else {
+        drawHeight = exportHeight;
+        drawWidth = exportHeight * imgAspect;
+        drawX = (exportWidth - drawWidth) / 2;
       }
 
       ctx.fillStyle = '#f5f5f5';
