@@ -500,9 +500,9 @@ const ClientPortal = () => {
             <div className="rounded-xl overflow-hidden border shadow-sm bg-muted">
               <div className="aspect-[3/4] relative max-w-md mx-auto">
                 {selectedProperty.map_data ? (
-                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={selectedProperty.map_data} />
+                  <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={selectedProperty.map_data} imageFit="contain" />
                 ) : (
-                  <img src={mapUrl} alt={selectedProperty.name} className="w-full h-full object-cover" />
+                  <img src={mapUrl} alt={selectedProperty.name} className="w-full h-full object-contain" />
                 )}
               </div>
             </div>

@@ -21,6 +21,7 @@ interface MapCanvasProps {
   initialData?: string | null;
   exportId?: string;
   showToolbar?: boolean;
+  imageFit?: 'cover' | 'contain';
 }
 
 type Tool = 'select' | 'text' | 'icon' | 'rectangle' | 'line' | 'eraser' | 'draw';
@@ -61,7 +62,7 @@ const AVAILABLE_ICONS = [
 const REFERENCE_WIDTH = 750;
 const REFERENCE_HEIGHT = 1000;
 
-export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId, showToolbar = true }: MapCanvasProps) => {
+export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId, showToolbar = true, imageFit = 'cover' }: MapCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
@@ -976,14 +977,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       let drawX = 0;
       let drawY = 0;
 
-      if (imgAspect > canvasAspect) {
-        drawHeight = exportHeight;
-        drawWidth = exportHeight * imgAspect;
-        drawX = (exportWidth - drawWidth) / 2;
-      } else {
+      const shouldContain = imageFit === 'contain';
+      if (shouldContain ? imgAspect > canvasAspect : imgAspect <= canvasAspect) {
         drawWidth = exportWidth;
         drawHeight = exportWidth / imgAspect;
         drawY = (exportHeight - drawHeight) / 2;
+      } else {
+        drawHeight = exportHeight;
+        drawWidth = exportHeight * imgAspect;
+        drawX = (exportWidth - drawWidth) / 2;
       }
 
       ctx.fillStyle = '#f5f5f5';
@@ -1053,7 +1055,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
         }
       }
     };
-  }, [mapUrl, legendItems, exportId]);
+  }, [mapUrl, legendItems, exportId, imageFit]);
 
   // Auto-save canvas data whenever it changes
   useEffect(() => {
@@ -1194,7 +1196,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       {/* Map - either static image or iframe */}
       {mapUrl.startsWith('data:image') || (mapUrl.startsWith('http') && !mapUrl.includes('openstreetmap')) ? (
           <img
-            className="absolute inset-0 w-full h-full rounded-lg border-2 border-foreground object-cover bg-card"
+            className={`absolute inset-0 w-full h-full rounded-lg border-2 border-foreground bg-card ${imageFit === 'contain' ? 'object-contain' : 'object-cover'}`}
             style={{ 
             border: '2px solid hsl(var(--foreground))',
             pointerEvents: 'none',

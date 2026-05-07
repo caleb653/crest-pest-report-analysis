@@ -2687,9 +2687,9 @@ const PropertyDashboard = ({
             </div>
             <div className="bg-background mx-auto" style={{ aspectRatio: "3 / 4", height: 720, width: "auto", maxWidth: "100%" }}>
               {property.map_data ? (
-                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} imageFit="contain" />
               ) : mapUrl ? (
-                <img src={mapUrl} alt="Site map" className="w-full h-full object-cover" />
+                <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
               ) : null}
             </div>
           </div>
@@ -3901,11 +3901,12 @@ const PropertyDashboard = ({
                       mapUrl={mapUrl}
                       onSave={handleSaveMapData}
                       initialData={property.map_data ? (typeof property.map_data === 'string' ? property.map_data : JSON.stringify(property.map_data)) : undefined}
+                      imageFit="contain"
                     />
                   ) : property.map_data ? (
-                    <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                    <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} imageFit="contain" />
                   ) : (
-                    <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
+                    <img src={mapUrl} alt={property.name} className="w-full h-full object-contain" />
                   )
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2 p-4 text-center">

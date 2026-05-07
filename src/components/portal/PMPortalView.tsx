@@ -1018,7 +1018,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
             <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
               {property.map_data ? (
-                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} imageFit="contain" />
               ) : mapUrl ? (
                 <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
               ) : null}
@@ -1419,9 +1419,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 <Card className="overflow-hidden shadow-sm">
                   <div className="relative bg-muted max-w-[520px] mx-auto" style={{ aspectRatio: "3 / 4" }}>
                     {property.map_data ? (
-                      <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} />
+                      <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} imageFit="contain" />
                     ) : (
-                      <img src={mapUrl} alt={property.name} className="w-full h-full object-cover" />
+                      <img src={mapUrl} alt={property.name} className="w-full h-full object-contain" />
                     )}
                   </div>
                 </Card>

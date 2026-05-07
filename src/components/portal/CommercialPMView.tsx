@@ -482,7 +482,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 {property.map_data || mapUrl ? (
                   <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "60vh", minHeight: 380 }}>
                     {property.map_data ? (
-                      <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} />
+                      <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} imageFit="contain" />
                     ) : mapUrl ? (
                       <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
                     ) : null}
