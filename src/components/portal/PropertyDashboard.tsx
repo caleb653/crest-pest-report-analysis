@@ -27,7 +27,14 @@ import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
-import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import {
+  DEFAULT_PEST_SURVEY_QUESTIONS,
+  DEFAULT_SURVEY_INTRO,
+  DEFAULT_ONBOARDING_SURVEY_QUESTIONS,
+  DEFAULT_ONBOARDING_SURVEY_TITLE,
+  DEFAULT_ONBOARDING_SURVEY_INTRO,
+  type SurveyQuestion,
+} from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
@@ -445,6 +452,14 @@ const PropertyDashboard = ({
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
 
+  // Onboarding survey state (separate inner tab) — mirrors PMPortalView
+  const [onbTitle, setOnbTitle] = useState(DEFAULT_ONBOARDING_SURVEY_TITLE);
+  const [onbIntro, setOnbIntro] = useState(DEFAULT_ONBOARDING_SURVEY_INTRO);
+  const [onbEmails, setOnbEmails] = useState("");
+  const [sendingOnb, setSendingOnb] = useState(false);
+  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding">("tenant");
+  const [generatingLink, setGeneratingLink] = useState<"tenant" | "onboarding" | null>(null);
+
   // Local Property Plan state — debounced save so typing isn't laggy or toast-spammy
   const [planDraft, setPlanDraft] = useState<string>(property.notes || "");
   useEffect(() => { setPlanDraft(property.notes || ""); }, [property.id, property.notes]);
@@ -809,8 +824,23 @@ const PropertyDashboard = ({
     loadSurveys();
   }, [property.id]);
 
-  const sendSurvey = async () => {
-    const emails = surveyEmails
+  const reloadSurveys = async () => {
+    const [{ data: svys }, { data: respRows }] = await Promise.all([
+      (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+      (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
+    ]);
+    if (Array.isArray(svys)) setSurveys(svys);
+    if (Array.isArray(respRows)) setSurveyResponses(respRows);
+  };
+
+  const sendSurveyGeneric = async (kind: "tenant" | "onboarding") => {
+    const isOnb = kind === "onboarding";
+    const raw = isOnb ? onbEmails : surveyEmails;
+    const titleVal = isOnb ? onbTitle : surveyTitle;
+    const introVal = isOnb ? onbIntro : surveyIntro;
+    const questions = isOnb ? DEFAULT_ONBOARDING_SURVEY_QUESTIONS : DEFAULT_PEST_SURVEY_QUESTIONS;
+    const defaultTitle = isOnb ? DEFAULT_ONBOARDING_SURVEY_TITLE : "Pest Activity Survey";
+    const emails = raw
       .split(/[\s,;]+/)
       .map((e) => e.trim().toLowerCase())
       .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
@@ -818,16 +848,16 @@ const PropertyDashboard = ({
       toast({ title: "Add at least one valid email", variant: "destructive" });
       return;
     }
-    setSendingSurvey(true);
+    if (isOnb) setSendingOnb(true); else setSendingSurvey(true);
     try {
       const { data: created, error } = await (supabase as any)
         .from("portal_surveys")
         .insert({
           property_id: property.id,
           client_id: clientId || null,
-          title: surveyTitle.trim() || "Pest Activity Survey",
-          intro: surveyIntro.trim() || null,
-          questions: DEFAULT_PEST_SURVEY_QUESTIONS,
+          title: titleVal.trim() || defaultTitle,
+          intro: introVal.trim() || null,
+          questions,
           recipient_emails: emails,
         })
         .select("*")
@@ -837,22 +867,65 @@ const PropertyDashboard = ({
         body: { surveyId: created.id, appBaseUrl: window.location.origin },
       });
       if ((sendRes as any)?.ok) {
-        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} ${residentTerm}(s).` });
+        toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} recipient(s).` });
       } else {
         toast({ title: "Survey created", description: "Email send may have failed — check logs." });
       }
-      setSurveyEmails("");
-      const [{ data: svys }, { data: respRows }] = await Promise.all([
-        (supabase as any).from("portal_surveys").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
-        (supabase as any).from("portal_survey_responses").select("*").eq("property_id", property.id).order("created_at", { ascending: false }),
-      ]);
-      if (Array.isArray(svys)) setSurveys(svys);
-      if (Array.isArray(respRows)) setSurveyResponses(respRows);
+      if (isOnb) setOnbEmails(""); else setSurveyEmails("");
+      await reloadSurveys();
     } catch (e: any) {
       console.error("sendSurvey failed", e);
       toast({ title: "Send failed", description: e?.message || "Try again", variant: "destructive" });
     } finally {
-      setSendingSurvey(false);
+      if (isOnb) setSendingOnb(false); else setSendingSurvey(false);
+    }
+  };
+
+  const sendSurvey = () => sendSurveyGeneric("tenant");
+
+  const createShareableLink = async (kind: "tenant" | "onboarding") => {
+    const isOnb = kind === "onboarding";
+    const titleVal = isOnb ? onbTitle : surveyTitle;
+    const introVal = isOnb ? onbIntro : surveyIntro;
+    const questions = isOnb ? DEFAULT_ONBOARDING_SURVEY_QUESTIONS : DEFAULT_PEST_SURVEY_QUESTIONS;
+    const defaultTitle = isOnb ? DEFAULT_ONBOARDING_SURVEY_TITLE : "Pest Activity Survey";
+    setGeneratingLink(kind);
+    try {
+      const { data: created, error } = await (supabase as any)
+        .from("portal_surveys")
+        .insert({
+          property_id: property.id,
+          client_id: clientId || null,
+          title: titleVal.trim() || defaultTitle,
+          intro: introVal.trim() || null,
+          questions,
+          recipient_emails: [],
+        })
+        .select("id")
+        .maybeSingle();
+      if (error || !created?.id) throw new Error("create_failed");
+      const { data: resp, error: rErr } = await (supabase as any)
+        .from("portal_survey_responses")
+        .insert({
+          survey_id: created.id,
+          property_id: property.id,
+          recipient_email: null,
+        })
+        .select("token")
+        .maybeSingle();
+      if (rErr || !resp?.token) throw new Error("token_failed");
+      const url = `${window.location.origin}/survey/${resp.token}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied", description: url });
+      } catch {
+        toast({ title: "Link generated", description: url });
+      }
+      await reloadSurveys();
+    } catch {
+      toast({ title: "Could not generate link", variant: "destructive" });
+    } finally {
+      setGeneratingLink(null);
     }
   };
 
@@ -3621,7 +3694,7 @@ const PropertyDashboard = ({
         )}
         <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <BarChart3 className="w-5 h-5" />
-          <span>{isHOA ? "Resident Survey" : "Tenant Survey"} <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
+          <span>Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
         {isHOA && (
           <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
@@ -5356,6 +5429,12 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 6: TENANT SURVEY ══════════ */}
       <TabsContent value="survey" className="mt-0">
         <div className="max-w-4xl mx-auto space-y-5">
+          <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding")}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="tenant">{isHOA ? "Resident Survey" : "Tenant Survey"}</TabsTrigger>
+              <TabsTrigger value="onboarding">Onboarding Survey</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tenant" className="mt-0 space-y-5">
           <Card className="border-primary/60 shadow-md">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -5388,10 +5467,25 @@ const PropertyDashboard = ({
                   Each {residentTerm} gets their own unique link so you can see who responded.
                 </p>
               </div>
-              <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
-                <Send className="w-4 h-4 mr-2" />
-                {sendingSurvey ? "Sending..." : "Send Survey"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="flex-1" size="lg">
+                  <Send className="w-4 h-4 mr-2" />
+                  {sendingSurvey ? "Sending..." : "Send Survey"}
+                </Button>
+                <Button
+                  onClick={() => createShareableLink("tenant")}
+                  disabled={generatingLink === "tenant"}
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  {generatingLink === "tenant" ? "Generating..." : "Copy Shareable Link"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Use the shareable link to post in Slack, text, or signage — no email required.
+              </p>
             </CardContent>
           </Card>
 
@@ -5724,6 +5818,73 @@ const PropertyDashboard = ({
               </CardContent>
             </Card>
           )}
+            </TabsContent>
+
+            <TabsContent value="onboarding" className="mt-0 space-y-5">
+              <Card className="border-primary/60 shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Send className="w-4 h-4 text-primary" />Send Property Onboarding Survey
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Sent once to property management to capture scheduling preferences,
+                    points of contact, and benchmark data so we can tailor service from day one.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label className="text-sm">Survey Title</Label>
+                    <Input value={onbTitle} onChange={(e) => setOnbTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Intro Message</Label>
+                    <Textarea rows={3} value={onbIntro} onChange={(e) => setOnbIntro(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Recipient Emails</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="Paste property manager emails — one per line, or comma-separated"
+                      value={onbEmails}
+                      onChange={(e) => setOnbEmails(e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Each recipient gets a unique link so you can track who has responded.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      onClick={() => sendSurveyGeneric("onboarding")}
+                      disabled={sendingOnb || !onbEmails.trim()}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendingOnb ? "Sending..." : "Send Onboarding Survey"}
+                    </Button>
+                    <Button
+                      onClick={() => createShareableLink("onboarding")}
+                      disabled={generatingLink === "onboarding"}
+                      variant="outline"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {generatingLink === "onboarding" ? "Generating..." : "Copy Shareable Link"}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Use the shareable link when emailing isn't ideal — it works the same way as a sent survey.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <SurveyQuestionsPreview
+                residentTerm="property manager"
+                questions={DEFAULT_ONBOARDING_SURVEY_QUESTIONS}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </TabsContent>
 
