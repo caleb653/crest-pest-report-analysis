@@ -5818,6 +5818,73 @@ const PropertyDashboard = ({
               </CardContent>
             </Card>
           )}
+            </TabsContent>
+
+            <TabsContent value="onboarding" className="mt-0 space-y-5">
+              <Card className="border-primary/60 shadow-md">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Send className="w-4 h-4 text-primary" />Send Property Onboarding Survey
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Sent once to property management to capture scheduling preferences,
+                    points of contact, and benchmark data so we can tailor service from day one.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label className="text-sm">Survey Title</Label>
+                    <Input value={onbTitle} onChange={(e) => setOnbTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Intro Message</Label>
+                    <Textarea rows={3} value={onbIntro} onChange={(e) => setOnbIntro(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Recipient Emails</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="Paste property manager emails — one per line, or comma-separated"
+                      value={onbEmails}
+                      onChange={(e) => setOnbEmails(e.target.value)}
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Each recipient gets a unique link so you can track who has responded.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      onClick={() => sendSurveyGeneric("onboarding")}
+                      disabled={sendingOnb || !onbEmails.trim()}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      {sendingOnb ? "Sending..." : "Send Onboarding Survey"}
+                    </Button>
+                    <Button
+                      onClick={() => createShareableLink("onboarding")}
+                      disabled={generatingLink === "onboarding"}
+                      variant="outline"
+                      className="flex-1"
+                      size="lg"
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {generatingLink === "onboarding" ? "Generating..." : "Copy Shareable Link"}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Use the shareable link when emailing isn't ideal — it works the same way as a sent survey.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <SurveyQuestionsPreview
+                residentTerm="property manager"
+                questions={DEFAULT_ONBOARDING_SURVEY_QUESTIONS}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </TabsContent>
 
