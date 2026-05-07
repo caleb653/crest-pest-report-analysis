@@ -184,15 +184,13 @@ export async function createPortalFromReport(
   // Property name should reflect the property (customer name like "Stonebrook Apartments"),
   // NOT the street address. Fall back to address only when no customer name exists.
   const propertyName = customerName !== "Unnamed Customer" ? customerName : (address || "Unnamed Property");
-  // When map_data (annotations) exists, the portal's ReadOnlyMapCanvas needs the BASE map
-  // image (custom_map_url) so it can re-draw annotations on top. Using rendered_map_url
-  // here would double-render annotations. Without map_data we fall back to the rendered map.
-  const reportMapData = (report as any).map_data || null;
+  // Use the pre-rendered flat image (with annotations already baked in) so the portal
+  // renders an exact visual match of the proposal map at the correct sizing. We
+  // intentionally do NOT pass map_data here — the rendered image already contains
+  // the annotations, and re-drawing them on top would double-render and mis-scale.
   const customMapUrl = (report as any).custom_map_url || null;
   const renderedMapUrl = (report as any).rendered_map_url || null;
-  const mapImageUrl = reportMapData
-    ? (customMapUrl || renderedMapUrl || (report as any).map_url || null)
-    : (renderedMapUrl || customMapUrl || (report as any).map_url || null);
+  const mapImageUrl = renderedMapUrl || customMapUrl || (report as any).map_url || null;
   const propertyImage =
     Array.isArray((report as any).property_images) && (report as any).property_images.length > 0
       ? (report as any).property_images[0]
@@ -206,7 +204,7 @@ export async function createPortalFromReport(
       address,
       image_url: propertyImage,
       map_image_url: mapImageUrl,
-      map_data: (report as any).map_data || null,
+      map_data: null,
       notes: propertyPlan,
       // Only the service_frequency + property_type keys are set — no other customer preferences.
       // target_pests is included so the Pre-Application Notice auto-checks the right pests
