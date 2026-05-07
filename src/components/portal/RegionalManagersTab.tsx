@@ -156,7 +156,14 @@ export default function RegionalManagersTab() {
     const propServices = services.filter(
       (s) => s.property_id === prop.id && s.status === "completed" && Array.isArray(s.unit_details) && (s.unit_details as any[]).length > 0
     );
-    const totalVisits = propServices.length;
+    // Group services by date — multiple rows on the same day = one visit
+    const visitsByDate = new Map<string, any[]>();
+    propServices.forEach((sv) => {
+      const k = sv.service_date || sv.id;
+      if (!visitsByDate.has(k)) visitsByDate.set(k, []);
+      visitsByDate.get(k)!.push(sv);
+    });
+    const totalVisits = visitsByDate.size;
     const allUnitRows: any[] = [];
     propServices.forEach((sv) => {
       const rows = (sv.unit_details as any[]) || [];
