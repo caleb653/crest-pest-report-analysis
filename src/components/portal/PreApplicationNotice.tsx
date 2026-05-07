@@ -148,7 +148,8 @@ export const PreApplicationNotice = forwardRef<HTMLDivElement, PreApplicationNot
   ({ property, noticeDate, editable, onChange }, ref) => {
     const checked = getCheckedPests(property);
     const frequency = getFrequency(property);
-    const today = noticeDate || new Date().toISOString().slice(0, 10);
+    // Notice date starts blank — only populated when explicitly set.
+    const today = noticeDate || "";
     const initialDate = getInitialServiceDate(property);
 
     const emit = (patch: Partial<{
