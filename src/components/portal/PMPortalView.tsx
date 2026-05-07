@@ -2822,6 +2822,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 6: SURVEY RESULTS (compose + aggregated answers) ════════ */}
         <TabsContent value="survey" className="mt-0">
           <div className="max-w-4xl mx-auto space-y-5">
+            <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding")}>
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="tenant">{isHOA ? "Resident Survey" : "Tenant Survey"}</TabsTrigger>
+                <TabsTrigger value="onboarding">Onboarding Survey</TabsTrigger>
+              </TabsList>
+              <TabsContent value="tenant" className="mt-0 space-y-5">
             {/* Compose */}
             <Card className="border-primary/60 shadow-md">
               <CardHeader className="pb-3">
@@ -2857,10 +2863,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     Each {residentTerm} gets their own unique link so you can see who responded.
                   </p>
                 </div>
-                <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="w-full" size="lg">
-                  <Send className="w-4 h-4 mr-2" />
-                  {sendingSurvey ? "Sending..." : "Send Survey"}
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={sendSurvey} disabled={sendingSurvey || !surveyEmails.trim()} className="flex-1" size="lg">
+                    <Send className="w-4 h-4 mr-2" />
+                    {sendingSurvey ? "Sending..." : "Send Survey"}
+                  </Button>
+                  <Button
+                    onClick={() => createShareableLink("tenant")}
+                    disabled={generatingLink === "tenant"}
+                    variant="outline"
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    {generatingLink === "tenant" ? "Generating..." : "Copy Shareable Link"}
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Use the shareable link to post in Slack, text, or signage — no email required.
+                </p>
               </CardContent>
             </Card>
 
