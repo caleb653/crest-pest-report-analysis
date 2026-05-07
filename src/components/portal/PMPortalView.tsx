@@ -23,7 +23,14 @@ import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getO
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
-import { DEFAULT_PEST_SURVEY_QUESTIONS, DEFAULT_SURVEY_INTRO, type SurveyQuestion } from "@/lib/surveyDefaults";
+import {
+  DEFAULT_PEST_SURVEY_QUESTIONS,
+  DEFAULT_SURVEY_INTRO,
+  DEFAULT_ONBOARDING_SURVEY_QUESTIONS,
+  DEFAULT_ONBOARDING_SURVEY_TITLE,
+  DEFAULT_ONBOARDING_SURVEY_INTRO,
+  type SurveyQuestion,
+} from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
@@ -218,6 +225,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [surveyEmails, setSurveyEmails] = useState("");
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [expandedSurveyId, setExpandedSurveyId] = useState<string | null>(null);
+
+  // Onboarding survey state (separate inner tab)
+  const [onbTitle, setOnbTitle] = useState(DEFAULT_ONBOARDING_SURVEY_TITLE);
+  const [onbIntro, setOnbIntro] = useState(DEFAULT_ONBOARDING_SURVEY_INTRO);
+  const [onbEmails, setOnbEmails] = useState("");
+  const [sendingOnb, setSendingOnb] = useState(false);
+  // Inner tab selector for the Survey tab
+  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding">("tenant");
+  const [generatingLink, setGeneratingLink] = useState<"tenant" | "onboarding" | null>(null);
 
 
   useEffect(() => {
