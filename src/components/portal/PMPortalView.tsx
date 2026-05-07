@@ -598,13 +598,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       });
       if ((sendRes as any)?.ok) {
         toast({ title: "Survey sent", description: `Sent to ${(sendRes as any).sent} recipient(s).` });
-        if (isOnb) setOnbEmails(""); else setSurveyEmails("");
-        loadAll();
       } else {
-        toast({ title: "Could not send survey", variant: "destructive" });
+        toast({ title: "Survey created", description: "Email send may have failed — check logs." });
       }
-    } catch {
-      toast({ title: "Could not send survey", variant: "destructive" });
+      if (isOnb) setOnbEmails(""); else setSurveyEmails("");
+      loadAll();
+    } catch (e: any) {
+      console.error("sendSurvey failed", e);
+      toast({ title: "Send failed", description: e?.message || "Try again", variant: "destructive" });
     } finally {
       if (isOnb) setSendingOnb(false); else setSendingSurvey(false);
     }
