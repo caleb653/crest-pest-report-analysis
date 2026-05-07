@@ -1400,7 +1400,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   );
                 })()}
                 {property.notes ? (
-                  <p className="text-sm whitespace-pre-wrap">{property.notes}</p>
+                  <div
+                    className="text-sm leading-relaxed [&_b]:font-semibold [&_strong]:font-semibold [&_u]:underline"
+                    style={{ whiteSpace: "pre-wrap" }}
+                    dangerouslySetInnerHTML={{ __html: property.notes }}
+                  />
                 ) : (
                   <p className="text-xs text-muted-foreground italic">No property plan set yet.</p>
                 )}
