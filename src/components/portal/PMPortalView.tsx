@@ -656,7 +656,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       } catch {
         toast({ title: "Link generated", description: url });
       }
-      loadAll();
+      await loadAll();
     } catch {
       toast({ title: "Could not generate link", variant: "destructive" });
     } finally {
