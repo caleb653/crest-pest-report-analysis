@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
 import NotificationBell from "@/components/NotificationBell";
+import RegionalManagersTab from "@/components/portal/RegionalManagersTab";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 
@@ -621,6 +622,7 @@ const PortalAdmin = () => {
             <TabsList className="mb-4">
               <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
               <TabsTrigger value="billing"><DollarSign className="w-4 h-4 mr-1" />Billing &amp; Schedule</TabsTrigger>
+              <TabsTrigger value="regional"><Users className="w-4 h-4 mr-1" />Regional Managers</TabsTrigger>
             </TabsList>
 
             <TabsContent value="properties">
@@ -760,6 +762,10 @@ const PortalAdmin = () => {
                 properties={allProperties}
                 services={allServices}
               />
+            </TabsContent>
+
+            <TabsContent value="regional">
+              <RegionalManagersTab />
             </TabsContent>
 
             {/* Prep Sheets tab */}
