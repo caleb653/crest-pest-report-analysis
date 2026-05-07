@@ -470,30 +470,7 @@ const Report = () => {
 
   const fetchStaticMap = async () => {
     if (!coordinates) return;
-
-    try {
-      const { data, error } = await supabase.functions.invoke("static-map", {
-        body: {
-          lat: coordinates.lat,
-          lng: coordinates.lng,
-          zoom: zoomLevel,
-          width: 1100,
-          height: 700,
-          marker: "1",
-        },
-      });
-
-      if (error) {
-        console.error("Error fetching static map:", error);
-        return;
-      }
-
-      if (data?.dataUrl) {
-        setStaticMapUrl(data.dataUrl);
-      }
-    } catch (error) {
-      console.error("Error fetching static map:", error);
-    }
+    // Static map (Mapbox) fetching has been removed — users upload custom maps instead.
   };
 
   const loadReport = async () => {
