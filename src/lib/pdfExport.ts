@@ -959,3 +959,59 @@ export function downloadPDF(pdfBytes: Uint8Array, filename: string) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// ─── buildSignedReportPDF ────────────────────────────────────────────────────
+// Captures a single root element (e.g., the customer-facing report view) as
+// a tall canvas, then slices it into A4-landscape PDF pages. Used to email
+// the signed proposal back to the customer after they sign.
+export async function buildSignedReportPDF(root: HTMLElement): Promise<Uint8Array> {
+  const canvas = await html2canvas(root, {
+    scale: 2,
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: "#ffffff",
+    logging: false,
+    windowWidth: Math.max(root.scrollWidth, 1100),
+  });
+
+  const outDoc = await PDFDocument.create();
+  // A4 landscape in points
+  const pageW = 842;
+  const pageH = 595;
+  const MARGIN = 16;
+  const contentW = pageW - MARGIN * 2;
+  const contentH = pageH - MARGIN * 2;
+
+  const totalImgW = canvas.width;
+  const totalImgH = canvas.height;
+  // Scale so the image fits content width
+  const scale = contentW / totalImgW;
+  const sliceHeightPx = Math.floor(contentH / scale); // source-pixel height per page
+
+  let y = 0;
+  while (y < totalImgH) {
+    const sliceH = Math.min(sliceHeightPx, totalImgH - y);
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = totalImgW;
+    sliceCanvas.height = sliceH;
+    const ctx = sliceCanvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+    ctx.drawImage(canvas, 0, y, totalImgW, sliceH, 0, 0, totalImgW, sliceH);
+    const dataUrl = sliceCanvas.toDataURL("image/jpeg", 0.92);
+    const imgBytes = await fetch(dataUrl).then((r) => r.arrayBuffer());
+    const img = await outDoc.embedJpg(imgBytes);
+    const page = outDoc.addPage([pageW, pageH]);
+    const drawW = totalImgW * scale;
+    const drawH = sliceH * scale;
+    page.drawImage(img, {
+      x: (pageW - drawW) / 2,
+      y: pageH - MARGIN - drawH,
+      width: drawW,
+      height: drawH,
+    });
+    y += sliceH;
+  }
+
+  return outDoc.save();
+}
