@@ -259,6 +259,7 @@ export type Database = {
       portal_properties: {
         Row: {
           address: string | null
+          archived_at: string | null
           client_id: string
           created_at: string
           customer_preferences: Json | null
@@ -274,6 +275,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          archived_at?: string | null
           client_id: string
           created_at?: string
           customer_preferences?: Json | null
@@ -289,6 +291,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          archived_at?: string | null
           client_id?: string
           created_at?: string
           customer_preferences?: Json | null
