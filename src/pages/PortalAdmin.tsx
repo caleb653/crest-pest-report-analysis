@@ -1043,6 +1043,30 @@ const PortalAdmin = () => {
 
       {renderServiceDialog()}
 
+      {/* Delete Property Password Dialog */}
+      <Dialog open={!!deletePropertyId} onOpenChange={(o) => { if (!o) { setDeletePropertyId(null); setDeletePropertyPw(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Hide Property</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Enter the admin password to hide this property. It will no longer appear in the admin list but can be restored later.</p>
+            <div>
+              <Label>Admin Password</Label>
+              <Input
+                type="password"
+                autoFocus
+                value={deletePropertyPw}
+                onChange={e => setDeletePropertyPw(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") confirmDeleteProperty(); }}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setDeletePropertyId(null); setDeletePropertyPw(""); }}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmDeleteProperty} disabled={!deletePropertyPw}>Hide Property</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Footer */}
       <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
         <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestcontrol.com</p>
