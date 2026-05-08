@@ -161,7 +161,7 @@ const PortalAdmin = () => {
   const loadAll = async () => {
     const [{ data: c }, { data: p }, { data: s }, { data: l }, { data: ps }, { data: m }] = await Promise.all([
       supabase.from("portal_clients").select("*").order("created_at", { ascending: false }),
-      supabase.from("portal_properties").select("*").order("name"),
+      supabase.from("portal_properties").select("*").is("archived_at", null).order("name"),
       supabase.from("portal_services").select("*").order("service_date", { ascending: false }),
       supabase.from("portal_links").select("*"),
       supabase.from("portal_prep_sheets").select("*").order("title"),
@@ -340,13 +340,13 @@ const PortalAdmin = () => {
 
   const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
   const deleteProperty = async (id: string) => {
-    const pw = window.prompt("Enter admin password to delete this property:");
+    const pw = window.prompt("Enter admin password to hide this property:");
     if (pw === null) return;
     if (pw !== "18444") { toast({ title: "Incorrect password", variant: "destructive" }); return; }
-    await supabase.from("portal_properties").delete().eq("id", id);
+    await supabase.from("portal_properties").update({ archived_at: new Date().toISOString() } as any).eq("id", id);
     if (selectedProperty?.id === id) setSelectedProperty(null);
     loadAll();
-    toast({ title: "Property deleted" });
+    toast({ title: "Property hidden", description: "It can be restored from the database if needed." });
   };
   const renameProperty = async (id: string, name: string) => {
     const { error } = await supabase.from("portal_properties").update({ name }).eq("id", id);
