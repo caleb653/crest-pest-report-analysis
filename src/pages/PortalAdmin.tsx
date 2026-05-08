@@ -92,6 +92,8 @@ const PortalAdmin = () => {
   const [messages, setMessages] = useState<PortalMessage[]>([]);
 
   const [selectedProperty, setSelectedProperty] = useState<PortalProperty | null>(null);
+  const [deletePropertyId, setDeletePropertyId] = useState<string | null>(null);
+  const [deletePropertyPw, setDeletePropertyPw] = useState("");
   const [selectedService, setSelectedService] = useState<PortalService | null>(null);
   const [globalTab, setGlobalTab] = useState("properties");
   // Unified admin view: render the editable PropertyDashboard directly so
@@ -340,11 +342,19 @@ const PortalAdmin = () => {
 
   const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
   const deleteProperty = async (id: string) => {
-    const pw = window.prompt("Enter admin password to hide this property:");
-    if (pw === null) return;
-    if (pw !== "18444") { toast({ title: "Incorrect password", variant: "destructive" }); return; }
+    setDeletePropertyId(id);
+    setDeletePropertyPw("");
+  };
+  const confirmDeleteProperty = async () => {
+    if (deletePropertyPw !== "18444") {
+      toast({ title: "Incorrect password", variant: "destructive" });
+      return;
+    }
+    const id = deletePropertyId!;
     await supabase.from("portal_properties").update({ archived_at: new Date().toISOString() } as any).eq("id", id);
     if (selectedProperty?.id === id) setSelectedProperty(null);
+    setDeletePropertyId(null);
+    setDeletePropertyPw("");
     loadAll();
     toast({ title: "Property hidden", description: "It can be restored from the database if needed." });
   };
