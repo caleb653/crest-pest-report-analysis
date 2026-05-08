@@ -339,7 +339,15 @@ const PortalAdmin = () => {
   };
 
   const deleteClient = async (id: string) => { await supabase.from("portal_clients").delete().eq("id", id); loadAll(); toast({ title: "Client deleted" }); };
-  const deleteProperty = async (id: string) => { await supabase.from("portal_properties").delete().eq("id", id); if (selectedProperty?.id === id) setSelectedProperty(null); loadAll(); toast({ title: "Property deleted" }); };
+  const deleteProperty = async (id: string) => {
+    const pw = window.prompt("Enter admin password to delete this property:");
+    if (pw === null) return;
+    if (pw !== "18444") { toast({ title: "Incorrect password", variant: "destructive" }); return; }
+    await supabase.from("portal_properties").delete().eq("id", id);
+    if (selectedProperty?.id === id) setSelectedProperty(null);
+    loadAll();
+    toast({ title: "Property deleted" });
+  };
   const renameProperty = async (id: string, name: string) => {
     const { error } = await supabase.from("portal_properties").update({ name }).eq("id", id);
     if (error) { toast({ title: "Rename failed", description: error.message, variant: "destructive" }); return; }
