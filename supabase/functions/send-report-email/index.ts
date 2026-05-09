@@ -48,7 +48,11 @@ const handler = async (req: Request): Promise<Response> => {
       reportType,
     }: SendReportRequest = await req.json();
 
-    if (!customerEmail) {
+    const sanitizeEmail = (e: string) => e.trim().replace(/[.\s,;]+$/, "");
+    const cleanCustomerEmail = customerEmail ? sanitizeEmail(customerEmail) : customerEmail;
+    const cleanCcEmails = ccEmails?.map(sanitizeEmail).filter(Boolean);
+
+    if (!cleanCustomerEmail) {
       return new Response(
         JSON.stringify({ error: "Customer email is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -145,7 +149,7 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
     `;
 
-    console.log("Sending email to:", customerEmail);
+    console.log("Sending email to:", cleanCustomerEmail);
 
     const finalSubject = emailSubject || `Crest Pest Control: Service Proposal`;
 
@@ -162,8 +166,8 @@ const handler = async (req: Request): Promise<Response> => {
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
       reply_to: replyToAddress,
-      to: [customerEmail],
-      ...(ccEmails && ccEmails.length > 0 ? { cc: ccEmails } : {}),
+      to: [cleanCustomerEmail],
+      ...(cleanCcEmails && cleanCcEmails.length > 0 ? { cc: cleanCcEmails } : {}),
       subject: finalSubject,
       html: emailHtml,
       ...(pdfBase64 ? {
