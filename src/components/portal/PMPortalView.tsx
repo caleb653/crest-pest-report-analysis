@@ -2331,19 +2331,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 technician={s.technician}
                                 attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
                                 communityFeedback={isFirst ? (() => {
-                                  // Community pest sightings submitted since
-                                  // the most recent completed visit. Used to
-                                  // brief the tech for the next service.
-                                  const lastDate = lastPast?.service_date ? new Date(lastPast.service_date).getTime() : 0;
+                                  // Show every open community pest sighting
+                                  // on the next upcoming visit so the board
+                                  // (and the tech) always see what's been
+                                  // submitted. They drop off only once the
+                                  // request is marked resolved.
                                   return (requests as any[])
                                     .filter((r) => {
                                       if (r.status === "resolved") return false;
                                       const isCommunity = r.request_type === "Community Pest Sighting" ||
                                         /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-                                      if (!isCommunity) return false;
-                                      if (!lastDate) return true;
-                                      const created = new Date(r.created_at).getTime();
-                                      return created >= lastDate;
+                                      return isCommunity;
                                     })
                                     .map((r) => ({
                                       id: r.id,
