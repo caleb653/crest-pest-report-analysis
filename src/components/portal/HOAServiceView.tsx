@@ -568,62 +568,6 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             </div>
           )}
 
-          {serviceRequests.length > 0 && !isUpcoming && (
-            <div className="rounded-xl border-2 border-sky-500/70 bg-sky-50/60 dark:bg-sky-500/[0.06] p-4 shadow-sm">
-              <div className="flex items-center gap-1.5 mb-2">
-                <ClipboardList className="w-4 h-4 text-sky-700 dark:text-sky-400" />
-                <p className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
-                  {isUpcoming
-                    ? `Service Requests (${serviceRequests.length})`
-                    : `Service Requests Addressed (${serviceRequests.length})`}
-                </p>
-              </div>
-              <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
-                {isUpcoming
-                  ? "Open resident service requests for this upcoming visit."
-                  : "Resident service requests that were addressed on this visit."}
-              </p>
-              <ul className="space-y-2">
-                {serviceRequests.map((r) => {
-                  const dateStr = (() => {
-                    try { return new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
-                    catch { return ""; }
-                  })();
-                  const cleanDesc = (r.description || "")
-                    .replace(/^\[(HOA SERVICE REQUEST|TREATMENT|INSPECTION|GENERAL)\]\s*/i, "")
-                    .trim();
-                  const photos = Array.isArray(r.photos) ? r.photos : [];
-                  return (
-                    <li key={r.id} className="rounded-md border border-sky-300/60 bg-background/70 p-2">
-                      <div className="flex items-start justify-between gap-2 mb-0.5">
-                        <p className="text-[13px] font-semibold text-foreground">
-                          {r.unit_number || r.request_type || "Service Request"}
-                          {r.pest_type ? <span className="text-muted-foreground font-normal"> — {r.pest_type}</span> : null}
-                          {r.location_type ? <span className="text-muted-foreground font-normal"> · {r.location_type}</span> : null}
-                        </p>
-                        {dateStr && <span className="text-[10px] text-muted-foreground shrink-0">{dateStr}</span>}
-                      </div>
-                      {cleanDesc && <p className="text-[12px] text-muted-foreground leading-snug whitespace-pre-wrap">{cleanDesc}</p>}
-                      {photos.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {photos.map((url: any, i: number) => {
-                            const src = typeof url === "string" ? url : url?.url;
-                            if (!src) return null;
-                            return (
-                              <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
-                                <img src={src} alt={`Request photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                              </a>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
           <div className="rounded-xl border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-4 shadow-sm">
             <div className="flex items-center gap-1.5 mb-2">
               <ClipboardList className="w-4 h-4 text-primary" />
