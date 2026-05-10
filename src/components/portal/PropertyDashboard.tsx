@@ -1441,31 +1441,40 @@ const PropertyDashboard = ({
         : {};
     delete (existingReport as any).completion_draft;
 
-    // ─── Snapshot Community Pest Sightings onto THIS completed visit so they
-    //     stay attached to the past service that addressed them, then mark
-    //     them resolved so they no longer bleed into the next upcoming. ───
+    // ─── Snapshot every open submission (Community Pest Sightings AND
+    //     Service Requests) onto THIS completed visit so they stay attached
+    //     to the past service that addressed them. They are a snapshot in
+    //     time — once a visit closes, they MUST stop showing up on the next
+    //     upcoming service. ───
     let addressedCommunitySightings: any[] = [];
+    let addressedServiceRequests: any[] = [];
     try {
-      const openCommunity = (pendingRequests as any[]).filter((r) => {
+      const openRequests = (pendingRequests as any[]).filter((r) => {
         if (!r) return false;
-        if (r.status === "resolved" || r.status === "completed") return false;
-        const isCommunity =
-          r.request_type === "Community Pest Sighting" ||
-          /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-        return isCommunity;
+        return r.status !== "resolved" && r.status !== "completed";
       });
-      addressedCommunitySightings = openCommunity.map((r) => ({
+      const isCommunityRow = (r: any) =>
+        r.request_type === "Community Pest Sighting" ||
+        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+      const mapRow = (r: any) => ({
         id: r.id,
         created_at: r.created_at,
         pest_type: r.pest_type,
         location_type: r.location_type,
         description: r.description,
-      }));
+        unit_number: r.unit_number,
+        request_type: r.request_type,
+      });
+      addressedCommunitySightings = openRequests.filter(isCommunityRow).map(mapRow);
+      addressedServiceRequests = openRequests.filter((r) => !isCommunityRow(r)).map(mapRow);
       if (addressedCommunitySightings.length > 0) {
         (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
       }
+      if (addressedServiceRequests.length > 0) {
+        (existingReport as any).service_requests_addressed = addressedServiceRequests;
+      }
     } catch (e) {
-      console.warn("snapshot community sightings failed", e);
+      console.warn("snapshot open requests failed", e);
     }
 
     await supabase.from("portal_services").update({
@@ -1524,18 +1533,22 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
-    // ─── Resolve every open Community Pest Sighting we just snapshotted so
-    //     they stop showing up on the next upcoming visit. ───
+    // ─── Resolve every open submission we just snapshotted (community +
+    //     service requests) so they stop bleeding into the next upcoming
+    //     visit. They live on the past service from now on. ───
     try {
-      const sightingIds = addressedCommunitySightings.map((s) => s.id).filter(Boolean);
-      if (sightingIds.length > 0) {
+      const allIds = [
+        ...addressedCommunitySightings.map((s) => s.id),
+        ...addressedServiceRequests.map((s) => s.id),
+      ].filter(Boolean);
+      if (allIds.length > 0) {
         await supabase
           .from("portal_requests")
           .update({ status: "resolved", updated_at: new Date().toISOString() } as any)
-          .in("id", sightingIds);
+          .in("id", allIds);
       }
     } catch (e) {
-      console.warn("resolve community sightings failed", e);
+      console.warn("resolve open requests failed", e);
     }
 
     // ─── Dedupe: delete any OTHER scheduled service rows for this property
