@@ -1567,6 +1567,7 @@ const PropertyDashboard = ({
           .from("portal_requests")
           .update({ status: "resolved", updated_at: new Date().toISOString() } as any)
           .in("id", allIds);
+        setPendingRequests(prev => prev.filter((r: any) => !allIds.includes(r.id)));
       }
     } catch (e) {
       console.warn("resolve open requests failed", e);
