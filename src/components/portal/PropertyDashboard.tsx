@@ -5126,14 +5126,25 @@ const PropertyDashboard = ({
                             // Make sure the active save uses dateValue regardless of which row was last focused
                             const rescheduleDateLocal = dateValue;
                             try {
-                                    if (isProjected) {
-                                      // No DB row yet — create a real scheduled service so
-                                      // the projection anchors on this confirmed date.
-                                      // CRITICAL: carry over any in-progress edits the user
-                                      // already typed into the projected card (unit rows,
-                                      // products, technician, summary, etc.) so scheduling a
-                                      // date NEVER wipes data the admin already filled out.
-                                      const inProgress = completionData[s.id];
+                                     // CRITICAL: a projected card may have been silently
+                                     // materialized into a real DB row already (by an
+                                     // earlier photo upload, map edit, or office note).
+                                     // In that case `s.id` will be a real UUID even
+                                     // though the closure-captured `isProjected` flag is
+                                     // still `true`. We MUST detect that and UPDATE the
+                                     // existing row instead of INSERTing a new one —
+                                     // otherwise the photos/map/notes already saved get
+                                     // stranded on the original row and the schedule
+                                     // creates a duplicate empty row.
+                                     const idIsRealRow = !!s.id && !String(s.id).startsWith("projected-");
+                                     if (isProjected && !idIsRealRow) {
+                                       // No DB row yet — create a real scheduled service so
+                                       // the projection anchors on this confirmed date.
+                                       // CRITICAL: carry over any in-progress edits the user
+                                       // already typed into the projected card (unit rows,
+                                       // products, technician, summary, etc.) so scheduling a
+                                       // date NEVER wipes data the admin already filled out.
+                                       const inProgress = completionData[s.id];
                                       const carriedUnitDetails = Array.isArray(inProgress?.unitRows)
                                         ? inProgress!.unitRows
                                             .filter((r: any) => String(r?.unit_number || "").trim())
@@ -5169,12 +5180,16 @@ const PropertyDashboard = ({
                                           return next;
                                         });
                                       }
-                                    } else {
-                                      await supabase
-                                        .from("portal_services")
-                                        .update({ service_date: rescheduleDate })
-                                        .eq("id", s.id);
-                                    }
+                                     } else {
+                                       // Either a normally-scheduled row OR a projected
+                                       // card that was already materialized. Update its
+                                       // date in-place so attachments/map_data/office
+                                       // notes/etc. all stay attached to the same row.
+                                       await supabase
+                                         .from("portal_services")
+                                         .update({ service_date: rescheduleDateLocal })
+                                         .eq("id", s.id);
+                                     }
                                     toast({ title: isProjected ? "Visit scheduled" : "Service rescheduled", description: `Next visit set to ${formatDate(rescheduleDateLocal)}` });
                                     setReschedulingId(null);
                                     onRefresh();
