@@ -568,7 +568,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             </div>
           )}
 
-          {serviceRequests.length > 0 && (
+          {serviceRequests.length > 0 && !isUpcoming && (
             <div className="rounded-xl border-2 border-sky-500/70 bg-sky-50/60 dark:bg-sky-500/[0.06] p-4 shadow-sm">
               <div className="flex items-center gap-1.5 mb-2">
                 <ClipboardList className="w-4 h-4 text-sky-700 dark:text-sky-400" />
