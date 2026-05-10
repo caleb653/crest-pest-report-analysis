@@ -1911,23 +1911,21 @@ const PropertyDashboard = ({
    */
   const saveServiceMapData = async (serviceId: string, canvasData: string) => {
     if (!serviceId || !canvasData) return;
+    let realId = serviceId;
     if (serviceId.startsWith("projected-")) {
-      toast({
-        title: "Schedule this visit first",
-        description: "Click Reschedule to pick a date — map edits can only be saved on a scheduled service.",
-        variant: "destructive",
-      });
-      return;
+      const newId = await materializeProjected(serviceId);
+      if (!newId) return;
+      realId = newId;
     }
     try {
       const parsed = JSON.parse(canvasData);
-      const svc = (propServices as any[]).find((s) => s.id === serviceId);
+      const svc = (propServices as any[]).find((s) => s.id === realId);
       const existing = (svc?.report_data && typeof svc.report_data === "object") ? svc.report_data : {};
       const merged = { ...existing, service_map_data: parsed };
       const { error } = await supabase
         .from("portal_services")
         .update({ report_data: merged })
-        .eq("id", serviceId);
+        .eq("id", realId);
       if (error) {
         toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
       } else {
@@ -1946,7 +1944,8 @@ const PropertyDashboard = ({
   const resetServiceMapData = async (serviceId: string) => {
     if (!serviceId) return;
     if (serviceId.startsWith("projected-")) {
-      toast({ title: "Schedule this visit first", description: "Click Reschedule to pick a date.", variant: "destructive" });
+      // Nothing persisted yet — just refresh local view.
+      await onRefresh?.();
       return;
     }
     try {
