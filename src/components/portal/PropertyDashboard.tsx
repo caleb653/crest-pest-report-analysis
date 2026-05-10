@@ -2788,6 +2788,32 @@ const PropertyDashboard = ({
               }
               return [];
             })()}
+            serviceRequests={(() => {
+              if (!isUpcoming) {
+                const snap = (s as any)?.report_data?.service_requests_addressed;
+                return Array.isArray(snap) ? snap : [];
+              }
+              if (isFirstUpcoming) {
+                return (pendingRequests as any[])
+                  .filter((r) => {
+                    if (r.status === "resolved" || r.status === "completed") return false;
+                    const isCommunity = r.request_type === "Community Pest Sighting" ||
+                      /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                    return !isCommunity;
+                  })
+                  .map((r) => ({
+                    id: r.id,
+                    created_at: r.created_at,
+                    pest_type: r.pest_type,
+                    location_type: r.location_type,
+                    description: r.description,
+                    unit_number: r.unit_number,
+                    request_type: r.request_type,
+                    photos: Array.isArray(r.photos) ? r.photos : [],
+                  }));
+              }
+              return [];
+            })()}
           />
           {/* HOA upcoming: full-width Complete Service action.
               Flips status -> "completed", auto-rolls flagged units into a
