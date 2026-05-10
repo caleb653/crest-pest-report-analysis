@@ -107,9 +107,9 @@ export interface HOAServiceViewProps {
 
   /** Photos & videos attached to this appointment.
    *  Each entry: { url, type: 'image' | 'video', name? }. Visible to PM. */
-  attachments?: Array<{ url: string; type?: "image" | "video"; name?: string }>;
+  attachments?: Array<{ url: string; type?: "image" | "video"; name?: string; caption?: string }>;
   /** Admin-only — persist updated attachments list to portal_services.attachments. */
-  onChangeAttachments?: (next: Array<{ url: string; type?: "image" | "video"; name?: string }>) => Promise<void> | void;
+  onChangeAttachments?: (next: Array<{ url: string; type?: "image" | "video"; name?: string; caption?: string }>) => Promise<void> | void;
 
   /** Admin-only private notes for this single appointment.
    *  Stored on portal_services.office_notes. NEVER passed to PM mode. */
@@ -271,6 +271,11 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     if (!onChangeAttachments) return;
     if (!window.confirm("Remove this attachment?")) return;
     const next = attachments.filter((_, i) => i !== idx);
+    await onChangeAttachments(next);
+  };
+  const updateAttachmentCaption = async (idx: number, caption: string) => {
+    if (!onChangeAttachments) return;
+    const next = attachments.map((att, i) => (i === idx ? { ...att, caption } : att));
     await onChangeAttachments(next);
   };
 
@@ -742,32 +747,48 @@ export function HOAServiceView(props: HOAServiceViewProps) {
               {attachments.map((att, i) => {
                 const isVideo = att.type === "video" || /\.(mp4|webm|mov|m4v)$/i.test(att.url);
                 return (
-                  <div key={i} className="relative group rounded-md overflow-hidden border bg-background">
-                    {isVideo ? (
-                      <video
-                        src={att.url}
-                        controls
-                        className="w-full h-32 object-cover bg-black"
-                      />
-                    ) : (
-                      <a href={att.url} target="_blank" rel="noopener noreferrer">
-                        <img src={att.url} alt={att.name || "Attachment"} className="w-full h-32 object-cover" />
-                      </a>
-                    )}
-                    <div className="absolute top-1 left-1 bg-background/90 rounded px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-1">
-                      {isVideo ? <Film className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
-                      {isVideo ? "Video" : "Photo"}
+                  <div key={i} className="flex flex-col gap-1.5">
+                    <div className="relative group rounded-md overflow-hidden border bg-background">
+                      {isVideo ? (
+                        <video
+                          src={att.url}
+                          controls
+                          className="w-full h-32 object-cover bg-black"
+                        />
+                      ) : (
+                        <a href={att.url} target="_blank" rel="noopener noreferrer">
+                          <img src={att.url} alt={att.caption || att.name || "Attachment"} className="w-full h-32 object-cover" />
+                        </a>
+                      )}
+                      <div className="absolute top-1 left-1 bg-background/90 rounded px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                        {isVideo ? <Film className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                        {isVideo ? "Video" : "Photo"}
+                      </div>
+                      {canEditAttachments && (
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(i)}
+                          className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
                     </div>
-                    {canEditAttachments && (
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(i)}
-                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="Remove"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
+                    {canEditAttachments ? (
+                      <input
+                        type="text"
+                        defaultValue={att.caption || ""}
+                        placeholder="Add caption / context…"
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (att.caption || "")) updateAttachmentCaption(i, val);
+                        }}
+                        className="w-full text-[11px] px-2 py-1 rounded border bg-background focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                    ) : att.caption ? (
+                      <p className="text-[11px] text-foreground/80 leading-snug px-0.5 whitespace-pre-wrap">{att.caption}</p>
+                    ) : null}
                   </div>
                 );
               })}
