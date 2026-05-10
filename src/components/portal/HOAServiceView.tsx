@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2, Upload, X, Film, Flag, AlertTriangle } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,12 +27,6 @@ import { useState, useEffect, useRef } from "react";
  * and the PM portal (PMPortalView). Pass `mode="admin"` to enable inline map
  * editing and findings editing; PM uses the read-only defaults.
  */
-
-const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Treated" },
-  { value: "Not Treated",         label: "Not Treated" },
-];
 
 export interface HOAUnitItem {
   unit_number: string;
