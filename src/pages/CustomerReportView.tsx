@@ -1399,34 +1399,8 @@ export default function CustomerReportView() {
 
       {portalVideoAttached && renderPlayableVideo("client-portal-walkthrough", "Additional Video", "/videos/client-portal-video.mp4", "Client Portal Walkthrough")}
 
-      {/* Bottom-uploaded property video — render at the VERY end so it sits below
-          all proposal content, photos, maps, and notices. */}
-      {videoUrl2 && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
-          {renderHeader("Property Video")}
-          <main className="p-4">
-            <div className="rounded-lg overflow-hidden border border-border relative group">
-              <video
-                id="bottom-property-video"
-                ref={bottomVideoRef}
-                src={videoUrl2}
-                controls
-                preload="metadata"
-                className="w-full h-auto max-h-[70vh] relative bg-muted"
-                playsInline
-                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={(e) => { setBottomVideoActivated(true); const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-              />
-              <div data-bottom-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                <p className="text-2xl font-bold text-foreground tracking-wide">Property Video</p>
-                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-              </div>
-            </div>
-          </main>
-        </div>
-      )}
+      {/* Bottom-uploaded property video — render after all proposal content, photos, maps, and notices. */}
+      {videoUrl2 && renderPlayableVideo("bottom-property-video", "Property Video", videoUrl2, "Property Video")}
 
       <div className="max-w-5xl mx-auto mt-8 px-4">
         <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
