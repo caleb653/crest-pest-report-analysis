@@ -1909,6 +1909,76 @@ const PropertyDashboard = ({
    * Per-service drawings/edits live on `portal_services.report_data.service_map_data`
    * — they show up ONLY for that one service and never bleed into the next visit.
    */
+  /**
+   * Convert an in-memory "projected-N" service into a real DB row using the
+   * projected service_date already shown on screen. Returns the new id, or
+   * null on failure. Lets the user save photos / map edits / office notes
+   * BEFORE explicitly clicking "Schedule" — we just lock in the projection's
+   * date so the row exists in the database.
+   */
+  const materializeProjected = async (serviceId: string): Promise<string | null> => {
+    const svc = (allUpcoming as any[]).find((s) => s.id === serviceId)
+      || (propServices as any[]).find((s) => s.id === serviceId);
+    if (!svc) return null;
+    if (!svc.service_date) {
+      toast({
+        title: "Couldn't auto-schedule this visit",
+        description: "Pick a date and try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    try {
+      const inProgress = completionDataRef.current?.[serviceId];
+      const carriedUnitDetails = Array.isArray(inProgress?.unitRows)
+        ? inProgress!.unitRows
+            .filter((r: any) => String(r?.unit_number || "").trim())
+            .map((r: any) => ({ ...r }))
+        : (Array.isArray(svc.unit_details) ? svc.unit_details : []);
+      const carriedProducts = Array.isArray(inProgress?.products) && inProgress!.products.length > 0
+        ? inProgress!.products
+        : (Array.isArray(svc.products_used) ? svc.products_used : []);
+      const { data: inserted, error } = await supabase.from("portal_services").insert({
+        property_id: property.id,
+        service_type: svc.service_type || "General Pest Control",
+        service_date: svc.service_date,
+        technician: inProgress?.technician || svc.technician || null,
+        status: "scheduled",
+        units_planned: Array.isArray(svc.units_planned) ? svc.units_planned : [],
+        unit_details: carriedUnitDetails,
+        products_used: carriedProducts,
+        summary: inProgress?.summary || null,
+        findings: inProgress?.findings || null,
+        notes: inProgress?.notes || null,
+        frequency_days: propertyFrequencyDays,
+      } as any).select("id").single();
+      if (error || !inserted?.id) {
+        toast({ title: "Couldn't save", description: error?.message || "Unknown error", variant: "destructive" });
+        return null;
+      }
+      const newId = inserted.id as string;
+      // Mutate the in-memory projected row so subsequent saves in this same
+      // render reuse the real id without waiting for onRefresh.
+      (svc as any).id = newId;
+      (svc as any).isProjected = false;
+      // Migrate any in-progress completion buffer keyed by the projected id.
+      if (inProgress) {
+        setCompletionData((prev) => {
+          const next = { ...prev };
+          next[newId] = inProgress;
+          delete next[serviceId];
+          return next;
+        });
+      }
+      // Refresh in the background so the rest of the tree picks up the row.
+      onRefresh?.();
+      return newId;
+    } catch (e: any) {
+      toast({ title: "Couldn't save", description: e?.message || "Unknown error", variant: "destructive" });
+      return null;
+    }
+  };
+
   const saveServiceMapData = async (serviceId: string, canvasData: string) => {
     if (!serviceId || !canvasData) return;
     let realId = serviceId;
