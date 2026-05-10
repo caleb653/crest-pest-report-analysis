@@ -86,11 +86,22 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
-const isCommunityPestSighting = (r: any) =>
+type RequestSnapshotRow = {
+  id?: string;
+  created_at?: string;
+  pest_type?: string | null;
+  location_type?: string | null;
+  description?: string | null;
+  unit_number?: string | null;
+  request_type?: string | null;
+  photos?: unknown;
+};
+
+const isCommunityPestSighting = (r: RequestSnapshotRow | null | undefined) =>
   r?.request_type === "Community Pest Sighting" ||
   /^\[COMMUNITY SIGHTING\]/i.test(String(r?.description || ""));
 
-const toAddressedRequestSnapshot = (r: any) => ({
+const toAddressedRequestSnapshot = (r: RequestSnapshotRow) => ({
   id: r.id,
   created_at: r.created_at,
   pest_type: r.pest_type,
