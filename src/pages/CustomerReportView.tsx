@@ -846,27 +846,7 @@ export default function CustomerReportView() {
       )}
 
       {videoUrl2 && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
-          {renderHeader("Additional Video")}
-          <main className="p-4">
-            <div className="rounded-lg overflow-hidden border border-border relative group">
-              <video
-                src={videoUrl2}
-                controls
-                className="w-full h-auto max-h-[70vh] relative"
-                playsInline
-                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-              />
-              <div data-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                <p className="text-2xl font-bold text-foreground tracking-wide">Client Portal Walkthrough</p>
-                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-              </div>
-            </div>
-          </main>
-        </div>
+        null
       )}
 
       <div className="max-w-5xl mx-auto">
@@ -1405,6 +1385,30 @@ export default function CustomerReportView() {
               <p className="text-xs text-muted-foreground text-center mt-2">
                 A short walkthrough of your Client Portal.
               </p>
+            </div>
+          </main>
+        </div>
+      )}
+
+      {/* Bottom-uploaded property video — render at the VERY end so it sits below
+          all proposal content, photos, maps, and notices. */}
+      {videoUrl2 && (
+        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
+          {renderHeader("Property Video")}
+          <main className="p-4">
+            <div className="rounded-lg overflow-hidden border border-border relative group">
+              <video
+                src={videoUrl2}
+                controls
+                className="w-full h-auto max-h-[70vh] relative"
+                playsInline
+                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+              />
+              <div data-bottom-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
+              </div>
             </div>
           </main>
         </div>
