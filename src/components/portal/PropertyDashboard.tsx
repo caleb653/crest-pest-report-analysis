@@ -1461,50 +1461,39 @@ const PropertyDashboard = ({
 
     // ─── Snapshot every open submission (Community Pest Sightings AND
     //     Service Requests) onto THIS completed visit so they stay attached
-    //     to the past service that addressed them. They are a snapshot in
-    //     time — once a visit closes, they MUST stop showing up on the next
-    //     upcoming service. ───
+    //     to the past service that addressed them. Re-query here instead of
+    //     trusting component state so a sighting submitted moments before
+    //     completion cannot be missed by stale `pendingRequests`. ───
     let addressedCommunitySightings: any[] = [];
     let addressedServiceRequests: any[] = [];
     try {
-      const openRequests = (pendingRequests as any[]).filter((r) => {
+      const { data: latestRequests } = await supabase
+        .from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .in("status", ["pending", "in_progress"])
+        .order("created_at", { ascending: false });
+      const openRequests = ((latestRequests || pendingRequests) as any[]).filter((r) => {
         if (!r) return false;
         return r.status !== "resolved" && r.status !== "completed";
-      });
-      const isCommunityRow = (r: any) =>
-        r.request_type === "Community Pest Sighting" ||
-        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-      const mapRow = (r: any) => ({
-        id: r.id,
-        created_at: r.created_at,
-        pest_type: r.pest_type,
-        location_type: r.location_type,
-        description: r.description,
-        unit_number: r.unit_number,
-        request_type: r.request_type,
-        photos: Array.isArray(r.photos) ? r.photos : [],
       });
       const completedUnitRequestIds = new Set(
         unitRows
           .map((r: any) => r.request_id || r.request?.id)
           .filter(Boolean)
       );
-      addressedCommunitySightings = openRequests.filter(isCommunityRow).map(mapRow);
+      addressedCommunitySightings = openRequests.filter(isCommunityPestSighting).map(toAddressedRequestSnapshot);
       addressedServiceRequests = openRequests
-        .filter((r) => !isCommunityRow(r))
+        .filter((r) => !isCommunityPestSighting(r))
         .filter((r) => {
           if (completedUnitRequestIds.has(r.id)) return true;
           const requestUnit = String(r.unit_number || "").trim();
           if (!requestUnit) return true;
           return unitRows.some((u: any) => String(u.unit_number || "").trim() === requestUnit);
         })
-        .map(mapRow);
-      if (addressedCommunitySightings.length > 0) {
-        (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
-      }
-      if (addressedServiceRequests.length > 0) {
-        (existingReport as any).service_requests_addressed = addressedServiceRequests;
-      }
+        .map(toAddressedRequestSnapshot);
+      (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
+      (existingReport as any).service_requests_addressed = addressedServiceRequests;
     } catch (e) {
       console.warn("snapshot open requests failed", e);
     }
