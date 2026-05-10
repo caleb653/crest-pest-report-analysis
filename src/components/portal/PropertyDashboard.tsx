@@ -361,7 +361,7 @@ const PropertyDashboard = ({
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   type CompletionDraft = {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -1265,6 +1265,7 @@ const PropertyDashboard = ({
             status: r.status || "To Be Treated",
             notes: r.notes || "",
             source: r.source || "planned",
+            request_id: r.request_id || r.request?.id || undefined,
             follow_up_needed: r.follow_up_needed === true,
             sanitization_concern: r.sanitization_concern === true,
             photos: Array.isArray(r.photos) ? r.photos : [],
@@ -1312,6 +1313,7 @@ const PropertyDashboard = ({
             status: "To Be Treated",
             notes: ctx?.notes || "",
             source: sourceFromCtx(u, ctx?.source),
+            request_id: ctx?.request?.id,
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "new-work-order" }];
@@ -1345,6 +1347,7 @@ const PropertyDashboard = ({
             status: "To Be Treated",
             notes: ctx?.notes || "",
             source: ctx?.source === "work_order" ? "new-work-order" : ctx?.source === "follow_up" ? "follow-up" : "planned",
+            request_id: ctx?.request?.id,
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }];
@@ -1464,9 +1467,23 @@ const PropertyDashboard = ({
         description: r.description,
         unit_number: r.unit_number,
         request_type: r.request_type,
+        photos: Array.isArray(r.photos) ? r.photos : [],
       });
+      const completedUnitRequestIds = new Set(
+        unitRows
+          .map((r: any) => r.request_id || r.request?.id)
+          .filter(Boolean)
+      );
       addressedCommunitySightings = openRequests.filter(isCommunityRow).map(mapRow);
-      addressedServiceRequests = openRequests.filter((r) => !isCommunityRow(r)).map(mapRow);
+      addressedServiceRequests = openRequests
+        .filter((r) => !isCommunityRow(r))
+        .filter((r) => {
+          if (completedUnitRequestIds.has(r.id)) return true;
+          const requestUnit = String(r.unit_number || "").trim();
+          if (!requestUnit) return true;
+          return unitRows.some((u: any) => String(u.unit_number || "").trim() === requestUnit);
+        })
+        .map(mapRow);
       if (addressedCommunitySightings.length > 0) {
         (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
       }
@@ -2629,6 +2646,7 @@ const PropertyDashboard = ({
       const hoaUnits: HOAUnitItem[] = (isUpcoming
         ? merged.unitContexts.map((uc) => ({
             unit_number: String(uc.unit_number || "").trim(),
+            status: (completionData[s.id]?.unitRows || []).find((r: any) => String(r.unit_number || "").trim() === String(uc.unit_number || "").trim())?.status || "To Be Treated",
             follow_up_needed: uc.source === "follow_up",
             target_pest: uc.target_pest || (uc as any)?.request?.pest_type || "",
           }))
@@ -2689,6 +2707,16 @@ const PropertyDashboard = ({
             products={products}
             displayProducts={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
+            onChangeUnitStatus={(unitNumber, status) => {
+              const draft = completionDataRef.current[s.id] || ensureCompletionDraft(s, merged.unitContexts);
+              const normalized = String(unitNumber || "").trim();
+              const hasRow = draft.unitRows.some((r: any) => String(r.unit_number || "").trim() === normalized);
+              const nextRows = hasRow
+                ? draft.unitRows.map((r: any) => String(r.unit_number || "").trim() === normalized ? { ...r, status } : r)
+                : [...draft.unitRows, { unit_number: normalized, target_pest: "", findings: "", pest_activity: "None", products_used: [], status, notes: "", source: "planned" }];
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: { ...draft, unitRows: nextRows } };
+              setCompletionData(prev => ({ ...prev, [s.id]: { ...(prev[s.id] || draft), unitRows: nextRows } }));
+            }}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
             attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
@@ -2756,6 +2784,32 @@ const PropertyDashboard = ({
                     pest_type: r.pest_type,
                     location_type: r.location_type,
                     description: r.description,
+                  }));
+              }
+              return [];
+            })()}
+            serviceRequests={(() => {
+              if (!isUpcoming) {
+                const snap = (s as any)?.report_data?.service_requests_addressed;
+                return Array.isArray(snap) ? snap : [];
+              }
+              if (isFirstUpcoming) {
+                return (pendingRequests as any[])
+                  .filter((r) => {
+                    if (r.status === "resolved" || r.status === "completed") return false;
+                    const isCommunity = r.request_type === "Community Pest Sighting" ||
+                      /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                    return !isCommunity;
+                  })
+                  .map((r) => ({
+                    id: r.id,
+                    created_at: r.created_at,
+                    pest_type: r.pest_type,
+                    location_type: r.location_type,
+                    description: r.description,
+                    unit_number: r.unit_number,
+                    request_type: r.request_type,
+                    photos: Array.isArray(r.photos) ? r.photos : [],
                   }));
               }
               return [];
@@ -2915,6 +2969,48 @@ const PropertyDashboard = ({
                               <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
                             </a>
                           ))}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
+
+        {!isUpcoming && !isHOA && (() => {
+          const addressed = [
+            ...(((s as any)?.report_data?.community_sightings_addressed || []) as any[]),
+            ...(((s as any)?.report_data?.service_requests_addressed || []) as any[]),
+          ];
+          if (addressed.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                  Requests Addressed On This Service ({addressed.length})
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {addressed.map((r: any) => {
+                  const photos = Array.isArray(r.photos) ? r.photos : [];
+                  return (
+                    <li key={r.id} className="rounded-md border border-sky-300/70 bg-background/80 p-2 text-sm leading-snug">
+                      <div className="font-semibold text-foreground">
+                        {r.unit_number || r.request_type || "Request"}
+                        {r.pest_type ? <span className="font-normal text-muted-foreground"> — {r.pest_type}</span> : null}
+                        {r.location_type ? <span className="font-normal text-muted-foreground"> · {r.location_type}</span> : null}
+                      </div>
+                      {r.description && <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-0.5">{String(r.description).replace(/^\[[^\]]+\]\s*/i, "")}</p>}
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {photos.map((url: any, i: number) => {
+                            const src = typeof url === "string" ? url : url?.url;
+                            if (!src) return null;
+                            return <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted"><img src={src} alt={`Request photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" /></a>;
+                          })}
                         </div>
                       )}
                     </li>
@@ -3232,6 +3328,7 @@ const PropertyDashboard = ({
                         : ctx.source === "follow_up"
                           ? "follow-up"
                           : ctx.source,
+                      request_id: ctx.request?.id,
                     };
                   });
                 if (additions.length === 0) return prev;

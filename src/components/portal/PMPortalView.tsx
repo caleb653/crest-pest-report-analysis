@@ -951,6 +951,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               const snap = (s as any)?.report_data?.community_sightings_addressed;
               return Array.isArray(snap) ? snap : [];
             })()}
+            serviceRequests={(() => {
+              const snap = (s as any)?.report_data?.service_requests_addressed;
+              return Array.isArray(snap) ? snap : [];
+            })()}
           />
         </div>
       );
@@ -1005,6 +1009,33 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   )
                 )}
               </div>
+            </div>
+          );
+        })()}
+        {(() => {
+          const addressed = [
+            ...(((s as any)?.report_data?.community_sightings_addressed || []) as any[]),
+            ...(((s as any)?.report_data?.service_requests_addressed || []) as any[]),
+          ];
+          if (addressed.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <p className="text-xs font-bold text-sky-900 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                Requests Addressed On This Service ({addressed.length})
+              </p>
+              <ul className="space-y-2">
+                {addressed.map((r: any) => (
+                  <li key={r.id} className="rounded-md border border-sky-300/70 bg-background/80 p-2">
+                    <div className="font-semibold text-foreground">
+                      {r.unit_number || r.request_type || "Request"}
+                      {r.pest_type ? <span className="font-normal text-muted-foreground"> — {r.pest_type}</span> : null}
+                      {r.location_type ? <span className="font-normal text-muted-foreground"> · {r.location_type}</span> : null}
+                    </div>
+                    {r.description && <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-0.5">{String(r.description).replace(/^\[[^\]]+\]\s*/i, "")}</p>}
+                  </li>
+                ))}
+              </ul>
             </div>
           );
         })()}
@@ -2353,6 +2384,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       pest_type: r.pest_type,
                                       location_type: r.location_type,
                                       description: r.description,
+                                    }));
+                                })() : []}
+                                serviceRequests={isFirst ? (() => {
+                                  return (requests as any[])
+                                    .filter((r) => {
+                                      if (r.status === "resolved" || r.status === "completed") return false;
+                                      const isCommunity = r.request_type === "Community Pest Sighting" ||
+                                        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                                      return !isCommunity;
+                                    })
+                                    .map((r) => ({
+                                      id: r.id,
+                                      created_at: r.created_at,
+                                      pest_type: r.pest_type,
+                                      location_type: r.location_type,
+                                      description: r.description,
+                                      unit_number: r.unit_number,
+                                      request_type: r.request_type,
+                                      photos: Array.isArray(r.photos) ? r.photos : [],
                                     }));
                                 })() : []}
                                 units={(unitContexts.length > 0

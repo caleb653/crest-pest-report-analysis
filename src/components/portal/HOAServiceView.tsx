@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2, Upload, X, Film, Flag, AlertTriangle } from "lucide-react";
 import { MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -28,12 +27,6 @@ import { useState, useEffect, useRef } from "react";
  * and the PM portal (PMPortalView). Pass `mode="admin"` to enable inline map
  * editing and findings editing; PM uses the read-only defaults.
  */
-
-const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "To Be Treated",       label: "To Be Treated" },
-  { value: "Treated - Complete",  label: "Treated" },
-  { value: "Not Treated",         label: "Not Treated" },
-];
 
 export interface HOAUnitItem {
   unit_number: string;
@@ -103,6 +96,19 @@ export interface HOAServiceViewProps {
     pest_type?: string | null;
     location_type?: string | null;
     description?: string | null;
+    photos?: any;
+  }>;
+
+  /** Service requests / work orders attached to this appointment. Upcoming = open requests, past = addressed snapshot. */
+  serviceRequests?: Array<{
+    id: string;
+    created_at: string;
+    pest_type?: string | null;
+    location_type?: string | null;
+    description?: string | null;
+    unit_number?: string | null;
+    request_type?: string | null;
+    photos?: any;
   }>;
 
   /** Photos & videos attached to this appointment.
@@ -143,6 +149,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onChangeProducts,
     onDraftChange,
     communityFeedback = [],
+    serviceRequests = [],
   } = props;
 
   const {
@@ -528,6 +535,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                   })();
                   // Strip the "[COMMUNITY SIGHTING] " tag the form prepends.
                   const cleanDesc = (f.description || "").replace(/^\[COMMUNITY SIGHTING\]\s*/i, "").trim();
+                  const photos = Array.isArray(f.photos) ? f.photos : [];
                   return (
                     <li key={f.id} className="rounded-md border border-amber-300/60 bg-background/70 p-2">
                       <div className="flex items-start justify-between gap-2 mb-0.5">
@@ -539,6 +547,75 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                       </div>
                       {cleanDesc && (
                         <p className="text-[12px] text-muted-foreground leading-snug whitespace-pre-wrap">{cleanDesc}</p>
+                      )}
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {photos.map((url: any, i: number) => {
+                            const src = typeof url === "string" ? url : url?.url;
+                            if (!src) return null;
+                            return (
+                              <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                                <img src={src} alt={`Sighting photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {serviceRequests.length > 0 && (
+            <div className="rounded-xl border-2 border-sky-500/70 bg-sky-50/60 dark:bg-sky-500/[0.06] p-4 shadow-sm">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-4 h-4 text-sky-700 dark:text-sky-400" />
+                <p className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">
+                  {isUpcoming
+                    ? `Service Requests (${serviceRequests.length})`
+                    : `Service Requests Addressed (${serviceRequests.length})`}
+                </p>
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
+                {isUpcoming
+                  ? "Open resident service requests for this upcoming visit."
+                  : "Resident service requests that were addressed on this visit."}
+              </p>
+              <ul className="space-y-2">
+                {serviceRequests.map((r) => {
+                  const dateStr = (() => {
+                    try { return new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+                    catch { return ""; }
+                  })();
+                  const cleanDesc = (r.description || "")
+                    .replace(/^\[(HOA SERVICE REQUEST|TREATMENT|INSPECTION|GENERAL)\]\s*/i, "")
+                    .trim();
+                  const photos = Array.isArray(r.photos) ? r.photos : [];
+                  return (
+                    <li key={r.id} className="rounded-md border border-sky-300/60 bg-background/70 p-2">
+                      <div className="flex items-start justify-between gap-2 mb-0.5">
+                        <p className="text-[13px] font-semibold text-foreground">
+                          {r.unit_number || r.request_type || "Service Request"}
+                          {r.pest_type ? <span className="text-muted-foreground font-normal"> — {r.pest_type}</span> : null}
+                          {r.location_type ? <span className="text-muted-foreground font-normal"> · {r.location_type}</span> : null}
+                        </p>
+                        {dateStr && <span className="text-[10px] text-muted-foreground shrink-0">{dateStr}</span>}
+                      </div>
+                      {cleanDesc && <p className="text-[12px] text-muted-foreground leading-snug whitespace-pre-wrap">{cleanDesc}</p>}
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {photos.map((url: any, i: number) => {
+                            const src = typeof url === "string" ? url : url?.url;
+                            if (!src) return null;
+                            return (
+                              <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                                <img src={src} alt={`Request photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                              </a>
+                            );
+                          })}
+                        </div>
                       )}
                     </li>
                   );
@@ -672,23 +749,26 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                         · {u.target_pest}
                       </span>
                     )}
-                    <Select
-                      value={u.status || "To Be Treated"}
-                      onValueChange={(v) =>
-                        onChangeUnitStatus!(u.unit_number, v)
-                      }
-                    >
-                      <SelectTrigger className="h-6 text-[11px] px-1.5 border-0 bg-transparent w-auto min-w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TREATMENT_STATUS_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
+                    <div className="inline-flex rounded-full border border-border bg-muted/30 p-0.5">
+                      {[
+                        { value: "Treated - Complete", label: "Completed" },
+                        { value: "Not Treated", label: "Not Completed" },
+                      ].map((o) => {
+                        const active = (u.status || "To Be Treated") === o.value;
+                        return (
+                          <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => onChangeUnitStatus!(u.unit_number, o.value)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                              active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
                             {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               }
