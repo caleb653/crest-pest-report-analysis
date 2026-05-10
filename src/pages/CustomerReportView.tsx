@@ -177,11 +177,11 @@ export default function CustomerReportView() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
-  const [bottomVideoActivated, setBottomVideoActivated] = useState(false);
+  const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const reportRootRef = useRef<HTMLDivElement>(null);
-  const bottomVideoRef = useRef<HTMLVideoElement>(null);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   // Parse per-proposal signatures from the stored customer_signature field
   const getPerProposalSignatures = (): Record<string, string> => {
@@ -400,14 +400,13 @@ export default function CustomerReportView() {
     }
   };
 
-  const handleBottomVideoPlay = () => {
-    setBottomVideoActivated(true);
-    const video = bottomVideoRef.current;
+  const handleVideoPlayRequest = (videoKey: string) => {
+    const video = videoRefs.current[videoKey];
     if (!video) return;
 
-    video.controls = true;
+    setPlayingVideos((prev) => ({ ...prev, [videoKey]: true }));
     video.play().catch(() => {
-      // Keep the native video controls exposed so the customer can press play directly.
+      setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }));
     });
   };
 
