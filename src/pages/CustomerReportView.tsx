@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check, FileCheck } from "lucide-react";
+import { Loader2, Check, FileCheck, Play } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
@@ -177,9 +177,11 @@ export default function CustomerReportView() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
+  const [bottomVideoActivated, setBottomVideoActivated] = useState(false);
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const reportRootRef = useRef<HTMLDivElement>(null);
+  const bottomVideoRef = useRef<HTMLVideoElement>(null);
 
   // Parse per-proposal signatures from the stored customer_signature field
   const getPerProposalSignatures = (): Record<string, string> => {
@@ -396,6 +398,17 @@ export default function CustomerReportView() {
     } else {
       toast.error("Please sign above before submitting");
     }
+  };
+
+  const handleBottomVideoPlay = () => {
+    setBottomVideoActivated(true);
+    const video = bottomVideoRef.current;
+    if (!video) return;
+
+    video.controls = true;
+    video.play().catch(() => {
+      // Keep the native video controls exposed so the customer can press play directly.
+    });
   };
 
   if (isLoading) {
@@ -1399,27 +1412,30 @@ export default function CustomerReportView() {
             <div className="rounded-lg overflow-hidden border border-border relative group">
               <video
                 id="bottom-property-video"
+                ref={bottomVideoRef}
                 src={videoUrl2}
                 controls
-                className="w-full h-auto max-h-[70vh] relative"
+                preload="metadata"
+                className="w-full h-auto max-h-[70vh] relative bg-muted"
                 playsInline
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                onPlay={() => setBottomVideoActivated(true)}
               />
-              <button
-                type="button"
-                data-bottom-video-overlay
-                aria-label="Play property video"
-                onClick={(e) => {
-                  const v = (e.currentTarget.parentElement?.querySelector('#bottom-property-video') as HTMLVideoElement | null);
-                  if (v) { v.play().catch(() => {}); }
-                }}
-                className="absolute inset-0 flex items-center justify-center rounded-lg z-20 cursor-pointer border-0"
-                style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}
-              >
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto pointer-events-none" />
-              </button>
+              {!bottomVideoActivated && (
+                <button
+                  type="button"
+                  data-bottom-video-overlay
+                  aria-label="Play property video"
+                  onClick={handleBottomVideoPlay}
+                  className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 rounded-lg border-0 bg-primary text-primary-foreground cursor-pointer transition-opacity hover:opacity-95"
+                >
+                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto pointer-events-none" />
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg pointer-events-none">
+                    <Play className="h-10 w-10 fill-current ml-1" aria-hidden="true" />
+                  </span>
+                  <span className="text-sm font-semibold uppercase tracking-wide pointer-events-none">Click to play</span>
+                </button>
+              )}
             </div>
           </main>
         </div>
