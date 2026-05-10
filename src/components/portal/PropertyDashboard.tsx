@@ -1911,6 +1911,14 @@ const PropertyDashboard = ({
    */
   const saveServiceMapData = async (serviceId: string, canvasData: string) => {
     if (!serviceId || !canvasData) return;
+    if (serviceId.startsWith("projected-")) {
+      toast({
+        title: "Schedule this visit first",
+        description: "Click Reschedule to pick a date — map edits can only be saved on a scheduled service.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const parsed = JSON.parse(canvasData);
       const svc = (propServices as any[]).find((s) => s.id === serviceId);
@@ -1937,6 +1945,10 @@ const PropertyDashboard = ({
 
   const resetServiceMapData = async (serviceId: string) => {
     if (!serviceId) return;
+    if (serviceId.startsWith("projected-")) {
+      toast({ title: "Schedule this visit first", description: "Click Reschedule to pick a date.", variant: "destructive" });
+      return;
+    }
     try {
       const svc = (propServices as any[]).find((s) => s.id === serviceId);
       const existing = (svc?.report_data && typeof svc.report_data === "object") ? svc.report_data : {};
