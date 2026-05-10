@@ -1909,25 +1909,93 @@ const PropertyDashboard = ({
    * Per-service drawings/edits live on `portal_services.report_data.service_map_data`
    * — they show up ONLY for that one service and never bleed into the next visit.
    */
-  const saveServiceMapData = async (serviceId: string, canvasData: string) => {
-    if (!serviceId || !canvasData) return;
-    if (serviceId.startsWith("projected-")) {
+  /**
+   * Convert an in-memory "projected-N" service into a real DB row using the
+   * projected service_date already shown on screen. Returns the new id, or
+   * null on failure. Lets the user save photos / map edits / office notes
+   * BEFORE explicitly clicking "Schedule" — we just lock in the projection's
+   * date so the row exists in the database.
+   */
+  const materializeProjected = async (serviceId: string): Promise<string | null> => {
+    const svc = (allUpcoming as any[]).find((s) => s.id === serviceId)
+      || (propServices as any[]).find((s) => s.id === serviceId);
+    if (!svc) return null;
+    if (!svc.service_date) {
       toast({
-        title: "Schedule this visit first",
-        description: "Click Reschedule to pick a date — map edits can only be saved on a scheduled service.",
+        title: "Couldn't auto-schedule this visit",
+        description: "Pick a date and try again.",
         variant: "destructive",
       });
-      return;
+      return null;
+    }
+    try {
+      const inProgress = completionDataRef.current?.[serviceId];
+      const carriedUnitDetails = Array.isArray(inProgress?.unitRows)
+        ? inProgress!.unitRows
+            .filter((r: any) => String(r?.unit_number || "").trim())
+            .map((r: any) => ({ ...r }))
+        : (Array.isArray(svc.unit_details) ? svc.unit_details : []);
+      const carriedProducts = Array.isArray(inProgress?.products) && inProgress!.products.length > 0
+        ? inProgress!.products
+        : (Array.isArray(svc.products_used) ? svc.products_used : []);
+      const { data: inserted, error } = await supabase.from("portal_services").insert({
+        property_id: property.id,
+        service_type: svc.service_type || "General Pest Control",
+        service_date: svc.service_date,
+        technician: inProgress?.technician || svc.technician || null,
+        status: "scheduled",
+        units_planned: Array.isArray(svc.units_planned) ? svc.units_planned : [],
+        unit_details: carriedUnitDetails,
+        products_used: carriedProducts,
+        summary: inProgress?.summary || null,
+        findings: inProgress?.findings || null,
+        notes: inProgress?.notes || null,
+        frequency_days: propertyFrequencyDays,
+      } as any).select("id").single();
+      if (error || !inserted?.id) {
+        toast({ title: "Couldn't save", description: error?.message || "Unknown error", variant: "destructive" });
+        return null;
+      }
+      const newId = inserted.id as string;
+      // Mutate the in-memory projected row so subsequent saves in this same
+      // render reuse the real id without waiting for onRefresh.
+      (svc as any).id = newId;
+      (svc as any).isProjected = false;
+      // Migrate any in-progress completion buffer keyed by the projected id.
+      if (inProgress) {
+        setCompletionData((prev) => {
+          const next = { ...prev };
+          next[newId] = inProgress;
+          delete next[serviceId];
+          return next;
+        });
+      }
+      // Refresh in the background so the rest of the tree picks up the row.
+      onRefresh?.();
+      return newId;
+    } catch (e: any) {
+      toast({ title: "Couldn't save", description: e?.message || "Unknown error", variant: "destructive" });
+      return null;
+    }
+  };
+
+  const saveServiceMapData = async (serviceId: string, canvasData: string) => {
+    if (!serviceId || !canvasData) return;
+    let realId = serviceId;
+    if (serviceId.startsWith("projected-")) {
+      const newId = await materializeProjected(serviceId);
+      if (!newId) return;
+      realId = newId;
     }
     try {
       const parsed = JSON.parse(canvasData);
-      const svc = (propServices as any[]).find((s) => s.id === serviceId);
+      const svc = (propServices as any[]).find((s) => s.id === realId);
       const existing = (svc?.report_data && typeof svc.report_data === "object") ? svc.report_data : {};
       const merged = { ...existing, service_map_data: parsed };
       const { error } = await supabase
         .from("portal_services")
         .update({ report_data: merged })
-        .eq("id", serviceId);
+        .eq("id", realId);
       if (error) {
         toast({ title: "Failed to save map", description: error.message, variant: "destructive" });
       } else {
@@ -1946,7 +2014,8 @@ const PropertyDashboard = ({
   const resetServiceMapData = async (serviceId: string) => {
     if (!serviceId) return;
     if (serviceId.startsWith("projected-")) {
-      toast({ title: "Schedule this visit first", description: "Click Reschedule to pick a date.", variant: "destructive" });
+      // Nothing persisted yet — just refresh local view.
+      await onRefresh?.();
       return;
     }
     try {
@@ -2571,13 +2640,25 @@ const PropertyDashboard = ({
             attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
             attachmentsPathPrefix={`portal-services/${property.id}/${s.id}`}
             onChangeAttachments={async (next) => {
-              await supabase.from("portal_services").update({ attachments: next as any }).eq("id", s.id);
+              let targetId = s.id;
+              if (String(s.id).startsWith("projected-")) {
+                const newId = await materializeProjected(s.id);
+                if (!newId) return;
+                targetId = newId;
+              }
+              await supabase.from("portal_services").update({ attachments: next as any }).eq("id", targetId);
               (s as any).attachments = next;
               await onRefresh?.();
             }}
             officeNotes={(s as any).office_notes || ""}
             onChangeOfficeNotes={async (next) => {
-              await supabase.from("portal_services").update({ office_notes: next } as any).eq("id", s.id);
+              let targetId = s.id;
+              if (String(s.id).startsWith("projected-")) {
+                const newId = await materializeProjected(s.id);
+                if (!newId) return;
+                targetId = newId;
+              }
+              await supabase.from("portal_services").update({ office_notes: next } as any).eq("id", targetId);
               (s as any).office_notes = next;
             }}
             onFlagOffice={async () => {
