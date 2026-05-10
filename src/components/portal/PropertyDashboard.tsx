@@ -2646,6 +2646,7 @@ const PropertyDashboard = ({
       const hoaUnits: HOAUnitItem[] = (isUpcoming
         ? merged.unitContexts.map((uc) => ({
             unit_number: String(uc.unit_number || "").trim(),
+            status: (completionData[s.id]?.unitRows || []).find((r: any) => String(r.unit_number || "").trim() === String(uc.unit_number || "").trim())?.status || "To Be Treated",
             follow_up_needed: uc.source === "follow_up",
             target_pest: uc.target_pest || (uc as any)?.request?.pest_type || "",
           }))
@@ -2706,6 +2707,16 @@ const PropertyDashboard = ({
             products={products}
             displayProducts={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
+            onChangeUnitStatus={(unitNumber, status) => {
+              const draft = completionDataRef.current[s.id] || ensureCompletionDraft(s, merged.unitContexts);
+              const normalized = String(unitNumber || "").trim();
+              const hasRow = draft.unitRows.some((r: any) => String(r.unit_number || "").trim() === normalized);
+              const nextRows = hasRow
+                ? draft.unitRows.map((r: any) => String(r.unit_number || "").trim() === normalized ? { ...r, status } : r)
+                : [...draft.unitRows, { unit_number: normalized, target_pest: "", findings: "", pest_activity: "None", products_used: [], status, notes: "", source: "planned" }];
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: { ...draft, unitRows: nextRows } };
+              setCompletionData(prev => ({ ...prev, [s.id]: { ...(prev[s.id] || draft), unitRows: nextRows } }));
+            }}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
             attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
