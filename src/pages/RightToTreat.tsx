@@ -151,6 +151,59 @@ const RightToTreat = () => {
               and the property's service plan.
             </div>
 
+            <div className="rounded-md border border-amber-300 bg-amber-50/70 p-3 text-[11px] leading-snug text-amber-950/90 space-y-2">
+              <p className="font-bold uppercase tracking-wide text-amber-800 text-xs">Pesticide Notice</p>
+              <p className="italic">
+                State law requires that you be given the following information: CAUTION—PESTICIDES ARE TOXIC CHEMICALS.
+                Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and
+                apply pesticides which are registered and approved for use by the California Department of Pesticide
+                Regulation and the United States Environmental Protection Agency. Registration is granted when the state
+                finds that, based on existing scientific evidence, there are no appreciable risks if proper use conditions
+                are followed or that the risks are outweighed by the benefits. The degree of risk depends upon the degree
+                of exposure, so exposure should be minimized. If within 24 hours following application you experience
+                symptoms similar to common seasonal illness comparable to the flu, contact your physician or poison
+                control center (800-222-1222) and your pest control company immediately. For further information,
+                contact: Crest Pest Control (949-424-5000); Health Questions—County Health Department (800-564-8448);
+                Application Information—County Agricultural Commissioner (714-955-0100); Regulatory Information—
+                Structural Pest Control Board (800-737-8188), 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815.
+              </p>
+            </div>
+
+            <div className="rounded-md border bg-muted/30 p-3 text-[11px] leading-snug space-y-1.5">
+              <p className="font-bold uppercase tracking-wide text-foreground text-xs">Possible Chemicals Used</p>
+              <p className="text-muted-foreground">
+                Depending on conditions observed, the technician may apply one or more of the following EPA-registered products:
+              </p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 list-disc pl-4 text-foreground/90">
+                <li>Alpine WSG (Dinotefuran)</li>
+                <li>Bifen I/T (Bifenthrin)</li>
+                <li>Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)</li>
+                <li>Temprid FX (Imidacloprid, Cyfluthrin)</li>
+                <li>Termidor SC (Fipronil)</li>
+                <li>Phantom (Chlorfenapyr)</li>
+                <li>ExciteR (Pyrethrins, Piperonyl Butoxide)</li>
+                <li>Gentrol IGR Concentrate ((S)-Hydroprene)</li>
+                <li>Nyguard IGR Concentrate (Pyridine)</li>
+                <li>PT Wasp Freeze (Prallethrin)</li>
+                <li>PT Alpine Flea & Bed Bug (Dinotefuran, Pyriproxyfen, Prallethrin)</li>
+                <li>PT Alpine Fly Bait</li>
+                <li>Gentrol Aerosol ((S)-Hydroprene)</li>
+                <li>Bedlam (Cyclopropanecarboxylate, Dicarboximide)</li>
+                <li>Invade Hot Spot +</li>
+                <li>Bifen LP (Bifenthrin)</li>
+                <li>Advion Ant Gel Bait (Indoxacarb)</li>
+                <li>Maxforce FC Ant Gel (Fipronil)</li>
+                <li>MasterLine B MaxxPro</li>
+                <li>Advion Cockroach Gel Bait (Indoxacarb)</li>
+                <li>Contrac California (Bromethalin)</li>
+                <li>Delta Dust (Deltamethrin)</li>
+                <li>In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)</li>
+                <li>OneGuard (Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide)</li>
+                <li>Advion Microflow (Indoxacarb)</li>
+                <li>Optigard (Thiamethoxam)</li>
+              </ul>
+            </div>
+
             {alreadySigned ? (
               <div className="rounded-md border border-primary/30 bg-primary/5 p-4 text-center space-y-2">
                 <CheckCircle2 className="w-8 h-8 text-primary mx-auto" />
