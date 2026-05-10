@@ -1420,7 +1420,6 @@ export default function CustomerReportView() {
                 playsInline
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
                 onPlay={() => setBottomVideoActivated(true)}
-                onLoadedMetadata={() => bottomVideoRef.current?.load()}
               />
               {!bottomVideoActivated && (
                 <button
