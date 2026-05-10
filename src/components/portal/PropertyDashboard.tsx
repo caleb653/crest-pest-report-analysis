@@ -1441,6 +1441,33 @@ const PropertyDashboard = ({
         : {};
     delete (existingReport as any).completion_draft;
 
+    // ─── Snapshot Community Pest Sightings onto THIS completed visit so they
+    //     stay attached to the past service that addressed them, then mark
+    //     them resolved so they no longer bleed into the next upcoming. ───
+    let addressedCommunitySightings: any[] = [];
+    try {
+      const openCommunity = (pendingRequests as any[]).filter((r) => {
+        if (!r) return false;
+        if (r.status === "resolved" || r.status === "completed") return false;
+        const isCommunity =
+          r.request_type === "Community Pest Sighting" ||
+          /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+        return isCommunity;
+      });
+      addressedCommunitySightings = openCommunity.map((r) => ({
+        id: r.id,
+        created_at: r.created_at,
+        pest_type: r.pest_type,
+        location_type: r.location_type,
+        description: r.description,
+      }));
+      if (addressedCommunitySightings.length > 0) {
+        (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
+      }
+    } catch (e) {
+      console.warn("snapshot community sightings failed", e);
+    }
+
     await supabase.from("portal_services").update({
       status: "completed",
       // Preserve any existing service_date the tech set; only fall back to
@@ -1495,6 +1522,20 @@ const PropertyDashboard = ({
         .or("request_type.ilike.%general%,description.ilike.%[GENERAL]%");
     } catch (e) {
       console.warn("auto-resolve work orders failed", e);
+    }
+
+    // ─── Resolve every open Community Pest Sighting we just snapshotted so
+    //     they stop showing up on the next upcoming visit. ───
+    try {
+      const sightingIds = addressedCommunitySightings.map((s) => s.id).filter(Boolean);
+      if (sightingIds.length > 0) {
+        await supabase
+          .from("portal_requests")
+          .update({ status: "resolved", updated_at: new Date().toISOString() } as any)
+          .in("id", sightingIds);
+      }
+    } catch (e) {
+      console.warn("resolve community sightings failed", e);
     }
 
     // ─── Dedupe: delete any OTHER scheduled service rows for this property
