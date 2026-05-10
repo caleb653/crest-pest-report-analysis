@@ -389,8 +389,8 @@ export function HOAServiceView(props: HOAServiceViewProps) {
               )}
             </div>
             <div
-              className="relative bg-background w-full"
-              style={{ aspectRatio: "3 / 4", width: "100%", maxHeight: 720 }}
+              className="relative bg-background mx-auto"
+              style={{ aspectRatio: "3 / 4", width: "100%", maxWidth: 540, maxHeight: 720 }}
               onPaste={
                 canEditMap && onUploadMapImage
                   ? async (e) => {
