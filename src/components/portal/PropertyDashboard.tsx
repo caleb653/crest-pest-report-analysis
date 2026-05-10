@@ -2979,6 +2979,48 @@ const PropertyDashboard = ({
           );
         })()}
 
+        {!isUpcoming && !isHOA && (() => {
+          const addressed = [
+            ...(((s as any)?.report_data?.community_sightings_addressed || []) as any[]),
+            ...(((s as any)?.report_data?.service_requests_addressed || []) as any[]),
+          ];
+          if (addressed.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                <p className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                  Requests Addressed On This Service ({addressed.length})
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {addressed.map((r: any) => {
+                  const photos = Array.isArray(r.photos) ? r.photos : [];
+                  return (
+                    <li key={r.id} className="rounded-md border border-sky-300/70 bg-background/80 p-2 text-sm leading-snug">
+                      <div className="font-semibold text-foreground">
+                        {r.unit_number || r.request_type || "Request"}
+                        {r.pest_type ? <span className="font-normal text-muted-foreground"> — {r.pest_type}</span> : null}
+                        {r.location_type ? <span className="font-normal text-muted-foreground"> · {r.location_type}</span> : null}
+                      </div>
+                      {r.description && <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-0.5">{String(r.description).replace(/^\[[^\]]+\]\s*/i, "")}</p>}
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {photos.map((url: any, i: number) => {
+                            const src = typeof url === "string" ? url : url?.url;
+                            if (!src) return null;
+                            return <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted"><img src={src} alt={`Request photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" /></a>;
+                          })}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
+
         {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
         {overage.hasOverage && (
           <div className="border-2 border-amber-500/70 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
