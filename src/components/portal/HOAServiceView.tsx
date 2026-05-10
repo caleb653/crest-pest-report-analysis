@@ -273,6 +273,11 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     const next = attachments.filter((_, i) => i !== idx);
     await onChangeAttachments(next);
   };
+  const updateAttachmentCaption = async (idx: number, caption: string) => {
+    if (!onChangeAttachments) return;
+    const next = attachments.map((att, i) => (i === idx ? { ...att, caption } : att));
+    await onChangeAttachments(next);
+  };
 
   // ─── Office flag email ────────────────────────────────────────────────
   const [flagging, setFlagging] = useState(false);
