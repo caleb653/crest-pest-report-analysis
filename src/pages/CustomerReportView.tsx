@@ -504,6 +504,43 @@ export default function CustomerReportView() {
     </header>
   );
 
+  const renderPlayableVideo = (videoKey: string, title: string, src: string, label: string = title) => (
+    <div className="max-w-5xl mx-auto border-t-4 border-border mt-8 no-pdf-export no-print">
+      {renderHeader(title)}
+      <main className="p-4">
+        <div className="rounded-lg overflow-hidden border border-border relative bg-muted">
+          <video
+            ref={(el) => { videoRefs.current[videoKey] = el; }}
+            src={src}
+            controls
+            preload="metadata"
+            className="w-full h-auto max-h-[70vh] relative bg-muted"
+            playsInline
+            poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='hsl(130 14% 79%)'/></svg>`)}`}
+            onPlay={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: true }))}
+            onPause={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
+            onEnded={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
+          />
+          {!playingVideos[videoKey] && (
+            <button
+              type="button"
+              onClick={() => handleVideoPlayRequest(videoKey)}
+              className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-sage text-foreground cursor-pointer"
+              aria-label={`Play ${label}`}
+            >
+              <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+              <p className="text-2xl font-bold tracking-wide">{label}</p>
+              <span className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Play className="h-4 w-4" />
+                Click to play
+              </span>
+            </button>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+
   const renderProposalServicesContent = (proposal: Proposal, proposalIndex: number) => {
     // Use per-proposal findings if available, fall back to main findings for index 0
     const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
