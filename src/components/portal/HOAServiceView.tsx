@@ -103,6 +103,19 @@ export interface HOAServiceViewProps {
     pest_type?: string | null;
     location_type?: string | null;
     description?: string | null;
+    photos?: any;
+  }>;
+
+  /** Service requests / work orders attached to this appointment. Upcoming = open requests, past = addressed snapshot. */
+  serviceRequests?: Array<{
+    id: string;
+    created_at: string;
+    pest_type?: string | null;
+    location_type?: string | null;
+    description?: string | null;
+    unit_number?: string | null;
+    request_type?: string | null;
+    photos?: any;
   }>;
 
   /** Photos & videos attached to this appointment.
@@ -143,6 +156,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     onChangeProducts,
     onDraftChange,
     communityFeedback = [],
+    serviceRequests = [],
   } = props;
 
   const {
