@@ -107,9 +107,9 @@ export interface HOAServiceViewProps {
 
   /** Photos & videos attached to this appointment.
    *  Each entry: { url, type: 'image' | 'video', name? }. Visible to PM. */
-  attachments?: Array<{ url: string; type?: "image" | "video"; name?: string }>;
+  attachments?: Array<{ url: string; type?: "image" | "video"; name?: string; caption?: string }>;
   /** Admin-only — persist updated attachments list to portal_services.attachments. */
-  onChangeAttachments?: (next: Array<{ url: string; type?: "image" | "video"; name?: string }>) => Promise<void> | void;
+  onChangeAttachments?: (next: Array<{ url: string; type?: "image" | "video"; name?: string; caption?: string }>) => Promise<void> | void;
 
   /** Admin-only private notes for this single appointment.
    *  Stored on portal_services.office_notes. NEVER passed to PM mode. */
