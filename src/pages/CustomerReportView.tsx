@@ -1397,25 +1397,7 @@ export default function CustomerReportView() {
         </div>
       )}
 
-      {portalVideoAttached && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8 no-pdf-export no-print">
-          {renderHeader("Client Portal Walkthrough")}
-          <main className="p-4">
-            <div className="max-w-3xl mx-auto">
-              <video
-                src="/videos/client-portal-video.mp4"
-                controls
-                preload="metadata"
-                playsInline
-                className="w-full rounded-lg border-2 border-border"
-              />
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                A short walkthrough of your Client Portal.
-              </p>
-            </div>
-          </main>
-        </div>
-      )}
+      {portalVideoAttached && renderPlayableVideo("client-portal-walkthrough", "Additional Video", "/videos/client-portal-video.mp4", "Client Portal Walkthrough")}
 
       {/* Bottom-uploaded property video — render at the VERY end so it sits below
           all proposal content, photos, maps, and notices. */}
