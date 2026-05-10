@@ -1265,6 +1265,7 @@ const PropertyDashboard = ({
             status: r.status || "To Be Treated",
             notes: r.notes || "",
             source: r.source || "planned",
+            request_id: r.request_id || r.request?.id || undefined,
             follow_up_needed: r.follow_up_needed === true,
             sanitization_concern: r.sanitization_concern === true,
             photos: Array.isArray(r.photos) ? r.photos : [],
@@ -1312,6 +1313,7 @@ const PropertyDashboard = ({
             status: "To Be Treated",
             notes: ctx?.notes || "",
             source: sourceFromCtx(u, ctx?.source),
+            request_id: ctx?.request?.id,
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "new-work-order" }];
@@ -1345,6 +1347,7 @@ const PropertyDashboard = ({
             status: "To Be Treated",
             notes: ctx?.notes || "",
             source: ctx?.source === "work_order" ? "new-work-order" : ctx?.source === "follow_up" ? "follow-up" : "planned",
+            request_id: ctx?.request?.id,
           };
         })
       : [{ unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }];
