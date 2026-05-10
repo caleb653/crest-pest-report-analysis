@@ -177,11 +177,11 @@ export default function CustomerReportView() {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savingProposalIndex, setSavingProposalIndex] = useState<number | null>(null);
-  const [bottomVideoActivated, setBottomVideoActivated] = useState(false);
+  const [playingVideos, setPlayingVideos] = useState<Record<string, boolean>>({});
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const reportRootRef = useRef<HTMLDivElement>(null);
-  const bottomVideoRef = useRef<HTMLVideoElement>(null);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   // Parse per-proposal signatures from the stored customer_signature field
   const getPerProposalSignatures = (): Record<string, string> => {
@@ -400,14 +400,13 @@ export default function CustomerReportView() {
     }
   };
 
-  const handleBottomVideoPlay = () => {
-    setBottomVideoActivated(true);
-    const video = bottomVideoRef.current;
+  const handleVideoPlayRequest = (videoKey: string) => {
+    const video = videoRefs.current[videoKey];
     if (!video) return;
 
-    video.controls = true;
+    setPlayingVideos((prev) => ({ ...prev, [videoKey]: true }));
     video.play().catch(() => {
-      // Keep the native video controls exposed so the customer can press play directly.
+      setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }));
     });
   };
 
@@ -503,6 +502,42 @@ export default function CustomerReportView() {
         <span className="font-bold text-foreground">PEST CONTROL</span>
       </div>
     </header>
+  );
+
+  const renderPlayableVideo = (videoKey: string, title: string, src: string, label: string = title) => (
+    <div className="max-w-5xl mx-auto border-t-4 border-border mt-8 no-pdf-export no-print">
+      {renderHeader(title)}
+      <main className="p-4">
+        <div className="rounded-lg overflow-hidden border border-border relative bg-muted">
+          <video
+            ref={(el) => { videoRefs.current[videoKey] = el; }}
+            src={src}
+            controls
+            preload="metadata"
+            className="w-full h-auto max-h-[70vh] relative bg-muted"
+            playsInline
+            onPlay={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: true }))}
+            onPause={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
+            onEnded={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
+          />
+          {!playingVideos[videoKey] && (
+            <button
+              type="button"
+              onClick={() => handleVideoPlayRequest(videoKey)}
+              className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-sage text-foreground cursor-pointer"
+              aria-label={`Play ${label}`}
+            >
+              <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+              <p className="text-2xl font-bold tracking-wide">{label}</p>
+              <span className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Play className="h-4 w-4" />
+                Click to play
+              </span>
+            </button>
+          )}
+        </div>
+      </main>
+    </div>
   );
 
   const renderProposalServicesContent = (proposal: Proposal, proposalIndex: number) => {
@@ -834,29 +869,7 @@ export default function CustomerReportView() {
         </div>
       )}
 
-      {videoUrl && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
-          {renderHeader("Property Video")}
-          <main className="p-4">
-            <div className="rounded-lg overflow-hidden border border-border relative group">
-              <video
-                src={videoUrl}
-                controls
-                className="w-full h-auto max-h-[70vh] relative"
-                playsInline
-                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-              />
-              <div data-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                <p className="text-2xl font-bold text-foreground tracking-wide">Video Report</p>
-                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-              </div>
-            </div>
-          </main>
-        </div>
-      )}
+      {videoUrl && renderPlayableVideo("primary-property-video", "Property Video", videoUrl, "Video Report")}
 
       {videoUrl2 && (
         null
@@ -1383,54 +1396,10 @@ export default function CustomerReportView() {
         </div>
       )}
 
-      {portalVideoAttached && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8 no-pdf-export no-print">
-          {renderHeader("Client Portal Walkthrough")}
-          <main className="p-4">
-            <div className="max-w-3xl mx-auto">
-              <video
-                src="/videos/client-portal-video.mp4"
-                controls
-                preload="metadata"
-                playsInline
-                className="w-full rounded-lg border-2 border-border"
-              />
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                A short walkthrough of your Client Portal.
-              </p>
-            </div>
-          </main>
-        </div>
-      )}
+      {portalVideoAttached && renderPlayableVideo("client-portal-walkthrough", "Additional Video", "/videos/client-portal-video.mp4", "Client Portal Walkthrough")}
 
-      {/* Bottom-uploaded property video — render at the VERY end so it sits below
-          all proposal content, photos, maps, and notices. */}
-      {videoUrl2 && (
-        <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
-          {renderHeader("Property Video")}
-          <main className="p-4">
-            <div className="rounded-lg overflow-hidden border border-border relative group">
-              <video
-                id="bottom-property-video"
-                ref={bottomVideoRef}
-                src={videoUrl2}
-                controls
-                preload="metadata"
-                className="w-full h-auto max-h-[70vh] relative bg-muted"
-                playsInline
-                poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={(e) => { setBottomVideoActivated(true); const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-              />
-              <div data-bottom-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                <p className="text-2xl font-bold text-foreground tracking-wide">Property Video</p>
-                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-              </div>
-            </div>
-          </main>
-        </div>
-      )}
+      {/* Bottom-uploaded property video — render after all proposal content, photos, maps, and notices. */}
+      {videoUrl2 && renderPlayableVideo("bottom-property-video", "Property Video", videoUrl2, "Property Video")}
 
       <div className="max-w-5xl mx-auto mt-8 px-4">
         <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
