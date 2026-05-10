@@ -86,6 +86,21 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
+const isCommunityPestSighting = (r: any) =>
+  r?.request_type === "Community Pest Sighting" ||
+  /^\[COMMUNITY SIGHTING\]/i.test(String(r?.description || ""));
+
+const toAddressedRequestSnapshot = (r: any) => ({
+  id: r.id,
+  created_at: r.created_at,
+  pest_type: r.pest_type,
+  location_type: r.location_type,
+  description: r.description,
+  unit_number: r.unit_number,
+  request_type: r.request_type,
+  photos: Array.isArray(r.photos) ? r.photos : [],
+});
+
 const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 // Status option sets are now context-aware: technicians only see the choices
 // that make sense for the kind of visit they're filling out (treatment vs.
