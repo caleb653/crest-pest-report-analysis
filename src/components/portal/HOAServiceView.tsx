@@ -743,7 +743,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
           {attachments.length === 0 ? (
             <p className="text-xs italic text-muted-foreground">No attachments yet.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {attachments.map((att, i) => {
                 const isVideo = att.type === "video" || /\.(mp4|webm|mov|m4v)$/i.test(att.url);
                 return (
@@ -753,11 +753,11 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                         <video
                           src={att.url}
                           controls
-                          className="w-full h-32 object-cover bg-black"
+                          className="w-full h-56 sm:h-64 object-cover bg-black"
                         />
                       ) : (
                         <a href={att.url} target="_blank" rel="noopener noreferrer">
-                          <img src={att.url} alt={att.caption || att.name || "Attachment"} className="w-full h-32 object-cover" />
+                          <img src={att.url} alt={att.caption || att.name || "Attachment"} className="w-full h-56 sm:h-64 object-cover" />
                         </a>
                       )}
                       <div className="absolute top-1 left-1 bg-background/90 rounded px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-1">
