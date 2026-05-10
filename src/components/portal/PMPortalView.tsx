@@ -2359,6 +2359,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       description: r.description,
                                     }));
                                 })() : []}
+                                serviceRequests={isFirst ? (() => {
+                                  return (requests as any[])
+                                    .filter((r) => {
+                                      if (r.status === "resolved" || r.status === "completed") return false;
+                                      const isCommunity = r.request_type === "Community Pest Sighting" ||
+                                        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                                      return !isCommunity;
+                                    })
+                                    .map((r) => ({
+                                      id: r.id,
+                                      created_at: r.created_at,
+                                      pest_type: r.pest_type,
+                                      location_type: r.location_type,
+                                      description: r.description,
+                                      unit_number: r.unit_number,
+                                      request_type: r.request_type,
+                                      photos: Array.isArray(r.photos) ? r.photos : [],
+                                    }));
+                                })() : []}
                                 units={(unitContexts.length > 0
                                   ? unitContexts.map((uc) => ({
                                       unit_number: String(uc.unit_number || "").trim(),
