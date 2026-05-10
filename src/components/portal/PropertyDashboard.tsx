@@ -2720,25 +2720,33 @@ const PropertyDashboard = ({
                 ...(draft.products !== undefined ? { products: draft.products } : {}),
               });
             }}
-            communityFeedback={isUpcoming && isFirstUpcoming ? (() => {
-              // Show every open community pest sighting on the next visit so
-              // the tech is always briefed. Sightings drop off only once the
-              // request is marked resolved.
-              return (pendingRequests as any[])
-                .filter((r) => {
-                  if (r.status === "resolved") return false;
-                  const isCommunity = r.request_type === "Community Pest Sighting" ||
-                    /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-                  return isCommunity;
-                })
-                .map((r) => ({
-                  id: r.id,
-                  created_at: r.created_at,
-                  pest_type: r.pest_type,
-                  location_type: r.location_type,
-                  description: r.description,
-                }));
-            })() : []}
+            communityFeedback={(() => {
+              // Past visits: render the snapshot of sightings that were
+              // addressed on THIS visit (captured at completion time).
+              if (!isUpcoming) {
+                const snap = (s as any)?.report_data?.community_sightings_addressed;
+                return Array.isArray(snap) ? snap : [];
+              }
+              // Upcoming first visit: show every open community sighting so
+              // the tech is briefed. They get cleared at completion time.
+              if (isFirstUpcoming) {
+                return (pendingRequests as any[])
+                  .filter((r) => {
+                    if (r.status === "resolved" || r.status === "completed") return false;
+                    const isCommunity = r.request_type === "Community Pest Sighting" ||
+                      /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
+                    return isCommunity;
+                  })
+                  .map((r) => ({
+                    id: r.id,
+                    created_at: r.created_at,
+                    pest_type: r.pest_type,
+                    location_type: r.location_type,
+                    description: r.description,
+                  }));
+              }
+              return [];
+            })()}
           />
           {/* HOA upcoming: full-width Complete Service action.
               Flips status -> "completed", auto-rolls flagged units into a
