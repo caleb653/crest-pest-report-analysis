@@ -711,19 +711,16 @@ export function HOAServiceView(props: HOAServiceViewProps) {
         </div>
       </div>
 
-      {/* ─── Bottom zone: Compact unit chips (collapsed by default, discrete) ─── */}
-      <details className="group rounded-md border border-dashed border-border/60 bg-transparent px-3 py-1.5 text-muted-foreground">
-        <summary className="cursor-pointer list-none text-[10px] font-medium uppercase tracking-wide flex items-center gap-1.5 hover:text-foreground transition-colors">
+      {/* ─── Bottom zone: Compact unit chips (always visible, discrete) ─── */}
+      <div className="rounded-md border border-dashed border-border/60 bg-transparent px-3 py-2 text-muted-foreground">
+        <p className="text-[10px] font-medium uppercase tracking-wide flex items-center gap-1.5 mb-2">
           <Bug className="w-3 h-3 opacity-60" />
           <span>
             {isUpcoming
               ? `Homes Scheduled${units.length ? ` (${units.length})` : ""}`
               : `Homes Treated${units.length ? ` (${units.length})` : ""}`}
           </span>
-          <span className="ml-auto text-[10px] opacity-60 group-open:hidden">Show</span>
-          <span className="ml-auto text-[10px] opacity-60 hidden group-open:inline">Hide</span>
-        </summary>
-        <div className="mt-2">
+        </p>
         {units.length === 0 ? (
           <p className="text-[11px] italic text-muted-foreground">
             {isUpcoming
@@ -799,8 +796,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             })}
           </div>
         )}
-        </div>
-      </details>
+      </div>
 
       {!isUpcoming && <PesticideNotice />}
 
