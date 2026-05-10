@@ -1398,6 +1398,7 @@ export default function CustomerReportView() {
           <main className="p-4">
             <div className="rounded-lg overflow-hidden border border-border relative group">
               <video
+                id="bottom-property-video"
                 src={videoUrl2}
                 controls
                 className="w-full h-auto max-h-[70vh] relative"
@@ -1406,9 +1407,19 @@ export default function CustomerReportView() {
                 onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
                 onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
               />
-              <div data-bottom-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
-              </div>
+              <button
+                type="button"
+                data-bottom-video-overlay
+                aria-label="Play property video"
+                onClick={(e) => {
+                  const v = (e.currentTarget.parentElement?.querySelector('#bottom-property-video') as HTMLVideoElement | null);
+                  if (v) { v.play().catch(() => {}); }
+                }}
+                className="absolute inset-0 flex items-center justify-center rounded-lg z-20 cursor-pointer border-0"
+                style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}
+              >
+                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto pointer-events-none" />
+              </button>
             </div>
           </main>
         </div>
