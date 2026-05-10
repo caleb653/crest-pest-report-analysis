@@ -951,6 +951,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               const snap = (s as any)?.report_data?.community_sightings_addressed;
               return Array.isArray(snap) ? snap : [];
             })()}
+            serviceRequests={(() => {
+              const snap = (s as any)?.report_data?.service_requests_addressed;
+              return Array.isArray(snap) ? snap : [];
+            })()}
           />
         </div>
       );
