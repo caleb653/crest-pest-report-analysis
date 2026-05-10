@@ -1012,6 +1012,33 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           );
         })()}
+        {(() => {
+          const addressed = [
+            ...(((s as any)?.report_data?.community_sightings_addressed || []) as any[]),
+            ...(((s as any)?.report_data?.service_requests_addressed || []) as any[]),
+          ];
+          if (addressed.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
+              <p className="text-xs font-bold text-sky-900 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                Requests Addressed On This Service ({addressed.length})
+              </p>
+              <ul className="space-y-2">
+                {addressed.map((r: any) => (
+                  <li key={r.id} className="rounded-md border border-sky-300/70 bg-background/80 p-2">
+                    <div className="font-semibold text-foreground">
+                      {r.unit_number || r.request_type || "Request"}
+                      {r.pest_type ? <span className="font-normal text-muted-foreground"> — {r.pest_type}</span> : null}
+                      {r.location_type ? <span className="font-normal text-muted-foreground"> · {r.location_type}</span> : null}
+                    </div>
+                    {r.description && <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-0.5">{String(r.description).replace(/^\[[^\]]+\]\s*/i, "")}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
         {/* For HOA: prepend the community site map so it's the dominant
             visual at the top of the report (matches admin layout). The
             rest of the report (Summary → Products → Unit Summary →
