@@ -535,6 +535,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                   })();
                   // Strip the "[COMMUNITY SIGHTING] " tag the form prepends.
                   const cleanDesc = (f.description || "").replace(/^\[COMMUNITY SIGHTING\]\s*/i, "").trim();
+                  const photos = Array.isArray(f.photos) ? f.photos : [];
                   return (
                     <li key={f.id} className="rounded-md border border-amber-300/60 bg-background/70 p-2">
                       <div className="flex items-start justify-between gap-2 mb-0.5">
@@ -546,6 +547,19 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                       </div>
                       {cleanDesc && (
                         <p className="text-[12px] text-muted-foreground leading-snug whitespace-pre-wrap">{cleanDesc}</p>
+                      )}
+                      {photos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {photos.map((url: any, i: number) => {
+                            const src = typeof url === "string" ? url : url?.url;
+                            if (!src) return null;
+                            return (
+                              <a key={`${src}-${i}`} href={src} target="_blank" rel="noopener noreferrer" className="block w-14 h-14 rounded border overflow-hidden bg-muted">
+                                <img src={src} alt={`Sighting photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                              </a>
+                            );
+                          })}
+                        </div>
                       )}
                     </li>
                   );
