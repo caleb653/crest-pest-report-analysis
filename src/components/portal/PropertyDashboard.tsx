@@ -2556,6 +2556,29 @@ const PropertyDashboard = ({
             units={hoaUnits}
             onChangeFindings={(next) => updateServiceFindings(s.id, next)}
             onChangeProducts={(next) => updateServiceProducts(s.id, next)}
+            attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
+            attachmentsPathPrefix={`portal-services/${property.id}/${s.id}`}
+            onChangeAttachments={async (next) => {
+              await supabase.from("portal_services").update({ attachments: next as any }).eq("id", s.id);
+              (s as any).attachments = next;
+              await onRefresh?.();
+            }}
+            officeNotes={(s as any).office_notes || ""}
+            onChangeOfficeNotes={async (next) => {
+              await supabase.from("portal_services").update({ office_notes: next } as any).eq("id", s.id);
+              (s as any).office_notes = next;
+            }}
+            onFlagOffice={async () => {
+              await supabase.functions.invoke("flag-office-note", {
+                body: {
+                  propertyName: property.name,
+                  serviceDate: s.service_date,
+                  serviceType: (s as any).appointment_service || s.service_type,
+                  technician: s.technician,
+                  note: (s as any).office_notes || "",
+                },
+              });
+            }}
             onDraftChange={(draft) => {
               if (!completionDataRef.current[s.id]) ensureCompletionDraft(s, merged.unitContexts);
               patchCompletionDraft(s.id, {
