@@ -5025,7 +5025,7 @@ const PropertyDashboard = ({
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {isProjected ? (
-                          <span className="italic">No date set — click Reschedule to pick one</span>
+                          <span className="italic">No date set — pick one to schedule this visit</span>
                         ) : (
                           formatDate(s.service_date)
                         )}
@@ -5035,63 +5035,19 @@ const PropertyDashboard = ({
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {isFirst && (
-                        <Popover
-                          open={reschedulingId === s.id}
-                          onOpenChange={(open) => {
-                            if (open) {
-                              setReschedulingId(s.id);
-                              setRescheduleDate(isProjected ? "" : (s.service_date || today));
-                            } else {
-                              setReschedulingId(null);
-                            }
-                          }}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Calendar className="w-3 h-3" />
-                              {propertyType === "apartments" && isProjected ? "Schedule" : "Reschedule"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-72 p-3 space-y-2"
-                            align="end"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div>
-                              <Label className="text-xs">New service date</Label>
-                              <Input
-                                type="date"
-                                value={rescheduleDate}
-                                onChange={(e) => setRescheduleDate(e.target.value)}
-                                className="h-9 mt-1"
-                              />
-                              <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">
-                                Following visits will roll forward at the {propertyFrequency.replace("-", " ")} cadence.
-                              </p>
-                            </div>
-                            <div className="flex justify-end gap-2 pt-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-xs"
-                                onClick={() => setReschedulingId(null)}
-                                disabled={rescheduleSaving}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                size="sm"
-                                className="h-8 text-xs"
-                                disabled={!rescheduleDate || rescheduleSaving}
-                                onClick={async () => {
-                                  if (!rescheduleDate) return;
-                                  setRescheduleSaving(true);
-                                  try {
+                        (() => {
+                          const editing = reschedulingId === s.id;
+                          const dateValue = editing ? rescheduleDate : (s.service_date || "");
+                          const canSave =
+                            !!dateValue &&
+                            !rescheduleSaving &&
+                            (isProjected || dateValue !== (s.service_date || ""));
+                          const doSave = async () => {
+                            if (!dateValue) return;
+                            setRescheduleSaving(true);
+                            // Make sure the active save uses dateValue regardless of which row was last focused
+                            const rescheduleDateLocal = dateValue;
+                            try {
                                     if (isProjected) {
                                       // No DB row yet — create a real scheduled service so
                                       // the projection anchors on this confirmed date.
@@ -5111,7 +5067,7 @@ const PropertyDashboard = ({
                                       const inserted = await supabase.from("portal_services").insert({
                                         property_id: property.id,
                                         service_type: s.service_type || "General Pest Control",
-                                        service_date: rescheduleDate,
+                                        service_date: rescheduleDateLocal,
                                         technician: inProgress?.technician || (s as any).technician || null,
                                         status: "scheduled",
                                         units_planned: Array.isArray(s.units_planned) ? s.units_planned : [],
@@ -5141,7 +5097,7 @@ const PropertyDashboard = ({
                                         .update({ service_date: rescheduleDate })
                                         .eq("id", s.id);
                                     }
-                                    toast({ title: "Service rescheduled", description: `Next visit set to ${formatDate(rescheduleDate)}` });
+                                    toast({ title: isProjected ? "Visit scheduled" : "Service rescheduled", description: `Next visit set to ${formatDate(rescheduleDateLocal)}` });
                                     setReschedulingId(null);
                                     onRefresh();
                                   } catch (err: any) {
@@ -5149,13 +5105,56 @@ const PropertyDashboard = ({
                                   } finally {
                                     setRescheduleSaving(false);
                                   }
+                                };
+                          return (
+                            <div
+                              className={`flex items-center gap-2 ${isProjected ? "p-2 -my-1 rounded-lg bg-primary/10 ring-2 ring-primary/60 shadow-md" : ""}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {isProjected && (
+                                <span className="text-[11px] font-bold uppercase tracking-wide text-primary hidden sm:inline">
+                                  Pick a date →
+                                </span>
+                              )}
+                              <Input
+                                type="date"
+                                value={dateValue}
+                                onFocus={() => {
+                                  setReschedulingId(s.id);
+                                  setRescheduleDate(s.service_date || "");
+                                }}
+                                onChange={(e) => {
+                                  if (!editing) setReschedulingId(s.id);
+                                  setRescheduleDate(e.target.value);
+                                }}
+                                className={`h-10 text-sm font-semibold w-[170px] ${
+                                  isProjected ? "border-primary text-primary bg-background" : ""
+                                }`}
+                              />
+                              <Button
+                                size="sm"
+                                className={`h-10 px-3 text-sm font-semibold gap-1.5 ${
+                                  isProjected
+                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/40 hover:bg-primary/90"
+                                    : ""
+                                }`}
+                                variant={isProjected ? "default" : "outline"}
+                                disabled={!canSave}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  doSave();
                                 }}
                               >
-                                {rescheduleSaving ? "Saving…" : "Save date"}
+                                <Calendar className="w-4 h-4" />
+                                {rescheduleSaving
+                                  ? "Saving…"
+                                  : isProjected
+                                    ? "Schedule"
+                                    : "Update"}
                               </Button>
                             </div>
-                          </PopoverContent>
-                        </Popover>
+                          );
+                        })()
                       )}
                       {!isFirst && <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />}
                       {!isProjected && (
