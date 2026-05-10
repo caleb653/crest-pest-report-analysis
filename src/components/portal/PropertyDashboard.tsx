@@ -2599,18 +2599,15 @@ const PropertyDashboard = ({
               });
             }}
             communityFeedback={isUpcoming && isFirstUpcoming ? (() => {
-              // Community pest sightings submitted since the most recent
-              // completed visit. Briefs the tech for the next service.
-              const lastDate = pastServices[0]?.service_date ? new Date(pastServices[0].service_date).getTime() : 0;
+              // Show every open community pest sighting on the next visit so
+              // the tech is always briefed. Sightings drop off only once the
+              // request is marked resolved.
               return (pendingRequests as any[])
                 .filter((r) => {
                   if (r.status === "resolved") return false;
                   const isCommunity = r.request_type === "Community Pest Sighting" ||
                     /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-                  if (!isCommunity) return false;
-                  if (!lastDate) return true;
-                  const created = new Date(r.created_at).getTime();
-                  return created >= lastDate;
+                  return isCommunity;
                 })
                 .map((r) => ({
                   id: r.id,
