@@ -946,6 +946,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             technician={s.technician}
             products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
+            attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
           />
         </div>
       );
