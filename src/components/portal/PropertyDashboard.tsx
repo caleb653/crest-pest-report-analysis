@@ -1498,7 +1498,7 @@ const PropertyDashboard = ({
       console.warn("snapshot open requests failed", e);
     }
 
-    await supabase.from("portal_services").update({
+    const { error: completeErr } = await supabase.from("portal_services").update({
       status: "completed",
       // Preserve any existing service_date the tech set; only fall back to
       // today when the row truly has no date yet. Completing a service must
@@ -1517,6 +1517,11 @@ const PropertyDashboard = ({
       appointment_service: appointmentLabel,
       report_data: existingReport,
     }).eq("id", serviceId);
+    if (completeErr) {
+      toast({ title: "Could not complete service", description: completeErr.message, variant: "destructive" });
+      setCompletingServiceId(null);
+      return;
+    }
     // Forget the local "last serialized" snapshot so a re-open of this
     // service id (rare) doesn't think there's nothing to save.
     delete completionDraftLast.current[serviceId];
