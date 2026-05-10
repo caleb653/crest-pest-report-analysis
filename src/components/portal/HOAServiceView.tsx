@@ -742,23 +742,26 @@ export function HOAServiceView(props: HOAServiceViewProps) {
                         · {u.target_pest}
                       </span>
                     )}
-                    <Select
-                      value={u.status || "To Be Treated"}
-                      onValueChange={(v) =>
-                        onChangeUnitStatus!(u.unit_number, v)
-                      }
-                    >
-                      <SelectTrigger className="h-6 text-[11px] px-1.5 border-0 bg-transparent w-auto min-w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TREATMENT_STATUS_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
+                    <div className="inline-flex rounded-full border border-border bg-muted/30 p-0.5">
+                      {[
+                        { value: "Treated - Complete", label: "Completed" },
+                        { value: "Not Treated", label: "Not Completed" },
+                      ].map((o) => {
+                        const active = (u.status || "To Be Treated") === o.value;
+                        return (
+                          <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => onChangeUnitStatus!(u.unit_number, o.value)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                              active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
                             {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               }
