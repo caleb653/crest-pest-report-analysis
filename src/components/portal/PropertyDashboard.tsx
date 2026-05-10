@@ -361,7 +361,7 @@ const PropertyDashboard = ({
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   type CompletionDraft = {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
