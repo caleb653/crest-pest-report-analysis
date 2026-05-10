@@ -2788,6 +2788,7 @@ const PropertyDashboard = ({
                     pest_type: r.pest_type,
                     location_type: r.location_type,
                     description: r.description,
+                    photos: Array.isArray(r.photos) ? r.photos : [],
                   }));
               }
               return [];
