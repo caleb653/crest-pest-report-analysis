@@ -708,6 +708,112 @@ export function HOAServiceView(props: HOAServiceViewProps) {
       </div>
 
       {!isUpcoming && <PesticideNotice />}
+
+      {/* ─── Attachments (photos + videos) — visible to PM, admin can edit ─── */}
+      {(canEditAttachments || attachments.length > 0) && (
+        <div className="rounded-xl border-2 border-blue-300 bg-blue-50/40 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-900 flex items-center gap-1.5">
+              <ImageIcon className="w-4 h-4" />
+              Photos & Videos {attachments.length > 0 ? `(${attachments.length})` : ""}
+            </p>
+            {canEditAttachments && (
+              <label className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted/40 cursor-pointer ${uploadingAttach ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploadingAttach ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {uploadingAttach ? "Uploading…" : "Upload"}
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploadingAttach}
+                  onChange={(e) => {
+                    handleAttachmentUpload(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {attachments.length === 0 ? (
+            <p className="text-xs italic text-muted-foreground">No attachments yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              {attachments.map((att, i) => {
+                const isVideo = att.type === "video" || /\.(mp4|webm|mov|m4v)$/i.test(att.url);
+                return (
+                  <div key={i} className="relative group rounded-md overflow-hidden border bg-background">
+                    {isVideo ? (
+                      <video
+                        src={att.url}
+                        controls
+                        className="w-full h-32 object-cover bg-black"
+                      />
+                    ) : (
+                      <a href={att.url} target="_blank" rel="noopener noreferrer">
+                        <img src={att.url} alt={att.name || "Attachment"} className="w-full h-32 object-cover" />
+                      </a>
+                    )}
+                    <div className="absolute top-1 left-1 bg-background/90 rounded px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                      {isVideo ? <Film className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                      {isVideo ? "Video" : "Photo"}
+                    </div>
+                    {canEditAttachments && (
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Office Only Notes (admin only — never shown to PM) ─── */}
+      {mode === "admin" && (canEditOfficeNotes || onFlagOffice) && (
+        <div className="rounded-xl border-2 border-red-500 bg-red-50/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-red-900 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              Office Only Notes — Per Appointment
+            </p>
+            {onFlagOffice && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={handleFlagOffice}
+                disabled={flagging}
+              >
+                {flagging ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Flag className="w-3.5 h-3.5 mr-1" />}
+                {flagging ? "Sending…" : "Flag for Office"}
+              </Button>
+            )}
+          </div>
+          <p className="text-[11px] text-red-900/80 mb-2 leading-snug">
+            Private notes for this appointment. Never shown to the property manager. Use "Flag for Office" to email office@crestpestcontrol.com.
+          </p>
+          {canEditOfficeNotes ? (
+            <Textarea
+              value={localOfficeNotes}
+              onChange={(e) => setLocalOfficeNotes(e.target.value)}
+              placeholder="Issue, scheduling concern, callback needed…"
+              className="text-sm min-h-[90px] resize-y bg-background border-red-300 focus-visible:ring-red-400"
+            />
+          ) : officeNotes ? (
+            <p className="text-sm whitespace-pre-wrap text-red-900 font-medium">{officeNotes}</p>
+          ) : (
+            <p className="text-xs italic text-muted-foreground">No office notes yet.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
