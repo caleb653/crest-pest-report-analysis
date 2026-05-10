@@ -947,6 +947,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
             attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
+            communityFeedback={(() => {
+              const snap = (s as any)?.report_data?.community_sightings_addressed;
+              return Array.isArray(snap) ? snap : [];
+            })()}
           />
         </div>
       );
@@ -2334,11 +2338,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                   // Show every open community pest sighting
                                   // on the next upcoming visit so the board
                                   // (and the tech) always see what's been
-                                  // submitted. They drop off only once the
-                                  // request is marked resolved.
+                                  // submitted. They drop off once the visit
+                                  // is completed (status -> resolved).
                                   return (requests as any[])
                                     .filter((r) => {
-                                      if (r.status === "resolved") return false;
+                                      if (r.status === "resolved" || r.status === "completed") return false;
                                       const isCommunity = r.request_type === "Community Pest Sighting" ||
                                         /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
                                       return isCommunity;
