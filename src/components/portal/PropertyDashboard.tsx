@@ -2640,13 +2640,25 @@ const PropertyDashboard = ({
             attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
             attachmentsPathPrefix={`portal-services/${property.id}/${s.id}`}
             onChangeAttachments={async (next) => {
-              await supabase.from("portal_services").update({ attachments: next as any }).eq("id", s.id);
+              let targetId = s.id;
+              if (String(s.id).startsWith("projected-")) {
+                const newId = await materializeProjected(s.id);
+                if (!newId) return;
+                targetId = newId;
+              }
+              await supabase.from("portal_services").update({ attachments: next as any }).eq("id", targetId);
               (s as any).attachments = next;
               await onRefresh?.();
             }}
             officeNotes={(s as any).office_notes || ""}
             onChangeOfficeNotes={async (next) => {
-              await supabase.from("portal_services").update({ office_notes: next } as any).eq("id", s.id);
+              let targetId = s.id;
+              if (String(s.id).startsWith("projected-")) {
+                const newId = await materializeProjected(s.id);
+                if (!newId) return;
+                targetId = newId;
+              }
+              await supabase.from("portal_services").update({ office_notes: next } as any).eq("id", targetId);
               (s as any).office_notes = next;
             }}
             onFlagOffice={async () => {
