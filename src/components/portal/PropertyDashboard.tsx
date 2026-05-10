@@ -1467,9 +1467,23 @@ const PropertyDashboard = ({
         description: r.description,
         unit_number: r.unit_number,
         request_type: r.request_type,
+        photos: Array.isArray(r.photos) ? r.photos : [],
       });
+      const completedUnitRequestIds = new Set(
+        unitRows
+          .map((r: any) => r.request_id || r.request?.id)
+          .filter(Boolean)
+      );
       addressedCommunitySightings = openRequests.filter(isCommunityRow).map(mapRow);
-      addressedServiceRequests = openRequests.filter((r) => !isCommunityRow(r)).map(mapRow);
+      addressedServiceRequests = openRequests
+        .filter((r) => !isCommunityRow(r))
+        .filter((r) => {
+          if (completedUnitRequestIds.has(r.id)) return true;
+          const requestUnit = String(r.unit_number || "").trim();
+          if (!requestUnit) return true;
+          return unitRows.some((u: any) => String(u.unit_number || "").trim() === requestUnit);
+        })
+        .map(mapRow);
       if (addressedCommunitySightings.length > 0) {
         (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
       }
