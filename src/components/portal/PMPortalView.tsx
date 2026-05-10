@@ -946,6 +946,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             technician={s.technician}
             products={hoaProducts.length > 0 ? hoaProducts : products}
             units={hoaUnits}
+            attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
           />
         </div>
       );
@@ -2328,6 +2329,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 serviceMapData={(s as any)?.report_data?.service_map_data ?? null}
                                 findings={[s.summary, s.findings, s.notes].filter(Boolean).join("\n\n")}
                                 technician={s.technician}
+                                attachments={Array.isArray((s as any).attachments) ? (s as any).attachments : []}
                                 communityFeedback={isFirst ? (() => {
                                   // Community pest sightings submitted since
                                   // the most recent completed visit. Used to

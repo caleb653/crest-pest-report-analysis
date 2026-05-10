@@ -447,6 +447,7 @@ export type Database = {
       portal_services: {
         Row: {
           appointment_service: string | null
+          attachments: Json
           created_at: string
           findings: string | null
           follow_up_notes: string | null
@@ -454,6 +455,7 @@ export type Database = {
           frequency_days: number | null
           id: string
           notes: string | null
+          office_notes: string | null
           photos: Json | null
           prep_notes: string | null
           prep_required: boolean | null
@@ -474,6 +476,7 @@ export type Database = {
         }
         Insert: {
           appointment_service?: string | null
+          attachments?: Json
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
@@ -481,6 +484,7 @@ export type Database = {
           frequency_days?: number | null
           id?: string
           notes?: string | null
+          office_notes?: string | null
           photos?: Json | null
           prep_notes?: string | null
           prep_required?: boolean | null
@@ -501,6 +505,7 @@ export type Database = {
         }
         Update: {
           appointment_service?: string | null
+          attachments?: Json
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
@@ -508,6 +513,7 @@ export type Database = {
           frequency_days?: number | null
           id?: string
           notes?: string | null
+          office_notes?: string | null
           photos?: Json | null
           prep_notes?: string | null
           prep_required?: boolean | null

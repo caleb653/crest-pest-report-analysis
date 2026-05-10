@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2 } from "lucide-react";
+import { ClipboardList, MapPin, Edit, Image as ImageIcon, FlaskConical, Bug, RotateCcw, Check, Loader2, Upload, X, Film, Flag, AlertTriangle } from "lucide-react";
 import { MessageSquare } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { normalizeUsageList, type ProductUsage } from "@/lib/productCatalog";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -101,6 +104,22 @@ export interface HOAServiceViewProps {
     location_type?: string | null;
     description?: string | null;
   }>;
+
+  /** Photos & videos attached to this appointment.
+   *  Each entry: { url, type: 'image' | 'video', name? }. Visible to PM. */
+  attachments?: Array<{ url: string; type?: "image" | "video"; name?: string }>;
+  /** Admin-only — persist updated attachments list to portal_services.attachments. */
+  onChangeAttachments?: (next: Array<{ url: string; type?: "image" | "video"; name?: string }>) => Promise<void> | void;
+
+  /** Admin-only private notes for this single appointment.
+   *  Stored on portal_services.office_notes. NEVER passed to PM mode. */
+  officeNotes?: string;
+  /** Admin-only — persist updated office notes. */
+  onChangeOfficeNotes?: (next: string) => Promise<void> | void;
+  /** Admin-only — emails office@crestpestcontrol.com with the office note. */
+  onFlagOffice?: () => Promise<void> | void;
+  /** Storage path prefix used when uploading attachments (e.g. property id). */
+  attachmentsPathPrefix?: string;
 }
 
 export function HOAServiceView(props: HOAServiceViewProps) {
@@ -126,6 +145,15 @@ export function HOAServiceView(props: HOAServiceViewProps) {
     communityFeedback = [],
   } = props;
 
+  const {
+    attachments = [],
+    onChangeAttachments,
+    officeNotes = "",
+    onChangeOfficeNotes,
+    onFlagOffice,
+    attachmentsPathPrefix,
+  } = props;
+  const { toast } = useToast();
   const [isEditingMap, setIsEditingMap] = useState(false);
   const canEditMap = mode === "admin" && !!onSaveServiceMapData;
   const canEditFindings = mode === "admin" && !!onChangeFindings;
@@ -182,6 +210,94 @@ export function HOAServiceView(props: HOAServiceViewProps) {
   const findingsTimerRef = useRef<number | null>(null);
 
   useEffect(() => { onChangeFindingsRef.current = onChangeFindings; }, [onChangeFindings]);
+
+  // ─── Office notes (admin only) — local debounced persist ──────────────
+  const canEditOfficeNotes = mode === "admin" && !!onChangeOfficeNotes;
+  const [localOfficeNotes, setLocalOfficeNotes] = useState(officeNotes);
+  const officeNotesSyncedRef = useRef(officeNotes);
+  const officeNotesTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (officeNotes !== officeNotesSyncedRef.current) {
+      setLocalOfficeNotes(officeNotes);
+      officeNotesSyncedRef.current = officeNotes;
+    }
+  }, [officeNotes]);
+  useEffect(() => {
+    if (!canEditOfficeNotes) return;
+    if (localOfficeNotes === officeNotesSyncedRef.current) return;
+    if (officeNotesTimerRef.current) window.clearTimeout(officeNotesTimerRef.current);
+    officeNotesTimerRef.current = window.setTimeout(async () => {
+      const next = localOfficeNotes;
+      officeNotesSyncedRef.current = next;
+      await onChangeOfficeNotes?.(next);
+    }, 400);
+    return () => {
+      if (officeNotesTimerRef.current) window.clearTimeout(officeNotesTimerRef.current);
+    };
+  }, [localOfficeNotes, canEditOfficeNotes, onChangeOfficeNotes]);
+
+  // ─── Attachments (photos + videos) ────────────────────────────────────
+  const canEditAttachments = mode === "admin" && !!onChangeAttachments;
+  const [uploadingAttach, setUploadingAttach] = useState(false);
+  const handleAttachmentUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !onChangeAttachments) return;
+    setUploadingAttach(true);
+    try {
+      const uploaded: Array<{ url: string; type: "image" | "video"; name: string }> = [];
+      for (const file of Array.from(files)) {
+        const isVideo = file.type.startsWith("video/");
+        const ext = (file.name.split(".").pop() || (isVideo ? "mp4" : "jpg")).toLowerCase();
+        const path = `${attachmentsPathPrefix || "service-attachments"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("report-images")
+          .upload(path, file, { contentType: file.type || (isVideo ? "video/mp4" : "image/jpeg"), upsert: false });
+        if (upErr) {
+          console.error("attachment upload failed", upErr);
+          toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+        uploaded.push({ url: pub.publicUrl, type: isVideo ? "video" : "image", name: file.name });
+      }
+      if (uploaded.length > 0) {
+        await onChangeAttachments([...attachments, ...uploaded]);
+        toast({ title: `Uploaded ${uploaded.length} file${uploaded.length === 1 ? "" : "s"}`, duration: 1500 });
+      }
+    } finally {
+      setUploadingAttach(false);
+    }
+  };
+  const removeAttachment = async (idx: number) => {
+    if (!onChangeAttachments) return;
+    if (!window.confirm("Remove this attachment?")) return;
+    const next = attachments.filter((_, i) => i !== idx);
+    await onChangeAttachments(next);
+  };
+
+  // ─── Office flag email ────────────────────────────────────────────────
+  const [flagging, setFlagging] = useState(false);
+  const handleFlagOffice = async () => {
+    if (!onFlagOffice) return;
+    if (!localOfficeNotes.trim()) {
+      toast({ title: "Add an office note first", description: "Type the issue you want to flag for the office.", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Email office@crestpestcontrol.com with these office notes?")) return;
+    setFlagging(true);
+    try {
+      // Make sure the latest draft is persisted before we email it.
+      if (canEditOfficeNotes && localOfficeNotes !== officeNotesSyncedRef.current) {
+        officeNotesSyncedRef.current = localOfficeNotes;
+        await onChangeOfficeNotes?.(localOfficeNotes);
+      }
+      await onFlagOffice();
+      toast({ title: "Flagged for office", description: "Email sent to office@crestpestcontrol.com" });
+    } catch (e: any) {
+      toast({ title: "Flag failed", description: e?.message || "Could not send email", variant: "destructive" });
+    } finally {
+      setFlagging(false);
+    }
+  };
 
   useEffect(() => {
     if (!canEditFindings) return;
@@ -274,7 +390,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
             </div>
             <div
               className="relative bg-background w-full"
-              style={{ aspectRatio: "3 / 4", height: 720, maxWidth: "100%" }}
+              style={{ aspectRatio: "3 / 4", width: "100%", maxHeight: 720 }}
               onPaste={
                 canEditMap && onUploadMapImage
                   ? async (e) => {
@@ -592,6 +708,112 @@ export function HOAServiceView(props: HOAServiceViewProps) {
       </div>
 
       {!isUpcoming && <PesticideNotice />}
+
+      {/* ─── Attachments (photos + videos) — visible to PM, admin can edit ─── */}
+      {(canEditAttachments || attachments.length > 0) && (
+        <div className="rounded-xl border-2 border-blue-300 bg-blue-50/40 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-900 flex items-center gap-1.5">
+              <ImageIcon className="w-4 h-4" />
+              Photos & Videos {attachments.length > 0 ? `(${attachments.length})` : ""}
+            </p>
+            {canEditAttachments && (
+              <label className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border bg-background hover:bg-muted/40 cursor-pointer ${uploadingAttach ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploadingAttach ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {uploadingAttach ? "Uploading…" : "Upload"}
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  disabled={uploadingAttach}
+                  onChange={(e) => {
+                    handleAttachmentUpload(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {attachments.length === 0 ? (
+            <p className="text-xs italic text-muted-foreground">No attachments yet.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              {attachments.map((att, i) => {
+                const isVideo = att.type === "video" || /\.(mp4|webm|mov|m4v)$/i.test(att.url);
+                return (
+                  <div key={i} className="relative group rounded-md overflow-hidden border bg-background">
+                    {isVideo ? (
+                      <video
+                        src={att.url}
+                        controls
+                        className="w-full h-32 object-cover bg-black"
+                      />
+                    ) : (
+                      <a href={att.url} target="_blank" rel="noopener noreferrer">
+                        <img src={att.url} alt={att.name || "Attachment"} className="w-full h-32 object-cover" />
+                      </a>
+                    )}
+                    <div className="absolute top-1 left-1 bg-background/90 rounded px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                      {isVideo ? <Film className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                      {isVideo ? "Video" : "Photo"}
+                    </div>
+                    {canEditAttachments && (
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(i)}
+                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Office Only Notes (admin only — never shown to PM) ─── */}
+      {mode === "admin" && (canEditOfficeNotes || onFlagOffice) && (
+        <div className="rounded-xl border-2 border-red-500 bg-red-50/60 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs font-bold uppercase tracking-wide text-red-900 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4" />
+              Office Only Notes — Per Appointment
+            </p>
+            {onFlagOffice && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={handleFlagOffice}
+                disabled={flagging}
+              >
+                {flagging ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Flag className="w-3.5 h-3.5 mr-1" />}
+                {flagging ? "Sending…" : "Flag for Office"}
+              </Button>
+            )}
+          </div>
+          <p className="text-[11px] text-red-900/80 mb-2 leading-snug">
+            Private notes for this appointment. Never shown to the property manager. Use "Flag for Office" to email office@crestpestcontrol.com.
+          </p>
+          {canEditOfficeNotes ? (
+            <Textarea
+              value={localOfficeNotes}
+              onChange={(e) => setLocalOfficeNotes(e.target.value)}
+              placeholder="Issue, scheduling concern, callback needed…"
+              className="text-sm min-h-[90px] resize-y bg-background border-red-300 focus-visible:ring-red-400"
+            />
+          ) : officeNotes ? (
+            <p className="text-sm whitespace-pre-wrap text-red-900 font-medium">{officeNotes}</p>
+          ) : (
+            <p className="text-xs italic text-muted-foreground">No office notes yet.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
