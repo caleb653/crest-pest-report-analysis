@@ -86,6 +86,32 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
+type RequestSnapshotRow = {
+  id?: string;
+  created_at?: string;
+  pest_type?: string | null;
+  location_type?: string | null;
+  description?: string | null;
+  unit_number?: string | null;
+  request_type?: string | null;
+  photos?: unknown;
+};
+
+const isCommunityPestSighting = (r: RequestSnapshotRow | null | undefined) =>
+  r?.request_type === "Community Pest Sighting" ||
+  /^\[COMMUNITY SIGHTING\]/i.test(String(r?.description || ""));
+
+const toAddressedRequestSnapshot = (r: RequestSnapshotRow) => ({
+  id: r.id,
+  created_at: r.created_at,
+  pest_type: r.pest_type,
+  location_type: r.location_type,
+  description: r.description,
+  unit_number: r.unit_number,
+  request_type: r.request_type,
+  photos: Array.isArray(r.photos) ? r.photos : [],
+});
+
 const ACTIVITY_OPTIONS = ["None", "Low", "Medium", "High", "Very High"];
 // Status option sets are now context-aware: technicians only see the choices
 // that make sense for the kind of visit they're filling out (treatment vs.
@@ -1446,55 +1472,44 @@ const PropertyDashboard = ({
 
     // ─── Snapshot every open submission (Community Pest Sightings AND
     //     Service Requests) onto THIS completed visit so they stay attached
-    //     to the past service that addressed them. They are a snapshot in
-    //     time — once a visit closes, they MUST stop showing up on the next
-    //     upcoming service. ───
+    //     to the past service that addressed them. Re-query here instead of
+    //     trusting component state so a sighting submitted moments before
+    //     completion cannot be missed by stale `pendingRequests`. ───
     let addressedCommunitySightings: any[] = [];
     let addressedServiceRequests: any[] = [];
     try {
-      const openRequests = (pendingRequests as any[]).filter((r) => {
+      const { data: latestRequests } = await supabase
+        .from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .in("status", ["pending", "in_progress"])
+        .order("created_at", { ascending: false });
+      const openRequests = ((latestRequests || pendingRequests) as any[]).filter((r) => {
         if (!r) return false;
         return r.status !== "resolved" && r.status !== "completed";
-      });
-      const isCommunityRow = (r: any) =>
-        r.request_type === "Community Pest Sighting" ||
-        /^\[COMMUNITY SIGHTING\]/i.test(String(r.description || ""));
-      const mapRow = (r: any) => ({
-        id: r.id,
-        created_at: r.created_at,
-        pest_type: r.pest_type,
-        location_type: r.location_type,
-        description: r.description,
-        unit_number: r.unit_number,
-        request_type: r.request_type,
-        photos: Array.isArray(r.photos) ? r.photos : [],
       });
       const completedUnitRequestIds = new Set(
         unitRows
           .map((r: any) => r.request_id || r.request?.id)
           .filter(Boolean)
       );
-      addressedCommunitySightings = openRequests.filter(isCommunityRow).map(mapRow);
+      addressedCommunitySightings = openRequests.filter(isCommunityPestSighting).map(toAddressedRequestSnapshot);
       addressedServiceRequests = openRequests
-        .filter((r) => !isCommunityRow(r))
+        .filter((r) => !isCommunityPestSighting(r))
         .filter((r) => {
           if (completedUnitRequestIds.has(r.id)) return true;
           const requestUnit = String(r.unit_number || "").trim();
           if (!requestUnit) return true;
           return unitRows.some((u: any) => String(u.unit_number || "").trim() === requestUnit);
         })
-        .map(mapRow);
-      if (addressedCommunitySightings.length > 0) {
-        (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
-      }
-      if (addressedServiceRequests.length > 0) {
-        (existingReport as any).service_requests_addressed = addressedServiceRequests;
-      }
+        .map(toAddressedRequestSnapshot);
+      (existingReport as any).community_sightings_addressed = addressedCommunitySightings;
+      (existingReport as any).service_requests_addressed = addressedServiceRequests;
     } catch (e) {
       console.warn("snapshot open requests failed", e);
     }
 
-    await supabase.from("portal_services").update({
+    const { error: completeErr } = await supabase.from("portal_services").update({
       status: "completed",
       // Preserve any existing service_date the tech set; only fall back to
       // today when the row truly has no date yet. Completing a service must
@@ -1513,6 +1528,11 @@ const PropertyDashboard = ({
       appointment_service: appointmentLabel,
       report_data: existingReport,
     }).eq("id", serviceId);
+    if (completeErr) {
+      toast({ title: "Could not complete service", description: completeErr.message, variant: "destructive" });
+      setCompletingServiceId(null);
+      return;
+    }
     // Forget the local "last serialized" snapshot so a re-open of this
     // service id (rare) doesn't think there's nothing to save.
     delete completionDraftLast.current[serviceId];
@@ -1563,6 +1583,7 @@ const PropertyDashboard = ({
           .from("portal_requests")
           .update({ status: "resolved", updated_at: new Date().toISOString() } as any)
           .in("id", allIds);
+        setPendingRequests(prev => prev.filter((r: any) => !allIds.includes(r.id)));
       }
     } catch (e) {
       console.warn("resolve open requests failed", e);
@@ -2784,6 +2805,7 @@ const PropertyDashboard = ({
                     pest_type: r.pest_type,
                     location_type: r.location_type,
                     description: r.description,
+                    photos: Array.isArray(r.photos) ? r.photos : [],
                   }));
               }
               return [];
