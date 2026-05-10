@@ -3492,53 +3492,58 @@ Crest Pest Control`;
             </div>
           )}
 
-          {videoUrl2 && (
-            <div className="mt-6 no-pdf-export">
-              <h2 className="text-lg font-semibold text-foreground mb-3">Property Video</h2>
-              <div className="max-w-3xl mx-auto relative group">
-                <video
-                  id="property-video-bottom"
-                  src={videoUrl2}
-                  controls
-                  preload="metadata"
-                  className="w-full rounded-lg border-2 border-border relative"
-                  poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                  onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                  onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-                />
-                <div data-bottom-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                  <p className="text-2xl font-bold text-foreground tracking-wide">Property Video</p>
-                  <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {portalVideoAttached && (
-            <div className="mt-6 no-pdf-export">
-              <h2 className="text-lg font-semibold text-foreground mb-3">Client Portal Walkthrough</h2>
-              <div className="max-w-3xl mx-auto relative group">
-                <video
-                  id="portal-walkthrough-video"
-                  src="/videos/client-portal-video.mp4"
-                  controls
-                  preload="metadata"
-                  className="w-full rounded-lg border-2 border-border relative"
-                  poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                  onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
-                  onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
-                />
-                <div data-portal-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
-                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
-                  <p className="text-2xl font-bold text-foreground tracking-wide">Client Portal Walkthrough</p>
-                  <p className="text-sm text-muted-foreground mt-2">Click to play</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* ─── Bottom Videos — render at the VERY end of the report,
+          AFTER all proposal pages, maps, notices, and photos so they
+          always sit at the very bottom of what the customer scrolls. */}
+      {(videoUrl2 || portalVideoAttached) && (
+        <div data-pdf-page="bottom-videos" className="print-page-break bg-background no-pdf-export">
+          <div className="p-4 max-w-[1800px] mx-auto space-y-6">
+            {videoUrl2 && (
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-3">Property Video</h2>
+                <div className="max-w-3xl mx-auto relative group">
+                  <video
+                    id="property-video-bottom"
+                    src={videoUrl2}
+                    controls
+                    preload="metadata"
+                    className="w-full rounded-lg border-2 border-border relative"
+                    poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                    onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                    onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                  />
+                  <div data-bottom-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                    <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {portalVideoAttached && (
+              <div>
+                <div className="max-w-3xl mx-auto relative group">
+                  <video
+                    id="portal-walkthrough-video"
+                    src="/videos/client-portal-video.mp4"
+                    controls
+                    preload="metadata"
+                    className="w-full rounded-lg border-2 border-border relative"
+                    poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                    onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                    onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                  />
+                  <div data-portal-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                    <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Signature Modal — large signing area for the active proposal */}
       <Dialog
