@@ -516,7 +516,6 @@ export default function CustomerReportView() {
             preload="metadata"
             className="w-full h-auto max-h-[70vh] relative bg-muted"
             playsInline
-            poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='hsl(130 14% 79%)'/></svg>`)}`}
             onPlay={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: true }))}
             onPause={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
             onEnded={() => setPlayingVideos((prev) => ({ ...prev, [videoKey]: false }))}
