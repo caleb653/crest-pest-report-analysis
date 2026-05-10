@@ -1419,23 +1419,14 @@ export default function CustomerReportView() {
                 className="w-full h-auto max-h-[70vh] relative bg-muted"
                 playsInline
                 poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
-                onPlay={() => setBottomVideoActivated(true)}
+                onPlay={(e) => { setBottomVideoActivated(true); const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
               />
-              {!bottomVideoActivated && (
-                <button
-                  type="button"
-                  data-bottom-video-overlay
-                  aria-label="Play property video"
-                  onClick={handleBottomVideoPlay}
-                  className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-5 rounded-lg border-0 bg-primary text-primary-foreground cursor-pointer transition-opacity hover:opacity-95"
-                >
-                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto pointer-events-none" />
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full bg-background/90 text-foreground shadow-lg pointer-events-none">
-                    <Play className="h-10 w-10 fill-current ml-1" aria-hidden="true" />
-                  </span>
-                  <span className="text-sm font-semibold uppercase tracking-wide pointer-events-none">Click to play</span>
-                </button>
-              )}
+              <div data-bottom-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+                <p className="text-2xl font-bold text-foreground tracking-wide">Property Video</p>
+                <p className="text-sm text-muted-foreground mt-2">Click to play</p>
+              </div>
             </div>
           </main>
         </div>
