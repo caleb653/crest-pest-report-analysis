@@ -3286,6 +3286,7 @@ const PropertyDashboard = ({
                         : ctx.source === "follow_up"
                           ? "follow-up"
                           : ctx.source,
+                      request_id: ctx.request?.id,
                     };
                   });
                 if (additions.length === 0) return prev;
