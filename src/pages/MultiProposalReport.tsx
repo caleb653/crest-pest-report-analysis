@@ -3330,24 +3330,24 @@ Crest Pest Control`;
             </div>
           </div>
 
-          {/* Video Upload */}
+          {/* Video Upload (Top) */}
           {!videoUrl && !isReadOnly && (
             <div className="no-print mb-4 flex items-center gap-3">
               <div className="relative inline-flex">
                 <Button variant="outline" size="sm" type="button">
                   <Video className="w-4 h-4 mr-2" />
-                  Upload Video
+                  Upload Video (Top)
                 </Button>
                 <input
                   type="file"
                   accept="video/*"
                   onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
-                  onChange={handleVideoUpload}
+                  onChange={(e) => handleVideoUpload(e, 1)}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
               </div>
               {uploadingVideo && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span className="text-xs text-muted-foreground">Upload a video to move it to the first page</span>
+              <span className="text-xs text-muted-foreground">Appears on the first page of the proposal</span>
             </div>
           )}
 
@@ -3435,10 +3435,10 @@ Crest Pest Control`;
             </div>
           )}
 
-          {/* Client Portal Walkthrough Video — toggle button + render area
-              live at the VERY bottom of the proposal (below all photos). */}
+          {/* Bottom Videos — Upload Video (Bottom) + Client Portal Walkthrough.
+              Both render at the VERY bottom of the proposal (below all photos). */}
           {!isReadOnly && (
-            <div className="no-print mt-8 pt-6 border-t border-border flex items-center gap-3">
+            <div className="no-print mt-8 pt-6 border-t border-border flex flex-wrap items-center gap-3">
               {!portalVideoAttached ? (
                 <Button
                   variant="outline"
@@ -3460,9 +3460,58 @@ Crest Pest Control`;
                   Remove Client Portal Walkthrough Video
                 </Button>
               )}
+              {!videoUrl2 ? (
+                <div className="relative inline-flex">
+                  <Button variant="outline" size="sm" type="button">
+                    <Video className="w-4 h-4 mr-2" />
+                    Upload Video (Bottom)
+                  </Button>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                    onChange={(e) => handleVideoUpload(e, 2)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                </div>
+              ) : (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  type="button"
+                  onClick={() => setVideoUrl2(null)}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Remove Bottom Video
+                </Button>
+              )}
+              {uploadingVideo2 && <Loader2 className="w-4 h-4 animate-spin" />}
               <span className="text-xs text-muted-foreground">
-                When attached, the walkthrough video appears at the very bottom of the proposal — below all photos.
+                Bottom videos appear at the very bottom of the proposal — below all photos.
               </span>
+            </div>
+          )}
+
+          {videoUrl2 && (
+            <div className="mt-6 no-pdf-export">
+              <h2 className="text-lg font-semibold text-foreground mb-3">Property Video</h2>
+              <div className="max-w-3xl mx-auto relative group">
+                <video
+                  id="property-video-bottom"
+                  src={videoUrl2}
+                  controls
+                  preload="metadata"
+                  className="w-full rounded-lg border-2 border-border relative"
+                  poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                  onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                  onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-bottom-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                />
+                <div data-bottom-video-overlay className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                  <img src={crestLogoVideo} alt="Crest Pest Control" className="h-20 w-auto mb-4" />
+                  <p className="text-2xl font-bold text-foreground tracking-wide">Property Video</p>
+                  <p className="text-sm text-muted-foreground mt-2">Click to play</p>
+                </div>
+              </div>
             </div>
           )}
 
