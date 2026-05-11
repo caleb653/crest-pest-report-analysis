@@ -42,10 +42,10 @@ const TREATMENT_MAP: Record<string, string> = {
   Complete: "Treated",
   "Not Treated": "Not Treated",
   "Not Serviced": "Not Treated",
-  "Inspected: Free and Clear": "No Activity Found",
+  "Inspected: Free and Clear": "No Activity Found - Free and Clear",
   "Inspected: Activity Found": "Activity Found",
   "Inspection: Not Performed": "Not Inspected",
-  "Free and Clear": "No Activity Found",
+  "Free and Clear": "No Activity Found - Free and Clear",
 };
 
 const INSPECTION_MAP: Record<string, string> = {
@@ -58,9 +58,9 @@ const INSPECTION_MAP: Record<string, string> = {
   "Not Treated": "Not Inspected",
   "Not Serviced": "Not Inspected",
   "Inspection: Not Performed": "Not Inspected",
-  "Inspected: Free and Clear": "No Activity Found",
+  "Inspected: Free and Clear": "No Activity Found - Free and Clear",
   "Inspected: Activity Found": "Activity Found",
-  "Free and Clear": "No Activity Found",
+  "Free and Clear": "No Activity Found - Free and Clear",
 };
 
 /**
