@@ -245,13 +245,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // Realtime: when admin adds/removes a unit, deletes a service, or
     // resolves a work order, the PM must see the change immediately so
     // both portals always show the same upcoming-service info.
+    // Debounced so the admin's keystroke-driven debounce-saves (findings,
+    // products, office notes) don't cascade into a refetch storm that
+    // re-renders the PM view mid-keystroke.
+    let t: any = null;
+    const debouncedReload = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => loadAll(), 1500);
+    };
     const channel = supabase
       .channel(`pm-portal-sync-${propertyId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, debouncedReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, debouncedReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, debouncedReload)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(channel); };
   }, [propertyId, linkId]);
 
   useEffect(() => {
