@@ -1198,16 +1198,25 @@ const PropertyDashboard = ({
     if (productsSaveTimers.current[serviceId]) clearTimeout(productsSaveTimers.current[serviceId]);
     productsSaveTimers.current[serviceId] = setTimeout(async () => {
       await supabase.from("portal_services").update({ products_used: products as any }).eq("id", serviceId);
-      onRefresh();
-      // Clear the override slightly after refresh so the next render reads
-      // the freshly-loaded value from props.
+      // Update the in-memory row so the UI reads the saved value on next
+      // render without triggering a full refetch (which re-renders the
+      // entire dashboard and can wipe in-flight keystrokes).
+      const svc = (propServices as any[]).find(s => s.id === serviceId);
+      if (svc) svc.products_used = products as any;
+      // Only clear the override if it still matches the value we just
+      // saved. If the user has typed MORE since this save fired, leave
+      // the override alone — otherwise we'd snap the editor back to the
+      // older saved value, which feels like a phantom backspace.
       setTimeout(() => {
         setProductsOverride(prev => {
+          const cur = prev[serviceId];
+          if (!cur) return prev;
+          if (JSON.stringify(cur) !== JSON.stringify(products)) return prev;
           const next = { ...prev };
           delete next[serviceId];
           return next;
         });
-      }, 400);
+      }, 200);
     }, 600);
   };
 
