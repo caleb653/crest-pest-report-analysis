@@ -41,6 +41,8 @@ import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoti
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
+import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
+import { downloadRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
 const PEST_TYPES = [
   "General Pests",
@@ -232,7 +234,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [onbEmails, setOnbEmails] = useState("");
   const [sendingOnb, setSendingOnb] = useState(false);
   // Inner tab selector for the Survey tab
-  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding">("tenant");
+  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding" | "documents">("tenant");
   const [generatingLink, setGeneratingLink] = useState<"tenant" | "onboarding" | null>(null);
 
 
@@ -1302,7 +1304,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           {!isHOA && (
             <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
               <FileDown className="w-5 h-5" />
-              <span>Prep & Auth <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+              <span>Prep / Auth / Docs <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
             </TabsTrigger>
           )}
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
@@ -2867,6 +2869,27 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
                               </p>
                             </div>
+                            <div className="shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 text-sm"
+                                onClick={() => downloadRightToTreatPdf({
+                                  propertyName: property.name,
+                                  propertyAddress: property.address,
+                                  unitNumber: r.unit_number,
+                                  signerName: r.right_to_treat_signer_name,
+                                  signerEmail: r.tenant_email,
+                                  reason: r.pest_type || r.request_type,
+                                  locationType: r.location_type,
+                                  description: r.description,
+                                  signedAt: r.right_to_treat_signed_at,
+                                  signatureDataUrl: r.right_to_treat_signature,
+                                })}
+                              >
+                                <Download className="w-3.5 h-3.5 mr-1" />Download PDF
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
@@ -2875,16 +2898,26 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
               );
             })()}
+
+            {/* Apartment property document uploads */}
+            <div className="mt-8">
+              <PropertyDocuments
+                propertyId={property.id}
+                heading="Property Documents"
+                helperText="Upload PDFs, notices, agreements, or other files for this property. Visible to anyone with the property link."
+              />
+            </div>
           </div>
         </TabsContent>
 
         {/* ════════ TAB 6: SURVEY RESULTS (compose + aggregated answers) ════════ */}
         <TabsContent value="survey" className="mt-0">
           <div className="max-w-4xl mx-auto space-y-5">
-            <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding")}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
+            <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding" | "documents")}>
+              <TabsList className={`grid w-full ${isHOA ? "grid-cols-3" : "grid-cols-2"} mb-4`}>
                 <TabsTrigger value="tenant">{isHOA ? "Resident Survey" : "Tenant Survey"}</TabsTrigger>
                 <TabsTrigger value="onboarding">Onboarding Survey</TabsTrigger>
+                {isHOA && <TabsTrigger value="documents">Document Upload</TabsTrigger>}
               </TabsList>
               <TabsContent value="tenant" className="mt-0 space-y-5">
             {/* Compose */}
@@ -3383,6 +3416,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   );
                 })()}
               </TabsContent>
+
+              {isHOA && (
+                <TabsContent value="documents" className="mt-0 space-y-5">
+                  <PropertyDocuments
+                    propertyId={property.id}
+                    heading="Resident & Property Documents"
+                    helperText="Upload PDFs, notices, agreements, or other files to share with residents and the board. Anyone with the property link can view and download these."
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </TabsContent>

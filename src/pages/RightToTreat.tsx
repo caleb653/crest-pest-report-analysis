@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { downloadRightToTreatPdf } from "@/lib/rightToTreatPdf";
+import { Download } from "lucide-react";
 
 interface RequestRow {
   id: string;
@@ -215,6 +217,24 @@ const RightToTreat = () => {
                 {request?.right_to_treat_signature && (
                   <img src={request.right_to_treat_signature} alt="Signature" className="mx-auto max-h-20 bg-white rounded border p-2" />
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => downloadRightToTreatPdf({
+                    propertyName: property?.name,
+                    propertyAddress: property?.address,
+                    unitNumber: request?.unit_number,
+                    signerName: request?.right_to_treat_signer_name,
+                    reason: request?.pest_type,
+                    locationType: request?.location_type,
+                    description: request?.description,
+                    signedAt: request?.right_to_treat_signed_at,
+                    signatureDataUrl: request?.right_to_treat_signature,
+                  })}
+                >
+                  <Download className="w-4 h-4 mr-1.5" />Download Signed Authorization (PDF)
+                </Button>
               </div>
             ) : (
               <>
