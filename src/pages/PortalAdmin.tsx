@@ -140,13 +140,22 @@ const PortalAdmin = () => {
   // admin would not see it until manual refresh — which can lead to the
   // two portals showing different units for the same upcoming service.
   useEffect(() => {
+    // Debounce realtime-triggered reloads so a flurry of writes (e.g. a
+    // tech typing into findings / products, which debounce-saves on every
+    // keystroke) doesn't trigger a refetch storm that re-renders the
+    // entire portal mid-keystroke and feels like phantom backspaces.
+    let t: any = null;
+    const debouncedReload = () => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => loadAll(), 1500);
+    };
     const channel = supabase
       .channel("portal-admin-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services" }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests" }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties" }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services" }, debouncedReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests" }, debouncedReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties" }, debouncedReload)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (t) clearTimeout(t); supabase.removeChannel(channel); };
   }, []);
 
   // Deferred property restore after data is loaded
