@@ -1677,7 +1677,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     const displayTitle = (s as any).appointment_service || cadenceLabel || s.service_type;
                     return (
                       <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
-                        <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          className="w-full text-left p-3 flex items-center justify-between cursor-pointer"
+                          onClick={() => setExpandedPastId(isExpanded ? null : s.id)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpandedPastId(isExpanded ? null : s.id); } }}
+                        >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
@@ -1693,8 +1699,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               )}
                             </div>
                           </div>
-                          <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                        </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete service (admin password required)"
+                              disabled={deletingPastId === s.id}
+                              onClick={(e) => { e.stopPropagation(); deletePastService(s.id); }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </div>
+                        </div>
                         {isExpanded && renderServiceDetailsRO(s)}
                       </Card>
                     );
