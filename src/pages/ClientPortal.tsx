@@ -668,6 +668,15 @@ const ClientPortal = () => {
               )}
             </div>
           )}
+
+          {/* Property documents (uploads from PMs/admins) */}
+          {!serviceView && (
+            <PropertyDocuments
+              propertyId={selectedProperty.id}
+              heading="Property Documents"
+              helperText="Notices, agreements, and other files shared for this property."
+            />
+          )}
         </div>
 
         {/* Footer */}
