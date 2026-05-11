@@ -124,7 +124,7 @@ const TREATMENT_STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 const INSPECTION_STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "To Be Treated",              label: "To Be Inspected" },
-  { value: "Inspected: Free and Clear",  label: "No Activity Found" },
+  { value: "Inspected: Free and Clear",  label: "No Activity Found - Free and Clear" },
   { value: "Inspected: Activity Found",  label: "Activity Found" },
   // Use a distinct canonical value so an inspection that wasn't performed
   // never collides with a treatment row's "Not Treated" status (which would
@@ -2289,7 +2289,7 @@ const PropertyDashboard = ({
       { value: "Not Serviced",      label: "Not Treated" },
     ];
     const INSPECTION_STATUSES: { value: string; label: string }[] = [
-      { value: "Free and Clear",  label: "No Activity Found" },
+      { value: "Free and Clear",  label: "No Activity Found - Free and Clear" },
       { value: "Activity Found",  label: "Activity Found" },
       { value: "Not Serviced",    label: "Not Inspected" },
     ];
@@ -2541,7 +2541,7 @@ const PropertyDashboard = ({
                   onChange={e => setNewUnitData(d => ({ ...d, status: e.target.value }))}
                 >
                   {(((newUnitData as any).kind === "inspection")
-                    ? [{ v: "Free and Clear", l: "No Activity Found" }, { v: "Activity Found", l: "Activity Found" }]
+                    ? [{ v: "Free and Clear", l: "No Activity Found - Free and Clear" }, { v: "Activity Found", l: "Activity Found" }]
                     : [{ v: "Complete", l: "Complete" }, { v: "Not Serviced", l: "Not Serviced" }]
                   ).map(a => <option key={a.v} value={a.v}>{a.l}</option>)}
                 </select>
