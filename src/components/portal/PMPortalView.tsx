@@ -42,7 +42,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
-import { downloadRightToTreatPdf } from "@/lib/rightToTreatPdf";
+import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
 const PEST_TYPES = [
   "General Pests",
@@ -2888,7 +2888,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
                       <Badge variant="secondary" className="text-xs ml-1">{signed.length}</Badge>
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property.</p>
+                    <div className="flex items-center justify-between gap-2 mt-1 flex-wrap">
+                      <p className="text-xs text-muted-foreground">Every signed {residentTerm} authorization recorded for this property.</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        onClick={() => downloadBlankRightToTreatPdf(property.name)}
+                      >
+                        <Download className="w-3.5 h-3.5 mr-1" />Download Blank Agreement
+                      </Button>
+                    </div>
                   </div>
                   {signed.length === 0 ? (
                     <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
