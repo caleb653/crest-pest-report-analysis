@@ -316,6 +316,30 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     toast({ title: "Property renamed", duration: 1500 });
   };
 
+  // Delete a past (completed) service — gated by the shared admin
+  // password (18444). Used from the Previous Services / Community
+  // Visits tab in both the HOA and Apartment portal views.
+  const deletePastService = async (serviceId: string) => {
+    if (!serviceId) return;
+    const pw = window.prompt("Enter admin password to delete this service:");
+    if (pw === null) return;
+    if (pw.trim() !== "18444") {
+      toast({ title: "Incorrect password", variant: "destructive" });
+      return;
+    }
+    if (!window.confirm("Permanently delete this service? This cannot be undone.")) return;
+    setDeletingPastId(serviceId);
+    const { error } = await supabase.from("portal_services").delete().eq("id", serviceId);
+    setDeletingPastId(null);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setServices(prev => prev.filter(s => s.id !== serviceId));
+    if (expandedPastId === serviceId) setExpandedPastId(null);
+    toast({ title: "Service deleted" });
+  };
+
   const loadAll = async () => {
     setLoading(true);
 
