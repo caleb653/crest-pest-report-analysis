@@ -41,6 +41,8 @@ import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoti
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
+import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
+import { downloadRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
 const PEST_TYPES = [
   "General Pests",
@@ -1302,7 +1304,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           {!isHOA && (
             <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
               <FileDown className="w-5 h-5" />
-              <span>Prep & Auth <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
+              <span>Prep / Auth / Docs <Badge variant="secondary" className="ml-1 text-[10px] h-4">{prepSheets.length}</Badge></span>
             </TabsTrigger>
           )}
           <TabsTrigger value="survey" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
