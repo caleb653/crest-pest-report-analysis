@@ -172,6 +172,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [prepEmailSending, setPrepEmailSending] = useState<string | null>(null);
   // For non-HOA portals: "date" / "unit" (existing behavior).
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
+  const [deletingPastId, setDeletingPastId] = useState<string | null>(null);
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
   const toggleUnitKey = (key: string) =>
