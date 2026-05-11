@@ -998,6 +998,15 @@ const PortalAdmin = () => {
 
         {/* Property document uploads — visible to admins, PMs, and customers */}
         <div className="mt-8">
+          <div className="flex justify-end mb-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => downloadBlankRightToTreatPdf(selectedProperty.name)}
+            >
+              <Download className="w-4 h-4 mr-1.5" />Download Blank Right-to-Treat Agreement
+            </Button>
+          </div>
           <PropertyDocuments
             propertyId={selectedProperty.id}
             uploadedBy="Admin"
