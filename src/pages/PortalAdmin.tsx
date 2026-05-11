@@ -745,7 +745,6 @@ const PortalAdmin = () => {
                           <div key={p.id} className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors group"
                             onClick={() => { setSelectedProperty(p); ensurePropertyLink(p); }}>
                             <div className="flex items-center gap-3">
-                              {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-lg object-cover" />}
                               <div>
                                 <p className="font-medium" onClick={(e) => e.stopPropagation()}>
                                   <InlineEditableText
