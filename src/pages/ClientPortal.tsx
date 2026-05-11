@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import crestLogo from "@/assets/crest-logo.png";
+import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 
 interface LinkData {
   id: string;
@@ -666,6 +667,15 @@ const ClientPortal = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Property documents (uploads from PMs/admins) */}
+          {!serviceView && (
+            <PropertyDocuments
+              propertyId={selectedProperty.id}
+              heading="Property Documents"
+              helperText="Notices, agreements, and other files shared for this property."
+            />
           )}
         </div>
 

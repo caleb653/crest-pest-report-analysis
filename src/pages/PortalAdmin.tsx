@@ -23,6 +23,7 @@ import NotificationBell from "@/components/NotificationBell";
 import RegionalManagersTab from "@/components/portal/RegionalManagersTab";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
+import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -993,6 +994,16 @@ const PortalAdmin = () => {
           propertyType={getPropertyType(selectedProperty)}
         />
         )}
+
+        {/* Property document uploads — visible to admins, PMs, and customers */}
+        <div className="mt-8">
+          <PropertyDocuments
+            propertyId={selectedProperty.id}
+            uploadedBy="Admin"
+            heading="Property Documents"
+            helperText="Upload PDFs, notices, agreements, or other files. Visible to anyone with the property link (admin, PMs, and clients)."
+          />
+        </div>
       </div>
 
       {/* Service Detail Modal */}
