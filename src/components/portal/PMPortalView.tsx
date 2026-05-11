@@ -2913,10 +2913,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {/* ════════ TAB 6: SURVEY RESULTS (compose + aggregated answers) ════════ */}
         <TabsContent value="survey" className="mt-0">
           <div className="max-w-4xl mx-auto space-y-5">
-            <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding")}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
+            <Tabs value={innerSurveyTab} onValueChange={(v) => setInnerSurveyTab(v as "tenant" | "onboarding" | "documents")}>
+              <TabsList className={`grid w-full ${isHOA ? "grid-cols-3" : "grid-cols-2"} mb-4`}>
                 <TabsTrigger value="tenant">{isHOA ? "Resident Survey" : "Tenant Survey"}</TabsTrigger>
                 <TabsTrigger value="onboarding">Onboarding Survey</TabsTrigger>
+                {isHOA && <TabsTrigger value="documents">Document Upload</TabsTrigger>}
               </TabsList>
               <TabsContent value="tenant" className="mt-0 space-y-5">
             {/* Compose */}
