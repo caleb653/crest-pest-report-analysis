@@ -24,6 +24,7 @@ import RegionalManagersTab from "@/components/portal/RegionalManagersTab";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
+import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
