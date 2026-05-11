@@ -234,7 +234,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [onbEmails, setOnbEmails] = useState("");
   const [sendingOnb, setSendingOnb] = useState(false);
   // Inner tab selector for the Survey tab
-  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding">("tenant");
+  const [innerSurveyTab, setInnerSurveyTab] = useState<"tenant" | "onboarding" | "documents">("tenant");
   const [generatingLink, setGeneratingLink] = useState<"tenant" | "onboarding" | null>(null);
 
 
