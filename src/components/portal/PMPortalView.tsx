@@ -2869,6 +2869,27 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 Signed {r.right_to_treat_signed_at ? new Date(r.right_to_treat_signed_at).toLocaleString() : "—"}
                               </p>
                             </div>
+                            <div className="shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 text-sm"
+                                onClick={() => downloadRightToTreatPdf({
+                                  propertyName: property.name,
+                                  propertyAddress: property.address,
+                                  unitNumber: r.unit_number,
+                                  signerName: r.right_to_treat_signer_name,
+                                  signerEmail: r.tenant_email,
+                                  reason: r.pest_type || r.request_type,
+                                  locationType: r.location_type,
+                                  description: r.description,
+                                  signedAt: r.right_to_treat_signed_at,
+                                  signatureDataUrl: r.right_to_treat_signature,
+                                })}
+                              >
+                                <Download className="w-3.5 h-3.5 mr-1" />Download PDF
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
@@ -2877,6 +2898,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 </div>
               );
             })()}
+
+            {/* Apartment property document uploads */}
+            <div className="mt-8">
+              <PropertyDocuments
+                propertyId={property.id}
+                heading="Property Documents"
+                helperText="Upload PDFs, notices, agreements, or other files for this property. Visible to anyone with the property link."
+              />
+            </div>
           </div>
         </TabsContent>
 
