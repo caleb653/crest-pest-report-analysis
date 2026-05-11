@@ -3416,6 +3416,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   );
                 })()}
               </TabsContent>
+
+              {isHOA && (
+                <TabsContent value="documents" className="mt-0 space-y-5">
+                  <PropertyDocuments
+                    propertyId={property.id}
+                    heading="Resident & Property Documents"
+                    helperText="Upload PDFs, notices, agreements, or other files to share with residents and the board. Anyone with the property link can view and download these."
+                  />
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </TabsContent>
