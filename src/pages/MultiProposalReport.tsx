@@ -3465,6 +3465,27 @@ Crest Pest Control`;
                   Remove Client Portal Walkthrough Video
                 </Button>
               )}
+              {!hoaVideoAttached ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => setHoaVideoAttached(true)}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Attach HOA Video
+                </Button>
+              ) : (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  type="button"
+                  onClick={() => setHoaVideoAttached(false)}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Remove HOA Video
+                </Button>
+              )}
               {!videoUrl2 ? (
                 <div className="relative inline-flex">
                   <Button variant="outline" size="sm" type="button">
