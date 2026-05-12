@@ -412,6 +412,9 @@ const Report = () => {
   // /videos/client-portal-video.mp4 at the VERY bottom of the proposal
   // (after property images). Toggled from the bottom of the media page.
   const [portalVideoAttached, setPortalVideoAttached] = useState<boolean>(false);
+  // HOA portal walkthrough video — renders /videos/hoa-portal-video.mp4
+  // at the bottom of the proposal alongside the Client Portal walkthrough.
+  const [hoaVideoAttached, setHoaVideoAttached] = useState<boolean>(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingVideo2, setUploadingVideo2] = useState(false);
 
@@ -1074,6 +1077,7 @@ const Report = () => {
               if (parsed.videoUrl) setVideoUrl(parsed.videoUrl);
               if (parsed.videoUrl2) setVideoUrl2(parsed.videoUrl2);
               if (parsed.portalVideoAttached) setPortalVideoAttached(true);
+              if (parsed.hoaVideoAttached) setHoaVideoAttached(true);
               if (parsed.duplicatedPages) setDuplicatedPages(parsed.duplicatedPages);
               if (parsed.duplicateMapData) setDuplicateMapData(parsed.duplicateMapData);
               if (parsed.duplicateRenderedMapImages) setDuplicateRenderedMapImages(parsed.duplicateRenderedMapImages);
@@ -1234,6 +1238,7 @@ const Report = () => {
       videoUrl,
       videoUrl2,
       portalVideoAttached,
+      hoaVideoAttached,
       duplicatedPages,
       duplicateMapData: options?.duplicateMapDataOverride ?? duplicateMapData,
       duplicateRenderedMapImages: duplicateRenderedMapImagesRef.current,
