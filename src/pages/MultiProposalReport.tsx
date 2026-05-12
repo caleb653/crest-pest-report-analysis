@@ -3524,7 +3524,7 @@ Crest Pest Control`;
       {/* ─── Bottom Videos — render at the VERY end of the report,
           AFTER all proposal pages, maps, notices, and photos so they
           always sit at the very bottom of what the customer scrolls. */}
-      {(videoUrl2 || portalVideoAttached) && (
+      {(videoUrl2 || portalVideoAttached || hoaVideoAttached) && (
         <div data-pdf-page="bottom-videos" className="print-page-break bg-background no-pdf-export">
           <div className="p-4 max-w-[1800px] mx-auto space-y-6">
             {videoUrl2 && (
@@ -3562,6 +3562,26 @@ Crest Pest Control`;
                     onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-portal-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
                   />
                   <div data-portal-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
+                    <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {hoaVideoAttached && (
+              <div>
+                <div className="max-w-3xl mx-auto relative group">
+                  <video
+                    id="hoa-portal-video"
+                    src="/videos/hoa-portal-video.mp4"
+                    controls
+                    preload="metadata"
+                    className="w-full rounded-lg border-2 border-border relative"
+                    poster={`data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><rect width='1920' height='1080' fill='#C3D1C5'/></svg>`)}`}
+                    onPlay={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-hoa-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = 'none'; }}
+                    onPause={(e) => { const overlay = (e.target as HTMLElement).parentElement?.querySelector('[data-hoa-video-overlay]') as HTMLElement; if (overlay) overlay.style.display = ''; }}
+                  />
+                  <div data-hoa-video-overlay className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-lg z-20" style={{ background: 'linear-gradient(135deg, #C3D1C5 0%, #a8b8aa 100%)' }}>
                     <img src={crestLogoVideo} alt="Crest Pest Control" className="h-24 w-auto" />
                   </div>
                 </div>
