@@ -53,6 +53,17 @@ const parseInt2 = (s: any): number | null => {
   return isFinite(n) && n > 0 ? n : null;
 };
 
+/** Days between two ISO date strings (YYYY-MM-DD). */
+const daysBetween = (a: string, b: string): number => {
+  const da = new Date(a).getTime();
+  const db = new Date(b).getTime();
+  if (!isFinite(da) || !isFinite(db)) return 0;
+  return Math.round((db - da) / (1000 * 60 * 60 * 24));
+};
+
+const isFreeAndClear = (status: any): boolean =>
+  /free\s*and\s*clear|free\s*&\s*clear|^clear$/i.test(String(status || ""));
+
 export default function RegionalManagersTab() {
   const [managers, setManagers] = useState<RegionalManager[]>([]);
   const [properties, setProperties] = useState<PropertyLite[]>([]);
