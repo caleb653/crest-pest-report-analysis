@@ -156,6 +156,7 @@ export default function CommercialDashboardView({
   const [tab, setTab] = useState<string>("map");
   const [requests, setRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<any[]>([]);
+  const [docs, setDocs] = useState<any[]>([]);
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
@@ -321,6 +322,9 @@ export default function CommercialDashboardView({
     loadRequests();
     supabase.from("portal_prep_sheets").select("*").order("title").then(({ data }) => {
       if (Array.isArray(data)) setPrepSheets(data);
+    });
+    supabase.from("portal_documents").select("*").eq("property_id", property.id).order("created_at", { ascending: false }).then(({ data }) => {
+      if (Array.isArray(data)) setDocs(data);
     });
     const channel = supabase
       .channel(`commercial-admin-${property.id}`)
@@ -1090,6 +1094,48 @@ export default function CommercialDashboardView({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ════════ TAB: Conditions ════════ */}
+        <TabsContent value="conditions" className="mt-0">
+          <div className="max-w-5xl mx-auto">
+            <ConditionsReportSection
+              services={services as any}
+              onSaveServiceReportData={persistServiceReportData}
+            />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Trending & Records ════════ */}
+        <TabsContent value="trending" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <PestTrendingSection requests={requests as any} />
+            <DeviceTrendingSection services={services as any} />
+            <ServiceRecordsSection services={services as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Materials ════════ */}
+        <TabsContent value="materials" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <CommercialApprovedMaterials />
+            <MaterialUseLogSection services={services as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Team & Licensing ════════ */}
+        <TabsContent value="team" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Help ════════ */}
+        <TabsContent value="help" className="mt-0">
+          <div className="max-w-3xl mx-auto">
+            <HelpTutorialSection />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -25,7 +25,15 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
+import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import {
+  ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
+  ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
+  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
+  LogbookDateBadge,
+} from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
+import { AlertTriangle, TrendingUp, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
 
 interface PropertyData {
   id: string;
@@ -133,6 +141,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [services, setServices] = useState<ServiceData[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
+  const [docs, setDocs] = useState<any[]>([]);
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
@@ -152,16 +161,18 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const loadAll = async () => {
-    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }, { data: dx }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
+      supabase.from("portal_documents").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
     if (prop) setProperty(prop as any);
     if (Array.isArray(svcs)) setServices(svcs as any);
     if (Array.isArray(reqs)) setRequests(reqs as any);
     if (Array.isArray(ps)) setPrepSheets(ps as any);
+    if (Array.isArray(dx)) setDocs(dx as any);
     setLoading(false);
   };
 
@@ -331,14 +342,30 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           </CardContent>
         </Card>
 
+        {/* Sprague-style logbook header */}
+        <Card>
+          <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <LogbookDateBadge services={services as any} />
+              <span className="text-[11px] text-muted-foreground">Online Logbook</span>
+            </div>
+            <DownloadLogbookButton propertyName={property.name} />
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 h-11">
-            <TabsTrigger value="visits" className="text-[11px] gap-1"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
-            <TabsTrigger value="map" className="text-[11px] gap-1"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
-            <TabsTrigger value="services" className="text-[11px] gap-1"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
-            <TabsTrigger value="requests" className="text-[11px] gap-1"><ClipboardList className="w-3.5 h-3.5" />Requests</TabsTrigger>
-            <TabsTrigger value="prep" className="text-[11px] gap-1"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
-            <TabsTrigger value="contact" className="text-[11px] gap-1"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
+          <TabsList className="flex w-full flex-wrap h-auto p-1 gap-1 justify-start">
+            <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
+            <TabsTrigger value="map" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
+            <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
+            <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
+            <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
+            <TabsTrigger value="trending" className="text-[11px] gap-1 flex-1 min-w-[88px]"><TrendingUp className="w-3.5 h-3.5" />Trending</TabsTrigger>
+            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Materials</TabsTrigger>
+            <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
+            <TabsTrigger value="prep" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
+            <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
+            <TabsTrigger value="contact" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
           {/* ─── VISITS ─── */}
@@ -616,6 +643,35 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* ─── CONDITIONS (read-only) ─── */}
+          <TabsContent value="conditions" className="mt-3">
+            <ConditionsReportSection services={services as any} readOnly />
+          </TabsContent>
+
+          {/* ─── TRENDING & RECORDS ─── */}
+          <TabsContent value="trending" className="mt-3 space-y-6">
+            <PestTrendingSection requests={requests as any} />
+            <DeviceTrendingSection services={services as any} />
+            <ServiceRecordsSection services={services as any} />
+          </TabsContent>
+
+          {/* ─── MATERIALS ─── */}
+          <TabsContent value="materials" className="mt-3 space-y-6">
+            <CommercialApprovedMaterials />
+            <MaterialUseLogSection services={services as any} />
+          </TabsContent>
+
+          {/* ─── TEAM & LICENSING ─── */}
+          <TabsContent value="team" className="mt-3 space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+          </TabsContent>
+
+          {/* ─── HELP ─── */}
+          <TabsContent value="help" className="mt-3">
+            <HelpTutorialSection />
           </TabsContent>
 
           {/* ─── PREP SHEETS ─── */}
