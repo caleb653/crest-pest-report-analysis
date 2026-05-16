@@ -25,7 +25,15 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
+import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import {
+  ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
+  ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
+  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
+  LogbookDateBadge,
+} from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
+import { AlertTriangle, TrendingUp, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
 
 interface PropertyData {
   id: string;
@@ -133,6 +141,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [services, setServices] = useState<ServiceData[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
+  const [docs, setDocs] = useState<any[]>([]);
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
@@ -152,16 +161,18 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const loadAll = async () => {
-    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }, { data: dx }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
       supabase.from("portal_prep_sheets").select("*").order("title"),
+      supabase.from("portal_documents").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
     if (prop) setProperty(prop as any);
     if (Array.isArray(svcs)) setServices(svcs as any);
     if (Array.isArray(reqs)) setRequests(reqs as any);
     if (Array.isArray(ps)) setPrepSheets(ps as any);
+    if (Array.isArray(dx)) setDocs(dx as any);
     setLoading(false);
   };
 
