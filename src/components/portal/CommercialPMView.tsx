@@ -342,14 +342,30 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           </CardContent>
         </Card>
 
+        {/* Sprague-style logbook header */}
+        <Card>
+          <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <LogbookDateBadge services={services as any} />
+              <span className="text-[11px] text-muted-foreground">Online Logbook</span>
+            </div>
+            <DownloadLogbookButton propertyName={property.name} />
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 h-11">
-            <TabsTrigger value="visits" className="text-[11px] gap-1"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
-            <TabsTrigger value="map" className="text-[11px] gap-1"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
-            <TabsTrigger value="services" className="text-[11px] gap-1"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
-            <TabsTrigger value="requests" className="text-[11px] gap-1"><ClipboardList className="w-3.5 h-3.5" />Requests</TabsTrigger>
-            <TabsTrigger value="prep" className="text-[11px] gap-1"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
-            <TabsTrigger value="contact" className="text-[11px] gap-1"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
+          <TabsList className="flex w-full flex-wrap h-auto p-1 gap-1 justify-start">
+            <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
+            <TabsTrigger value="map" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
+            <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
+            <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
+            <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
+            <TabsTrigger value="trending" className="text-[11px] gap-1 flex-1 min-w-[88px]"><TrendingUp className="w-3.5 h-3.5" />Trending</TabsTrigger>
+            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Materials</TabsTrigger>
+            <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
+            <TabsTrigger value="prep" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
+            <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
+            <TabsTrigger value="contact" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
           {/* ─── VISITS ─── */}
