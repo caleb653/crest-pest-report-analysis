@@ -647,6 +647,39 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
           {/* ─── PREP SHEETS ─── */}
           <TabsContent value="prep" className="space-y-3 mt-3">
+          </TabsContent>
+
+          {/* ─── CONDITIONS (read-only) ─── */}
+          <TabsContent value="conditions" className="mt-3">
+            <ConditionsReportSection services={services as any} readOnly />
+          </TabsContent>
+
+          {/* ─── TRENDING & RECORDS ─── */}
+          <TabsContent value="trending" className="mt-3 space-y-6">
+            <PestTrendingSection requests={requests as any} />
+            <DeviceTrendingSection services={services as any} />
+            <ServiceRecordsSection services={services as any} />
+          </TabsContent>
+
+          {/* ─── MATERIALS ─── */}
+          <TabsContent value="materials" className="mt-3 space-y-6">
+            <CommercialApprovedMaterials />
+            <MaterialUseLogSection services={services as any} />
+          </TabsContent>
+
+          {/* ─── TEAM & LICENSING ─── */}
+          <TabsContent value="team" className="mt-3 space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+          </TabsContent>
+
+          {/* ─── HELP ─── */}
+          <TabsContent value="help" className="mt-3">
+            <HelpTutorialSection />
+          </TabsContent>
+
+          {/* ─── PREP SHEETS (continued) ─── */}
+          <TabsContent value="prep-orig" className="space-y-3 mt-3 hidden">
             <div className="border-b-2 border-primary/70 pb-2 mb-2">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <FileDown className="w-5 h-5 text-primary" />Prep Sheets
