@@ -35,11 +35,23 @@ import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
   CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
+  Bug, ShieldCheck, X,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
+import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import {
+  CommercialConcernsObserved,
+  CommercialNonChemEquipment,
+  COMMERCIAL_PEST_OPTIONS,
+  normalizeConcerns,
+  normalizeNonChemEquipment,
+  type ConcernEntry,
+  type NonChemEquipmentEntry,
+} from "@/components/portal/CommercialReportExtras";
+import { supabase as supa } from "@/integrations/supabase/client";
 
 interface PropertyData {
   id: string;
@@ -143,6 +155,8 @@ export default function CommercialDashboardView({
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
+  const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
+  const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
@@ -230,19 +244,56 @@ export default function CommercialDashboardView({
     if (!newReq.description.trim()) return;
     const { error } = await supabase.from("portal_requests").insert({
       property_id: property.id,
-      request_type: "Service Request",
+      request_type: "Pest Sighting",
       pest_type: newReq.pest || null,
       location_type: newReq.location || null,
       description: newReq.description.trim(),
+      photos: newReqPhotos,
     } as any);
     if (error) {
-      toast({ title: "Couldn't add request", description: error.message, variant: "destructive" });
+      toast({ title: "Couldn't add sighting", description: error.message, variant: "destructive" });
       return;
     }
     setNewReq({ pest: "", location: "", description: "" });
-    toast({ title: "Request added" });
+    setNewReqPhotos([]);
+    toast({ title: "Pest sighting added" });
     loadRequests();
   };
+
+  const uploadSightingPhoto = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingReqPhoto(true);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `pest-sightings/${property.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supa.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) continue;
+      const { data: pub } = supa.storage.from("report-images").getPublicUrl(path);
+      urls.push(pub.publicUrl);
+    }
+    setNewReqPhotos((p) => [...p, ...urls]);
+    setUploadingReqPhoto(false);
+  };
+
+  // Helpers for the inline editable report data (concerns / non-chem equipment)
+  // stored on portal_services.report_data.
+  const getReportData = (s: ServiceData): any => (s as any).report_data || {};
+  const saveReportData = async (s: ServiceData, patch: Record<string, any>) => {
+    const next = { ...getReportData(s), ...patch };
+    await saveServiceField(s.id, { report_data: next });
+  };
+
+  // Recent pest sightings (open + last 30 days) — surfaced on every visit
+  // card so the cofounder can see what to address.
+  const recentSightings = requests
+    .filter((r) => {
+      const created = new Date(r.created_at).getTime();
+      return Date.now() - created < 1000 * 60 * 60 * 24 * 45;
+    })
+    .slice(0, 6);
 
   // Only show portal links that are actually targeted at this property.
   const propertyLinks = links.filter(l => {
