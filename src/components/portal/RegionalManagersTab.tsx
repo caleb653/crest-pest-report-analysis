@@ -463,7 +463,8 @@ export default function RegionalManagersTab() {
                   <TableHead colSpan={4} className="text-center border-r bg-muted/30">Vacant Unit Efficiency</TableHead>
                   <TableHead colSpan={1} className="text-center border-r bg-muted/30">Occupied Eff.</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">3+ Follow-Ups</TableHead>
-                  <TableHead colSpan={1} className="text-center bg-muted/30">Days to F&C</TableHead>
+                  <TableHead colSpan={2} className="text-center border-r bg-muted/30">Time to Free &amp; Clear</TableHead>
+                  <TableHead colSpan={1} className="text-center bg-muted/30">Follow-Up Cadence</TableHead>
                 </TableRow>
                 <TableRow>
                   <TableHead className="text-xs">Total Units</TableHead>
@@ -478,12 +479,14 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs border-r">Avg FU/Unit</TableHead>
                   <TableHead className="text-xs">Count</TableHead>
                   <TableHead className="text-xs border-r">% of Total</TableHead>
+                  <TableHead className="text-xs">Prev (survey)</TableHead>
+                  <TableHead className="text-xs border-r">Crest (calc)</TableHead>
                   <TableHead className="text-xs">Avg Days</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {managedProps.length === 0 ? (
-                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
                   const url = portalUrlForProperty(p.id);
@@ -511,6 +514,17 @@ export default function RegionalManagersTab() {
                       <TableCell>{m.threePlusCount}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</TableCell>
                       <TableCell className="text-xs">{m.freeAndClear || "—"}</TableCell>
+                      <TableCell className="text-xs border-r">
+                        {m.avgWeeksToClear ? (
+                          <>
+                            {m.avgWeeksToClear.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span>
+                            <span className="text-[10px] text-muted-foreground ml-1">({m.avgVisitsToClear.toFixed(1)} visits)</span>
+                          </>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {m.avgDaysToFollowUp ? <>{m.avgDaysToFollowUp.toFixed(0)}<span className="text-[10px] text-muted-foreground ml-1">days</span></> : "—"}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -518,7 +532,7 @@ export default function RegionalManagersTab() {
             </Table>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Total Units, Avg Mo Rent, and Days to Free &amp; Clear are pulled from submitted onboarding surveys. Visit, vacancy, and follow-up metrics are calculated from completed service unit details. Gained Income = (Vacant Prev − Vacant Curr) × Avg Mo Rent.
+            Total Units &amp; Avg Mo Rent come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, vacancy, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are all calculated live from completed service unit details. Gained Income = (Vacant Prev − Vacant Curr) × Avg Mo Rent.
           </p>
         </div>
       </CardContent>
