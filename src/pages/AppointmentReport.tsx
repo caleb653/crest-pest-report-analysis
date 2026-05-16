@@ -1125,9 +1125,10 @@ const AppointmentReport = () => {
               )}
             </Card>
 
-            {/* Disclaimers — match apartment portal */}
+            {/* Disclaimers — match apartment portal. The "Important Disclaimer"
+                is not relevant for commercial accounts. */}
             <PesticideNotice />
-            <ApartmentInspectionDisclaimer />
+            {!isCommercial && <ApartmentInspectionDisclaimer />}
 
             {/* Save */}
             <Button className="w-full" size="lg" onClick={saveReport} disabled={isSaving}>
