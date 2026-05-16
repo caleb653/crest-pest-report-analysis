@@ -645,10 +645,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             </div>
           </TabsContent>
 
-          {/* ─── PREP SHEETS ─── */}
-          <TabsContent value="prep" className="space-y-3 mt-3">
-          </TabsContent>
-
           {/* ─── CONDITIONS (read-only) ─── */}
           <TabsContent value="conditions" className="mt-3">
             <ConditionsReportSection services={services as any} readOnly />
@@ -678,8 +674,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <HelpTutorialSection />
           </TabsContent>
 
-          {/* ─── PREP SHEETS (continued) ─── */}
-          <TabsContent value="prep-orig" className="space-y-3 mt-3 hidden">
+          {/* ─── PREP SHEETS ─── */}
+          <TabsContent value="prep" className="space-y-3 mt-3">
             <div className="border-b-2 border-primary/70 pb-2 mb-2">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <FileDown className="w-5 h-5 text-primary" />Prep Sheets
