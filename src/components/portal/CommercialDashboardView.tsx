@@ -1095,6 +1095,48 @@ export default function CommercialDashboardView({
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ════════ TAB: Conditions ════════ */}
+        <TabsContent value="conditions" className="mt-0">
+          <div className="max-w-5xl mx-auto">
+            <ConditionsReportSection
+              services={services as any}
+              onSaveServiceReportData={persistServiceReportData}
+            />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Trending & Records ════════ */}
+        <TabsContent value="trending" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <PestTrendingSection requests={requests as any} />
+            <DeviceTrendingSection services={services as any} />
+            <ServiceRecordsSection services={services as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Materials ════════ */}
+        <TabsContent value="materials" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <CommercialApprovedMaterials />
+            <MaterialUseLogSection services={services as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Team & Licensing ════════ */}
+        <TabsContent value="team" className="mt-0 space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Help ════════ */}
+        <TabsContent value="help" className="mt-0">
+          <div className="max-w-3xl mx-auto">
+            <HelpTutorialSection />
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
