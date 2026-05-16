@@ -53,6 +53,17 @@ const parseInt2 = (s: any): number | null => {
   return isFinite(n) && n > 0 ? n : null;
 };
 
+/** Days between two ISO date strings (YYYY-MM-DD). */
+const daysBetween = (a: string, b: string): number => {
+  const da = new Date(a).getTime();
+  const db = new Date(b).getTime();
+  if (!isFinite(da) || !isFinite(db)) return 0;
+  return Math.round((db - da) / (1000 * 60 * 60 * 24));
+};
+
+const isFreeAndClear = (status: any): boolean =>
+  /free\s*and\s*clear|free\s*&\s*clear|^clear$/i.test(String(status || ""));
+
 export default function RegionalManagersTab() {
   const [managers, setManagers] = useState<RegionalManager[]>([]);
   const [properties, setProperties] = useState<PropertyLite[]>([]);
@@ -148,8 +159,13 @@ export default function RegionalManagersTab() {
   // ============= Per-property metrics =============
   const computeMetrics = (prop: PropertyLite) => {
     const onb = onboardingByProperty[prop.id] || {};
-    const totalUnits = parseInt2(onb.onb_total_units);
-    const rentalIncome = parseMoney(onb.onb_rental_income);
+    const prefs = (prop.customer_preferences as any) || {};
+    // Source of truth for property facts is the property record itself
+    // (set on the Apartments tab). Onboarding survey is a fallback only.
+    const totalUnits =
+      parseInt2(prefs.total_units) ?? parseInt2(onb.onb_total_units);
+    const rentalIncome =
+      parseMoney(prefs.avg_monthly_rent) ?? parseMoney(onb.onb_rental_income);
     const freeAndClear = onb.onb_free_and_clear_time || null;
 
     // Only count visits that actually contain unit-level work
@@ -201,6 +217,56 @@ export default function RegionalManagersTab() {
     const threePlusCount = Object.values(followUpsByUnit).filter((c) => c >= 3).length;
     const threePlusPct = uniqueUnits.size > 0 ? (threePlusCount / uniqueUnits.size) * 100 : 0;
 
+    // ---- NEW: weeks-to-free-and-clear (calculated from real service history)
+    // For each unique unit that EVER reached "Free and Clear", measure the
+    // number of days from its FIRST service to its FIRST free-and-clear
+    // service, then convert to weeks. Average across all such units.
+    const rowsByUnit = new Map<string, any[]>();
+    allUnitRows.forEach((u) => {
+      const k = (u.unit_number || "").toString().trim();
+      if (!k) return;
+      if (!rowsByUnit.has(k)) rowsByUnit.set(k, []);
+      rowsByUnit.get(k)!.push(u);
+    });
+    const weeksSamples: number[] = [];
+    const visitsToClearSamples: number[] = [];
+    rowsByUnit.forEach((rows) => {
+      const sorted = [...rows]
+        .filter((r) => r._date)
+        .sort((a, b) => (a._date || "").localeCompare(b._date || ""));
+      if (sorted.length === 0) return;
+      const firstDate = sorted[0]._date as string;
+      const clearIdx = sorted.findIndex((r) => isFreeAndClear(r.status));
+      if (clearIdx < 0) return;
+      const clearDate = sorted[clearIdx]._date as string;
+      weeksSamples.push(Math.max(0, daysBetween(firstDate, clearDate) / 7));
+      visitsToClearSamples.push(clearIdx + 1);
+    });
+    const avgWeeksToClear =
+      weeksSamples.length > 0 ? weeksSamples.reduce((a, b) => a + b, 0) / weeksSamples.length : 0;
+    const avgVisitsToClear =
+      visitsToClearSamples.length > 0
+        ? visitsToClearSamples.reduce((a, b) => a + b, 0) / visitsToClearSamples.length
+        : 0;
+
+    // ---- NEW: average days to follow-up
+    // For each unit, look at consecutive services where the EARLIER service
+    // was flagged follow_up_needed=true; measure the gap (days) to the next
+    // service. Average across all such gaps in the portfolio.
+    const gapSamples: number[] = [];
+    rowsByUnit.forEach((rows) => {
+      const sorted = [...rows]
+        .filter((r) => r._date)
+        .sort((a, b) => (a._date || "").localeCompare(b._date || ""));
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i].follow_up_needed === true) {
+          gapSamples.push(daysBetween(sorted[i]._date, sorted[i + 1]._date));
+        }
+      }
+    });
+    const avgDaysToFollowUp =
+      gapSamples.length > 0 ? gapSamples.reduce((a, b) => a + b, 0) / gapSamples.length : 0;
+
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
@@ -208,6 +274,7 @@ export default function RegionalManagersTab() {
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
       avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
+      avgWeeksToClear, avgVisitsToClear, avgDaysToFollowUp,
     };
   };
 
@@ -314,8 +381,16 @@ export default function RegionalManagersTab() {
   const apartmentProps = managedProps.filter((p) => propertyType(p) === "apartments");
 
   // Portfolio totals
-  const totalUnitsSum = apartmentProps.reduce((acc, p) => acc + (parseInt2(onboardingByProperty[p.id]?.onb_total_units) || 0), 0);
-  const incomes = apartmentProps.map((p) => parseMoney(onboardingByProperty[p.id]?.onb_rental_income)).filter((v): v is number => v != null);
+  const totalUnitsSum = apartmentProps.reduce((acc, p) => {
+    const prefs = (p.customer_preferences as any) || {};
+    return acc + (parseInt2(prefs.total_units) ?? parseInt2(onboardingByProperty[p.id]?.onb_total_units) ?? 0);
+  }, 0);
+  const incomes = apartmentProps
+    .map((p) => {
+      const prefs = (p.customer_preferences as any) || {};
+      return parseMoney(prefs.avg_monthly_rent) ?? parseMoney(onboardingByProperty[p.id]?.onb_rental_income);
+    })
+    .filter((v): v is number => v != null);
   const avgIncome = incomes.length > 0 ? incomes.reduce((a, b) => a + b, 0) / incomes.length : 0;
 
   return (
@@ -388,7 +463,8 @@ export default function RegionalManagersTab() {
                   <TableHead colSpan={4} className="text-center border-r bg-muted/30">Vacant Unit Efficiency</TableHead>
                   <TableHead colSpan={1} className="text-center border-r bg-muted/30">Occupied Eff.</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">3+ Follow-Ups</TableHead>
-                  <TableHead colSpan={1} className="text-center bg-muted/30">Days to F&C</TableHead>
+                  <TableHead colSpan={2} className="text-center border-r bg-muted/30">Time to Free &amp; Clear</TableHead>
+                  <TableHead colSpan={1} className="text-center bg-muted/30">Follow-Up Cadence</TableHead>
                 </TableRow>
                 <TableRow>
                   <TableHead className="text-xs">Total Units</TableHead>
@@ -403,12 +479,14 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs border-r">Avg FU/Unit</TableHead>
                   <TableHead className="text-xs">Count</TableHead>
                   <TableHead className="text-xs border-r">% of Total</TableHead>
+                  <TableHead className="text-xs">Prev (survey)</TableHead>
+                  <TableHead className="text-xs border-r">Crest (calc)</TableHead>
                   <TableHead className="text-xs">Avg Days</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {managedProps.length === 0 ? (
-                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
                   const url = portalUrlForProperty(p.id);
@@ -436,6 +514,17 @@ export default function RegionalManagersTab() {
                       <TableCell>{m.threePlusCount}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</TableCell>
                       <TableCell className="text-xs">{m.freeAndClear || "—"}</TableCell>
+                      <TableCell className="text-xs border-r">
+                        {m.avgWeeksToClear ? (
+                          <>
+                            {m.avgWeeksToClear.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span>
+                            <span className="text-[10px] text-muted-foreground ml-1">({m.avgVisitsToClear.toFixed(1)} visits)</span>
+                          </>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {m.avgDaysToFollowUp ? <>{m.avgDaysToFollowUp.toFixed(0)}<span className="text-[10px] text-muted-foreground ml-1">days</span></> : "—"}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -443,7 +532,7 @@ export default function RegionalManagersTab() {
             </Table>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Total Units, Avg Mo Rent, and Days to Free &amp; Clear are pulled from submitted onboarding surveys. Visit, vacancy, and follow-up metrics are calculated from completed service unit details. Gained Income = (Vacant Prev − Vacant Curr) × Avg Mo Rent.
+            Total Units &amp; Avg Mo Rent come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, vacancy, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are all calculated live from completed service unit details. Gained Income = (Vacant Prev − Vacant Curr) × Avg Mo Rent.
           </p>
         </div>
       </CardContent>
