@@ -159,8 +159,13 @@ export default function RegionalManagersTab() {
   // ============= Per-property metrics =============
   const computeMetrics = (prop: PropertyLite) => {
     const onb = onboardingByProperty[prop.id] || {};
-    const totalUnits = parseInt2(onb.onb_total_units);
-    const rentalIncome = parseMoney(onb.onb_rental_income);
+    const prefs = (prop.customer_preferences as any) || {};
+    // Source of truth for property facts is the property record itself
+    // (set on the Apartments tab). Onboarding survey is a fallback only.
+    const totalUnits =
+      parseInt2(prefs.total_units) ?? parseInt2(onb.onb_total_units);
+    const rentalIncome =
+      parseMoney(prefs.avg_monthly_rent) ?? parseMoney(onb.onb_rental_income);
     const freeAndClear = onb.onb_free_and_clear_time || null;
 
     // Only count visits that actually contain unit-level work
@@ -212,6 +217,56 @@ export default function RegionalManagersTab() {
     const threePlusCount = Object.values(followUpsByUnit).filter((c) => c >= 3).length;
     const threePlusPct = uniqueUnits.size > 0 ? (threePlusCount / uniqueUnits.size) * 100 : 0;
 
+    // ---- NEW: weeks-to-free-and-clear (calculated from real service history)
+    // For each unique unit that EVER reached "Free and Clear", measure the
+    // number of days from its FIRST service to its FIRST free-and-clear
+    // service, then convert to weeks. Average across all such units.
+    const rowsByUnit = new Map<string, any[]>();
+    allUnitRows.forEach((u) => {
+      const k = (u.unit_number || "").toString().trim();
+      if (!k) return;
+      if (!rowsByUnit.has(k)) rowsByUnit.set(k, []);
+      rowsByUnit.get(k)!.push(u);
+    });
+    const weeksSamples: number[] = [];
+    const visitsToClearSamples: number[] = [];
+    rowsByUnit.forEach((rows) => {
+      const sorted = [...rows]
+        .filter((r) => r._date)
+        .sort((a, b) => (a._date || "").localeCompare(b._date || ""));
+      if (sorted.length === 0) return;
+      const firstDate = sorted[0]._date as string;
+      const clearIdx = sorted.findIndex((r) => isFreeAndClear(r.status));
+      if (clearIdx < 0) return;
+      const clearDate = sorted[clearIdx]._date as string;
+      weeksSamples.push(Math.max(0, daysBetween(firstDate, clearDate) / 7));
+      visitsToClearSamples.push(clearIdx + 1);
+    });
+    const avgWeeksToClear =
+      weeksSamples.length > 0 ? weeksSamples.reduce((a, b) => a + b, 0) / weeksSamples.length : 0;
+    const avgVisitsToClear =
+      visitsToClearSamples.length > 0
+        ? visitsToClearSamples.reduce((a, b) => a + b, 0) / visitsToClearSamples.length
+        : 0;
+
+    // ---- NEW: average days to follow-up
+    // For each unit, look at consecutive services where the EARLIER service
+    // was flagged follow_up_needed=true; measure the gap (days) to the next
+    // service. Average across all such gaps in the portfolio.
+    const gapSamples: number[] = [];
+    rowsByUnit.forEach((rows) => {
+      const sorted = [...rows]
+        .filter((r) => r._date)
+        .sort((a, b) => (a._date || "").localeCompare(b._date || ""));
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (sorted[i].follow_up_needed === true) {
+          gapSamples.push(daysBetween(sorted[i]._date, sorted[i + 1]._date));
+        }
+      }
+    });
+    const avgDaysToFollowUp =
+      gapSamples.length > 0 ? gapSamples.reduce((a, b) => a + b, 0) / gapSamples.length : 0;
+
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
@@ -219,6 +274,7 @@ export default function RegionalManagersTab() {
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
       avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
+      avgWeeksToClear, avgVisitsToClear, avgDaysToFollowUp,
     };
   };
 
