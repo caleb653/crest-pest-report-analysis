@@ -156,6 +156,7 @@ export default function CommercialDashboardView({
   const [tab, setTab] = useState<string>("map");
   const [requests, setRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<any[]>([]);
+  const [docs, setDocs] = useState<any[]>([]);
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
@@ -321,6 +322,9 @@ export default function CommercialDashboardView({
     loadRequests();
     supabase.from("portal_prep_sheets").select("*").order("title").then(({ data }) => {
       if (Array.isArray(data)) setPrepSheets(data);
+    });
+    supabase.from("portal_documents").select("*").eq("property_id", property.id).order("created_at", { ascending: false }).then(({ data }) => {
+      if (Array.isArray(data)) setDocs(data);
     });
     const channel = supabase
       .channel(`commercial-admin-${property.id}`)
