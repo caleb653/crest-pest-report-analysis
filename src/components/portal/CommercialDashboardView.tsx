@@ -43,6 +43,12 @@ import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
+  ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
+  ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
+  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
+  LogbookDateBadge, persistServiceReportData,
+} from "@/components/portal/CommercialSpragueSections";
+import {
   CommercialConcernsObserved,
   CommercialNonChemEquipment,
   COMMERCIAL_PEST_OPTIONS,
@@ -418,6 +424,17 @@ export default function CommercialDashboardView({
         </CardContent>
       </Card>
 
+      {/* Sprague-style logbook header — date range + one-click download */}
+      <Card>
+        <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <LogbookDateBadge services={services as any} />
+            <span className="text-xs text-muted-foreground">Online Logbook for {property.name}</span>
+          </div>
+          <DownloadLogbookButton propertyName={property.name} />
+        </CardContent>
+      </Card>
+
       {/* Portal links for this property */}
       {propertyLinks.length > 0 && (
         <Card>
@@ -442,7 +459,7 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map and Plan</span>
@@ -463,11 +480,31 @@ export default function CommercialDashboardView({
           </TabsTrigger>
           <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Wrench className="w-5 h-5" />
-            <span>Requests <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
+            <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileDown className="w-5 h-5" />
             <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
+          </TabsTrigger>
+          <TabsTrigger value="conditions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <AlertTriangle className="w-5 h-5" />
+            <span>Conditions</span>
+          </TabsTrigger>
+          <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <FileText className="w-5 h-5" />
+            <span>Trending &amp; Records</span>
+          </TabsTrigger>
+          <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <FlaskConical className="w-5 h-5" />
+            <span>Materials</span>
+          </TabsTrigger>
+          <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <ShieldCheck className="w-5 h-5" />
+            <span>Team &amp; Licensing</span>
+          </TabsTrigger>
+          <TabsTrigger value="help" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <FileText className="w-5 h-5" />
+            <span>Help</span>
           </TabsTrigger>
         </TabsList>
 
