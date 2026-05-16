@@ -381,8 +381,16 @@ export default function RegionalManagersTab() {
   const apartmentProps = managedProps.filter((p) => propertyType(p) === "apartments");
 
   // Portfolio totals
-  const totalUnitsSum = apartmentProps.reduce((acc, p) => acc + (parseInt2(onboardingByProperty[p.id]?.onb_total_units) || 0), 0);
-  const incomes = apartmentProps.map((p) => parseMoney(onboardingByProperty[p.id]?.onb_rental_income)).filter((v): v is number => v != null);
+  const totalUnitsSum = apartmentProps.reduce((acc, p) => {
+    const prefs = (p.customer_preferences as any) || {};
+    return acc + (parseInt2(prefs.total_units) ?? parseInt2(onboardingByProperty[p.id]?.onb_total_units) ?? 0);
+  }, 0);
+  const incomes = apartmentProps
+    .map((p) => {
+      const prefs = (p.customer_preferences as any) || {};
+      return parseMoney(prefs.avg_monthly_rent) ?? parseMoney(onboardingByProperty[p.id]?.onb_rental_income);
+    })
+    .filter((v): v is number => v != null);
   const avgIncome = incomes.length > 0 ? incomes.reduce((a, b) => a + b, 0) / incomes.length : 0;
 
   return (
