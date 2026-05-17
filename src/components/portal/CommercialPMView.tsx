@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { COMMERCIAL_PEST_OPTIONS } from "@/components/portal/CommercialReportExtras";
 import {
   Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
   ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
@@ -573,12 +575,17 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                   Use this to report new pest activity or request an extra visit. Our team will review and follow up.
                 </p>
                 <div className="space-y-2">
-                  <Input
-                    placeholder="Pest type (e.g. ants, rodents, flies)"
-                    value={reqPest}
-                    onChange={e => setReqPest(e.target.value)}
-                    className="h-11 text-base"
-                  />
+                  <Select value={reqPest || ""} onValueChange={v => setReqPest(v === "__none__" ? "" : v)}>
+                    <SelectTrigger className="h-11 text-base">
+                      <SelectValue placeholder="Pest type (select)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Select pest —</SelectItem>
+                      {COMMERCIAL_PEST_OPTIONS.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
                     placeholder="Area / location (e.g. kitchen, dish pit, patio)"
                     value={reqLocation}
