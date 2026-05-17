@@ -36,7 +36,7 @@ export const COMMERCIAL_NON_CHEM_EQUIPMENT = [
   "Glue Boards",
   "Mosquito Buckets",
   "Fly Lights",
-  "Pheromone Pest Monitors",
+  "Pest Monitors",
   "Insect Light Traps",
   "Tin Cats",
 ] as const;
