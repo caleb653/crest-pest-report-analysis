@@ -468,95 +468,103 @@ export default function RegionalManagersTab() {
 
         {/* Per-property metrics */}
         <div className="-mx-4 sm:-mx-6 xl:-mx-16 2xl:-mx-28">
-          <p className="text-sm font-semibold mb-2">Property Metrics</p>
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead rowSpan={2} className="align-bottom border-r">Property</TableHead>
-                  <TableHead colSpan={2} className="text-center border-r bg-muted/30">General Property Info</TableHead>
-                  <TableHead colSpan={3} className="text-center border-r bg-muted/30">General Treatment</TableHead>
-                  <TableHead colSpan={4} className="text-center border-r bg-muted/30">Efficiency to Clear Vacant Unit Pests</TableHead>
-                  <TableHead colSpan={1} className="text-center border-r bg-muted/30">Occupied Eff.</TableHead>
-                  <TableHead colSpan={2} className="text-center border-r bg-muted/30">3+ Follow-Ups</TableHead>
-                  <TableHead colSpan={2} className="text-center border-r bg-muted/30">Time to Free &amp; Clear</TableHead>
-                  <TableHead colSpan={1} className="text-center bg-muted/30">Follow-Up Cadence</TableHead>
-                </TableRow>
-                <TableRow>
-                  <TableHead className="text-xs">Total Units</TableHead>
-                  <TableHead className="text-xs border-r">Avg Mo Rent</TableHead>
-                  <TableHead className="text-xs">Visits</TableHead>
-                  <TableHead className="text-xs">Units Treated</TableHead>
-                  <TableHead className="text-xs border-r">Avg/Visit</TableHead>
-                  <TableHead className="text-xs">Prev (wks)</TableHead>
-                  <TableHead className="text-xs">Curr (wks)</TableHead>
-                  <TableHead className="text-xs">Diff (wks)</TableHead>
-                  <TableHead className="text-xs border-r leading-tight">
-                    Diff ($/unit)
-                    <div className="text-[9px] font-normal text-muted-foreground normal-case">
-                      (Prev−Curr) × Rent ÷ 4.1
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-xs border-r">Avg FU/Unit</TableHead>
-                  <TableHead className="text-xs">Count</TableHead>
-                  <TableHead className="text-xs border-r">% of Total</TableHead>
-                  <TableHead className="text-xs">Prev (survey)</TableHead>
-                  <TableHead className="text-xs border-r">Crest (calc)</TableHead>
-                  <TableHead className="text-xs">Avg Days</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {managedProps.length === 0 ? (
-                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
-                ) : managedProps.map((p) => {
-                  const m = computeMetrics(p);
-                  const url = portalUrlForProperty(p.id);
-                  return (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium border-r">
-                        {url ? (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
-                            {p.name}<ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : p.name}
-                      </TableCell>
-                      <TableCell>{m.totalUnits != null ? <>{m.totalUnits}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
-                      <TableCell className="border-r">{m.rentalIncome != null ? <>${Math.round(m.rentalIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
-                      <TableCell>{m.totalVisits}<span className="text-[10px] text-muted-foreground ml-1">visits</span></TableCell>
-                      <TableCell>{m.totalUnitsTreated}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
-                      <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
-                      <TableCell>{m.prevWeeks != null ? <>{m.prevWeeks}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
-                      <TableCell>{m.currWeeks != null ? <>{m.currWeeks.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
-                      <TableCell className={m.weeksSaved != null && m.weeksSaved > 0 ? "text-emerald-600 font-medium" : ""}>
-                        {m.weeksSaved != null ? <>{m.weeksSaved.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1 font-normal">wks</span></> : "—"}
-                      </TableCell>
-                      <TableCell className={"border-r " + (m.effGainedIncome > 0 ? "text-emerald-600 font-medium" : "")}>
-                        {m.effGainedIncome > 0 ? <>${Math.round(m.effGainedIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1 font-normal">/unit</span></> : "—"}
-                      </TableCell>
-                      <TableCell className="border-r">{m.avgFollowUpsPerOccUnit ? <>{m.avgFollowUpsPerOccUnit.toFixed(2)}<span className="text-[10px] text-muted-foreground ml-1">per unit</span></> : "—"}</TableCell>
-                      <TableCell>{m.threePlusCount}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
-                      <TableCell className="border-r">{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</TableCell>
-                      <TableCell className="text-xs">{m.freeAndClear || "—"}</TableCell>
-                      <TableCell className="text-xs border-r">
-                        {m.avgWeeksToClear ? (
-                          <>
-                            {m.avgWeeksToClear.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span>
-                            <span className="text-[10px] text-muted-foreground ml-1">({m.avgVisitsToClear.toFixed(1)} visits)</span>
-                          </>
-                        ) : "—"}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {m.avgDaysToFollowUp ? <>{m.avgDaysToFollowUp.toFixed(0)}<span className="text-[10px] text-muted-foreground ml-1">days</span></> : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <div className="flex items-baseline justify-between mb-3 px-1">
+            <p className="text-sm font-semibold tracking-tight">Property Metrics</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Live from service data</p>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-2">
-            Total Units &amp; Avg Mo Rent come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are calculated live from completed service unit details.
-            Efficiency to Clear Vacant Unit Pests: <b>Prev</b> = onboarding survey Q8 (weeks with previous provider), <b>Curr</b> = Crest calc (always ≥ 1 wk), <b>Diff $/unit</b> = (Prev − Curr) × Avg Mo Rent ÷ 4.1 weeks/mo.
+          <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-separate border-spacing-0 [&_th]:border-b [&_td]:border-b [&_th]:border-border [&_td]:border-border/60">
+                <thead className="bg-muted/40">
+                  <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-[10px] [&>th]:font-semibold [&>th]:uppercase [&>th]:tracking-wider [&>th]:text-muted-foreground [&>th]:text-center">
+                    <th rowSpan={2} className="!text-left align-bottom !px-4 sticky left-0 z-10 bg-muted/40 border-r">Property</th>
+                    <th colSpan={2} className="border-r">Property Info</th>
+                    <th colSpan={3} className="border-r">General Treatment</th>
+                    <th colSpan={4} className="border-r bg-emerald-50/60 dark:bg-emerald-950/20 !text-emerald-700 dark:!text-emerald-400">Efficiency to Clear Vacant Unit Pests</th>
+                    <th className="border-r">Occupied Eff.</th>
+                    <th colSpan={2} className="border-r">3+ Follow-Ups</th>
+                    <th colSpan={2} className="border-r">Time to Free &amp; Clear</th>
+                    <th>Follow-Up Cadence</th>
+                  </tr>
+                  <tr className="[&>th]:px-3 [&>th]:py-2 [&>th]:text-[10px] [&>th]:font-medium [&>th]:text-muted-foreground [&>th]:text-right [&>th]:normal-case">
+                    <th>Total Units</th>
+                    <th className="border-r">Avg Mo Rent</th>
+                    <th>Visits</th>
+                    <th>Units Treated</th>
+                    <th className="border-r">Avg/Visit</th>
+                    <th className="bg-emerald-50/40 dark:bg-emerald-950/10">Prev (wks)</th>
+                    <th className="bg-emerald-50/40 dark:bg-emerald-950/10">Curr (wks)</th>
+                    <th className="bg-emerald-50/40 dark:bg-emerald-950/10">Diff (wks)</th>
+                    <th className="border-r bg-emerald-50/40 dark:bg-emerald-950/10 leading-tight">
+                      Diff ($/unit)
+                      <div className="text-[9px] font-normal text-muted-foreground/70 normal-case mt-0.5">
+                        (Prev−Curr) × Rent ÷ 4.1
+                      </div>
+                    </th>
+                    <th className="border-r">Avg FU/Unit</th>
+                    <th>Count</th>
+                    <th className="border-r">% of Total</th>
+                    <th>Prev (survey)</th>
+                    <th className="border-r">Crest (calc)</th>
+                    <th>Avg Days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {managedProps.length === 0 ? (
+                    <tr><td colSpan={16} className="text-center text-muted-foreground text-sm py-8">No properties assigned to this manager.</td></tr>
+                  ) : managedProps.map((p, idx) => {
+                    const m = computeMetrics(p);
+                    const url = portalUrlForProperty(p.id);
+                    const zebra = idx % 2 === 1 ? "bg-muted/20" : "";
+                    const num = "px-3 py-2.5 text-right tabular-nums whitespace-nowrap";
+                    const sub = "text-[10px] text-muted-foreground ml-0.5 font-normal";
+                    return (
+                      <tr key={p.id} className={`${zebra} hover:bg-accent/40 transition-colors`}>
+                        <td className={`px-4 py-2.5 font-medium border-r sticky left-0 z-10 ${zebra || "bg-card"}`}>
+                          {url ? (
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">
+                              {p.name}<ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : p.name}
+                        </td>
+                        <td className={num}>{m.totalUnits != null ? <>{m.totalUnits}<span className={sub}>units</span></> : "—"}</td>
+                        <td className={`${num} border-r`}>{m.rentalIncome != null ? <>${Math.round(m.rentalIncome).toLocaleString()}<span className={sub}>/mo</span></> : "—"}</td>
+                        <td className={num}>{m.totalVisits}<span className={sub}>visits</span></td>
+                        <td className={num}>{m.totalUnitsTreated}<span className={sub}>units</span></td>
+                        <td className={`${num} border-r`}>{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className={sub}>units</span></> : "—"}</td>
+                        <td className={num}>{m.prevWeeks != null ? <>{m.prevWeeks}<span className={sub}>wks</span></> : "—"}</td>
+                        <td className={num}>{m.currWeeks != null ? <>{m.currWeeks.toFixed(1)}<span className={sub}>wks</span></> : "—"}</td>
+                        <td className={`${num} ${m.weeksSaved != null && m.weeksSaved > 0 ? "text-emerald-600 font-semibold" : ""}`}>
+                          {m.weeksSaved != null ? <>{m.weeksSaved.toFixed(1)}<span className={`${sub} ${m.weeksSaved > 0 ? "text-emerald-600/70" : ""}`}>wks</span></> : "—"}
+                        </td>
+                        <td className={`${num} border-r ${m.effGainedIncome > 0 ? "text-emerald-600 font-semibold" : ""}`}>
+                          {m.effGainedIncome > 0 ? <>${Math.round(m.effGainedIncome).toLocaleString()}<span className={`${sub} ${m.effGainedIncome > 0 ? "text-emerald-600/70" : ""}`}>/unit</span></> : "—"}
+                        </td>
+                        <td className={`${num} border-r`}>{m.avgFollowUpsPerOccUnit ? <>{m.avgFollowUpsPerOccUnit.toFixed(2)}<span className={sub}>/unit</span></> : "—"}</td>
+                        <td className={num}>{m.threePlusCount}<span className={sub}>units</span></td>
+                        <td className={`${num} border-r`}>{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</td>
+                        <td className={num}>{m.freeAndClear || "—"}</td>
+                        <td className={`${num} border-r`}>
+                          {m.avgWeeksToClear ? (
+                            <>
+                              {m.avgWeeksToClear.toFixed(1)}<span className={sub}>wks</span>
+                              <div className="text-[10px] text-muted-foreground font-normal">({m.avgVisitsToClear.toFixed(1)} visits)</div>
+                            </>
+                          ) : "—"}
+                        </td>
+                        <td className={num}>
+                          {m.avgDaysToFollowUp ? <>{m.avgDaysToFollowUp.toFixed(0)}<span className={sub}>days</span></> : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-3 px-1 leading-relaxed">
+            <b className="text-foreground">Total Units</b> &amp; <b className="text-foreground">Avg Mo Rent</b> come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are calculated live from completed service unit details.
+            <span className="block mt-1"><b className="text-emerald-700 dark:text-emerald-400">Efficiency to Clear Vacant Unit Pests:</b> Prev = onboarding survey Q8 (weeks with previous provider), Curr = Crest calc (always ≥ 1 wk), Diff $/unit = (Prev − Curr) × Avg Mo Rent ÷ 4.1 weeks/mo.</span>
           </p>
         </div>
       </CardContent>
