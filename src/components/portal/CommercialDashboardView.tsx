@@ -1209,14 +1209,14 @@ export default function CommercialDashboardView({
           <div className="max-w-3xl mx-auto space-y-4">
             <Card className="border-2 border-primary/30 bg-primary/[0.03]">
               <CardContent className="p-3 space-y-2">
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Request</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Sighting</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Input value={newReq.pest} onChange={e => setNewReq(r => ({ ...r, pest: e.target.value }))} placeholder="Pest (e.g. Ants)" className="h-11 text-sm" />
                   <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
                 </div>
                 <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
                 <Button size="sm" onClick={submitNewRequest} disabled={!newReq.description.trim()} className="h-11 text-sm gap-1.5 w-full">
-                  <Plus className="w-4 h-4" /> Add Request
+                  <Plus className="w-4 h-4" /> Add Sighting
                 </Button>
               </CardContent>
             </Card>
