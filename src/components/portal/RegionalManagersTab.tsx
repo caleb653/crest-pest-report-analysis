@@ -190,23 +190,20 @@ export default function RegionalManagersTab() {
       visitsByDate.get(k)!.push(sv);
     });
     const totalVisits = visitsByDate.size;
-    // Real visit cadence (weeks between consecutive visits). We only ever
-    // visit weekly or every other week, so 1.1-week averages are nonsense —
-    // every downstream "weeks" metric must be a multiple of this cadence.
-    const visitDates = Array.from(visitsByDate.keys())
-      .filter((d) => /^\d{4}-\d{2}-\d{2}/.test(d))
-      .sort();
-    const visitGapsDays: number[] = [];
-    for (let i = 1; i < visitDates.length; i++) {
-      const g = daysBetween(visitDates[i - 1], visitDates[i]);
-      if (g > 0 && g <= 60) visitGapsDays.push(g);
-    }
-    const avgVisitGapDays =
-      visitGapsDays.length > 0
-        ? visitGapsDays.reduce((a, b) => a + b, 0) / visitGapsDays.length
-        : 7;
-    // Snap to the closer real cadence (weekly = 7, bi-weekly = 14).
-    const cadenceDays = Math.abs(avgVisitGapDays - 14) < Math.abs(avgVisitGapDays - 7) ? 14 : 7;
+    // Cadence is the property's configured appointment frequency (set by admin
+    // on the PM portal). Follow-ups always land on the next scheduled visit,
+    // so every downstream "weeks" / "days-to-follow-up" metric uses this.
+    const freqKey = String(prefs.service_frequency || "bi-weekly");
+    const FREQ_DAYS: Record<string, number> = {
+      weekly: 7,
+      "bi-weekly": 14,
+      monthly: 30,
+      "8-weekly": 56,
+      "bi-monthly": 60,
+      "12-weekly": 84,
+      quarterly: 90,
+    };
+    const cadenceDays = FREQ_DAYS[freqKey] ?? 14;
     const cadenceWeeks = cadenceDays / 7;
     const allUnitRows: any[] = [];
     propServices.forEach((sv) => {
