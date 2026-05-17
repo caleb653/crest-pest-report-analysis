@@ -588,7 +588,8 @@ export default function RegionalManagersTab() {
           </div>
           <p className="text-[11px] text-muted-foreground mt-3 px-1 leading-relaxed">
             <b className="text-foreground">Total Units</b> &amp; <b className="text-foreground">Avg Mo Rent</b> come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are calculated live from completed service unit details.
-            <span className="block mt-1"><b className="text-emerald-700 dark:text-emerald-400">Efficiency to Clear Vacant Unit Pests:</b> Prev = onboarding survey Q8 (weeks with previous provider), Curr = Crest calc (always ≥ 1 wk), Diff $/unit = (Prev − Curr) × Avg Mo Rent ÷ 4.1 weeks/mo.</span>
+            <span className="block mt-1"><b className="text-emerald-700 dark:text-emerald-400">Efficiency to Clear Vacant Unit Pests:</b> Prev = onboarding survey Q8 (weeks with previous provider). Curr = avg visits-to-clear × real visit cadence (weekly = 7d, bi-weekly = 14d) — units can only clear on a visit day. Diff $/unit = (Prev − Curr) × Avg Mo Rent ÷ 4.1 weeks/mo.</span>
+            <span className="block mt-1"><b className="text-foreground">Follow-Up Cadence — Avg Days:</b> snapped to the property's actual visit interval (7 or 14 days). Follow-ups are always performed on the next scheduled visit, never in between.</span>
           </p>
         </div>
       </CardContent>
