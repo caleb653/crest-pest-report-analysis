@@ -1221,6 +1221,29 @@ export default function CommercialDashboardView({
                   <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
                 </div>
                 <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
+                <div className="rounded-md border border-dashed border-border p-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Camera className="w-3 h-3" /> Photos</p>
+                    <label className="cursor-pointer">
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={e => { uploadSightingPhoto(e.target.files); e.currentTarget.value = ""; }} />
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted">
+                        <Upload className="w-3 h-3" /> {uploadingReqPhoto ? "Uploading…" : "Add Photo"}
+                      </span>
+                    </label>
+                  </div>
+                  {newReqPhotos.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newReqPhotos.map((url, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
+                          <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setNewReqPhotos(p => p.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 border border-border">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button size="sm" onClick={submitNewRequest} disabled={!newReq.description.trim()} className="h-11 text-sm gap-1.5 w-full">
                   <Plus className="w-4 h-4" /> Add Sighting
                 </Button>
