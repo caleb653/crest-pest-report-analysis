@@ -703,9 +703,7 @@ export interface PortalDoc {
 export function BusinessLicenseSection({ docs }: { docs: PortalDoc[] }) {
   const licenses = docs.filter(d => (d.category || "").toLowerCase().includes("licens"));
   const standardLicenses = [
-    { name: "California Structural Pest Control Board — Co. Reg.", number: "PR 9876", verified: "01/01/2025" },
-    { name: "Utah Department of Agriculture — Pesticide Business License", number: "UT-PB-4421", verified: "01/01/2025" },
-    { name: "Oregon Department of Agriculture — Pesticide Business License", number: "OR-1138", verified: "01/01/2025" },
+    { name: "California Structural Pest Control Board — Co. Reg.", number: "PR 9859", verified: "01/01/2025" },
   ];
   return (
     <div className="space-y-3">
