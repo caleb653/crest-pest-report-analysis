@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
@@ -164,6 +166,8 @@ export default function CommercialDashboardView({
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
+  // Per-upcoming-service photo uploading state
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
@@ -283,6 +287,38 @@ export default function CommercialDashboardView({
     }
     setNewReqPhotos((p) => [...p, ...urls]);
     setUploadingReqPhoto(false);
+  };
+
+  // Upload photos directly onto an upcoming service (mirrors PM portal pattern)
+  const uploadServicePhotos = async (serviceId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingPhotoFor(serviceId);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `upcoming-service-photos/${property.id}/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supa.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supa.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) {
+      const current = services.find(s => s.id === serviceId);
+      const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+      await saveServiceField(serviceId, { photos: [...existing, ...urls] });
+      toast({ title: `Added ${urls.length} photo${urls.length === 1 ? "" : "s"}` });
+    }
+    setUploadingPhotoFor(null);
+  };
+
+  const removeServicePhoto = async (serviceId: string, url: string) => {
+    const current = services.find(s => s.id === serviceId);
+    const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+    const next = existing.filter((p: any) => (typeof p === "string" ? p : p?.url) !== url);
+    await saveServiceField(serviceId, { photos: next });
   };
 
   // Helpers for the inline editable report data (concerns / non-chem equipment)
