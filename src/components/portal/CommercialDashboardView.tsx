@@ -834,6 +834,15 @@ export default function CommercialDashboardView({
                             </div>
                           </div>
                         )}
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                            <ClipboardList className="w-3 h-3" /> Conditions
+                          </p>
+                          <ConditionsReportSection
+                            services={[s as any]}
+                            onSaveServiceReportData={persistServiceReportData}
+                          />
+                        </div>
                       </div>
                     )}
                   </CardContent>
