@@ -55,6 +55,28 @@ export const APPROVED_COMMERCIAL_MATERIALS: ApprovedMaterial[] = [
 const sdsHref = (m: ApprovedMaterial) =>
   m.sdsUrl || `https://duckduckgo.com/?q=${encodeURIComponent(`${m.name} SDS pesticide pdf`)}`;
 
+/**
+ * Trigger a download via a temporary <a download> — this is treated as a
+ * user-initiated link click by Chrome, so it bypasses the popup blocker
+ * AND the "this file isn't commonly downloaded" Safe Browsing prompt that
+ * fires when JavaScript window.open()s a .pdf from a preview domain.
+ */
+const triggerDownload = (url: string, filename: string) => {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
+
+const filenameFor = (m: ApprovedMaterial) => {
+  const fromUrl = (m.sdsUrl || "").split("/").pop();
+  return fromUrl || `${m.name.replace(/[^\w]+/g, "_")}_SDS.pdf`;
+};
+
 interface Props {
   /** Optional: dim items not in this subset (e.g. only ones used on the site). */
   highlightOnly?: string[];
@@ -64,10 +86,12 @@ interface Props {
 
 export default function CommercialApprovedMaterials({ highlightOnly, compact }: Props) {
   const downloadAll = () => {
-    for (const m of APPROVED_COMMERCIAL_MATERIALS) {
-      // Stagger so popup blockers are less likely to nuke them all.
-      setTimeout(() => window.open(sdsHref(m), "_blank", "noopener,noreferrer"), 80);
-    }
+    // Sequential <a download> clicks. Browsers allow many of these in a row
+    // when triggered from a single user gesture; window.open() spam gets
+    // blocked after the first popup.
+    APPROVED_COMMERCIAL_MATERIALS.forEach((m, i) => {
+      setTimeout(() => triggerDownload(sdsHref(m), filenameFor(m)), i * 250);
+    });
   };
 
   const inner = (
@@ -126,14 +150,19 @@ export default function CommercialApprovedMaterials({ highlightOnly, compact }: 
                     {m.epa || "—"}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs gap-1"
-                      onClick={() => window.open(sdsHref(m), "_blank", "noopener,noreferrer")}
+                    {/* Real anchor — Chrome trusts user-initiated link
+                        clicks far more than JS window.open, so the PDF
+                        opens / downloads cleanly without Safe Browsing
+                        intercepting it. */}
+                    <a
+                      href={sdsHref(m)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={filenameFor(m)}
+                      className="inline-flex items-center justify-center gap-1 h-8 px-3 text-xs rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
                       <ExternalLink className="w-3 h-3" /> SDS
-                    </Button>
+                    </a>
                   </td>
                 </tr>
               );
