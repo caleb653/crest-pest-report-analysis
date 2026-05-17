@@ -20,7 +20,7 @@ import { COMMERCIAL_PEST_OPTIONS } from "@/components/portal/CommercialReportExt
 import {
   Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
   ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
-  Download, Eye, Copy, FileDown,
+  Download, Eye, Copy, FileDown, Upload, X,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -160,7 +160,28 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [reqDescription, setReqDescription] = useState("");
   const [reqPest, setReqPest] = useState("");
   const [reqLocation, setReqLocation] = useState("");
+  const [reqPhotos, setReqPhotos] = useState<string[]>([]);
+  const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  const uploadRequestPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingReqPhoto(true);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `pest-sightings/${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) setReqPhotos((p) => [...p, ...urls]);
+    setUploadingReqPhoto(false);
+  };
 
   const loadAll = async () => {
     const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }, { data: dx }] = await Promise.all([
@@ -248,6 +269,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
       toast({ title: "Add a description", variant: "destructive" });
       return;
     }
+    if (uploadingReqPhoto) {
+      toast({ title: "Hang on — photos still uploading…" });
+      return;
+    }
     setSubmittingRequest(true);
     try {
       const { error } = await supabase.from("portal_requests").insert({
@@ -258,7 +283,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         pest_type: reqPest.trim() || null,
         location_type: reqLocation.trim() || null,
         status: "pending",
-        photos: [],
+        photos: reqPhotos,
       } as any);
       if (error) throw error;
       // Notify office (non-fatal).
@@ -271,13 +296,14 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
               reqDescription.trim(),
               reqPest.trim() ? `\nPest: ${reqPest.trim()}` : "",
               reqLocation.trim() ? `\nArea: ${reqLocation.trim()}` : "",
+              reqPhotos.length ? `\nPhotos attached: ${reqPhotos.length}` : "",
             ].filter(Boolean).join(""),
             senderName: "Commercial Portal",
           },
         });
       } catch { /* non-fatal */ }
       toast({ title: "Request submitted", description: "Our team will follow up shortly." });
-      setReqDescription(""); setReqPest(""); setReqLocation("");
+      setReqDescription(""); setReqPest(""); setReqLocation(""); setReqPhotos([]);
       loadAll();
     } catch (e: any) {
       toast({ title: "Couldn't submit", description: e?.message, variant: "destructive" });
@@ -599,6 +625,50 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     rows={4}
                     className="text-base"
                   />
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 p-2.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <Camera className="w-3 h-3" /> Photos
+                        {reqPhotos.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{reqPhotos.length}</Badge>}
+                      </p>
+                      <label className="inline-flex">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          multiple
+                          className="hidden"
+                          disabled={uploadingReqPhoto}
+                          onChange={(e) => { uploadRequestPhotos(e.target.files); e.currentTarget.value = ""; }}
+                        />
+                        <span className="inline-flex items-center gap-1 h-9 px-3 rounded-md border border-border bg-background text-xs font-medium cursor-pointer hover:bg-muted">
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploadingReqPhoto ? "Uploading…" : "Add Photo"}
+                        </span>
+                      </label>
+                    </div>
+                    {reqPhotos.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Optional — snap a photo of the pest or affected area to help us identify the issue.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {reqPhotos.map((url, i) => (
+                          <div key={url} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                            <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setReqPhotos(p => p.filter(u => u !== url))}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                              aria-label="Remove photo"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button type="button" onClick={submitRequest} disabled={submittingRequest} className="w-full h-11 text-sm gap-2">
                   <Send className="w-4 h-4" />
