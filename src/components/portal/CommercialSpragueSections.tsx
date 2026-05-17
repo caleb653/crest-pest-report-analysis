@@ -705,7 +705,7 @@ export interface PortalDoc {
 export function BusinessLicenseSection({ docs }: { docs: PortalDoc[] }) {
   const licenses = docs.filter(d => (d.category || "").toLowerCase().includes("licens"));
   const standardLicenses = [
-    { name: "California Structural Pest Control Board — Co. Reg.", number: "PR 9859", verified: "01/01/2025" },
+    { name: "California Structural Pest Control Board — Co. Reg.", number: "PR 9859", verified: "01/01/2025", url: "https://www.pestboard.ca.gov/" },
   ];
   return (
     <div className="space-y-3">
@@ -724,16 +724,16 @@ export function BusinessLicenseSection({ docs }: { docs: PortalDoc[] }) {
               <tr>
                 <th className="text-left px-3 py-2 font-bold">License</th>
                 <th className="text-left px-3 py-2 font-bold hidden sm:table-cell">Number</th>
-                <th className="text-left px-3 py-2 font-bold">Last Verified</th>
                 <th className="text-right px-3 py-2 font-bold">View</th>
               </tr>
             </thead>
             <tbody>
               {standardLicenses.map(l => (
                 <tr key={l.name} className="border-t border-border">
-                  <td className="px-3 py-2 font-medium">{l.name}</td>
+                  <td className="px-3 py-2 font-medium">
+                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{l.name}</a>
+                  </td>
                   <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground">{l.number}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{l.verified}</td>
                   <td className="px-3 py-2 text-right text-muted-foreground text-xs italic">On file</td>
                 </tr>
               ))}
@@ -741,7 +741,6 @@ export function BusinessLicenseSection({ docs }: { docs: PortalDoc[] }) {
                 <tr key={d.id} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{d.title}</td>
                   <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground">{d.file_name || "—"}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{fmtDay(d.created_at.slice(0, 10))}</td>
                   <td className="px-3 py-2 text-right">
                     <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
                       onClick={() => window.open(d.file_url, "_blank", "noopener,noreferrer")}>
