@@ -793,7 +793,9 @@ const PortalAdmin = () => {
             </TabsContent>
 
             <TabsContent value="regional">
-              <RegionalManagersTab />
+              <div className="-mx-4 sm:-mx-6 xl:-mx-16 2xl:-mx-28">
+                <RegionalManagersTab />
+              </div>
             </TabsContent>
 
             {/* Prep Sheets tab */}
