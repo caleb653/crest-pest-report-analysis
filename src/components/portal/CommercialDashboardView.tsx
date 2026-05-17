@@ -646,6 +646,10 @@ export default function CommercialDashboardView({
               </CardContent>
             </Card>
           </div>
+          <div className="space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+          </div>
         </TabsContent>
 
         {/* ════════ TAB 2: Previous Services ════════ */}
