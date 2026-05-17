@@ -1211,7 +1211,13 @@ export default function CommercialDashboardView({
               <CardContent className="p-3 space-y-2">
                 <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Sighting</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input value={newReq.pest} onChange={e => setNewReq(r => ({ ...r, pest: e.target.value }))} placeholder="Pest (e.g. Ants)" className="h-11 text-sm" />
+                  <Select value={newReq.pest || ""} onValueChange={v => setNewReq(r => ({ ...r, pest: v === "__none__" ? "" : v }))}>
+                    <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Pest (select)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Select pest —</SelectItem>
+                      {COMMERCIAL_PEST_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
                 </div>
                 <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
