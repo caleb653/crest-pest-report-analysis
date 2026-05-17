@@ -467,7 +467,7 @@ export default function RegionalManagersTab() {
         </div>
 
         {/* Per-property metrics */}
-        <div>
+        <div className="-mx-4 sm:-mx-6 xl:-mx-16 2xl:-mx-28">
           <p className="text-sm font-semibold mb-2">Property Metrics</p>
           <div className="border rounded-lg overflow-x-auto">
             <Table>
@@ -476,7 +476,7 @@ export default function RegionalManagersTab() {
                   <TableHead rowSpan={2} className="align-bottom border-r">Property</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">General Property Info</TableHead>
                   <TableHead colSpan={3} className="text-center border-r bg-muted/30">General Treatment</TableHead>
-                  <TableHead colSpan={3} className="text-center border-r bg-muted/30">Efficiency to Clear Vacant Unit Pests</TableHead>
+                  <TableHead colSpan={4} className="text-center border-r bg-muted/30">Efficiency to Clear Vacant Unit Pests</TableHead>
                   <TableHead colSpan={1} className="text-center border-r bg-muted/30">Occupied Eff.</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">3+ Follow-Ups</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">Time to Free &amp; Clear</TableHead>
@@ -490,7 +490,13 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs border-r">Avg/Visit</TableHead>
                   <TableHead className="text-xs">Prev (wks)</TableHead>
                   <TableHead className="text-xs">Curr (wks)</TableHead>
-                  <TableHead className="text-xs border-r">Diff ($/unit)</TableHead>
+                  <TableHead className="text-xs">Diff (wks)</TableHead>
+                  <TableHead className="text-xs border-r leading-tight">
+                    Diff ($/unit)
+                    <div className="text-[9px] font-normal text-muted-foreground normal-case">
+                      (Prev−Curr) × Rent ÷ 4.1
+                    </div>
+                  </TableHead>
                   <TableHead className="text-xs border-r">Avg FU/Unit</TableHead>
                   <TableHead className="text-xs">Count</TableHead>
                   <TableHead className="text-xs border-r">% of Total</TableHead>
@@ -501,7 +507,7 @@ export default function RegionalManagersTab() {
               </TableHeader>
               <TableBody>
                 {managedProps.length === 0 ? (
-                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
                   const url = portalUrlForProperty(p.id);
@@ -521,6 +527,9 @@ export default function RegionalManagersTab() {
                       <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
                       <TableCell>{m.prevWeeks != null ? <>{m.prevWeeks}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
                       <TableCell>{m.currWeeks != null ? <>{m.currWeeks.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
+                      <TableCell className={m.weeksSaved != null && m.weeksSaved > 0 ? "text-emerald-600 font-medium" : ""}>
+                        {m.weeksSaved != null ? <>{m.weeksSaved.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1 font-normal">wks</span></> : "—"}
+                      </TableCell>
                       <TableCell className={"border-r " + (m.effGainedIncome > 0 ? "text-emerald-600 font-medium" : "")}>
                         {m.effGainedIncome > 0 ? <>${Math.round(m.effGainedIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1 font-normal">/unit</span></> : "—"}
                       </TableCell>
