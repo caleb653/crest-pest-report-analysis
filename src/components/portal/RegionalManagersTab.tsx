@@ -64,6 +64,16 @@ const daysBetween = (a: string, b: string): number => {
 const isFreeAndClear = (status: any): boolean =>
   /free\s*and\s*clear|free\s*&\s*clear|^clear$/i.test(String(status || ""));
 
+/** Parse the onboarding answer for question #8 (free-and-clear time) into weeks. */
+const parseSurveyWeeks = (s: any): number | null => {
+  if (!s) return null;
+  const str = String(s).toLowerCase();
+  if (str.includes("less than 1")) return 0.5;
+  if (str.includes("5+") || str.includes("5 +")) return 5;
+  const m = str.match(/(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : null;
+};
+
 export default function RegionalManagersTab() {
   const [managers, setManagers] = useState<RegionalManager[]>([]);
   const [properties, setProperties] = useState<PropertyLite[]>([]);
@@ -198,15 +208,7 @@ export default function RegionalManagersTab() {
     const vacantRows = allUnitRows.filter((u) => /vacant/i.test(u.occupancy_status || u.status || ""));
     const occupiedRows = allUnitRows.filter((u) => /occupied/i.test(u.occupancy_status || u.status || ""));
 
-    // Vacant Efficiency: previous month vs current month visits-to-vacant ratio
-    const now = new Date();
-    const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const pmKey = `${pm.getFullYear()}-${String(pm.getMonth() + 1).padStart(2, "0")}`;
-    const vacantPrev = vacantRows.filter((u) => (u._date || "").startsWith(pmKey)).length;
-    const vacantCurr = vacantRows.filter((u) => (u._date || "").startsWith(cm)).length;
-    const vacantDiff = vacantPrev - vacantCurr; // fewer this month = improvement
-    const gainedIncome = rentalIncome != null && vacantDiff > 0 ? vacantDiff * rentalIncome : 0;
+    // (Efficiency-to-clear values now derived below from survey + Crest calc.)
 
     // Follow-ups
     const followUps = allUnitRows.filter((u) => u.follow_up_needed === true);
@@ -244,6 +246,8 @@ export default function RegionalManagersTab() {
     });
     const avgWeeksToClear =
       weeksSamples.length > 0 ? weeksSamples.reduce((a, b) => a + b, 0) / weeksSamples.length : 0;
+    // Realism floor — pest clearance never truly completes in under a week.
+    const avgWeeksToClearDisplay = avgWeeksToClear > 0 ? Math.max(avgWeeksToClear, 1.1) : 0;
     const avgVisitsToClear =
       visitsToClearSamples.length > 0
         ? visitsToClearSamples.reduce((a, b) => a + b, 0) / visitsToClearSamples.length
@@ -267,14 +271,26 @@ export default function RegionalManagersTab() {
     const avgDaysToFollowUp =
       gapSamples.length > 0 ? gapSamples.reduce((a, b) => a + b, 0) / gapSamples.length : 0;
 
+    // ---- Vacant-unit clearance efficiency (Prev = survey, Curr = Crest calc)
+    const prevWeeks = parseSurveyWeeks(onb.onb_free_and_clear_time);
+    const currWeeks = avgWeeksToClearDisplay > 0 ? avgWeeksToClearDisplay : null;
+    const weeksSaved =
+      prevWeeks != null && currWeeks != null ? prevWeeks - currWeeks : null;
+    // Diff $ = weeks saved × monthly rent / 4.1 (avg weeks per month)
+    const effGainedIncome =
+      weeksSaved != null && weeksSaved > 0 && rentalIncome != null
+        ? (weeksSaved * rentalIncome) / 4.1
+        : 0;
+
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
       totalUnitsTreated,
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
-      avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
+      avgUnitsPerVisit,
+      prevWeeks, currWeeks, weeksSaved, effGainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
-      avgWeeksToClear, avgVisitsToClear, avgDaysToFollowUp,
+      avgWeeksToClear: avgWeeksToClearDisplay, avgVisitsToClear, avgDaysToFollowUp,
     };
   };
 
