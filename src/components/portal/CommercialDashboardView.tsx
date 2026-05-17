@@ -871,7 +871,10 @@ export default function CommercialDashboardView({
               </CardContent></Card>
             ) : (
               <div className="space-y-2">
-                {upcoming.map(s => (
+                {upcoming.map(s => {
+                  const upProducts = _normUsage(getField(s, "products_used"));
+                  const upPhotosRaw: any[] = Array.isArray(getField(s, "photos")) ? getField(s, "photos") : [];
+                  return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
@@ -932,6 +935,66 @@ export default function CommercialDashboardView({
                           />
                         </div>
                       </div>
+
+                      {/* Products used (with amounts/dilution) — same editor as past visits */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <FlaskConical className="w-3 h-3" /> Products Used
+                        </p>
+                        <ProductUsageEditor
+                          value={upProducts}
+                          onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
+                          compact
+                        />
+                      </div>
+
+                      {/* Photos — upload + thumbnails with remove */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                            <Camera className="w-3 h-3" /> Photos
+                            {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
+                          </p>
+                          <label className="inline-flex">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              disabled={uploadingPhotoFor === s.id}
+                              onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                            />
+                            <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                              <Upload className="w-3 h-3" />
+                              {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                            </span>
+                          </label>
+                        </div>
+                        {upPhotosRaw.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {upPhotosRaw.map((p: any, i: number) => {
+                              const url = typeof p === "string" ? p : p?.url;
+                              if (!url) return null;
+                              return (
+                                <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                                  <a href={url} target="_blank" rel="noopener noreferrer">
+                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeServicePhoto(s.id, url)}
+                                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove photo"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
                           <FileText className="w-3 h-3" /> Open Report
@@ -945,7 +1008,8 @@ export default function CommercialDashboardView({
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
