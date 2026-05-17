@@ -35,7 +35,7 @@ import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
   CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
-  Bug, ShieldCheck, X,
+  Bug, X,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
@@ -499,10 +499,10 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
-            <span>Site Map and Plan</span>
+            <span>Site Map, Plan &amp; Team</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Calendar className="w-5 h-5" />
@@ -522,25 +522,13 @@ export default function CommercialDashboardView({
             <Wrench className="w-5 h-5" />
             <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileDown className="w-5 h-5" />
-            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
-          </TabsTrigger>
-          <TabsTrigger value="conditions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <AlertTriangle className="w-5 h-5" />
-            <span>Conditions</span>
-          </TabsTrigger>
           <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
             <span>Trending &amp; Records</span>
           </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FlaskConical className="w-5 h-5" />
-            <span>Materials</span>
-          </TabsTrigger>
-          <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <ShieldCheck className="w-5 h-5" />
-            <span>Team &amp; Licensing</span>
+            <span>Materials &amp; Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="help" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
@@ -657,6 +645,10 @@ export default function CommercialDashboardView({
                 )}
               </CardContent>
             </Card>
+          </div>
+          <div className="space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
           </div>
         </TabsContent>
 
@@ -846,6 +838,15 @@ export default function CommercialDashboardView({
                             </div>
                           </div>
                         )}
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                            <ClipboardList className="w-3 h-3" /> Conditions
+                          </p>
+                          <ConditionsReportSection
+                            services={[s as any]}
+                            onSaveServiceReportData={persistServiceReportData}
+                          />
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -1006,6 +1007,15 @@ export default function CommercialDashboardView({
                           <Trash2 className="w-3 h-3" /> Delete
                         </Button>
                       </div>
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <ClipboardList className="w-3 h-3" /> Conditions
+                        </p>
+                        <ConditionsReportSection
+                          services={[s as any]}
+                          onSaveServiceReportData={persistServiceReportData}
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                   );
@@ -1121,91 +1131,6 @@ export default function CommercialDashboardView({
           </div>
         </TabsContent>
 
-        {/* ════════ TAB 5: Prep Sheets ════════ */}
-        <TabsContent value="prep" className="mt-0 space-y-4">
-          <Card>
-            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <FileDown className="w-5 h-5 text-primary" /> Prep Sheets
-                <Badge variant="secondary" className="ml-1 text-xs">{prepSheets.length}</Badge>
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Treatment prep instructions you can view, download, or share with the customer.
-              </p>
-            </CardHeader>
-            <CardContent className="p-4">
-              {prepSheets.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No prep sheets uploaded yet.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {prepSheets.map(ps => {
-                    const open = expandedPrep === ps.id;
-                    return (
-                      <Card key={ps.id} className="border-border/60">
-                        <button
-                          type="button"
-                          className="w-full text-left p-3 flex items-center justify-between"
-                          onClick={() => setExpandedPrep(open ? null : ps.id)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate">{ps.title}</p>
-                            <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
-                          </div>
-                          <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-                        </button>
-                        {open && (
-                          <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
-                            {ps.description && (
-                              <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
-                                <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap gap-1.5">
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={() => window.open(ps.file_url, "_blank", "noopener,noreferrer")}>
-                                  <Eye className="w-3.5 h-3.5 mr-1" />View
-                                </Button>
-                              )}
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={() => window.open(ps.file_url, "_blank")}>
-                                  <Download className="w-3.5 h-3.5 mr-1" />Download
-                                </Button>
-                              )}
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={async () => {
-                                    await navigator.clipboard.writeText(ps.file_url);
-                                    toast({ title: "Link copied" });
-                                  }}>
-                                  <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ════════ TAB: Conditions ════════ */}
-        <TabsContent value="conditions" className="mt-0">
-          <div className="max-w-5xl mx-auto">
-            <ConditionsReportSection
-              services={services as any}
-              onSaveServiceReportData={persistServiceReportData}
-            />
-          </div>
-        </TabsContent>
-
         {/* ════════ TAB: Trending & Records ════════ */}
         <TabsContent value="trending" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
@@ -1215,19 +1140,82 @@ export default function CommercialDashboardView({
           </div>
         </TabsContent>
 
-        {/* ════════ TAB: Materials ════════ */}
+        {/* ════════ TAB: Materials & Prep Sheets ════════ */}
         <TabsContent value="materials" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <CommercialApprovedMaterials />
             <MaterialUseLogSection services={services as any} />
-          </div>
-        </TabsContent>
-
-        {/* ════════ TAB: Team & Licensing ════════ */}
-        <TabsContent value="team" className="mt-0 space-y-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <ServiceTeamSection services={services as any} />
-            <BusinessLicenseSection docs={docs as any} />
+            <Card>
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <FileDown className="w-5 h-5 text-primary" /> Prep Sheets
+                  <Badge variant="secondary" className="ml-1 text-xs">{prepSheets.length}</Badge>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Treatment prep instructions you can view, download, or share with the customer.
+                </p>
+              </CardHeader>
+              <CardContent className="p-4">
+                {prepSheets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No prep sheets uploaded yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {prepSheets.map(ps => {
+                      const open = expandedPrep === ps.id;
+                      return (
+                        <Card key={ps.id} className="border-border/60">
+                          <button
+                            type="button"
+                            className="w-full text-left p-3 flex items-center justify-between"
+                            onClick={() => setExpandedPrep(open ? null : ps.id)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{ps.title}</p>
+                              <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                          </button>
+                          {open && (
+                            <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
+                              {ps.description && (
+                                <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
+                                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
+                                </div>
+                              )}
+                              <div className="flex flex-wrap gap-1.5">
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={() => window.open(ps.file_url, "_blank", "noopener,noreferrer")}>
+                                    <Eye className="w-3.5 h-3.5 mr-1" />View
+                                  </Button>
+                                )}
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={() => window.open(ps.file_url, "_blank")}>
+                                    <Download className="w-3.5 h-3.5 mr-1" />Download
+                                  </Button>
+                                )}
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={async () => {
+                                      await navigator.clipboard.writeText(ps.file_url);
+                                      toast({ title: "Link copied" });
+                                    }}>
+                                    <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
