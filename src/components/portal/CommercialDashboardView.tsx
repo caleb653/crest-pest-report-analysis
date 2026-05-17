@@ -150,6 +150,151 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// Equipment options — kept in sync with the sales report, AppointmentReport,
+// and HOA/apartment PropertyDashboard so the lists "jive" across the app.
+const EQUIPMENT_OPTIONS = [
+  "Rodent Bait Stations",
+  "Rodent Traps",
+  "Mosquito Buckets",
+  "Fly Light",
+  "Pest Monitors",
+] as const;
+
+type EquipItem = { name: string; count: number };
+
+const normalizeEquipment = (raw: any): EquipItem[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((e: any) => {
+      if (typeof e === "string") return { name: e, count: 1 };
+      if (e && typeof e === "object" && e.name) {
+        const n = Number(e.count);
+        return { name: String(e.name), count: Number.isFinite(n) && n > 0 ? n : 1 };
+      }
+      return null;
+    })
+    .filter(Boolean) as EquipItem[];
+};
+
+function PropertyEquipmentCard({
+  propertyId,
+  initial,
+  onSaved,
+}: { propertyId: string; initial: any; onSaved?: () => void }) {
+  const [items, setItems] = useState<EquipItem[]>(normalizeEquipment(initial));
+  useEffect(() => { setItems(normalizeEquipment(initial)); }, [propertyId]); // eslint-disable-line
+  const save = async (next: EquipItem[]) => {
+    setItems(next);
+    const { error } = await supabase
+      .from("portal_properties")
+      .update({ equipment: next as any })
+      .eq("id", propertyId);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    onSaved?.();
+  };
+  return (
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+        <CardTitle className="text-base font-bold flex items-center gap-2">
+          <Wrench className="w-5 h-5 text-primary" /> Equipment On-Site
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Monitoring devices and equipment installed at this property. Synced
+          with the rest of Crest (sales reports, appointment reports).
+        </p>
+      </CardHeader>
+      <CardContent className="pt-3 space-y-1">
+        {EQUIPMENT_OPTIONS.map((eq) => {
+          const item = items.find((i) => i.name === eq);
+          const isChecked = !!item;
+          return (
+            <div
+              key={eq}
+              className={`flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border transition-all ${
+                isChecked ? "bg-primary/10 border-primary/60 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"
+              }`}
+            >
+              <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={async () => {
+                    const next = isChecked
+                      ? items.filter((e) => e.name !== eq)
+                      : [...items, { name: eq, count: 1 }];
+                    await save(next);
+                  }}
+                  className="rounded w-4 h-4"
+                />
+                {eq}
+              </label>
+              {isChecked && (
+                <Input
+                  type="number"
+                  min={1}
+                  className="h-8 w-16 text-xs text-center"
+                  value={item?.count || 1}
+                  onChange={(e) => {
+                    const count = parseInt(e.target.value) || 1;
+                    setItems((prev) => prev.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
+                  }}
+                  onBlur={async (e) => {
+                    const count = parseInt(e.target.value) || 1;
+                    await save(items.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+        {items.filter((e) => !(EQUIPMENT_OPTIONS as readonly string[]).includes(e.name)).map((custom) => (
+          <div key={custom.name} className="flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border bg-primary/10 border-primary/60 font-medium">
+            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+              <input
+                type="checkbox"
+                checked
+                onChange={async () => { await save(items.filter((e) => e.name !== custom.name)); }}
+                className="rounded w-4 h-4"
+              />
+              {custom.name}
+            </label>
+            <Input
+              type="number"
+              min={1}
+              className="h-8 w-16 text-xs text-center"
+              value={custom.count || 1}
+              onChange={(e) => {
+                const count = parseInt(e.target.value) || 1;
+                setItems((prev) => prev.map((ei) => (ei.name === custom.name ? { ...ei, count } : ei)));
+              }}
+              onBlur={async () => { await save(items); }}
+            />
+          </div>
+        ))}
+        <div className="pt-1.5">
+          <Input
+            className="h-9 text-xs border-dashed"
+            placeholder="Add custom equipment and press Enter…"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const val = (e.target as HTMLInputElement).value.trim();
+                if (val && !items.some((ei) => ei.name === val)) {
+                  await save([...items, { name: val, count: 1 }]);
+                  (e.target as HTMLInputElement).value = "";
+                }
+              }
+            }}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
