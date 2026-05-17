@@ -164,6 +164,25 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
+  const uploadRequestPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingReqPhoto(true);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `pest-sightings/${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) setReqPhotos((p) => [...p, ...urls]);
+    setUploadingReqPhoto(false);
+  };
+
   const loadAll = async () => {
     const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }, { data: dx }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
