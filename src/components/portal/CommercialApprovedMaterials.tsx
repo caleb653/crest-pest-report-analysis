@@ -85,15 +85,6 @@ interface Props {
 }
 
 export default function CommercialApprovedMaterials({ highlightOnly, compact }: Props) {
-  const downloadAll = () => {
-    // Sequential <a download> clicks. Browsers allow many of these in a row
-    // when triggered from a single user gesture; window.open() spam gets
-    // blocked after the first popup.
-    APPROVED_COMMERCIAL_MATERIALS.forEach((m, i) => {
-      setTimeout(() => triggerDownload(sdsHref(m), filenameFor(m)), i * 250);
-    });
-  };
-
   const inner = (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -104,13 +95,9 @@ export default function CommercialApprovedMaterials({ highlightOnly, compact }: 
           <p className="text-xs text-muted-foreground mt-0.5 max-w-prose">
             The complete list of products Crest is approved to use on this commercial site.
             Click <span className="font-semibold">SDS</span> next to any product to view its
-            Safety Data Sheet, or use <span className="font-semibold">Download All SDS</span>{" "}
-            to open every sheet at once.
+            Safety Data Sheet.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={downloadAll} className="h-9 gap-1.5 text-xs">
-          <FileDown className="w-3.5 h-3.5" /> Download All SDS
-        </Button>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
