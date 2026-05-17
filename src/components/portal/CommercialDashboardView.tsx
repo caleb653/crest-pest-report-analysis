@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
@@ -164,6 +166,8 @@ export default function CommercialDashboardView({
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
+  // Per-upcoming-service photo uploading state
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
@@ -283,6 +287,38 @@ export default function CommercialDashboardView({
     }
     setNewReqPhotos((p) => [...p, ...urls]);
     setUploadingReqPhoto(false);
+  };
+
+  // Upload photos directly onto an upcoming service (mirrors PM portal pattern)
+  const uploadServicePhotos = async (serviceId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingPhotoFor(serviceId);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `upcoming-service-photos/${property.id}/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supa.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supa.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) {
+      const current = services.find(s => s.id === serviceId);
+      const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+      await saveServiceField(serviceId, { photos: [...existing, ...urls] });
+      toast({ title: `Added ${urls.length} photo${urls.length === 1 ? "" : "s"}` });
+    }
+    setUploadingPhotoFor(null);
+  };
+
+  const removeServicePhoto = async (serviceId: string, url: string) => {
+    const current = services.find(s => s.id === serviceId);
+    const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+    const next = existing.filter((p: any) => (typeof p === "string" ? p : p?.url) !== url);
+    await saveServiceField(serviceId, { photos: next });
   };
 
   // Helpers for the inline editable report data (concerns / non-chem equipment)
@@ -835,7 +871,10 @@ export default function CommercialDashboardView({
               </CardContent></Card>
             ) : (
               <div className="space-y-2">
-                {upcoming.map(s => (
+                {upcoming.map(s => {
+                  const upProducts = _normUsage(getField(s, "products_used"));
+                  const upPhotosRaw: any[] = Array.isArray(getField(s, "photos")) ? getField(s, "photos") : [];
+                  return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
@@ -896,6 +935,66 @@ export default function CommercialDashboardView({
                           />
                         </div>
                       </div>
+
+                      {/* Products used (with amounts/dilution) — same editor as past visits */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <FlaskConical className="w-3 h-3" /> Products Used
+                        </p>
+                        <ProductUsageEditor
+                          value={upProducts}
+                          onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
+                          compact
+                        />
+                      </div>
+
+                      {/* Photos — upload + thumbnails with remove */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                            <Camera className="w-3 h-3" /> Photos
+                            {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
+                          </p>
+                          <label className="inline-flex">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              disabled={uploadingPhotoFor === s.id}
+                              onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                            />
+                            <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                              <Upload className="w-3 h-3" />
+                              {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                            </span>
+                          </label>
+                        </div>
+                        {upPhotosRaw.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {upPhotosRaw.map((p: any, i: number) => {
+                              const url = typeof p === "string" ? p : p?.url;
+                              if (!url) return null;
+                              return (
+                                <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                                  <a href={url} target="_blank" rel="noopener noreferrer">
+                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeServicePhoto(s.id, url)}
+                                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove photo"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
                           <FileText className="w-3 h-3" /> Open Report
@@ -909,7 +1008,8 @@ export default function CommercialDashboardView({
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
