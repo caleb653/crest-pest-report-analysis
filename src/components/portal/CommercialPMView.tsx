@@ -250,6 +250,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
       toast({ title: "Add a description", variant: "destructive" });
       return;
     }
+    if (uploadingReqPhoto) {
+      toast({ title: "Hang on — photos still uploading…" });
+      return;
+    }
     setSubmittingRequest(true);
     try {
       const { error } = await supabase.from("portal_requests").insert({
