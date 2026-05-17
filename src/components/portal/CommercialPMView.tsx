@@ -625,6 +625,50 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     rows={4}
                     className="text-base"
                   />
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 p-2.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <Camera className="w-3 h-3" /> Photos
+                        {reqPhotos.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{reqPhotos.length}</Badge>}
+                      </p>
+                      <label className="inline-flex">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          multiple
+                          className="hidden"
+                          disabled={uploadingReqPhoto}
+                          onChange={(e) => { uploadRequestPhotos(e.target.files); e.currentTarget.value = ""; }}
+                        />
+                        <span className="inline-flex items-center gap-1 h-9 px-3 rounded-md border border-border bg-background text-xs font-medium cursor-pointer hover:bg-muted">
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploadingReqPhoto ? "Uploading…" : "Add Photo"}
+                        </span>
+                      </label>
+                    </div>
+                    {reqPhotos.length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Optional — snap a photo of the pest or affected area to help us identify the issue.
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {reqPhotos.map((url, i) => (
+                          <div key={url} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                            <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setReqPhotos(p => p.filter(u => u !== url))}
+                              className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                              aria-label="Remove photo"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Button type="button" onClick={submitRequest} disabled={submittingRequest} className="w-full h-11 text-sm gap-2">
                   <Send className="w-4 h-4" />
