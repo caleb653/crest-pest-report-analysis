@@ -1091,6 +1091,20 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
+                            Office-Only Notes
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
+                          </Label>
+                          <Textarea
+                            value={getField(s, "office_notes") || ""}
+                            onChange={e => setField(s.id, "office_notes", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Internal notes — never shown to the client…"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
 
                       {/* Products used (with amounts/dilution) — same editor as past visits */}
@@ -1102,6 +1116,14 @@ export default function CommercialDashboardView({
                           value={upProducts}
                           onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
                           compact
+                        />
+                      </div>
+
+                      {/* Equipment used on this visit (synced w/ rest of Crest app) */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <CommercialNonChemEquipment
+                          value={normalizeNonChemEquipment(getReportData(s).non_chem_equipment)}
+                          onChange={(next) => saveReportData(s, { non_chem_equipment: next })}
                         />
                       </div>
 
