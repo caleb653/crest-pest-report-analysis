@@ -734,14 +734,6 @@ export default function CommercialDashboardView({
                     {savingProp ? "Saving…" : "Saves automatically when you tap away."}
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 pt-1">
-                  <Button size="sm" onClick={() => quickAddVisit("scheduled")} className="h-11 text-sm gap-1.5">
-                    <Plus className="w-4 h-4" /> Add Upcoming Visit
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-11 text-sm gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> Log Past Visit
-                  </Button>
-                </div>
               </CardContent>
             </Card>
 
