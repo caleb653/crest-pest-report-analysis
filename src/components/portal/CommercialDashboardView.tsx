@@ -89,6 +89,8 @@ interface ServiceData {
   products_used: any;
   photos: any;
   special_notes: string | null;
+  office_notes?: string | null;
+  report_data?: any;
 }
 
 interface PortalLink {
