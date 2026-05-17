@@ -64,6 +64,16 @@ const daysBetween = (a: string, b: string): number => {
 const isFreeAndClear = (status: any): boolean =>
   /free\s*and\s*clear|free\s*&\s*clear|^clear$/i.test(String(status || ""));
 
+/** Parse the onboarding answer for question #8 (free-and-clear time) into weeks. */
+const parseSurveyWeeks = (s: any): number | null => {
+  if (!s) return null;
+  const str = String(s).toLowerCase();
+  if (str.includes("less than 1")) return 0.5;
+  if (str.includes("5+") || str.includes("5 +")) return 5;
+  const m = str.match(/(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : null;
+};
+
 export default function RegionalManagersTab() {
   const [managers, setManagers] = useState<RegionalManager[]>([]);
   const [properties, setProperties] = useState<PropertyLite[]>([]);
@@ -198,15 +208,7 @@ export default function RegionalManagersTab() {
     const vacantRows = allUnitRows.filter((u) => /vacant/i.test(u.occupancy_status || u.status || ""));
     const occupiedRows = allUnitRows.filter((u) => /occupied/i.test(u.occupancy_status || u.status || ""));
 
-    // Vacant Efficiency: previous month vs current month visits-to-vacant ratio
-    const now = new Date();
-    const cm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const pm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const pmKey = `${pm.getFullYear()}-${String(pm.getMonth() + 1).padStart(2, "0")}`;
-    const vacantPrev = vacantRows.filter((u) => (u._date || "").startsWith(pmKey)).length;
-    const vacantCurr = vacantRows.filter((u) => (u._date || "").startsWith(cm)).length;
-    const vacantDiff = vacantPrev - vacantCurr; // fewer this month = improvement
-    const gainedIncome = rentalIncome != null && vacantDiff > 0 ? vacantDiff * rentalIncome : 0;
+    // (Efficiency-to-clear values now derived below from survey + Crest calc.)
 
     // Follow-ups
     const followUps = allUnitRows.filter((u) => u.follow_up_needed === true);
@@ -244,6 +246,8 @@ export default function RegionalManagersTab() {
     });
     const avgWeeksToClear =
       weeksSamples.length > 0 ? weeksSamples.reduce((a, b) => a + b, 0) / weeksSamples.length : 0;
+    // Realism floor — pest clearance never truly completes in under a week.
+    const avgWeeksToClearDisplay = avgWeeksToClear > 0 ? Math.max(avgWeeksToClear, 1.1) : 0;
     const avgVisitsToClear =
       visitsToClearSamples.length > 0
         ? visitsToClearSamples.reduce((a, b) => a + b, 0) / visitsToClearSamples.length
@@ -267,14 +271,26 @@ export default function RegionalManagersTab() {
     const avgDaysToFollowUp =
       gapSamples.length > 0 ? gapSamples.reduce((a, b) => a + b, 0) / gapSamples.length : 0;
 
+    // ---- Vacant-unit clearance efficiency (Prev = survey, Curr = Crest calc)
+    const prevWeeks = parseSurveyWeeks(onb.onb_free_and_clear_time);
+    const currWeeks = avgWeeksToClearDisplay > 0 ? avgWeeksToClearDisplay : null;
+    const weeksSaved =
+      prevWeeks != null && currWeeks != null ? prevWeeks - currWeeks : null;
+    // Diff $ = weeks saved × monthly rent / 4.1 (avg weeks per month)
+    const effGainedIncome =
+      weeksSaved != null && weeksSaved > 0 && rentalIncome != null
+        ? (weeksSaved * rentalIncome) / 4.1
+        : 0;
+
     return {
       totalUnits, rentalIncome, freeAndClear,
       totalVisits, uniqueUnits: uniqueUnits.size,
       totalUnitsTreated,
       vacantRows: vacantRows.length, occupiedRows: occupiedRows.length,
-      avgUnitsPerVisit, vacantPrev, vacantCurr, vacantDiff, gainedIncome,
+      avgUnitsPerVisit,
+      prevWeeks, currWeeks, weeksSaved, effGainedIncome,
       avgFollowUpsPerOccUnit, threePlusCount, threePlusPct,
-      avgWeeksToClear, avgVisitsToClear, avgDaysToFollowUp,
+      avgWeeksToClear: avgWeeksToClearDisplay, avgVisitsToClear, avgDaysToFollowUp,
     };
   };
 
@@ -460,7 +476,7 @@ export default function RegionalManagersTab() {
                   <TableHead rowSpan={2} className="align-bottom border-r">Property</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">General Property Info</TableHead>
                   <TableHead colSpan={3} className="text-center border-r bg-muted/30">General Treatment</TableHead>
-                  <TableHead colSpan={4} className="text-center border-r bg-muted/30">Vacant Unit Efficiency</TableHead>
+                  <TableHead colSpan={3} className="text-center border-r bg-muted/30">Efficiency to Clear Vacant Unit Pests</TableHead>
                   <TableHead colSpan={1} className="text-center border-r bg-muted/30">Occupied Eff.</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">3+ Follow-Ups</TableHead>
                   <TableHead colSpan={2} className="text-center border-r bg-muted/30">Time to Free &amp; Clear</TableHead>
@@ -472,10 +488,9 @@ export default function RegionalManagersTab() {
                   <TableHead className="text-xs">Visits</TableHead>
                   <TableHead className="text-xs">Units Treated</TableHead>
                   <TableHead className="text-xs border-r">Avg/Visit</TableHead>
-                  <TableHead className="text-xs">Prev</TableHead>
-                  <TableHead className="text-xs">Curr</TableHead>
-                  <TableHead className="text-xs">Diff</TableHead>
-                  <TableHead className="text-xs border-r">Gained Income</TableHead>
+                  <TableHead className="text-xs">Prev (wks)</TableHead>
+                  <TableHead className="text-xs">Curr (wks)</TableHead>
+                  <TableHead className="text-xs border-r">Diff ($/unit)</TableHead>
                   <TableHead className="text-xs border-r">Avg FU/Unit</TableHead>
                   <TableHead className="text-xs">Count</TableHead>
                   <TableHead className="text-xs border-r">% of Total</TableHead>
@@ -486,7 +501,7 @@ export default function RegionalManagersTab() {
               </TableHeader>
               <TableBody>
                 {managedProps.length === 0 ? (
-                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground text-sm py-6">No properties assigned to this manager.</TableCell></TableRow>
                 ) : managedProps.map((p) => {
                   const m = computeMetrics(p);
                   const url = portalUrlForProperty(p.id);
@@ -504,12 +519,11 @@ export default function RegionalManagersTab() {
                       <TableCell>{m.totalVisits}<span className="text-[10px] text-muted-foreground ml-1">visits</span></TableCell>
                       <TableCell>{m.totalUnitsTreated}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.avgUnitsPerVisit ? <>{m.avgUnitsPerVisit.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">units</span></> : "—"}</TableCell>
-                      <TableCell>{m.vacantPrev}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
-                      <TableCell>{m.vacantCurr}<span className="text-[10px] text-muted-foreground ml-1">vac</span></TableCell>
-                      <TableCell className={m.vacantDiff > 0 ? "text-emerald-600 font-medium" : m.vacantDiff < 0 ? "text-destructive font-medium" : ""}>
-                        {m.vacantDiff > 0 ? `+${m.vacantDiff}` : m.vacantDiff}<span className="text-[10px] text-muted-foreground ml-1 font-normal">units</span>
+                      <TableCell>{m.prevWeeks != null ? <>{m.prevWeeks}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
+                      <TableCell>{m.currWeeks != null ? <>{m.currWeeks.toFixed(1)}<span className="text-[10px] text-muted-foreground ml-1">wks</span></> : "—"}</TableCell>
+                      <TableCell className={"border-r " + (m.effGainedIncome > 0 ? "text-emerald-600 font-medium" : "")}>
+                        {m.effGainedIncome > 0 ? <>${Math.round(m.effGainedIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1 font-normal">/unit</span></> : "—"}
                       </TableCell>
-                      <TableCell className="border-r">{m.gainedIncome > 0 ? <>${Math.round(m.gainedIncome).toLocaleString()}<span className="text-[10px] text-muted-foreground ml-1">/mo</span></> : "—"}</TableCell>
                       <TableCell className="border-r">{m.avgFollowUpsPerOccUnit ? <>{m.avgFollowUpsPerOccUnit.toFixed(2)}<span className="text-[10px] text-muted-foreground ml-1">per unit</span></> : "—"}</TableCell>
                       <TableCell>{m.threePlusCount}<span className="text-[10px] text-muted-foreground ml-1">units</span></TableCell>
                       <TableCell className="border-r">{m.threePlusPct ? `${m.threePlusPct.toFixed(0)}%` : "—"}</TableCell>
@@ -532,7 +546,8 @@ export default function RegionalManagersTab() {
             </Table>
           </div>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Total Units &amp; Avg Mo Rent come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, vacancy, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are all calculated live from completed service unit details. Gained Income = (Vacant Prev − Vacant Curr) × Avg Mo Rent.
+            Total Units &amp; Avg Mo Rent come from the property settings on the Apartments tab (with onboarding-survey fallback). Visits, follow-ups, Crest's time-to-free-&amp;-clear, and avg days-to-follow-up are calculated live from completed service unit details.
+            Efficiency to Clear Vacant Unit Pests: <b>Prev</b> = onboarding survey Q8 (weeks with previous provider), <b>Curr</b> = Crest calc (always ≥ 1 wk), <b>Diff $/unit</b> = (Prev − Curr) × Avg Mo Rent ÷ 4.1 weeks/mo.
           </p>
         </div>
       </CardContent>
