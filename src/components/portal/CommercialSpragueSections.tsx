@@ -145,14 +145,16 @@ interface ConditionsProps {
   readOnly?: boolean;
   /** Admin-only: persist a patch to portal_services.report_data. */
   onSaveServiceReportData?: (serviceId: string, nextReportData: any) => Promise<void> | void;
+  /** Include services even when they have no service_date (e.g. upcoming visits). */
+  includeUndated?: boolean;
 }
 
-export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData }: ConditionsProps) {
+export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated }: ConditionsProps) {
   const past = useMemo(
     () => services
-      .filter(s => s.service_date)
+      .filter(s => includeUndated || s.service_date)
       .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || "")),
-    [services]
+    [services, includeUndated]
   );
 
   const conditionsFor = (s: SpragueService): ConditionRow[] => {
