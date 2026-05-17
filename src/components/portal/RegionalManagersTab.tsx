@@ -467,7 +467,7 @@ export default function RegionalManagersTab() {
         </div>
 
         {/* Per-property metrics */}
-        <div className="-mx-4 sm:-mx-6 xl:-mx-16 2xl:-mx-28">
+        <div>
           <div className="flex items-baseline justify-between mb-3 px-1">
             <p className="text-sm font-semibold tracking-tight">Property Metrics</p>
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Live from service data</p>
