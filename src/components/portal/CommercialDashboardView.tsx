@@ -795,6 +795,11 @@ export default function CommercialDashboardView({
           <div className="space-y-6">
             <ServiceTeamSection services={services as any} />
             <BusinessLicenseSection docs={docs as any} />
+            <PropertyEquipmentCard
+              propertyId={property.id}
+              initial={property.equipment}
+              onSaved={onRefresh}
+            />
           </div>
         </TabsContent>
 
@@ -1291,6 +1296,11 @@ export default function CommercialDashboardView({
         <TabsContent value="materials" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <CommercialApprovedMaterials />
+            <PropertyEquipmentCard
+              propertyId={property.id}
+              initial={property.equipment}
+              onSaved={onRefresh}
+            />
             <MaterialUseLogSection services={services as any} />
             <Card>
               <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
