@@ -1004,7 +1004,8 @@ const PortalAdmin = () => {
         />
         )}
 
-        {/* Property document uploads — visible to admins, PMs, and customers */}
+        {/* Property document uploads — hidden for commercial accounts */}
+        {getPropertyType(selectedProperty) !== "commercial" && (
         <div className="mt-8">
           <div className="flex justify-end mb-3">
             <Button
@@ -1022,6 +1023,7 @@ const PortalAdmin = () => {
             helperText="Upload PDFs, notices, agreements, or other files. Visible to anyone with the property link (admin, PMs, and clients)."
           />
         </div>
+        )}
       </div>
 
       {/* Service Detail Modal */}
