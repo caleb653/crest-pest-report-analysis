@@ -20,7 +20,7 @@ import { COMMERCIAL_PEST_OPTIONS } from "@/components/portal/CommercialReportExt
 import {
   Calendar, ClipboardList, MapPin, MessageSquare, Send, Phone, Clock,
   ChevronDown, FlaskConical, Camera, FileText, Plus, Wrench, Image as ImageIcon,
-  Download, Eye, Copy, FileDown,
+  Download, Eye, Copy, FileDown, Upload, X,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -160,6 +160,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [reqDescription, setReqDescription] = useState("");
   const [reqPest, setReqPest] = useState("");
   const [reqLocation, setReqLocation] = useState("");
+  const [reqPhotos, setReqPhotos] = useState<string[]>([]);
+  const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const loadAll = async () => {
@@ -258,7 +260,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         pest_type: reqPest.trim() || null,
         location_type: reqLocation.trim() || null,
         status: "pending",
-        photos: [],
+        photos: reqPhotos,
       } as any);
       if (error) throw error;
       // Notify office (non-fatal).
@@ -271,13 +273,14 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
               reqDescription.trim(),
               reqPest.trim() ? `\nPest: ${reqPest.trim()}` : "",
               reqLocation.trim() ? `\nArea: ${reqLocation.trim()}` : "",
+              reqPhotos.length ? `\nPhotos attached: ${reqPhotos.length}` : "",
             ].filter(Boolean).join(""),
             senderName: "Commercial Portal",
           },
         });
       } catch { /* non-fatal */ }
       toast({ title: "Request submitted", description: "Our team will follow up shortly." });
-      setReqDescription(""); setReqPest(""); setReqLocation("");
+      setReqDescription(""); setReqPest(""); setReqLocation(""); setReqPhotos([]);
       loadAll();
     } catch (e: any) {
       toast({ title: "Couldn't submit", description: e?.message, variant: "destructive" });
