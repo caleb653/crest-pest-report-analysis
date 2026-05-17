@@ -70,6 +70,7 @@ interface PropertyData {
   map_image_url: string | null;
   customer_preferences: any;
   notes: string | null;
+  equipment?: any;
 }
 
 interface ServiceData {
