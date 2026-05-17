@@ -1003,6 +1003,15 @@ export default function CommercialDashboardView({
                           <Trash2 className="w-3 h-3" /> Delete
                         </Button>
                       </div>
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <ClipboardList className="w-3 h-3" /> Conditions
+                        </p>
+                        <ConditionsReportSection
+                          services={[s as any]}
+                          onSaveServiceReportData={persistServiceReportData}
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                   );
