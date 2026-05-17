@@ -917,10 +917,13 @@ export default function CommercialDashboardView({
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Internal Notes</Label>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
+                            Office-Only Notes
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
+                          </Label>
                           <Textarea
-                            value={getField(s, "notes") || ""}
-                            onChange={e => setField(s.id, "notes", e.target.value)}
+                            value={getField(s, "office_notes") || ""}
+                            onChange={e => setField(s.id, "office_notes", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Office-only notes (not shown to client)…"
                             rows={2}
