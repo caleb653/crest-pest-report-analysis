@@ -2960,6 +2960,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               );
             })()}
 
+            {/* Apartment property document uploads */}
+            <div className="mt-8">
+              <PropertyDocuments
+                propertyId={property.id}
+                heading="Property Documents"
+                helperText="Upload PDFs, notices, agreements, or other files for this property. Visible to anyone with the property link."
+              />
+            </div>
           </div>
         </TabsContent>
 
