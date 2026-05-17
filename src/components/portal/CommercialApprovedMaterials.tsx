@@ -25,31 +25,24 @@ export interface ApprovedMaterial {
   sdsUrl?: string;
 }
 
-// Crest's standard approved commercial pesticide list (per project knowledge).
+// Crest's approved commercial pesticide list. ONLY products with an SDS
+// on file (served locally from /public/sds) are shown — never list a
+// product we cannot hand the customer a current Safety Data Sheet for.
 export const APPROVED_COMMERCIAL_MATERIALS: ApprovedMaterial[] = [
-  { name: "Alpine WSG",                 activeIngredient: "Dinotefuran",                        epa: "499-561",        sdsUrl: "https://www.domyown.com/msds/Alpine_WSG_SDS.pdf" },
-  { name: "Bifen I/T",                  activeIngredient: "Bifenthrin",                         epa: "53883-118",      sdsUrl: "https://www.domyown.com/msds/Bifen_I-T_SDS1.pdf" },
-  { name: "Temprid FX",                 activeIngredient: "Imidacloprid, Beta-Cyfluthrin",      epa: "432-1483",       sdsUrl: "https://www.domyown.com/msds/Temprid_FX_SDS1.pdf" },
-  { name: "Termidor SC",                activeIngredient: "Fipronil",                           epa: "7969-210",       sdsUrl: "https://www.domyown.com/msds/Termidor_SC_SDS1.pdf" },
-  { name: "Phantom",                    activeIngredient: "Chlorfenapyr",                       epa: "241-392",        sdsUrl: "https://www.domyown.com/msds/Phantom_SDS1.pdf" },
-  { name: "Essentria IC Pro",           activeIngredient: "Geraniol, Clove Oil, Cornmint Oil",  epa: "25B Exempt",     sdsUrl: "https://www.domyown.com/msds/Essentria_IC_Pro_SDS1.pdf" },
-  { name: "Gentrol IGR Concentrate",    activeIngredient: "(S)-Hydroprene",                     epa: "2724-351",       sdsUrl: "https://www.domyown.com/msds/Gentrol_IGR_Concentrate_SDS.pdf" },
-  { name: "Nyguard IGR Concentrate",    activeIngredient: "Pyriproxyfen",                       epa: "1021-1603",      sdsUrl: "https://www.domyown.com/msds/Nyguard_IGR_Concentrate_SDS1.pdf" },
-  { name: "PT Wasp Freeze",             activeIngredient: "Prallethrin",                        epa: "499-550",        sdsUrl: "https://www.domyown.com/msds/PT_Wasp_Freeze_II_SDS.pdf" },
-  { name: "PT Alpine Flea & Bed Bug",   activeIngredient: "Dinotefuran, Pyriproxyfen, Prallethrin", epa: "499-540",   sdsUrl: "https://www.domyown.com/msds/PT_Alpine_Flea_and_Bed_Bug_SDS1.pdf" },
-  { name: "PT Alpine Fly Bait",         activeIngredient: "Dinotefuran",                        epa: "499-568",        sdsUrl: "https://www.domyown.com/msds/PT_Alpine_Pressurized_Fly_Bait_SDS1.pdf" },
-  { name: "Advion Ant Gel Bait",        activeIngredient: "Indoxacarb",                         epa: "100-1498",       sdsUrl: "https://www.domyown.com/msds/Advion_Ant_Gel_SDS1.pdf" },
-  { name: "Advion Cockroach Gel Bait",  activeIngredient: "Indoxacarb",                         epa: "100-1484",       sdsUrl: "https://www.domyown.com/msds/Advion_Cockroach_Gel_Bait_SDS.pdf" },
-  { name: "Maxforce FC Ant Gel",        activeIngredient: "Fipronil",                           epa: "432-1264",       sdsUrl: "https://www.domyown.com/msds/Maxforce_FC_Ant_Killer_Bait_Gel_SDS.pdf" },
-  { name: "Delta Dust",                 activeIngredient: "Deltamethrin",                       epa: "432-772",        sdsUrl: "https://www.domyown.com/msds/Delta_Dust_SDS1.pdf" },
-  { name: "Contrac Blox (California)",  activeIngredient: "Bromethalin",                        epa: "12455-151",      sdsUrl: "https://www.domyown.com/msds/Contrac_Blox_SDS.pdf" },
-  { name: "MasterLine B MaxxPro",       activeIngredient: "Bifenthrin",                         epa: "279-3206-73748", sdsUrl: "https://www.domyown.com/msds/MasterLine_Bifenthrin_2EC_Pro_SDS.pdf" },
-  { name: "In2Care Mix",                activeIngredient: "Pyriproxyfen, Beauveria bassiana GHA", epa: "91720-1",     sdsUrl: "https://www.domyown.com/msds/In2Care_Mosquito_Station_SDS.pdf" },
-  { name: "OneGuard Multi MoA",         activeIngredient: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, PBO", epa: "1021-2807", sdsUrl: "https://www.domyown.com/msds/OneGuard_Multi_MoA_Pro_SDS.pdf" },
-  { name: "Advion Microflow",           activeIngredient: "Indoxacarb",                         epa: "100-1682",       sdsUrl: "https://www.domyown.com/msds/Advion_MicroFlow_Insect_Bait_SDS.pdf" },
-  { name: "Optigard Flex Liquid",       activeIngredient: "Thiamethoxam",                       epa: "100-1306",       sdsUrl: "https://www.domyown.com/msds/Optigard_Flex_Liquid_SDS.pdf" },
+  { name: "Alpine WSG",               activeIngredient: "Dinotefuran",                            epa: "499-561",  sdsUrl: "/sds/Alpine_WSG_SDS.pdf" },
+  { name: "Delta Dust",               activeIngredient: "Deltamethrin",                           epa: "432-772",  sdsUrl: "/sds/Delta_Dust_SDS.pdf" },
+  { name: "Nyguard IGR Concentrate",  activeIngredient: "Pyriproxyfen",                           epa: "1021-1603",sdsUrl: "/sds/Nyguard_IGR_SDS.pdf" },
+  { name: "Onslaught FastCap",        activeIngredient: "Esfenvalerate, Prallethrin, PBO",        epa: "1021-2574",sdsUrl: "/sds/Onslaught_FC_SDS.pdf" },
+  { name: "Phantom",                  activeIngredient: "Chlorfenapyr",                           epa: "241-392",  sdsUrl: "/sds/Phantom_SDS.pdf" },
+  { name: "PT Alpine Flea & Bed Bug", activeIngredient: "Dinotefuran, Pyriproxyfen, Prallethrin", epa: "499-540",  sdsUrl: "/sds/PT_Alpine_Flea_Bed_Bug_SDS.pdf" },
+  { name: "PT Wasp Freeze II",        activeIngredient: "Prallethrin",                            epa: "499-550",  sdsUrl: "/sds/PT_Wasp_Freeze_SDS.pdf" },
+  { name: "Shockwave",                activeIngredient: "Cypermethrin, Imiprothrin, PBO",         epa: "1021-1798",sdsUrl: "/sds/Shockwave_SDS.pdf" },
+  { name: "Temprid FX",               activeIngredient: "Imidacloprid, Beta-Cyfluthrin",          epa: "432-1483", sdsUrl: "/sds/Temprid_FX_SDS.pdf" },
+  { name: "Termidor SC",              activeIngredient: "Fipronil",                               epa: "7969-210", sdsUrl: "/sds/Termidor_SC_SDS.pdf" },
 ];
 
+// Every approved material is required to have a hosted SDS — but keep a
+// search fallback as a defensive guard in case the list ever grows.
 const sdsHref = (m: ApprovedMaterial) =>
   m.sdsUrl || `https://duckduckgo.com/?q=${encodeURIComponent(`${m.name} SDS pesticide pdf`)}`;
 
@@ -140,8 +133,8 @@ export default function CommercialApprovedMaterials({ highlightOnly, compact }: 
         </table>
       </div>
       <p className="text-[10.5px] text-muted-foreground italic leading-snug">
-        SDS links open the manufacturer / distributor Safety Data Sheet. If a direct PDF
-        isn't available, the link opens a search for the most recent SDS.
+        Only products with a current Safety Data Sheet on file are listed.
+        Each SDS link opens the manufacturer's PDF directly.
       </p>
     </div>
   );
