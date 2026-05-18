@@ -128,6 +128,8 @@ const RAW_CATALOG: Array<[string, string, string, string, string?]> = [
   ["Alpine Cockroach Gel", "BASF", "grams", "grams"],
   ["Max Force Roach Bait", "Bayer", "grams", "grams"],
   ["Maxforce Ant Gel", "Bayer", "grams", "grams"],
+  ["Maxforce Quantum Ant Bait", "Bayer", "grams", "grams", "432-1506"],
+  ["Maxforce Quantum", "Bayer", "grams", "grams", "432-1506"],
   ["In2Care", "In2Care", "grams", "grams", "91720-1"],
   ["In2Care Mix", "In2Care", "grams", "grams", "91720-1"],
   ["Advion Fire Ant Bait", "Syngenta", "lbs", "lbs"],
