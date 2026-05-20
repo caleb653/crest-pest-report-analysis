@@ -28,6 +28,10 @@ const RightToTreat         = lazy(() => import("./pages/RightToTreat"));
 const SurveyTake           = lazy(() => import("./pages/SurveyTake"));
 const Notifications        = lazy(() => import("./pages/Notifications"));
 const PreApplicationNoticePage = lazy(() => import("./pages/PreApplicationNoticePage"));
+const AdminLogin           = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard       = lazy(() => import("./pages/AdminDashboard"));
+const SlotFinder           = lazy(() => import("./pages/SlotFinder"));
+const ScheduleReview       = lazy(() => import("./pages/ScheduleReview"));
 
 const queryClient = new QueryClient();
 
@@ -57,6 +61,13 @@ const App = () => (
             <Route path="/right-to-treat/:token" element={<RightToTreat />} />
             <Route path="/survey/:token" element={<SurveyTake />} />
             <Route path="/pre-application/:propertyId" element={<PreApplicationNoticePage />} />
+            {/* Admin routes — each page guards itself via useAdminSession()
+                / validate-admin-session edge function. No PIN required so
+                office staff who don't know the PIN can still sign in. */}
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/slot-finder" element={<SlotFinder />} />
+            <Route path="/admin/schedule-review" element={<ScheduleReview />} />
             {/* All other routes require PIN */}
             <Route path="*" element={
               <PinGate>
