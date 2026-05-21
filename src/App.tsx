@@ -65,9 +65,7 @@ const App = () => (
                 / validate-admin-session edge function. No PIN required so
                 office staff who don't know the PIN can still sign in. */}
             <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/slot-finder" element={<SlotFinder />} />
-            <Route path="/admin/schedule-review" element={<ScheduleReview />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
             {/* All other routes require PIN */}
             <Route path="*" element={
               <PinGate>
@@ -86,6 +84,8 @@ const App = () => (
                     <Route path="/portal-admin" element={<PortalAdmin />} />
                     <Route path="/team-docs" element={<TeamDocs />} />
                     <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/slot-finder" element={<SlotFinder />} />
+                    <Route path="/schedule-review" element={<ScheduleReview />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>

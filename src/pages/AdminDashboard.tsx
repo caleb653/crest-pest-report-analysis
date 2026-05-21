@@ -197,7 +197,7 @@ const AdminDashboard = () => {
               <Button
                 variant="outline"
                 className="h-auto py-4 px-4 flex-col items-start gap-1 text-left"
-                onClick={() => navigate("/admin/slot-finder")}
+                onClick={() => navigate("/slot-finder")}
               >
                 <span className="flex items-center gap-2 font-semibold">
                   <MapPin className="w-4 h-4" /> Slot Finder
@@ -209,7 +209,7 @@ const AdminDashboard = () => {
               <Button
                 variant="outline"
                 className="h-auto py-4 px-4 flex-col items-start gap-1 text-left"
-                onClick={() => navigate("/admin/schedule-review")}
+                onClick={() => navigate("/schedule-review")}
               >
                 <span className="flex items-center gap-2 font-semibold">
                   <ClipboardList className="w-4 h-4" /> Schedule Review

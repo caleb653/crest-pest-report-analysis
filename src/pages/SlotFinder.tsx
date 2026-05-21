@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin } from "lucide-react";
 
-import { useAdminSession } from "@/hooks/useAdminSession";
+import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +31,8 @@ type SlotCandidate = {
   est_min: number | null;
   route_date: string;
   tech_name: string;
-  prev_stop: { customer_name: string; city: string; start_time: string };
-  next_stop: { customer_name: string; city: string; start_time: string };
+  prev_stop: { customer_name: string; city: string; start_time: string; end_time: string };
+  next_stop: { customer_name: string; city: string; start_time: string; end_time: string };
 };
 
 type SlotResult = {
@@ -50,10 +50,26 @@ type SlotResult = {
 
 function fmtTime(minSinceMidnight: number | null): string {
   if (minSinceMidnight === null || minSinceMidnight === undefined) return "?";
-  const h12 = ((minSinceMidnight / 60) | 0) % 12 || 12;
+  const h24 = Math.floor(minSinceMidnight / 60);
   const m = minSinceMidnight % 60;
-  const ampm = (minSinceMidnight / 60) | 0 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 || 12;
+  const ampm = h24 < 12 ? "AM" : "PM";
   return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
+function fmtHHMMSS(s: string | null | undefined): string {
+  // FieldRoutes returns "13:00:00"; convert to "1:00 PM"
+  if (!s) return "?";
+  const [hStr, mStr] = s.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (Number.isNaN(h) || Number.isNaN(m)) return s;
+  return fmtTime(h * 60 + m);
+}
+
+function fmtWindow(start: string | null | undefined, end: string | null | undefined): string {
+  if (!start || !end) return "?";
+  return `${fmtHHMMSS(start)} – ${fmtHHMMSS(end)}`;
 }
 
 function fmtDetour(c: SlotCandidate): string {
@@ -64,8 +80,66 @@ function fmtDetour(c: SlotCandidate): string {
   return `+${min} min (${src}) / +${miles} mi`;
 }
 
+// Drive-time tiers based on EXTRA DRIVE MINUTES added by this insertion.
+// Prefer Google Maps duration when available; fall back to Haversine estimate.
+//   <  5 min  → ON ROUTE        (emerald, very green)
+//   <  10 min → green
+//   <  15 min → yellow
+//   <  20 min → LONG DRIVE      (amber/orange)
+//   ≥ 20 min → VERY LONG DRIVE (red)
+type DriveTier = "on_route" | "near" | "edge" | "long" | "very_long";
+
+function detourMinutes(c: SlotCandidate): number {
+  const sec = c.extra_sec_gmaps ?? c.extra_sec_haversine;
+  return Math.round(sec / 60);
+}
+
+function driveTier(c: SlotCandidate): DriveTier {
+  const min = detourMinutes(c);
+  if (min >= 20) return "very_long";
+  if (min >= 15) return "long";
+  if (min >= 10) return "edge";
+  if (min >= 5)  return "near";
+  return "on_route";
+}
+
+function rowClass(c: SlotCandidate): string {
+  switch (driveTier(c)) {
+    case "very_long": return "bg-red-100 hover:bg-red-200";
+    case "long":      return "bg-amber-50 hover:bg-amber-100";
+    case "edge":      return "bg-yellow-50 hover:bg-yellow-100";
+    case "near":      return "bg-green-50 hover:bg-green-100";
+    case "on_route":  return "bg-emerald-100 hover:bg-emerald-200";
+  }
+}
+
+function DriveBadge({ c }: { c: SlotCandidate }) {
+  switch (driveTier(c)) {
+    case "very_long":
+      return (
+        <Badge className="ml-2 bg-red-600 text-white hover:bg-red-700 font-bold">
+          VERY LONG DRIVE
+        </Badge>
+      );
+    case "long":
+      return (
+        <Badge className="ml-2 bg-amber-500 text-white hover:bg-amber-600 font-semibold">
+          LONG DRIVE
+        </Badge>
+      );
+    case "on_route":
+      return (
+        <Badge className="ml-2 bg-emerald-600 text-white hover:bg-emerald-700 font-semibold">
+          ON ROUTE
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
+
 const SlotFinder = () => {
-  const session = useAdminSession();
+  const staff = useCurrentStaff();
   const navigate = useNavigate();
 
   const [address, setAddress] = useState("");
@@ -75,7 +149,10 @@ const SlotFinder = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (session.status !== "valid") return;
+    if (!staff) {
+      toast.error("Please sign in again.");
+      return;
+    }
     if (address.trim().length < 4) {
       toast.error("Please enter a full street address.");
       return;
@@ -85,7 +162,7 @@ const SlotFinder = () => {
     try {
       const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
         body: {
-          sessionToken: session.token,
+          staffName: staff.fullName,
           address: address.trim(),
           window: window === "none" ? null : window,
           use_google: true,
@@ -105,21 +182,13 @@ const SlotFinder = () => {
     }
   };
 
-  if (session.status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="h-8 w-8 rounded-full border-2 border-muted border-t-foreground animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin")}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to admin
+            Back to home
           </Button>
         </div>
 
@@ -131,8 +200,8 @@ const SlotFinder = () => {
             </CardTitle>
             <CardDescription>
               Enter a service address. Returns the 2 best slot picks in the
-              next 24 hours and the next 72 hours, ranked by detour distance
-              (traffic-aware via Google Distance Matrix).
+              next 24 hours and the next 3 business days, ranked by detour
+              distance (traffic-aware via Google Distance Matrix).
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -188,7 +257,7 @@ const SlotFinder = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">
-                  Next 72 hours ({result.today} → {result.h72_end})
+                  Next 3 business days ({result.today} → {result.h72_end})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -213,23 +282,26 @@ function SlotTable({ rows }: { rows: SlotCandidate[] }) {
           <TableHead>Rank</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Tech</TableHead>
-          <TableHead>Approx time</TableHead>
+          <TableHead>Window</TableHead>
           <TableHead>Inserts between</TableHead>
           <TableHead>Detour</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((c, i) => (
-          <TableRow key={i}>
+          <TableRow key={i} className={rowClass(c)}>
             <TableCell><Badge variant="secondary">{i + 1}</Badge></TableCell>
             <TableCell>{c.route_date}</TableCell>
             <TableCell className="font-medium">{c.tech_name}</TableCell>
-            <TableCell>{fmtTime(c.est_min)}</TableCell>
+            <TableCell className="font-medium">{fmtWindow(c.next_stop.start_time, c.next_stop.end_time)}</TableCell>
             <TableCell className="text-xs">
-              {c.prev_stop.customer_name} ({c.prev_stop.city}, {c.prev_stop.start_time})
-              <br />→ {c.next_stop.customer_name} ({c.next_stop.city}, {c.next_stop.start_time})
+              {c.prev_stop.customer_name} ({c.prev_stop.city})
+              <br />→ {c.next_stop.customer_name} ({c.next_stop.city})
             </TableCell>
-            <TableCell className="font-mono text-xs">{fmtDetour(c)}</TableCell>
+            <TableCell className="font-mono text-xs whitespace-nowrap">
+              {fmtDetour(c)}
+              <DriveBadge c={c} />
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
