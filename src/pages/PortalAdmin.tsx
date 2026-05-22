@@ -1101,8 +1101,18 @@ const PortalAdmin = () => {
       </Dialog>
 
       {/* Footer */}
-      <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground">
+      <div className="border-t mt-8 py-4 text-center text-xs text-muted-foreground space-y-1">
         <p>© {new Date().getFullYear()} Crest Pest Control • 949-424-5000 • office@crestpestcontrol.com</p>
+        <p>
+          <a
+            href="https://search.dca.ca.gov/details/8400/PR/9859/ccd5c9c9bf593119ba12f0de94b26b73"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground transition-colors"
+          >
+            PR # 9859
+          </a>
+        </p>
       </div>
     </div>
   );

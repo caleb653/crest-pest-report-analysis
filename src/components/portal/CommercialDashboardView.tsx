@@ -35,10 +35,12 @@ import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
   CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
-  Bug, ShieldCheck, X,
+  Bug, X,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
+import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
+import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
@@ -68,6 +70,7 @@ interface PropertyData {
   map_image_url: string | null;
   customer_preferences: any;
   notes: string | null;
+  equipment?: any;
 }
 
 interface ServiceData {
@@ -86,6 +89,8 @@ interface ServiceData {
   products_used: any;
   photos: any;
   special_notes: string | null;
+  office_notes?: string | null;
+  report_data?: any;
 }
 
 interface PortalLink {
@@ -147,6 +152,151 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+// Equipment options — kept in sync with the sales report, AppointmentReport,
+// and HOA/apartment PropertyDashboard so the lists "jive" across the app.
+const EQUIPMENT_OPTIONS = [
+  "Rodent Bait Stations",
+  "Rodent Traps",
+  "Mosquito Buckets",
+  "Fly Light",
+  "Pest Monitors",
+] as const;
+
+type EquipItem = { name: string; count: number };
+
+const normalizeEquipment = (raw: any): EquipItem[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((e: any) => {
+      if (typeof e === "string") return { name: e, count: 1 };
+      if (e && typeof e === "object" && e.name) {
+        const n = Number(e.count);
+        return { name: String(e.name), count: Number.isFinite(n) && n > 0 ? n : 1 };
+      }
+      return null;
+    })
+    .filter(Boolean) as EquipItem[];
+};
+
+function PropertyEquipmentCard({
+  propertyId,
+  initial,
+  onSaved,
+}: { propertyId: string; initial: any; onSaved?: () => void }) {
+  const [items, setItems] = useState<EquipItem[]>(normalizeEquipment(initial));
+  useEffect(() => { setItems(normalizeEquipment(initial)); }, [propertyId]); // eslint-disable-line
+  const save = async (next: EquipItem[]) => {
+    setItems(next);
+    const { error } = await supabase
+      .from("portal_properties")
+      .update({ equipment: next as any })
+      .eq("id", propertyId);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    onSaved?.();
+  };
+  return (
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+        <CardTitle className="text-base font-bold flex items-center gap-2">
+          <Wrench className="w-5 h-5 text-primary" /> Equipment On-Site
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Monitoring devices and equipment installed at this property. Synced
+          with the rest of Crest (sales reports, appointment reports).
+        </p>
+      </CardHeader>
+      <CardContent className="pt-3 space-y-1">
+        {EQUIPMENT_OPTIONS.map((eq) => {
+          const item = items.find((i) => i.name === eq);
+          const isChecked = !!item;
+          return (
+            <div
+              key={eq}
+              className={`flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border transition-all ${
+                isChecked ? "bg-primary/10 border-primary/60 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"
+              }`}
+            >
+              <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={async () => {
+                    const next = isChecked
+                      ? items.filter((e) => e.name !== eq)
+                      : [...items, { name: eq, count: 1 }];
+                    await save(next);
+                  }}
+                  className="rounded w-4 h-4"
+                />
+                {eq}
+              </label>
+              {isChecked && (
+                <Input
+                  type="number"
+                  min={1}
+                  className="h-8 w-16 text-xs text-center"
+                  value={item?.count || 1}
+                  onChange={(e) => {
+                    const count = parseInt(e.target.value) || 1;
+                    setItems((prev) => prev.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
+                  }}
+                  onBlur={async (e) => {
+                    const count = parseInt(e.target.value) || 1;
+                    await save(items.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+        {items.filter((e) => !(EQUIPMENT_OPTIONS as readonly string[]).includes(e.name)).map((custom) => (
+          <div key={custom.name} className="flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border bg-primary/10 border-primary/60 font-medium">
+            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+              <input
+                type="checkbox"
+                checked
+                onChange={async () => { await save(items.filter((e) => e.name !== custom.name)); }}
+                className="rounded w-4 h-4"
+              />
+              {custom.name}
+            </label>
+            <Input
+              type="number"
+              min={1}
+              className="h-8 w-16 text-xs text-center"
+              value={custom.count || 1}
+              onChange={(e) => {
+                const count = parseInt(e.target.value) || 1;
+                setItems((prev) => prev.map((ei) => (ei.name === custom.name ? { ...ei, count } : ei)));
+              }}
+              onBlur={async () => { await save(items); }}
+            />
+          </div>
+        ))}
+        <div className="pt-1.5">
+          <Input
+            className="h-9 text-xs border-dashed"
+            placeholder="Add custom equipment and press Enter…"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const val = (e.target as HTMLInputElement).value.trim();
+                if (val && !items.some((ei) => ei.name === val)) {
+                  await save([...items, { name: val, count: 1 }]);
+                  (e.target as HTMLInputElement).value = "";
+                }
+              }
+            }}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
@@ -164,6 +314,8 @@ export default function CommercialDashboardView({
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
+  // Per-upcoming-service photo uploading state
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
@@ -283,6 +435,38 @@ export default function CommercialDashboardView({
     }
     setNewReqPhotos((p) => [...p, ...urls]);
     setUploadingReqPhoto(false);
+  };
+
+  // Upload photos directly onto an upcoming service (mirrors PM portal pattern)
+  const uploadServicePhotos = async (serviceId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingPhotoFor(serviceId);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `upcoming-service-photos/${property.id}/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supa.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supa.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) {
+      const current = services.find(s => s.id === serviceId);
+      const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+      await saveServiceField(serviceId, { photos: [...existing, ...urls] });
+      toast({ title: `Added ${urls.length} photo${urls.length === 1 ? "" : "s"}` });
+    }
+    setUploadingPhotoFor(null);
+  };
+
+  const removeServicePhoto = async (serviceId: string, url: string) => {
+    const current = services.find(s => s.id === serviceId);
+    const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+    const next = existing.filter((p: any) => (typeof p === "string" ? p : p?.url) !== url);
+    await saveServiceField(serviceId, { photos: next });
   };
 
   // Helpers for the inline editable report data (concerns / non-chem equipment)
@@ -463,10 +647,10 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
-            <span>Site Map and Plan</span>
+            <span>Site Map, Plan &amp; Team</span>
           </TabsTrigger>
           <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Calendar className="w-5 h-5" />
@@ -486,25 +670,13 @@ export default function CommercialDashboardView({
             <Wrench className="w-5 h-5" />
             <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="prep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileDown className="w-5 h-5" />
-            <span>Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
-          </TabsTrigger>
-          <TabsTrigger value="conditions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <AlertTriangle className="w-5 h-5" />
-            <span>Conditions</span>
-          </TabsTrigger>
           <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
             <span>Trending &amp; Records</span>
           </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FlaskConical className="w-5 h-5" />
-            <span>Materials</span>
-          </TabsTrigger>
-          <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <ShieldCheck className="w-5 h-5" />
-            <span>Team &amp; Licensing</span>
+            <span>Materials &amp; Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="help" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
@@ -562,14 +734,6 @@ export default function CommercialDashboardView({
                     {savingProp ? "Saving…" : "Saves automatically when you tap away."}
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 pt-1">
-                  <Button size="sm" onClick={() => quickAddVisit("scheduled")} className="h-11 text-sm gap-1.5">
-                    <Plus className="w-4 h-4" /> Add Upcoming Visit
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-11 text-sm gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> Log Past Visit
-                  </Button>
-                </div>
               </CardContent>
             </Card>
 
@@ -621,6 +785,15 @@ export default function CommercialDashboardView({
                 )}
               </CardContent>
             </Card>
+          </div>
+          <div className="space-y-6">
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
+            <PropertyEquipmentCard
+              propertyId={property.id}
+              initial={property.equipment}
+              onSaved={onRefresh}
+            />
           </div>
         </TabsContent>
 
@@ -738,10 +911,13 @@ export default function CommercialDashboardView({
                           />
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Internal Notes</Label>
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
+                            Office-Only Notes
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
+                          </Label>
                           <Textarea
-                            value={getField(s, "notes") || ""}
-                            onChange={e => setField(s.id, "notes", e.target.value)}
+                            value={getField(s, "office_notes") || ""}
+                            onChange={e => setField(s.id, "office_notes", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Office-only notes (not shown to client)…"
                             rows={2}
@@ -810,6 +986,15 @@ export default function CommercialDashboardView({
                             </div>
                           </div>
                         )}
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                            <ClipboardList className="w-3 h-3" /> Conditions
+                          </p>
+                          <ConditionsReportSection
+                            services={[s as any]}
+                            onSaveServiceReportData={persistServiceReportData}
+                          />
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -835,7 +1020,10 @@ export default function CommercialDashboardView({
               </CardContent></Card>
             ) : (
               <div className="space-y-2">
-                {upcoming.map(s => (
+                {upcoming.map(s => {
+                  const upProducts = _normUsage(getField(s, "products_used"));
+                  const upPhotosRaw: any[] = Array.isArray(getField(s, "photos")) ? getField(s, "photos") : [];
+                  return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
@@ -895,7 +1083,89 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
+                            Office-Only Notes
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
+                          </Label>
+                          <Textarea
+                            value={getField(s, "office_notes") || ""}
+                            onChange={e => setField(s.id, "office_notes", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="Internal notes — never shown to the client…"
+                            rows={2}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
+
+                      {/* Products used (with amounts/dilution) — same editor as past visits */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <FlaskConical className="w-3 h-3" /> Products Used
+                        </p>
+                        <ProductUsageEditor
+                          value={upProducts}
+                          onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
+                          compact
+                        />
+                      </div>
+
+                      {/* Equipment used on this visit (synced w/ rest of Crest app) */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <CommercialNonChemEquipment
+                          value={normalizeNonChemEquipment(getReportData(s).non_chem_equipment)}
+                          onChange={(next) => saveReportData(s, { non_chem_equipment: next })}
+                        />
+                      </div>
+
+                      {/* Photos — upload + thumbnails with remove */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                            <Camera className="w-3 h-3" /> Photos
+                            {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
+                          </p>
+                          <label className="inline-flex">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              disabled={uploadingPhotoFor === s.id}
+                              onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                            />
+                            <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                              <Upload className="w-3 h-3" />
+                              {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                            </span>
+                          </label>
+                        </div>
+                        {upPhotosRaw.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {upPhotosRaw.map((p: any, i: number) => {
+                              const url = typeof p === "string" ? p : p?.url;
+                              if (!url) return null;
+                              return (
+                                <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                                  <a href={url} target="_blank" rel="noopener noreferrer">
+                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeServicePhoto(s.id, url)}
+                                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Remove photo"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
                           <FileText className="w-3 h-3" /> Open Report
@@ -907,9 +1177,20 @@ export default function CommercialDashboardView({
                           <Trash2 className="w-3 h-3" /> Delete
                         </Button>
                       </div>
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <ClipboardList className="w-3 h-3" /> Conditions
+                        </p>
+                        <ConditionsReportSection
+                          services={[s as any]}
+                          onSaveServiceReportData={persistServiceReportData}
+                          includeUndated
+                        />
+                      </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -920,14 +1201,43 @@ export default function CommercialDashboardView({
           <div className="max-w-3xl mx-auto space-y-4">
             <Card className="border-2 border-primary/30 bg-primary/[0.03]">
               <CardContent className="p-3 space-y-2">
-                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Request</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Add Sighting</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input value={newReq.pest} onChange={e => setNewReq(r => ({ ...r, pest: e.target.value }))} placeholder="Pest (e.g. Ants)" className="h-11 text-sm" />
+                  <Select value={newReq.pest || ""} onValueChange={v => setNewReq(r => ({ ...r, pest: v === "__none__" ? "" : v }))}>
+                    <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Pest (select)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Select pest —</SelectItem>
+                      {COMMERCIAL_PEST_OPTIONS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <Input value={newReq.location} onChange={e => setNewReq(r => ({ ...r, location: e.target.value }))} placeholder="Location (e.g. Kitchen)" className="h-11 text-sm" />
                 </div>
                 <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
+                <div className="rounded-md border border-dashed border-border p-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Camera className="w-3 h-3" /> Photos</p>
+                    <label className="cursor-pointer">
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={e => { uploadSightingPhoto(e.target.files); e.currentTarget.value = ""; }} />
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted">
+                        <Upload className="w-3 h-3" /> {uploadingReqPhoto ? "Uploading…" : "Add Photo"}
+                      </span>
+                    </label>
+                  </div>
+                  {newReqPhotos.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newReqPhotos.map((url, i) => (
+                        <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
+                          <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setNewReqPhotos(p => p.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 border border-border">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Button size="sm" onClick={submitNewRequest} disabled={!newReq.description.trim()} className="h-11 text-sm gap-1.5 w-full">
-                  <Plus className="w-4 h-4" /> Add Request
+                  <Plus className="w-4 h-4" /> Add Sighting
                 </Button>
               </CardContent>
             </Card>
@@ -1021,91 +1331,6 @@ export default function CommercialDashboardView({
           </div>
         </TabsContent>
 
-        {/* ════════ TAB 5: Prep Sheets ════════ */}
-        <TabsContent value="prep" className="mt-0 space-y-4">
-          <Card>
-            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <FileDown className="w-5 h-5 text-primary" /> Prep Sheets
-                <Badge variant="secondary" className="ml-1 text-xs">{prepSheets.length}</Badge>
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Treatment prep instructions you can view, download, or share with the customer.
-              </p>
-            </CardHeader>
-            <CardContent className="p-4">
-              {prepSheets.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No prep sheets uploaded yet.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {prepSheets.map(ps => {
-                    const open = expandedPrep === ps.id;
-                    return (
-                      <Card key={ps.id} className="border-border/60">
-                        <button
-                          type="button"
-                          className="w-full text-left p-3 flex items-center justify-between"
-                          onClick={() => setExpandedPrep(open ? null : ps.id)}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold truncate">{ps.title}</p>
-                            <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
-                          </div>
-                          <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-                        </button>
-                        {open && (
-                          <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
-                            {ps.description && (
-                              <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
-                                <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap gap-1.5">
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={() => window.open(ps.file_url, "_blank", "noopener,noreferrer")}>
-                                  <Eye className="w-3.5 h-3.5 mr-1" />View
-                                </Button>
-                              )}
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={() => window.open(ps.file_url, "_blank")}>
-                                  <Download className="w-3.5 h-3.5 mr-1" />Download
-                                </Button>
-                              )}
-                              {ps.file_url && (
-                                <Button size="sm" variant="outline" className="h-9 text-xs"
-                                  onClick={async () => {
-                                    await navigator.clipboard.writeText(ps.file_url);
-                                    toast({ title: "Link copied" });
-                                  }}>
-                                  <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ════════ TAB: Conditions ════════ */}
-        <TabsContent value="conditions" className="mt-0">
-          <div className="max-w-5xl mx-auto">
-            <ConditionsReportSection
-              services={services as any}
-              onSaveServiceReportData={persistServiceReportData}
-            />
-          </div>
-        </TabsContent>
-
         {/* ════════ TAB: Trending & Records ════════ */}
         <TabsContent value="trending" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
@@ -1115,19 +1340,87 @@ export default function CommercialDashboardView({
           </div>
         </TabsContent>
 
-        {/* ════════ TAB: Materials ════════ */}
+        {/* ════════ TAB: Materials & Prep Sheets ════════ */}
         <TabsContent value="materials" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <CommercialApprovedMaterials />
+            <PropertyEquipmentCard
+              propertyId={property.id}
+              initial={property.equipment}
+              onSaved={onRefresh}
+            />
             <MaterialUseLogSection services={services as any} />
-          </div>
-        </TabsContent>
-
-        {/* ════════ TAB: Team & Licensing ════════ */}
-        <TabsContent value="team" className="mt-0 space-y-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <ServiceTeamSection services={services as any} />
-            <BusinessLicenseSection docs={docs as any} />
+            <Card>
+              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <FileDown className="w-5 h-5 text-primary" /> Prep Sheets
+                  <Badge variant="secondary" className="ml-1 text-xs">{prepSheets.length}</Badge>
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Treatment prep instructions you can view, download, or share with the customer.
+                </p>
+              </CardHeader>
+              <CardContent className="p-4">
+                {prepSheets.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No prep sheets uploaded yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {prepSheets.map(ps => {
+                      const open = expandedPrep === ps.id;
+                      return (
+                        <Card key={ps.id} className="border-border/60">
+                          <button
+                            type="button"
+                            className="w-full text-left p-3 flex items-center justify-between"
+                            onClick={() => setExpandedPrep(open ? null : ps.id)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold truncate">{ps.title}</p>
+                              <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                          </button>
+                          {open && (
+                            <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
+                              {ps.description && (
+                                <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
+                                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
+                                </div>
+                              )}
+                              <div className="flex flex-wrap gap-1.5">
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={() => window.open(ps.file_url, "_blank", "noopener,noreferrer")}>
+                                    <Eye className="w-3.5 h-3.5 mr-1" />View
+                                  </Button>
+                                )}
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={() => window.open(ps.file_url, "_blank")}>
+                                    <Download className="w-3.5 h-3.5 mr-1" />Download
+                                  </Button>
+                                )}
+                                {ps.file_url && (
+                                  <Button size="sm" variant="outline" className="h-9 text-xs"
+                                    onClick={async () => {
+                                      await navigator.clipboard.writeText(ps.file_url);
+                                      toast({ title: "Link copied" });
+                                    }}>
+                                    <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
