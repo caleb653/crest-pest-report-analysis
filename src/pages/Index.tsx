@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, MapPin } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
 const reportTypes = [
@@ -83,14 +85,45 @@ const reportTypes = [
     hoverBg: "hover:bg-violet-100",
     border: "hover:border-violet-300",
   },
+  {
+    id: "slot-finder",
+    title: "Slot Finder",
+    description: "Best slot in next 24h / 72h for a new address",
+    icon: MapPin,
+    path: "/slot-finder",
+    color: "text-rose-600",
+    bg: "bg-rose-50",
+    hoverBg: "hover:bg-rose-100",
+    border: "hover:border-rose-300",
+  },
+  {
+    id: "schedule-review",
+    title: "Schedule Review",
+    description: "Compliance, route order, past-window risks",
+    icon: ClipboardList,
+    path: "/schedule-review",
+    color: "text-indigo-600",
+    bg: "bg-indigo-50",
+    hoverBg: "hover:bg-indigo-100",
+    border: "hover:border-indigo-300",
+  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
-const gridOrder = [0, 6, 2, 4, 3, 5];
+//         row3 = slot-finder, schedule-review
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8];
 
 const Index = () => {
   const navigate = useNavigate();
+  // Detect "is this device signed in as admin?" Optimistically check localStorage
+  // for the admin_session token. Server-side validation happens when they
+  // navigate to an admin route (via useAdminSession), so an expired token will
+  // bounce to /admin-login at click time rather than silently failing here.
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(!!localStorage.getItem("admin_session"));
+  }, []);
 
   const handleCardClick = (report: typeof reportTypes[0]) => {
     if ("state" in report && report.state) {
@@ -102,11 +135,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <img 
-        src={crestBug} 
-        alt="" 
+      <img
+        src={crestBug}
+        alt=""
         className="absolute bottom-4 right-4 w-24 h-auto opacity-30"
       />
+      {/* Discreet admin entry. When already signed in, goes straight to the
+          dashboard; otherwise opens the password prompt. Lives behind the PIN
+          gate, so clients/tenants never see this anyway. */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate(isAdmin ? "/admin-dashboard" : "/admin-login")}
+        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+      >
+        <Lock className="w-4 h-4 mr-2" />
+        {isAdmin ? "Admin Dashboard" : "Admin"}
+      </Button>
       <div className="text-center mb-10">
         <img 
           src={crestLogo} 
@@ -138,6 +183,7 @@ const Index = () => {
           );
         })}
       </div>
+
     </div>
   );
 };

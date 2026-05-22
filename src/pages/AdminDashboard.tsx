@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Calendar, CheckCircle, FileText, LogOut, Trash2, User } from "lucide-react";
+import { Calendar, CheckCircle, ClipboardList, FileText, LogOut, MapPin, Trash2, User } from "lucide-react";
 import crestLogo from "@/assets/crest-logo-black.png";
 
 type ReportType = "sales" | "initial";
@@ -187,7 +187,41 @@ const AdminDashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 md:py-8">
+      <main className="container mx-auto px-4 py-6 md:py-8 space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Scheduling Tools</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-auto py-4 px-4 flex-col items-start gap-1 text-left"
+                onClick={() => navigate("/slot-finder")}
+              >
+                <span className="flex items-center gap-2 font-semibold">
+                  <MapPin className="w-4 h-4" /> Slot Finder
+                </span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Best slot in next 24h / 72h for a new address
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 px-4 flex-col items-start gap-1 text-left"
+                onClick={() => navigate("/schedule-review")}
+              >
+                <span className="flex items-center gap-2 font-semibold">
+                  <ClipboardList className="w-4 h-4" /> Schedule Review
+                </span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Compliance, route order, past-window risks
+                </span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="gap-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">

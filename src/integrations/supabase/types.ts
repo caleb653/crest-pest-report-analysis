@@ -805,6 +805,42 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduling_audit_log: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          function_name: string
+          id: string
+          ip_address: string | null
+          payload: Json | null
+          staff_name: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          function_name: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          staff_name?: string | null
+          success: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          function_name?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json | null
+          staff_name?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       team_documents: {
         Row: {
           created_at: string
