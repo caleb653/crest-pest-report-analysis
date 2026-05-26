@@ -5476,12 +5476,48 @@ const PropertyDashboard = ({
                                   .select("id");
                                 cascaded = Array.isArray(del) ? del.length : 0;
                               }
+                              // Apartments only: ALSO clear the `follow_up_needed`
+                              // flags on the most-recent past service's unit_details.
+                              // Otherwise `getFollowUpDetailsFromPast` keeps surfacing
+                              // those units as orange "Follow-up" rows on the very
+                              // next upcoming visit — so the admin "deletes" the
+                              // auto-spawned follow-up service and watches the same
+                              // units immediately reappear on whatever comes next.
+                              let clearedFollowUps = 0;
+                              if (propertyType === "apartments") {
+                                const mostRecentPast = pastServices[0];
+                                if (mostRecentPast && Array.isArray(mostRecentPast.unit_details)) {
+                                  const cleared = (mostRecentPast.unit_details as any[]).map((u) => {
+                                    if (u && u.follow_up_needed === true) {
+                                      clearedFollowUps += 1;
+                                      return { ...u, follow_up_needed: false };
+                                    }
+                                    return u;
+                                  });
+                                  if (clearedFollowUps > 0) {
+                                    await supabase
+                                      .from("portal_services")
+                                      .update({
+                                        unit_details: cleared,
+                                        follow_up_recommended: false,
+                                      })
+                                      .eq("id", mostRecentPast.id);
+                                  }
+                                }
+                              }
                               toast({
                                 title: "Upcoming service deleted",
                                 description:
-                                  cascaded > 0
-                                    ? `Also removed ${cascaded} open request${cascaded === 1 ? "" : "s"} tied to this date.`
-                                    : undefined,
+                                  [
+                                    cascaded > 0
+                                      ? `Removed ${cascaded} open request${cascaded === 1 ? "" : "s"} tied to this date.`
+                                      : null,
+                                    clearedFollowUps > 0
+                                      ? `Cleared ${clearedFollowUps} follow-up flag${clearedFollowUps === 1 ? "" : "s"} from the last visit so they won't reappear.`
+                                      : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" ") || undefined,
                               });
                               if (expandedUpcomingId === s.id) setExpandedUpcomingId(null);
                               onRefresh();
