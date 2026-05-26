@@ -1098,7 +1098,7 @@ export default function CustomerReportView() {
                   </Card>
                 </div>
 
-                {findingsHtml && (
+                {!isMultiProposal && findingsHtml && (
                   <Card className="overflow-hidden">
                     <div className="bg-brand-black text-white px-4 py-2">
                       <span className="text-xs font-bold uppercase">Proposed Services</span>
