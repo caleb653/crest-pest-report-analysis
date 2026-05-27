@@ -64,6 +64,7 @@ const TECHNICIANS = [
   { name: "Jackson Latham", license: "FR 68261" },
   { name: "Dylan Gallegos", license: "RA 71068" },
   { name: "Michael Muniz", license: "FR 54193" },
+  { name: "David Longoria", license: "FR 71710" },
 ];
 
 const PEST_OPTIONS = [
