@@ -1,11 +1,20 @@
-// SlotFinder — admin-only page that wraps the scheduling-find-slot edge function.
-// User enters an address (+ optional time window) and gets the 2 best slot
-// recommendations for the next 24 hours and the next 72 hours.
+// SlotFinder — PinGate-staff page wrapping the scheduling-find-slot /
+// scheduling-check-slot edge functions.
+//
+//   Mode A "Find open slots":  pick one or more days (+ optional window) and get
+//      the most efficient openings per day, each annotated with the Route
+//      Manager's resulting stop count, per-window load, estimated route time,
+//      and a plain-English justification.
+//
+//   Mode B "Check a day & window":  enter a date + time window and find out how
+//      out-of-the-way that slot is and whether it's feasible.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin } from "lucide-react";
+import {
+  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown,
+} from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,11 +26,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  SelectGroup, SelectLabel,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuCheckboxItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+
+// ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
+
+type Stop = { customer_name: string; city: string; start_time: string; end_time: string };
+
+type WindowCounts = { "8-12"?: number; "10-2"?: number; "1-5"?: number };
+
+type RouteSnapshot = {
+  stops: number;
+  stops_excluding_tasks: number;
+  stops_by_window: WindowCounts;
+  total_drive_min: number;
+  est_route_hours: number;
+  est_finish_min: number | null;
+  has_home: boolean;
+};
+
+type AfterInsert = {
+  stops: number;
+  stops_excluding_tasks: number;
+  stops_by_window: WindowCounts;
+  est_route_hours: number;
+  est_finish_min: number | null;
+  new_stop_window: string | null;
+};
 
 type SlotCandidate = {
   score_sec: number;
@@ -31,24 +68,48 @@ type SlotCandidate = {
   est_min: number | null;
   route_date: string;
   tech_name: string;
-  prev_stop: { customer_name: string; city: string; start_time: string; end_time: string };
-  next_stop: { customer_name: string; city: string; start_time: string; end_time: string };
+  insertion_kind?: string;
+  detour_min?: number;
+  detour_miles?: number;
+  prev_stop: Stop;
+  next_stop: Stop;
+  route_snapshot?: RouteSnapshot;
+  after_insert?: AfterInsert;
+  justification?: string;
+  // Mode B extras
+  feasible?: "feasible" | "tight" | "not_feasible";
+  reasons?: string[];
+  off_by_min?: number | null;
 };
 
-type SlotResult = {
+type DayGroup = { date: string; weekday: string; slots: SlotCandidate[] };
+
+type FindResult = {
   address: string;
   geocoded: { lat: number; lng: number; formatted: string };
-  today: string;
-  h24_end: string;
-  h72_end: string;
-  horizon_24h: SlotCandidate[];
-  horizon_72h: SlotCandidate[];
+  mode: "by_day" | "horizon";
+  by_day?: DayGroup[];
+  horizon_24h?: SlotCandidate[];
+  horizon_72h?: SlotCandidate[];
   routes_scored: number;
   stops_in_horizon: number;
   error?: string;
 };
 
-function fmtTime(minSinceMidnight: number | null): string {
+type CheckResult = {
+  address: string;
+  geocoded: { lat: number; lng: number; formatted: string };
+  date: string;
+  requested_window: string;
+  verdict: "feasible" | "tight" | "not_feasible" | "no_route";
+  summary: string;
+  options: SlotCandidate[];
+  routes_considered: number;
+};
+
+// ── Formatting helpers ──────────────────────────────────────────────────────
+
+function fmtTime(minSinceMidnight: number | null | undefined): string {
   if (minSinceMidnight === null || minSinceMidnight === undefined) return "?";
   const h24 = Math.floor(minSinceMidnight / 60);
   const m = minSinceMidnight % 60;
@@ -58,7 +119,6 @@ function fmtTime(minSinceMidnight: number | null): string {
 }
 
 function fmtHHMMSS(s: string | null | undefined): string {
-  // FieldRoutes returns "13:00:00"; convert to "1:00 PM"
   if (!s) return "?";
   const [hStr, mStr] = s.split(":");
   const h = parseInt(hStr, 10);
@@ -67,120 +127,106 @@ function fmtHHMMSS(s: string | null | undefined): string {
   return fmtTime(h * 60 + m);
 }
 
-function fmtWindow(start: string | null | undefined, end: string | null | undefined): string {
+function fmtWindow(start?: string | null, end?: string | null): string {
   if (!start || !end) return "?";
   return `${fmtHHMMSS(start)} – ${fmtHHMMSS(end)}`;
 }
 
-function fmtDetour(c: SlotCandidate): string {
-  const sec = c.extra_sec_gmaps ?? c.extra_sec_haversine;
-  const min = Math.round(sec / 60);
-  const miles = c.extra_miles_haversine.toFixed(1);
-  const src = c.extra_sec_gmaps != null ? "Maps" : "HV";
-  return `+${min} min (${src}) / +${miles} mi`;
-}
-
-// Drive-time tiers based on EXTRA DRIVE MINUTES added by this insertion.
-// Prefer Google Maps duration when available; fall back to Haversine estimate.
-//   <  5 min  → ON ROUTE        (emerald, very green)
-//   <  10 min → green
-//   <  15 min → yellow
-//   <  20 min → LONG DRIVE      (amber/orange)
-//   ≥ 20 min → VERY LONG DRIVE (red)
-type DriveTier = "on_route" | "near" | "edge" | "long" | "very_long";
-
 function detourMinutes(c: SlotCandidate): number {
+  if (c.detour_min != null) return c.detour_min;
   const sec = c.extra_sec_gmaps ?? c.extra_sec_haversine;
   return Math.round(sec / 60);
 }
 
+function detourMiles(c: SlotCandidate): string {
+  return (c.detour_miles ?? c.extra_miles_haversine).toFixed(1);
+}
+
+type DriveTier = "on_route" | "near" | "edge" | "long" | "very_long";
 function driveTier(c: SlotCandidate): DriveTier {
   const min = detourMinutes(c);
   if (min >= 20) return "very_long";
   if (min >= 15) return "long";
   if (min >= 10) return "edge";
-  if (min >= 5)  return "near";
+  if (min >= 5) return "near";
   return "on_route";
 }
 
-function rowClass(c: SlotCandidate): string {
+function tierBorder(c: SlotCandidate): string {
   switch (driveTier(c)) {
-    case "very_long": return "bg-red-100 hover:bg-red-200";
-    case "long":      return "bg-amber-50 hover:bg-amber-100";
-    case "edge":      return "bg-yellow-50 hover:bg-yellow-100";
-    case "near":      return "bg-green-50 hover:bg-green-100";
-    case "on_route":  return "bg-emerald-100 hover:bg-emerald-200";
+    case "very_long": return "border-l-4 border-l-red-500 bg-red-50/40";
+    case "long": return "border-l-4 border-l-amber-500 bg-amber-50/40";
+    case "edge": return "border-l-4 border-l-yellow-400 bg-yellow-50/40";
+    case "near": return "border-l-4 border-l-green-400 bg-green-50/30";
+    case "on_route": return "border-l-4 border-l-emerald-500 bg-emerald-50/40";
   }
 }
 
-function DriveBadge({ c }: { c: SlotCandidate }) {
-  switch (driveTier(c)) {
-    case "very_long":
-      return (
-        <Badge className="ml-2 bg-red-600 text-white hover:bg-red-700 font-bold">
-          VERY LONG DRIVE
-        </Badge>
-      );
-    case "long":
-      return (
-        <Badge className="ml-2 bg-amber-500 text-white hover:bg-amber-600 font-semibold">
-          LONG DRIVE
-        </Badge>
-      );
-    case "on_route":
-      return (
-        <Badge className="ml-2 bg-emerald-600 text-white hover:bg-emerald-700 font-semibold">
-          ON ROUTE
-        </Badge>
-      );
-    default:
-      return null;
-  }
+function DetourBadge({ c }: { c: SlotCandidate }) {
+  const min = detourMinutes(c);
+  const cls =
+    min >= 20 ? "bg-red-600 text-white"
+    : min >= 15 ? "bg-amber-500 text-white"
+    : min >= 10 ? "bg-yellow-400 text-black"
+    : min >= 5 ? "bg-green-500 text-white"
+    : "bg-emerald-600 text-white";
+  const label =
+    min >= 20 ? "VERY LONG DRIVE"
+    : min >= 15 ? "LONG DRIVE"
+    : min < 5 ? "ON ROUTE"
+    : "NEAR";
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span className="font-mono text-xs">+{min} min / +{detourMiles(c)} mi</span>
+      <Badge className={`${cls} font-semibold`}>{label}</Badge>
+    </span>
+  );
 }
+
+function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?: string | null }) {
+  if (!counts) return null;
+  const order: (keyof WindowCounts)[] = ["8-12", "10-2", "1-5"];
+  return (
+    <span className="inline-flex flex-wrap gap-1">
+      {order.map((w) => {
+        const n = counts[w] ?? 0;
+        const isHi = highlight === w;
+        return (
+          <Badge
+            key={w}
+            variant="outline"
+            className={isHi ? "border-emerald-500 bg-emerald-100 text-emerald-900" : "text-muted-foreground"}
+          >
+            {w}: {n}
+          </Badge>
+        );
+      })}
+    </span>
+  );
+}
+
+// Next `count` business days (incl. today) as {iso, label} using local time.
+function upcomingBusinessDays(count: number): { iso: string; label: string }[] {
+  const out: { iso: string; label: string }[] = [];
+  const d = new Date();
+  while (out.length < count) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) {
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const label = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      out.push({ iso, label });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 const SlotFinder = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
-
-  const [address, setAddress] = useState("");
-  const [window, setWindow] = useState<string>("none");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SlotResult | null>(null);
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!staff) {
-      toast.error("Please sign in again.");
-      return;
-    }
-    if (address.trim().length < 4) {
-      toast.error("Please enter a full street address.");
-      return;
-    }
-    setLoading(true);
-    setResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
-        body: {
-          staffName: staff.fullName,
-          address: address.trim(),
-          window: window === "none" ? null : window,
-          use_google: true,
-        },
-      });
-      if (error) throw error;
-      if (!data?.ok) {
-        toast.error(data?.detail?.detail || data?.error || "Failed to find slots.");
-        return;
-      }
-      setResult(data.result as SlotResult);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Unexpected error.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const days = useMemo(() => upcomingBusinessDays(21), []);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -192,121 +238,441 @@ const SlotFinder = () => {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Slot Finder
-            </CardTitle>
-            <CardDescription>
-              Enter a service address. Returns the 2 best slot picks in the
-              next 24 hours and the next 3 business days, ranked by detour
-              distance (traffic-aware via Google Distance Matrix).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="address">Service address</Label>
-                <Input
-                  id="address"
-                  placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="space-y-2 md:w-64">
-                <Label>Preferred window (optional)</Label>
-                <Select value={window} onValueChange={setWindow}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Any time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Any time</SelectItem>
-                    <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
-                    <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" disabled={loading} className="w-full md:w-auto">
-                {loading ? "Searching…" : "Find slots"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="find">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
+            <TabsTrigger value="find" className="gap-2">
+              <MapPin className="w-4 h-4" /> Find open slots
+            </TabsTrigger>
+            <TabsTrigger value="check" className="gap-2">
+              <CalendarClock className="w-4 h-4" /> Check a day &amp; window
+            </TabsTrigger>
+          </TabsList>
 
-        {result && (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Next 24 hours ({result.today} → {result.h24_end})
-                </CardTitle>
-                <CardDescription>
-                  Scored {result.routes_scored} routes / {result.stops_in_horizon} stops
-                  in the horizon. Geocoded to{" "}
-                  <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SlotTable rows={result.horizon_24h} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Next 3 business days ({result.today} → {result.h72_end})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SlotTable rows={result.horizon_72h} />
-              </CardContent>
-            </Card>
-          </>
-        )}
+          <TabsContent value="find" className="mt-4">
+            <FindMode staff={staff} dayOptions={days} />
+          </TabsContent>
+          <TabsContent value="check" className="mt-4">
+            <CheckMode staff={staff} dayOptions={days} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
 
-function SlotTable({ rows }: { rows: SlotCandidate[] }) {
-  if (!rows || rows.length === 0) {
-    return <p className="text-sm text-muted-foreground italic">No slots found in this window.</p>;
-  }
+// Multi-select dropdown of the next ~21 working days. Selecting an item keeps
+// the menu open (onSelect preventDefault) so several days can be picked at once.
+function DayMultiSelect({
+  options, selected, onChange,
+}: {
+  options: { iso: string; label: string }[];
+  selected: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const toggle = (iso: string) =>
+    onChange(selected.includes(iso) ? selected.filter((d) => d !== iso) : [...selected, iso]);
+  const text =
+    selected.length === 0 ? "Select days"
+    : selected.length === 1 ? (options.find((o) => o.iso === selected[0])?.label ?? "1 day")
+    : `${selected.length} days selected`;
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Rank</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Tech</TableHead>
-          <TableHead>Window</TableHead>
-          <TableHead>Inserts between</TableHead>
-          <TableHead>Detour</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map((c, i) => (
-          <TableRow key={i} className={rowClass(c)}>
-            <TableCell><Badge variant="secondary">{i + 1}</Badge></TableCell>
-            <TableCell>{c.route_date}</TableCell>
-            <TableCell className="font-medium">{c.tech_name}</TableCell>
-            <TableCell className="font-medium">{fmtWindow(c.next_stop.start_time, c.next_stop.end_time)}</TableCell>
-            <TableCell className="text-xs">
-              {c.prev_stop.customer_name} ({c.prev_stop.city})
-              <br />→ {c.next_stop.customer_name} ({c.next_stop.city})
-            </TableCell>
-            <TableCell className="font-mono text-xs whitespace-nowrap">
-              {fmtDetour(c)}
-              <DriveBadge c={c} />
-            </TableCell>
-          </TableRow>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full md:w-72 justify-between font-normal">
+          <span className="truncate">{text}</span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
+        <div className="flex items-center justify-between px-2 py-1.5 text-xs">
+          <button type="button" className="underline hover:text-foreground"
+            onClick={() => onChange(options.slice(0, 3).map((o) => o.iso))}>Next 3 days</button>
+          <button type="button" className="underline hover:text-foreground"
+            onClick={() => onChange([])}>Clear</button>
+        </div>
+        <DropdownMenuSeparator />
+        {options.map((o) => (
+          <DropdownMenuCheckboxItem
+            key={o.iso}
+            checked={selected.includes(o.iso)}
+            onCheckedChange={() => toggle(o.iso)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {o.label}
+          </DropdownMenuCheckboxItem>
         ))}
-      </TableBody>
-    </Table>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
+
+// ── Mode A: Find open slots ───────────────────────────────────────────────────
+
+function FindMode({
+  staff,
+  dayOptions,
+}: {
+  staff: { fullName: string } | null;
+  dayOptions: { iso: string; label: string }[];
+}) {
+  const [address, setAddress] = useState("");
+  const [window, setWindow] = useState("none");
+  const [selectedDates, setSelectedDates] = useState<string[]>(
+    dayOptions.slice(0, 3).map((d) => d.iso), // default: next 3 working days
+  );
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<FindResult | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staff) return toast.error("Please sign in again.");
+    if (address.trim().length < 4) return toast.error("Please enter a full street address.");
+    if (selectedDates.length === 0) return toast.error("Pick at least one day.");
+
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
+        body: {
+          staffName: staff.fullName,
+          address: address.trim(),
+          window: window === "none" ? null : window,
+          use_google: true,
+          dates: selectedDates,
+          slots_per_day: 5,
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) return toast.error(data?.detail?.detail || data?.error || "Failed to find slots.");
+      setResult(data.result as FindResult);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Unexpected error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const byDay = result?.by_day ?? [];
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" /> Find open slots
+          </CardTitle>
+          <CardDescription>
+            Pick the day(s) and an optional time window. Returns the 5 most
+            efficient openings per day — each showing the Route Manager's
+            resulting stops, per-window load, estimated route time, and why it
+            works. Detours are traffic-aware via Google.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="address">Service address</Label>
+              <Input
+                id="address"
+                placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Days to search</Label>
+              <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
+              <p className="text-xs text-muted-foreground">Next 3 working days are selected by default.</p>
+            </div>
+
+            <div className="space-y-2 md:w-64">
+              <Label>Preferred window (optional)</Label>
+              <Select value={window} onValueChange={setWindow}>
+                <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Any time</SelectItem>
+                  <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
+                  <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full md:w-auto">
+              {loading ? "Searching…" : "Find slots"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <div className="mt-6 space-y-6">
+          <p className="text-xs text-muted-foreground">
+            Scored {result.routes_scored} route-openings across{" "}
+            {result.stops_in_horizon} stops. Geocoded to{" "}
+            <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
+          </p>
+          {byDay.length === 0 && (
+            <p className="text-sm italic text-muted-foreground">
+              No field-tech routes on the selected day(s).
+            </p>
+          )}
+          {byDay.map((day) => (
+            <Card key={day.date}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  {day.weekday} · {day.date}
+                </CardTitle>
+                <CardDescription>{day.slots.length} best opening(s)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {day.slots.length === 0 && (
+                  <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
+                )}
+                {day.slots.map((c, i) => (
+                  <SlotCard key={i} c={c} rank={i + 1} />
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function SlotCard({ c, rank }: { c: SlotCandidate; rank: number }) {
+  const snap = c.route_snapshot;
+  const after = c.after_insert;
+  return (
+    <div className={`rounded-md p-3 ${tierBorder(c)}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">#{rank}</Badge>
+          <span className="font-semibold">{c.tech_name}</span>
+          <span className="text-sm text-muted-foreground">
+            {fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time)} window
+          </span>
+        </div>
+        <DetourBadge c={c} />
+      </div>
+
+      <div className="mt-2 text-xs text-muted-foreground">
+        Inserts between <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
+        {" → "}
+        <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city})
+      </div>
+
+      {snap && after && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+          <span>
+            Stops: <span className="font-semibold">{snap.stops} → {after.stops}</span>
+          </span>
+          <span className="flex items-center gap-1">
+            After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
+          </span>
+          {after.est_finish_min != null && (
+            <span>Finishes ~<span className="font-medium">{fmtTime(after.est_finish_min)}</span></span>
+          )}
+          <span className="text-muted-foreground">~{after.est_route_hours}h day{snap.has_home ? "" : " (no home base on file)"}</span>
+        </div>
+      )}
+
+      {c.justification && (
+        <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
+      )}
+    </div>
+  );
+}
+
+// ── Mode B: Check a day & time ────────────────────────────────────────────────
+
+function CheckMode({
+  staff,
+  dayOptions,
+}: {
+  staff: { fullName: string } | null;
+  dayOptions: { iso: string; label: string }[];
+}) {
+  const [address, setAddress] = useState("");
+  const [date, setDate] = useState(dayOptions[0]?.iso ?? "");
+  const [window, setWindow] = useState("8-12");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<CheckResult | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staff) return toast.error("Please sign in again.");
+    if (address.trim().length < 4) return toast.error("Please enter a full street address.");
+    if (!date) return toast.error("Pick a date.");
+
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-check-slot", {
+        body: {
+          staffName: staff.fullName,
+          address: address.trim(),
+          date,
+          window,
+          use_google: true,
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) return toast.error(data?.detail?.detail || data?.error || "Failed to check slot.");
+      setResult(data.result as CheckResult);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Unexpected error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarClock className="w-5 h-5" /> Check a specific day &amp; window
+          </CardTitle>
+          <CardDescription>
+            For when a customer needs a particular day &amp; time window. Tells you how
+            out-of-the-way that window is for that day's routes and whether it's
+            feasible.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="check-address">Service address</Label>
+              <Input
+                id="check-address"
+                placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <div className="space-y-2">
+                <Label>Day</Label>
+                <Select value={date} onValueChange={setDate}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Pick a day" /></SelectTrigger>
+                  <SelectContent>
+                    {dayOptions.map((d) => (
+                      <SelectItem key={d.iso} value={d.iso}>{d.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Time window</Label>
+                <Select value={window} onValueChange={setWindow}>
+                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>4-hour windows</SelectLabel>
+                      <SelectItem value="8-12">8 AM – 12 PM</SelectItem>
+                      <SelectItem value="10-2">10 AM – 2 PM</SelectItem>
+                      <SelectItem value="1-5">1 PM – 5 PM</SelectItem>
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>2-hour windows</SelectLabel>
+                      <SelectItem value="8-10">8 AM – 10 AM</SelectItem>
+                      <SelectItem value="10-12">10 AM – 12 PM</SelectItem>
+                      <SelectItem value="12-2">12 PM – 2 PM</SelectItem>
+                      <SelectItem value="2-4">2 PM – 4 PM</SelectItem>
+                      <SelectItem value="3-5">3 PM – 5 PM</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button type="submit" disabled={loading} className="w-full md:w-auto">
+              {loading ? "Checking…" : "Check feasibility"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <div className="mt-6 space-y-4">
+          <VerdictBanner result={result} />
+          {result.options.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Closest openings</CardTitle>
+                <CardDescription>{result.routes_considered} route(s) on {result.date}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {result.options.map((c, i) => (
+                  <div key={i} className={`rounded-md p-3 ${tierBorder(c)}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <FeasibleBadge v={c.feasible} />
+                        <span className="font-semibold">{c.tech_name}</span>
+                        <span className="text-sm text-muted-foreground">{fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time)} window</span>
+                      </div>
+                      <DetourBadge c={c} />
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Between <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
+                      {" → "}
+                      <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city})
+                    </div>
+                    {c.after_insert && (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                        <span>Stops: <span className="font-semibold">{c.route_snapshot?.stops} → {c.after_insert.stops}</span></span>
+                        {c.after_insert.est_finish_min != null && (
+                          <span>Finishes ~<span className="font-medium">{fmtTime(c.after_insert.est_finish_min)}</span></span>
+                        )}
+                      </div>
+                    )}
+                    {c.reasons && c.reasons.length > 0 && (
+                      <ul className="mt-2 list-disc pl-5 text-xs text-muted-foreground">
+                        {c.reasons.map((r, j) => <li key={j}>{r}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+function FeasibleBadge({ v }: { v?: SlotCandidate["feasible"] }) {
+  if (v === "feasible") return <Badge className="bg-emerald-600 text-white">Feasible</Badge>;
+  if (v === "tight") return <Badge className="bg-amber-500 text-white">Tight</Badge>;
+  return <Badge className="bg-red-600 text-white">Not feasible</Badge>;
+}
+
+function VerdictBanner({ result }: { result: CheckResult }) {
+  const v = result.verdict;
+  const map = {
+    feasible: { Icon: CheckCircle2, cls: "border-emerald-500 bg-emerald-50 text-emerald-900" },
+    tight: { Icon: AlertTriangle, cls: "border-amber-500 bg-amber-50 text-amber-900" },
+    not_feasible: { Icon: XCircle, cls: "border-red-500 bg-red-50 text-red-900" },
+    no_route: { Icon: XCircle, cls: "border-gray-400 bg-gray-50 text-gray-800" },
+  }[v];
+  const { Icon, cls } = map;
+  return (
+    <div className={`flex items-start gap-3 rounded-md border-l-4 p-4 ${cls}`}>
+      <Icon className="mt-0.5 h-5 w-5 shrink-0" />
+      <div>
+        <p className="font-medium">{result.summary}</p>
+        <p className="mt-1 text-xs opacity-80">
+          {result.address} · {result.date} · {result.requested_window} window
+        </p>
+      </div>
+    </div>
+  );
+}
+
 
 export default SlotFinder;
