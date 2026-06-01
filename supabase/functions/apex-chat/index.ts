@@ -111,26 +111,36 @@ serve(async (req) => {
       return json({ ok: false, error: "missing_staff" });
     }
 
-    const apiUrl = Deno.env.get("APEX_API_URL");
-    const apiKey = Deno.env.get("APEX_API_KEY");
-    if (!apiUrl || !apiKey) {
+    const credentials = [
+      { label: "apex", apiUrl: Deno.env.get("APEX_API_URL"), apiKey: Deno.env.get("APEX_API_KEY") },
+      { label: "scheduling", apiUrl: Deno.env.get("SCHEDULING_API_URL"), apiKey: Deno.env.get("SCHEDULING_API_KEY") },
+    ].filter((credential) => credential.apiUrl && credential.apiKey);
+
+    if (!credentials.length) {
       await logAttempt(false, "api_not_configured");
       return json({ ok: false, error: "api_not_configured" });
     }
 
-    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/apex-chat`, {
-      method: "POST",
-      headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
-    });
+    let lastFailure: { status: number; detail: unknown } | null = null;
+    for (const credential of credentials) {
+      const upstream = await fetch(`${credential.apiUrl!.replace(/\/+$/, "")}/api/apex-chat`, {
+        method: "POST",
+        headers: { "X-API-Key": credential.apiKey!, "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
 
-    const result = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      await logAttempt(false, `upstream_${upstream.status}`);
-      return json({ ok: false, error: "upstream_failed", status: upstream.status, detail: result });
+      const result = await upstream.json().catch(() => ({}));
+      if (upstream.ok) {
+        await logAttempt(true, null);
+        return json({ ok: true, result });
+      }
+
+      lastFailure = { status: upstream.status, detail: result };
+      if (upstream.status !== 401 && upstream.status !== 403) break;
     }
-    await logAttempt(true, null);
-    return json({ ok: true, result });
+
+    await logAttempt(false, `upstream_${lastFailure?.status ?? "failed"}`);
+    return json({ ok: false, error: "upstream_failed", status: lastFailure?.status, detail: lastFailure?.detail });
   } catch (e) {
     console.error("apex-chat exception", e);
     await supabase.from("scheduling_audit_log").insert({
