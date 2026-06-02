@@ -31,6 +31,16 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// bytes -> base64, chunked so a large PDF doesn't blow the call stack.
+function bytesToB64(bytes: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -98,11 +108,34 @@ serve(async (req) => {
     let finalStatus = "failed";
     let result: unknown = null;
     let errText: string | null = null;
+
+    // Document rows keep the PDF in Storage (not in the row). Resolve it now:
+    // download the file, base64 it, and swap the storage_* refs for file_base64
+    // so Cloud Run /api/fr/document gets the bytes. Other entities pass through.
+    const sendPayload: Record<string, unknown> = { ...(claimed as { payload: Record<string, unknown> }).payload };
+    const storageBucket = sendPayload.storage_bucket as string | undefined;
+    const storagePath = sendPayload.storage_path as string | undefined;
+    if (storagePath) {
+      const { data: file, error: dlErr } = await supabase.storage
+        .from(storageBucket ?? "fieldroutes-writes")
+        .download(storagePath);
+      if (dlErr || !file) {
+        await supabase.from("fieldroutes_write_queue")
+          .update({ status: "failed", error: `storage_download_failed: ${dlErr?.message ?? "missing"}` })
+          .eq("id", id);
+        return json({ ok: false, error: "storage_download_failed", detail: dlErr?.message }, 500);
+      }
+      sendPayload.file_base64 = bytesToB64(new Uint8Array(await file.arrayBuffer()));
+      delete sendPayload.storage_bucket;
+      delete sendPayload.storage_path;
+      delete sendPayload.filename;
+    }
+
     try {
       const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}${(claimed as { endpoint: string }).endpoint}`, {
         method: "POST",
         headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ ...(claimed as { payload: Record<string, unknown> }).payload, dry_run: false }),
+        body: JSON.stringify({ ...sendPayload, dry_run: false }),
       });
       const data = await upstream.json().catch(() => ({}));
       result = data;

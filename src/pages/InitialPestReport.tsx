@@ -42,6 +42,7 @@ import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PROPERTY_TYPES = [
@@ -745,6 +746,27 @@ const Report = () => {
     }
   };
 
+  // Auto-link to a FieldRoutes customer when not already linked, so a completed
+  // report's PDF can later upload back to the right customer. High-confidence
+  // only (unique exact email / address); the picker stays the manual override.
+  const ensureCustomerLink = async (reportData: Record<string, any>) => {
+    if (reportData.fieldroutes_customer_id) return;
+    try {
+      const match = await autoMatchCustomerId({
+        email: reportData.customer_email,
+        name: reportData.customer_name,
+        address: reportData.address,
+        staffName: currentStaff?.fullName,
+      });
+      if (match) {
+        reportData.fieldroutes_customer_id = match.customerId;
+        setFieldroutesCustomerId(match.customerId);
+      }
+    } catch (e) {
+      console.warn("FieldRoutes auto-match skipped", e);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!editableTech) {
       toast.error("Please enter technician name");
@@ -804,6 +826,8 @@ const Report = () => {
         customer_phone: customerPhone || null,
         fieldroutes_customer_id: fieldroutesCustomerId,
       };
+
+      await ensureCustomerLink(reportData);
 
       if (reportId) {
         const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
@@ -961,6 +985,62 @@ const Report = () => {
     }
   };
 
+  // Queue this completed report's PDF to upload onto the linked FieldRoutes
+  // customer (via the approval queue — does NOT write to FieldRoutes directly).
+  // Admin-only; requires a linked customer. This is the "completed" trigger for
+  // initial reports: there is no completion flag and auto-created drafts start
+  // linked, so an explicit click avoids uploading half-finished drafts. Idempotent.
+  const sendReportToFieldRoutes = async () => {
+    const sessionToken = localStorage.getItem("admin_session");
+    if (!sessionToken) { toast.error("Admin session required to send to FieldRoutes."); return; }
+    if (!fieldroutesCustomerId) {
+      toast.error("Link a FieldRoutes customer first (the search box at the top).");
+      return;
+    }
+    try {
+      toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      const exportFn = (window as any).exportMapAsImage;
+      if (exportFn) { const fresh = await exportFn(); if (fresh) setRenderedMapImage(fresh); }
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 200));
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+      const pdfBytes = await buildSimplePDF({ reportPages });
+      setPdfExportMode(false);
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < pdfBytes.length; i += chunk) {
+        bin += String.fromCharCode(...pdfBytes.subarray(i, i + chunk));
+      }
+      const fileBase64 = btoa(bin);
+      const { data, error } = await supabase.functions.invoke("fieldroutes-document-submit", {
+        body: {
+          sessionToken,
+          customerID: Number(fieldroutesCustomerId),
+          fileBase64,
+          filename: `Crest_Initial_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          description: `Initial Pest Report — ${editableCustomer || "Customer"}`,
+          reportId: reportId ?? undefined,
+          showCustomer: false,
+        },
+      });
+      toast.dismiss("fr-doc");
+      if (error || !data?.ok) {
+        toast.error(`Could not queue: ${data?.error ?? error?.message ?? "unknown error"}`);
+        return;
+      }
+      if (data?.deduped) { toast.info("Already queued for FieldRoutes."); return; }
+      toast.success("Initial report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
+    } catch (e) {
+      console.error("send to FieldRoutes error:", e);
+      setPdfExportMode(false);
+      toast.dismiss("fr-doc");
+      toast.error("Failed to prepare/queue the PDF. Try again.");
+    }
+  };
+
   const handleOpenCompose = () => {
     // Set a default email message when opening compose
     const firstName = (editableCustomer || "").split(" ")[0] || "there";
@@ -1034,6 +1114,8 @@ Crest Pest Control
         fieldroutes_customer_id: fieldroutesCustomerId,
         sent_to_customer_at: new Date().toISOString(),
       };
+
+      await ensureCustomerLink(fullReportData);
 
       let finalReportId = reportId;
 
@@ -1446,6 +1528,9 @@ Crest Pest Control
                 {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}Save
               </Button>
               <Button onClick={exportToPDF} variant="outline" size="sm"><FileDown className="w-3 h-3 mr-1" />PDF</Button>
+              {!!localStorage.getItem("admin_session") && (
+                <Button onClick={sendReportToFieldRoutes} variant="outline" size="sm">Send to FieldRoutes</Button>
+              )}
               <Button onClick={() => navigate("/")} variant="outline" size="sm"><Home className="w-3 h-3" /></Button>
             </div>
 
@@ -1603,6 +1688,11 @@ Crest Pest Control
                 <Button onClick={exportToPDF} variant="outline" size="sm" className="h-7 px-2 text-xs hidden lg:flex">
                   <FileDown className="w-3 h-3 mr-1" />PDF
                 </Button>
+                {!!localStorage.getItem("admin_session") && (
+                  <Button onClick={sendReportToFieldRoutes} variant="outline" size="sm" className="h-7 px-2 text-xs hidden lg:flex">
+                    Send to FieldRoutes
+                  </Button>
+                )}
                 <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-7 w-7 hidden lg:flex">
                   <Home className="w-3 h-3" />
                 </Button>
