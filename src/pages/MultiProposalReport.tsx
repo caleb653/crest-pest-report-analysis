@@ -3080,6 +3080,26 @@ Crest Pest Control`;
                       className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print" />
                   </div>
                 )}
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground w-16">FR ID:</span>
+                  {isReadOnly ? (
+                    <span className="text-foreground font-medium">{fieldroutesCustomerId || "—"}</span>
+                  ) : (
+                    <>
+                      <Input
+                        value={fieldroutesCustomerId ?? ""}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, "");
+                          setFieldroutesCustomerId(v ? v : null);
+                        }}
+                        placeholder="FieldRoutes customer ID"
+                        inputMode="numeric"
+                        className="bg-transparent border-b border-border text-foreground placeholder:text-muted-foreground px-1 h-6 text-xs flex-1 min-w-0 focus-visible:ring-0 no-print"
+                      />
+                      <span className="print-only-text hidden text-foreground font-medium">{fieldroutesCustomerId || "—"}</span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
