@@ -38,6 +38,57 @@ export type Database = {
         }
         Relationships: []
       }
+      fieldroutes_write_queue: {
+        Row: {
+          action: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          endpoint: string
+          entity: string
+          error: string | null
+          id: string
+          payload: Json
+          requested_at: string
+          requested_by: string | null
+          result: Json | null
+          status: string
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          endpoint: string
+          entity: string
+          error?: string | null
+          id?: string
+          payload: Json
+          requested_at?: string
+          requested_by?: string | null
+          result?: Json | null
+          status?: string
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          endpoint?: string
+          entity?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          requested_at?: string
+          requested_by?: string | null
+          result?: Json | null
+          status?: string
+          summary?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -719,6 +770,8 @@ export type Database = {
           customer_preferences: Json | null
           customer_signature: string | null
           equipment: Json | null
+          fieldroutes_appointment_id: string | null
+          fieldroutes_customer_id: string | null
           findings: Json | null
           id: string
           license_number: string | null
@@ -751,6 +804,8 @@ export type Database = {
           customer_preferences?: Json | null
           customer_signature?: string | null
           equipment?: Json | null
+          fieldroutes_appointment_id?: string | null
+          fieldroutes_customer_id?: string | null
           findings?: Json | null
           id?: string
           license_number?: string | null
@@ -783,6 +838,8 @@ export type Database = {
           customer_preferences?: Json | null
           customer_signature?: string | null
           equipment?: Json | null
+          fieldroutes_appointment_id?: string | null
+          fieldroutes_customer_id?: string | null
           findings?: Json | null
           id?: string
           license_number?: string | null
