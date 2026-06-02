@@ -229,7 +229,7 @@ serve(async (req) => {
       service_date: serviceDate,
       report_title: serviceName,
       target_pests: isRodent ? ["Rodents"] : [],
-      notes: `Auto-created from FieldRoutes ${serviceName} appointment ${appointmentId}`
+      notes: `Sales draft synced from FieldRoutes ${serviceName} appointment ${appointmentId}`
            + `${serviceDate ? ` on ${serviceDate}` : ""} (real-time webhook).`,
       fieldroutes_customer_id: customerId,
       fieldroutes_appointment_id: appointmentId,
