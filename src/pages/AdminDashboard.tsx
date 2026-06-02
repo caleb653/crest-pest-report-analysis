@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Calendar, CheckCircle, ClipboardList, FileText, LogOut, MapPin, Trash2, User } from "lucide-react";
+import { Calendar, CheckCircle, ClipboardList, FileText, LogOut, MapPin, PenSquare, Trash2, User } from "lucide-react";
 import crestLogo from "@/assets/crest-logo-black.png";
 
 type ReportType = "sales" | "initial";
@@ -216,6 +216,18 @@ const AdminDashboard = () => {
                 </span>
                 <span className="text-xs text-muted-foreground font-normal">
                   Compliance, route order, past-window risks
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 px-4 flex-col items-start gap-1 text-left"
+                onClick={() => navigate("/admin/fieldroutes-writes")}
+              >
+                <span className="flex items-center gap-2 font-semibold">
+                  <PenSquare className="w-4 h-4" /> FieldRoutes Writes
+                </span>
+                <span className="text-xs text-muted-foreground font-normal">
+                  Approve notes & changes before they hit FieldRoutes
                 </span>
               </Button>
             </div>

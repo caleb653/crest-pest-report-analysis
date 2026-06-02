@@ -33,6 +33,7 @@ const AdminDashboard       = lazy(() => import("./pages/AdminDashboard"));
 const SlotFinder           = lazy(() => import("./pages/SlotFinder"));
 const ScheduleReview       = lazy(() => import("./pages/ScheduleReview"));
 const AskApex              = lazy(() => import("./pages/AskApex"));
+const FieldRoutesWriteQueue = lazy(() => import("./pages/FieldRoutesWriteQueue"));
 
 const queryClient = new QueryClient();
 
@@ -67,6 +68,7 @@ const App = () => (
                 office staff who don't know the PIN can still sign in. */}
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/fieldroutes-writes" element={<FieldRoutesWriteQueue />} />
             {/* All other routes require PIN */}
             <Route path="*" element={
               <PinGate>
