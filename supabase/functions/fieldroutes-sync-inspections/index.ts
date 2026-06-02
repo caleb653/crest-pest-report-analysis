@@ -176,11 +176,22 @@ serve(async (req) => {
     const apiKey = Deno.env.get("SCHEDULING_API_KEY");
     if (!apiUrl || !apiKey) return json({ ok: false, error: "api_not_configured" }, 500);
 
-    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fr/new-inspections`, {
-      method: "POST",
-      headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ days_ahead: daysAhead }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20_000);
+    let upstream: Response;
+    try {
+      upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fr/new-inspections`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ days_ahead: daysAhead }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      const detail = e instanceof DOMException && e.name === "AbortError" ? "upstream_timeout" : String(e);
+      return json({ ok: false, error: "upstream_unreachable", detail }, 504);
+    } finally {
+      clearTimeout(timeoutId);
+    }
     const upJson = await upstream.json().catch(() => ({}));
     if (!upstream.ok || !upJson?.ok) {
       return json({ ok: false, error: "upstream_failed", detail: upJson }, 502);
