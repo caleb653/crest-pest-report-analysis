@@ -1589,6 +1589,67 @@ Crest Pest Control
         </div>
       )}
 
+      {/* Rodent Exclusion / Attic — grouped photo capture panel.
+          Renders only for the rodent-exclusion variant. Designed to be
+          ultra simple on mobile: stacked, full-width "Add Photos" buttons
+          per category that append to propertyImages with a caption tag. */}
+      {isRodentExclusion && (
+        <div className="no-print bg-amber-50/40 border-y-2 border-amber-200">
+          <div className={isMobile ? "p-4 space-y-3" : "p-4 max-w-[1800px] mx-auto"}>
+            <div className="flex items-center gap-2 mb-1">
+              <Home className="w-5 h-5 text-amber-700" />
+              <h2 className="text-lg font-bold text-foreground">
+                Rodent Exclusion / Attic Photos
+              </h2>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {propertyImages.length}/12 photos
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Tap a section to add photos straight from your camera or gallery.
+              Each photo is auto-tagged with the section name.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                "Entry Points",
+                "Attic — Before",
+                "Attic — After",
+                "Exclusion Work",
+                "Bait Stations / Traps",
+                "Other",
+              ].map((group) => {
+                const groupCount = propertyImages.filter((p) =>
+                  (p.caption || "").startsWith(group),
+                ).length;
+                return (
+                  <label
+                    key={group}
+                    className="relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300 bg-card hover:bg-amber-50 active:bg-amber-100 transition-colors py-5 px-3 cursor-pointer text-center min-h-[96px]"
+                  >
+                    <Plus className="w-6 h-6 text-amber-700" />
+                    <span className="text-sm font-semibold text-foreground leading-tight">
+                      {group}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {groupCount === 0 ? "Add photos" : `${groupCount} added`}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                      onChange={(e) => handleRodentGroupUpload(e, group)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      aria-label={`Add photos for ${group}`}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
