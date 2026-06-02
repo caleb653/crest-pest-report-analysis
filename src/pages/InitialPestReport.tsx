@@ -148,7 +148,13 @@ const Report = () => {
     licenseNumber,
     targetPests,
     productsUsed,
+    variant,
   } = location.state || {};
+
+  // "rodent-exclusion" variant tweaks the initial report for rodent
+  // exclusion / attic jobs: defaults Target Pest to Rodents and shows a
+  // mobile-friendly grouped photo capture panel at the top of the body.
+  const isRodentExclusion = variant === "rodent-exclusion";
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [editableAddress, setEditableAddress] = useState<string>(address || "");
@@ -173,7 +179,10 @@ const Report = () => {
     }
     setTechDropdownOpen(false);
   };
-  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || [GENERAL_PESTS_OPTION]);
+  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(
+    targetPests?.filter((p: string) => p) ||
+      (isRodentExclusion ? ["Rodents"] : [GENERAL_PESTS_OPTION]),
+  );
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
   );
@@ -1236,6 +1245,71 @@ Crest Pest Control
     });
   };
 
+  // Append-style uploader used by the Rodent Exclusion / Attic grouped photo
+  // capture panel. Each group passes its own caption prefix so the captured
+  // photos already carry a category label when they land in propertyImages.
+  const handleRodentGroupUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    captionPrefix: string,
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).slice(0, 12 - propertyImages.length);
+    if (fileArray.length === 0) {
+      toast.error("Maximum 12 images allowed");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (fileArray.some((file) => file.size === 0)) {
+      toast.error("One of the selected photos isn't downloaded yet (iCloud). Download it in Photos and try again.");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (fileArray.some((file) => file.type && !file.type.startsWith("image/"))) {
+      toast.error("Please upload only image files");
+      e.currentTarget.value = "";
+      return;
+    }
+    try {
+      const existingForGroup = propertyImages.filter((p) =>
+        (p.caption || "").startsWith(captionPrefix),
+      ).length;
+      const uploadPromises = fileArray.map(async (file, idx) => {
+        const { ext, contentType } = inferImageUploadMeta(file);
+        let uploadBlob: Blob = file;
+        try {
+          const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+          uploadBlob = compressed.blob;
+          URL.revokeObjectURL(compressed.localUrl);
+        } catch (compressErr) {
+          console.warn("Image compression failed, uploading original:", compressErr);
+        }
+        const fileName = `${Math.random()}.${ext}`;
+        const filePath = `${reportId || "temp"}/property/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, uploadBlob, { upsert: true, contentType });
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("report-images").getPublicUrl(filePath);
+        return {
+          image: publicUrl,
+          caption: `${captionPrefix} #${existingForGroup + idx + 1}`,
+        };
+      });
+      const uploadedImages = await Promise.all(uploadPromises);
+      setPropertyImages((prev) => [...prev, ...uploadedImages]);
+      pendingAutoSaveRef.current = true;
+      toast.success(`${uploadedImages.length} photo(s) added to ${captionPrefix}`);
+    } catch (error) {
+      console.error("Error uploading rodent group images:", error);
+      toast.error("Failed to upload images");
+    } finally {
+      e.currentTarget.value = "";
+    }
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -1511,6 +1585,67 @@ Crest Pest Control
             <p className="mt-1 text-[10px] text-foreground leading-tight opacity-80">
               We appreciate you entrusting Crest with your pest control needs. We've created this educational report to help you get one step closer to living a pest-free life. Call <span className="font-semibold">949-424-5000</span> with any questions.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Rodent Exclusion / Attic — grouped photo capture panel.
+          Renders only for the rodent-exclusion variant. Designed to be
+          ultra simple on mobile: stacked, full-width "Add Photos" buttons
+          per category that append to propertyImages with a caption tag. */}
+      {isRodentExclusion && (
+        <div className="no-print bg-amber-50/40 border-y-2 border-amber-200">
+          <div className={isMobile ? "p-4 space-y-3" : "p-4 max-w-[1800px] mx-auto"}>
+            <div className="flex items-center gap-2 mb-1">
+              <Home className="w-5 h-5 text-amber-700" />
+              <h2 className="text-lg font-bold text-foreground">
+                Rodent Exclusion / Attic Photos
+              </h2>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {propertyImages.length}/12 photos
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Tap a section to add photos straight from your camera or gallery.
+              Each photo is auto-tagged with the section name.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                "Entry Points",
+                "Attic — Before",
+                "Attic — After",
+                "Exclusion Work",
+                "Bait Stations / Traps",
+                "Other",
+              ].map((group) => {
+                const groupCount = propertyImages.filter((p) =>
+                  (p.caption || "").startsWith(group),
+                ).length;
+                return (
+                  <label
+                    key={group}
+                    className="relative flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-amber-300 bg-card hover:bg-amber-50 active:bg-amber-100 transition-colors py-5 px-3 cursor-pointer text-center min-h-[96px]"
+                  >
+                    <Plus className="w-6 h-6 text-amber-700" />
+                    <span className="text-sm font-semibold text-foreground leading-tight">
+                      {group}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {groupCount === 0 ? "Add photos" : `${groupCount} added`}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      capture="environment"
+                      onChange={(e) => handleRodentGroupUpload(e, group)}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      aria-label={`Add photos for ${group}`}
+                    />
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

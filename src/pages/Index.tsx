@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, MapPin, MessageSquare } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, MapPin, MessageSquare, Bug, Home as HomeIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
 const reportTypes = [
@@ -132,11 +133,16 @@ const Index = () => {
   // navigate to an admin route (via useAdminSession), so an expired token will
   // bounce to /admin-login at click time rather than silently failing here.
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showInitialVariantPicker, setShowInitialVariantPicker] = useState(false);
   useEffect(() => {
     setIsAdmin(!!localStorage.getItem("admin_session"));
   }, []);
 
   const handleCardClick = (report: typeof reportTypes[0]) => {
+    if (report.id === "initial-pest") {
+      setShowInitialVariantPicker(true);
+      return;
+    }
     if ("state" in report && report.state) {
       navigate(report.path, { state: report.state });
     } else {
@@ -194,6 +200,55 @@ const Index = () => {
           );
         })}
       </div>
+
+      <Dialog open={showInitialVariantPicker} onOpenChange={setShowInitialVariantPicker}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose Initial Report Type</DialogTitle>
+            <DialogDescription>
+              Pick the type of initial service this report is for.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "general" } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-emerald-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                <Bug className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">General Pest / Bait Boxes</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Standard initial pest service report
+                </p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "rodent-exclusion", targetPests: ["Rodents"] } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-amber-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+                <HomeIcon className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Rodent Exclusion / Attic</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Photo-heavy exclusion & attic write-up
+                </p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
