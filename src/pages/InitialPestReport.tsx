@@ -1271,10 +1271,7 @@ Crest Pest Control
       return;
     }
     try {
-      const existingForGroup = propertyImages.filter((p) =>
-        (p.caption || "").startsWith(captionPrefix),
-      ).length;
-      const uploadPromises = fileArray.map(async (file, idx) => {
+      const uploadPromises = fileArray.map(async (file) => {
         const { ext, contentType } = inferImageUploadMeta(file);
         let uploadBlob: Blob = file;
         try {
@@ -1293,15 +1290,12 @@ Crest Pest Control
         const {
           data: { publicUrl },
         } = supabase.storage.from("report-images").getPublicUrl(filePath);
-        return {
-          image: publicUrl,
-          caption: `${captionPrefix} #${existingForGroup + idx + 1}`,
-        };
+        return { image: publicUrl, caption: "" };
       });
       const uploadedImages = await Promise.all(uploadPromises);
       setPropertyImages((prev) => [...prev, ...uploadedImages]);
       pendingAutoSaveRef.current = true;
-      toast.success(`${uploadedImages.length} photo(s) added to ${captionPrefix}`);
+      toast.success(`${uploadedImages.length} photo(s) added`);
     } catch (error) {
       console.error("Error uploading rodent group images:", error);
       toast.error("Failed to upload images");
