@@ -2752,9 +2752,6 @@ Crest Pest Control`;
                   </div>
                 ) : (
                   <div className="h-full w-full bg-muted flex items-center justify-center">
-                    {coordinates ? (
-                      <p className="text-muted-foreground">Loading satellite view...</p>
-                    ) : (
                       <div className="text-center p-8">
                         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                           <FileDown className="w-8 h-8 text-primary" />
@@ -2779,7 +2776,6 @@ Crest Pest Control`;
                           />
                         </div>
                       </div>
-                    )}
                   </div>
                 )}
               </div>
