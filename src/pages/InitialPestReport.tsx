@@ -2195,6 +2195,7 @@ Crest Pest Control
       </div>
 
       {/* Second Page - Property Images */}
+      {!isRodentExclusion && (
       <div 
         data-pdf-page="2"
         data-pdf-capture="2"
