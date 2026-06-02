@@ -96,6 +96,10 @@ function isWithinDays(dateStr: string, days: number): boolean {
   return d >= cutoff;
 }
 
+function isFieldRoutesInspectionDraft(notesHead: string): boolean {
+  return /Auto-created from FieldRoutes .*Inspection appointment/i.test(notesHead);
+}
+
 const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos"];
 
 const SubmittedReports = () => {
@@ -143,14 +147,14 @@ const SubmittedReports = () => {
       if (error) throw error;
 
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
-        const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
+        const head = typeof r.notes_head === "string" ? r.notes_head : "";
+        const isInitial = (Array.isArray(r.next_steps) && r.next_steps.length > 0) || isFieldRoutesInspectionDraft(head);
         let isMultiProposal = false;
         let isPreProposal = false;
         let dealStatus: "won" | "lost" | null = null;
         // Detect via _reportFormat marker. We only need to peek at the start of
         // the notes blob — markers live near the top of the JSON. A cheap
         // substring match avoids parsing megabytes of text.
-        const head = typeof r.notes_head === "string" ? r.notes_head : "";
         if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
         if (head.includes('"_isPreProposal":true')) isPreProposal = true;
         if (head.includes('"_dealStatus":"won"')) dealStatus = "won";
