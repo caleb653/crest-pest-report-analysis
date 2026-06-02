@@ -1,12 +1,10 @@
 // supabase/functions/fieldroutes-document-submit
-// SUBMIT a "upload document" write to the FieldRoutes approval queue.
+// SUBMIT a "upload document" write to FieldRoutes.
 //
-// Used to push a completed report's PDF (signed sales proposal / finished
-// inspection report) back onto the customer in FieldRoutes. Like note-submit,
-// this does NOT write to FieldRoutes — it stores the PDF in the private
-// `fieldroutes-writes` storage bucket and inserts a PENDING row into
-// public.fieldroutes_write_queue. The write only happens when an admin approves
-// it via fieldroutes-queue-decide (which fetches the PDF and forwards it).
+// Default mode: stores the PDF and inserts a PENDING row in the approval queue.
+// `autoApprove: true` mode: stores the PDF, forwards to Cloud Run immediately
+//   (dry_run:false), and records the row as `committed`/`failed`. Used for
+//   signed agreements which should reach FieldRoutes without admin approval.
 //
 // The base64 PDF is kept OUT of the queue row (the approval UI renders the row
 // payload as JSON) — only the storage path goes in the payload.
@@ -64,6 +62,7 @@ serve(async (req) => {
     const description = String(body?.description ?? "").trim();
     const reportId = body?.reportId ? String(body.reportId).trim() : null;
     const showCustomer = body?.showCustomer === true;
+    const autoApprove = body?.autoApprove === true;
 
     // Auth: a valid, unexpired admin session is required to queue a write.
     if (!sessionToken) return json({ ok: false, error: "missing_session" }, 401);
@@ -134,6 +133,7 @@ serve(async (req) => {
 
     const summary = `Document → Customer ${customerID}: "${description}" (${(bytes.byteLength / 1024).toFixed(0)} KB)`;
 
+    const initialStatus = autoApprove ? "processing" : "pending";
     const { data: row, error } = await supabase
       .from("fieldroutes_write_queue")
       .insert({
@@ -142,8 +142,10 @@ serve(async (req) => {
         endpoint: "/api/fr/document",
         payload,
         summary,
-        status: "pending",
+        status: initialStatus,
         requested_by: requestedBy,
+        decided_by: autoApprove ? "auto_signed" : null,
+        decided_at: autoApprove ? new Date().toISOString() : null,
       })
       .select("id, status, summary, requested_at")
       .single();
@@ -153,6 +155,51 @@ serve(async (req) => {
       // Best-effort cleanup so we don't orphan the file if the row failed.
       await supabase.storage.from(BUCKET).remove([storagePath]);
       return json({ ok: false, error: "enqueue_failed", detail: error.message }, 500);
+    }
+
+    // Direct-commit path for signed agreements (no admin approval needed).
+    if (autoApprove) {
+      const apiUrl = Deno.env.get("SCHEDULING_API_URL");
+      const apiKey = Deno.env.get("SCHEDULING_API_KEY");
+      if (!apiUrl || !apiKey) {
+        await supabase.from("fieldroutes_write_queue")
+          .update({ status: "failed", error: "api_not_configured" }).eq("id", row.id);
+        return json({ ok: false, error: "api_not_configured" }, 500);
+      }
+      // Convert stored bytes → base64 for Cloud Run.
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      const sendPayload = {
+        customer_id: customerID,
+        description,
+        show_customer: showCustomer,
+        file_base64: btoa(bin),
+      };
+      let finalStatus = "failed";
+      let result: unknown = null;
+      let errText: string | null = null;
+      try {
+        const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fr/document`, {
+          method: "POST",
+          headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ ...sendPayload, dry_run: false }),
+        });
+        const data = await upstream.json().catch(() => ({}));
+        result = data;
+        if (!upstream.ok) errText = `upstream_${upstream.status}`;
+        else if (data?.forced_dry_run === true || data?.dry_run === true) errText = "server_write_disabled";
+        else if (data?.ok === false) errText = String(data?.error ?? "fieldroutes_error");
+        else finalStatus = "committed";
+      } catch (e) {
+        errText = `request_failed: ${String(e)}`;
+      }
+      await supabase.from("fieldroutes_write_queue")
+        .update({ status: finalStatus, result, error: errText })
+        .eq("id", row.id);
+      return json({ ok: finalStatus === "committed", autoApproved: true, id: row.id, status: finalStatus, error: errText });
     }
 
     return json({ ok: true, queued: row });
