@@ -109,19 +109,25 @@ function tokenScore(input: string, candidate: string): number {
   return total / inputTokens.length;
 }
 
-function resolveTechnician(rawName: string | null): { name: string; license: string } | null {
-  if (!rawName) return null;
-  const normalized = normalizeName(rawName);
-  if (!normalized || normalized === "unassigned") return null;
+function resolveTechnician(rawName: string | null): { name: string; license: string; score: number } | null {
+  try {
+    if (!rawName) return null;
+    const normalized = normalizeName(rawName);
+    if (!normalized || normalized === "unassigned") return null;
 
-  let best: { name: string; license: string; score: number } | null = null;
-  for (const tech of TECHNICIANS) {
-    const variants = [tech.name, ...tech.aliases].map(normalizeName);
-    const score = Math.max(...variants.map((variant) => tokenScore(normalized, variant)));
-    if (!best || score > best.score) best = { name: tech.name, license: tech.license, score };
+    let best: { name: string; license: string; score: number } | null = null;
+    for (const tech of TECHNICIANS) {
+      const variants = [tech.name, ...tech.aliases].map(normalizeName);
+      const score = Math.max(...variants.map((variant) => tokenScore(normalized, variant)));
+      if (!best || score > best.score) best = { name: tech.name, license: tech.license, score };
+    }
+
+    // FieldRoutes names can be shortened/misspelled; choose the closest obvious match.
+    return best && best.score >= 0.55 ? best : null;
+  } catch (e) {
+    console.error("fieldroutes-inspection-webhook technician_match_failed", { rawName, error: String(e) });
+    return null;
   }
-
-  return best && best.score >= 0.78 ? { name: best.name, license: best.license } : null;
 }
 
 // Parse either JSON or url-encoded form bodies — we don't control the Content-Type
@@ -196,6 +202,11 @@ serve(async (req) => {
       clean(body.techName ?? body.tech_name ?? body.assignedTech ?? body.assignedTechName ?? body.employeeName ?? body.employee ?? body.tech) ??
       ([techFirst, techLast].filter(Boolean).join(" ") || null);
     const matchedTech = resolveTechnician(techName);
+    console.log("fieldroutes-inspection-webhook technician", {
+      raw: techName,
+      resolved: matchedTech?.name ?? null,
+      score: matchedTech?.score ?? null,
+    });
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
     // Idempotency: bail early if this appointment already has a report.
