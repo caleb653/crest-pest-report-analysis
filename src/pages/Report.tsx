@@ -639,6 +639,8 @@ const Report = () => {
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
+  const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  const frAutoPushRef = useRef(false);
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
