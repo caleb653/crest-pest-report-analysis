@@ -632,7 +632,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("short");
+  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("none");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
