@@ -197,13 +197,13 @@ const SubmittedReports = () => {
 
   const syncFieldRoutesInspections = async ({ silent = false } = {}) => {
     const sessionToken = localStorage.getItem("admin_session");
-    if (!sessionToken || syncingInspectionsRef.current) return;
+    if ((!sessionToken && !loggedInUser) || syncingInspectionsRef.current) return;
 
     syncingInspectionsRef.current = true;
     setSyncingInspections(true);
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-sync-inspections", {
-        body: { sessionToken },
+        body: { sessionToken, staffName: loggedInUser },
       });
 
       if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
