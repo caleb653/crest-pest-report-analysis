@@ -639,6 +639,8 @@ const Report = () => {
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
+  const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  const frAutoPushRef = useRef(false);
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
@@ -746,7 +748,65 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setIsSavingSignature(false);
       }
     }
+
+    // Auto-upload the signed report to FieldRoutes (no approval needed).
+    if (signatureData) void autoPushSignedToFieldRoutes();
   };
+
+  // Build the PDF and push it directly to FieldRoutes as "Signed Agreement".
+  // Silent — runs only when admin session + linked customer are both present.
+  const autoPushSignedToFieldRoutes = async () => {
+    if (frAutoPushRef.current) return;
+    const sessionToken = localStorage.getItem("admin_session");
+    if (!sessionToken || !reportId || !fieldroutesCustomerId) return;
+    frAutoPushRef.current = true;
+    try {
+      await captureFreshRenderedMap();
+      setPdfExportMode(true);
+      await new Promise((r) => setTimeout(r, 200));
+      const pageEls = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
+      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
+      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
+      const pdfBytes = await buildSimplePDF({ reportPages }) as Uint8Array;
+      setPdfExportMode(false);
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < pdfBytes.length; i += chunk) {
+        bin += String.fromCharCode(...pdfBytes.subarray(i, i + chunk));
+      }
+      const fileBase64 = btoa(bin);
+      const { data, error } = await supabase.functions.invoke("fieldroutes-document-submit", {
+        body: {
+          sessionToken,
+          customerID: Number(fieldroutesCustomerId),
+          fileBase64,
+          filename: `Crest_${(editableCustomer || "Customer").replace(/\s+/g, "_")}_signed.pdf`,
+          description: "Signed Agreement",
+          reportId,
+          showCustomer: false,
+          autoApprove: true,
+        },
+      });
+      if (error || !data?.ok) {
+        frAutoPushRef.current = false;
+        console.warn("FieldRoutes auto-upload failed", data?.error ?? error?.message);
+      }
+    } catch (e) {
+      frAutoPushRef.current = false;
+      setPdfExportMode(false);
+      console.warn("FieldRoutes auto-upload exception", e);
+    }
+  };
+
+  // If an admin opens an already-signed report, push it once (server dedupes).
+  useEffect(() => {
+    if (!reportId || !customerSignature || !fieldroutesCustomerId) return;
+    if (!localStorage.getItem("admin_session")) return;
+    if (frAutoPushRef.current) return;
+    void autoPushSignedToFieldRoutes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportId, customerSignature, fieldroutesCustomerId]);
 
   const expandWithAI = async (
     text: string,
@@ -868,6 +928,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       if (row.customer_signature) {
         setCustomerSignature(row.customer_signature);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
+      }
+      if (row.fieldroutes_customer_id) {
+        setFieldroutesCustomerId(String(row.fieldroutes_customer_id));
       }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
         const normalizedServices = normalizeServices(row.services);
