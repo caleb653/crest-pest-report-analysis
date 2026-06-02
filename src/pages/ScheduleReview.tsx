@@ -506,15 +506,24 @@ function HighlightRow({
 }
 
 function PerRouteGrid({
-  result, orderEntries, missWindowList, crossDayMoves,
+  result, orderEntries, missWindowList, crossDayMoves, longDrives,
 }: {
   result: ReviewResult;
   orderEntries: [string, RouteOrder][];
   missWindowList: (MissWindowEntry & { key: string })[];
   crossDayMoves: CrossDayMove[];
+  longDrives: LongDrive[];
 }) {
   // Group everything by (date, route_id) key
   const orderByKey   = new Map(orderEntries);
+  const longDriveByKey = new Map(longDrives.map((l) => [l.routeKey, l]));
+  const crossSourceByKeyForGrid = new Map<string, CrossDayMove[]>();
+  crossDayMoves.forEach((m) => {
+    const sk = `${m.current_date}|${m.current_tech}`;
+    const list = crossSourceByKeyForGrid.get(sk) ?? [];
+    list.push(m);
+    crossSourceByKeyForGrid.set(sk, list);
+  });
   const missByKey    = new Map<string, MissWindowEntry[]>();
   missWindowList.forEach((f) => {
     const list = missByKey.get(f.key) ?? [];
@@ -555,13 +564,14 @@ function PerRouteGrid({
         const comp = compByKey.get(techDayKey) ?? [];
         const crossOut = crossSourceByKey.get(techDayKey) ?? [];
         const crossIn  = crossTargetByKey.get(techDayKey) ?? [];
+        const longDrive = longDriveByKey.get(routeKey);
 
-        const hasIssues = comp.length + misses.length > 0;
+        const hasIssues = comp.length + misses.length + (longDrive ? 1 : 0) > 0;
         const hasOpps   = (order ? 1 : 0) + crossOut.length + crossIn.length > 0;
 
         const borderTone =
           comp.length > 0 ? "border-l-red-500"
-          : misses.length > 0 ? "border-l-amber-500"
+          : (misses.length > 0 || longDrive) ? "border-l-amber-500"
           : hasOpps ? "border-l-indigo-500"
           : "border-l-emerald-500";
 
@@ -602,6 +612,14 @@ function PerRouteGrid({
                   </div>
                 );
               })}
+              {/* Long drive between stops */}
+              {longDrive ? (
+                <div className="text-xs bg-amber-50 rounded p-2">
+                  <Badge variant="outline" className="mr-2 text-amber-700 border-amber-300">long drive</Badge>
+                  Avg <strong>{Math.round(longDrive.avg_leg_min)} min</strong> between stops
+                  {" · "}{suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
+                </div>
+              ) : null}
               {/* Reorder */}
               {order ? (
                 <Collapsible>
