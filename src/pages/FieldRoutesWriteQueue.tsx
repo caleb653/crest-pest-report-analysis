@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle, Inbox } from "lucide-react";
 
 import { useAdminSession } from "@/hooks/useAdminSession";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +69,7 @@ export default function FieldRoutesWriteQueue() {
   const [recent, setRecent] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Compose form
   const [customerID, setCustomerID] = useState("");
@@ -94,6 +95,23 @@ export default function FieldRoutesWriteQueue() {
   }, [token]);
 
   useEffect(() => { if (token) load(); }, [token, load]);
+
+  // Manual run of the inspection auto-create job (also runs hourly via cron once wired).
+  const syncInspections = async () => {
+    if (!token) return;
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-sync-inspections", {
+        body: { sessionToken: token },
+      });
+      if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
+      toast.success(`Inspections synced: ${data.created} new draft report(s), ${data.skipped} already existed.`);
+    } catch (e) {
+      toast.error(`Sync failed: ${String(e)}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const submitNote = async () => {
     if (!token) return;
@@ -167,6 +185,9 @@ export default function FieldRoutesWriteQueue() {
             Every write waits here. Nothing reaches FieldRoutes until you approve it.
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={syncInspections} disabled={syncing}>
+          <Inbox className={`h-4 w-4 mr-2 ${syncing ? "animate-pulse" : ""}`} /> Sync inspections
+        </Button>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
         </Button>
