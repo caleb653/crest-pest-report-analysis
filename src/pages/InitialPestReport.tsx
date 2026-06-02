@@ -1949,6 +1949,7 @@ Crest Pest Control
 
             {/* Customer Key Areas */}
             {!isRodentExclusion && (
+            <>
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Key Areas</h2>
               <div className="flex flex-wrap gap-2 p-2">
