@@ -1650,6 +1650,18 @@ const Report = () => {
     }
   };
 
+  // Auto-push a signed proposal to FieldRoutes whenever an admin opens it.
+  // The customer's own device never has an admin session, so the on-sign
+  // auto-call there silently no-ops. This effect closes that gap: any admin
+  // viewing the report fires the queue (server-side dedup makes re-fires safe).
+  useEffect(() => {
+    if (!reportId || !customerSignature || !fieldroutesCustomerId) return;
+    if (!localStorage.getItem("admin_session")) return;
+    if (frQueueAttemptedRef.current) return;
+    void sendReportToFieldRoutes({ auto: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportId, customerSignature, fieldroutesCustomerId]);
+
   const handleOpenCompose = () => {
     const firstName = (editableCustomer || "").split(" ")[0] || "there";
     const defaultMessage = `Hi ${firstName},
