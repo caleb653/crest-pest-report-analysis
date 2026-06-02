@@ -112,11 +112,11 @@ const SubmittedReports = () => {
 
   const [techFilter, setTechFilter] = useState(defaultTech);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
 
   const locationFilter = (location.state as any)?.filter;
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
-    locationFilter === "initial" ? "initial" : locationFilter === "sales" ? "sales-all" : "all"
+    locationFilter === "sales" ? "sales-all" : locationFilter === "all" ? "all" : "initial"
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -152,7 +152,6 @@ const SubmittedReports = () => {
       if (error) throw error;
 
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
-        const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
         let isPreProposal = false;
         let dealStatus: "won" | "lost" | null = null;
@@ -160,6 +159,8 @@ const SubmittedReports = () => {
         // the notes blob — markers live near the top of the JSON. A cheap
         // substring match avoids parsing megabytes of text.
         const head = typeof r.notes_head === "string" ? r.notes_head : "";
+        const isFieldRoutesInspection = head.includes("Auto-created from FieldRoutes");
+        const isInitial = isFieldRoutesInspection || (Array.isArray(r.next_steps) && r.next_steps.length > 0);
         if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
         if (head.includes('"_isPreProposal":true')) isPreProposal = true;
         if (head.includes('"_dealStatus":"won"')) dealStatus = "won";
@@ -197,13 +198,13 @@ const SubmittedReports = () => {
 
   const syncFieldRoutesInspections = async ({ silent = false } = {}) => {
     const sessionToken = localStorage.getItem("admin_session");
-    if (!sessionToken || syncingInspectionsRef.current) return;
+    if ((!sessionToken && !loggedInUser) || syncingInspectionsRef.current) return;
 
     syncingInspectionsRef.current = true;
     setSyncingInspections(true);
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-sync-inspections", {
-        body: { sessionToken },
+        body: { sessionToken, staffName: loggedInUser },
       });
 
       if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
