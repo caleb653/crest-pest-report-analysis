@@ -2426,27 +2426,6 @@ Crest Pest Control`;
                         onFontSizeChange={setProposedServicesFontSize}
                         className="flex-1"
                       />
-                      <Button
-                        type="button" variant="outline" size="sm"
-                        onClick={() => {
-                          const currentVal = isDuplicate ? (proposalFindings[proposalIndex] ?? servicesContent) : (editableFindings[0] || "");
-                          expandWithAI(currentVal, "findings", (updater) => {
-                            const updated = typeof updater === 'function' ? updater([currentVal]) : updater;
-                            const newVal = updated[0] || "";
-                            if (isDuplicate) {
-                              setProposalFindings(prev => ({ ...prev, [proposalIndex]: newVal }));
-                            } else {
-                              setEditableFindings(updated);
-                              setProposalFindings(prev => ({ ...prev, [0]: newVal }));
-                            }
-                          });
-                        }}
-                        disabled={isExpandingFindings}
-                        className="no-print h-6 text-xs"
-                      >
-                        {isExpandingFindings ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                        Expand with AI
-                      </Button>
                     </div>
                     <div
                       data-pdf-content="proposed-services"
