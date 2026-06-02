@@ -86,7 +86,10 @@ serve(async (req) => {
     }
 
     const appointmentId = clean(body.appointmentID ?? body.appointment_id);
-    if (!appointmentId) return json({ ok: false, error: "missing_appointment_id" }, 400);
+    if (!appointmentId) {
+      console.error("fieldroutes-inspection-webhook missing_appointment_id. Body keys:", Object.keys(body), "Body sample:", JSON.stringify(body).slice(0, 2000));
+      return json({ ok: false, error: "missing_appointment_id", received_keys: Object.keys(body), hint: "FieldRoutes trigger body must include {{appointmentID}} (case-sensitive)." }, 400);
+    }
 
     const customerId = clean(body.customerID ?? body.customer_id);
     const serviceTypeId = clean(body.serviceType ?? body.service_type_id) ?? "";
