@@ -10,6 +10,7 @@
 // Auth (either):
 //   - header  x-sync-key: <INSPECTION_SYNC_KEY>     (for the scheduler/cron)
 //   - body    { sessionToken }  = valid admin session (for a manual "Sync now")
+//   - body    { staffName }     = known PinGate staff login (for staff report list)
 //
 // Required Supabase secrets:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (auto)
@@ -23,6 +24,17 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-sync-key",
 };
+
+const KNOWN_STAFF = new Set([
+  "Darrell Tanner",
+  "Jake Shubin",
+  "Caleb Whalen",
+  "Jackson Latham",
+  "Dylan Gallegos",
+  "Michael Muniz",
+  "Carmen Lopez",
+  "David Longoria",
+]);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -139,10 +151,11 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const sessionToken = String(body?.sessionToken ?? "").trim();
+    const staffName = String(body?.staffName ?? "").trim();
     const syncKey = req.headers.get("x-sync-key") ?? "";
     const daysAhead = Number.isFinite(body?.days_ahead) ? Math.trunc(Number(body.days_ahead)) : 90;
 
-    // Auth: cron secret OR admin session.
+    // Auth: cron secret OR admin session OR known PinGate staff user.
     const expectedKey = Deno.env.get("INSPECTION_SYNC_KEY");
     let authed = false;
     if (expectedKey && syncKey && syncKey === expectedKey) {
@@ -153,6 +166,8 @@ serve(async (req) => {
         .eq("session_token", sessionToken).eq("is_valid", true)
         .gt("expires_at", new Date().toISOString()).maybeSingle();
       if (session) authed = true;
+    } else if (staffName && KNOWN_STAFF.has(staffName)) {
+      authed = true;
     }
     if (!authed) return json({ ok: false, error: "unauthorized" }, 401);
 
