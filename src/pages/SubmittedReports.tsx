@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,8 @@ const SubmittedReports = () => {
   const location = useLocation();
   const [reports, setReports] = useState<ReportListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncingInspections, setSyncingInspections] = useState(false);
+  const syncingInspectionsRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const loggedInUser = sessionStorage.getItem("app_logged_in_user") || "";
@@ -128,6 +130,13 @@ const SubmittedReports = () => {
 
   useEffect(() => {
     loadReports();
+    syncFieldRoutesInspections({ silent: true });
+
+    const interval = window.setInterval(() => {
+      if (!document.hidden) syncFieldRoutesInspections({ silent: true });
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
   }, []);
 
   const loadReports = async () => {
@@ -183,6 +192,33 @@ const SubmittedReports = () => {
       setReports([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncFieldRoutesInspections = async ({ silent = false } = {}) => {
+    const sessionToken = localStorage.getItem("admin_session");
+    if (!sessionToken || syncingInspectionsRef.current) return;
+
+    syncingInspectionsRef.current = true;
+    setSyncingInspections(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-sync-inspections", {
+        body: { sessionToken },
+      });
+
+      if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
+
+      if (data.created > 0) {
+        toast.success(`FieldRoutes synced: ${data.created} new sales report${data.created === 1 ? "" : "s"}.`);
+        await loadReports();
+      } else if (!silent) {
+        toast.success("FieldRoutes synced: no new inspections found.");
+      }
+    } catch (error: any) {
+      if (!silent) toast.error(`FieldRoutes sync failed: ${error.message ?? String(error)}`);
+    } finally {
+      syncingInspectionsRef.current = false;
+      setSyncingInspections(false);
     }
   };
 
