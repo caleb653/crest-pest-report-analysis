@@ -359,18 +359,22 @@ function StatCard({
 }
 
 function KeyHighlights({
-  compliance, missWindow, crossDayMoves, routeOrder,
+  compliance, missWindow, crossDayMoves, routeOrder, longDrives, routeOrderMap, crossSourceByKey,
 }: {
   compliance: ComplianceIssue[];
   missWindow: (MissWindowEntry & { key: string })[];
   crossDayMoves: CrossDayMove[];
   routeOrder: [string, RouteOrder][];
+  longDrives: LongDrive[];
+  routeOrderMap: Map<string, RouteOrder>;
+  crossSourceByKey: Map<string, CrossDayMove[]>;
 }) {
   const nothing =
     compliance.length === 0 &&
     missWindow.length === 0 &&
     crossDayMoves.length === 0 &&
-    routeOrder.length === 0;
+    routeOrder.length === 0 &&
+    longDrives.length === 0;
 
   if (nothing) {
     return (
@@ -431,6 +435,20 @@ function KeyHighlights({
               <>
                 <strong>{m.current_date}</strong> {m.current_tech}'s route → <strong>{m.suggested_date}</strong> {m.suggested_tech}'s route
                 {" · "}saves <strong>{m.improvement_mi.toFixed(1)} mi</strong> from {m.current_tech}'s day
+              </>
+            }
+          />
+        ))}
+        {longDrives.slice(0, 3).map((ld, idx) => (
+          <HighlightRow
+            key={`ld-${idx}`}
+            icon={<Car className="w-5 h-5 text-amber-600" />}
+            tone="warn"
+            title={`Long drive · ${ld.tech_name} (${ld.date}) — avg ${Math.round(ld.avg_leg_min)} min between stops`}
+            detail={
+              <>
+                {ld.stops} stops · {fmtMinutes(ld.total_drive_min)} total drive.{" "}
+                {suggestionForLongDrive(ld, routeOrderMap, crossSourceByKey)}
               </>
             }
           />
