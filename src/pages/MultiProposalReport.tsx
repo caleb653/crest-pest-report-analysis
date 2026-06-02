@@ -1622,7 +1622,12 @@ const Report = () => {
         bin += String.fromCharCode(...pdfBytes.subarray(i, i + chunk));
       }
       const fileBase64 = btoa(bin);
-      const description = `${editableTitle || "Proposal"} — ${editableCustomer || "Customer"}`.slice(0, 120);
+      // Signed agreements skip the approval queue and upload directly with a
+      // standard "Signed Agreement" tag. Manual sends still go through the
+      // approval queue with the descriptive title.
+      const description = auto
+        ? "Signed Agreement"
+        : `${editableTitle || "Proposal"} — ${editableCustomer || "Customer"}`.slice(0, 120);
       const { data, error } = await supabase.functions.invoke("fieldroutes-document-submit", {
         body: {
           sessionToken,
@@ -1632,17 +1637,24 @@ const Report = () => {
           description,
           reportId: reportId ?? undefined,
           showCustomer: false,
+          autoApprove: auto, // signed-agreement auto-push bypasses approval
         },
       });
       if (!auto) toast.dismiss("fr-doc");
       if (error || !data?.ok) {
         frQueueAttemptedRef.current = false; // allow a retry on a real failure
-        if (!auto) toast.error(`Could not queue: ${data?.error ?? error?.message ?? "unknown error"}`);
+        if (!auto) toast.error(`Could not send: ${data?.error ?? error?.message ?? "unknown error"}`);
         else console.warn("FieldRoutes auto-queue failed", data?.error ?? error?.message);
         return;
       }
       if (data?.deduped) { if (!auto) toast.info("Already queued for FieldRoutes."); return; }
-      toast.success("Sales report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
+      if (auto && data?.autoApproved) {
+        // silent success on auto-push
+      } else if (data?.autoApproved) {
+        toast.success("Uploaded to FieldRoutes ✓");
+      } else {
+        toast.success("Sales report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
+      }
     } catch (e) {
       console.error("send to FieldRoutes error:", e);
       frQueueAttemptedRef.current = false;
