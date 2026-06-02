@@ -227,8 +227,7 @@ serve(async (req) => {
           service_date: c.appointment_date || null,
           report_title: c.service_name,
           target_pests: isRodent ? ["Rodents"] : [],
-          notes: `Sales draft synced from FieldRoutes ${c.service_name} appointment `
-               + `${c.appointment_id}${c.appointment_date ? ` on ${c.appointment_date}` : ""}.`,
+          notes: null,
           fieldroutes_customer_id: c.customer_id,
           fieldroutes_appointment_id: c.appointment_id,
         };

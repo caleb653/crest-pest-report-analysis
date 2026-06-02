@@ -229,8 +229,7 @@ serve(async (req) => {
       service_date: serviceDate,
       report_title: serviceName,
       target_pests: isRodent ? ["Rodents"] : [],
-      notes: `Sales draft synced from FieldRoutes ${serviceName} appointment ${appointmentId}`
-           + `${serviceDate ? ` on ${serviceDate}` : ""} (real-time webhook).`,
+      notes: null,
       fieldroutes_customer_id: customerId,
       fieldroutes_appointment_id: appointmentId,
     };
