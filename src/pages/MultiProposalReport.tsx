@@ -2996,7 +2996,7 @@ Crest Pest Control`;
                   <DropdownMenuItem onClick={() => exportToPDF("short")}>Normal PDF</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
                   {!!localStorage.getItem("admin_session") && (
-                    <DropdownMenuItem onClick={sendReportToFieldRoutes}>Send to FieldRoutes…</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => sendReportToFieldRoutes()}>Send to FieldRoutes…</DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
