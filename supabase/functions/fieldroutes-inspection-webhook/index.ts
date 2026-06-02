@@ -40,6 +40,16 @@ const INSPECTION_SERVICE_TYPES: Record<string, string> = {
   "227": "Rodent Inspection",
 };
 
+const TECHNICIANS = [
+  { name: "Darrell Tanner", license: "FR 62523", aliases: ["darrell", "tanner", "d tanner", "darrell t"] },
+  { name: "Jake Shubin", license: "FR 71068", aliases: ["jake", "shubin", "jake s", "jacob shubin"] },
+  { name: "Caleb Whalen", license: "FR 71183", aliases: ["caleb", "whalen", "caleb w"] },
+  { name: "Jackson Latham", license: "FR 68261", aliases: ["jackson", "latham", "jackson l", "jack latham"] },
+  { name: "Dylan Gallegos", license: "RA 71068", aliases: ["dylan", "gallegos", "dylan g"] },
+  { name: "Michael Muniz", license: "FR 54193", aliases: ["michael", "mike", "muniz", "munoz", "michael m", "mike muniz"] },
+  { name: "David Longoria", license: "FR 71710", aliases: ["david", "longoria", "david l"] },
+];
+
 // FieldRoutes substitutes {{placeholders}} into the body as raw text. If a field
 // is blank or the placeholder didn't resolve, we get "" or a literal "{{...}}".
 // Treat both as null so a missing value never lands in the report as "{{fname}}".
@@ -47,6 +57,71 @@ function clean(v: unknown): string | null {
   const s = String(v ?? "").trim();
   if (!s || (s.startsWith("{{") && s.endsWith("}}"))) return null;
   return s;
+}
+
+function normalizeName(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(fr|ra)\s*\d+\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function similarity(a: string, b: string): number {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prevDiagonal = previous[0];
+    previous[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const temp = previous[j];
+      previous[j] = Math.min(
+        previous[j] + 1,
+        previous[j - 1] + 1,
+        prevDiagonal + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      prevDiagonal = temp;
+    }
+  }
+  return 1 - previous[b.length] / Math.max(a.length, b.length);
+}
+
+function tokenScore(input: string, candidate: string): number {
+  const inputTokens = input.split(" ").filter(Boolean);
+  const candidateTokens = candidate.split(" ").filter(Boolean);
+  if (inputTokens.length === 0 || candidateTokens.length === 0) return 0;
+
+  let total = 0;
+  for (const token of inputTokens) {
+    let best = 0;
+    for (const candidateToken of candidateTokens) {
+      if (token === candidateToken) best = Math.max(best, 1);
+      else if (token.length === 1 && candidateToken.startsWith(token)) best = Math.max(best, 0.92);
+      else if (candidateToken.length === 1 && token.startsWith(candidateToken)) best = Math.max(best, 0.92);
+      else if ((token.length >= 3 || candidateToken.length >= 3) && (token.includes(candidateToken) || candidateToken.includes(token))) best = Math.max(best, 0.88);
+      else best = Math.max(best, similarity(token, candidateToken));
+    }
+    total += best;
+  }
+  return total / inputTokens.length;
+}
+
+function resolveTechnician(rawName: string | null): { name: string; license: string } | null {
+  if (!rawName) return null;
+  const normalized = normalizeName(rawName);
+  if (!normalized || normalized === "unassigned") return null;
+
+  let best: { name: string; license: string; score: number } | null = null;
+  for (const tech of TECHNICIANS) {
+    const variants = [tech.name, ...tech.aliases].map(normalizeName);
+    const score = Math.max(...variants.map((variant) => tokenScore(normalized, variant)));
+    if (!best || score > best.score) best = { name: tech.name, license: tech.license, score };
+  }
+
+  return best && best.score >= 0.78 ? { name: best.name, license: best.license } : null;
 }
 
 // Parse either JSON or url-encoded form bodies — we don't control the Content-Type
@@ -120,6 +195,7 @@ serve(async (req) => {
     const techName =
       clean(body.techName ?? body.tech_name ?? body.assignedTech ?? body.assignedTechName ?? body.employeeName ?? body.employee ?? body.tech) ??
       ([techFirst, techLast].filter(Boolean).join(" ") || null);
+    const matchedTech = resolveTechnician(techName);
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
     // Idempotency: bail early if this appointment already has a report.
@@ -133,7 +209,8 @@ serve(async (req) => {
 
     const row = {
       id: crypto.randomUUID(),
-      technician_name: techName || "Unassigned", // NOT NULL
+      technician_name: matchedTech?.name || techName || "Unassigned", // NOT NULL
+      license_number: matchedTech?.license ?? null,
       customer_name: customerName,
       customer_email: clean(body.email),
       customer_phone: clean(body.phone1 ?? body.phone),
