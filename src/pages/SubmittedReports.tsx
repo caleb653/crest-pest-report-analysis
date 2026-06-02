@@ -630,9 +630,19 @@ const SubmittedReports = () => {
               <CardTitle className="text-lg">
                 {visibleReports.length} Report{visibleReports.length !== 1 ? "s" : ""}
               </CardTitle>
-              <Button variant="ghost" size="sm" onClick={loadReports} disabled={loading}>
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => syncFieldRoutesInspections()}
+                  disabled={syncingInspections}
+                >
+                  {syncingInspections ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sync FieldRoutes"}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={loadReports} disabled={loading}>
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
