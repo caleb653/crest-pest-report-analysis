@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.send-service-completed]
 verify_jwt = false
+
+[functions.fieldroutes-inspection-webhook]
+verify_jwt = false

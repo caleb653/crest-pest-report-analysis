@@ -33,6 +33,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
 import CustomerPicker from "@/components/CustomerPicker";
+import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
@@ -885,6 +886,11 @@ const Report = () => {
         setIsSavingSignature(false);
       }
     }
+    // Signed = proposal accepted → queue its PDF to FieldRoutes. Auto mode is
+    // idempotent and silently no-ops without an admin session / linked customer.
+    if (signatureData) {
+      void sendReportToFieldRoutes({ auto: true });
+    }
   };
 
   const expandWithAI = async (
@@ -1431,6 +1437,27 @@ const Report = () => {
 
   const persistReport = async (reportData: Record<string, unknown>) => {
     const adminSessionToken = localStorage.getItem("admin_session");
+
+    // Auto-link to a FieldRoutes customer if not already linked, so the completed
+    // report's PDF can later upload back to the right customer. High-confidence
+    // only (unique exact email / address); the picker stays the manual override.
+    if (!reportData.fieldroutes_customer_id) {
+      try {
+        const match = await autoMatchCustomerId({
+          email: reportData.customer_email as string | null,
+          name: reportData.customer_name as string | null,
+          address: reportData.address as string | null,
+          staffName: currentStaff?.fullName,
+        });
+        if (match) {
+          reportData.fieldroutes_customer_id = match.customerId;
+          setFieldroutesCustomerId(match.customerId);
+        }
+      } catch (e) {
+        console.warn("FieldRoutes auto-match skipped", e);
+      }
+    }
+
     if (reportId) {
       let savedViaAdmin = false;
       if (adminSessionToken) {
@@ -1524,38 +1551,102 @@ const Report = () => {
     }
   };
 
-  const exportToPDF = async (mode: "short" | "full" = "short") => {
+  // Capture the on-screen report pages and build the PDF bytes (no download).
+  // Shared by the PDF download and the "Send to FieldRoutes" upload.
+  const capturePdfBytes = async (mode: "short" | "full" = "short"): Promise<Uint8Array> => {
+    await captureFreshRenderedMap();
+    setPdfExportMode(true);
     try {
-      toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
-      await captureFreshRenderedMap();
-      setPdfExportMode(true);
       // Wait for all rendered map images to appear in DOM
       await new Promise((r) => setTimeout(r, 600));
       const pageEls = Array.from(
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-      let pdfBytes: Uint8Array;
       if (mode === "full") {
-        pdfBytes = await buildMergedPDF({
+        return await buildMergedPDF({
           customerName: editableCustomer || "",
           technicianName: editableTech || "",
           address: editableAddress || extractedAddress || address || "",
           reportPages,
         });
-      } else {
-        pdfBytes = await buildSimplePDF({ reportPages });
       }
+      return await buildSimplePDF({ reportPages });
+    } finally {
       setPdfExportMode(false);
+    }
+  };
+
+  const exportToPDF = async (mode: "short" | "full" = "short") => {
+    try {
+      toast.info("Generating PDF...", { duration: 10000, id: "pdf-gen" });
+      const pdfBytes = await capturePdfBytes(mode);
       toast.dismiss("pdf-gen");
       const filename = `Crest_MultiProposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`;
       downloadPDF(pdfBytes, filename);
       toast.success("PDF downloaded!");
     } catch (e) {
       console.error("PDF export error:", e);
-      setPdfExportMode(false);
       toast.dismiss("pdf-gen");
       toast.error("PDF generation failed. Try again.");
+    }
+  };
+
+  // Queue this report's PDF to upload back onto the linked FieldRoutes customer.
+  // Goes through the approval queue (fieldroutes-document-submit) — it does NOT
+  // write to FieldRoutes directly. Admin-only; requires a linked customer.
+  // `auto` mode (fired on signature) stays quiet on the "nothing to do" cases
+  // and never double-queues (server-side dedup + this ref).
+  const frQueueAttemptedRef = useRef(false);
+  const sendReportToFieldRoutes = async (opts?: { auto?: boolean }) => {
+    const auto = opts?.auto === true;
+    const sessionToken = localStorage.getItem("admin_session");
+    // On a customer's device (remote signing) there's no admin session — we
+    // can't authenticate a write, so auto-mode silently skips.
+    if (!sessionToken) { if (!auto) toast.error("Admin session required to send to FieldRoutes."); return; }
+    if (!fieldroutesCustomerId) {
+      if (!auto) toast.error("Link a FieldRoutes customer first (the search box at the top).");
+      return;
+    }
+    if (auto) {
+      if (frQueueAttemptedRef.current) return;
+      frQueueAttemptedRef.current = true;
+    }
+    try {
+      if (!auto) toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      const pdfBytes = await capturePdfBytes("short");
+      // Uint8Array -> base64, chunked to avoid call-stack limits on big files.
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < pdfBytes.length; i += chunk) {
+        bin += String.fromCharCode(...pdfBytes.subarray(i, i + chunk));
+      }
+      const fileBase64 = btoa(bin);
+      const description = `${editableTitle || "Proposal"} — ${editableCustomer || "Customer"}`.slice(0, 120);
+      const { data, error } = await supabase.functions.invoke("fieldroutes-document-submit", {
+        body: {
+          sessionToken,
+          customerID: Number(fieldroutesCustomerId),
+          fileBase64,
+          filename: `Crest_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
+          description,
+          reportId: reportId ?? undefined,
+          showCustomer: false,
+        },
+      });
+      if (!auto) toast.dismiss("fr-doc");
+      if (error || !data?.ok) {
+        frQueueAttemptedRef.current = false; // allow a retry on a real failure
+        if (!auto) toast.error(`Could not queue: ${data?.error ?? error?.message ?? "unknown error"}`);
+        else console.warn("FieldRoutes auto-queue failed", data?.error ?? error?.message);
+        return;
+      }
+      if (data?.deduped) { if (!auto) toast.info("Already queued for FieldRoutes."); return; }
+      toast.success("Sales report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
+    } catch (e) {
+      console.error("send to FieldRoutes error:", e);
+      frQueueAttemptedRef.current = false;
+      if (!auto) { toast.dismiss("fr-doc"); toast.error("Failed to prepare/queue the PDF. Try again."); }
     }
   };
 
@@ -2904,6 +2995,9 @@ Crest Pest Control`;
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => exportToPDF("short")}>Normal PDF</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => exportToPDF("full")}>Full Proposal PDF</DropdownMenuItem>
+                  {!!localStorage.getItem("admin_session") && (
+                    <DropdownMenuItem onClick={sendReportToFieldRoutes}>Send to FieldRoutes…</DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button onClick={() => navigate("/")} variant="outline" size="sm">
