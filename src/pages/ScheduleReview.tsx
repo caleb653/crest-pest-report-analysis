@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck,
+  ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -90,6 +90,70 @@ function fmtMinutes(min: number): string {
   return h > 0 ? `${h}h${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
+// Heuristic: flag a route as having "long drives between stops" when the
+// average leg (total drive time divided by number of legs) is over this
+// threshold. We don't have per-leg distances on the client, so this is a
+// proxy — but a high average almost always means at least one painful
+// hop. Tuned for our market (OC/LA): ~22 min/leg is where techs start
+// complaining.
+const LONG_LEG_MIN_THRESHOLD = 22;
+
+type LongDrive = {
+  routeKey: string;     // `${date}|${route_id}`
+  techDayKey: string;   // `${date}|${tech_name}`
+  date: string;
+  tech_name: string;
+  stops: number;
+  total_drive_min: number;
+  avg_leg_min: number;
+};
+
+function computeLongDrives(result: ReviewResult): LongDrive[] {
+  const out: LongDrive[] = [];
+  for (const r of result.routes) {
+    const key = `${r.date}|${r.route_id}`;
+    const snap = result.snapshot[key];
+    if (!snap || r.stop_count < 2) continue;
+    const legs = Math.max(1, r.stop_count - 1);
+    const avg = snap.total_drive_min / legs;
+    if (avg >= LONG_LEG_MIN_THRESHOLD) {
+      out.push({
+        routeKey: key,
+        techDayKey: `${r.date}|${r.tech_name}`,
+        date: r.date,
+        tech_name: r.tech_name,
+        stops: r.stop_count,
+        total_drive_min: snap.total_drive_min,
+        avg_leg_min: avg,
+      });
+    }
+  }
+  // worst first
+  return out.sort((a, b) => b.avg_leg_min - a.avg_leg_min);
+}
+
+function suggestionForLongDrive(
+  ld: LongDrive,
+  orderByKey: Map<string, RouteOrder>,
+  crossSourceByKey: Map<string, CrossDayMove[]>,
+): string {
+  const order = orderByKey.get(ld.routeKey);
+  const outMoves = crossSourceByKey.get(ld.techDayKey) ?? [];
+  const bestMove = [...outMoves].sort((a, b) => b.improvement_mi - a.improvement_mi)[0];
+
+  if (bestMove && (!order || bestMove.improvement_mi >= 5)) {
+    return `Move ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech} — saves ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
+  }
+  if (order && order.savings_sec >= 5 * 60) {
+    const top = order.moves?.[0];
+    return `Reorder this route — saves ${fmtMinutes(order.savings_sec / 60)} of drive${top ? ` (e.g. move ${top.customer} from #${top.from_position} → #${top.to_position})` : ""}.`;
+  }
+  if (bestMove) {
+    return `Consider moving ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech}.`;
+  }
+  return `No easy fix in this window — check if any stop can be rescheduled or paired with a nearby visit on another day.`;
+}
+
 function keyToRouteRef(result: ReviewResult, key: string) {
   const [d, ridStr] = key.split("|");
   const rid = parseInt(ridStr, 10);
@@ -144,6 +208,7 @@ const ScheduleReview = () => {
   const crossDayMoves = result?.cross_day_moves ?? [];
   const snapshotEntries = result ? Object.entries(result.snapshot) : [];
   const totalStops = snapshotEntries.reduce((acc, [, s]) => acc + s.stops, 0);
+  const longDrives = result ? computeLongDrives(result) : [];
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -222,10 +287,10 @@ const ScheduleReview = () => {
               />
               <StatCard
                 label="Risks + moves"
-                value={missWindowList.length + crossDayMoves.length + orderEntries.length}
+              value={missWindowList.length + crossDayMoves.length + orderEntries.length + longDrives.length}
                 tone={
                   missWindowList.length > 0 ? "warn"
-                  : (crossDayMoves.length + orderEntries.length) > 0 ? "info"
+                : (crossDayMoves.length + orderEntries.length + longDrives.length) > 0 ? "info"
                   : "ok"
                 }
               />
@@ -237,6 +302,18 @@ const ScheduleReview = () => {
               missWindow={missWindowList}
               crossDayMoves={crossDayMoves}
               routeOrder={orderEntries}
+            longDrives={longDrives}
+            routeOrderMap={new Map(orderEntries)}
+            crossSourceByKey={(() => {
+              const m = new Map<string, CrossDayMove[]>();
+              crossDayMoves.forEach((mv) => {
+                const k = `${mv.current_date}|${mv.current_tech}`;
+                const list = m.get(k) ?? [];
+                list.push(mv);
+                m.set(k, list);
+              });
+              return m;
+            })()}
             />
 
             {/* ── Per-tech-day breakdown ──────────────────────────────── */}
@@ -245,6 +322,7 @@ const ScheduleReview = () => {
               orderEntries={orderEntries}
               missWindowList={missWindowList}
               crossDayMoves={crossDayMoves}
+            longDrives={longDrives}
             />
           </>
         )}
