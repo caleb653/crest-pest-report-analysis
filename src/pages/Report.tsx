@@ -871,6 +871,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         setCustomerSignature(row.customer_signature);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
       }
+      if (row.fieldroutes_customer_id) {
+        setFieldroutesCustomerId(String(row.fieldroutes_customer_id));
+      }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
         const normalizedServices = normalizeServices(row.services);
         setServices(normalizedServices);
