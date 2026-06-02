@@ -1918,7 +1918,37 @@ Crest Pest Control
               )}
             </Card>
 
+            {/* For rodent-exclusion variant, collapse all the structured
+                sections (Key Areas, Preferences, Services Completed,
+                Today's Findings, Recommendations, What to Expect) into a
+                single big "Service Summary / Findings" card. */}
+            {isRodentExclusion && (
+              <Card className="print-section p-3 md:p-4">
+                <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">
+                  Service Summary / Findings
+                </h2>
+                <div className="p-2 no-print">
+                  <Textarea
+                    value={editableFindings[0] || ""}
+                    onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}
+                    placeholder="Describe the rodent exclusion / attic work completed, findings, entry points sealed, and anything the customer should know..."
+                    className="text-sm resize-y min-h-[260px] leading-relaxed"
+                    rows={12}
+                  />
+                </div>
+                <div
+                  className="hidden print-content-formatted p-2"
+                  dangerouslySetInnerHTML={{
+                    __html: (editableFindings[0] || "")
+                      .replace(/^(.*?:)/gm, "<strong>$1</strong>")
+                      .replace(/\n/g, "<br/>"),
+                  }}
+                />
+              </Card>
+            )}
+
             {/* Customer Key Areas */}
+            {!isRodentExclusion && (
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Key Areas</h2>
               <div className="flex flex-wrap gap-2 p-2">
