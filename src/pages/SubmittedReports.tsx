@@ -112,11 +112,11 @@ const SubmittedReports = () => {
 
   const [techFilter, setTechFilter] = useState(defaultTech);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
 
   const locationFilter = (location.state as any)?.filter;
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
-    locationFilter === "initial" ? "initial" : locationFilter === "sales" ? "sales-all" : "all"
+    locationFilter === "sales" ? "sales-all" : locationFilter === "all" ? "all" : "initial"
   );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
