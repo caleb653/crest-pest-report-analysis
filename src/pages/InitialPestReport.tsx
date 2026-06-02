@@ -2034,21 +2034,6 @@ Crest Pest Control
                           .replace(/\n/g, "<br/>"),
                       }}
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                      disabled={isExpandingFindings}
-                      className="no-print"
-                    >
-                      {isExpandingFindings ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4 mr-2" />
-                      )}
-                      Expand with AI
-                    </Button>
                   </>
                 )}
               </div>
@@ -2115,21 +2100,6 @@ Crest Pest Control
                       .replace(/\n/g, "<br/>"),
                   }}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => expandWithAI(editableExpectations[0] || "", "expect", setEditableExpectations)}
-                  disabled={isExpandingExpect}
-                  className="no-print"
-                >
-                  {isExpandingExpect ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Expand with AI
-                </Button>
               </div>
             </Card>
           </div>
