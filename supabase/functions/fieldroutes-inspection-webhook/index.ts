@@ -109,7 +109,14 @@ serve(async (req) => {
     ].filter(Boolean).join(", ") || null;
 
     const serviceDate = clean(body.serviceDate ?? body.service_date);
-    const techName = clean(body.techName ?? body.tech_name);
+    // Tech assigned to the appointment in FieldRoutes. Different trigger templates
+    // expose this under different placeholder names — accept all common variants,
+    // and fall back to building "first last" from employee name fields.
+    const techFirst = clean(body.techFname ?? body.tech_fname ?? body.employeeFname ?? body.assignedTechFname);
+    const techLast = clean(body.techLname ?? body.tech_lname ?? body.employeeLname ?? body.assignedTechLname);
+    const techName =
+      clean(body.techName ?? body.tech_name ?? body.assignedTech ?? body.assignedTechName ?? body.employeeName ?? body.employee ?? body.tech) ??
+      ([techFirst, techLast].filter(Boolean).join(" ") || null);
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
     // Idempotency: bail early if this appointment already has a report.
