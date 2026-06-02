@@ -152,7 +152,6 @@ const SubmittedReports = () => {
       if (error) throw error;
 
       const mapped: ReportListItem[] = (data ?? []).map((r: any) => {
-        const isInitial = Array.isArray(r.next_steps) && r.next_steps.length > 0;
         let isMultiProposal = false;
         let isPreProposal = false;
         let dealStatus: "won" | "lost" | null = null;
@@ -160,6 +159,8 @@ const SubmittedReports = () => {
         // the notes blob — markers live near the top of the JSON. A cheap
         // substring match avoids parsing megabytes of text.
         const head = typeof r.notes_head === "string" ? r.notes_head : "";
+        const isFieldRoutesInspection = head.includes("Auto-created from FieldRoutes");
+        const isInitial = isFieldRoutesInspection || (Array.isArray(r.next_steps) && r.next_steps.length > 0);
         if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
         if (head.includes('"_isPreProposal":true')) isPreProposal = true;
         if (head.includes('"_dealStatus":"won"')) dealStatus = "won";
