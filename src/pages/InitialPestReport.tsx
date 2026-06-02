@@ -1245,6 +1245,71 @@ Crest Pest Control
     });
   };
 
+  // Append-style uploader used by the Rodent Exclusion / Attic grouped photo
+  // capture panel. Each group passes its own caption prefix so the captured
+  // photos already carry a category label when they land in propertyImages.
+  const handleRodentGroupUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    captionPrefix: string,
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).slice(0, 12 - propertyImages.length);
+    if (fileArray.length === 0) {
+      toast.error("Maximum 12 images allowed");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (fileArray.some((file) => file.size === 0)) {
+      toast.error("One of the selected photos isn't downloaded yet (iCloud). Download it in Photos and try again.");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (fileArray.some((file) => file.type && !file.type.startsWith("image/"))) {
+      toast.error("Please upload only image files");
+      e.currentTarget.value = "";
+      return;
+    }
+    try {
+      const existingForGroup = propertyImages.filter((p) =>
+        (p.caption || "").startsWith(captionPrefix),
+      ).length;
+      const uploadPromises = fileArray.map(async (file, idx) => {
+        const { ext, contentType } = inferImageUploadMeta(file);
+        let uploadBlob: Blob = file;
+        try {
+          const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+          uploadBlob = compressed.blob;
+          URL.revokeObjectURL(compressed.localUrl);
+        } catch (compressErr) {
+          console.warn("Image compression failed, uploading original:", compressErr);
+        }
+        const fileName = `${Math.random()}.${ext}`;
+        const filePath = `${reportId || "temp"}/property/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("report-images")
+          .upload(filePath, uploadBlob, { upsert: true, contentType });
+        if (uploadError) throw uploadError;
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("report-images").getPublicUrl(filePath);
+        return {
+          image: publicUrl,
+          caption: `${captionPrefix} #${existingForGroup + idx + 1}`,
+        };
+      });
+      const uploadedImages = await Promise.all(uploadPromises);
+      setPropertyImages((prev) => [...prev, ...uploadedImages]);
+      pendingAutoSaveRef.current = true;
+      toast.success(`${uploadedImages.length} photo(s) added to ${captionPrefix}`);
+    } catch (error) {
+      console.error("Error uploading rodent group images:", error);
+      toast.error("Failed to upload images");
+    } finally {
+      e.currentTarget.value = "";
+    }
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
