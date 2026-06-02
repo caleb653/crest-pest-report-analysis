@@ -2306,6 +2306,7 @@ Crest Pest Control
           )}
         </div>
       </div>
+      )}
 
       {/* Crest Guarantee */}
       <div className="bg-background">
