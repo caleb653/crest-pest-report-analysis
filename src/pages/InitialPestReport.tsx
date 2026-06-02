@@ -148,7 +148,13 @@ const Report = () => {
     licenseNumber,
     targetPests,
     productsUsed,
+    variant,
   } = location.state || {};
+
+  // "rodent-exclusion" variant tweaks the initial report for rodent
+  // exclusion / attic jobs: defaults Target Pest to Rodents and shows a
+  // mobile-friendly grouped photo capture panel at the top of the body.
+  const isRodentExclusion = variant === "rodent-exclusion";
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [editableAddress, setEditableAddress] = useState<string>(address || "");
@@ -173,7 +179,10 @@ const Report = () => {
     }
     setTechDropdownOpen(false);
   };
-  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(targetPests?.filter((p: string) => p) || [GENERAL_PESTS_OPTION]);
+  const [editableTargetPests, setEditableTargetPests] = useState<string[]>(
+    targetPests?.filter((p: string) => p) ||
+      (isRodentExclusion ? ["Rodents"] : [GENERAL_PESTS_OPTION]),
+  );
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
   );
