@@ -32,6 +32,8 @@ import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
+import CustomerPicker from "@/components/CustomerPicker";
+import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
 import crestLogoVideo from "@/assets/crest-logo-video.png";
@@ -364,6 +366,11 @@ const Report = () => {
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [editableAddress, setEditableAddress] = useState(address || "");
+
+  // FieldRoutes customer link (chosen via the picker) + autofilled phone.
+  const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  const [customerPhone, setCustomerPhone] = useState("");
+  const currentStaff = useCurrentStaff();
 
   const [editableTitle, setEditableTitle] = useState("Proposal");
 
@@ -982,6 +989,8 @@ const Report = () => {
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
+      setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
+      setCustomerPhone(row.customer_phone || "");
       setEditableFindings((row.findings as string[]) || []);
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
         findingsEditedRef.current = true;
@@ -1416,6 +1425,8 @@ const Report = () => {
     equipment: editableEquipment,
     report_title: editableTitle,
     customer_email: customerEmail || null,
+    customer_phone: customerPhone || null,
+    fieldroutes_customer_id: fieldroutesCustomerId,
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
@@ -2900,6 +2911,28 @@ Crest Pest Control`;
               </Button>
             </div>
           </div>
+
+          {/* FieldRoutes customer link — search & select to autofill + link */}
+          {!isReadOnly && (
+            <div className="mb-4 no-print">
+              <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
+              <CustomerPicker
+                staffName={currentStaff?.fullName}
+                linkedId={fieldroutesCustomerId}
+                linkedLabel={editableCustomer || null}
+                onSelect={(c) => {
+                  setFieldroutesCustomerId(c.customer_id);
+                  if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
+                  if (c.email) setCustomerEmail(c.email);
+                  if (c.phone) setCustomerPhone(c.phone);
+                  const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
+                    .filter(Boolean).join(", ");
+                  if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
+                }}
+                onClear={() => setFieldroutesCustomerId(null)}
+              />
+            </div>
+          )}
 
           {/* Info grid */}
           <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">

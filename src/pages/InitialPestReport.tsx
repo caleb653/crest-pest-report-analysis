@@ -37,6 +37,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import RichTextEditor from "@/components/RichTextEditor";
+import CustomerPicker from "@/components/CustomerPicker";
+import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
@@ -166,6 +168,10 @@ const Report = () => {
 
   const [editableTech, setEditableTech] = useState(technicianName || "");
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
+  // FieldRoutes customer link (chosen via the picker) + autofilled phone.
+  const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  const [customerPhone, setCustomerPhone] = useState("");
+  const currentStaff = useCurrentStaff();
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
   const [editableLicenseNumber, setEditableLicenseNumber] = useState(licenseNumber || "");
   const [techDropdownOpen, setTechDropdownOpen] = useState(false);
@@ -508,6 +514,8 @@ const Report = () => {
 
       setEditableTech(row.technician_name);
       setEditableCustomer(row.customer_name || "");
+      setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
+      setCustomerPhone(row.customer_phone || "");
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
       setEditableFindings((row.findings as string[]) || []);
@@ -793,6 +801,8 @@ const Report = () => {
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
+        customer_phone: customerPhone || null,
+        fieldroutes_customer_id: fieldroutesCustomerId,
       };
 
       if (reportId) {
@@ -853,6 +863,8 @@ const Report = () => {
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail || null,
+        customer_phone: customerPhone || null,
+        fieldroutes_customer_id: fieldroutesCustomerId,
       };
       const { error } = await supabase.from("reports").update(reportData).eq("id", reportId);
       if (error) throw error;
@@ -1018,6 +1030,8 @@ Crest Pest Control
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
         customer_email: customerEmail,
+        customer_phone: customerPhone || null,
+        fieldroutes_customer_id: fieldroutesCustomerId,
         sent_to_customer_at: new Date().toISOString(),
       };
 
@@ -1444,6 +1458,26 @@ Crest Pest Control
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-1">
                     <h1 className="text-2xl font-bold text-foreground whitespace-nowrap">Initial Pest Report</h1>
+                  </div>
+
+                  {/* FieldRoutes customer link — search & select to autofill + link */}
+                  <div className="mb-3 no-print">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
+                    <CustomerPicker
+                      staffName={currentStaff?.fullName}
+                      linkedId={fieldroutesCustomerId}
+                      linkedLabel={editableCustomer || null}
+                      onSelect={(c) => {
+                        setFieldroutesCustomerId(c.customer_id);
+                        if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
+                        if (c.email) setCustomerEmail(c.email);
+                        if (c.phone) setCustomerPhone(c.phone);
+                        const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
+                          .filter(Boolean).join(", ");
+                        if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
+                      }}
+                      onClear={() => setFieldroutesCustomerId(null)}
+                    />
                   </div>
 
                   <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 text-xs">
