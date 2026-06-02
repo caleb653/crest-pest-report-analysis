@@ -2489,21 +2489,6 @@ Crest Pest Control`;
                         onFontSizeChange={setProposedServicesFontSize}
                         className="flex-1"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => expandWithAI(editableFindings[0] || "", "findings", setEditableFindings)}
-                        disabled={isExpandingFindings}
-                        className="no-print h-6 text-xs"
-                      >
-                        {isExpandingFindings ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3 h-3 mr-1" />
-                        )}
-                        Expand with AI
-                      </Button>
                     </div>
                     <div
                       data-pdf-content="proposed-services"
