@@ -1947,6 +1947,61 @@ Crest Pest Control
               </Card>
             )}
 
+            {/* Materials Used — rodent-exclusion only. Multi-select chips
+                stored in editableEquipment so they persist via the existing
+                equipment column without schema changes. */}
+            {isRodentExclusion && (
+              <Card className="print-section p-3 md:p-4">
+                <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">
+                  Materials Used
+                </h2>
+                <div className="flex flex-wrap gap-2 p-2">
+                  {[
+                    "Steel Wool",
+                    "Chicken Wire",
+                    "Hardware Cloth",
+                    "Expanding Foam",
+                    "Sealant / Caulk",
+                    "Grates / Vent Covers",
+                    "Mesh Screen",
+                    "Snap Traps",
+                    "Glue Boards",
+                    "Bait Boxes",
+                    "TAP Insulation",
+                    "Door Sweeps",
+                  ].map((mat) => {
+                    const selected = editableEquipment.includes(mat);
+                    return (
+                      <button
+                        key={mat}
+                        type="button"
+                        onClick={() => {
+                          setEditableEquipment((prev) =>
+                            prev.includes(mat)
+                              ? prev.filter((m) => m !== mat)
+                              : [...prev, mat],
+                          );
+                        }}
+                        className={cn(
+                          "print-tag inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-colors",
+                          selected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground border-border hover:border-dark-sage",
+                        )}
+                      >
+                        {mat}
+                      </button>
+                    );
+                  })}
+                </div>
+                {editableEquipment.length === 0 && (
+                  <p className="text-xs text-muted-foreground p-2 no-print">
+                    Tap to select materials used during the exclusion.
+                  </p>
+                )}
+              </Card>
+            )}
+
             {/* Customer Key Areas */}
             {!isRodentExclusion && (
             <>
@@ -2140,6 +2195,7 @@ Crest Pest Control
       </div>
 
       {/* Second Page - Property Images */}
+      {!isRodentExclusion && (
       <div 
         data-pdf-page="2"
         data-pdf-capture="2"
@@ -2250,6 +2306,7 @@ Crest Pest Control
           )}
         </div>
       </div>
+      )}
 
       {/* Crest Guarantee */}
       <div className="bg-background">
