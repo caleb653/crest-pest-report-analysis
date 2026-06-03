@@ -3,7 +3,7 @@
 // the most actionable items in a big "Key Highlights" panel up top, then a
 // per-tech-day grid below with inline indicators.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -164,6 +164,10 @@ function keyToRouteRef(result: ReviewResult, key: string) {
 const ScheduleReview = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
+  useEffect(() => {
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham"]);
+    if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
+  }, [staff, navigate]);
 
   const [days, setDays] = useState<number>(3);
   const [start, setStart] = useState<string>("");
