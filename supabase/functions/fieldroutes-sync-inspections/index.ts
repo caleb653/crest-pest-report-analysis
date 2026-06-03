@@ -211,6 +211,9 @@ serve(async (req) => {
     // 3) Build draft rows for the new ones.
     const rows = candidates
       .filter((c) => !seen.has(c.appointment_id))
+      // Guard: only inspection appointments create reports. Subscription setups
+      // (Monthly/Bi-Monthly/Quarterly/Commercial/etc) must never auto-spawn reports.
+      .filter((c) => /inspection/i.test(c.service_name))
       .map((c) => {
         const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
           .filter(Boolean).join(", ");
