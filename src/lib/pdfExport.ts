@@ -814,7 +814,6 @@ async function captureElement(el: HTMLElement): Promise<string> {
     });
 
     return canvas.toDataURL("image/jpeg", 0.95);
-    // (quality is overridden below if __captureQualityOverride is set)
   } finally {
     marked.forEach(([elem, attr]) => elem.removeAttribute(attr));
   }
