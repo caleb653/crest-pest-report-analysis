@@ -193,7 +193,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
 
   try {
     const canvas = await html2canvas(el, {
-      scale: 2,
+      scale: __captureScaleOverride ?? 2,
       useCORS: true,
       allowTaint: false,
       backgroundColor: "#ffffff",
@@ -813,7 +813,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
       },
     });
 
-    return canvas.toDataURL("image/jpeg", 0.95);
+    return canvas.toDataURL("image/jpeg", __captureQualityOverride ?? 0.95);
   } finally {
     marked.forEach(([elem, attr]) => elem.removeAttribute(attr));
   }
@@ -898,8 +898,13 @@ export async function buildMergedPDF(options: {
 }
 
 // ─── buildSimplePDF ───────────────────────────────────────────────────────────
-export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): Promise<Uint8Array> {
-  const { reportPages } = options;
+export async function buildSimplePDF(options: { reportPages: HTMLElement[]; compact?: boolean }): Promise<Uint8Array> {
+  const { reportPages, compact } = options;
+  if (compact) {
+    __captureScaleOverride = 1.25;
+    __captureQualityOverride = 0.6;
+  }
+  try {
   const outDoc = await PDFDocument.create();
   const pageW = 842;
   const pageH = 595;
@@ -951,6 +956,12 @@ export async function buildSimplePDF(options: { reportPages: HTMLElement[] }): P
   }
 
   return outDoc.save();
+  } finally {
+    if (compact) {
+      __captureScaleOverride = null;
+      __captureQualityOverride = null;
+    }
+  }
 }
 
 // ─── downloadPDF ─────────────────────────────────────────────────────────────
