@@ -55,7 +55,10 @@ serve(async (req) => {
     const id = String(body?.id ?? "").trim();
     const action = String(body?.action ?? "").trim();
 
-    if (!sessionToken) return json({ ok: false, error: "missing_session" }, 401);
+    // Expired local admin sessions are expected in the browser. Return a normal
+    // JSON verdict so the UI can clear local storage without surfacing a hard
+    // Edge Function runtime error.
+    if (!sessionToken) return json({ ok: false, error: "missing_session" });
     const { data: session } = await supabase
       .from("admin_sessions")
       .select("id")
@@ -63,7 +66,7 @@ serve(async (req) => {
       .eq("is_valid", true)
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
-    if (!session) return json({ ok: false, error: "invalid_session" }, 401);
+    if (!session) return json({ ok: false, error: "invalid_session" });
     const decidedBy = "admin_session";
 
     if (!id) return json({ ok: false, error: "missing_id" }, 400);

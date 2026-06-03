@@ -73,6 +73,12 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  const clearExpiredSession = useCallback(() => {
+    localStorage.removeItem("admin_session");
+    setToken(null);
+    setRows([]);
+  }, []);
+
   useEffect(() => { setToken(localStorage.getItem("admin_session")); }, []);
 
   const wanted = entityFilter == null ? null
@@ -86,11 +92,13 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
       const { data, error } = await supabase.functions.invoke("fieldroutes-queue-list", {
         body: { sessionToken: token },
       });
+      const errorMessage = data?.error ?? error?.message ?? "load_failed";
       if (error || !data?.ok) {
-        if (data?.error === "invalid_session") {
-          localStorage.removeItem("admin_session"); setToken(null);
+        if (errorMessage === "invalid_session" || errorMessage === "missing_session") {
+          clearExpiredSession();
+          return;
         }
-        throw new Error(data?.error ?? error?.message ?? "load_failed");
+        throw new Error(errorMessage);
       }
       const pending = (data.pending ?? []) as QueueRow[];
       setRows(wanted ? pending.filter((r) => wanted.includes(r.entity)) : pending);
@@ -100,7 +108,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
     } finally {
       setLoading(false);
     }
-  }, [token, wanted?.join("|")]);
+  }, [token, wanted?.join("|"), clearExpiredSession]);
 
   useEffect(() => { if (token) load(); }, [token, load]);
 
@@ -112,7 +120,16 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
       const { data, error } = await supabase.functions.invoke("fieldroutes-queue-decide", {
         body: { sessionToken: token, id: row.id, action },
       });
-      if (error) throw new Error(error.message);
+      const errorMessage = data?.error ?? error?.message ?? "unknown";
+      if (errorMessage === "invalid_session" || errorMessage === "missing_session") {
+        clearExpiredSession();
+        toast.info("Admin session expired — please sign in again.");
+        return;
+      }
+      if (error) {
+        toast.error(`Action failed: ${errorMessage}`);
+        return;
+      }
       if (action === "reject") toast.success(data?.ok ? "Rejected" : `Reject: ${data?.error ?? "failed"}`);
       else if (data?.status === "committed") toast.success("Written to FieldRoutes ✓");
       else if (data?.error === "not_pending") toast.info("Already decided — refreshing");
