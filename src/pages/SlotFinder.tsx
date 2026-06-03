@@ -9,7 +9,7 @@
 //   Mode B "Check a day & window":  enter a date + time window and find out how
 //      out-of-the-way that slot is and whether it's feasible.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -229,6 +229,10 @@ function upcomingBusinessDays(count: number): { iso: string; label: string }[] {
 const SlotFinder = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
+  useEffect(() => {
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham"]);
+    if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
+  }, [staff, navigate]);
   const days = useMemo(() => upcomingBusinessDays(21), []);
 
   return (
