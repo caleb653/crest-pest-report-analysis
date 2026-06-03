@@ -115,6 +115,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
       if (error) throw new Error(error.message);
       if (action === "reject") toast.success(data?.ok ? "Rejected" : `Reject: ${data?.error ?? "failed"}`);
       else if (data?.status === "committed") toast.success("Written to FieldRoutes ✓");
+      else if (data?.error === "not_pending") toast.info("Already decided — refreshing");
       else if (data?.error === "server_write_disabled") toast.error("Writes disabled on server (FR_WRITE_ENABLED).");
       else toast.error(`Write failed: ${data?.error ?? "unknown"}`);
       await load();
