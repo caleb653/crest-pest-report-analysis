@@ -183,11 +183,17 @@ const ScheduleReview = () => {
         </div>
 
         <Tabs defaultValue="review">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
-            <TabsTrigger value="review" className="gap-2">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
+            <TabsTrigger
+              value="review"
+              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
               <ClipboardList className="w-4 h-4" /> Review
             </TabsTrigger>
-            <TabsTrigger value="fill" className="gap-2">
+            <TabsTrigger
+              value="fill"
+              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
               <Wand2 className="w-4 h-4" /> Fill
             </TabsTrigger>
           </TabsList>
