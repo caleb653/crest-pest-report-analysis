@@ -4,6 +4,12 @@ import html2canvas from "html2canvas";
 const TEMPLATE_PDF_URL = "/proposal-template.pdf";
 const A4_LANDSCAPE_WIDTH_PX = 1800;
 
+// Optional capture overrides used by buildSimplePDF({ compact: true }) to
+// produce a smaller PDF (used for the FieldRoutes auto-upload, where the
+// middleware sometimes 502s on multi-MB files).
+let __captureScaleOverride: number | null = null;
+let __captureQualityOverride: number | null = null;
+
 const BRAND = {
   black: "#2A2A2A",
   offWhite: "#F2F2F2",
@@ -808,6 +814,7 @@ async function captureElement(el: HTMLElement): Promise<string> {
     });
 
     return canvas.toDataURL("image/jpeg", 0.95);
+    // (quality is overridden below if __captureQualityOverride is set)
   } finally {
     marked.forEach(([elem, attr]) => elem.removeAttribute(attr));
   }
