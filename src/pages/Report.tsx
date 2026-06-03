@@ -2004,6 +2004,27 @@ Crest Pest Control`;
               </div>
             </div>
 
+            {/* FieldRoutes customer link — search & select to autofill + link */}
+            {!isReadOnly && (
+              <div className="mb-3 no-print">
+                <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
+                <CustomerPicker
+                  staffName={currentStaff?.fullName}
+                  linkedId={fieldroutesCustomerId}
+                  linkedLabel={editableCustomer || null}
+                  onSelect={(c) => {
+                    setFieldroutesCustomerId(c.customer_id);
+                    if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
+                    if (c.email) setCustomerEmail(c.email);
+                    const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
+                      .filter(Boolean).join(", ");
+                    if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
+                  }}
+                  onClear={() => setFieldroutesCustomerId(null)}
+                />
+              </div>
+            )}
+
             {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
             <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
               {/* Column 1: Customer Details */}
