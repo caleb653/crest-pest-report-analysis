@@ -25,6 +25,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -219,6 +220,8 @@ const ScheduleReview = () => {
             Back to home
           </Button>
         </div>
+
+        <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
 
         {/* ── Controls ───────────────────────────────────────────────── */}
         <Card>

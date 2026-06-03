@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, MapPin, MessageSquare, Bug, Home as HomeIcon, PenSquare } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, MessageSquare, Bug, Home as HomeIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
+import { supabase } from "@/integrations/supabase/client";
 const reportTypes = [
   {
     id: "initial-pest",
@@ -119,24 +120,12 @@ const reportTypes = [
     hoverBg: "hover:bg-sky-100",
     border: "hover:border-sky-300",
   },
-  {
-    id: "fieldroutes-writes",
-    title: "FieldRoutes Writes",
-    description: "Approve notes & changes before they hit FieldRoutes",
-    icon: PenSquare,
-    path: "/admin/fieldroutes-writes",
-    color: "text-teal-600",
-    bg: "bg-teal-50",
-    hoverBg: "hover:bg-teal-100",
-    border: "hover:border-teal-300",
-  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
 //         row3 = slot-finder, schedule-review, ask-me-anything
-//         row4 = fieldroutes-writes
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9, 10];
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -175,11 +164,19 @@ const Index = () => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => navigate(isAdmin ? "/admin-dashboard" : "/admin-login")}
+        onClick={async () => {
+          if (!isAdmin) { navigate("/admin-login"); return; }
+          const t = localStorage.getItem("admin_session");
+          if (t) {
+            try { await supabase.functions.invoke("invalidate-admin-session", { body: { sessionToken: t } }); } catch {}
+          }
+          localStorage.removeItem("admin_session");
+          setIsAdmin(false);
+        }}
         className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
       >
-        <Lock className="w-4 h-4 mr-2" />
-        {isAdmin ? "Admin Dashboard" : "Admin"}
+        {isAdmin ? <LogOut className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+        {isAdmin ? "Sign out (admin)" : "Admin"}
       </Button>
       <div className="text-center mb-10">
         <img 

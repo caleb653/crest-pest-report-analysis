@@ -1,0 +1,123 @@
+// supabase/functions/fieldroutes-appointment-submit
+// QUEUE a FieldRoutes appointment-book write for manual admin approval.
+//
+// Caleb's rule: slot-finder / schedule-review writes are NEVER auto-approved.
+// We only enqueue here; fieldroutes-queue-decide commits to Cloud Run on
+// approve (adds dry_run:false there). Endpoint is /api/fr/appointment.
+//
+// subscription_id rule lives in the client: inspection types → -1 (standalone);
+// subscription types → the customer's real subscription id (never -1). We just
+// accept whatever the caller sends and pass it through.
+//
+// Auth: a PinGate staff name OR a valid admin session (mirrors find-slot,
+// since techs/dispatch initiate the request; office approves later).
+//
+// Request body:
+//   { staffName?, sessionToken?, customer_id, service_type_id, service_type_label,
+//     date, start, end, duration, subscription_id, employee_id?, customer_label? }
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const KNOWN_STAFF = new Set([
+  "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
+  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria",
+]);
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  try {
+    const body = await req.json().catch(() => ({}));
+    const staffName = String(body?.staffName ?? "").trim();
+    const sessionToken = String(body?.sessionToken ?? "").trim();
+
+    let requestedBy: string | null = null;
+    if (sessionToken) {
+      const { data: session } = await supabase
+        .from("admin_sessions").select("id")
+        .eq("session_token", sessionToken).eq("is_valid", true)
+        .gt("expires_at", new Date().toISOString()).maybeSingle();
+      if (!session) return json({ ok: false, error: "invalid_session" }, 401);
+      requestedBy = "admin_session";
+    } else if (staffName) {
+      if (!KNOWN_STAFF.has(staffName)) return json({ ok: false, error: "unknown_staff" }, 401);
+      requestedBy = staffName;
+    } else {
+      return json({ ok: false, error: "missing_auth" }, 401);
+    }
+
+    const customer_id = Number(body?.customer_id ?? 0);
+    const service_type_id = Number(body?.service_type_id ?? 0);
+    const service_type_label = String(body?.service_type_label ?? "").trim();
+    const date = String(body?.date ?? "").trim();
+    const start = String(body?.start ?? "").trim();
+    const end = String(body?.end ?? "").trim();
+    const duration = Number(body?.duration ?? 30);
+    const subscription_id = body?.subscription_id == null ? -1 : Number(body.subscription_id);
+    const employee_id = body?.employee_id == null ? null : Number(body.employee_id);
+    const customer_label = String(body?.customer_label ?? "").trim();
+
+    if (!customer_id || customer_id <= 0) return json({ ok: false, error: "missing_customer_id" }, 400);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ ok: false, error: "bad_date" }, 400);
+    if (!/^\d{2}:\d{2}(:\d{2})?$/.test(start) || !/^\d{2}:\d{2}(:\d{2})?$/.test(end)) {
+      return json({ ok: false, error: "bad_time" }, 400);
+    }
+
+    const payload = {
+      customer_id,
+      service_type_id,
+      date,
+      start: start.length === 5 ? `${start}:00` : start,
+      end: end.length === 5 ? `${end}:00` : end,
+      duration,
+      subscription_id,
+      employee_id,
+      // Display-only context for the approval UI (not sent to Cloud Run):
+      _label: {
+        service_type: service_type_label,
+        customer: customer_label,
+        requested_by: requestedBy,
+      },
+    };
+
+    const summary = `Book ${service_type_label || "appointment"} for ${customer_label || `customer ${customer_id}`} on ${date} ${start}–${end}`;
+
+    const { data: row, error } = await supabase
+      .from("fieldroutes_write_queue")
+      .insert({
+        entity: "appointment",
+        action: "create",
+        endpoint: "/api/fr/appointment",
+        payload,
+        summary,
+        status: "pending",
+        requested_by: requestedBy,
+      })
+      .select("id, status, summary, requested_at")
+      .single();
+
+    if (error) return json({ ok: false, error: "enqueue_failed", detail: error.message }, 500);
+    return json({ ok: true, queued: row });
+  } catch (e) {
+    console.error("fieldroutes-appointment-submit exception", e);
+    return json({ ok: false, error: "exception", detail: String(e) });
+  }
+});

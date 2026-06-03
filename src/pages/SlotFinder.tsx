@@ -13,7 +13,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown,
+  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import CustomerPicker, { type FRCustomer } from "@/components/CustomerPicker";
+import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
+import { SERVICE_TYPES, findServiceType, type ServiceType } from "@/lib/serviceTypes";
 
 // ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
 
@@ -255,6 +258,8 @@ const SlotFinder = () => {
             <CheckMode staff={staff} dayOptions={days} />
           </TabsContent>
         </Tabs>
+
+        <PendingFieldRoutesWrites entityFilter="appointment" title="Pending appointment writes" />
       </div>
     </div>
   );
@@ -315,13 +320,27 @@ function FindMode({
   staff: { fullName: string } | null;
   dayOptions: { iso: string; label: string }[];
 }) {
+  const [customer, setCustomer] = useState<FRCustomer | null>(null);
   const [address, setAddress] = useState("");
+  const [serviceTypeLabel, setServiceTypeLabel] = useState<string>("");
+  const [subscriptionId, setSubscriptionId] = useState<string>("");
   const [window, setWindow] = useState("none");
   const [selectedDates, setSelectedDates] = useState<string[]>(
     dayOptions.slice(0, 3).map((d) => d.iso), // default: next 3 working days
   );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FindResult | null>(null);
+
+  const serviceType = findServiceType(serviceTypeLabel);
+  // Inspections (= "standalone") force subscription_id = -1 and hide the input.
+  // Subscription services require a real subscription id (NEVER -1).
+  const isStandalone = serviceType?.kind === "standalone";
+
+  const selectCustomer = (c: FRCustomer) => {
+    setCustomer(c);
+    const full = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip].filter(Boolean).join(", ");
+    if (full && !address.trim()) setAddress(full);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -355,6 +374,16 @@ function FindMode({
 
   const byDay = result?.by_day ?? [];
 
+  const canSchedule = !!customer && !!serviceType
+    && (isStandalone || (subscriptionId.trim().length > 0 && subscriptionId.trim() !== "-1"));
+
+  const scheduleContext = canSchedule ? {
+    customer: customer!,
+    serviceType: serviceType!,
+    subscriptionId: isStandalone ? -1 : Number(subscriptionId.trim()),
+    staffName: staff?.fullName ?? null,
+  } : null;
+
   return (
     <>
       <Card>
@@ -372,14 +401,65 @@ function FindMode({
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label>Customer (FieldRoutes)</Label>
+              <CustomerPicker
+                staffName={staff?.fullName ?? undefined}
+                linkedId={customer?.customer_id ?? null}
+                linkedLabel={customer?.name ?? customer?.company_name ?? null}
+                onSelect={selectCustomer}
+                onClear={() => setCustomer(null)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Required to click-to-schedule. Selecting a customer also autofills the address below.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="address">Service address</Label>
               <Input
                 id="address"
                 placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                autoFocus
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Service type *</Label>
+                <Select value={serviceTypeLabel} onValueChange={(v) => { setServiceTypeLabel(v); if (findServiceType(v)?.kind === "standalone") setSubscriptionId(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Pick a service type" /></SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    <SelectGroup>
+                      <SelectLabel>Subscription (needs subscription id)</SelectLabel>
+                      {SERVICE_TYPES.filter((s) => s.kind === "subscription").map((s) => (
+                        <SelectItem key={s.label} value={s.label}>{s.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel>Standalone / inspection (subscription_id = -1)</SelectLabel>
+                      {SERVICE_TYPES.filter((s) => s.kind === "standalone").map((s) => (
+                        <SelectItem key={s.label} value={s.label}>{s.label}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                {serviceType && (
+                  <p className="text-xs text-muted-foreground">
+                    {isStandalone ? "Standalone — books with subscription_id = -1." : "Subscription — enter the customer's subscription id."}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Subscription ID {isStandalone ? "(not needed)" : "*"}</Label>
+                <Input
+                  value={isStandalone ? "" : subscriptionId}
+                  onChange={(e) => setSubscriptionId(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder={isStandalone ? "—" : "e.g. 48213"}
+                  disabled={isStandalone || !serviceType}
+                  inputMode="numeric"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -414,6 +494,11 @@ function FindMode({
             {result.stops_in_horizon} stops. Geocoded to{" "}
             <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
           </p>
+          {!canSchedule && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              Pick a customer{!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.
+            </p>
+          )}
           {byDay.length === 0 && (
             <p className="text-sm italic text-muted-foreground">
               No field-tech routes on the selected day(s).
@@ -432,7 +517,7 @@ function FindMode({
                   <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
                 )}
                 {day.slots.map((c, i) => (
-                  <SlotCard key={i} c={c} rank={i + 1} />
+                  <SlotCard key={i} c={c} rank={i + 1} date={day.date} scheduleContext={scheduleContext} />
                 ))}
               </CardContent>
             </Card>
@@ -443,9 +528,58 @@ function FindMode({
   );
 }
 
-function SlotCard({ c, rank }: { c: SlotCandidate; rank: number }) {
+type ScheduleContext = {
+  customer: FRCustomer;
+  serviceType: ServiceType;
+  subscriptionId: number;
+  staffName: string | null;
+};
+
+function SlotCard({
+  c, rank, date, scheduleContext,
+}: {
+  c: SlotCandidate;
+  rank: number;
+  date?: string;
+  scheduleContext?: ScheduleContext | null;
+}) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
+  const [booking, setBooking] = useState(false);
+
+  const onSchedule = async () => {
+    if (!scheduleContext) return;
+    const start = c.next_stop?.start_time;
+    const end = c.next_stop?.end_time;
+    const useDate = date ?? c.route_date;
+    if (!start || !end || !useDate) { toast.error("This slot is missing time data."); return; }
+    const subLabel = scheduleContext.subscriptionId === -1 ? "standalone" : `subscription #${scheduleContext.subscriptionId}`;
+    if (!window.confirm(`Queue this appointment for office approval?\n\n${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}`)) return;
+    setBooking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: scheduleContext.staffName,
+          customer_id: Number(scheduleContext.customer.customer_id),
+          customer_label: scheduleContext.customer.name || scheduleContext.customer.company_name || `#${scheduleContext.customer.customer_id}`,
+          service_type_id: scheduleContext.serviceType.id,
+          service_type_label: scheduleContext.serviceType.label,
+          date: useDate,
+          start, end,
+          duration: 30,
+          subscription_id: scheduleContext.subscriptionId,
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) { toast.error(data?.error ?? "Failed to queue appointment."); return; }
+      toast.success("Queued for office approval ✓");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to queue appointment.");
+    } finally {
+      setBooking(false);
+    }
+  };
+
   return (
     <div className={`rounded-md p-3 ${tierBorder(c)}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -483,6 +617,18 @@ function SlotCard({ c, rank }: { c: SlotCandidate; rank: number }) {
       {c.justification && (
         <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
       )}
+
+      <div className="mt-3 flex justify-end">
+        <Button
+          type="button" size="sm"
+          disabled={!scheduleContext || booking}
+          onClick={onSchedule}
+          title={scheduleContext ? "Queue this appointment for office approval" : "Pick a customer + service type above to enable"}
+        >
+          <CalendarPlus className="h-3 w-3 mr-1" />
+          {booking ? "Queueing…" : "Schedule (queue for approval)"}
+        </Button>
+      </div>
     </div>
   );
 }
