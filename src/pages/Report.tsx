@@ -644,6 +644,7 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
   const frAutoPushRef = useRef(false);
+  const currentStaff = useCurrentStaff();
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
