@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
+  Wand2, Phone, Users, MapPinned, CalendarPlus, CheckCircle2,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -25,6 +26,8 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
@@ -169,6 +172,42 @@ const ScheduleReview = () => {
     if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
   }, [staff, navigate]);
 
+  return (
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to home
+          </Button>
+        </div>
+
+        <Tabs defaultValue="review">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
+            <TabsTrigger value="review" className="gap-2">
+              <ClipboardList className="w-4 h-4" /> Review
+            </TabsTrigger>
+            <TabsTrigger value="fill" className="gap-2">
+              <Wand2 className="w-4 h-4" /> Fill
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="review" className="mt-4 space-y-6">
+            <ReviewMode staff={staff} />
+          </TabsContent>
+          <TabsContent value="fill" className="mt-4 space-y-6">
+            <FillMode staff={staff} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Review mode (the original quick-review report)
+// ─────────────────────────────────────────────────────────────────────────
+
+function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
   const [days, setDays] = useState<number>(3);
   const [start, setStart] = useState<string>("");
   const [tech, setTech] = useState<string>("");
@@ -216,15 +255,7 @@ const ScheduleReview = () => {
   const longDrives = result ? computeLongDrives(result) : [];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to home
-          </Button>
-        </div>
-
+    <>
         <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
 
         {/* ── Controls ───────────────────────────────────────────────── */}
@@ -333,10 +364,9 @@ const ScheduleReview = () => {
             />
           </>
         )}
-      </div>
-    </div>
+    </>
   );
-};
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Subcomponents
@@ -671,5 +701,329 @@ function PerRouteGrid({
     </div>
   );
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Fill mode (schedule planner) — proposes a schedule from the due "job pool"
+// ─────────────────────────────────────────────────────────────────────────
+
+const FILL_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz"];
+
+type FillStop = {
+  subscription_id: string;
+  customer_id: string;
+  service_type_id: string;
+  customer: string;
+  city: string;
+  service_type: string;
+  next_due: string;
+  distance_mi: number;
+  window_hint: "AM" | "PM" | null;
+  preferred_tech: string | null;
+  special_scheduling: string | null;
+  reasons: string[];
+};
+type FillDay = {
+  date: string;
+  tech: string;
+  route_id: string;
+  existing_stops: number;
+  added_stops: number;
+  total_stops: number;
+  capacity: number;
+  stops: FillStop[];
+};
+type FillManual = {
+  subscription_id: string;
+  customer: string;
+  city: string;
+  service_type: string;
+  next_due: string;
+  preferred_tech: string | null;
+  special_scheduling: string | null;
+  reason: string;
+};
+type FillResult = {
+  start: string;
+  end: string;
+  techs: string[];
+  max_stops: number;
+  pool_size: number;
+  assigned_count: number;
+  manual_count: number;
+  route_days_considered: number;
+  proposed: FillDay[];
+  manual: FillManual[];
+};
+
+// Default window: today → today + 30 days, in local time.
+function isoToday(offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function weekdayLabel(iso: string): string {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
+    weekday: "short", month: "short", day: "numeric",
+  });
+}
+
+function FillMode({ staff }: { staff: { fullName: string } | null }) {
+  const [start, setStart] = useState<string>(isoToday(0));
+  const [end, setEnd] = useState<string>(isoToday(30));
+  const [maxStops, setMaxStops] = useState<number>(14);
+  const [techs, setTechs] = useState<string[]>(FILL_TECHS);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<FillResult | null>(null);
+
+  const toggleTech = (t: string) =>
+    setTechs((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
+
+  const run = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    if (!start || !end) return toast.error("Pick a start and end date.");
+    if (end < start) return toast.error("End date must be on or after the start date.");
+    if (techs.length === 0) return toast.error("Pick at least one tech.");
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-fill", {
+        body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops },
+      });
+      if (error) throw error;
+      if (!data?.ok) {
+        toast.error(data?.detail || data?.error || "Failed to build the fill plan.");
+        return;
+      }
+      setResult(data.result as FillResult);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Unexpected error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wand2 className="w-5 h-5" /> Schedule Fill
+          </CardTitle>
+          <CardDescription>
+            Pick a future window and the planner pulls everyone coming{" "}
+            <strong>due</strong> in that range (last service + service frequency),
+            then proposes which day &amp; tech each one fits — clustering by
+            location and honoring preferred tech, day/time notes, and per-day
+            capacity. Anything marked "call to schedule" is set aside for manual
+            handling. Nothing is booked — review and queue through the normal
+            approval flow.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label>Window start</Label>
+              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Window end</Label>
+              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Max stops / tech-day</Label>
+              <Input type="number" min={4} max={30} value={maxStops}
+                     onChange={(e) => setMaxStops(parseInt(e.target.value, 10) || 14)} />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Techs</Label>
+              <div className="flex flex-col gap-1.5 pt-1">
+                {FILL_TECHS.map((t) => (
+                  <label key={t} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={techs.includes(t)} onCheckedChange={() => toggleTech(t)} />
+                    {t}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <Button onClick={run} disabled={loading} className="mt-4">
+            <Wand2 className="w-4 h-4 mr-2" />
+            {loading ? "Building plan…" : "Propose schedule"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <StatCard label="Window" value={`${result.start} – ${result.end}`} small />
+            <StatCard label="Due pool" value={result.pool_size} />
+            <StatCard label="Auto-placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
+            <StatCard label="Manual" value={result.manual_count} tone={result.manual_count > 0 ? "warn" : "ok"} />
+            <StatCard label="Tech-days" value={result.route_days_considered} />
+          </div>
+
+          {result.pool_size === 0 && (
+            <Card>
+              <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                Nobody comes due between {result.start} and {result.end}.
+              </CardContent>
+            </Card>
+          )}
+
+          {result.proposed.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {result.proposed.map((d) => (
+                <FillDayCard key={`${d.date}|${d.route_id}`} day={d} staff={staff} />
+              ))}
+            </div>
+          )}
+
+          {result.manual.length > 0 && (
+            <Card className="border-l-4 border-l-amber-500">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-amber-600" /> Needs manual scheduling ({result.manual.length})
+                </CardTitle>
+                <CardDescription>
+                  Due in the window but not auto-placed — call-ahead customers, no
+                  preferred-tech capacity, unmet day/time constraints, or no
+                  geocoded address.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {result.manual.map((m) => (
+                  <div key={m.subscription_id} className="text-xs bg-amber-50 rounded p-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="font-semibold text-sm">{m.customer}</span>
+                      <span className="text-muted-foreground">due {m.next_due}</span>
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      {m.city} · {m.service_type}
+                      {m.preferred_tech ? <> · prefers {m.preferred_tech}</> : null}
+                    </div>
+                    <div className="text-amber-700 mt-0.5">{m.reason}</div>
+                    {m.special_scheduling && m.special_scheduling !== m.reason && (
+                      <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+
+      <PendingFieldRoutesWrites entityFilter="appointment" title="Pending appointment writes" />
+    </>
+  );
+}
+
+// A proposed-schedule day card with a single "queue this whole day for
+// approval" action. Nothing books here — each stop is enqueued to the
+// fieldroutes_write_queue and the office approves it later (same path as the
+// Slot Finder's per-slot schedule button).
+function windowTimes(hint: "AM" | "PM" | null): { start: string; end: string } {
+  if (hint === "PM") return { start: "13:00", end: "17:00" };
+  return { start: "08:00", end: "12:00" }; // AM, or unspecified → morning window
+}
+
+function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
+  const [queueing, setQueueing] = useState(false);
+  const [queued, setQueued] = useState<Set<string>>(new Set());
+  const over = day.total_stops > day.capacity;
+  const remaining = day.stops.filter((s) => !queued.has(s.subscription_id));
+  const allQueued = day.stops.length > 0 && remaining.length === 0;
+
+  const queueDay = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    if (remaining.length === 0) return;
+    if (!window.confirm(
+      `Queue ${remaining.length} appointment(s) on ${day.tech}'s ${day.date} route for office approval?\n\n` +
+      `Nothing books in FieldRoutes until the office approves each one.`,
+    )) return;
+
+    setQueueing(true);
+    const done = new Set(queued);
+    let ok = 0, fail = 0;
+    for (const s of remaining) {
+      const { start, end } = windowTimes(s.window_hint);
+      try {
+        const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+          body: {
+            staffName: staff.fullName,
+            customer_id: Number(s.customer_id),
+            customer_label: s.customer,
+            service_type_id: Number(s.service_type_id) || 0,
+            service_type_label: s.service_type,
+            date: day.date,
+            start, end,
+            duration: 30,
+            subscription_id: Number(s.subscription_id),
+          },
+        });
+        if (error || !data?.ok) { fail++; continue; }
+        ok++; done.add(s.subscription_id);
+      } catch { fail++; }
+    }
+    setQueued(done);
+    setQueueing(false);
+    if (ok) toast.success(`Queued ${ok} for approval${fail ? ` · ${fail} failed` : ""}`);
+    else toast.error("Failed to queue this day — see console.");
+  };
+
+  return (
+    <Card className="border-l-4 border-l-indigo-500">
+      <CardHeader className="pb-2">
+        <div className="flex items-baseline justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base">{weekdayLabel(day.date)} · {day.tech}</CardTitle>
+          <div className="text-sm text-muted-foreground">
+            {day.existing_stops} existing + <span className="font-semibold text-indigo-700">{day.added_stops} new</span>{" "}
+            = <span className={over ? "font-bold text-red-600" : "font-semibold"}>{day.total_stops}</span>/{day.capacity}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-0">
+        {day.stops.map((s) => {
+          const isQueued = queued.has(s.subscription_id);
+          return (
+            <div key={s.subscription_id} className="text-xs bg-indigo-50 rounded p-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="font-semibold text-sm flex items-center gap-1">
+                  {isQueued && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                  {s.customer}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  {s.window_hint && (
+                    <Badge variant="outline" className="text-indigo-700 border-indigo-300">{s.window_hint}</Badge>
+                  )}
+                  <span className="font-mono text-muted-foreground flex items-center gap-1">
+                    <MapPinned className="w-3 h-3" />{s.distance_mi} mi
+                  </span>
+                </span>
+              </div>
+              <div className="text-muted-foreground mt-0.5">{s.city} · {s.service_type} · due {s.next_due}</div>
+              <div className="text-muted-foreground mt-0.5">{s.reasons.join(" · ")}</div>
+              {s.special_scheduling && (
+                <div className="mt-1 text-amber-700">
+                  <Badge variant="outline" className="mr-1 text-amber-700 border-amber-300">note</Badge>
+                  {s.special_scheduling}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <div className="flex justify-end pt-1">
+          <Button size="sm" onClick={queueDay} disabled={queueing || allQueued}>
+            {allQueued ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Day queued</>
+              : <><CalendarPlus className="w-3 h-3 mr-1" /> {queueing ? "Queueing…" : `Queue this day (${remaining.length}) for approval`}</>}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default ScheduleReview;

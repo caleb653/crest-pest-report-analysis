@@ -100,8 +100,8 @@ const reportTypes = [
   },
   {
     id: "schedule-review",
-    title: "Schedule Review",
-    description: "Compliance, route order, past-window risks",
+    title: "Schedule Review / Fill",
+    description: "Review routes, or fill future days from the due pool",
     icon: ClipboardList,
     path: "/schedule-review",
     color: "text-indigo-600",
