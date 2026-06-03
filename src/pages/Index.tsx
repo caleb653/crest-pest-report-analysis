@@ -135,6 +135,15 @@ const Index = () => {
   // bounce to /admin-login at click time rather than silently failing here.
   const [isAdmin, setIsAdmin] = useState(false);
   const [showInitialVariantPicker, setShowInitialVariantPicker] = useState(false);
+  const currentUser = sessionStorage.getItem("app_logged_in_user") || "";
+  const RESTRICTED_USERS = new Set([
+    "Michael Muniz",
+    "Darrell Tanner",
+    "Dylan Gallegos",
+    "Jackson Latham",
+  ]);
+  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review", "ask-me-anything"]);
+  const isRestricted = RESTRICTED_USERS.has(currentUser);
   useEffect(() => {
     setIsAdmin(!!localStorage.getItem("admin_session"));
   }, []);
@@ -189,8 +198,10 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 max-w-4xl w-full">
-        {gridOrder.map((idx) => {
-          const report = reportTypes[idx];
+        {gridOrder
+          .map((idx) => reportTypes[idx])
+          .filter((report) => !(isRestricted && RESTRICTED_CARDS.has(report.id)))
+          .map((report) => {
           const Icon = report.icon;
           return (
             <Card

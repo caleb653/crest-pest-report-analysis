@@ -37,6 +37,11 @@ const AskApex = () => {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham"]);
+    if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
+  }, [staff, navigate]);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns, thinking]);
 
