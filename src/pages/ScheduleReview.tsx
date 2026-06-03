@@ -932,10 +932,31 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  // Per-card exclusion set: when the user X's someone, we drop them from the
+  // queueing list so they will NOT be sent to FieldRoutes for this day.
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const over = day.stop_count > day.capacity;
-  const bookable = day.stops.filter((s) => s.subscription_id);
+  const stopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
+  // Bookable = has a subscription, isn't already on the books, isn't locked,
+  // hasn't been notified, and hasn't been X'd out by the user.
+  const bookable = day.stops.filter((s) =>
+    s.subscription_id &&
+    !s.already_scheduled &&
+    !s.locked &&
+    !s.notification_sent &&
+    !excluded.has(stopKey(s)),
+  );
   const remaining = bookable.filter((s) => !queued.has(s.subscription_id));
   const allQueued = bookable.length > 0 && remaining.length === 0;
+
+  const toggleExclude = (s: FillStop) => {
+    setExcluded((cur) => {
+      const next = new Set(cur);
+      const k = stopKey(s);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
 
   const queueDay = async () => {
     if (!staff) return toast.error("Please sign in again.");
@@ -988,24 +1009,85 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
           const isQueued = queued.has(s.subscription_id);
+          const key = stopKey(s);
+          const isExcluded = excluded.has(key);
+          // Color rules (per user request):
+          //  - locked OR notification already sent → black (and locked-in)
+          //  - already scheduled on this day        → green
+          //  - excluded by user                     → muted/struck
+          //  - default                              → indigo (planner proposal)
+          const isBlack = !!(s.locked || s.notification_sent);
+          const isGreen = !isBlack && !!s.already_scheduled;
+          const rowClass =
+            isBlack ? "bg-foreground/90 text-background"
+            : isGreen ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+            : isExcluded ? "bg-muted text-muted-foreground line-through opacity-60"
+            : "bg-indigo-50";
+          // Lock the X button when the row is system-locked.
+          const canExclude = !isBlack && !isQueued;
           return (
-            <div key={`${s.subscription_id || s.customer_id}-${s.order}`} className="text-xs bg-indigo-50 rounded p-2">
+            <div key={key} className={`text-xs rounded p-2 ${rowClass}`}>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-semibold text-sm flex items-center gap-1">
                   {isQueued && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                  <span className="text-muted-foreground font-mono">#{s.order}</span> {s.customer}
+                  {isBlack && <Lock className="w-3.5 h-3.5" />}
+                  {isGreen && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />}
+                  <span className={isBlack ? "font-mono opacity-70" : "text-muted-foreground font-mono"}>#{s.order}</span> {s.customer}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  <Badge variant="outline" className="text-indigo-700 border-indigo-300">{s.window}</Badge>
-                  <span className="font-mono text-muted-foreground">
+                  <Badge
+                    variant="outline"
+                    className={
+                      isBlack ? "text-background border-background/40"
+                      : isGreen ? "text-emerald-800 border-emerald-400"
+                      : "text-indigo-700 border-indigo-300"
+                    }
+                  >
+                    {s.window}
+                  </Badge>
+                  <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
                   </span>
+                  {canExclude && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title={isExcluded ? "Re-include in this day" : "Exclude from this day (won't send to FieldRoutes)"}
+                      onClick={() => toggleExclude(s)}
+                    >
+                      <X className={`w-3.5 h-3.5 ${isExcluded ? "text-emerald-700" : "text-red-600"}`} />
+                    </Button>
+                  )}
                 </span>
               </div>
-              <div className="text-muted-foreground mt-0.5">{s.city} · {s.service_label} · due {s.due_date}</div>
+              <div className={`mt-0.5 ${isBlack ? "opacity-80" : "text-muted-foreground"}`}>
+                {s.city} · {s.service_label} · due {s.due_date}
+              </div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
                 {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
+                {s.locked && (
+                  <Badge variant="outline" className="text-background border-background/40">
+                    <Lock className="w-3 h-3 mr-1" /> locked
+                  </Badge>
+                )}
+                {s.notification_sent && !s.locked && (
+                  <Badge variant="outline" className="text-background border-background/40">
+                    <BellRing className="w-3 h-3 mr-1" /> notified
+                  </Badge>
+                )}
+                {isGreen && (
+                  <Badge variant="outline" className="text-emerald-800 border-emerald-400">
+                    already scheduled
+                  </Badge>
+                )}
+                {isExcluded && (
+                  <Badge variant="outline" className="text-red-700 border-red-300">
+                    excluded — won't send to FR
+                  </Badge>
+                )}
               </div>
               {s.special_scheduling && (
                 <div className="mt-1 text-amber-700">
