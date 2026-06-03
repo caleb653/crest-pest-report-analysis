@@ -741,6 +741,7 @@ type FillStop = {
   special_scheduling: string | null;
   confirm: boolean;
   off_zone_day: boolean;
+  route_id?: string;             // FieldRoutes routeID for the tech-day (placement)
   // Optional flags supplied by upstream planner:
   already_scheduled?: boolean;   // green — already on the books for this day
   locked?: boolean;              // black — appointment locked
@@ -988,6 +989,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
             end: s.end,
             duration: s.duration || 30,
             subscription_id: Number(s.subscription_id),
+            route_id: s.route_id ? Number(s.route_id) : undefined,
           },
         });
         if (error || !data?.ok) { fail++; continue; }

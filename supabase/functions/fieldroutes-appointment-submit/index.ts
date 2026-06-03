@@ -73,6 +73,10 @@ serve(async (req) => {
     const duration = Number(body?.duration ?? 30);
     const subscription_id = body?.subscription_id == null ? -1 : Number(body.subscription_id);
     const employee_id = body?.employee_id == null ? null : Number(body.employee_id);
+    // routeID places the appointment ON a route (the route carries the date) —
+    // without it FieldRoutes creates an unplaced appointment that never shows.
+    const route_id = body?.route_id == null || body?.route_id === "" ? null : Number(body.route_id);
+    const spot_id = body?.spot_id == null || body?.spot_id === "" ? null : Number(body.spot_id);
     const customer_label = String(body?.customer_label ?? "").trim();
 
     if (!customer_id || customer_id <= 0) return json({ ok: false, error: "missing_customer_id" }, 400);
@@ -90,6 +94,8 @@ serve(async (req) => {
       duration,
       subscription_id,
       employee_id,
+      route_id,
+      spot_id,
       // Display-only context for the approval UI (not sent to Cloud Run):
       _label: {
         service_type: service_type_label,
