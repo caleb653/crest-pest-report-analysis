@@ -258,6 +258,8 @@ const SlotFinder = () => {
             <CheckMode staff={staff} dayOptions={days} />
           </TabsContent>
         </Tabs>
+
+        <PendingFieldRoutesWrites entityFilter="appointment" title="Pending appointment writes" />
       </div>
     </div>
   );
