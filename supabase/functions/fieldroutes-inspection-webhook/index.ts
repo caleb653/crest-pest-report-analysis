@@ -209,6 +209,16 @@ serve(async (req) => {
     });
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
+    // Guard: only inspection service types create a report. New subscriptions
+    // (Monthly/Bi-Monthly/Quarterly/Commercial/etc) must NOT auto-spawn reports
+    // even if a FieldRoutes trigger accidentally fires this webhook for them.
+    const isInspection =
+      INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined ||
+      /inspection/i.test(serviceName);
+    if (!isInspection) {
+      return json({ ok: true, created: false, reason: "not_inspection", service: serviceName });
+    }
+
     // Idempotency: bail early if this appointment already has a report.
     const { data: existing, error: exErr } = await supabase
       .from("reports")
