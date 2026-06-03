@@ -183,7 +183,7 @@ const ScheduleReview = () => {
         </div>
 
         <Tabs defaultValue="review">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
             <TabsTrigger
               value="review"
               className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
@@ -196,12 +196,21 @@ const ScheduleReview = () => {
             >
               <Wand2 className="w-4 h-4" /> Fill
             </TabsTrigger>
+            <TabsTrigger
+              value="pending"
+              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <Clock className="w-4 h-4" /> Pending
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="review" className="mt-4 space-y-6">
             <ReviewMode staff={staff} />
           </TabsContent>
           <TabsContent value="fill" className="mt-4 space-y-6">
             <FillMode staff={staff} />
+          </TabsContent>
+          <TabsContent value="pending" className="mt-4 space-y-6">
+            <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
           </TabsContent>
         </Tabs>
       </div>
@@ -262,8 +271,6 @@ function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
 
   return (
     <>
-        <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
-
         {/* ── Controls ───────────────────────────────────────────────── */}
         <Card>
           <CardHeader>
@@ -918,8 +925,6 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           />
         </>
       )}
-
-      <PendingFieldRoutesWrites entityFilter="appointment" title="Pending appointment writes" />
     </>
   );
 }
