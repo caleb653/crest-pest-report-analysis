@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
-  Wand2, Phone, Users, MapPinned, CalendarPlus, CheckCircle2,
+  Wand2, Phone, Users, CalendarPlus, CheckCircle2,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -709,36 +709,41 @@ function PerRouteGrid({
 const FILL_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz"];
 
 type FillStop = {
+  order: number;
   subscription_id: string;
   customer_id: string;
   service_type_id: string;
   customer: string;
   city: string;
-  service_type: string;
-  next_due: string;
-  distance_mi: number;
-  window_hint: "AM" | "PM" | null;
-  preferred_tech: string | null;
+  address: string;
+  services: string[];
+  service_label: string;
+  frequency: number;
+  duration: number;
+  window: string;
+  start: string;
+  end: string;
+  due_date: string;
+  days_off_target: number;
   special_scheduling: string | null;
-  reasons: string[];
+  confirm: boolean;
+  off_zone_day: boolean;
 };
 type FillDay = {
   date: string;
+  weekday: string;
   tech: string;
-  route_id: string;
-  existing_stops: number;
-  added_stops: number;
-  total_stops: number;
+  zone: string;
+  stop_count: number;
   capacity: number;
   stops: FillStop[];
 };
-type FillManual = {
-  subscription_id: string;
+type FillUnscheduled = {
   customer: string;
   city: string;
-  service_type: string;
-  next_due: string;
-  preferred_tech: string | null;
+  service: string;
+  due_date: string;
+  tech: string | null;
   special_scheduling: string | null;
   reason: string;
 };
@@ -748,11 +753,15 @@ type FillResult = {
   techs: string[];
   max_stops: number;
   pool_size: number;
+  schedulable: number;
   assigned_count: number;
   manual_count: number;
-  route_days_considered: number;
+  needs_reassignment_count: number;
+  unplaced_count: number;
   proposed: FillDay[];
-  manual: FillManual[];
+  manual: FillUnscheduled[];
+  needs_reassignment: FillUnscheduled[];
+  unplaced: FillUnscheduled[];
 };
 
 // Default window: today → today + 30 days, in local time.
@@ -857,18 +866,19 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
       {result && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <StatCard label="Window" value={`${result.start} – ${result.end}`} small />
             <StatCard label="Due pool" value={result.pool_size} />
-            <StatCard label="Auto-placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
+            <StatCard label="Placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
             <StatCard label="Manual" value={result.manual_count} tone={result.manual_count > 0 ? "warn" : "ok"} />
-            <StatCard label="Tech-days" value={result.route_days_considered} />
+            <StatCard label="Reassign" value={result.needs_reassignment_count} tone={result.needs_reassignment_count > 0 ? "warn" : "ok"} />
+            <StatCard label="Unplaced" value={result.unplaced_count} tone={result.unplaced_count > 0 ? "info" : "ok"} />
           </div>
 
-          {result.pool_size === 0 && (
+          {result.proposed.length === 0 && (
             <Card>
               <CardContent className="py-6 text-center text-sm text-muted-foreground">
-                Nobody comes due between {result.start} and {result.end}.
+                Nobody is due (within tolerance) between {result.start} and {result.end}.
               </CardContent>
             </Card>
           )}
@@ -876,43 +886,26 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           {result.proposed.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {result.proposed.map((d) => (
-                <FillDayCard key={`${d.date}|${d.route_id}`} day={d} staff={staff} />
+                <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} />
               ))}
             </div>
           )}
 
-          {result.manual.length > 0 && (
-            <Card className="border-l-4 border-l-amber-500">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-amber-600" /> Needs manual scheduling ({result.manual.length})
-                </CardTitle>
-                <CardDescription>
-                  Due in the window but not auto-placed — call-ahead customers, no
-                  preferred-tech capacity, unmet day/time constraints, or no
-                  geocoded address.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {result.manual.map((m) => (
-                  <div key={m.subscription_id} className="text-xs bg-amber-50 rounded p-2">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="font-semibold text-sm">{m.customer}</span>
-                      <span className="text-muted-foreground">due {m.next_due}</span>
-                    </div>
-                    <div className="text-muted-foreground mt-0.5">
-                      {m.city} · {m.service_type}
-                      {m.preferred_tech ? <> · prefers {m.preferred_tech}</> : null}
-                    </div>
-                    <div className="text-amber-700 mt-0.5">{m.reason}</div>
-                    {m.special_scheduling && m.special_scheduling !== m.reason && (
-                      <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          <UnscheduledBucket
+            title="Needs manual scheduling"
+            items={result.manual}
+            blurb='Flagged "call to schedule / do not auto-schedule" — handle these by phone.'
+          />
+          <UnscheduledBucket
+            title="Needs tech reassignment"
+            items={result.needs_reassignment}
+            blurb="Due in the window, but their preferred tech isn't a field tech — the office must reassign before scheduling."
+          />
+          <UnscheduledBucket
+            title="Couldn't fit in the window"
+            items={result.unplaced}
+            blurb="Due within tolerance, but every eligible day was at capacity or constraints left no slot. Widen the window or raise max stops."
+          />
         </>
       )}
 
@@ -924,18 +917,15 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 // A proposed-schedule day card with a single "queue this whole day for
 // approval" action. Nothing books here — each stop is enqueued to the
 // fieldroutes_write_queue and the office approves it later (same path as the
-// Slot Finder's per-slot schedule button).
-function windowTimes(hint: "AM" | "PM" | null): { start: string; end: string } {
-  if (hint === "PM") return { start: "13:00", end: "17:00" };
-  return { start: "08:00", end: "12:00" }; // AM, or unspecified → morning window
-}
-
+// Slot Finder's per-slot schedule button). The engine hands us a concrete
+// start/end window per stop, so we queue those directly.
 function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
-  const over = day.total_stops > day.capacity;
-  const remaining = day.stops.filter((s) => !queued.has(s.subscription_id));
-  const allQueued = day.stops.length > 0 && remaining.length === 0;
+  const over = day.stop_count > day.capacity;
+  const bookable = day.stops.filter((s) => s.subscription_id);
+  const remaining = bookable.filter((s) => !queued.has(s.subscription_id));
+  const allQueued = bookable.length > 0 && remaining.length === 0;
 
   const queueDay = async () => {
     if (!staff) return toast.error("Please sign in again.");
@@ -949,7 +939,6 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
     const done = new Set(queued);
     let ok = 0, fail = 0;
     for (const s of remaining) {
-      const { start, end } = windowTimes(s.window_hint);
       try {
         const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
           body: {
@@ -957,10 +946,11 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
             customer_id: Number(s.customer_id),
             customer_label: s.customer,
             service_type_id: Number(s.service_type_id) || 0,
-            service_type_label: s.service_type,
+            service_type_label: s.service_label,
             date: day.date,
-            start, end,
-            duration: 30,
+            start: s.start,
+            end: s.end,
+            duration: s.duration || 30,
             subscription_id: Number(s.subscription_id),
           },
         });
@@ -980,32 +970,33 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         <div className="flex items-baseline justify-between gap-2 flex-wrap">
           <CardTitle className="text-base">{weekdayLabel(day.date)} · {day.tech}</CardTitle>
           <div className="text-sm text-muted-foreground">
-            {day.existing_stops} existing + <span className="font-semibold text-indigo-700">{day.added_stops} new</span>{" "}
-            = <span className={over ? "font-bold text-red-600" : "font-semibold"}>{day.total_stops}</span>/{day.capacity}
+            <span className={over ? "font-bold text-red-600" : "font-semibold"}>{day.stop_count}</span>/{day.capacity} stops
           </div>
         </div>
+        <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
           const isQueued = queued.has(s.subscription_id);
           return (
-            <div key={s.subscription_id} className="text-xs bg-indigo-50 rounded p-2">
+            <div key={`${s.subscription_id || s.customer_id}-${s.order}`} className="text-xs bg-indigo-50 rounded p-2">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-semibold text-sm flex items-center gap-1">
                   {isQueued && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
-                  {s.customer}
+                  <span className="text-muted-foreground font-mono">#{s.order}</span> {s.customer}
                 </span>
                 <span className="inline-flex items-center gap-2">
-                  {s.window_hint && (
-                    <Badge variant="outline" className="text-indigo-700 border-indigo-300">{s.window_hint}</Badge>
-                  )}
-                  <span className="font-mono text-muted-foreground flex items-center gap-1">
-                    <MapPinned className="w-3 h-3" />{s.distance_mi} mi
+                  <Badge variant="outline" className="text-indigo-700 border-indigo-300">{s.window}</Badge>
+                  <span className="font-mono text-muted-foreground">
+                    {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
                   </span>
                 </span>
               </div>
-              <div className="text-muted-foreground mt-0.5">{s.city} · {s.service_type} · due {s.next_due}</div>
-              <div className="text-muted-foreground mt-0.5">{s.reasons.join(" · ")}</div>
+              <div className="text-muted-foreground mt-0.5">{s.city} · {s.service_label} · due {s.due_date}</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
+                {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
+              </div>
               {s.special_scheduling && (
                 <div className="mt-1 text-amber-700">
                   <Badge variant="outline" className="mr-1 text-amber-700 border-amber-300">note</Badge>
@@ -1016,11 +1007,43 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
           );
         })}
         <div className="flex justify-end pt-1">
-          <Button size="sm" onClick={queueDay} disabled={queueing || allQueued}>
+          <Button size="sm" onClick={queueDay} disabled={queueing || allQueued || bookable.length === 0}>
             {allQueued ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Day queued</>
               : <><CalendarPlus className="w-3 h-3 mr-1" /> {queueing ? "Queueing…" : `Queue this day (${remaining.length}) for approval`}</>}
           </Button>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Read-only list of due customers the planner did NOT auto-place, with the reason.
+function UnscheduledBucket({ title, items, blurb }: { title: string; items: FillUnscheduled[]; blurb: string }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <Card className="border-l-4 border-l-amber-500">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Phone className="w-4 h-4 text-amber-600" /> {title} ({items.length})
+        </CardTitle>
+        <CardDescription>{blurb}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {items.map((m, i) => (
+          <div key={`${m.customer}-${m.due_date}-${i}`} className="text-xs bg-amber-50 rounded p-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-semibold text-sm">{m.customer}</span>
+              <span className="text-muted-foreground">due {m.due_date}</span>
+            </div>
+            <div className="text-muted-foreground mt-0.5">
+              {m.city} · {m.service}{m.tech ? <> · prefers {m.tech}</> : null}
+            </div>
+            <div className="text-amber-700 mt-0.5">{m.reason}</div>
+            {m.special_scheduling && m.special_scheduling !== m.reason && (
+              <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
+            )}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
