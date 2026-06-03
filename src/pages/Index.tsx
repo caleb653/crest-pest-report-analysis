@@ -6,6 +6,7 @@ import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
+import { supabase } from "@/integrations/supabase/client";
 const reportTypes = [
   {
     id: "initial-pest",
