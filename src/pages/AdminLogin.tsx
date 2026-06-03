@@ -27,7 +27,7 @@ const AdminLogin = () => {
       if (data.valid) {
         localStorage.setItem('admin_session', data.sessionToken);
         toast.success("Logged in successfully");
-        navigate('/admin-dashboard');
+        navigate('/');
       } else {
         toast.error("Incorrect password");
       }

@@ -28,12 +28,10 @@ const RightToTreat         = lazy(() => import("./pages/RightToTreat"));
 const SurveyTake           = lazy(() => import("./pages/SurveyTake"));
 const Notifications        = lazy(() => import("./pages/Notifications"));
 const PreApplicationNoticePage = lazy(() => import("./pages/PreApplicationNoticePage"));
-const AdminLogin           = lazy(() => import("./pages/AdminLogin"));
-const AdminDashboard       = lazy(() => import("./pages/AdminDashboard"));
 const SlotFinder           = lazy(() => import("./pages/SlotFinder"));
 const ScheduleReview       = lazy(() => import("./pages/ScheduleReview"));
 const AskApex              = lazy(() => import("./pages/AskApex"));
-const FieldRoutesWriteQueue = lazy(() => import("./pages/FieldRoutesWriteQueue"));
+const AdminLogin           = lazy(() => import("./pages/AdminLogin"));
 
 const queryClient = new QueryClient();
 
@@ -67,8 +65,6 @@ const App = () => (
                 / validate-admin-session edge function. No PIN required so
                 office staff who don't know the PIN can still sign in. */}
             <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/fieldroutes-writes" element={<FieldRoutesWriteQueue />} />
             {/* All other routes require PIN */}
             <Route path="*" element={
               <PinGate>
