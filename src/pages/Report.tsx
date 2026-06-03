@@ -772,7 +772,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
       ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
       const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-      const pdfBytes = await buildSimplePDF({ reportPages }) as Uint8Array;
+      const pdfBytes = await buildSimplePDF({ reportPages, compact: true }) as Uint8Array;
       setPdfExportMode(false);
       let bin = "";
       const chunk = 0x8000;
