@@ -246,11 +246,17 @@ const SlotFinder = () => {
         </div>
 
         <Tabs defaultValue="find">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid">
-            <TabsTrigger value="find" className="gap-2">
+          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
+            <TabsTrigger
+              value="find"
+              className="gap-2 text-base font-semibold px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
               <MapPin className="w-4 h-4" /> Find open slots
             </TabsTrigger>
-            <TabsTrigger value="check" className="gap-2">
+            <TabsTrigger
+              value="check"
+              className="gap-2 text-base font-semibold px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
               <CalendarClock className="w-4 h-4" /> Check a day &amp; window
             </TabsTrigger>
           </TabsList>
