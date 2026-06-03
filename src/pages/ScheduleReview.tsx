@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
-  Wand2, Phone, Users, CalendarPlus, CheckCircle2,
+  Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -734,6 +734,10 @@ type FillStop = {
   special_scheduling: string | null;
   confirm: boolean;
   off_zone_day: boolean;
+  // Optional flags supplied by upstream planner:
+  already_scheduled?: boolean;   // green — already on the books for this day
+  locked?: boolean;              // black — appointment locked
+  notification_sent?: boolean;   // black — customer already notified
 };
 type FillDay = {
   date: string;
