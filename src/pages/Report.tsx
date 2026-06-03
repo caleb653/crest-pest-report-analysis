@@ -46,6 +46,9 @@ import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import CustomerPicker from "@/components/CustomerPicker";
+import { useCurrentStaff } from "@/hooks/useCurrentStaff";
+import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -641,6 +644,7 @@ const Report = () => {
   const [additionalDetails, setAdditionalDetails] = useState("");
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
   const frAutoPushRef = useRef(false);
+  const currentStaff = useCurrentStaff();
   const signatureRef = useRef<SignatureCanvasRef>(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
@@ -1240,10 +1244,30 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     equipment: editableEquipment,
     report_title: editableTitle,
     customer_email: customerEmail || null,
+    fieldroutes_customer_id: fieldroutesCustomerId,
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
     const adminSessionToken = localStorage.getItem("admin_session");
+
+    // Auto-link to a FieldRoutes customer if not already linked, so the signed
+    // PDF can later upload back to the right customer. High-confidence only.
+    if (!reportData.fieldroutes_customer_id) {
+      try {
+        const match = await autoMatchCustomerId({
+          email: reportData.customer_email as string | null,
+          name: reportData.customer_name as string | null,
+          address: reportData.address as string | null,
+          staffName: currentStaff?.fullName,
+        });
+        if (match) {
+          reportData.fieldroutes_customer_id = match.customerId;
+          setFieldroutesCustomerId(match.customerId);
+        }
+      } catch (e) {
+        console.warn("FieldRoutes auto-match skipped", e);
+      }
+    }
 
     if (reportId) {
       let savedViaAdmin = false;
@@ -1979,6 +2003,32 @@ Crest Pest Control`;
                 </Button>
               </div>
             </div>
+
+            {/* FieldRoutes customer link — search & select to autofill + link */}
+            {!isReadOnly && (
+              <div className="mb-3 no-print">
+                <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
+                <CustomerPicker
+                  staffName={currentStaff?.fullName}
+                  linkedId={fieldroutesCustomerId}
+                  linkedLabel={editableCustomer || null}
+                  onSelect={(c) => {
+                    setFieldroutesCustomerId(c.customer_id);
+                    if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
+                    if (c.email) setCustomerEmail(c.email);
+                    const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
+                      .filter(Boolean).join(", ");
+                    if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
+                  }}
+                  onClear={() => setFieldroutesCustomerId(null)}
+                />
+              </div>
+            )}
+            {isReadOnly && fieldroutesCustomerId && (
+              <div className="mb-2 text-xs text-muted-foreground">
+                FieldRoutes customer <span className="font-medium text-foreground">#{fieldroutesCustomerId}</span>
+              </div>
+            )}
 
             {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
             <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
