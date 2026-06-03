@@ -2024,6 +2024,11 @@ Crest Pest Control`;
                 />
               </div>
             )}
+            {isReadOnly && fieldroutesCustomerId && (
+              <div className="mb-2 text-xs text-muted-foreground">
+                FieldRoutes customer <span className="font-medium text-foreground">#{fieldroutesCustomerId}</span>
+              </div>
+            )}
 
             {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
             <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
