@@ -13,7 +13,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown,
+  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import CustomerPicker, { type FRCustomer } from "@/components/CustomerPicker";
+import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
+import { SERVICE_TYPES, findServiceType, type ServiceType } from "@/lib/serviceTypes";
 
 // ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
 
