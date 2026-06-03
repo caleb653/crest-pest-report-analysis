@@ -528,9 +528,58 @@ function FindMode({
   );
 }
 
-function SlotCard({ c, rank }: { c: SlotCandidate; rank: number }) {
+type ScheduleContext = {
+  customer: FRCustomer;
+  serviceType: ServiceType;
+  subscriptionId: number;
+  staffName: string | null;
+};
+
+function SlotCard({
+  c, rank, date, scheduleContext,
+}: {
+  c: SlotCandidate;
+  rank: number;
+  date?: string;
+  scheduleContext?: ScheduleContext | null;
+}) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
+  const [booking, setBooking] = useState(false);
+
+  const onSchedule = async () => {
+    if (!scheduleContext) return;
+    const start = c.next_stop?.start_time;
+    const end = c.next_stop?.end_time;
+    const useDate = date ?? c.route_date;
+    if (!start || !end || !useDate) { toast.error("This slot is missing time data."); return; }
+    const subLabel = scheduleContext.subscriptionId === -1 ? "standalone" : `subscription #${scheduleContext.subscriptionId}`;
+    if (!window.confirm(`Queue this appointment for office approval?\n\n${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}`)) return;
+    setBooking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: scheduleContext.staffName,
+          customer_id: Number(scheduleContext.customer.customer_id),
+          customer_label: scheduleContext.customer.name || scheduleContext.customer.company_name || `#${scheduleContext.customer.customer_id}`,
+          service_type_id: scheduleContext.serviceType.id,
+          service_type_label: scheduleContext.serviceType.label,
+          date: useDate,
+          start, end,
+          duration: 30,
+          subscription_id: scheduleContext.subscriptionId,
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) { toast.error(data?.error ?? "Failed to queue appointment."); return; }
+      toast.success("Queued for office approval ✓");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to queue appointment.");
+    } finally {
+      setBooking(false);
+    }
+  };
+
   return (
     <div className={`rounded-md p-3 ${tierBorder(c)}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -568,6 +617,18 @@ function SlotCard({ c, rank }: { c: SlotCandidate; rank: number }) {
       {c.justification && (
         <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
       )}
+
+      <div className="mt-3 flex justify-end">
+        <Button
+          type="button" size="sm"
+          disabled={!scheduleContext || booking}
+          onClick={onSchedule}
+          title={scheduleContext ? "Queue this appointment for office approval" : "Pick a customer + service type above to enable"}
+        >
+          <CalendarPlus className="h-3 w-3 mr-1" />
+          {booking ? "Queueing…" : "Schedule (queue for approval)"}
+        </Button>
+      </div>
     </div>
   );
 }
