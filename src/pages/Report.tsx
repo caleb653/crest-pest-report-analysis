@@ -1244,10 +1244,30 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     equipment: editableEquipment,
     report_title: editableTitle,
     customer_email: customerEmail || null,
+    fieldroutes_customer_id: fieldroutesCustomerId,
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
     const adminSessionToken = localStorage.getItem("admin_session");
+
+    // Auto-link to a FieldRoutes customer if not already linked, so the signed
+    // PDF can later upload back to the right customer. High-confidence only.
+    if (!reportData.fieldroutes_customer_id) {
+      try {
+        const match = await autoMatchCustomerId({
+          email: reportData.customer_email as string | null,
+          name: reportData.customer_name as string | null,
+          address: reportData.address as string | null,
+          staffName: currentStaff?.fullName,
+        });
+        if (match) {
+          reportData.fieldroutes_customer_id = match.customerId;
+          setFieldroutesCustomerId(match.customerId);
+        }
+      } catch (e) {
+        console.warn("FieldRoutes auto-match skipped", e);
+      }
+    }
 
     if (reportId) {
       let savedViaAdmin = false;
