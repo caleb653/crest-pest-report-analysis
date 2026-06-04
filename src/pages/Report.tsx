@@ -755,6 +755,43 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
     // Auto-upload the signed report to FieldRoutes (no approval needed).
     if (signatureData) void autoPushSignedToFieldRoutes();
+
+    // If this sales report contains Rodent Exclusion (or Trapping &
+    // Exclusion), auto-spawn a Rodent Exclusion Report so the tech has a
+    // pre-populated photo/exclusion write-up ready.
+    if (signatureData && reportId) {
+      void (async () => {
+        try {
+          const mod = await import("@/lib/rodentExclusionAutoCreate");
+          if (!mod.salesReportHasRodentExclusion(services)) return;
+          const res = await mod.ensureRodentExclusionReport({
+            id: reportId,
+            technician_name: editableTech,
+            customer_name: editableCustomer,
+            customer_email: customerEmail || null,
+            address: editableAddress,
+            service_date: editableServiceDate,
+            license_number: editableLicenseNumber,
+            map_data: mapData ? JSON.parse(mapData) : null,
+            custom_map_url: customMapImage,
+            rendered_map_url: renderedMapImage,
+            fieldroutes_customer_id: fieldroutesCustomerId,
+            services,
+          });
+          if (res?.created) {
+            toast.success("Rodent Exclusion Report created", {
+              description: "Open it to upload before/after photos.",
+              action: {
+                label: "Open",
+                onClick: () => navigate(mod.rodentExclusionUrl(res.reportId)),
+              },
+            });
+          }
+        } catch (e) {
+          console.warn("Rodent Exclusion auto-create failed:", e);
+        }
+      })();
+    }
   };
 
   // Build the PDF and push it directly to FieldRoutes as "Signed Agreement".
