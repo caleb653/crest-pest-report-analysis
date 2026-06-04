@@ -954,7 +954,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             <StatCard label="Due pool" value={result.pool_size} />
             <StatCard label="Placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
             <StatCard label="Manual" value={result.manual_count} tone={result.manual_count > 0 ? "warn" : "ok"} />
-            <StatCard label="Reassign" value={result.needs_reassignment_count} tone={result.needs_reassignment_count > 0 ? "warn" : "ok"} />
+            <StatCard label="Other tech job pool" value={result.needs_reassignment_count} small />
             <StatCard label="Unplaced" value={result.unplaced_count} tone={result.unplaced_count > 0 ? "info" : "ok"} />
           </div>
 
@@ -1037,11 +1037,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             items={result.manual}
             blurb='Flagged "call to schedule / do not auto-schedule" — handle these by phone.'
           />
-          <UnscheduledBucket
-            title="Needs tech reassignment"
-            items={result.needs_reassignment}
-            blurb="Due in the window, but their preferred tech isn't a field tech — the office must reassign before scheduling."
-          />
+          {/* "Other tech job pool" — customers whose preferred tech isn't a field
+              tech. Shown only as the count stat above; the full list is noise. */}
           <UnscheduledBucket
             title="Couldn't fit in the window"
             items={result.unplaced}
