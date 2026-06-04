@@ -836,16 +836,16 @@ function isoFromDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// Default Fill window: the Sun–Sat week that sits 4 weeks out from the current
-// week. E.g. during the week of Sun May 31, this returns Sun Jun 28 – Sat Jul 4.
-// Recomputed on each mount so it's always current.
+// Default Fill window: the Mon–Fri work week that sits 4 weeks out from the
+// current week. E.g. during the week of Mon Jun 1, this returns Mon Jun 29 –
+// Fri Jul 3. Recomputed on each mount so it's always current.
 function defaultFillWindow(): { start: string; end: string } {
   const d = new Date();
-  d.setHours(12, 0, 0, 0);              // noon — dodge DST / midnight rollover
-  d.setDate(d.getDate() - d.getDay());  // back up to this week's Sunday (0 = Sun)
-  d.setDate(d.getDate() + 28);          // 4 weeks out → target Sunday (start)
+  d.setHours(12, 0, 0, 0);                         // noon — dodge DST / midnight rollover
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); // back up to this week's Monday
+  d.setDate(d.getDate() + 28);                     // 4 weeks out → target Monday (start)
   const start = isoFromDate(d);
-  d.setDate(d.getDate() + 6);           // + 6 days → that week's Saturday (end)
+  d.setDate(d.getDate() + 4);                      // + 4 days → that week's Friday (end)
   return { start, end: isoFromDate(d) };
 }
 
