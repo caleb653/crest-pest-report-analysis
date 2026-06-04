@@ -301,6 +301,8 @@ function avgOf(nums: number[]): number | null {
 function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EfficiencyResult | null>(null);
+  const [monthly, setMonthly] = useState<EfficiencyResult | null>(null);
+  const [loadingMonthly, setLoadingMonthly] = useState(false);
 
   const run = async () => {
     if (!staff) return toast.error("Please sign in again.");
@@ -319,7 +321,22 @@ function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
     }
   };
 
-  useEffect(() => { run(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const runMonthly = async () => {
+    if (!staff) return;
+    setLoadingMonthly(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-efficiency", {
+        body: { staffName: staff.fullName, weeks_back: 26, weeks_forward: 0 },
+      });
+      if (error) throw error;
+      if (!data?.ok) return;
+      setMonthly(data.result as EfficiencyResult);
+    } catch { /* silent */ } finally {
+      setLoadingMonthly(false);
+    }
+  };
+
+  useEffect(() => { run(); runMonthly(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   return (
     <>
@@ -397,7 +414,92 @@ function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
       {result && result.weeks.length === 0 && (
         <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">No routes found in this window.</CardContent></Card>
       )}
+
+      <MonthlyEfficiencyTable result={monthly} loading={loadingMonthly} />
     </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Monthly rollup — aggregates the weekly cells into calendar months
+// ─────────────────────────────────────────────────────────────────────────
+
+function monthKey(iso: string): string {
+  // iso is a Monday date; bucket by the calendar month of that Monday.
+  return iso.slice(0, 7); // YYYY-MM
+}
+function monthLabel(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+}
+
+function MonthlyEfficiencyTable({ result, loading }: { result: EfficiencyResult | null; loading: boolean }) {
+  if (loading && !result) {
+    return <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">Loading monthly history…</CardContent></Card>;
+  }
+  if (!result || result.weeks.length === 0) return null;
+
+  const months = Array.from(new Set(result.weeks.map(monthKey))).sort();
+
+  // tech → month → weighted-avg efficiency (weighted by stops so a 2-stop week
+  // doesn't outweigh a 40-stop one).
+  const cellFor = (tech: string, mo: string): { efficiency: number | null; stops: number; routes: number } => {
+    const row = result.data[tech] || {};
+    let num = 0, den = 0, stops = 0, routes = 0;
+    for (const wk of result.weeks) {
+      if (monthKey(wk) !== mo) continue;
+      const c = row[wk];
+      if (!c) continue;
+      const w = Math.max(1, c.stops);
+      num += c.efficiency * w;
+      den += w;
+      stops += c.stops;
+      routes += c.routes;
+    }
+    return { efficiency: den ? Math.round(num / den) : null, stops, routes };
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <TrendingUp className="w-4 h-4" /> Route Efficiency by Month
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Same wrench-time metric, rolled up by calendar month — last ~6 months for the bigger picture.
+          Weighted by stops so light weeks don't skew the average.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0 overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="sticky left-0 bg-background text-left font-semibold p-2 z-10">Tech</th>
+              {months.map((mo) => (
+                <th key={mo} className="p-2 text-center font-medium whitespace-nowrap">{monthLabel(mo)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {result.techs.map((tech) => (
+              <tr key={tech} className="border-b hover:bg-muted/40">
+                <td className="sticky left-0 bg-background font-medium p-2 z-10 whitespace-nowrap">{tech}</td>
+                {months.map((mo) => {
+                  const c = cellFor(tech, mo);
+                  return (
+                    <td key={mo} className="p-2 text-center" title={c.efficiency != null ? `${c.routes} routes · ${c.stops} stops` : "no routes"}>
+                      {c.efficiency != null
+                        ? <span className={`font-semibold ${efficiencyTone(c.efficiency)}`}>{c.efficiency}%</span>
+                        : <span className="text-muted-foreground">—</span>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
   );
 }
 
