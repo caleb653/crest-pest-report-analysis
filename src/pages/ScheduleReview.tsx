@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
-  Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing,
+  Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing, TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -234,7 +234,7 @@ const ScheduleReview = () => {
         </div>
 
         <Tabs defaultValue="review">
-          <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
             <TabsTrigger
               value="review"
               className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
@@ -246,6 +246,12 @@ const ScheduleReview = () => {
               className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <Wand2 className="w-4 h-4" /> Fill
+            </TabsTrigger>
+            <TabsTrigger
+              value="efficiency"
+              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <TrendingUp className="w-4 h-4" /> Efficiency
             </TabsTrigger>
             <TabsTrigger
               value="pending"
@@ -260,6 +266,9 @@ const ScheduleReview = () => {
           <TabsContent value="fill" className="mt-4 space-y-6">
             <FillMode staff={staff} />
           </TabsContent>
+          <TabsContent value="efficiency" className="mt-4 space-y-6">
+            <EfficiencyMode staff={staff} />
+          </TabsContent>
           <TabsContent value="pending" className="mt-4 space-y-6">
             <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
           </TabsContent>
@@ -268,6 +277,129 @@ const ScheduleReview = () => {
     </div>
   );
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Efficiency mode — avg wrench-time % by tech by week, history vs upcoming
+// ─────────────────────────────────────────────────────────────────────────
+
+type EffCell = { efficiency: number; routes: number; stops: number; production: number };
+type EfficiencyResult = {
+  weeks: string[];        // Monday ISO dates, oldest → newest
+  techs: string[];
+  this_week: string;      // Monday of the current week
+  start: string; end: string;
+  data: Record<string, Record<string, EffCell>>;
+};
+
+function weekShort(iso: string): string {
+  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: "numeric", day: "numeric" });
+}
+function avgOf(nums: number[]): number | null {
+  return nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length) : null;
+}
+
+function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<EfficiencyResult | null>(null);
+
+  const run = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-efficiency", {
+        body: { staffName: staff.fullName, weeks_back: 8, weeks_forward: 8 },
+      });
+      if (error) throw error;
+      if (!data?.ok) { toast.error(data?.error || "Failed to load efficiency."); return; }
+      setResult(data.result as EfficiencyResult);
+    } catch (e: any) {
+      toast.error(e?.message || "Unexpected error.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { run(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Route Efficiency by Week</CardTitle>
+          <CardDescription>
+            Average wrench-time efficiency (on-site ÷ total working time) per tech, per week — 8 weeks
+            of history through 8 weeks ahead. Same metric as Fill &amp; Review, estimated the same way
+            for past and future so weeks compare directly. The <strong>bold</strong> column is this week.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={run} disabled={loading}>{loading ? "Loading…" : "Refresh"}</Button>
+        </CardContent>
+      </Card>
+
+      {result && result.weeks.length > 0 && (
+        <Card>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="sticky left-0 bg-background text-left font-semibold p-2 z-10">Tech</th>
+                  {result.weeks.map((wk) => {
+                    const future = wk > result.this_week;
+                    const isThis = wk === result.this_week;
+                    return (
+                      <th key={wk} className={`p-2 text-center font-medium whitespace-nowrap ${isThis ? "font-bold text-primary border-x-2 border-primary/40" : future ? "text-muted-foreground" : ""}`}>
+                        {weekShort(wk)}{future && !isThis ? "*" : ""}
+                      </th>
+                    );
+                  })}
+                  <th className="p-2 text-center font-semibold whitespace-nowrap">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.techs.map((tech) => {
+                  const row = result.data[tech] || {};
+                  const past = avgOf(result.weeks.filter((w) => w < result.this_week).map((w) => row[w]?.efficiency).filter((x): x is number => x != null));
+                  const fut = avgOf(result.weeks.filter((w) => w >= result.this_week).map((w) => row[w]?.efficiency).filter((x): x is number => x != null));
+                  const delta = past != null && fut != null ? fut - past : null;
+                  return (
+                    <tr key={tech} className="border-b hover:bg-muted/40">
+                      <td className="sticky left-0 bg-background font-medium p-2 z-10 whitespace-nowrap">{tech}</td>
+                      {result.weeks.map((wk) => {
+                        const c = row[wk];
+                        const isThis = wk === result.this_week;
+                        return (
+                          <td key={wk} className={`p-2 text-center ${isThis ? "border-x-2 border-primary/40" : ""}`}
+                              title={c ? `${c.routes} route${c.routes === 1 ? "" : "s"} · ${c.stops} stops · $${c.production.toLocaleString()}` : "no routes"}>
+                            {c ? <span className={`font-semibold ${efficiencyTone(c.efficiency)}`}>{c.efficiency}%</span> : <span className="text-muted-foreground">—</span>}
+                          </td>
+                        );
+                      })}
+                      <td className="p-2 text-center whitespace-nowrap">
+                        {delta == null ? <Minus className="w-3.5 h-3.5 inline text-muted-foreground" />
+                          : delta > 1 ? <span className="text-emerald-700 inline-flex items-center gap-0.5"><TrendingUp className="w-3.5 h-3.5" />+{delta}</span>
+                          : delta < -1 ? <span className="text-red-600 inline-flex items-center gap-0.5"><TrendingDown className="w-3.5 h-3.5" />{delta}</span>
+                          : <span className="text-muted-foreground inline-flex items-center gap-0.5"><Minus className="w-3.5 h-3.5" />0</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+      {result && result.weeks.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          * upcoming weeks (scheduled, not yet completed). Trend = avg upcoming − avg past. Hover a cell for routes / stops / production.
+        </p>
+      )}
+      {result && result.weeks.length === 0 && (
+        <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">No routes found in this window.</CardContent></Card>
+      )}
+    </>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Review mode (the original quick-review report)
