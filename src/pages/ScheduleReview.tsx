@@ -453,38 +453,26 @@ function KeyHighlights({
 
   return (
     <Card className="border-l-4 border-l-amber-500">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Key Highlights</CardTitle>
-        <CardDescription>
-          The few items most worth acting on — cross-day moves and special-scheduling violations first.
-        </CardDescription>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Key Highlights</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-1.5">
         {compliance.slice(0, 3).map((i, idx) => (
           <HighlightRow
             key={`c-${idx}`}
-            icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
+            icon={<AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
             tone="danger"
-            title={`${i.tech_name} (${i.date}) — ${i.kind.replace(/_/g, " ")}`}
-            detail={
-              <>
-                {i.customer ? <strong>{i.customer}</strong> : null}
-                {i.customer ? " — " : null}
-                {i.detail}
-              </>
-            }
+            title={`${i.kind.replace(/_/g, " ")}: ${i.customer || i.tech_name} (${i.date})`}
           />
         ))}
         {topCross.map((m, idx) => (
           <HighlightRow
             key={`x-${idx}`}
-            icon={<ShuffleIcon className="w-5 h-5 text-indigo-600" />}
+            icon={<ShuffleIcon className="w-3.5 h-3.5 text-indigo-600" />}
             tone="info"
-            title={`Move ${m.customer} (${m.city}) to a better-fitting day`}
-            detail={
+            title={
               <>
-                <strong>{m.current_date}</strong> {m.current_tech}'s route → <strong>{m.suggested_date}</strong> {m.suggested_tech}'s route
-                {" · "}saves <strong>{m.improvement_mi.toFixed(1)} mi</strong> from {m.current_tech}'s day
+                Move <strong>{m.customer}</strong>: {m.current_date} {m.current_tech} → {m.suggested_date} {m.suggested_tech} · saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
               </>
             }
           />
@@ -492,15 +480,9 @@ function KeyHighlights({
         {longDrives.slice(0, 3).map((ld, idx) => (
           <HighlightRow
             key={`ld-${idx}`}
-            icon={<Car className="w-5 h-5 text-amber-600" />}
+            icon={<Car className="w-3.5 h-3.5 text-amber-600" />}
             tone="warn"
-            title={`Long drive · ${ld.tech_name} (${ld.date}) — avg ${Math.round(ld.avg_leg_min)} min between stops`}
-            detail={
-              <>
-                {ld.stops} stops · {fmtMinutes(ld.total_drive_min)} total drive.{" "}
-                {suggestionForLongDrive(ld, routeOrderMap, crossSourceByKey)}
-              </>
-            }
+            title={`Long drive: ${ld.tech_name} ${ld.date} · ${Math.round(ld.avg_leg_min)}m/leg · ${fmtMinutes(ld.total_drive_min)} total`}
           />
         ))}
         {topOrder.map(([key, s], idx) => {
@@ -508,18 +490,13 @@ function KeyHighlights({
           return (
             <HighlightRow
               key={`ro-${idx}`}
-              icon={<MapPin className="w-5 h-5 text-emerald-600" />}
+              icon={<MapPin className="w-3.5 h-3.5 text-emerald-600" />}
               tone="ok"
-              title={`Reorder ${date}'s route saves ${fmtMinutes(s.savings_sec / 60)}`}
-              detail={
+              title={
                 s.moves && s.moves.length > 0 ? (
-                  <span>
-                    Top move: <strong>{s.moves[0].customer}</strong>{" "}
-                    from #{s.moves[0].from_position} → #{s.moves[0].to_position}
-                    {s.moves.length > 1 ? ` (+${s.moves.length - 1} other change${s.moves.length > 2 ? "s" : ""})` : ""}
-                  </span>
+                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)} (mv <strong>{s.moves[0].customer}</strong> #{s.moves[0].from_position}→#{s.moves[0].to_position}{s.moves.length > 1 ? ` +${s.moves.length - 1}` : ""})</>
                 ) : (
-                  <span>Multiple small shifts — see per-route detail below.</span>
+                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)}</>
                 )
               }
             />
@@ -531,12 +508,11 @@ function KeyHighlights({
 }
 
 function HighlightRow({
-  icon, tone, title, detail,
+  icon, tone, title,
 }: {
   icon: React.ReactNode;
   tone: "ok" | "warn" | "danger" | "info";
-  title: string;
-  detail: React.ReactNode;
+  title: React.ReactNode;
 }) {
   const toneBg = {
     ok:     "bg-emerald-50",
@@ -545,12 +521,9 @@ function HighlightRow({
     info:   "bg-indigo-50",
   }[tone];
   return (
-    <div className={`flex gap-3 items-start rounded-md p-3 ${toneBg}`}>
-      <div className="mt-0.5">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm">{title}</div>
-        <div className="text-sm text-muted-foreground">{detail}</div>
-      </div>
+    <div className={`flex gap-2 items-center rounded px-2 py-1 ${toneBg}`}>
+      <div className="shrink-0">{icon}</div>
+      <div className="flex-1 min-w-0 text-xs leading-snug truncate">{title}</div>
     </div>
   );
 }
