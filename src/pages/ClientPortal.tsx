@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, ChevronDown, Send, ArrowLeft, X, MapPin, Shield, Wrench } from "lucide-react";
+import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, ChevronDown, Send, ArrowLeft, X, MapPin, Shield, Wrench, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
@@ -74,11 +74,14 @@ interface ChatMessage {
 }
 
 // ─── Service Snapshot Component ───
-const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
+const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, uploadingPhotoId, onUploadPhotos }: {
   service: ServiceData;
   isExpanded: boolean;
   onToggle: () => void;
   onViewFull: () => void;
+  isAdmin: boolean;
+  uploadingPhotoId: string | null;
+  onUploadPhotos: (serviceId: string, files: FileList | null) => void;
 }) => {
   // Surface follow-up units extremely prominently — pull every unit the
   // technician explicitly flagged so the customer sees exactly which
@@ -220,6 +223,53 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull }: {
             </div>
           )}
           {service.special_notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Special Notes</p><p className="text-sm">{service.special_notes}</p></div>}
+          {/* Service-level photos. Anyone can view; Crest staff (admin) can add
+              more — to ANY service, past or upcoming — from camera or gallery. */}
+          {(() => {
+            const servicePhotos: any[] = Array.isArray(service.photos) ? service.photos : [];
+            const photoUrl = (p: any) => (typeof p === "string" ? p : p?.url || p?.src);
+            if (servicePhotos.length === 0 && !isAdmin) return null;
+            const busy = uploadingPhotoId === service.id;
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Photos{servicePhotos.length > 0 ? ` (${servicePhotos.length})` : ""}
+                  </p>
+                  {isAdmin && (
+                    <label className={`inline-flex items-center gap-1 text-xs font-medium text-primary ${busy ? "opacity-60" : "cursor-pointer hover:underline"}`}>
+                      {busy
+                        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
+                        : <><ImagePlus className="w-3.5 h-3.5" /> Add photos</>}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        disabled={busy}
+                        onChange={(e) => { onUploadPhotos(service.id, e.target.files); e.currentTarget.value = ""; }}
+                      />
+                    </label>
+                  )}
+                </div>
+                {servicePhotos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {servicePhotos.map((p, i) => {
+                      const url = photoUrl(p);
+                      if (!url) return null;
+                      return (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-md overflow-hidden border bg-muted">
+                          <img src={url} alt={`Service photo ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : isAdmin && (
+                  <p className="text-xs text-muted-foreground">No photos yet — tap "Add photos" to upload from this device's camera or gallery (you can pick several at once).</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
     </CardContent>
@@ -318,6 +368,43 @@ const ClientPortal = () => {
   const [serviceSortBy, setServiceSortBy] = useState<"date" | "unit">("date");
   const [expandedServiceId, setExpandedServiceId] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  // Crest staff (signed in as admin) get an "Add photos" control on each service;
+  // regular clients viewing via their link do not. Mirrors the admin_session
+  // convention used by the pending-writes approval UI.
+  const [isAdmin] = useState<boolean>(() => typeof window !== "undefined" && !!localStorage.getItem("admin_session"));
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null);
+
+  // Upload one or more photos onto a service (any service, past or upcoming).
+  // No `capture` attribute on the input, so an iPad offers Photo Library AND
+  // Camera; `multiple` lets staff pick several at once.
+  const uploadServicePhotos = async (serviceId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingPhotoId(serviceId);
+    const urls: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `client-portal-service-photos/${serviceId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("report-images").upload(path, file, {
+        contentType: file.type || "image/jpeg", upsert: false,
+      });
+      if (upErr) { toast({ title: "Upload failed", description: upErr.message, variant: "destructive" }); continue; }
+      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
+      if (pub?.publicUrl) urls.push(pub.publicUrl);
+    }
+    if (urls.length) {
+      const current = services.find(s => s.id === serviceId);
+      const existing: any[] = Array.isArray(current?.photos) ? (current!.photos as any[]) : [];
+      const next = [...existing, ...urls];
+      const { error: updErr } = await supabase.from("portal_services").update({ photos: next }).eq("id", serviceId);
+      if (updErr) { toast({ title: "Couldn't save photos", description: updErr.message, variant: "destructive" }); }
+      else {
+        setServices(prev => prev.map(s => s.id === serviceId ? { ...s, photos: next } : s));
+        toast({ title: `Added ${urls.length} photo${urls.length === 1 ? "" : "s"}` });
+      }
+    }
+    setUploadingPhotoId(null);
+  };
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -638,6 +725,9 @@ const ClientPortal = () => {
                         isExpanded={(autoExpandId === s.id && i === 0 && !expandedServiceId) || expandedServiceId === s.id}
                         onToggle={() => setExpandedServiceId(expandedServiceId === s.id ? null : s.id)}
                         onViewFull={() => setSelectedService(s)}
+                        isAdmin={isAdmin}
+                        uploadingPhotoId={uploadingPhotoId}
+                        onUploadPhotos={uploadServicePhotos}
                       />
                     ))}
                   </div>
@@ -662,6 +752,9 @@ const ClientPortal = () => {
                       isExpanded={expandedServiceId === s.id}
                       onToggle={() => setExpandedServiceId(expandedServiceId === s.id ? null : s.id)}
                       onViewFull={() => setSelectedService(s)}
+                      isAdmin={isAdmin}
+                      uploadingPhotoId={uploadingPhotoId}
+                      onUploadPhotos={uploadServicePhotos}
                     />
                   ))}
                 </div>
