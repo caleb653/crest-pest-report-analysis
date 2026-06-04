@@ -1,26 +1,50 @@
-## Phase 1 — Foundation (now)
-1. **Add 4th card** to the Index page: "Client Portal" 
-2. **Create database tables**: `portal_clients`, `portal_links`, `portal_properties`, `portal_services`, `portal_prep_sheets`, `portal_messages`
-3. **Build the main portal page** (`/client-portal/:token`) — single-page layout with sections for Past Services, Future Services, Prep Sheets, and Message Crest
-4. **Build link-based access model**: Master links see all properties; sub-links see only assigned ones
-5. **Build admin portal management page** (`/client-portal-admin`) — accessible from the 4th card, where Crest staff can create clients, generate links, add properties/services, and manage prep sheets
+## Goal
+Add a **Rodent Exclusion Report** that auto-spawns from a signed Sales report containing Rodent Exclusion or Rodent Trapping & Exclusion, with paired Before/After photos, arrow linking, and its own first-page PDF layout.
 
-## Phase 2 — Detail views
-- Past Service detail view with unit-level accordion
-- Future Service detail view
-- Prep sheet preview/download
+## 1. Data
+Reuse the existing `reports` table (no schema change). New rows are tagged via `notes` JSON marker `_reportFormat: "rodent-exclusion"` (same pattern as Multi-Proposal) and carry:
+- `source_sales_report_id` (in notes JSON)
+- `before_photos[]`, `after_photos[]` (URLs in `notes` JSON; reuses `report-images` bucket)
+- `photo_pairs[]` — array of `{ beforeId, afterId }`
 
-## Phase 3 — Messaging & polish
-- Message Crest form → sends email to office@crestpestcontrol.com
-- Admin impersonation (view as client)
-- Polish and mobile optimization
+## 2. Auto-conversion trigger
+In `src/pages/Report.tsx` (Sales) signature-finalize path: when a signature is saved AND services include `Rodent Exclusion` or `Rodent Trapping & Exclusion`, call new helper `createRodentExclusionFromSales(salesReport)`:
+- Inserts a new `reports` row pre-populated with customer info, address, technician, map data, target pests = `["Rodents"]`
+- Sets `_reportFormat: "rodent-exclusion"` and `source_sales_report_id`
+- Idempotent: skip if a rodent-exclusion report already references this sales id
+- Show toast linking to the new report
 
-**Shall I proceed with Phase 1?**
+## 3. New page & route
+- `src/pages/RodentExclusionReport.tsx` — new page mirroring InitialPestReport structure
+- Route `/rodent-exclusion/:id` in `src/App.tsx`
+- Two upload sections: **Before Photos** and **After Photos**, each capped at **20** images (override the 12-cap memory rule for this report only)
+- After-photo tiles are drag-reorderable (use `@dnd-kit/sortable` if installed, else simple HTML5 drag)
+- Arrow linking: click a Before tile → it highlights; click an After tile → creates a pair entry. Click the small ✕ on the pair badge to remove.
+- Map auto-renders from the inherited `map_data`
 
-## Phase 4 — Compliance documents
-- **Pesticide Pre-Application Notice**: auto-generated, per-property digital version
-  of the California-required notice. Customized with property name, address, service
-  frequency, and target pests pulled from `portal_properties.customer_preferences`.
-  - Public route: `/pre-application/:propertyId`
-  - Surfaced in Admin (PropertyDashboard) and PM Portal as a "Pesticide Pre-Application
-    Notice" card with View / Download (PDF) and Copy Link actions.
+## 4. PDF layout
+Update `src/lib/pdfExport.ts` (or a dedicated `rodentExclusionPdf.ts`) to:
+- **Page 1**: Header + Paired Before/After rows, 2 cols (Before | arrow | After), 2 pairs per page, overflow → more pages
+- **Following pages**: existing report flow (summary, map, services, signature)
+- Single Before or single After (unpaired) renders at the end of the photo section
+
+## 5. Email
+`src/lib/...` send paths for rodent-exclusion type → subject `"Your Rodent Exclusion Report from Crest"`. Pass `reportType: "rodent-exclusion"` through to `send-report-email` (no edge change needed — it just forwards subject).
+
+## 6. Created Reports list
+`src/pages/SubmittedReports.tsx` — add "Rodent Exclusion" filter; detect via `_reportFormat` marker.
+
+## 7. Files touched
+- NEW: `src/pages/RodentExclusionReport.tsx`, `src/lib/rodentExclusion.ts` (createFromSales + pairing helpers)
+- EDIT: `src/App.tsx`, `src/pages/Report.tsx` (post-sign hook), `src/lib/pdfExport.ts`, `src/pages/SubmittedReports.tsx`, `src/pages/Index.tsx` (optional dashboard tile)
+- Memory update: image-management cap exception for this report type
+
+## Technical notes
+- Arrows in-app: SVG overlay using DOM `getBoundingClientRect()` of paired tiles; recompute on scroll/resize.
+- Arrows in PDF: drawn as inline SVG between paired cells in the photo grid.
+- Reuses existing `compressImage` + `report-images` Storage bucket — no new bucket.
+
+## Out of scope (will not do unless asked)
+- Editing the sales report itself
+- Changing other report types' caps
+- New auth/role rules
