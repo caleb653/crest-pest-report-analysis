@@ -928,7 +928,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [defaultWindow] = useState(defaultFillWindow);
   const [start, setStart] = useState<string>(defaultWindow.start);
   const [end, setEnd] = useState<string>(defaultWindow.end);
-  const [maxStops, setMaxStops] = useState<number>(14);
+  const [maxStops, setMaxStops] = useState<number>(11);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
