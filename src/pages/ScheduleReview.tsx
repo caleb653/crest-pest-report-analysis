@@ -197,16 +197,16 @@ function suggestionForLongDrive(
   const bestMove = [...outMoves].sort((a, b) => b.improvement_mi - a.improvement_mi)[0];
 
   if (bestMove && (!order || bestMove.improvement_mi >= 5)) {
-    return `Move ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech} — saves ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
+    return `Try moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)} — saves about ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
   }
   if (order && order.savings_sec >= 5 * 60) {
     const top = order.moves?.[0];
-    return `Reorder this route — saves ${fmtMinutes(order.savings_sec / 60)} of drive${top ? ` (e.g. move ${top.customer} from #${top.from_position} → #${top.to_position})` : ""}.`;
+    return `Reorder the day to save ${fmtMinutes(order.savings_sec / 60)}${top ? ` — move ${top.customer} up from stop ${top.from_position} to ${top.to_position}` : ""}.`;
   }
   if (bestMove) {
-    return `Consider moving ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech}.`;
+    return `Consider moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)}.`;
   }
-  return `No easy fix in this window — check if any stop can be rescheduled or paired with a nearby visit on another day.`;
+  return `No easy fix here — see if a stop can shift to another day or pair with a nearby visit.`;
 }
 
 function keyToRouteRef(result: ReviewResult, key: string) {
