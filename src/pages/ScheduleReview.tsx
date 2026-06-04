@@ -1246,7 +1246,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                       : "text-indigo-700 border-indigo-300"
                     }
                   >
-                    {s.window}
+                   {humanTime(s.window)}
                   </Badge>
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
@@ -1266,7 +1266,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                 </span>
               </div>
               <div className={`mt-0.5 ${isBlack ? "opacity-80" : "text-muted-foreground"}`}>
-                {s.eta && <span className="font-mono font-medium">{s.eta}</span>}
+                {s.eta && <span className="font-mono font-medium">{humanTime(s.eta)}</span>}
                 {s.eta && " · "}
                 {typeof s.drive_from_prev_min === "number" && s.order > 1 && s.drive_from_prev_min > 0 && (
                   <>+{s.drive_from_prev_min}m drive · </>
