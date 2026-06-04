@@ -774,6 +774,7 @@ type FillDay = {
   summary?: FillRouteSummary;
   stops: FillStop[];
 };
+type FillRouteRow = { date: string; tech: string } & FillRouteSummary;
 type FillTopSummary = {
   route_count: number;
   total_stops: number;
@@ -782,7 +783,28 @@ type FillTopSummary = {
   total_min: number;
   total_production: number;
   avg_efficiency_pct: number;
+  routes: FillRouteRow[];
 };
+
+// Group the per-route summaries by day (soonest first), with that day's totals
+// across every tech/route on it.
+function groupRoutesByDay(routes: FillRouteRow[]) {
+  const m = new Map<string, FillRouteRow[]>();
+  for (const r of routes) {
+    if (!m.has(r.date)) m.set(r.date, []);
+    m.get(r.date)!.push(r);
+  }
+  return [...m.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, list]) => ({
+      date,
+      routes: [...list].sort((a, b) => a.tech.localeCompare(b.tech)),
+      production: list.reduce((s, r) => s + (r.production || 0), 0),
+      stops: list.reduce((s, r) => s + r.stop_count, 0),
+      drive_min: list.reduce((s, r) => s + r.drive_min, 0),
+      onsite_min: list.reduce((s, r) => s + r.onsite_min, 0),
+    }));
+}
 type FillUnscheduled = {
   customer: string;
   city: string;
@@ -937,25 +959,61 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           </div>
 
           {result.summary && result.summary.route_count > 0 && (
-            <Card className="border-l-4 border-l-emerald-500">
-              <CardContent className="py-3 grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
-                {([
-                  ["Routes", String(result.summary.route_count)],
-                  ["Total stops", String(result.summary.total_stops)],
-                  ["On-site", fmtHM(result.summary.total_onsite_min)],
-                  ["Drive time", fmtHM(result.summary.total_drive_min)],
-                  ["Production", `$${result.summary.total_production.toLocaleString()}`],
-                  ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
-                ] as [string, string][]).map(([label, value]) => (
-                  <div key={label}>
-                    <div className="text-muted-foreground text-xs">{label}</div>
-                    <div className={`font-semibold text-base ${label === "Avg efficiency" ? efficiencyTone(result.summary!.avg_efficiency_pct) : ""}`}>
-                      {value}
+            <>
+              <Card className="border-l-4 border-l-emerald-500">
+                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
+                  {([
+                    ["Routes", String(result.summary.route_count)],
+                    ["Total stops", String(result.summary.total_stops)],
+                    ["On-site", fmtHM(result.summary.total_onsite_min)],
+                    ["Drive time", fmtHM(result.summary.total_drive_min)],
+                    ["Production", `$${result.summary.total_production.toLocaleString()}`],
+                    ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
+                  ] as [string, string][]).map(([label, value]) => (
+                    <div key={label}>
+                      <div className="text-muted-foreground text-xs">{label}</div>
+                      <div className={`font-semibold text-base ${label === "Avg efficiency" ? efficiencyTone(result.summary!.avg_efficiency_pct) : ""}`}>
+                        {value}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Summary by day</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {groupRoutesByDay(result.summary.routes ?? []).map((day) => (
+                    <div key={day.date} className="space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2 border-b pb-1">
+                        <span className="font-semibold text-sm">{weekdayLabel(day.date)}</span>
+                        <span className="text-sm flex items-baseline gap-2 flex-wrap justify-end">
+                          <span className="text-muted-foreground text-xs">
+                            {day.routes.length} {day.routes.length === 1 ? "route" : "routes"} · {day.stops} stops · {fmtHM(day.drive_min)} drive
+                          </span>
+                          <span className="font-bold text-emerald-700">${day.production.toLocaleString()}</span>
+                        </span>
+                      </div>
+                      {day.routes.map((r) => (
+                        <div key={r.tech} className="flex items-baseline justify-between gap-2 text-xs pl-1">
+                          <span className="font-medium min-w-[7rem]">{r.tech}</span>
+                          <span className="text-muted-foreground flex gap-2 flex-wrap justify-end items-baseline">
+                            <span>{r.stop_count} stops</span>
+                            <span>· {r.total_hours}h</span>
+                            <span>· {fmtHM(r.drive_min)} drive</span>
+                            <span>· {r.est_start}–{r.est_finish}</span>
+                            <span className="font-semibold text-foreground">· ${r.production.toLocaleString()}</span>
+                            <span className={`font-semibold ${efficiencyTone(r.efficiency_pct)}`}>· {r.efficiency_pct}%</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </>
           )}
 
           {result.proposed.length === 0 && (
