@@ -1199,7 +1199,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
         {day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
-            <span>{day.summary.est_start}–{day.summary.est_finish} ({day.summary.total_hours}h)</span>
+            <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
             <span>· {fmtHM(day.summary.drive_min)} drive</span>
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
             <span>· ${day.summary.production.toLocaleString()} production</span>
