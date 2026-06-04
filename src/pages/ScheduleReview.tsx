@@ -721,39 +721,36 @@ function PerRouteGrid({
                           <li key={`c-${idx}`}>
                             <span className="text-red-600 font-medium">{i.kind.replace(/_/g, " ")}:</span>{" "}
                             {i.customer ? <strong>{i.customer}</strong> : null}
-                            {i.customer ? " — " : ""}{i.detail}
+                            {i.customer ? " — " : ""}{humanTime(i.detail) || i.detail}
                           </li>
                         ))}
                         {misses.map((f, idx) => (
                           <li key={`m-${idx}`}>
-                            <span className="text-amber-700 font-medium">late:</span>{" "}
-                            <strong>{f.customer}</strong> {f.window} (+{f.late_by_min}m)
+                            <span className="text-amber-700 font-medium">Running late:</span>{" "}
+                            <strong>{f.customer}</strong> — {humanTime(f.window)} window, ~{f.late_by_min} min late
                           </li>
                         ))}
                         {longDrive ? (
                           <li>
-                            <span className="text-amber-700 font-medium">long drive:</span>{" "}
-                            ~{Math.round(longDrive.avg_leg_min)}m/leg —{" "}
-                            {suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
+                            <span className="text-amber-700 font-medium">Long drives</span> (~{Math.round(longDrive.avg_leg_min)} min between stops) — {suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
                           </li>
                         ) : null}
                         {order ? (
                           <li>
-                            <span className="text-emerald-700 font-medium">reorder:</span>{" "}
-                            save {fmtMinutes(order.savings_sec / 60)}
-                            {order.moves?.[0] ? <> (mv {order.moves[0].customer} #{order.moves[0].from_position}→#{order.moves[0].to_position})</> : null}
+                            <span className="text-emerald-700 font-medium">Reorder to save {fmtMinutes(order.savings_sec / 60)}</span>
+                            {order.moves?.[0] ? <> — move <strong>{order.moves[0].customer}</strong> up from stop {order.moves[0].from_position} to {order.moves[0].to_position}</> : null}
                           </li>
                         ) : null}
                         {crossOut.map((m, idx) => (
                           <li key={`xo-${idx}`}>
-                            <span className="text-indigo-700 font-medium">move out:</span>{" "}
-                            <strong>{m.customer}</strong> → {m.suggested_date.slice(5)} {shortTech(m.suggested_tech)} (−{m.improvement_mi.toFixed(1)}mi)
+                            <span className="text-indigo-700 font-medium">Move out:</span>{" "}
+                            send <strong>{m.customer}</strong> to {firstName(m.suggested_tech)} on {shortDate(m.suggested_date)} (saves {m.improvement_mi.toFixed(1)} mi)
                           </li>
                         ))}
                         {crossIn.map((m, idx) => (
                           <li key={`xi-${idx}`}>
-                            <span className="text-indigo-700 font-medium">move in:</span>{" "}
-                            {m.customer} ← {shortTech(m.current_tech)}
+                            <span className="text-indigo-700 font-medium">Move in:</span>{" "}
+                            pick up <strong>{m.customer}</strong> from {firstName(m.current_tech)}
                           </li>
                         ))}
                       </ul>
