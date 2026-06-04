@@ -513,7 +513,11 @@ function KeyHighlights({
             key={`c-${idx}`}
             icon={<AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
             tone="danger"
-            title={`${i.kind.replace(/_/g, " ")}: ${i.customer || i.tech_name} (${i.date})`}
+            title={
+              <>
+                <strong>{i.customer || firstName(i.tech_name)}</strong> on {shortDate(i.date)} — {i.kind.replace(/_/g, " ")}
+              </>
+            }
           />
         ))}
         {topCross.map((m, idx) => (
@@ -523,7 +527,7 @@ function KeyHighlights({
             tone="info"
             title={
               <>
-                Move <strong>{m.customer}</strong>: {m.current_date} {m.current_tech} → {m.suggested_date} {m.suggested_tech} · saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
+                Move <strong>{m.customer}</strong> from {firstName(m.current_tech)} ({shortDate(m.current_date)}) to {firstName(m.suggested_tech)} ({shortDate(m.suggested_date)}) — saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
               </>
             }
           />
@@ -533,7 +537,11 @@ function KeyHighlights({
             key={`ld-${idx}`}
             icon={<Car className="w-3.5 h-3.5 text-amber-600" />}
             tone="warn"
-            title={`Long drive: ${ld.tech_name} ${ld.date} · ${Math.round(ld.avg_leg_min)}m/leg · ${fmtMinutes(ld.total_drive_min)} total`}
+            title={
+              <>
+                Tighten up <strong>{firstName(ld.tech_name)}</strong>'s {shortDate(ld.date)} — ~{Math.round(ld.avg_leg_min)} min between stops ({fmtMinutes(ld.total_drive_min)} driving)
+              </>
+            }
           />
         ))}
         {topOrder.map(([key, s], idx) => {
@@ -545,9 +553,11 @@ function KeyHighlights({
               tone="ok"
               title={
                 s.moves && s.moves.length > 0 ? (
-                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)} (mv <strong>{s.moves[0].customer}</strong> #{s.moves[0].from_position}→#{s.moves[0].to_position}{s.moves.length > 1 ? ` +${s.moves.length - 1}` : ""})</>
+                  <>
+                    Move <strong>{s.moves[0].customer}</strong> up on {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)} (stop {s.moves[0].from_position} → {s.moves[0].to_position}{s.moves.length > 1 ? `, +${s.moves.length - 1} more` : ""})
+                  </>
                 ) : (
-                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)}</>
+                  <>Reorder {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)}</>
                 )
               }
             />
