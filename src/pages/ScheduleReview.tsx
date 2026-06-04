@@ -832,11 +832,21 @@ type FillResult = {
   summary?: FillTopSummary;
 };
 
-// Default window: today → today + 30 days, in local time.
-function isoToday(offsetDays = 0): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
+function isoFromDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Default Fill window: the Sun–Sat week that sits 4 weeks out from the current
+// week. E.g. during the week of Sun May 31, this returns Sun Jun 28 – Sat Jul 4.
+// Recomputed on each mount so it's always current.
+function defaultFillWindow(): { start: string; end: string } {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);              // noon — dodge DST / midnight rollover
+  d.setDate(d.getDate() - d.getDay());  // back up to this week's Sunday (0 = Sun)
+  d.setDate(d.getDate() + 28);          // 4 weeks out → target Sunday (start)
+  const start = isoFromDate(d);
+  d.setDate(d.getDate() + 6);           // + 6 days → that week's Saturday (end)
+  return { start, end: isoFromDate(d) };
 }
 
 function weekdayLabel(iso: string): string {
@@ -861,8 +871,9 @@ function efficiencyTone(pct: number): string {
 }
 
 function FillMode({ staff }: { staff: { fullName: string } | null }) {
-  const [start, setStart] = useState<string>(isoToday(0));
-  const [end, setEnd] = useState<string>(isoToday(30));
+  const [defaultWindow] = useState(defaultFillWindow);
+  const [start, setStart] = useState<string>(defaultWindow.start);
+  const [end, setEnd] = useState<string>(defaultWindow.end);
   const [maxStops, setMaxStops] = useState<number>(14);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
   const [loading, setLoading] = useState(false);
