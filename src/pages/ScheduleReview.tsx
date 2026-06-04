@@ -94,6 +94,57 @@ function fmtMinutes(min: number): string {
   return h > 0 ? `${h}h${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
+// "08:00:00" → "8 AM", "08:30:00" → "8:30 AM", "8:00 AM-10:00 AM" → "8–10 AM",
+// "08:00:00-10:00:00" → "8–10 AM". Strips seconds, adds am/pm.
+function humanTime(s: string | null | undefined): string {
+  if (!s) return "";
+  const conv = (raw: string): string => {
+    const t = raw.trim();
+    // Already has am/pm — just drop seconds.
+    const ampm = t.match(/^(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([AaPp][Mm])$/);
+    if (ampm) {
+      const h = parseInt(ampm[1], 10);
+      const m = ampm[2] ? parseInt(ampm[2], 10) : 0;
+      const sfx = ampm[3].toUpperCase();
+      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
+    }
+    // 24h "HH:MM[:SS]"
+    const h24 = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (h24) {
+      let h = parseInt(h24[1], 10);
+      const m = parseInt(h24[2], 10);
+      const sfx = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
+    }
+    return t;
+  };
+  if (s.includes("-")) {
+    const [a, b] = s.split("-").map((x) => conv(x));
+    // Collapse same suffix: "8 AM–10 AM" → "8–10 AM"
+    const ma = a.match(/^(.+)\s(AM|PM)$/);
+    const mb = b.match(/^(.+)\s(AM|PM)$/);
+    if (ma && mb && ma[2] === mb[2]) return `${ma[1]}–${mb[1]} ${mb[2]}`;
+    return `${a}–${b}`;
+  }
+  return conv(s);
+}
+
+// First name only — friendlier than "Dylan G." in narrative sentences.
+function firstName(full: string): string {
+  return (full || "").split(" ")[0] || full;
+}
+
+// "2025-11-20" → "Thu Nov 20"
+function shortDate(iso: string): string {
+  if (!iso) return "";
+  try {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  } catch { return iso; }
+}
+
 // Heuristic: flag a route as having "long drives between stops" when the
 // average leg (total drive time divided by number of legs) is over this
 // threshold. We don't have per-leg distances on the client, so this is a
