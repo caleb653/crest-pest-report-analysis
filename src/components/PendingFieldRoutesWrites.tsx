@@ -5,9 +5,14 @@
 // from that page. If the visitor isn't admin, a single sign-in CTA shows up
 // instead so non-admins on the page see nothing scary.
 //
+// Appointment writes are grouped by service date so the office can approve a
+// WHOLE DAY in one click (or everything at once) instead of one appointment at
+// a time. Bulk approve loops the same per-item commit endpoint, so there's no
+// backend change — each item still writes independently and reports success.
+//
 // Backend: fieldroutes-queue-list (load), fieldroutes-queue-decide (commit).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, RefreshCw, XCircle } from "lucide-react";
@@ -59,6 +64,23 @@ function describe(row: QueueRow): { title: string; lines: string[] } {
   return { title: row.summary ?? `${row.entity}/${row.action}`, lines };
 }
 
+// Batch key: appointments group by service date (so a day approves at once);
+// everything else groups under its entity type.
+function groupKeyOf(row: QueueRow): string {
+  const p = (row.payload ?? {}) as Record<string, any>;
+  if (row.entity === "appointment" && p.date) return `appt:${p.date}`;
+  return `entity:${row.entity}`;
+}
+
+function groupLabelOf(key: string): string {
+  if (key.startsWith("appt:")) {
+    const iso = key.slice(5);
+    const d = new Date(`${iso}T12:00:00`);
+    return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  }
+  return `${key.slice(7)}s`;
+}
+
 type Props = {
   /** Optional filter by entity (e.g. "appointment"). Omit to show all pending. */
   entityFilter?: string | string[];
@@ -72,6 +94,9 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   const [rows, setRows] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Bulk approval: which group is committing ("all" for the whole list) + progress.
+  const [bulkBusy, setBulkBusy] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const clearExpiredSession = useCallback(() => {
     localStorage.removeItem("admin_session");
@@ -112,6 +137,21 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
 
   useEffect(() => { if (token) load(); }, [token, load]);
 
+  // Rows batched into approvable groups (appointments by date, soonest first).
+  const groups = useMemo(() => {
+    const m = new Map<string, QueueRow[]>();
+    for (const r of rows) {
+      const k = groupKeyOf(r);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    for (const list of m.values()) {
+      list.sort((a, b) =>
+        String((a.payload as any)?.start ?? "").localeCompare(String((b.payload as any)?.start ?? "")));
+    }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [rows]);
+
   const decide = async (row: QueueRow, action: "approve" | "reject") => {
     if (!token) return;
     if (action === "approve" && !window.confirm(`Approve and WRITE to FieldRoutes now?\n\n${row.summary ?? row.id}`)) return;
@@ -143,6 +183,49 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
     }
   };
 
+  // Bulk-approve a list of queued writes with a single confirm. Loops the same
+  // per-item commit endpoint sequentially (so one bad item can't abort the rest)
+  // and reports a roll-up. `scopeKey` drives which button shows the spinner.
+  const bulkApprove = async (list: QueueRow[], scopeKey: string, scopeLabel: string) => {
+    if (!token || list.length === 0) return;
+    if (!window.confirm(
+      `Approve and WRITE ${list.length} appointment${list.length === 1 ? "" : "s"}` +
+      `${scopeLabel ? ` for ${scopeLabel}` : ""} to FieldRoutes now?\n\n` +
+      `Each one books in FieldRoutes immediately.`,
+    )) return;
+
+    setBulkBusy(scopeKey);
+    setProgress({ done: 0, total: list.length });
+    let ok = 0, fail = 0, disabled = false, expired = false;
+    for (let i = 0; i < list.length; i++) {
+      const row = list[i];
+      try {
+        const { data, error } = await supabase.functions.invoke("fieldroutes-queue-decide", {
+          body: { sessionToken: token, id: row.id, action: "approve" },
+        });
+        const errorMessage = data?.error ?? error?.message ?? "unknown";
+        if (errorMessage === "invalid_session" || errorMessage === "missing_session") { expired = true; break; }
+        if (!error && data?.status === "committed") ok++;
+        else {
+          fail++;
+          if (errorMessage === "server_write_disabled") { disabled = true; break; }
+        }
+      } catch { fail++; }
+      setProgress({ done: i + 1, total: list.length });
+    }
+    setBulkBusy(null);
+    setProgress(null);
+    if (expired) {
+      clearExpiredSession();
+      toast.info("Admin session expired — please sign in again.");
+      return;
+    }
+    await load();
+    if (disabled) toast.error("Writes disabled on server (FR_WRITE_ENABLED).");
+    else if (ok) toast.success(`Wrote ${ok} to FieldRoutes${fail ? ` · ${fail} failed` : ""} ✓`);
+    else toast.error(`No writes committed${fail ? ` · ${fail} failed` : ""}`);
+  };
+
   // Non-admin: small sign-in chip, no scary UI.
   if (!token) {
     return (
@@ -157,40 +240,78 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
 
   if (rows.length === 0 && !loading) return null;
 
+  const anyBusy = bulkBusy !== null || busyId !== null;
+
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 gap-2">
         <CardTitle className="text-sm flex items-center gap-2">
           <Clock className="h-4 w-4" /> {title}{" "}
           <Badge variant="secondary">{rows.length}</Badge>
         </CardTitle>
-        <Button variant="ghost" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-2">
+          {rows.length > 1 && (
+            <Button
+              size="sm"
+              disabled={anyBusy}
+              onClick={() => bulkApprove(rows, "all", "")}
+            >
+              {bulkBusy === "all" && progress
+                ? <>Approving {progress.done}/{progress.total}…</>
+                : <><CheckCircle2 className="h-3 w-3 mr-1" /> Approve all ({rows.length})</>}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={load} disabled={loading || anyBusy}>
+            <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {rows.map((row) => {
-          const { title, lines } = describe(row);
+      <CardContent className="space-y-4">
+        {groups.map(([key, list]) => {
+          const label = groupLabelOf(key);
+          const isApptDay = key.startsWith("appt:");
           return (
-            <div key={row.id} className="rounded-md border border-blue-200 bg-blue-50/40 p-3 flex items-start gap-3">
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <p className="font-medium text-sm break-words">{title}</p>
-                {lines.map((l, i) => (
-                  <p key={i} className="text-xs text-muted-foreground break-words">{l}</p>
-                ))}
-                <p className="text-[10px] text-muted-foreground pt-1">
-                  Requested {new Date(row.requested_at).toLocaleString()}
-                  {row.requested_by ? ` · ${row.requested_by}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Button size="sm" disabled={busyId === row.id} onClick={() => decide(row, "approve")}>
-                  <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
-                </Button>
-                <Button size="sm" variant="outline" disabled={busyId === row.id} onClick={() => decide(row, "reject")}>
-                  <XCircle className="h-3 w-3 mr-1" /> Reject
+            <div key={key} className="space-y-2">
+              <div className="flex items-center justify-between gap-2 border-b pb-1">
+                <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                  {label} <Badge variant="outline">{list.length}</Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={anyBusy}
+                  onClick={() => bulkApprove(list, key, isApptDay ? label : `all ${label}`)}
+                >
+                  {bulkBusy === key && progress
+                    ? <>Approving {progress.done}/{progress.total}…</>
+                    : <><CheckCircle2 className="h-3 w-3 mr-1" /> {isApptDay ? "Approve day" : "Approve all"} ({list.length})</>}
                 </Button>
               </div>
+              {list.map((row) => {
+                const { title: rowTitle, lines } = describe(row);
+                return (
+                  <div key={row.id} className="rounded-md border border-blue-200 bg-blue-50/40 p-3 flex items-start gap-3">
+                    <div className="flex-1 min-w-0 space-y-0.5">
+                      <p className="font-medium text-sm break-words">{rowTitle}</p>
+                      {lines.map((l, i) => (
+                        <p key={i} className="text-xs text-muted-foreground break-words">{l}</p>
+                      ))}
+                      <p className="text-[10px] text-muted-foreground pt-1">
+                        Requested {new Date(row.requested_at).toLocaleString()}
+                        {row.requested_by ? ` · ${row.requested_by}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <Button size="sm" disabled={anyBusy} onClick={() => decide(row, "approve")}>
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+                      </Button>
+                      <Button size="sm" variant="outline" disabled={anyBusy} onClick={() => decide(row, "reject")}>
+                        <XCircle className="h-3 w-3 mr-1" /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

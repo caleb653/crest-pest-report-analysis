@@ -746,6 +746,23 @@ type FillStop = {
   already_scheduled?: boolean;   // green — already on the books for this day
   locked?: boolean;              // black — appointment locked
   notification_sent?: boolean;   // black — customer already notified
+  // Route-aware fields (drive-optimized planner):
+  production?: number;           // $ recurring charge this stop earns
+  eta?: string;                  // projected arrival clock time, e.g. "9:25 AM"
+  drive_from_prev_min?: number;  // estimated drive from the previous stop
+  flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
+};
+type FillRouteSummary = {
+  stop_count: number;
+  onsite_min: number;
+  paperwork_min: number;
+  drive_min: number;
+  total_min: number;
+  total_hours: number;
+  production: number;
+  efficiency_pct: number;        // wrench-time: onsite ÷ total working time
+  est_start: string;
+  est_finish: string;
 };
 type FillDay = {
   date: string;
@@ -754,7 +771,17 @@ type FillDay = {
   zone: string;
   stop_count: number;
   capacity: number;
+  summary?: FillRouteSummary;
   stops: FillStop[];
+};
+type FillTopSummary = {
+  route_count: number;
+  total_stops: number;
+  total_drive_min: number;
+  total_onsite_min: number;
+  total_min: number;
+  total_production: number;
+  avg_efficiency_pct: number;
 };
 type FillUnscheduled = {
   customer: string;
@@ -780,6 +807,7 @@ type FillResult = {
   manual: FillUnscheduled[];
   needs_reassignment: FillUnscheduled[];
   unplaced: FillUnscheduled[];
+  summary?: FillTopSummary;
 };
 
 // Default window: today → today + 30 days, in local time.
@@ -793,6 +821,21 @@ function weekdayLabel(iso: string): string {
   return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
     weekday: "short", month: "short", day: "numeric",
   });
+}
+
+// Minutes → "2h 15m" / "45m".
+function fmtHM(mins?: number): string {
+  if (mins == null) return "—";
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
+
+// Color the wrench-time efficiency score: green ≥70, amber ≥50, red below.
+function efficiencyTone(pct: number): string {
+  if (pct >= 70) return "text-emerald-700";
+  if (pct >= 50) return "text-amber-700";
+  return "text-red-600";
 }
 
 function FillMode({ staff }: { staff: { fullName: string } | null }) {
@@ -892,6 +935,28 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             <StatCard label="Reassign" value={result.needs_reassignment_count} tone={result.needs_reassignment_count > 0 ? "warn" : "ok"} />
             <StatCard label="Unplaced" value={result.unplaced_count} tone={result.unplaced_count > 0 ? "info" : "ok"} />
           </div>
+
+          {result.summary && result.summary.route_count > 0 && (
+            <Card className="border-l-4 border-l-emerald-500">
+              <CardContent className="py-3 grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
+                {([
+                  ["Routes", String(result.summary.route_count)],
+                  ["Total stops", String(result.summary.total_stops)],
+                  ["On-site", fmtHM(result.summary.total_onsite_min)],
+                  ["Drive time", fmtHM(result.summary.total_drive_min)],
+                  ["Production", `$${result.summary.total_production.toLocaleString()}`],
+                  ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
+                ] as [string, string][]).map(([label, value]) => (
+                  <div key={label}>
+                    <div className="text-muted-foreground text-xs">{label}</div>
+                    <div className={`font-semibold text-base ${label === "Avg efficiency" ? efficiencyTone(result.summary!.avg_efficiency_pct) : ""}`}>
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {result.proposed.length === 0 && (
             <Card>
@@ -1012,6 +1077,17 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
           </div>
         </div>
         <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
+        {day.summary && (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
+            <span>{day.summary.est_start}–{day.summary.est_finish} ({day.summary.total_hours}h)</span>
+            <span>· {fmtHM(day.summary.drive_min)} drive</span>
+            <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
+            <span>· ${day.summary.production.toLocaleString()} production</span>
+            <span className={`font-semibold ${efficiencyTone(day.summary.efficiency_pct)}`}>
+              · {day.summary.efficiency_pct}% efficient
+            </span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
@@ -1070,8 +1146,19 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                 </span>
               </div>
               <div className={`mt-0.5 ${isBlack ? "opacity-80" : "text-muted-foreground"}`}>
+                {s.eta && <span className="font-mono font-medium">{s.eta}</span>}
+                {s.eta && " · "}
+                {typeof s.drive_from_prev_min === "number" && s.order > 1 && s.drive_from_prev_min > 0 && (
+                  <>+{s.drive_from_prev_min}m drive · </>
+                )}
                 {s.city} · {s.service_label} · due {s.due_date}
               </div>
+              {s.flag && (
+                <div className="mt-1 text-red-700 font-medium">
+                  <Badge variant="outline" className="mr-1 text-red-700 border-red-300">overdue</Badge>
+                  {s.flag.replace(/^⚠\s*/, "")}
+                </div>
+              )}
               <div className="mt-1 flex flex-wrap gap-1">
                 {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
                 {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
