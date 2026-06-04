@@ -94,6 +94,57 @@ function fmtMinutes(min: number): string {
   return h > 0 ? `${h}h${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
+// "08:00:00" → "8 AM", "08:30:00" → "8:30 AM", "8:00 AM-10:00 AM" → "8–10 AM",
+// "08:00:00-10:00:00" → "8–10 AM". Strips seconds, adds am/pm.
+function humanTime(s: string | null | undefined): string {
+  if (!s) return "";
+  const conv = (raw: string): string => {
+    const t = raw.trim();
+    // Already has am/pm — just drop seconds.
+    const ampm = t.match(/^(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([AaPp][Mm])$/);
+    if (ampm) {
+      const h = parseInt(ampm[1], 10);
+      const m = ampm[2] ? parseInt(ampm[2], 10) : 0;
+      const sfx = ampm[3].toUpperCase();
+      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
+    }
+    // 24h "HH:MM[:SS]"
+    const h24 = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (h24) {
+      let h = parseInt(h24[1], 10);
+      const m = parseInt(h24[2], 10);
+      const sfx = h >= 12 ? "PM" : "AM";
+      h = h % 12 || 12;
+      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
+    }
+    return t;
+  };
+  if (s.includes("-")) {
+    const [a, b] = s.split("-").map((x) => conv(x));
+    // Collapse same suffix: "8 AM–10 AM" → "8–10 AM"
+    const ma = a.match(/^(.+)\s(AM|PM)$/);
+    const mb = b.match(/^(.+)\s(AM|PM)$/);
+    if (ma && mb && ma[2] === mb[2]) return `${ma[1]}–${mb[1]} ${mb[2]}`;
+    return `${a}–${b}`;
+  }
+  return conv(s);
+}
+
+// First name only — friendlier than "Dylan G." in narrative sentences.
+function firstName(full: string): string {
+  return (full || "").split(" ")[0] || full;
+}
+
+// "2025-11-20" → "Thu Nov 20"
+function shortDate(iso: string): string {
+  if (!iso) return "";
+  try {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  } catch { return iso; }
+}
+
 // Heuristic: flag a route as having "long drives between stops" when the
 // average leg (total drive time divided by number of legs) is over this
 // threshold. We don't have per-leg distances on the client, so this is a
@@ -146,16 +197,16 @@ function suggestionForLongDrive(
   const bestMove = [...outMoves].sort((a, b) => b.improvement_mi - a.improvement_mi)[0];
 
   if (bestMove && (!order || bestMove.improvement_mi >= 5)) {
-    return `Move ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech} — saves ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
+    return `Try moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)} — saves about ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
   }
   if (order && order.savings_sec >= 5 * 60) {
     const top = order.moves?.[0];
-    return `Reorder this route — saves ${fmtMinutes(order.savings_sec / 60)} of drive${top ? ` (e.g. move ${top.customer} from #${top.from_position} → #${top.to_position})` : ""}.`;
+    return `Reorder the day to save ${fmtMinutes(order.savings_sec / 60)}${top ? ` — move ${top.customer} up from stop ${top.from_position} to ${top.to_position}` : ""}.`;
   }
   if (bestMove) {
-    return `Consider moving ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech}.`;
+    return `Consider moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)}.`;
   }
-  return `No easy fix in this window — check if any stop can be rescheduled or paired with a nearby visit on another day.`;
+  return `No easy fix here — see if a stop can shift to another day or pair with a nearby visit.`;
 }
 
 function keyToRouteRef(result: ReviewResult, key: string) {
@@ -462,7 +513,11 @@ function KeyHighlights({
             key={`c-${idx}`}
             icon={<AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
             tone="danger"
-            title={`${i.kind.replace(/_/g, " ")}: ${i.customer || i.tech_name} (${i.date})`}
+            title={
+              <>
+                <strong>{i.customer || firstName(i.tech_name)}</strong> on {shortDate(i.date)} — {i.kind.replace(/_/g, " ")}
+              </>
+            }
           />
         ))}
         {topCross.map((m, idx) => (
@@ -472,7 +527,7 @@ function KeyHighlights({
             tone="info"
             title={
               <>
-                Move <strong>{m.customer}</strong>: {m.current_date} {m.current_tech} → {m.suggested_date} {m.suggested_tech} · saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
+                Move <strong>{m.customer}</strong> from {firstName(m.current_tech)} ({shortDate(m.current_date)}) to {firstName(m.suggested_tech)} ({shortDate(m.suggested_date)}) — saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
               </>
             }
           />
@@ -482,7 +537,11 @@ function KeyHighlights({
             key={`ld-${idx}`}
             icon={<Car className="w-3.5 h-3.5 text-amber-600" />}
             tone="warn"
-            title={`Long drive: ${ld.tech_name} ${ld.date} · ${Math.round(ld.avg_leg_min)}m/leg · ${fmtMinutes(ld.total_drive_min)} total`}
+            title={
+              <>
+                Tighten up <strong>{firstName(ld.tech_name)}</strong>'s {shortDate(ld.date)} — ~{Math.round(ld.avg_leg_min)} min between stops ({fmtMinutes(ld.total_drive_min)} driving)
+              </>
+            }
           />
         ))}
         {topOrder.map(([key, s], idx) => {
@@ -494,9 +553,11 @@ function KeyHighlights({
               tone="ok"
               title={
                 s.moves && s.moves.length > 0 ? (
-                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)} (mv <strong>{s.moves[0].customer}</strong> #{s.moves[0].from_position}→#{s.moves[0].to_position}{s.moves.length > 1 ? ` +${s.moves.length - 1}` : ""})</>
+                  <>
+                    Move <strong>{s.moves[0].customer}</strong> up on {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)} (stop {s.moves[0].from_position} → {s.moves[0].to_position}{s.moves.length > 1 ? `, +${s.moves.length - 1} more` : ""})
+                  </>
                 ) : (
-                  <>Reorder {date}: save {fmtMinutes(s.savings_sec / 60)}</>
+                  <>Reorder {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)}</>
                 )
               }
             />
@@ -660,39 +721,36 @@ function PerRouteGrid({
                           <li key={`c-${idx}`}>
                             <span className="text-red-600 font-medium">{i.kind.replace(/_/g, " ")}:</span>{" "}
                             {i.customer ? <strong>{i.customer}</strong> : null}
-                            {i.customer ? " — " : ""}{i.detail}
+                            {i.customer ? " — " : ""}{humanTime(i.detail) || i.detail}
                           </li>
                         ))}
                         {misses.map((f, idx) => (
                           <li key={`m-${idx}`}>
-                            <span className="text-amber-700 font-medium">late:</span>{" "}
-                            <strong>{f.customer}</strong> {f.window} (+{f.late_by_min}m)
+                            <span className="text-amber-700 font-medium">Running late:</span>{" "}
+                            <strong>{f.customer}</strong> — {humanTime(f.window)} window, ~{f.late_by_min} min late
                           </li>
                         ))}
                         {longDrive ? (
                           <li>
-                            <span className="text-amber-700 font-medium">long drive:</span>{" "}
-                            ~{Math.round(longDrive.avg_leg_min)}m/leg —{" "}
-                            {suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
+                            <span className="text-amber-700 font-medium">Long drives</span> (~{Math.round(longDrive.avg_leg_min)} min between stops) — {suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
                           </li>
                         ) : null}
                         {order ? (
                           <li>
-                            <span className="text-emerald-700 font-medium">reorder:</span>{" "}
-                            save {fmtMinutes(order.savings_sec / 60)}
-                            {order.moves?.[0] ? <> (mv {order.moves[0].customer} #{order.moves[0].from_position}→#{order.moves[0].to_position})</> : null}
+                            <span className="text-emerald-700 font-medium">Reorder to save {fmtMinutes(order.savings_sec / 60)}</span>
+                            {order.moves?.[0] ? <> — move <strong>{order.moves[0].customer}</strong> up from stop {order.moves[0].from_position} to {order.moves[0].to_position}</> : null}
                           </li>
                         ) : null}
                         {crossOut.map((m, idx) => (
                           <li key={`xo-${idx}`}>
-                            <span className="text-indigo-700 font-medium">move out:</span>{" "}
-                            <strong>{m.customer}</strong> → {m.suggested_date.slice(5)} {shortTech(m.suggested_tech)} (−{m.improvement_mi.toFixed(1)}mi)
+                            <span className="text-indigo-700 font-medium">Move out:</span>{" "}
+                            send <strong>{m.customer}</strong> to {firstName(m.suggested_tech)} on {shortDate(m.suggested_date)} (saves {m.improvement_mi.toFixed(1)} mi)
                           </li>
                         ))}
                         {crossIn.map((m, idx) => (
                           <li key={`xi-${idx}`}>
-                            <span className="text-indigo-700 font-medium">move in:</span>{" "}
-                            {m.customer} ← {shortTech(m.current_tech)}
+                            <span className="text-indigo-700 font-medium">Move in:</span>{" "}
+                            pick up <strong>{m.customer}</strong> from {firstName(m.current_tech)}
                           </li>
                         ))}
                       </ul>
@@ -1141,7 +1199,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
         {day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
-            <span>{day.summary.est_start}–{day.summary.est_finish} ({day.summary.total_hours}h)</span>
+            <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
             <span>· {fmtHM(day.summary.drive_min)} drive</span>
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
             <span>· ${day.summary.production.toLocaleString()} production</span>
@@ -1188,7 +1246,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                       : "text-indigo-700 border-indigo-300"
                     }
                   >
-                    {s.window}
+                   {humanTime(s.window)}
                   </Badge>
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
@@ -1208,7 +1266,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                 </span>
               </div>
               <div className={`mt-0.5 ${isBlack ? "opacity-80" : "text-muted-foreground"}`}>
-                {s.eta && <span className="font-mono font-medium">{s.eta}</span>}
+                {s.eta && <span className="font-mono font-medium">{humanTime(s.eta)}</span>}
                 {s.eta && " · "}
                 {typeof s.drive_from_prev_min === "number" && s.order > 1 && s.drive_from_prev_min > 0 && (
                   <>+{s.drive_from_prev_min}m drive · </>
