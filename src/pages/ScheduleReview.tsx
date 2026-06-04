@@ -94,57 +94,6 @@ function fmtMinutes(min: number): string {
   return h > 0 ? `${h}h${m.toString().padStart(2, "0")}m` : `${m}m`;
 }
 
-// "08:00:00" → "8 AM", "08:30:00" → "8:30 AM", "8:00 AM-10:00 AM" → "8–10 AM",
-// "08:00:00-10:00:00" → "8–10 AM". Strips seconds, adds am/pm.
-function humanTime(s: string | null | undefined): string {
-  if (!s) return "";
-  const conv = (raw: string): string => {
-    const t = raw.trim();
-    // Already has am/pm — just drop seconds.
-    const ampm = t.match(/^(\d{1,2})(?::(\d{2}))?(?::\d{2})?\s*([AaPp][Mm])$/);
-    if (ampm) {
-      const h = parseInt(ampm[1], 10);
-      const m = ampm[2] ? parseInt(ampm[2], 10) : 0;
-      const sfx = ampm[3].toUpperCase();
-      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
-    }
-    // 24h "HH:MM[:SS]"
-    const h24 = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-    if (h24) {
-      let h = parseInt(h24[1], 10);
-      const m = parseInt(h24[2], 10);
-      const sfx = h >= 12 ? "PM" : "AM";
-      h = h % 12 || 12;
-      return m === 0 ? `${h} ${sfx}` : `${h}:${String(m).padStart(2, "0")} ${sfx}`;
-    }
-    return t;
-  };
-  if (s.includes("-")) {
-    const [a, b] = s.split("-").map((x) => conv(x));
-    // Collapse same suffix: "8 AM–10 AM" → "8–10 AM"
-    const ma = a.match(/^(.+)\s(AM|PM)$/);
-    const mb = b.match(/^(.+)\s(AM|PM)$/);
-    if (ma && mb && ma[2] === mb[2]) return `${ma[1]}–${mb[1]} ${mb[2]}`;
-    return `${a}–${b}`;
-  }
-  return conv(s);
-}
-
-// First name only — friendlier than "Dylan G." in narrative sentences.
-function firstName(full: string): string {
-  return (full || "").split(" ")[0] || full;
-}
-
-// "2025-11-20" → "Thu Nov 20"
-function shortDate(iso: string): string {
-  if (!iso) return "";
-  try {
-    return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
-      weekday: "short", month: "short", day: "numeric",
-    });
-  } catch { return iso; }
-}
-
 // Heuristic: flag a route as having "long drives between stops" when the
 // average leg (total drive time divided by number of legs) is over this
 // threshold. We don't have per-leg distances on the client, so this is a
@@ -197,16 +146,16 @@ function suggestionForLongDrive(
   const bestMove = [...outMoves].sort((a, b) => b.improvement_mi - a.improvement_mi)[0];
 
   if (bestMove && (!order || bestMove.improvement_mi >= 5)) {
-    return `Try moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)} — saves about ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
+    return `Move ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech} — saves ${bestMove.improvement_mi.toFixed(1)} mi of detour.`;
   }
   if (order && order.savings_sec >= 5 * 60) {
     const top = order.moves?.[0];
-    return `Reorder the day to save ${fmtMinutes(order.savings_sec / 60)}${top ? ` — move ${top.customer} up from stop ${top.from_position} to ${top.to_position}` : ""}.`;
+    return `Reorder this route — saves ${fmtMinutes(order.savings_sec / 60)} of drive${top ? ` (e.g. move ${top.customer} from #${top.from_position} → #${top.to_position})` : ""}.`;
   }
   if (bestMove) {
-    return `Consider moving ${bestMove.customer} to ${firstName(bestMove.suggested_tech)} on ${shortDate(bestMove.suggested_date)}.`;
+    return `Consider moving ${bestMove.customer} (${bestMove.city}) to ${bestMove.suggested_date} ${bestMove.suggested_tech}.`;
   }
-  return `No easy fix here — see if a stop can shift to another day or pair with a nearby visit.`;
+  return `No easy fix in this window — check if any stop can be rescheduled or paired with a nearby visit on another day.`;
 }
 
 function keyToRouteRef(result: ReviewResult, key: string) {
@@ -225,7 +174,7 @@ const ScheduleReview = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -504,18 +453,24 @@ function KeyHighlights({
 
   return (
     <Card className="border-l-4 border-l-amber-500">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm">Key Highlights</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Key Highlights</CardTitle>
+        <CardDescription>
+          The few items most worth acting on — cross-day moves and special-scheduling violations first.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-1.5">
+      <CardContent className="space-y-3">
         {compliance.slice(0, 3).map((i, idx) => (
           <HighlightRow
             key={`c-${idx}`}
-            icon={<AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
+            icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
             tone="danger"
-            title={
+            title={`${i.tech_name} (${i.date}) — ${i.kind.replace(/_/g, " ")}`}
+            detail={
               <>
-                <strong>{i.customer || firstName(i.tech_name)}</strong> on {shortDate(i.date)} — {i.kind.replace(/_/g, " ")}
+                {i.customer ? <strong>{i.customer}</strong> : null}
+                {i.customer ? " — " : null}
+                {i.detail}
               </>
             }
           />
@@ -523,11 +478,13 @@ function KeyHighlights({
         {topCross.map((m, idx) => (
           <HighlightRow
             key={`x-${idx}`}
-            icon={<ShuffleIcon className="w-3.5 h-3.5 text-indigo-600" />}
+            icon={<ShuffleIcon className="w-5 h-5 text-indigo-600" />}
             tone="info"
-            title={
+            title={`Move ${m.customer} (${m.city}) to a better-fitting day`}
+            detail={
               <>
-                Move <strong>{m.customer}</strong> from {firstName(m.current_tech)} ({shortDate(m.current_date)}) to {firstName(m.suggested_tech)} ({shortDate(m.suggested_date)}) — saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
+                <strong>{m.current_date}</strong> {m.current_tech}'s route → <strong>{m.suggested_date}</strong> {m.suggested_tech}'s route
+                {" · "}saves <strong>{m.improvement_mi.toFixed(1)} mi</strong> from {m.current_tech}'s day
               </>
             }
           />
@@ -535,11 +492,13 @@ function KeyHighlights({
         {longDrives.slice(0, 3).map((ld, idx) => (
           <HighlightRow
             key={`ld-${idx}`}
-            icon={<Car className="w-3.5 h-3.5 text-amber-600" />}
+            icon={<Car className="w-5 h-5 text-amber-600" />}
             tone="warn"
-            title={
+            title={`Long drive · ${ld.tech_name} (${ld.date}) — avg ${Math.round(ld.avg_leg_min)} min between stops`}
+            detail={
               <>
-                Tighten up <strong>{firstName(ld.tech_name)}</strong>'s {shortDate(ld.date)} — ~{Math.round(ld.avg_leg_min)} min between stops ({fmtMinutes(ld.total_drive_min)} driving)
+                {ld.stops} stops · {fmtMinutes(ld.total_drive_min)} total drive.{" "}
+                {suggestionForLongDrive(ld, routeOrderMap, crossSourceByKey)}
               </>
             }
           />
@@ -549,15 +508,18 @@ function KeyHighlights({
           return (
             <HighlightRow
               key={`ro-${idx}`}
-              icon={<MapPin className="w-3.5 h-3.5 text-emerald-600" />}
+              icon={<MapPin className="w-5 h-5 text-emerald-600" />}
               tone="ok"
-              title={
+              title={`Reorder ${date}'s route saves ${fmtMinutes(s.savings_sec / 60)}`}
+              detail={
                 s.moves && s.moves.length > 0 ? (
-                  <>
-                    Move <strong>{s.moves[0].customer}</strong> up on {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)} (stop {s.moves[0].from_position} → {s.moves[0].to_position}{s.moves.length > 1 ? `, +${s.moves.length - 1} more` : ""})
-                  </>
+                  <span>
+                    Top move: <strong>{s.moves[0].customer}</strong>{" "}
+                    from #{s.moves[0].from_position} → #{s.moves[0].to_position}
+                    {s.moves.length > 1 ? ` (+${s.moves.length - 1} other change${s.moves.length > 2 ? "s" : ""})` : ""}
+                  </span>
                 ) : (
-                  <>Reorder {shortDate(date)} to save {fmtMinutes(s.savings_sec / 60)}</>
+                  <span>Multiple small shifts — see per-route detail below.</span>
                 )
               }
             />
@@ -569,11 +531,12 @@ function KeyHighlights({
 }
 
 function HighlightRow({
-  icon, tone, title,
+  icon, tone, title, detail,
 }: {
   icon: React.ReactNode;
   tone: "ok" | "warn" | "danger" | "info";
-  title: React.ReactNode;
+  title: string;
+  detail: React.ReactNode;
 }) {
   const toneBg = {
     ok:     "bg-emerald-50",
@@ -582,9 +545,12 @@ function HighlightRow({
     info:   "bg-indigo-50",
   }[tone];
   return (
-    <div className={`flex gap-2 items-center rounded px-2 py-1 ${toneBg}`}>
-      <div className="shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0 text-xs leading-snug truncate">{title}</div>
+    <div className={`flex gap-3 items-start rounded-md p-3 ${toneBg}`}>
+      <div className="mt-0.5">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-sm">{title}</div>
+        <div className="text-sm text-muted-foreground">{detail}</div>
+      </div>
     </div>
   );
 }
@@ -631,136 +597,116 @@ function PerRouteGrid({
     const tgt = crossTargetByKey.get(tk) ?? []; tgt.push(m); crossTargetByKey.set(tk, tgt);
   });
 
-  // Group routes by date so the layout reads left-to-right like a calendar:
-  // one column per day, techs stacked inside. Date is shown ONCE per column.
-  const byDate = new Map<string, typeof result.routes>();
-  for (const r of result.routes) {
-    if (!byDate.has(r.date)) byDate.set(r.date, [] as any);
-    byDate.get(r.date)!.push(r);
-  }
-  const days = [...byDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, routes]) => ({
-      date,
-      routes: [...routes].sort((a, b) => a.tech_name.localeCompare(b.tech_name)),
-    }));
-
-  const weekday = (iso: string) =>
-    new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
-      weekday: "short", month: "short", day: "numeric",
-    });
-
-  // Compact short-name so each tech row stays one line in narrow columns.
-  const shortTech = (full: string) => {
-    const parts = full.split(" ");
-    if (parts.length < 2) return full;
-    return `${parts[0]} ${parts[parts.length - 1][0]}.`;
-  };
+  // Sort routes by date then tech
+  const sortedRoutes = [...result.routes].sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.tech_name.localeCompare(b.tech_name);
+  });
 
   return (
-    <div
-      className="grid gap-3"
-      style={{ gridTemplateColumns: `repeat(${days.length}, minmax(240px, 1fr))` }}
-    >
-      {days.map(({ date, routes }) => {
-        const dayBorder = routes.some((r) => {
-          const tk = `${r.date}|${r.tech_name}`;
-          return (compByKey.get(tk) ?? []).length > 0;
-        })
-          ? "border-t-red-500"
-          : routes.some((r) => {
-              const rk = `${r.date}|${r.route_id}`;
-              const tk = `${r.date}|${r.tech_name}`;
-              return (missByKey.get(rk) ?? []).length > 0 || longDriveByKey.has(rk);
-            })
-          ? "border-t-amber-500"
-          : "border-t-indigo-500";
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {sortedRoutes.map((r) => {
+        const routeKey   = `${r.date}|${r.route_id}`;
+        const techDayKey = `${r.date}|${r.tech_name}`;
+        const snap = result.snapshot[routeKey];
+        const order = orderByKey.get(routeKey);
+        const misses = missByKey.get(routeKey) ?? [];
+        const comp = compByKey.get(techDayKey) ?? [];
+        const crossOut = crossSourceByKey.get(techDayKey) ?? [];
+        const crossIn  = crossTargetByKey.get(techDayKey) ?? [];
+        const longDrive = longDriveByKey.get(routeKey);
+
+        const hasIssues = comp.length + misses.length + (longDrive ? 1 : 0) > 0;
+        const hasOpps   = (order ? 1 : 0) + crossOut.length + crossIn.length > 0;
+
+        const borderTone =
+          comp.length > 0 ? "border-l-red-500"
+          : (misses.length > 0 || longDrive) ? "border-l-amber-500"
+          : hasOpps ? "border-l-indigo-500"
+          : "border-l-emerald-500";
 
         return (
-          <Card key={date} className={`border-t-4 ${dayBorder}`}>
+          <Card key={routeKey} className={`border-l-4 ${borderTone}`}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">{weekday(date)}</CardTitle>
+              <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                <CardTitle className="text-base">
+                  {r.date} · {r.tech_name}
+                </CardTitle>
+                <div className="text-sm text-muted-foreground">
+                  {r.stop_count} stops
+                  {snap ? <> · {fmtMinutes(snap.total_drive_min)} drive · {snap.est_completion_h}h day</> : null}
+                </div>
+              </div>
+              {r.day_alert ? (
+                <Badge variant="destructive" className="w-fit">Alert: {r.day_alert}</Badge>
+              ) : null}
             </CardHeader>
-            <CardContent className="space-y-3 pt-0">
-              {routes.map((r) => {
-                const routeKey   = `${r.date}|${r.route_id}`;
-                const techDayKey = `${r.date}|${r.tech_name}`;
-                const snap = result.snapshot[routeKey];
-                const order = orderByKey.get(routeKey);
-                const misses = missByKey.get(routeKey) ?? [];
-                const comp = compByKey.get(techDayKey) ?? [];
-                const crossOut = crossSourceByKey.get(techDayKey) ?? [];
-                const crossIn  = crossTargetByKey.get(techDayKey) ?? [];
-                const longDrive = longDriveByKey.get(routeKey);
-                const clean =
-                  comp.length + misses.length + crossOut.length + crossIn.length === 0 &&
-                  !order && !longDrive;
-
-                const dot =
-                  comp.length > 0 ? "bg-red-500"
-                  : (misses.length > 0 || longDrive) ? "bg-amber-500"
-                  : (order || crossOut.length || crossIn.length) ? "bg-indigo-500"
-                  : "bg-emerald-500";
-
+            <CardContent className="space-y-2 pt-0">
+              {/* Compliance for this tech-day */}
+              {comp.map((i, idx) => (
+                <div key={`c-${idx}`} className="text-xs bg-red-50 rounded p-2">
+                  <Badge variant="outline" className="mr-2 text-red-700 border-red-300">{i.kind}</Badge>
+                  {i.customer ? <strong>{i.customer}: </strong> : null}{i.detail}
+                </div>
+              ))}
+              {/* Miss-window for this route */}
+              {misses.map((f, idx) => {
+                const h = Math.floor(f.projected_arrival_min / 60);
+                const m = f.projected_arrival_min % 60;
                 return (
-                  <div key={routeKey} className="text-xs">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`w-2 h-2 rounded-full ${dot}`} />
-                      <span className="font-semibold">{shortTech(r.tech_name)}</span>
-                      <span className="text-muted-foreground">
-                        {r.stop_count}st
-                        {snap ? ` · ${fmtMinutes(snap.total_drive_min)} drv · ${snap.est_completion_h}h` : ""}
-                      </span>
-                    </div>
-
-                    {clean ? (
-                      <div className="text-muted-foreground italic pl-4">clean</div>
-                    ) : (
-                      <ul className="pl-4 space-y-0.5 text-foreground/90 list-disc marker:text-muted-foreground">
-                        {comp.map((i, idx) => (
-                          <li key={`c-${idx}`}>
-                            <span className="text-red-600 font-medium">{i.kind.replace(/_/g, " ")}:</span>{" "}
-                            {i.customer ? <strong>{i.customer}</strong> : null}
-                            {i.customer ? " — " : ""}{humanTime(i.detail) || i.detail}
-                          </li>
-                        ))}
-                        {misses.map((f, idx) => (
-                          <li key={`m-${idx}`}>
-                            <span className="text-amber-700 font-medium">Running late:</span>{" "}
-                            <strong>{f.customer}</strong> — {humanTime(f.window)} window, ~{f.late_by_min} min late
-                          </li>
-                        ))}
-                        {longDrive ? (
-                          <li>
-                            <span className="text-amber-700 font-medium">Long drives</span> (~{Math.round(longDrive.avg_leg_min)} min between stops) — {suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
-                          </li>
-                        ) : null}
-                        {order ? (
-                          <li>
-                            <span className="text-emerald-700 font-medium">Reorder to save {fmtMinutes(order.savings_sec / 60)}</span>
-                            {order.moves?.[0] ? <> — move <strong>{order.moves[0].customer}</strong> up from stop {order.moves[0].from_position} to {order.moves[0].to_position}</> : null}
-                          </li>
-                        ) : null}
-                        {crossOut.map((m, idx) => (
-                          <li key={`xo-${idx}`}>
-                            <span className="text-indigo-700 font-medium">Move out:</span>{" "}
-                            send <strong>{m.customer}</strong> to {firstName(m.suggested_tech)} on {shortDate(m.suggested_date)} (saves {m.improvement_mi.toFixed(1)} mi)
-                          </li>
-                        ))}
-                        {crossIn.map((m, idx) => (
-                          <li key={`xi-${idx}`}>
-                            <span className="text-indigo-700 font-medium">Move in:</span>{" "}
-                            pick up <strong>{m.customer}</strong> from {firstName(m.current_tech)}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {r.day_alert ? (
-                      <div className="pl-4 text-red-600 font-medium">⚠ {r.day_alert}</div>
-                    ) : null}
+                  <div key={`m-${idx}`} className="text-xs bg-amber-50 rounded p-2">
+                    <Badge variant="outline" className="mr-2 text-amber-700 border-amber-300">past window</Badge>
+                    <strong>{f.customer}</strong> ({f.city}) — window <code>{f.window}</code>, projected{" "}
+                    <code>{h.toString().padStart(2,"0")}:{m.toString().padStart(2,"0")}</code> ·{" "}
+                    <span className="font-bold text-red-600">{f.late_by_min} min late</span>
                   </div>
                 );
               })}
+              {/* Long drive between stops */}
+              {longDrive ? (
+                <div className="text-xs bg-amber-50 rounded p-2">
+                  <Badge variant="outline" className="mr-2 text-amber-700 border-amber-300">long drive</Badge>
+                  Avg <strong>{Math.round(longDrive.avg_leg_min)} min</strong> between stops
+                  {" · "}{suggestionForLongDrive(longDrive, orderByKey, crossSourceByKeyForGrid)}
+                </div>
+              ) : null}
+              {/* Reorder */}
+              {order ? (
+                <Collapsible>
+                  <CollapsibleTrigger className="w-full text-left text-xs bg-emerald-50 rounded p-2 hover:bg-emerald-100">
+                    <Badge variant="outline" className="mr-2 text-emerald-700 border-emerald-300">reorder</Badge>
+                    Save <strong>{fmtMinutes(order.savings_sec / 60)}</strong> of drive ({fmtMinutes(order.current_drive_sec / 60)} → {fmtMinutes(order.optimized_drive_sec / 60)})
+                    <span className="text-muted-foreground"> · click for moves</span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-2 pt-1 pb-2 text-xs space-y-1">
+                    {(order.moves ?? []).map((mv, idx) => (
+                      <div key={idx}>
+                        Move <strong>{mv.customer}</strong>{mv.city ? <> ({mv.city})</> : null} from{" "}
+                        <code>#{mv.from_position}</code> → <code>#{mv.to_position}</code>{" "}
+                        <span className="text-muted-foreground">({mv.direction})</span>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : null}
+              {/* Cross-day OUT */}
+              {crossOut.map((m, idx) => (
+                <div key={`xo-${idx}`} className="text-xs bg-indigo-50 rounded p-2">
+                  <Badge variant="outline" className="mr-2 text-indigo-700 border-indigo-300">move out</Badge>
+                  <strong>{m.customer}</strong> → {m.suggested_date} {m.suggested_tech} ·{" "}
+                  saves <strong>{m.improvement_mi.toFixed(1)} mi</strong>
+                </div>
+              ))}
+              {/* Cross-day IN */}
+              {crossIn.map((m, idx) => (
+                <div key={`xi-${idx}`} className="text-xs bg-indigo-50 rounded p-2">
+                  <Badge variant="outline" className="mr-2 text-indigo-700 border-indigo-300">move in</Badge>
+                  Receive <strong>{m.customer}</strong> from {m.current_date} {m.current_tech}
+                </div>
+              ))}
+              {!hasIssues && !hasOpps ? (
+                <div className="text-xs text-muted-foreground italic">No issues, no opportunities — this route is clean.</div>
+              ) : null}
             </CardContent>
           </Card>
         );
@@ -928,7 +874,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [defaultWindow] = useState(defaultFillWindow);
   const [start, setStart] = useState<string>(defaultWindow.start);
   const [end, setEnd] = useState<string>(defaultWindow.end);
-  const [maxStops, setMaxStops] = useState<number>(11);
+  const [maxStops, setMaxStops] = useState<number>(14);
+  const [minStops, setMinStops] = useState<number>(6);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
@@ -945,7 +892,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     setResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("scheduling-fill", {
-        body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops },
+        body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops, min_stops: minStops },
       });
       if (error) throw error;
       if (!data?.ok) {
@@ -979,7 +926,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label>Window start</Label>
               <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
@@ -992,6 +939,12 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               <Label>Max stops / tech-day</Label>
               <Input type="number" min={4} max={30} value={maxStops}
                      onChange={(e) => setMaxStops(parseInt(e.target.value, 10) || 14)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Min stops / tech-day</Label>
+              <Input type="number" min={0} max={maxStops} value={minStops}
+                     onChange={(e) => setMinStops(Math.max(0, parseInt(e.target.value, 10) || 0))} />
+              <p className="text-[11px] text-muted-foreground leading-tight">0 = off. Days below this get consolidated onto fuller days.</p>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Techs</Label>
@@ -1199,7 +1152,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
         {day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
-            <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
+            <span>{day.summary.est_start}–{day.summary.est_finish} ({day.summary.total_hours}h)</span>
             <span>· {fmtHM(day.summary.drive_min)} drive</span>
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
             <span>· ${day.summary.production.toLocaleString()} production</span>
@@ -1246,7 +1199,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                       : "text-indigo-700 border-indigo-300"
                     }
                   >
-                   {humanTime(s.window)}
+                    {s.window}
                   </Badge>
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
@@ -1266,7 +1219,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                 </span>
               </div>
               <div className={`mt-0.5 ${isBlack ? "opacity-80" : "text-muted-foreground"}`}>
-                {s.eta && <span className="font-mono font-medium">{humanTime(s.eta)}</span>}
+                {s.eta && <span className="font-mono font-medium">{s.eta}</span>}
                 {s.eta && " · "}
                 {typeof s.drive_from_prev_min === "number" && s.order > 1 && s.drive_from_prev_min > 0 && (
                   <>+{s.drive_from_prev_min}m drive · </>

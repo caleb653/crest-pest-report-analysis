@@ -59,12 +59,13 @@ serve(async (req) => {
   let endDate = "";
   let techs: string[] | null = null;
   let maxStops = 12;
+  let minStops = 0;
 
   const logAttempt = async (success: boolean, error_code: string | null) => {
     await supabase.from("scheduling_audit_log").insert({
       function_name: "fill-schedule",
       staff_name: staffName || (sessionToken ? "admin_session" : null),
-      payload: { start_date: startDate, end_date: endDate, techs, max_stops: maxStops },
+      payload: { start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops },
       success, error_code, ip_address: ip, user_agent: ua,
     });
   };
@@ -81,6 +82,9 @@ serve(async (req) => {
     }
     if (Number.isFinite(body?.max_stops)) {
       maxStops = Math.min(30, Math.max(4, Math.trunc(Number(body.max_stops))));
+    }
+    if (Number.isFinite(body?.min_stops)) {
+      minStops = Math.min(maxStops, Math.max(0, Math.trunc(Number(body.min_stops))));
     }
 
     // Auth: known staff name OR valid admin session.
@@ -109,7 +113,7 @@ serve(async (req) => {
     const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fill-schedule`, {
       method: "POST",
       headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops }),
+      body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops }),
     });
     const result = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
