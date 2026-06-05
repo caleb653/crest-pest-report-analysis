@@ -86,6 +86,16 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
+/**
+ * An "Ad Hoc Visit" is a one-off appointment that sits in its own bubble.
+ * It MUST NOT impact the cadence rotation, follow-up roll-forward, or the
+ * "next service" selection. We tag it on `report_data.is_ad_hoc = true`
+ * and filter it out of pastServices / scheduledServices used by all the
+ * cadence + follow-up logic.
+ */
+const isAdHocService = (s: any): boolean =>
+  !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
+
 type RequestSnapshotRow = {
   id?: string;
   created_at?: string;
