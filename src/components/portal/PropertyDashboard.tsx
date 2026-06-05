@@ -5252,6 +5252,15 @@ const PropertyDashboard = ({
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setShowQuickAdd(true)}>
               <CalendarPlus className="w-3.5 h-3.5 mr-1" />Add Service to Date
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs border-dashed"
+              onClick={() => setShowAdHocAdd(true)}
+              title="One-off visit. Doesn't affect cadence or follow-ups."
+            >
+              <CalendarPlus className="w-3.5 h-3.5 mr-1" />Ad Hoc Visit
+            </Button>
             {onAddUpcomingService && (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onAddUpcomingService}>
                 <Plus className="w-3.5 h-3.5" />
@@ -5277,6 +5286,90 @@ const PropertyDashboard = ({
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Ad Hoc Visit add form — stands alone, doesn't influence cadence */}
+        {showAdHocAdd && (
+          <Card className="shadow-sm border-dashed border-secondary/60">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold">Add Ad Hoc Visit</p>
+                <button onClick={() => setShowAdHocAdd(false)}><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                One-off visit on its own date. Does <strong>not</strong> follow the cadence,
+                does <strong>not</strong> pull in follow-ups or work orders, and does
+                <strong> not</strong> count toward the rotation.
+              </p>
+              <Select value={adHocType} onValueChange={setAdHocType}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                className="h-8 text-xs"
+                value={adHocDate}
+                onChange={e => setAdHocDate(e.target.value)}
+              />
+              <Textarea
+                className="text-xs min-h-[60px]"
+                placeholder="Reason / notes (optional)"
+                value={adHocNote}
+                onChange={e => setAdHocNote(e.target.value)}
+              />
+              <Button size="sm" className="w-full h-7 text-xs" onClick={addAdHocVisit} disabled={!adHocDate}>
+                <Plus className="w-3 h-3 mr-1" />Add Ad Hoc Visit
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ad Hoc Visits — separate bubble, never mixed with the cadence */}
+        {adHocServices.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Ad Hoc Visits</h3>
+              <Badge variant="outline" className="text-xs">{adHocServices.length}</Badge>
+              <span className="text-[11px] text-muted-foreground">One-off · doesn't affect cadence</span>
+            </div>
+            <div className="space-y-2">
+              {adHocServices.map((s) => {
+                const isCompleted = s.status === "completed";
+                return (
+                  <Card key={s.id} className="shadow-sm border-dashed">
+                    <div className="p-3 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs">Ad Hoc</Badge>
+                          <p className="font-semibold text-xs">{s.service_type}</p>
+                          <Badge variant={isCompleted ? "default" : "secondary"} className="text-xs">
+                            {s.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDate(s.service_date)}
+                          {(s as any).technician && ` • ${(s as any).technician}`}
+                        </p>
+                        {s.notes && (
+                          <p className="text-xs mt-1 line-clamp-2">{s.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onOpenServiceReport(s)}>
+                          Open
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => onDeleteService(s.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Upcoming Services */}
