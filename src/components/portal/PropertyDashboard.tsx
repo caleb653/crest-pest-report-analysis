@@ -1997,6 +1997,37 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  /**
+   * Insert a STANDALONE ad-hoc visit. Tagged `is_ad_hoc:true` so it lives in
+   * its own bubble — never advances cadence, never inherits follow-ups, and
+   * never appears as the property's "next service". units_planned is left
+   * empty so the visit doesn't pull units forward from prior services.
+   */
+  const addAdHocVisit = async () => {
+    if (!adHocDate) return;
+    const { error } = await supabase
+      .from("portal_services")
+      .insert({
+        property_id: property.id,
+        service_type: adHocType,
+        service_date: adHocDate,
+        status: "scheduled",
+        units_planned: [],
+        frequency_days: null,
+        notes: adHocNote || null,
+        report_data: { is_ad_hoc: true, manually_added: true } as any,
+      } as any);
+    if (error) {
+      toast({ title: "Failed to add ad-hoc visit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Ad-hoc visit added", description: `Scheduled for ${formatDate(adHocDate)}` });
+    setShowAdHocAdd(false);
+    setAdHocDate("");
+    setAdHocNote("");
+    onRefresh();
+  };
+
   const mapUrl = property.map_image_url || property.image_url;
   const [isEditingMap, setIsEditingMap] = useState(false);
   const [savingMap, setSavingMap] = useState(false);
