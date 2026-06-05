@@ -972,7 +972,7 @@ const PropertyDashboard = ({
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
-    .filter(s => s.status === "completed")
+    .filter(s => s.status === "completed" && !isAdHocService(s))
     .sort((a, b) => {
       // Primary: most recent service date first.
       const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
@@ -982,7 +982,14 @@ const PropertyDashboard = ({
       return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
     });
   const scheduledServices = propServices
-    .filter(s => s.status !== "completed")
+    .filter(s => s.status !== "completed" && !isAdHocService(s))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+
+  // Ad-hoc / one-off visits live in their own bubble. They never roll
+  // forward follow-ups, never advance the cadence rotation, and never
+  // count as the "next service".
+  const adHocServices = propServices
+    .filter(isAdHocService)
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Plan config (included units + overage $) — single read used everywhere below.
