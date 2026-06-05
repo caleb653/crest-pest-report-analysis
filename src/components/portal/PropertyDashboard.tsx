@@ -372,6 +372,11 @@ const PropertyDashboard = ({
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Ad Hoc (one-off) visit add form — completely separate from regular service.
+  const [showAdHocAdd, setShowAdHocAdd] = useState(false);
+  const [adHocDate, setAdHocDate] = useState("");
+  const [adHocType, setAdHocType] = useState("General Pest Control");
+  const [adHocNote, setAdHocNote] = useState("");
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
