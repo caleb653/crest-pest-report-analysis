@@ -5252,15 +5252,6 @@ const PropertyDashboard = ({
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setShowQuickAdd(true)}>
               <CalendarPlus className="w-3.5 h-3.5 mr-1" />Add Service to Date
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs border-dashed"
-              onClick={() => setShowAdHocAdd(true)}
-              title="One-off visit. Doesn't affect cadence or follow-ups."
-            >
-              <CalendarPlus className="w-3.5 h-3.5 mr-1" />Ad Hoc Visit
-            </Button>
             {onAddUpcomingService && (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onAddUpcomingService}>
                 <Plus className="w-3.5 h-3.5" />
@@ -5286,6 +5277,20 @@ const PropertyDashboard = ({
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* BIG Ad Hoc Visit CTA — one-off visit, fully detached from cadence */}
+        {!showAdHocAdd && (
+          <Button
+            onClick={() => setShowAdHocAdd(true)}
+            className="w-full h-16 text-base font-bold gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-md border-2 border-dashed border-secondary-foreground/40"
+          >
+            <CalendarPlus className="w-5 h-5" />
+            <span className="flex flex-col items-center leading-tight">
+              <span>Add Ad Hoc Visit</span>
+              <span className="text-[11px] font-normal opacity-80">One-off · doesn't affect cadence, next service, or follow-ups</span>
+            </span>
+          </Button>
         )}
 
         {/* Ad Hoc Visit add form — stands alone, doesn't influence cadence */}
@@ -5326,45 +5331,62 @@ const PropertyDashboard = ({
           </Card>
         )}
 
-        {/* Ad Hoc Visits — separate bubble, never mixed with the cadence */}
+        {/* Ad Hoc Visits — separate bubble with full visit editor (same as upcoming) */}
         {adHocServices.length > 0 && (
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">Ad Hoc Visits</h3>
-              <Badge variant="outline" className="text-xs">{adHocServices.length}</Badge>
-              <span className="text-[11px] text-muted-foreground">One-off · doesn't affect cadence</span>
+            <div className="border-b-2 border-secondary/70 pb-2.5 flex items-center gap-2">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <CalendarPlus className="w-5 h-5 text-secondary" />Ad Hoc Visits
+                <Badge variant="secondary" className="text-xs ml-1">{adHocServices.length}</Badge>
+              </h3>
+              <span className="text-[11px] text-muted-foreground">One-off · separate from cadence</span>
             </div>
             <div className="space-y-2">
               {adHocServices.map((s) => {
                 const isCompleted = s.status === "completed";
                 return (
-                  <Card key={s.id} className="shadow-sm border-dashed">
-                    <div className="p-3 flex items-center justify-between gap-2">
+                  <Card key={s.id} className="shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent">
+                    <div className="p-3 flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-xs">Ad Hoc</Badge>
-                          <p className="font-semibold text-xs">{s.service_type}</p>
-                          <Badge variant={isCompleted ? "default" : "secondary"} className="text-xs">
-                            {s.status}
-                          </Badge>
+                          <Badge className="text-xs bg-secondary text-secondary-foreground">Ad Hoc</Badge>
+                          <p className="font-semibold text-sm">{(s as any).appointment_service || s.service_type}</p>
+                          <Badge variant={isCompleted ? "default" : "secondary"} className="text-xs">{s.status}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {formatDate(s.service_date)}
                           {(s as any).technician && ` • ${(s as any).technician}`}
                         </p>
-                        {s.notes && (
-                          <p className="text-xs mt-1 line-clamp-2">{s.notes}</p>
-                        )}
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onOpenServiceReport(s)}>
-                          Open
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => onDeleteService(s.id)}>
-                          <Trash2 className="w-3.5 h-3.5" />
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          type="date"
+                          value={s.service_date || ""}
+                          onChange={async (e) => {
+                            const next = e.target.value;
+                            if (!next) return;
+                            await supabase.from("portal_services").update({ service_date: next }).eq("id", s.id);
+                            onRefresh();
+                          }}
+                          className="h-9 text-sm w-[160px]"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-9 w-9 p-0 text-destructive"
+                          onClick={() => {
+                            if (confirm("Delete this ad-hoc visit? This cannot be undone.")) {
+                              onDeleteService(s.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
+                    {/* Full visit editor — same bells & whistles as upcoming, but
+                        isFirstUpcoming=false so it NEVER pulls in follow-ups / work orders. */}
+                    {renderServiceDetails(s, true, false, false)}
                   </Card>
                 );
               })}
