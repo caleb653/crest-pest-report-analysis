@@ -86,6 +86,16 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Dewebbing": 30,
 };
 
+/**
+ * An "Ad Hoc Visit" is a one-off appointment that sits in its own bubble.
+ * It MUST NOT impact the cadence rotation, follow-up roll-forward, or the
+ * "next service" selection. We tag it on `report_data.is_ad_hoc = true`
+ * and filter it out of pastServices / scheduledServices used by all the
+ * cadence + follow-up logic.
+ */
+const isAdHocService = (s: any): boolean =>
+  !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
+
 type RequestSnapshotRow = {
   id?: string;
   created_at?: string;
@@ -362,6 +372,11 @@ const PropertyDashboard = ({
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Ad Hoc (one-off) visit add form — completely separate from regular service.
+  const [showAdHocAdd, setShowAdHocAdd] = useState(false);
+  const [adHocDate, setAdHocDate] = useState("");
+  const [adHocType, setAdHocType] = useState("General Pest Control");
+  const [adHocNote, setAdHocNote] = useState("");
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
@@ -962,7 +977,7 @@ const PropertyDashboard = ({
 
   const propServices = services.filter(s => s.property_id === property.id);
   const pastServices = propServices
-    .filter(s => s.status === "completed")
+    .filter(s => s.status === "completed" && !isAdHocService(s))
     .sort((a, b) => {
       // Primary: most recent service date first.
       const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
@@ -972,7 +987,14 @@ const PropertyDashboard = ({
       return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
     });
   const scheduledServices = propServices
-    .filter(s => s.status !== "completed")
+    .filter(s => s.status !== "completed" && !isAdHocService(s))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+
+  // Ad-hoc / one-off visits live in their own bubble. They never roll
+  // forward follow-ups, never advance the cadence rotation, and never
+  // count as the "next service".
+  const adHocServices = propServices
+    .filter(isAdHocService)
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Plan config (included units + overage $) — single read used everywhere below.
@@ -1972,6 +1994,37 @@ const PropertyDashboard = ({
     toast({ title: "Service added", description: `Saved for ${formatDate(addingServiceDate)}` });
     setShowQuickAdd(false);
     setAddingServiceDate("");
+    onRefresh();
+  };
+
+  /**
+   * Insert a STANDALONE ad-hoc visit. Tagged `is_ad_hoc:true` so it lives in
+   * its own bubble — never advances cadence, never inherits follow-ups, and
+   * never appears as the property's "next service". units_planned is left
+   * empty so the visit doesn't pull units forward from prior services.
+   */
+  const addAdHocVisit = async () => {
+    if (!adHocDate) return;
+    const { error } = await supabase
+      .from("portal_services")
+      .insert({
+        property_id: property.id,
+        service_type: adHocType,
+        service_date: adHocDate,
+        status: "scheduled",
+        units_planned: [],
+        frequency_days: null,
+        notes: adHocNote || null,
+        report_data: { is_ad_hoc: true, manually_added: true } as any,
+      } as any);
+    if (error) {
+      toast({ title: "Failed to add ad-hoc visit", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Ad-hoc visit added", description: `Scheduled for ${formatDate(adHocDate)}` });
+    setShowAdHocAdd(false);
+    setAdHocDate("");
+    setAdHocNote("");
     onRefresh();
   };
 
@@ -5199,6 +5252,15 @@ const PropertyDashboard = ({
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setShowQuickAdd(true)}>
               <CalendarPlus className="w-3.5 h-3.5 mr-1" />Add Service to Date
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs border-dashed"
+              onClick={() => setShowAdHocAdd(true)}
+              title="One-off visit. Doesn't affect cadence or follow-ups."
+            >
+              <CalendarPlus className="w-3.5 h-3.5 mr-1" />Ad Hoc Visit
+            </Button>
             {onAddUpcomingService && (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onAddUpcomingService}>
                 <Plus className="w-3.5 h-3.5" />
@@ -5224,6 +5286,90 @@ const PropertyDashboard = ({
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Ad Hoc Visit add form — stands alone, doesn't influence cadence */}
+        {showAdHocAdd && (
+          <Card className="shadow-sm border-dashed border-secondary/60">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold">Add Ad Hoc Visit</p>
+                <button onClick={() => setShowAdHocAdd(false)}><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                One-off visit on its own date. Does <strong>not</strong> follow the cadence,
+                does <strong>not</strong> pull in follow-ups or work orders, and does
+                <strong> not</strong> count toward the rotation.
+              </p>
+              <Select value={adHocType} onValueChange={setAdHocType}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SERVICE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                className="h-8 text-xs"
+                value={adHocDate}
+                onChange={e => setAdHocDate(e.target.value)}
+              />
+              <Textarea
+                className="text-xs min-h-[60px]"
+                placeholder="Reason / notes (optional)"
+                value={adHocNote}
+                onChange={e => setAdHocNote(e.target.value)}
+              />
+              <Button size="sm" className="w-full h-7 text-xs" onClick={addAdHocVisit} disabled={!adHocDate}>
+                <Plus className="w-3 h-3 mr-1" />Add Ad Hoc Visit
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ad Hoc Visits — separate bubble, never mixed with the cadence */}
+        {adHocServices.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">Ad Hoc Visits</h3>
+              <Badge variant="outline" className="text-xs">{adHocServices.length}</Badge>
+              <span className="text-[11px] text-muted-foreground">One-off · doesn't affect cadence</span>
+            </div>
+            <div className="space-y-2">
+              {adHocServices.map((s) => {
+                const isCompleted = s.status === "completed";
+                return (
+                  <Card key={s.id} className="shadow-sm border-dashed">
+                    <div className="p-3 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs">Ad Hoc</Badge>
+                          <p className="font-semibold text-xs">{s.service_type}</p>
+                          <Badge variant={isCompleted ? "default" : "secondary"} className="text-xs">
+                            {s.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatDate(s.service_date)}
+                          {(s as any).technician && ` • ${(s as any).technician}`}
+                        </p>
+                        {s.notes && (
+                          <p className="text-xs mt-1 line-clamp-2">{s.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onOpenServiceReport(s)}>
+                          Open
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => onDeleteService(s.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Upcoming Services */}
