@@ -44,6 +44,7 @@ import {
 import crestLogo from "@/assets/crest-logo-black.png";
 import NotificationBell from "@/components/NotificationBell";
 import { createPortalFromReport, type PortalPropertyType } from "@/lib/createPortalFromReport";
+import { ensureRodentExclusionReport, rodentExclusionUrl, salesReportHasRodentExclusion } from "@/lib/rodentExclusionAutoCreate";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
@@ -124,6 +125,7 @@ const SubmittedReports = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
+  const [creatingRodent, setCreatingRodent] = useState<string | null>(null);
   const [portalTypePickerReportId, setPortalTypePickerReportId] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
   const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
@@ -834,6 +836,22 @@ const SubmittedReports = () => {
                                 <Building2 className="w-4 h-4" />
                               )}
                               <span className="hidden md:inline">Create Client Portal</span>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCreateRodentReport(report.id, e)}
+                              disabled={creatingRodent === report.id}
+                              className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                              title="Create a Rodent Initial Report from this report"
+                            >
+                              {creatingRodent === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <FileText className="w-4 h-4" />
+                              )}
+                              <span className="hidden md:inline">Create Rodent Initial Report</span>
                             </Button>
 
                             <Button
