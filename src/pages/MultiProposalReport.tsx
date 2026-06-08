@@ -913,6 +913,7 @@ const Report = () => {
             rendered_map_url: renderedMapImage,
             fieldroutes_customer_id: fieldroutesCustomerId,
             services: flat,
+            property_images: propertyImages,
           });
           if (res?.created) {
             toast.success("Rodent Exclusion Report created", {
@@ -3064,6 +3065,7 @@ Crest Pest Control`;
                           rendered_map_url: renderedMapImage,
                           fieldroutes_customer_id: fieldroutesCustomerId,
                           services: flat,
+                          property_images: propertyImages,
                         });
                         if (!res) { toast.error("Could not create Rodent Exclusion Report"); return; }
                         toast.success(res.created ? "Rodent Exclusion Report created" : "Opening existing Rodent Exclusion Report");
