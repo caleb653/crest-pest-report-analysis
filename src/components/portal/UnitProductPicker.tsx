@@ -79,6 +79,17 @@ export const UnitProductPicker = ({ value, onChange, placeholder = "Add products
   };
 
   return (
+    <div className="w-full">
+      {previousList.length > 0 && selected.length === 0 && (
+        <button
+          type="button"
+          onClick={copyFromPrior}
+          className="mb-1 inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30"
+          title={previousList.join(", ")}
+        >
+          ↑ Same products as prior unit ({previousList.length})
+        </button>
+      )}
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
@@ -160,6 +171,7 @@ export const UnitProductPicker = ({ value, onChange, placeholder = "Add products
         </div>
       </PopoverContent>
     </Popover>
+    </div>
   );
 };
 
