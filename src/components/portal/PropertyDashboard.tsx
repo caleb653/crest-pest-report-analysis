@@ -2591,12 +2591,14 @@ const PropertyDashboard = ({
                         {uploadingUnitPhotoFor === `${s.id}:${j}` ? "Uploading…" : "Add photo to this unit"}
                       </span>
                     </div>
-                    <input type="file" accept="image/*" className="hidden"
+                    <input type="file" accept="image/*" multiple className="hidden"
                       disabled={uploadingUnitPhotoFor === `${s.id}:${j}`}
-                      onChange={e => {
-                        const f = e.target.files?.[0];
-                        if (f) uploadUnitPhoto(s.id, j, f);
+                      onChange={async e => {
+                        const files = Array.from(e.target.files || []);
                         (e.target as HTMLInputElement).value = "";
+                        for (const f of files) {
+                          await uploadUnitPhoto(s.id, j, f);
+                        }
                       }} />
                   </label>
                   {Array.isArray(unit.photos) && unit.photos.length > 0 && (
@@ -3964,12 +3966,14 @@ const PropertyDashboard = ({
                                     {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "Uploading…" : "Add photo to this unit"}
                                   </span>
                                 </div>
-                                <input type="file" accept="image/*" className="hidden"
+                                <input type="file" accept="image/*" multiple className="hidden"
                                   disabled={uploadingCompletionUnitPhotoFor === `${s.id}:${idx}`}
-                                  onChange={e => {
-                                    const f = e.target.files?.[0];
-                                    if (f) uploadCompletionUnitPhoto(s.id, idx, f);
+                                  onChange={async e => {
+                                    const files = Array.from(e.target.files || []);
                                     (e.target as HTMLInputElement).value = "";
+                                    for (const f of files) {
+                                      await uploadCompletionUnitPhoto(s.id, idx, f);
+                                    }
                                   }} />
                               </label>
                               {Array.isArray((row as any).photos) && (row as any).photos.length > 0 && (
