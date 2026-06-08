@@ -1498,6 +1498,32 @@ Crest Pest Control
     pendingAutoSaveRef.current = true;
   };
 
+  // Drag-and-drop swap helpers — let the tech reorder Before tiles or After
+  // tiles to re-pair them without re-uploading. We swap within the same
+  // column (Before<->Before, After<->After); pairing is by index.
+  const swapBeforeAt = (from: number, to: number) => {
+    if (from === to) return;
+    setBeforePhotos((prev) => {
+      const next = [...prev];
+      const max = Math.max(from, to);
+      while (next.length <= max) next.push({ image: "" });
+      [next[from], next[to]] = [next[to], next[from]];
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+  const swapAfterAt = (from: number, to: number) => {
+    if (from === to) return;
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      const max = Math.max(from, to);
+      while (next.length <= max) next.push({ image: "" });
+      [next[from], next[to]] = [next[to], next[from]];
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
