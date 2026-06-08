@@ -47,6 +47,11 @@ import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import CustomerPicker from "@/components/CustomerPicker";
+import {
+  salesReportHasRodentExclusion,
+  ensureRodentExclusionReport,
+  rodentExclusionUrl,
+} from "@/lib/rodentExclusionAutoCreate";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 
