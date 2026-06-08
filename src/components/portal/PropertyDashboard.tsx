@@ -997,6 +997,19 @@ const PropertyDashboard = ({
     .filter(isAdHocService)
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
+  // Display-only list used by the "Previous Services" tab. Includes completed
+  // ad-hoc visits so techs/PMs can see them in the past-services timeline.
+  // Cadence/follow-up math still uses the pure `pastServices` above so ad-hoc
+  // visits never advance the rotation.
+  const pastServicesForDisplay = [
+    ...pastServices,
+    ...adHocServices.filter(s => s.status === "completed"),
+  ].sort((a, b) => {
+    const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
+    if (dateCmp !== 0) return dateCmp;
+    return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
+  });
+
   // Plan config (included units + overage $) — single read used everywhere below.
   const planCfg = readUnitPlanConfig(property.customer_preferences);
 
