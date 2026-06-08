@@ -997,6 +997,19 @@ const PropertyDashboard = ({
     .filter(isAdHocService)
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
+  // Display-only list used by the "Previous Services" tab. Includes completed
+  // ad-hoc visits so techs/PMs can see them in the past-services timeline.
+  // Cadence/follow-up math still uses the pure `pastServices` above so ad-hoc
+  // visits never advance the rotation.
+  const pastServicesForDisplay = [
+    ...pastServices,
+    ...adHocServices.filter(s => s.status === "completed"),
+  ].sort((a, b) => {
+    const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
+    if (dateCmp !== 0) return dateCmp;
+    return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
+  });
+
   // Plan config (included units + overage $) — single read used everywhere below.
   const planCfg = readUnitPlanConfig(property.customer_preferences);
 
@@ -4037,7 +4050,7 @@ const PropertyDashboard = ({
         </TabsTrigger>
         <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Calendar className="w-5 h-5" />
-          <span>Previous Services <Badge variant="secondary" className="ml-1 text-xs h-4">{pastServices.length}</Badge></span>
+          <span>Previous Services <Badge variant="secondary" className="ml-1 text-xs h-4">{pastServicesForDisplay.length}</Badge></span>
         </TabsTrigger>
         <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <Bug className="w-5 h-5" />
@@ -4596,7 +4609,7 @@ const PropertyDashboard = ({
         <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/70">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
-            <Badge variant="secondary" className="text-xs ml-1">{pastServices.length}</Badge>
+            <Badge variant="secondary" className="text-xs ml-1">{pastServicesForDisplay.length}</Badge>
           </h3>
           {isHOA ? (
             null
@@ -4617,11 +4630,11 @@ const PropertyDashboard = ({
 
 
         {pastViewMode === "date" ? (
-          pastServices.length === 0 ? (
+          pastServicesForDisplay.length === 0 ? (
             <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No past services yet</CardContent></Card>
           ) : (
             <div className="space-y-2">
-              {pastServices.map((s, i) => {
+              {pastServicesForDisplay.map((s, i) => {
                 const isFirst = i === 0;
                 const isExpanded = expandedPastId === s.id;
                 // Back-fill the cadence visit label for legacy past services that
