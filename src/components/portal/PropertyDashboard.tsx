@@ -2590,7 +2590,7 @@ const PropertyDashboard = ({
                         {uploadingUnitPhotoFor === `${s.id}:${j}` ? "Uploading…" : "Add photo to this unit"}
                       </span>
                     </div>
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                    <input type="file" accept="image/*" className="hidden"
                       disabled={uploadingUnitPhotoFor === `${s.id}:${j}`}
                       onChange={e => {
                         const f = e.target.files?.[0];
