@@ -1432,6 +1432,72 @@ Crest Pest Control
     }
   };
 
+  // Upload a single "After" photo into a specific slot so it pairs visually
+  // with the matching Before photo at the same index. Pads empty slots as
+  // needed so the After can land at the requested index even when earlier
+  // pairs are still missing.
+  const handleAfterUploadAtIndex = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetIndex: number,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size === 0) {
+      toast.error("That photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (file.type && !file.type.startsWith("image/")) {
+      toast.error("Please upload only image files");
+      e.currentTarget.value = "";
+      return;
+    }
+    try {
+      const { ext, contentType } = inferImageUploadMeta(file);
+      let uploadBlob: Blob = file;
+      try {
+        const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+        uploadBlob = compressed.blob;
+        URL.revokeObjectURL(compressed.localUrl);
+      } catch (compressErr) {
+        console.warn("Image compression failed, uploading original:", compressErr);
+      }
+      const fileName = `${Math.random()}.${ext}`;
+      const filePath = `${reportId || "temp"}/property/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("report-images")
+        .upload(filePath, uploadBlob, { upsert: true, contentType });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+      setPropertyImages((prev) => {
+        const next = [...prev];
+        while (next.length <= targetIndex) next.push({ image: "" });
+        next[targetIndex] = { image: publicUrl, caption: next[targetIndex]?.caption || "" };
+        return next;
+      });
+      pendingAutoSaveRef.current = true;
+      toast.success("After photo added");
+    } catch (error) {
+      console.error("Error uploading after image:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      e.currentTarget.value = "";
+    }
+  };
+
+  const clearAfterAtIndex = (targetIndex: number) => {
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      if (targetIndex < next.length) {
+        // If trailing slots become empty, trim them so we don't grow forever.
+        next[targetIndex] = { image: "" };
+        while (next.length > 0 && !next[next.length - 1].image) next.pop();
+      }
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
