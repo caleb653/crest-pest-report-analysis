@@ -157,7 +157,11 @@ const Report = () => {
   // "rodent-exclusion" variant tweaks the initial report for rodent
   // exclusion / attic jobs: defaults Target Pest to Rodents and shows a
   // mobile-friendly grouped photo capture panel at the top of the body.
-  const isRodentExclusion = variant === "rodent-exclusion";
+  // Persisted as customer_preferences.reportFormat so it survives reloads
+  // and is detectable by the dashboard router.
+  const [isRodentExclusion, setIsRodentExclusion] = useState<boolean>(
+    variant === "rodent-exclusion",
+  );
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [editableAddress, setEditableAddress] = useState<string>(address || "");
@@ -559,6 +563,7 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
+        if (prefs.reportFormat === "rodent-exclusion") setIsRodentExclusion(true);
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
@@ -827,7 +832,14 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
+        customer_preferences: {
+          preference: customerPreference,
+          notes: customerPreferenceNotes,
+          propertyType,
+          companyName: companyName || undefined,
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+        },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
         fieldroutes_customer_id: fieldroutesCustomerId,
@@ -891,7 +903,14 @@ const Report = () => {
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
+        customer_preferences: {
+          preference: customerPreference,
+          notes: customerPreferenceNotes,
+          propertyType,
+          companyName: companyName || undefined,
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+        },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
         fieldroutes_customer_id: fieldroutesCustomerId,
@@ -1114,7 +1133,14 @@ Crest Pest Control
         equipment: editableEquipment,
         report_title: "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
-        customer_preferences: { preference: customerPreference, notes: customerPreferenceNotes, propertyType, companyName: companyName || undefined },
+        customer_preferences: {
+          preference: customerPreference,
+          notes: customerPreferenceNotes,
+          propertyType,
+          companyName: companyName || undefined,
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+        },
         customer_email: customerEmail,
         customer_phone: customerPhone || null,
         fieldroutes_customer_id: fieldroutesCustomerId,
