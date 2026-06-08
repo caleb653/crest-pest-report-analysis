@@ -800,6 +800,55 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   };
 
   // Build the PDF and push it directly to FieldRoutes as "Signed Agreement".
+  // Manually create a Rodent Exclusion Report from the current sales proposal.
+  // Pre-populates customer, address, tech, map, and pests so the tech only
+  // has to add the before/after photos.
+  const handleCreateRodentExclusionReport = async () => {
+    if (!reportId) {
+      toast.error("Save the report first before creating the Rodent Exclusion Report.");
+      return;
+    }
+    if (!salesReportHasRodentExclusion(services)) {
+      toast.error("No rodent exclusion service on this proposal.");
+      return;
+    }
+    try {
+      const res = await ensureRodentExclusionReport({
+        id: reportId,
+        technician_name: editableTech,
+        customer_name: editableCustomer,
+        customer_email: customerEmail || null,
+        address: editableAddress,
+        service_date: editableServiceDate,
+        license_number: editableLicenseNumber,
+        map_data: mapData ? JSON.parse(mapData) : null,
+        custom_map_url: customMapImage,
+        rendered_map_url: renderedMapImage,
+        fieldroutes_customer_id: fieldroutesCustomerId,
+        services,
+      });
+      if (!res) {
+        toast.error("Could not create Rodent Exclusion Report.");
+        return;
+      }
+      toast.success(
+        res.created ? "Rodent Exclusion Report created" : "Opening existing Rodent Exclusion Report",
+        {
+          description: "Add the before/after photos to finish it.",
+          action: {
+            label: "Open",
+            onClick: () => navigate(rodentExclusionUrl(res.reportId)),
+          },
+        },
+      );
+      navigate(rodentExclusionUrl(res.reportId));
+    } catch (e: any) {
+      console.error("handleCreateRodentExclusionReport failed:", e);
+      toast.error("Failed to create Rodent Exclusion Report");
+    }
+  };
+
+  // Build the PDF and push it directly to FieldRoutes as "Signed Agreement".
   // Silent — runs only when admin session + linked customer are both present.
   const autoPushSignedToFieldRoutes = async () => {
     if (frAutoPushRef.current) return;
