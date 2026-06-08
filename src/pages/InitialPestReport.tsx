@@ -1432,6 +1432,72 @@ Crest Pest Control
     }
   };
 
+  // Upload a single "After" photo into a specific slot so it pairs visually
+  // with the matching Before photo at the same index. Pads empty slots as
+  // needed so the After can land at the requested index even when earlier
+  // pairs are still missing.
+  const handleAfterUploadAtIndex = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetIndex: number,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size === 0) {
+      toast.error("That photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
+      e.currentTarget.value = "";
+      return;
+    }
+    if (file.type && !file.type.startsWith("image/")) {
+      toast.error("Please upload only image files");
+      e.currentTarget.value = "";
+      return;
+    }
+    try {
+      const { ext, contentType } = inferImageUploadMeta(file);
+      let uploadBlob: Blob = file;
+      try {
+        const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+        uploadBlob = compressed.blob;
+        URL.revokeObjectURL(compressed.localUrl);
+      } catch (compressErr) {
+        console.warn("Image compression failed, uploading original:", compressErr);
+      }
+      const fileName = `${Math.random()}.${ext}`;
+      const filePath = `${reportId || "temp"}/property/${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("report-images")
+        .upload(filePath, uploadBlob, { upsert: true, contentType });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+      setPropertyImages((prev) => {
+        const next = [...prev];
+        while (next.length <= targetIndex) next.push({ image: "" });
+        next[targetIndex] = { image: publicUrl, caption: next[targetIndex]?.caption || "" };
+        return next;
+      });
+      pendingAutoSaveRef.current = true;
+      toast.success("After photo added");
+    } catch (error) {
+      console.error("Error uploading after image:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      e.currentTarget.value = "";
+    }
+  };
+
+  const clearAfterAtIndex = (targetIndex: number) => {
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      if (targetIndex < next.length) {
+        // If trailing slots become empty, trim them so we don't grow forever.
+        next[targetIndex] = { image: "" };
+        while (next.length > 0 && !next[next.length - 1].image) next.pop();
+      }
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -1746,53 +1812,109 @@ Crest Pest Control
       {isRodentExclusion && (
         <div className="no-print bg-sage/20 border-y-2 border-dark-sage/40">
           <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
-            {beforePhotos.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                    Before Photos
-                  </h3>
-                  <span className="text-[11px] text-muted-foreground">
-                    From sales report · {beforePhotos.length} photo{beforePhotos.length === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {beforePhotos.map((p, i) => (
-                    <div key={`before-${i}`} className="space-y-1">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-dark-sage/60 bg-muted">
-                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                Before &amp; After
+              </h3>
+              <span className="text-[11px] text-muted-foreground">
+                {beforePhotos.length} before · {propertyImages.filter((p) => p.image).length} after
+              </span>
+            </div>
+            {(() => {
+              const pairCount = Math.max(beforePhotos.length, propertyImages.length);
+              const rows = Array.from({ length: pairCount }, (_, i) => i);
+              const usedAfters = propertyImages.filter((p) => p.image).length;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {rows.map((i) => {
+                    const before = beforePhotos[i];
+                    const after = propertyImages[i];
+                    return (
+                      <div
+                        key={`pair-${i}`}
+                        className="rounded-xl border-2 border-dark-sage/50 bg-card p-2"
+                      >
+                        <div className="flex items-center justify-between mb-1.5 px-0.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                            Pair {i + 1}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Before */}
+                          <div className="space-y-1">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
+                            <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                              {before?.image ? (
+                                <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground text-center px-2">
+                                  No before photo
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* After */}
+                          <div className="space-y-1">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
+                            {after?.image ? (
+                              <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group">
+                                <img src={after.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => clearAfterAtIndex(i)}
+                                  aria-label="Remove after photo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <label className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center">
+                                <Plus className="w-5 h-5 text-dark-sage" />
+                                <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
+                                  Add After
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                  aria-label={`Add after photo for pair ${i + 1}`}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-tight text-foreground bg-card/70 rounded px-1.5 py-1 border border-border">
-                          {p.caption}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {/* Trailing card to add unpaired After photos (extras beyond
+                      what the sales report provided). Stops at 12 total. */}
+                  {usedAfters < 12 && (
+                    <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
+                      <Plus className="w-7 h-7 text-dark-sage" />
+                      <span className="text-sm font-semibold text-foreground leading-tight">
+                        Add Extra After Photos
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {usedAfters}/12 · unpaired
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        capture="environment"
+                        onChange={(e) => handleRodentGroupUpload(e, "After")}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        aria-label="Add extra after photos"
+                      />
+                    </label>
+                  )}
                 </div>
-              </div>
-            )}
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-2">
-              After Photos
-            </h3>
-            <label className="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/20 active:bg-sage/30 transition-colors py-6 px-4 cursor-pointer text-center min-h-[120px]">
-              <Plus className="w-8 h-8 text-dark-sage" />
-              <span className="text-base font-semibold text-foreground leading-tight">
-                Add After Photos (up to 12)
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {propertyImages.length}/12 added · tap to use camera or gallery
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                capture="environment"
-                onChange={(e) => handleRodentGroupUpload(e, "After")}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                aria-label="Add after photos"
-              />
-            </label>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -2418,11 +2540,11 @@ Crest Pest Control
               </div>
             )}
 
-            {propertyImages.length > 0 && (
+            {propertyImages.some((p) => p.image) && (
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {propertyImages.map((p, i) => (
+                  {propertyImages.filter((p) => p.image).map((p, i) => (
                     <div key={`pdf-after-${i}`} className="space-y-1">
                       <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
                         <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
