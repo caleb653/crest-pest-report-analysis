@@ -214,6 +214,9 @@ const Report = () => {
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
   const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
+  // "Before" photos carried over from the source sales report (rodent-exclusion
+  // variant only). Read-only — represent the property's pre-service state.
+  const [beforePhotos, setBeforePhotos] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
@@ -556,6 +559,9 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
+        if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
+          setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
+        }
       }
       if (row.notes) {
         setTodaysFindings(row.notes as string);
@@ -1714,10 +1720,39 @@ Crest Pest Control
       {isRodentExclusion && (
         <div className="no-print bg-sage/20 border-y-2 border-dark-sage/40">
           <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
+            {beforePhotos.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                    Before Photos
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground">
+                    From sales report · {beforePhotos.length} photo{beforePhotos.length === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {beforePhotos.map((p, i) => (
+                    <div key={`before-${i}`} className="space-y-1">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-dark-sage/60 bg-muted">
+                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                      {p.caption && (
+                        <p className="text-[10px] leading-tight text-foreground bg-card/70 rounded px-1.5 py-1 border border-border">
+                          {p.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-2">
+              After Photos
+            </h3>
             <label className="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/20 active:bg-sage/30 transition-colors py-6 px-4 cursor-pointer text-center min-h-[120px]">
               <Plus className="w-8 h-8 text-dark-sage" />
               <span className="text-base font-semibold text-foreground leading-tight">
-                Add Photos (up to 12)
+                Add After Photos (up to 12)
               </span>
               <span className="text-xs text-muted-foreground">
                 {propertyImages.length}/12 added · tap to use camera or gallery
@@ -1727,9 +1762,9 @@ Crest Pest Control
                 accept="image/*"
                 multiple
                 capture="environment"
-                onChange={(e) => handleRodentGroupUpload(e, "Photo")}
+                onChange={(e) => handleRodentGroupUpload(e, "After")}
                 className="absolute inset-0 opacity-0 cursor-pointer"
-                aria-label="Add photos"
+                aria-label="Add after photos"
               />
             </label>
           </div>
@@ -2318,7 +2353,69 @@ Crest Pest Control
         </div>
       </div>
 
-      {/* Second Page - Property Images */}
+      {/* Second Page (rodent-exclusion variant) — Before / After photo gallery.
+          Renders Before photos carried over from the sales report, then the
+          After photos uploaded on this report. Included in the PDF capture so
+          customers see the full before/after story. */}
+      {isRodentExclusion && (beforePhotos.length > 0 || propertyImages.length > 0) && (
+        <div
+          data-pdf-page="2"
+          data-pdf-capture="2"
+          data-report-type="initial-pest"
+          className="print-page-break bg-background"
+        >
+          <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
+            <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
+              <div className="flex items-center gap-3">
+                <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
+                <h1 className="text-lg font-bold text-foreground">Before &amp; After</h1>
+              </div>
+            </div>
+
+            {beforePhotos.length > 0 && (
+              <div className="mb-5">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">Before</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                  {beforePhotos.map((p, i) => (
+                    <div key={`pdf-before-${i}`} className="space-y-1">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                      {p.caption && (
+                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
+                          {p.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {propertyImages.length > 0 && (
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                  {propertyImages.map((p, i) => (
+                    <div key={`pdf-after-${i}`} className="space-y-1">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                        <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                      {p.caption && (
+                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
+                          {p.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Second Page - Property Images (non-rodent variant) */}
       {!isRodentExclusion && (
       <div 
         data-pdf-page="2"

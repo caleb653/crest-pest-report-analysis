@@ -782,6 +782,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
             rendered_map_url: renderedMapImage,
             fieldroutes_customer_id: fieldroutesCustomerId,
             services,
+            property_images: propertyImages,
           });
           if (res?.created) {
             toast.success("Rodent Exclusion Report created", {
@@ -826,6 +827,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         rendered_map_url: renderedMapImage,
         fieldroutes_customer_id: fieldroutesCustomerId,
         services,
+        property_images: propertyImages,
       });
       if (!res) {
         toast.error("Could not create Rodent Exclusion Report.");
