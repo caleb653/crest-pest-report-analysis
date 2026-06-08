@@ -3938,7 +3938,7 @@ const PropertyDashboard = ({
                                     {uploadingCompletionUnitPhotoFor === `${s.id}:${idx}` ? "Uploading…" : "Add photo to this unit"}
                                   </span>
                                 </div>
-                                <input type="file" accept="image/*" capture="environment" className="hidden"
+                                <input type="file" accept="image/*" className="hidden"
                                   disabled={uploadingCompletionUnitPhotoFor === `${s.id}:${idx}`}
                                   onChange={e => {
                                     const f = e.target.files?.[0];
@@ -4040,7 +4040,7 @@ const PropertyDashboard = ({
                         <p className="text-xs text-muted-foreground mt-0.5">Tap to take a photo or upload from gallery</p>
                       </div>
                     </div>
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                    <input type="file" accept="image/*" className="hidden"
                       disabled={uploadingPhotoFor === s.id}
                       onChange={e => {
                         const f = e.target.files?.[0];
