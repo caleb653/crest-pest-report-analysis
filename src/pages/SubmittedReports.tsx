@@ -393,6 +393,7 @@ const SubmittedReports = () => {
       const result = await createPortalFromReport(reportId, propertyType);
       if (result) {
         // Verify the new property is readable before navigating, to avoid 404s
+        // (rodent helper appended below before this method)
         // from race conditions where Postgres hasn't yet propagated the row.
         let ready = false;
         for (let i = 0; i < 8 && !ready; i++) {
