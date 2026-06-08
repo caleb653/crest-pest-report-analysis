@@ -3513,7 +3513,61 @@ const PropertyDashboard = ({
             // We do this by:
             //   (a) adding the unit_number to report_data.dismissed_units, and
             //   (b) stripping it from units_planned if present.
-            if (!unitLabel || (s as any).isProjected || !s.id) return;
+            // For PROJECTED (not-yet-materialized) services, there's no row to
+            // persist on — so we instead record the dismissal on the most
+            // recent past service's `report_data.dismissed_follow_ups` so the
+            // follow-up never rolls forward again. A NEW work order for that
+            // same unit still surfaces (work orders use their own filter).
+            if (!unitLabel) return;
+            if ((s as any).isProjected || !s.id || String(s.id).startsWith("projected-")) {
+              try {
+                const mostRecent = pastServices[0];
+                if (!mostRecent?.id) return;
+                const existingRD =
+                  (mostRecent as any).report_data && typeof (mostRecent as any).report_data === "object"
+                    ? { ...((mostRecent as any).report_data as any) }
+                    : {};
+                const existingDismissed = Array.isArray(existingRD.dismissed_follow_ups)
+                  ? (existingRD.dismissed_follow_ups as any[])
+                  : [];
+                const normalized = existingDismissed
+                  .map((e) => {
+                    if (typeof e === "string") {
+                      const u = String(e).trim();
+                      return u ? { unit: u, at: "" } : null;
+                    }
+                    if (e && typeof e === "object") {
+                      const u = String((e as any).unit || "").trim();
+                      if (!u) return null;
+                      return { unit: u, at: String((e as any).at || "") };
+                    }
+                    return null;
+                  })
+                  .filter(Boolean) as { unit: string; at: string }[];
+                const filtered = normalized.filter((e) => e.unit !== unitLabel);
+                const nextRD = {
+                  ...existingRD,
+                  dismissed_follow_ups: [
+                    ...filtered,
+                    { unit: unitLabel, at: new Date().toISOString() },
+                  ],
+                };
+                const { error } = await supabase
+                  .from("portal_services")
+                  .update({ report_data: nextRD })
+                  .eq("id", mostRecent.id);
+                if (error) throw error;
+                toast({ title: `Removed ${unitLabel} — won't roll forward again` });
+                onRefresh();
+              } catch (err: any) {
+                toast({
+                  title: "Could not save removal",
+                  description: err?.message || "Unknown error",
+                  variant: "destructive",
+                });
+              }
+              return;
+            }
             try {
               const existingReportData =
                 (s as any).report_data && typeof (s as any).report_data === "object"

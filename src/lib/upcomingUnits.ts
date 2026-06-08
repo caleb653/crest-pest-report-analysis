@@ -136,8 +136,25 @@ export function getFollowUpDetailsFromPast(
   const details = Array.isArray(mostRecentPast?.unit_details)
     ? (mostRecentPast!.unit_details as UnitDetailRow[])
     : [];
+  // Units the admin explicitly dismissed from the upcoming visit are stored
+  // on the past service as `report_data.dismissed_follow_ups`. Once dismissed,
+  // they MUST NOT roll forward as a follow-up again unless a new work order
+  // for that unit is created (work orders are handled separately by
+  // computeUpcomingUnits and are not affected by this list).
+  const dismissedRaw = Array.isArray((mostRecentPast as any)?.report_data?.dismissed_follow_ups)
+    ? ((mostRecentPast as any).report_data.dismissed_follow_ups as unknown[])
+    : [];
+  const dismissed = new Set<string>();
+  dismissedRaw.forEach((entry) => {
+    if (typeof entry === "string") dismissed.add(String(entry).trim());
+    else if (entry && typeof entry === "object") {
+      const u = String((entry as any).unit || "").trim();
+      if (u) dismissed.add(u);
+    }
+  });
   return details.filter(u => {
     if (!u?.unit_number) return false;
+    if (dismissed.has(String(u.unit_number).trim())) return false;
     // ONLY flag a unit as needing a follow-up when the technician explicitly
     // CHECKED the "Follow Up Needed" checkbox on the unit. Status alone (even
     // "Activity Found" or "Treated - Follow Up") is NOT enough — the explicit
