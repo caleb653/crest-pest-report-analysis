@@ -4682,6 +4682,20 @@ const PropertyDashboard = ({
                           <Badge variant="default" className="text-xs">Completed</Badge>
                           {s.follow_up_recommended && <Badge className="text-xs bg-orange-500 text-white">Follow-up</Badge>}
                           {(() => {
+                            const sentAt = (s as any)?.report_data?.pm_email_sent_at as string | undefined;
+                            if (!sentAt) return null;
+                            const when = (() => { try { return new Date(sentAt).toLocaleString(); } catch { return sentAt; } })();
+                            const who = (s as any)?.report_data?.pm_email_recipient || "PM";
+                            return (
+                              <Badge
+                                title={`Completion email sent to ${who} on ${when}`}
+                                className="text-xs bg-emerald-600 text-white border-transparent hover:bg-emerald-600"
+                              >
+                                ✓ PM Emailed
+                              </Badge>
+                            );
+                          })()}
+                          {(() => {
                             const total = Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0;
                             const ov = computeOverage(total, planCfg);
                             if (!ov.hasOverage) return null;
