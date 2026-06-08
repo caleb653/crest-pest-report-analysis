@@ -157,7 +157,11 @@ const Report = () => {
   // "rodent-exclusion" variant tweaks the initial report for rodent
   // exclusion / attic jobs: defaults Target Pest to Rodents and shows a
   // mobile-friendly grouped photo capture panel at the top of the body.
-  const isRodentExclusion = variant === "rodent-exclusion";
+  // Persisted as customer_preferences.reportFormat so it survives reloads
+  // and is detectable by the dashboard router.
+  const [isRodentExclusion, setIsRodentExclusion] = useState<boolean>(
+    variant === "rodent-exclusion",
+  );
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [editableAddress, setEditableAddress] = useState<string>(address || "");
@@ -559,6 +563,7 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
+        if (prefs.reportFormat === "rodent-exclusion") setIsRodentExclusion(true);
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
