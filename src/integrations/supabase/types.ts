@@ -998,6 +998,7 @@ export type Database = {
           id: string
           next_steps: Json
           notes_head: string
+          report_format: string
           sent_to_customer_at: string
           services: Json
           technician_name: string
