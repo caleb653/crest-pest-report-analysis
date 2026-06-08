@@ -2019,6 +2019,17 @@ Crest Pest Control`;
               </div>
 
               <div className="flex items-center gap-2 no-print ml-auto shrink-0">
+                {salesReportHasRodentExclusion(services) && reportId && (
+                  <Button
+                    onClick={handleCreateRodentExclusionReport}
+                    variant="secondary"
+                    size="sm"
+                    title="Create a Rodent Exclusion service report from this proposal"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    <span className="hidden sm:inline">Rodent Exclusion Report</span>
+                  </Button>
+                )}
                 <Button onClick={handleOpenCompose} variant="secondary" size="sm">
                   <Mail className="w-3 h-3 mr-1" />
                   <span className="hidden sm:inline">Email</span>
