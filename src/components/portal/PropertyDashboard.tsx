@@ -3883,6 +3883,12 @@ const PropertyDashboard = ({
                                     ? (row.products_used as any[]).map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean)
                                     : (row.products_used || "")}
                                   onChange={(next) => updateRow(idx, "products_used", next as any)}
+                                  previousValue={idx > 0 ? (() => {
+                                    const prev = cd.unitRows[idx - 1] as any;
+                                    const pv = prev?.products_used;
+                                    if (Array.isArray(pv)) return pv.map((p: any) => typeof p === "string" ? p : p?.name).filter(Boolean);
+                                    return pv || "";
+                                  })() : undefined}
                                 />
                               </div>
                             </div>
@@ -3893,6 +3899,25 @@ const PropertyDashboard = ({
                                 <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
                                   Technician Findings (visible to customer)
                                 </Label>
+                              </div>
+                              <div className="mb-2">
+                                <select
+                                  className="h-7 text-[11px] px-2 rounded border border-amber-300 bg-background w-full sm:w-auto cursor-pointer"
+                                  value=""
+                                  onChange={(e) => {
+                                    const preset = PRESET_NOTES.find(p => p.id === e.target.value);
+                                    if (!preset) return;
+                                    const existing = (row.findings || "").trim();
+                                    const next = existing ? `${existing}\n\n${preset.text}` : preset.text;
+                                    updateRow(idx, "findings", next);
+                                    e.target.value = "";
+                                  }}
+                                >
+                                  <option value="">+ Insert preset note…</option>
+                                  {PRESET_NOTES.map(p => (
+                                    <option key={p.id} value={p.id}>{p.label}</option>
+                                  ))}
+                                </select>
                               </div>
                               <Textarea
                                 className="text-sm w-full px-2.5 py-2 min-h-[5rem] leading-snug whitespace-normal bg-background border-amber-400 focus-visible:ring-amber-400"
