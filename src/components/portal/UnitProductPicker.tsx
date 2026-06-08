@@ -9,11 +9,14 @@ interface Props {
   value: string | string[] | null | undefined;
   onChange: (next: string) => void;
   placeholder?: string;
+  // Optional: previous unit's product selection. When provided and current is empty,
+  // a "Same as prior unit" shortcut appears at the top of the picker.
+  previousValue?: string | string[] | null;
 }
 
 // Compact multi-select for product NAMES per unit (no amounts).
 // Stores as a comma-separated string for backward compatibility with unit_details.products_used.
-export const UnitProductPicker = ({ value, onChange, placeholder = "Add products" }: Props) => {
+export const UnitProductPicker = ({ value, onChange, placeholder = "Add products", previousValue }: Props) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -37,8 +40,21 @@ export const UnitProductPicker = ({ value, onChange, placeholder = "Add products
       seen.add(p.name.toLowerCase());
       out.push({ name: p.name, manufacturer: p.manufacturer });
     }
-    return out;
+    // Alphabetical sort across the whole list
+    return out.sort((a, b) => a.name.localeCompare(b.name));
   }, []);
+  const previousList = useMemo(() => {
+    if (Array.isArray(previousValue)) return previousValue.filter(Boolean);
+    if (typeof previousValue === "string") return previousValue.split(",").map(s => s.trim()).filter(Boolean);
+    return [];
+  }, [previousValue]);
+
+  const copyFromPrior = () => {
+    if (previousList.length === 0) return;
+    onChange(previousList.join(", "));
+    setOpen(false);
+  };
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -93,6 +109,15 @@ export const UnitProductPicker = ({ value, onChange, placeholder = "Add products
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2" align="start">
+        {previousList.length > 0 && selected.length === 0 && (
+          <button
+            type="button"
+            onClick={copyFromPrior}
+            className="w-full text-left mb-2 px-2 py-1.5 rounded text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/15 border border-primary/30"
+          >
+            ↑ Same as prior unit ({previousList.length})
+          </button>
+        )}
         <Input
           autoFocus
           placeholder="Search products…"

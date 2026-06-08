@@ -59,7 +59,7 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
       seen.add(p.name.toLowerCase());
       out.push({ name: p.name, manufacturer: p.manufacturer });
     }
-    return out;
+    return out.sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
   const filteredOptions = useMemo(() => {
