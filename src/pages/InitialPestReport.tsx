@@ -2540,11 +2540,11 @@ Crest Pest Control
               </div>
             )}
 
-            {propertyImages.length > 0 && (
+            {propertyImages.some((p) => p.image) && (
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {propertyImages.map((p, i) => (
+                  {propertyImages.filter((p) => p.image).map((p, i) => (
                     <div key={`pdf-after-${i}`} className="space-y-1">
                       <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
                         <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
