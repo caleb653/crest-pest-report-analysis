@@ -2353,7 +2353,69 @@ Crest Pest Control
         </div>
       </div>
 
-      {/* Second Page - Property Images */}
+      {/* Second Page (rodent-exclusion variant) — Before / After photo gallery.
+          Renders Before photos carried over from the sales report, then the
+          After photos uploaded on this report. Included in the PDF capture so
+          customers see the full before/after story. */}
+      {isRodentExclusion && (beforePhotos.length > 0 || propertyImages.length > 0) && (
+        <div
+          data-pdf-page="2"
+          data-pdf-capture="2"
+          data-report-type="initial-pest"
+          className="print-page-break bg-background"
+        >
+          <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
+            <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
+              <div className="flex items-center gap-3">
+                <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
+                <h1 className="text-lg font-bold text-foreground">Before &amp; After</h1>
+              </div>
+            </div>
+
+            {beforePhotos.length > 0 && (
+              <div className="mb-5">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">Before</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                  {beforePhotos.map((p, i) => (
+                    <div key={`pdf-before-${i}`} className="space-y-1">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                      {p.caption && (
+                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
+                          {p.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {propertyImages.length > 0 && (
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                  {propertyImages.map((p, i) => (
+                    <div key={`pdf-after-${i}`} className="space-y-1">
+                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                        <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                      {p.caption && (
+                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
+                          {p.caption}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Second Page - Property Images (non-rodent variant) */}
       {!isRodentExclusion && (
       <div 
         data-pdf-page="2"
