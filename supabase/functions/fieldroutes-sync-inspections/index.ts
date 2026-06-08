@@ -160,13 +160,15 @@ serve(async (req) => {
     let authed = false;
     if (expectedKey && syncKey && syncKey === expectedKey) {
       authed = true;
-    } else if (sessionToken) {
+    }
+    if (!authed && sessionToken) {
       const { data: session } = await supabase
         .from("admin_sessions").select("id")
         .eq("session_token", sessionToken).eq("is_valid", true)
         .gt("expires_at", new Date().toISOString()).maybeSingle();
       if (session) authed = true;
-    } else if (staffName && KNOWN_STAFF.has(staffName)) {
+    }
+    if (!authed && staffName && KNOWN_STAFF.has(staffName)) {
       authed = true;
     }
     if (!authed) return json({ ok: false, error: "unauthorized" }, 401);
