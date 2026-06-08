@@ -1710,7 +1710,16 @@ const PropertyDashboard = ({
         ? pocEmailRaw.trim()
         : null;
       const recipient = pocEmail || (client as any)?.email || null;
-      if (recipient) {
+      // Guard against duplicate sends — if we've already emailed the PM for
+      // this exact service, skip the send (but still let the user know).
+      const svcRow = propServices.find(s => s.id === serviceId);
+      const alreadySentAt = (svcRow as any)?.report_data?.pm_email_sent_at as string | undefined;
+      if (recipient && alreadySentAt) {
+        toast({
+          title: "PM already emailed",
+          description: `Skipped duplicate send (originally sent ${new Date(alreadySentAt).toLocaleString()}).`,
+        });
+      } else if (recipient) {
         // Prefer the property-scoped PM link; fall back to any active link.
         const propertyLink =
           links.find(l => l.link_type === "sub" && Array.isArray(l.assigned_property_ids) && (l.assigned_property_ids as string[]).includes(property.id))
@@ -1761,6 +1770,21 @@ const PropertyDashboard = ({
             portalUrl,
           },
         });
+        // Stamp the service so we don't email the PM again if Complete is
+        // re-clicked. Stored inside report_data (JSON) to avoid a migration.
+        try {
+          const mergedRd = {
+            ...((svcRow as any)?.report_data || {}),
+            pm_email_sent_at: new Date().toISOString(),
+            pm_email_recipient: recipient,
+          };
+          await supabase
+            .from("portal_services")
+            .update({ report_data: mergedRd })
+            .eq("id", serviceId);
+        } catch (err) {
+          console.warn("could not stamp pm_email_sent_at", err);
+        }
         toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
       }
     } catch (e) {
