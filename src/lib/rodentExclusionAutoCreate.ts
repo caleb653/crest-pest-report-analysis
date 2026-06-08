@@ -55,6 +55,7 @@ export interface SalesReportLike {
   fieldroutes_customer_id?: Maybe<string>;
   customer_preferences?: Maybe<Record<string, unknown>>;
   services?: unknown;
+  property_images?: Maybe<Array<{ image: string; caption?: string }>>;
 }
 
 export interface AutoCreateResult {
@@ -84,6 +85,17 @@ export async function ensureRodentExclusionReport(
   const newId = crypto.randomUUID();
   const prefs = (sales.customer_preferences || {}) as Record<string, unknown>;
 
+  // Carry the sales-report property photos forward as "Before" photos so the
+  // tech can show the property's pre-service state against the post-service
+  // exclusion work. We keep them in customer_preferences.beforeAfter.before so
+  // the InitialPestReport can render them as a read-only gallery, and
+  // property_images on the new report is reserved for "After" uploads.
+  const beforePhotos = Array.isArray(sales.property_images)
+    ? sales.property_images
+        .filter((p) => p && typeof p.image === "string" && p.image)
+        .map((p) => ({ image: p.image, caption: p.caption || "" }))
+    : [];
+
   const insertRow = {
     id: newId,
     technician_name: sales.technician_name || "",
@@ -108,7 +120,7 @@ export async function ensureRodentExclusionReport(
       ...prefs,
       reportFormat: "rodent-exclusion",
       sourceSalesReportId: sales.id,
-      beforeAfter: { after: [], pairs: [] },
+      beforeAfter: { before: beforePhotos, after: [], pairs: [] },
     },
   };
 
