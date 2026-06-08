@@ -1952,10 +1952,10 @@ Crest Pest Control`;
     if (imageFiles.length === 0) return;
     e.preventDefault();
 
-    // Limit to 12 images total
-    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
+    // Limit to 20 images total
+    const maxNew = Math.min(imageFiles.length, 20 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 12 images allowed");
+      toast.error("Maximum 20 images allowed");
       return;
     }
 
@@ -3311,7 +3311,7 @@ Crest Pest Control`;
             <div className="relative inline-flex">
               <Button variant="outline" size="sm" type="button">
                 <FileDown className="w-4 h-4 mr-2" />
-                Upload Images (up to 12)
+                Upload Images (up to 20)
               </Button>
               <input
                 id="property-images-upload"
@@ -3411,7 +3411,7 @@ Crest Pest Control`;
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
-                Click the button above to upload up to 12 images.
+                Click the button above to upload up to 20 images.
               </p>
             </div>
           )}
