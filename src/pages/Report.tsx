@@ -131,7 +131,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Recurring Pest Control (Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
+      `<b>Recurring Pest Control (Monthly):</b><br>• Inspect exterior for potential pest entry points, harborage areas, and signs of infestation<br>• Remove webs from the exterior of the property including eaves, windows, outdoor furniture, and high visibility areas<br>• Create a pest barrier around your home and property by targeted exterior treatments. Treat the garage and interior upon request.<br><br><b>Additional Details:</b> Our goal is to reduce your pest population as much as possible. However, given pests are abundant in So Cal, it's unlikely for us (or anyone) to reduce 100% of the pest population (i.e., you may still see the occasional ant, spider, or cockroach). Our products typically take 7-10 days to take full effect (this gives the products time to spread back to the larger colonies). If activity levels remain high after this period, contact us and we'll get someone out ASAP for a complimentary follow-up service.`,
     defaultInitial: 75,
     defaultRecurring: 75,
   },
@@ -139,7 +139,7 @@ const SERVICE_CONFIG: Record<
     frequency: 60,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
+      `<b>Recurring Pest Control (Bi-Monthly):</b><br>• Inspect exterior for potential pest entry points, harborage areas, and signs of infestation<br>• Remove webs from the exterior of the property including eaves, windows, outdoor furniture, and high visibility areas<br>• Create a pest barrier around your home and property by targeted exterior treatments. Treat the garage and interior upon request.<br>• The first treatment from the Pest Protection Plan begins 30 days after the initial service to break pest egg cycles<br><br><b>Additional Details:</b> Our goal is to reduce your pest population as much as possible. However, given pests are abundant in So Cal, it's unlikely for us (or anyone) to reduce 100% of the pest population (i.e., you may still see the occasional ant, spider, or cockroach). Our products typically take 7-10 days to take full effect (this gives the products time to spread back to the larger colonies). If activity levels remain high after this period, contact us and we'll get someone out ASAP for a complimentary follow-up service.`,
     defaultInitial: 110,
     defaultRecurring: 110,
   },
@@ -147,7 +147,7 @@ const SERVICE_CONFIG: Record<
     frequency: 90,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Recurring Pest Control (Quarterly):</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed<br>• Pest Protection Plan begins 30 days after the initial service to break pest egg cycles. Each treatment is the same price.`,
+      `<b>Recurring Pest Control (Quarterly):</b><br>• Inspect exterior for potential pest entry points, harborage areas, and signs of infestation<br>• Remove webs from the exterior of the property including eaves, windows, outdoor furniture, and high visibility areas<br>• Create a pest barrier around your home and property by targeted exterior treatments. Treat the garage and interior upon request.<br>• The first treatment from the Pest Protection Plan begins 30 days after the initial service to break pest egg cycles<br><br><b>Additional Details:</b> Our goal is to reduce your pest population as much as possible. However, given pests are abundant in So Cal, it's unlikely for us (or anyone) to reduce 100% of the pest population (i.e., you may still see the occasional ant, spider, or cockroach). Our products typically take 7-10 days to take full effect (this gives the products time to spread back to the larger colonies). If activity levels remain high after this period, contact us and we'll get someone out ASAP for a complimentary follow-up service.`,
     defaultInitial: 135,
     defaultRecurring: 135,
   },
@@ -155,7 +155,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Commercial General Pest:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
+      `<b>Commercial General Pest:</b><br>• Inspect exterior and interior (including placing and monitoring pest traps) for pest activity<br>• Treat the exterior perimeter of the property and interior common areas (restrooms, break rooms, lounges, etc.). Treat other interior areas as needed<br>• Provide ongoing communication with management on pest sightings and activity levels`,
     defaultInitial: 100,
     defaultRecurring: 100,
   },
@@ -163,7 +163,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Exclusion:</b><br>• Seal gaps and vulnerabilities using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants<br>• Customize every exclusion to the structure of the home to prevent future rodent entry`,
+      `<b>Rodent Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replacing framing, and any other general construction work.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -171,7 +171,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping:</b><br>• Eliminate active rodent populations through targeted trapping inside the home and on the property<br>• Strategically place traps in areas of highest activity to quickly reduce rodent populations<br>• Monitor and adjust trap placement as needed to ensure effective control`,
+      `<b>Rodent Trapping:</b><br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> Rodent trapping is specifically targeted at eliminating the existing rodent population. After we've completed our follow-up visits, we can't guarantee that rodents will not re-enter your property unless we are also performing rodent exclusion work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -179,7 +179,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping & Exclusion:</b><br>• Eliminate active rodent populations through targeted trapping inside the home and on the property<br>• Reinforce the home's protective barriers by sealing entry points and structural weaknesses<br>• Provide long-term protection by preventing re-entry while reducing current rodent activity`,
+      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -187,7 +187,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Bait Boxes:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Strategically move bait boxes depending on ongoing rodent activity`,
+      `<b>Rodent Bait Boxes:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 200,
     defaultRecurring: 70,
   },
@@ -195,7 +195,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Mosquitoes"],
     proposedServices:
-      `<b>Mosquito Service:</b><br>• Set up mosquito buckets, which interrupt breeding cycle and neutralize future generations<br>• Target adult mosquitoes and larvae by treating with long lasting products`,
+      `<b>Mosquito Service:</b><br>• Target adult mosquitoes by treating areas with heavy foliage and where mosquito activity has been identified<br>• Set up mosquito buckets to interrupt breeding cycles and impact nearby breeding sites.<br><br><b>Additional Details:</b> Mosquitoes are one of the most difficult pests to control. Our goal with these mosquito treatments is to reduce the population by 80-90%. It typically takes a couple treatments and 45-60 days for us to achieve this goal.`,
     defaultInitial: 150,
     defaultRecurring: 75,
   },
@@ -203,7 +203,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Attic Services (see details below):</b><br>• Remove fiberglass batt insulation, vacuum, and sanitize; Clean out debris and perform an attic cleanup; Blow in T.A.P. insulation and add required rodent traps<br>• Seal multiple entry points, and leave precautionary traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)`,
+      `<b>Attic Services (see details below):</b><br>• Remove all accessible insulation from the attic including any debris<br>• Vacuum and sanitize the attic<br>• Seal up all visible and accessible rodent entry points<br>• Blow in T.A.P. insulation (Thermal, Acoustical, and Pest Control)<br>• Set up rodent traps and come back 2x to check on all traps<br>• Warranties: Manufacturer's warranty on insulation*, and rodent exclusion warranty** (see page 2)`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -211,7 +211,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>General Pest Control:</b><br>• Each visit we will de-web the entire exterior of the property including eaves, outdoor furniture, and high visibility areas<br>• Apply targeted treatments to ensure general pests are deterred from the home, creating a barrier around the home<br>• Maintain protection over time with complimentary re-treatments if needed`,
+      `<b>General Pest Control:</b><br>• Inspect exterior for potential pest entry points, harborage areas, and signs of infestation<br>• Remove webs from the exterior of the property including eaves, windows, outdoor furniture, and high visibility areas<br>• Create a pest barrier around your home and property by targeted exterior treatments. Treat the garage and interior upon request.<br><br><b>Additional Details:</b> Our goal is to reduce your pest population as much as possible. However, given pests are abundant in So Cal, it's unlikely for us (or anyone) to reduce 100% of the pest population (i.e., you may still see the occasional ant, spider, or cockroach). Our products typically take 7-10 days to take full effect (this gives the products time to spread back to the larger colonies). If activity levels remain high after this period, contact us and we'll get someone out ASAP for a complimentary follow-up service.`,
     defaultInitial: 75,
     defaultRecurring: 75,
   },
@@ -219,7 +219,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Spiders"],
     proposedServices:
-      `<b>De-webbing:</b><br>• Thoroughly de-web the entire property including eaves, outdoor furniture, and high visibility areas`,
+      `<b>De-webbing:</b><br>• Thoroughly remove webs from the entire property`,
     defaultInitial: 100,
     defaultRecurring: 100,
   },
@@ -227,7 +227,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Sanitation:</b><br>• Clean and sanitize areas affected by rodent activity<br>• Remove droppings, nesting materials, and contaminated insulation<br>• Disinfect affected areas to eliminate health hazards`,
+      `<b>Rodent Sanitation:</b><br>• Remove rodent droppings from impacted and accessible areas<br>• Spray disinfect on impacted areas to eliminate health hazards<br><br><b>Additional Information:</b> We will remove all accessible rodent droppings from your attic. Please note that some droppings may be embedded in the insulation and cannot be reasonably removed.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -235,7 +235,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Commercial Rodent:</b><br>• Inspect interior and exterior areas for rodent activity and entry points<br>• Strategically place traps and bait stations in areas of highest activity<br>• Provide ongoing monitoring with regular inspections and clear communication with management`,
+      `<b>Commercial Rodent:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on rodent activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 200,
     defaultRecurring: 70,
   },
@@ -243,7 +243,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
     proposedServices:
-      `<b>Commercial General Pest & Rodent:</b><br>• Inspect interior and exterior areas (common areas, restrooms, break rooms, lounges) for pest and rodent activity<br>• Treat inspected areas, place and monitor insect monitors, and apply targeted interior and exterior treatments as needed<br>• Strategically place traps and bait stations in areas of highest rodent activity<br>• Provide ongoing service with regular inspections, monitoring, treatments, and clear communication with management`,
+      `<b>Commercial General Pest & Rodent:</b><br>• Inspect exterior and interior (including placing and monitoring pest traps) for pest activity<br>• Treat the exterior perimeter of the property and interior common areas (restrooms, break rooms, lounges, etc.). Treat other interior areas as needed<br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on pest sightings and activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 250,
     defaultRecurring: 150,
   },
@@ -251,7 +251,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Bed Bugs"],
     proposedServices:
-      `<b>Bed Bug Treatment:</b><br>• Conduct thorough inspection of all sleeping areas, furniture, and harborage points<br>• Apply targeted treatments using residual and contact products to eliminate bed bug populations<br>• Provide follow-up treatment recommendations to ensure complete eradication`,
+      `<b>Bed Bug Treatment:</b><br>• Conduct thorough inspection of all sleeping areas, furniture, and harborage points<br>• Apply targeted treatments using residual products to eliminate bed bug populations<br>• Provide a follow-up treatment roughly 2 weeks later<br><br><b>Additional Details:</b> Bed bugs are an extremely difficult pest to fully eliminate. Successful treatment requires you to complete the pre-treatment and post-treatment requirements provided in the preparation sheet. It typically takes 2-4 weeks for activity levels to fully subside.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -259,7 +259,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Fleas & Ticks"],
     proposedServices:
-      `<b>Flea & Tick Treatment:</b><br>• Treat interior and exterior areas to eliminate active flea and tick populations<br>• Apply growth regulators to break the flea lifecycle and prevent re-infestation<br>• Focus on pet resting areas, carpeted zones, and yard perimeter`,
+      `<b>Flea & Tick Treatment:</b><br>• Treat interior and exterior areas where fleas are most likely present (pet resting areas, carpeted areas, grass areas, etc.) to eliminate active flea and tick populations<br>• Apply insect growth regulators to break the flea lifecycle and prevent re-infestation<br>• Provide a follow-up treatment roughly 2 weeks later<br><br><b>Additional Details:</b> Fleas are a difficult pest to fully eliminate. Successful treatment requires you to complete the pre-treatment and post-treatment requirements provided in the preparation sheet. It typically takes 2-4 weeks for activity levels to fully subside.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -267,7 +267,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Roaches"],
     proposedServices:
-      `<b>German Cockroach Treatment:</b><br>• Apply gel baits, growth regulators, and residual products to eliminate German cockroach infestations<br>• Target kitchens, bathrooms, and other moisture-heavy areas where activity is concentrated<br>• Provide follow-up treatments to ensure full eradication of all life stages`,
+      `<b>German Cockroach Treatment:</b><br>• Apply gel baits, growth regulators, and residual products to eliminate German cockroach infestations<br>• Target kitchens, bathrooms, and other moisture-heavy areas where activity is concentrated<br>• Provide at least one follow-up treatment roughly 1 week later<br><br><b>Additional Details:</b> German roaches are a difficult pest to fully eliminate. Successful treatment requires you to complete the pre-treatment and post-treatment requirements provided in the preparation sheet. It typically takes 2-4 weeks for activity levels to fully subside.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
@@ -282,7 +282,7 @@ const SERVICE_CONFIG: Record<
 };
 
 // Attic Services additional details content for page 2 (HTML formatted)
-const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Exclusion Work Warranty:</b><br>• Lifetime warranty if rodents re-enter through any areas previously sealed by Crest, as long as the customer is on an ongoing bait box service<br>• If not on an ongoing bait box service - we'll re-seal it at no charge for one year.<br>• All warranties excludes new openings made by others or natural deterioration.<br>• Crest is not liable for any structural or property damage caused by rodents.<br><br><b>Not Included Services:</b><br>• Garage door work, or adding door sweeps to the home; Exclusion work in areas other than the attic; Rodent clean up in areas other than the attic<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
+const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Manufacturer's Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Not Included Services (Unless Otherwise Specified or Pictured Below):</b><br>• Garage door repair<br>• Exclusion work in areas other than the attic<br>• Rodent clean up in areas other than the attic<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
 // Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
 const EXCLUSION_PRESETS: { label: string; text: string }[] = [
