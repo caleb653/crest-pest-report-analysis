@@ -389,7 +389,6 @@ const SubmittedReports = () => {
 
   const handleCreatePortal = async (reportId: string, propertyType: PortalPropertyType) => {
     setCreatingPortal(reportId);
-    void 0;
     try {
       const result = await createPortalFromReport(reportId, propertyType);
       if (result) {
