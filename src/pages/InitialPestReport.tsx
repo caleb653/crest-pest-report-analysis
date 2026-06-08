@@ -214,6 +214,9 @@ const Report = () => {
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
   const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
+  // "Before" photos carried over from the source sales report (rodent-exclusion
+  // variant only). Read-only — represent the property's pre-service state.
+  const [beforePhotos, setBeforePhotos] = useState<Array<{ image: string; caption?: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
@@ -556,6 +559,9 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
+        if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
+          setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
+        }
       }
       if (row.notes) {
         setTodaysFindings(row.notes as string);
