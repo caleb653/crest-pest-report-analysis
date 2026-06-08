@@ -44,6 +44,7 @@ import {
 import crestLogo from "@/assets/crest-logo-black.png";
 import NotificationBell from "@/components/NotificationBell";
 import { createPortalFromReport, type PortalPropertyType } from "@/lib/createPortalFromReport";
+import { ensureRodentExclusionReport, rodentExclusionUrl, salesReportHasRodentExclusion } from "@/lib/rodentExclusionAutoCreate";
 
 type ReportType = "sales" | "initial" | "multi-proposal";
 type TypeFilterValue = "all" | ReportType | "sales-all" | "pre-proposal" | "won" | "lost";
@@ -124,6 +125,7 @@ const SubmittedReports = () => {
   const [deleting, setDeleting] = useState(false);
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [creatingPortal, setCreatingPortal] = useState<string | null>(null);
+  const [creatingRodent, setCreatingRodent] = useState<string | null>(null);
   const [portalTypePickerReportId, setPortalTypePickerReportId] = useState<string | null>(null);
   const [togglingPreProposal, setTogglingPreProposal] = useState<string | null>(null);
   const [togglingDealStatus, setTogglingDealStatus] = useState<string | null>(null);
@@ -391,6 +393,7 @@ const SubmittedReports = () => {
       const result = await createPortalFromReport(reportId, propertyType);
       if (result) {
         // Verify the new property is readable before navigating, to avoid 404s
+        // (rodent helper appended below before this method)
         // from race conditions where Postgres hasn't yet propagated the row.
         let ready = false;
         for (let i = 0; i < 8 && !ready; i++) {
@@ -422,6 +425,35 @@ const SubmittedReports = () => {
       toast.error(err?.message || "Failed to create client portal");
     } finally {
       setCreatingPortal(null);
+    }
+  };
+
+  const handleCreateRodentReport = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCreatingRodent(reportId);
+    try {
+      const { data: full, error } = await supabase
+        .from("reports")
+        .select("*")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (error || !full) throw error || new Error("Report not found");
+      if (!salesReportHasRodentExclusion((full as any).services)) {
+        toast.error("This report has no Rodent Exclusion service.");
+        return;
+      }
+      const result = await ensureRodentExclusionReport(full as any);
+      if (!result) {
+        toast.error("Failed to create Rodent Initial Report");
+        return;
+      }
+      toast.success(result.created ? "Rodent Initial Report created" : "Opening existing Rodent Initial Report");
+      navigate(rodentExclusionUrl(result.reportId));
+    } catch (err: any) {
+      console.error("Create rodent report error:", err);
+      toast.error(err?.message || "Failed to create Rodent Initial Report");
+    } finally {
+      setCreatingRodent(null);
     }
   };
 
@@ -834,6 +866,22 @@ const SubmittedReports = () => {
                                 <Building2 className="w-4 h-4" />
                               )}
                               <span className="hidden md:inline">Create Client Portal</span>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => handleCreateRodentReport(report.id, e)}
+                              disabled={creatingRodent === report.id}
+                              className="text-primary hover:text-primary hover:bg-primary/10 gap-1.5"
+                              title="Create a Rodent Initial Report from this report"
+                            >
+                              {creatingRodent === report.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <FileText className="w-4 h-4" />
+                              )}
+                              <span className="hidden md:inline">Create Rodent Initial Report</span>
                             </Button>
 
                             <Button
