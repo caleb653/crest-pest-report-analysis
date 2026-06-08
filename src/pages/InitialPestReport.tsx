@@ -1866,25 +1866,67 @@ Crest Pest Control
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          {/* Before */}
+                          {/* Before — draggable to swap with another Before tile */}
                           <div className="space-y-1">
                             <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
-                            <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                            <div
+                              className={`aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted transition-shadow ${before?.image ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-dark-sage" : ""}`}
+                              draggable={!!before?.image}
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "before", index: i }));
+                                e.dataTransfer.effectAllowed = "move";
+                              }}
+                              onDragOver={(e) => {
+                                const types = e.dataTransfer.types;
+                                if (types && Array.from(types).includes("application/x-photo")) {
+                                  e.preventDefault();
+                                  e.dataTransfer.dropEffect = "move";
+                                }
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                try {
+                                  const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                  if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
+                                } catch {}
+                              }}
+                            >
                               {before?.image ? (
-                                <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                                <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground text-center px-2">
-                                  No before photo
+                                  Drop a Before here
                                 </div>
                               )}
                             </div>
                           </div>
-                          {/* After */}
+                          {/* After — draggable to swap with another After tile */}
                           <div className="space-y-1">
                             <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
                             {after?.image ? (
-                              <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group">
-                                <img src={after.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                              <div
+                                className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary transition-shadow"
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "after", index: i }));
+                                  e.dataTransfer.effectAllowed = "move";
+                                }}
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
+                                <img src={after.image} alt={`After ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
                                 <Button
                                   size="icon"
                                   variant="destructive"
@@ -1896,10 +1938,26 @@ Crest Pest Control
                                 </Button>
                               </div>
                             ) : (
-                              <label className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center">
+                              <label
+                                className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center"
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
                                 <Plus className="w-5 h-5 text-dark-sage" />
                                 <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
-                                  Add After
+                                  Add or drop After
                                 </span>
                                 <input
                                   type="file"
