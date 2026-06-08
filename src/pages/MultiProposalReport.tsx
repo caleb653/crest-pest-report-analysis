@@ -3037,6 +3037,51 @@ Crest Pest Control`;
               </div>
             </div>
             <div className="flex items-center gap-2 no-print ml-auto shrink-0">
+              {(() => {
+                const flat = proposals.flatMap((p) => p.services || []);
+                // Inline check (mirrors salesReportHasRodentExclusion) to avoid a top-level import churn.
+                const has = flat.some((s: any) => {
+                  const t = String(s?.serviceType || "").trim().toLowerCase();
+                  return t === "rodent exclusion" || t === "rodent trapping & exclusion" || t === "rodent trapping and exclusion";
+                });
+                if (!has || !reportId) return null;
+                return (
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const mod = await import("@/lib/rodentExclusionAutoCreate");
+                        const res = await mod.ensureRodentExclusionReport({
+                          id: reportId,
+                          technician_name: editableTech,
+                          customer_name: editableCustomer,
+                          customer_email: customerEmail || null,
+                          customer_phone: customerPhone || null,
+                          address: editableAddress,
+                          service_date: editableServiceDate,
+                          license_number: editableLicenseNumber,
+                          map_data: mapData ? JSON.parse(mapData) : null,
+                          custom_map_url: customMapImage,
+                          rendered_map_url: renderedMapImage,
+                          fieldroutes_customer_id: fieldroutesCustomerId,
+                          services: flat,
+                        });
+                        if (!res) { toast.error("Could not create Rodent Exclusion Report"); return; }
+                        toast.success(res.created ? "Rodent Exclusion Report created" : "Opening existing Rodent Exclusion Report");
+                        navigate(mod.rodentExclusionUrl(res.reportId));
+                      } catch (e) {
+                        console.error(e);
+                        toast.error("Failed to create Rodent Exclusion Report");
+                      }
+                    }}
+                    variant="secondary"
+                    size="sm"
+                    title="Create a Rodent Exclusion service report from this proposal"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    <span className="hidden sm:inline">Rodent Exclusion Report</span>
+                  </Button>
+                );
+              })()}
               <Button onClick={handleOpenCompose} variant="secondary" size="sm">
                 <Mail className="w-3 h-3 mr-1" />
                 <span className="hidden sm:inline">Email</span>
