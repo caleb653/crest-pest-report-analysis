@@ -5385,18 +5385,23 @@ const PropertyDashboard = ({
           </Card>
         )}
 
-        {/* Ad Hoc Visits — separate bubble with full visit editor (same as upcoming) */}
-        {adHocServices.length > 0 && (
+        {/* Ad Hoc Visits — separate bubble with full visit editor (same as upcoming).
+            Only show ad-hocs that are NOT yet completed. Once completed, the
+            ad-hoc moves into Previous Services so it isn't listed in two places. */}
+        {(() => {
+          const pendingAdHoc = adHocServices.filter((s) => s.status !== "completed");
+          if (pendingAdHoc.length === 0) return null;
+          return (
           <div className="space-y-2">
             <div className="border-b-2 border-secondary/70 pb-2.5 flex items-center gap-2">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <CalendarPlus className="w-5 h-5 text-secondary" />Ad Hoc Visits
-                <Badge variant="secondary" className="text-xs ml-1">{adHocServices.length}</Badge>
+                <Badge variant="secondary" className="text-xs ml-1">{pendingAdHoc.length}</Badge>
               </h3>
               <span className="text-[11px] text-muted-foreground">One-off · separate from cadence</span>
             </div>
             <div className="space-y-2">
-              {adHocServices.map((s) => {
+              {pendingAdHoc.map((s) => {
                 const isCompleted = s.status === "completed";
                 return (
                   <Card key={s.id} className="shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent">
@@ -5446,7 +5451,8 @@ const PropertyDashboard = ({
               })}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Upcoming Services */}
         <div className="border-b-2 border-primary/70 pb-2.5">
