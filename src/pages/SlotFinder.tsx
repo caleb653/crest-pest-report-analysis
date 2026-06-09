@@ -49,6 +49,7 @@ type RouteSnapshot = {
   stops_excluding_tasks: number;
   stops_by_window: WindowCounts;
   total_drive_min: number;
+  home_base_min?: number;
   est_route_hours: number;
   est_finish_min: number | null;
   has_home: boolean;
@@ -620,7 +621,12 @@ function SlotCard({
           {after.est_finish_min != null && (
             <span>Finishes ~<span className="font-medium">{fmtTime(after.est_finish_min)}</span></span>
           )}
-          <span className="text-muted-foreground">~{after.est_route_hours}h day{snap.has_home ? "" : " (no home base on file)"}</span>
+          <span className="text-muted-foreground">
+            ~{after.est_route_hours}h day (stops only)
+            {snap.has_home
+              ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
+              : " (no home base on file)"}
+          </span>
         </div>
       )}
 
