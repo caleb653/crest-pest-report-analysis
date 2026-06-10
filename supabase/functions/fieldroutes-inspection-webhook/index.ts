@@ -239,7 +239,11 @@ serve(async (req) => {
       service_date: serviceDate,
       report_title: serviceName,
       target_pests: isRodent ? ["Rodents"] : [],
-      notes: null,
+      // Stamp the multi-proposal marker so the report opens in the NEW Sales
+      // Report (MultiProposalReport) flow — the old single-service /report
+      // route is archived and must never receive auto-created reports.
+      notes: JSON.stringify({ _reportFormat: "multi-proposal", _source: "fieldroutes-webhook" }),
+      customer_preferences: { reportFormat: "multi-proposal" },
       fieldroutes_customer_id: customerId,
       fieldroutes_appointment_id: appointmentId,
     };
