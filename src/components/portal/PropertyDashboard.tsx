@@ -250,6 +250,11 @@ const PropertyDashboard = ({
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
     // HOA-mode customer contact (homeowner submitting the request).
     customer_name: "", customer_phone: "",
+    // Optional new-tenant move-in date (YYYY-MM-DD). When set on submit,
+    // the date is saved into property.customer_preferences.tenant_move_ins
+    // keyed by the unit number so the 🏠 New Tenant tag appears on this
+    // unit until the date passes.
+    tenant_move_in_date: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   // Photos attached to the new work order (any number, all optional).
@@ -2090,6 +2095,23 @@ const PropertyDashboard = ({
       setSubmittingWorkOrder(false);
       return;
     }
+    // Persist the optional move-in date onto the property's tenant_move_ins
+    // map so the 🏠 New Tenant tag shows up on this unit everywhere.
+    if (!isGeneral && canonical && workOrder.tenant_move_in_date) {
+      try {
+        const prefs: any = property.customer_preferences || {};
+        const map = { ...(prefs.tenant_move_ins || {}) };
+        map[String(canonical).trim()] = workOrder.tenant_move_in_date;
+        const updatedPrefs = { ...prefs, tenant_move_ins: map };
+        await supabase
+          .from("portal_properties")
+          .update({ customer_preferences: updatedPrefs })
+          .eq("id", property.id);
+        (property as any).customer_preferences = updatedPrefs;
+      } catch (e) {
+        console.error("save tenant_move_in failed", e);
+      }
+    }
     toast({ title: isGeneral
       ? "General request submitted"
       : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
@@ -2118,6 +2140,7 @@ const PropertyDashboard = ({
       request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
       customer_name: "", customer_phone: "",
+      tenant_move_in_date: "",
     });
     setWorkOrderPhotos([]);
     // Refresh requests
@@ -3960,6 +3983,52 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                            <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
+                                🏠 New Tenant Move-In
+                              </span>
+                              {(() => {
+                                const prefs: any = property.customer_preferences || {};
+                                const map = (prefs.tenant_move_ins || {}) as Record<string, string>;
+                                const key = String(row.unit_number || "").trim();
+                                const current = key ? (map[key] || "") : "";
+                                return (
+                                  <>
+                                    <input
+                                      type="date"
+                                      className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                                      value={current}
+                                      min={new Date().toISOString().slice(0, 10)}
+                                      disabled={!key}
+                                      onChange={async (e) => {
+                                        if (!key) return;
+                                        const dateVal = e.target.value || null;
+                                        const nextMap = { ...map };
+                                        if (dateVal) nextMap[key] = dateVal;
+                                        else delete nextMap[key];
+                                        const updatedPrefs = { ...prefs, tenant_move_ins: nextMap };
+                                        const { error } = await supabase
+                                          .from("portal_properties")
+                                          .update({ customer_preferences: updatedPrefs })
+                                          .eq("id", property.id);
+                                        if (error) {
+                                          toast({ title: "Couldn't save move-in date", description: error.message, variant: "destructive" });
+                                        } else {
+                                          (property as any).customer_preferences = updatedPrefs;
+                                          toast({ title: dateVal ? "Move-in date saved" : "Move-in date cleared", duration: 1500 });
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-[11px] text-rose-900/80">
+                                      {key
+                                        ? "Tag stays on this unit through every follow-up until the date passes, then auto-clears."
+                                        : "Enter a unit number above to set a move-in date."}
+                                    </span>
+                                  </>
+                                );
+                              })()}
+                            </div>
                             {(() => {
                               const uc = merged.unitContexts.find(
                                 (c) => String(c.unit_number) === String(row.unit_number)
@@ -5436,6 +5505,34 @@ const PropertyDashboard = ({
                 ))}
               </div>
             </div>
+            )}
+
+            {/* Optional new-tenant move-in date — flags this unit until the date passes. */}
+            {workOrder.request_type !== "general" && !isHOA && (
+              <div className="rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+                  🏠 New Tenant Move-In <span className="text-rose-900/70 normal-case font-medium">(optional)</span>
+                </span>
+                <input
+                  type="date"
+                  className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                  value={workOrder.tenant_move_in_date}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, tenant_move_in_date: e.target.value }))}
+                />
+                {workOrder.tenant_move_in_date && (
+                  <button
+                    type="button"
+                    className="text-xs underline text-rose-900/80 hover:text-rose-900"
+                    onClick={() => setWorkOrder(wo => ({ ...wo, tenant_move_in_date: "" }))}
+                  >
+                    Clear
+                  </button>
+                )}
+                <span className="text-[11px] text-rose-900/80 basis-full">
+                  Tag stays on this unit through every follow-up until the date passes, then auto-clears.
+                </span>
+              </div>
             )}
 
             {/* Tenant Notification — full PM-portal parity */}

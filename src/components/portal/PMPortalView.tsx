@@ -201,6 +201,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [tenantEmail, setTenantEmail] = useState("");
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
+  // Optional new-tenant move-in date attached to a PM work order. When set,
+  // saved into property.customer_preferences.tenant_move_ins keyed by unit.
+  const [tenantMoveInDate, setTenantMoveInDate] = useState<string>("");
   // Photos attached to the new work order — uploaded to the public
   // `report-images` bucket and persisted into portal_requests.photos.
   const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
@@ -460,6 +463,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           : requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
         description: "Crest will reach out shortly.",
       });
+      // Persist optional move-in date onto property prefs (keyed by unit).
+      if (!isGeneral && canonical && tenantMoveInDate && property) {
+        try {
+          const prefs: any = property.customer_preferences || {};
+          const map = { ...(prefs.tenant_move_ins || {}) };
+          map[String(canonical).trim()] = tenantMoveInDate;
+          const updatedPrefs = { ...prefs, tenant_move_ins: map };
+          await supabase
+            .from("portal_properties")
+            .update({ customer_preferences: updatedPrefs })
+            .eq("id", propertyId);
+          (property as any).customer_preferences = updatedPrefs;
+          setProperty({ ...property, customer_preferences: updatedPrefs } as any);
+        } catch (e) { console.error("save tenant_move_in failed", e); }
+      }
       if (pmInserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
@@ -499,6 +517,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setTenantEmail("");
       setSelectedPrepSheetId("");
       setRequestRightToTreat(false);
+      setTenantMoveInDate("");
       setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
@@ -2089,6 +2108,34 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           onClick={() => setOccupancyStatus(occupancyStatus === opt ? "" : opt)}>{opt}</button>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* Optional new-tenant move-in date — flags this unit until the date passes. */}
+                {!isHOA && requestKind !== "general" && (
+                  <div className="rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+                      🏠 New Tenant Move-In <span className="text-rose-900/70 normal-case font-medium">(optional)</span>
+                    </span>
+                    <input
+                      type="date"
+                      className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                      value={tenantMoveInDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(e) => setTenantMoveInDate(e.target.value)}
+                    />
+                    {tenantMoveInDate && (
+                      <button
+                        type="button"
+                        className="text-xs underline text-rose-900/80 hover:text-rose-900"
+                        onClick={() => setTenantMoveInDate("")}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <span className="text-[11px] text-rose-900/80 basis-full">
+                      Tag stays on this unit through every follow-up until the date passes, then auto-clears.
+                    </span>
                   </div>
                 )}
 
