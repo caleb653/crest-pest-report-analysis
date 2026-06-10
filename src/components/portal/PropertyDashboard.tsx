@@ -250,6 +250,11 @@ const PropertyDashboard = ({
     email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
     // HOA-mode customer contact (homeowner submitting the request).
     customer_name: "", customer_phone: "",
+    // Optional new-tenant move-in date (YYYY-MM-DD). When set on submit,
+    // the date is saved into property.customer_preferences.tenant_move_ins
+    // keyed by the unit number so the 🏠 New Tenant tag appears on this
+    // unit until the date passes.
+    tenant_move_in_date: "",
   });
   const [submittingWorkOrder, setSubmittingWorkOrder] = useState(false);
   // Photos attached to the new work order (any number, all optional).
