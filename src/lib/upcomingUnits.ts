@@ -434,6 +434,7 @@ export function computeUpcomingUnits(args: {
 
     const notes =
       followUp?.notes ||
+      lastDetail?.notes ||
       "";
 
     return {
