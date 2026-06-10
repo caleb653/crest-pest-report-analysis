@@ -2343,6 +2343,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     requests,
                     mostRecentPast: lastPast,
                     allPastServices: pastServices,
+                    tenantMoveIns:
+                      (property.customer_preferences as any)?.tenant_move_ins || null,
                   });
                   const unitsPlanned = merged.units;
                   const unitContexts = merged.unitContexts;
