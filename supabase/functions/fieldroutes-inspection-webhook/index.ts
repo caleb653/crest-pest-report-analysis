@@ -192,6 +192,15 @@ serve(async (req) => {
       clean(body.zip),
     ].filter(Boolean).join(", ") || null;
 
+    // FieldRoutes customer-portal login (FieldPortals {{loginLink}}). The Trigger
+    // resolves this per-customer server-side, exactly like {{fname}}/{{email}} —
+    // captured here so the proposal's "Open Customer Portal" button auto-logs the
+    // customer in (manage account / add payment). portalURL/username accepted as
+    // fallbacks if a given trigger template sends those names instead.
+    const loginLink = clean(
+      body.loginLink ?? body.login_link ?? body.portalURL ?? body.portal_url,
+    );
+
     const serviceDate = clean(body.serviceDate ?? body.service_date);
     // Tech assigned to the appointment in FieldRoutes. Different trigger templates
     // expose this under different placeholder names — accept all common variants,
@@ -243,7 +252,7 @@ serve(async (req) => {
       // Report (MultiProposalReport) flow — the old single-service /report
       // route is archived and must never receive auto-created reports.
       notes: JSON.stringify({ _reportFormat: "multi-proposal", _source: "fieldroutes-webhook" }),
-      customer_preferences: { reportFormat: "multi-proposal" },
+      customer_preferences: { reportFormat: "multi-proposal", fieldroutes_login_link: loginLink },
       fieldroutes_customer_id: customerId,
       fieldroutes_appointment_id: appointmentId,
     };
