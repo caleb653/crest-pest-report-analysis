@@ -1334,9 +1334,19 @@ export default function CommercialDashboardView({
                               {r.pest_type || r.request_type}
                               {r.location_type ? ` — ${r.location_type}` : ""}
                             </p>
-                            <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
+                            <p className="text-xs text-muted-foreground">Reported {fmtDateTime(r.created_at)}</p>
                           </div>
-                          <Badge variant="secondary" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
+                          <Select
+                            value={r.sighting_status || (r.status === "in_progress" ? "in_progress" : "open")}
+                            onValueChange={(v: any) => setSightingStatus(r.id, v)}
+                          >
+                            <SelectTrigger className="h-8 w-32 text-xs shrink-0"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="open">Open</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="closed">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         {r.description && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
