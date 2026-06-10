@@ -269,7 +269,7 @@ const Report = () => {
   };
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(
     targetPests?.filter((p: string) => p) ||
-      (isRodentExclusion ? ["Rodents"] : [GENERAL_PESTS_OPTION]),
+      (isRodentExclusion ? ["Rodents"] : []),
   );
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
