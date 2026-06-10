@@ -3772,6 +3772,20 @@ const PropertyDashboard = ({
                               {isFollowUp && (
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
+                              {(() => {
+                                const todayStr = new Date().toISOString().slice(0, 10);
+                                const moveIns = ((property.customer_preferences as any)?.tenant_move_ins || {}) as Record<string, string>;
+                                const moveDate = moveIns[String(row.unit_number || "").trim()];
+                                if (!moveDate || moveDate.slice(0, 10) < todayStr) return null;
+                                return (
+                                  <span
+                                    className="text-xs font-bold uppercase tracking-wide text-rose-900 bg-rose-100 border border-rose-400 px-2 py-0.5 rounded shadow-sm"
+                                    title="New tenant move-in date — keep this unit pristine"
+                                  >
+                                    🏠 New Tenant · {moveDate.slice(5, 10).replace("-", "/")}
+                                  </span>
+                                );
+                              })()}
                               {/* Target Pest (in-header) */}
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.target_pest || "__none__"} onValueChange={(v) => updateRow(idx, "target_pest", v === "__none__" ? "" : v)}>
