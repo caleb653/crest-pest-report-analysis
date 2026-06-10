@@ -1332,24 +1332,41 @@ const PropertyDashboard = ({
     //    automatically while the admin types. It's wiped on completion. ──
     const svcRow = propServices.find(s => s.id === serviceId) as any;
     const draft = svcRow?.report_data?.completion_draft;
-    if (draft && Array.isArray(draft.unitRows)) {
+      if (draft && Array.isArray(draft.unitRows)) {
+        const dismissed = new Set<string>();
+        const dismissedRaw = Array.isArray((svcRow as any)?.report_data?.dismissed_units)
+          ? (svcRow as any).report_data.dismissed_units as any[]
+          : [];
+        dismissedRaw.forEach((entry) => {
+          const u = typeof entry === "string" ? entry : entry?.unit;
+          const label = String(u || "").trim();
+          if (label) dismissed.add(label);
+        });
+        const liveUnits = new Set((unitContexts || []).map(c => String(c.unit_number || "").trim()).filter(Boolean));
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
-          unitRows: draft.unitRows.map((r: any) => ({
-            unit_number: r.unit_number || "",
-            target_pest: r.target_pest || "",
-            findings: r.findings || "",
-            pest_activity: r.pest_activity || "None",
-            products_used: normalizeUsageList(r.products_used) || [],
-            status: r.status || "To Be Treated",
-            notes: r.notes || "",
-            source: r.source || "planned",
-            request_id: r.request_id || r.request?.id || undefined,
-            follow_up_needed: r.follow_up_needed === true,
-            sanitization_concern: r.sanitization_concern === true,
-            photos: Array.isArray(r.photos) ? r.photos : [],
-          })),
+          unitRows: draft.unitRows
+            .filter((r: any) => {
+              const label = String(r?.unit_number || "").trim();
+              if (!label) return false;
+              if (dismissed.has(label)) return false;
+              return liveUnits.size === 0 || liveUnits.has(label);
+            })
+            .map((r: any) => ({
+              unit_number: r.unit_number || "",
+              target_pest: r.target_pest || "",
+              findings: r.findings || "",
+              pest_activity: r.pest_activity || "None",
+              products_used: normalizeUsageList(r.products_used) || [],
+              status: r.status || "To Be Treated",
+              notes: r.notes || "",
+              source: r.source || "planned",
+              request_id: r.request_id || r.request?.id || undefined,
+              follow_up_needed: r.follow_up_needed === true,
+              sanitization_concern: r.sanitization_concern === true,
+              photos: Array.isArray(r.photos) ? r.photos : [],
+            })),
           summary: draft.summary || "",
           findings: draft.findings || "",
           notes: draft.notes || "",
