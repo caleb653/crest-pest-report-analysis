@@ -201,6 +201,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [tenantEmail, setTenantEmail] = useState("");
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
+  // Optional new-tenant move-in date attached to a PM work order. When set,
+  // saved into property.customer_preferences.tenant_move_ins keyed by unit.
+  const [tenantMoveInDate, setTenantMoveInDate] = useState<string>("");
   // Photos attached to the new work order — uploaded to the public
   // `report-images` bucket and persisted into portal_requests.photos.
   const [workOrderPhotos, setWorkOrderPhotos] = useState<string[]>([]);
