@@ -171,6 +171,16 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
   const open = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
+  const closed = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
+  const [showClosed, setShowClosed] = useState(false);
+
+  // Split each visit's rows into active/closed so each section renders cleanly.
+  const visitsWithActive = past
+    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status !== "Closed") }))
+    .filter(v => !readOnly || v.rows.length > 0);
+  const visitsWithClosed = past
+    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status === "Closed") }))
+    .filter(v => v.rows.length > 0);
 
   return (
     <div className="space-y-4">
@@ -188,6 +198,9 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
         <div className="flex gap-2 text-xs">
           <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50">
             {open.length} Open
+          </Badge>
+          <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50">
+            {closed.length} Closed
           </Badge>
           <Badge variant="outline">{visitsWithAny.length} Visits Logged</Badge>
         </div>
