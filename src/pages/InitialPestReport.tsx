@@ -2679,6 +2679,40 @@ Crest Pest Control
             {/* Recommendations Section */}
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
+              {editableTargetPests.length > 0 && (
+                <div className="no-print px-3 pb-2 space-y-2">
+                  {editableTargetPests
+                    .filter((p) => RECOMMENDATION_SNIPPETS[p]?.length)
+                    .map((pest) => (
+                      <div key={pest} className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {pest.startsWith("General Pests") ? "General Pests" : pest}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {RECOMMENDATION_SNIPPETS[pest].map((snip) => {
+                            const active = isRecSnippetActive(snip);
+                            return (
+                              <button
+                                key={snip}
+                                type="button"
+                                onClick={() => toggleRecSnippet(snip)}
+                                className={cn(
+                                  "text-left text-xs px-2.5 py-1.5 rounded-full border transition-colors",
+                                  active
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-foreground border-border hover:border-primary/50",
+                                )}
+                                dangerouslySetInnerHTML={{
+                                  __html: `${active ? "✓ " : ""}${snip}`,
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
               <div className="p-3 no-print">
                 <RichTextEditor
                   value={editableRecommendations[0] || ""}
@@ -2686,13 +2720,13 @@ Crest Pest Control
                   placeholder="Enter recommendations for the customer..."
                   fontSize={recommendationsFontSize}
                   onFontSizeChange={setRecommendationsFontSize}
-                  className="min-h-[120px] text-dark-sage"
+                  className="min-h-[120px] text-foreground"
                   showControls={true}
                 />
               </div>
               {/* Print version */}
               <div
-                className="hidden print-content-formatted text-dark-sage p-3"
+                className="hidden print-content-formatted text-foreground p-3"
                 style={{ fontSize: `${recommendationsFontSize}px` }}
                 dangerouslySetInnerHTML={{
                   __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
