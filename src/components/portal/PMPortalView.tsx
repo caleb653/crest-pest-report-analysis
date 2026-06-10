@@ -2111,6 +2111,34 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   </div>
                 )}
 
+                {/* Optional new-tenant move-in date — flags this unit until the date passes. */}
+                {!isHOA && requestKind !== "general" && (
+                  <div className="rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+                      🏠 New Tenant Move-In <span className="text-rose-900/70 normal-case font-medium">(optional)</span>
+                    </span>
+                    <input
+                      type="date"
+                      className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                      value={tenantMoveInDate}
+                      min={new Date().toISOString().slice(0, 10)}
+                      onChange={(e) => setTenantMoveInDate(e.target.value)}
+                    />
+                    {tenantMoveInDate && (
+                      <button
+                        type="button"
+                        className="text-xs underline text-rose-900/80 hover:text-rose-900"
+                        onClick={() => setTenantMoveInDate("")}
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <span className="text-[11px] text-rose-900/80 basis-full">
+                      Tag stays on this unit through every follow-up until the date passes, then auto-clears.
+                    </span>
+                  </div>
+                )}
+
                 <div>
                   <Label className="text-sm">{requestKind === "general" ? "Your Comment *" : "Additional Details"}</Label>
                   <Textarea
