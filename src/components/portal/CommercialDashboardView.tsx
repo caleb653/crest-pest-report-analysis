@@ -539,16 +539,46 @@ export default function CommercialDashboardView({
   const sendResponse = async (id: string) => {
     const note = (responseDraft[id] || "").trim();
     if (!note) return;
+    // Crest reply auto-closes the sighting + stamps closed_at and appends
+    // to the new crest_comments column (kept alongside legacy response_notes
+    // for backward compatibility with older portal builds).
+    const now = new Date().toISOString();
+    const existing = requests.find(r => r.id === id) as any;
+    const priorComments = Array.isArray(existing?.crest_comments) ? existing.crest_comments : [];
+    const nextComments = [...priorComments, { ts: now, note }];
     const { error } = await supabase
       .from("portal_requests")
-      .update({ response_notes: note, status: "in_progress", updated_at: new Date().toISOString() } as any)
+      .update({
+        response_notes: note,
+        status: "completed",
+        sighting_status: "closed",
+        crest_comments: nextComments,
+        closed_at: now,
+        updated_at: now,
+      } as any)
       .eq("id", id);
     if (error) {
       toast({ title: "Couldn't save response", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Response saved" });
+    toast({ title: "Response sent · sighting closed" });
     setResponseDraft(d => ({ ...d, [id]: "" }));
+    loadRequests();
+  };
+
+  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed") => {
+    const now = new Date().toISOString();
+    const patch: any = {
+      sighting_status: next,
+      updated_at: now,
+      status: next === "closed" ? "completed" : (next === "in_progress" ? "in_progress" : "pending"),
+    };
+    if (next === "closed") patch.closed_at = now;
+    const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
+      return;
+    }
     loadRequests();
   };
 
