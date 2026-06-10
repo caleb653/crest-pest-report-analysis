@@ -1662,6 +1662,80 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
+    // ─── If an ad-hoc/follow-up visit cleared a unit, remove that unit from
+    //     any future scheduled visit and suppress the old follow-up flag so it
+    //     cannot keep reappearing as "Upcoming" after a Free and Clear. ───
+    try {
+      const settledUnits = Array.from(new Set(
+        unitRows
+          .filter((r: any) => {
+            const status = String(r.status || "").trim();
+            if (r.follow_up_needed === true) return false;
+            if (!String(r.unit_number || "").trim()) return false;
+            return !["To Be Treated", "Not Treated", "Inspection: Not Performed", "Not Serviced"].includes(status);
+          })
+          .map((r: any) => String(r.unit_number || "").trim())
+      ));
+      if (settledUnits.length > 0) {
+        const settledLower = new Set(settledUnits.map(u => u.toLowerCase()));
+        const stamp = new Date().toISOString();
+        const futureRows = propServices.filter((svc: any) =>
+          svc.id !== serviceId &&
+          svc.status !== "completed" &&
+          !isAdHocService(svc) &&
+          Array.isArray(svc.units_planned) &&
+          (svc.units_planned as any[]).some(u => settledLower.has(String(u || "").trim().toLowerCase()))
+        );
+        await Promise.all(futureRows.map(async (svc: any) => {
+          const nextPlanned = (svc.units_planned as any[])
+            .map(u => String(u || "").trim())
+            .filter(u => u && !settledLower.has(u.toLowerCase()));
+          const rd = svc.report_data && typeof svc.report_data === "object" ? { ...svc.report_data } : {};
+          const existingDismissed = Array.isArray(rd.dismissed_units) ? rd.dismissed_units : [];
+          const normalized = existingDismissed
+            .map((entry: any) => {
+              const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+              return unit ? { unit, at: String(typeof entry === "string" ? "" : entry?.at || "") } : null;
+            })
+            .filter(Boolean) as { unit: string; at: string }[];
+          const kept = normalized.filter(e => !settledLower.has(e.unit.toLowerCase()));
+          rd.dismissed_units = [...kept, ...settledUnits.map(unit => ({ unit, at: stamp }))];
+          if (rd.completion_draft && Array.isArray(rd.completion_draft.unitRows)) {
+            rd.completion_draft = {
+              ...rd.completion_draft,
+              unitRows: rd.completion_draft.unitRows.filter((r: any) =>
+                !settledLower.has(String(r?.unit_number || "").trim().toLowerCase())
+              ),
+            };
+          }
+          return supabase.from("portal_services").update({ units_planned: nextPlanned, report_data: rd }).eq("id", svc.id);
+        }));
+
+        const priorFollowUpRows = pastServices.filter((svc: any) =>
+          svc.id !== serviceId &&
+          Array.isArray(svc.unit_details) &&
+          (svc.unit_details as any[]).some((u: any) =>
+            u?.follow_up_needed === true && settledLower.has(String(u?.unit_number || "").trim().toLowerCase())
+          )
+        );
+        await Promise.all(priorFollowUpRows.map(async (svc: any) => {
+          const rd = svc.report_data && typeof svc.report_data === "object" ? { ...svc.report_data } : {};
+          const existingDismissed = Array.isArray(rd.dismissed_follow_ups) ? rd.dismissed_follow_ups : [];
+          const normalized = existingDismissed
+            .map((entry: any) => {
+              const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+              return unit ? { unit, at: String(typeof entry === "string" ? "" : entry?.at || "") } : null;
+            })
+            .filter(Boolean) as { unit: string; at: string }[];
+          const kept = normalized.filter(e => !settledLower.has(e.unit.toLowerCase()));
+          rd.dismissed_follow_ups = [...kept, ...settledUnits.map(unit => ({ unit, at: stamp }))];
+          return supabase.from("portal_services").update({ report_data: rd }).eq("id", svc.id);
+        }));
+      }
+    } catch (e) {
+      console.warn("clear settled units from future services failed", e);
+    }
+
     // ─── Resolve every open submission we just snapshotted (community +
     //     service requests) so they stop bleeding into the next upcoming
     //     visit. They live on the past service from now on. ───
