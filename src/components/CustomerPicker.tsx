@@ -25,6 +25,8 @@ export type FRCustomer = {
   state?: string | null;
   zip?: string | null;
   commercial?: boolean | null;
+  /** FieldRoutes customer-portal URL ({loginlink} merge tag). */
+  loginLink?: string | null;
 };
 
 type Props = {
