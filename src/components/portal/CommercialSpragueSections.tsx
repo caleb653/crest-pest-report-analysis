@@ -38,7 +38,6 @@ import {
   AlertTriangle, CalendarRange, ChevronDown, FileDown, FlaskConical,
   HelpCircle, Phone, ShieldCheck, Users, Wrench, Activity, ClipboardList,
   TrendingUp, FileText, Plus, Trash2, Check, X, ExternalLink, Edit3, Mail,
-  Camera, Upload, CheckCircle2, MapPin,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -94,11 +93,6 @@ export interface ConditionRow {
   responsibility: "Customer" | "Crest";
   comments: string;
   status: "Open" | "Ongoing" | "Closed";
-  photos?: string[];           // required to save a condition
-  identified_at?: string;      // ISO date when first added
-  closed_at?: string;          // ISO date when marked closed
-  resolution_photo?: string;   // photo proving closure
-  resolution_note?: string;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -123,8 +117,6 @@ const newConditionRow = (): ConditionRow => ({
   responsibility: "Customer",
   comments: "",
   status: "Open",
-  photos: [],
-  identified_at: new Date().toISOString(),
 });
 
 const ACTION_OPTIONS = [
@@ -155,16 +147,9 @@ interface ConditionsProps {
   onSaveServiceReportData?: (serviceId: string, nextReportData: any) => Promise<void> | void;
   /** Include services even when they have no service_date (e.g. upcoming visits). */
   includeUndated?: boolean;
-  /** Admin-only: called when a brand-new condition is saved (photo attached).
-   *  Use to fire customer notification. */
-  onConditionAdded?: (serviceId: string, row: ConditionRow) => void;
-  /** Storage path prefix for uploaded condition photos. */
-  uploadPrefix?: string;
 }
 
-export function ConditionsReportSection({
-  services, readOnly, onSaveServiceReportData, includeUndated, onConditionAdded, uploadPrefix,
-}: ConditionsProps) {
+export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated }: ConditionsProps) {
   const past = useMemo(
     () => services
       .filter(s => includeUndated || s.service_date)
@@ -175,11 +160,7 @@ export function ConditionsReportSection({
   const conditionsFor = (s: SpragueService): ConditionRow[] => {
     const raw = s.report_data?.conditions;
     if (!Array.isArray(raw)) return [];
-    return raw.map((r: any) => ({
-      ...newConditionRow(),
-      ...r,
-      photos: Array.isArray(r?.photos) ? r.photos : [],
-    }));
+    return raw.map((r: any) => ({ ...newConditionRow(), ...r }));
   };
 
   const save = async (s: SpragueService, rows: ConditionRow[]) => {
@@ -188,31 +169,40 @@ export function ConditionsReportSection({
     await onSaveServiceReportData(s.id, next);
   };
 
-  // Track which conditions we've already announced so we don't double-fire
-  // when the row is later edited.
-  const [draftId, setDraftId] = useState<string | null>(null);
-
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
   const open = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
+  const closed = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
+  const [showClosed, setShowClosed] = useState(false);
+
+  // Split each visit's rows into active/closed so each section renders cleanly.
+  const visitsWithActive = past
+    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status !== "Closed") }))
+    .filter(v => !readOnly || v.rows.length > 0);
+  const visitsWithClosed = past
+    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status === "Closed") }))
+    .filter(v => v.rows.length > 0);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <h3 className="text-lg font-bold flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-primary" /> Active Conditions
+            <ClipboardList className="w-5 h-5 text-primary" /> Conditions Report
           </h3>
           <p className="text-xs text-muted-foreground max-w-prose">
-            Sanitation, structural, or conducive issues noted on this visit. A photo is
-            required for every condition. Items stay <span className="font-semibold">Active</span>
-            until you close them out (and attach proof).
+            Sanitation, structural, and conducive conditions noted during each visit. Items
+            stay <span className="font-semibold">Open</span> until resolved by the responsible
+            party.
           </p>
         </div>
         <div className="flex gap-2 text-xs">
           <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50">
-            {open.length} Active
+            {open.length} Open
           </Badge>
-          <Badge variant="outline">{visitsWithAny.length} Visits with conditions</Badge>
+          <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50">
+            {closed.length} Closed
+          </Badge>
+          <Badge variant="outline">{visitsWithAny.length} Visits Logged</Badge>
         </div>
       </div>
 
@@ -222,139 +212,130 @@ export function ConditionsReportSection({
         </CardContent></Card>
       )}
 
-      {past.map(s => {
-        const rows = conditionsFor(s);
-        const empty = rows.length === 0;
-        if (readOnly && empty) return null;
-        return (
-          <Card key={s.id}>
-            <div className="bg-muted/60 border-b border-border px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-              <p className="text-sm font-semibold">
-                {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
-                <span className="text-muted-foreground">{s.service_type}</span>
-                {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
-              </p>
-              {!readOnly && (
-                <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
-                  onClick={() => {
-                    const draft = newConditionRow();
-                    setDraftId(draft.id);
-                    save(s, [...rows, draft]);
-                  }}>
-                  <Plus className="w-3 h-3" /> Add Condition
-                </Button>
-              )}
-            </div>
-            <CardContent className="p-0">
-              {empty ? (
-                <p className="px-3 py-4 text-sm text-muted-foreground italic">
-                  {readOnly ? "No conditions noted on this visit." : "No conditions logged yet."}
-                </p>
-              ) : (
-                <div className="divide-y divide-border bg-background">
-                  {rows.map((c, idx) => (
-                    <ConditionRowEditor
-                      key={c.id}
-                      row={c}
-                      readOnly={readOnly}
-                      uploadPrefix={uploadPrefix || `condition-photos/${s.id}`}
-                      onChange={(next) => {
-                        const wasDraft = c.id === draftId;
-                        const beforeHadPhotos = (c.photos?.length || 0) > 0;
-                        const nowHasPhotos = (next.photos?.length || 0) > 0;
-                        save(s, rows.map((r, i) => i === idx ? next : r));
-                        // Fire "condition added" only once: when the draft
-                        // gains its first photo (the required field).
-                        if (wasDraft && !beforeHadPhotos && nowHasPhotos) {
-                          setDraftId(null);
-                          onConditionAdded?.(s.id, next);
-                        }
-                      }}
-                      onRemove={() => save(s, rows.filter((_, i) => i !== idx))}
-                    />
-                  ))}
+      {/* ─── ACTIVE ─── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-red-900">Active</h4>
+          <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50 text-[10px]">
+            {open.length}
+          </Badge>
+        </div>
+        {visitsWithActive.length === 0 ? (
+          <Card><CardContent className="p-4 text-sm text-muted-foreground text-center italic">
+            No active conditions.
+          </CardContent></Card>
+        ) : (
+          visitsWithActive.map(({ s, rows: activeRows }) => {
+            const allRows = conditionsFor(s);
+            return (
+              <Card key={`active-${s.id}`}>
+                <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-sm font-semibold">
+                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
+                    <span className="text-muted-foreground">{s.service_type}</span>
+                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                  </p>
+                  {!readOnly && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
+                      onClick={() => save(s, [...allRows, newConditionRow()])}>
+                      <Plus className="w-3 h-3" /> Add Condition
+                    </Button>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {activeRows.map((c) => {
+                      const idx = allRows.findIndex(r => r.id === c.id);
+                      return (
+                        <ConditionRowEditor
+                          key={c.id}
+                          row={c}
+                          readOnly={readOnly}
+                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                        />
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* ─── CLOSED ─── */}
+      {visitsWithClosed.length > 0 && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowClosed(v => !v)}
+            className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-green-900 hover:text-green-700 transition"
+          >
+            <span>Closed</span>
+            <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50 text-[10px]">
+              {closed.length}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground normal-case font-normal">
+              ({showClosed ? "hide" : "show"})
+            </span>
+          </button>
+          {showClosed && visitsWithClosed.map(({ s, rows: closedRows }) => {
+            const allRows = conditionsFor(s);
+            return (
+              <Card key={`closed-${s.id}`} className="opacity-90">
+                <div className="bg-green-50/60 border-b border-green-200 px-3 py-2">
+                  <p className="text-sm font-semibold">
+                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
+                    <span className="text-muted-foreground">{s.service_type}</span>
+                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                  </p>
+                </div>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {closedRows.map((c) => {
+                      const idx = allRows.findIndex(r => r.id === c.id);
+                      return (
+                        <ConditionRowEditor
+                          key={c.id}
+                          row={c}
+                          readOnly={readOnly}
+                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                        />
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 function ConditionRowEditor({
-  row, readOnly, onChange, onRemove, uploadPrefix,
+  row, readOnly, onChange, onRemove,
 }: {
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
-  uploadPrefix?: string;
 }) {
   const [local, setLocal] = useState(row);
-  const [uploading, setUploading] = useState(false);
-  const [closing, setClosing] = useState(false);
   // Local-then-blur pattern so typing in tables doesn't lose focus mid-keystroke.
   const set = <K extends keyof ConditionRow>(k: K, v: ConditionRow[K]) =>
     setLocal(prev => ({ ...prev, [k]: v }));
   const flush = () => { if (JSON.stringify(local) !== JSON.stringify(row)) onChange(local); };
 
-  const uploadPhotos = async (files: FileList | null, kind: "photos" | "resolution_photo") => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    const uploaded: string[] = [];
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${uploadPrefix || "condition-photos"}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await supabase.storage.from("report-images").upload(path, file, {
-        contentType: file.type || "image/jpeg", upsert: false,
-      });
-      if (error) { toast({ title: "Upload failed", description: error.message, variant: "destructive" }); continue; }
-      const { data: pub } = supabase.storage.from("report-images").getPublicUrl(path);
-      if (pub?.publicUrl) uploaded.push(pub.publicUrl);
-    }
-    if (uploaded.length) {
-      if (kind === "photos") {
-        const next = { ...local, photos: [...(local.photos || []), ...uploaded] };
-        setLocal(next); onChange(next);
-      } else {
-        const next = { ...local, resolution_photo: uploaded[0] };
-        setLocal(next); onChange(next);
-      }
-    }
-    setUploading(false);
-  };
-
-  const removePhoto = (url: string) => {
-    const next = { ...local, photos: (local.photos || []).filter((u) => u !== url) };
-    setLocal(next); onChange(next);
-  };
-
-  const closeOut = () => {
-    if (!local.resolution_photo) {
-      toast({ title: "Add a resolution photo first", variant: "destructive" });
-      return;
-    }
-    const next: ConditionRow = {
-      ...local,
-      status: "Closed",
-      closed_at: new Date().toISOString(),
-    };
-    setLocal(next); onChange(next); setClosing(false);
-    toast({ title: "Condition closed" });
-  };
-
-  const photos = local.photos || [];
-  const hasPhoto = photos.length > 0;
-
   if (readOnly) {
     return (
-      <div className="p-3 grid grid-cols-1 sm:grid-cols-6 gap-2 text-sm">
+      <div className="p-3 grid grid-cols-1 sm:grid-cols-5 gap-2 text-sm">
         <div>
-          <p className="text-[10px] uppercase font-bold text-muted-foreground">Location</p>
+          <p className="text-[10px] uppercase font-bold text-muted-foreground">Area</p>
           <p className="font-medium">{row.area || "—"}</p>
         </div>
-        <div className="sm:col-span-2">
+        <div>
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Condition</p>
           <p>{row.condition || "—"}</p>
           {row.detail && <p className="text-xs text-muted-foreground mt-0.5">{row.detail}</p>}
@@ -373,218 +354,76 @@ function ConditionRowEditor({
         </div>
         <div>
           <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[row.status]}`}>
-            {row.status === "Open" ? "Active" : row.status}
+            {row.status}
           </Badge>
           {row.comments && (
             <p className="text-xs text-muted-foreground mt-1">{row.comments}</p>
           )}
         </div>
-        {(photos.length > 0 || row.resolution_photo) && (
-          <div className="sm:col-span-6 flex flex-wrap gap-1.5 pt-1">
-            {photos.map((url, i) => (
-              <a key={url} href={url} target="_blank" rel="noopener noreferrer"
-                className="block w-20 h-20 rounded border overflow-hidden bg-muted/30">
-                <img src={url} alt={`Condition photo ${i + 1}`} loading="lazy"
-                  className="w-full h-full object-cover" />
-              </a>
-            ))}
-            {row.resolution_photo && (
-              <a href={row.resolution_photo} target="_blank" rel="noopener noreferrer"
-                className="block w-20 h-20 rounded border-2 border-emerald-400 overflow-hidden bg-emerald-50 relative">
-                <img src={row.resolution_photo} alt="Resolution" loading="lazy"
-                  className="w-full h-full object-cover" />
-                <span className="absolute bottom-0 left-0 right-0 bg-emerald-600 text-white text-[9px] font-bold text-center py-0.5">CLOSED</span>
-              </a>
-            )}
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className={`p-4 space-y-3 ${!hasPhoto ? "bg-amber-50/60 border-l-4 border-amber-400" : ""}`}>
-      {/* Header strip: status + close button + delete */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[local.status]}`}>
-            {local.status === "Open" ? "Active" : local.status}
-          </Badge>
-          <Badge variant="outline" className={`text-[10px] ${SEVERITY_COLORS[local.severity]}`}>
-            {local.severity} severity
-          </Badge>
-          {local.identified_at && (
-            <span className="text-[10.5px] text-muted-foreground">
-              Identified {format(parseISO(local.identified_at), "MMM d, yyyy")}
-            </span>
-          )}
-          {local.closed_at && (
-            <span className="text-[10.5px] text-emerald-700 font-semibold">
-              · Closed {format(parseISO(local.closed_at), "MMM d, yyyy")}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {local.status !== "Closed" && hasPhoto && (
-            <Button size="sm" variant="outline"
-              className="h-8 text-xs gap-1 text-emerald-700 border-emerald-300"
-              onClick={() => setClosing(true)}>
-              <CheckCircle2 className="w-3.5 h-3.5" /> Close
-            </Button>
-          )}
+    <div className="p-3 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end">
+      <div className="sm:col-span-1">
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Area</Label>
+        <Input value={local.area} onChange={e => set("area", e.target.value)} onBlur={flush}
+          placeholder="Kitchen" className="h-9 text-sm" />
+      </div>
+      <div className="sm:col-span-2">
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Condition / Detail</Label>
+        <Input value={local.condition} onChange={e => set("condition", e.target.value)} onBlur={flush}
+          placeholder="Trash and clutter noted" className="h-9 text-sm" />
+        <Textarea value={local.detail} onChange={e => set("detail", e.target.value)} onBlur={flush}
+          placeholder="More detail (optional)" rows={1} className="mt-1 text-xs" />
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Action</Label>
+        <Select value={local.action} onValueChange={v => { set("action", v); onChange({ ...local, action: v }); }}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ACTION_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Severity / Resp.</Label>
+        <Select value={local.severity} onValueChange={(v: any) => { set("severity", v); onChange({ ...local, severity: v }); }}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Low">Low</SelectItem>
+            <SelectItem value="Medium">Medium</SelectItem>
+            <SelectItem value="High">High</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={local.responsibility} onValueChange={(v: any) => { set("responsibility", v); onChange({ ...local, responsibility: v }); }}>
+          <SelectTrigger className="h-9 text-sm mt-1"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Customer">Customer</SelectItem>
+            <SelectItem value="Crest">Crest</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Status</Label>
+        <Select value={local.status} onValueChange={(v: any) => { set("status", v); onChange({ ...local, status: v }); }}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Open">Open</SelectItem>
+            <SelectItem value="Ongoing">Ongoing</SelectItem>
+            <SelectItem value="Closed">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex gap-1">
+          <Input value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
+            placeholder="Comments" className="h-9 text-xs flex-1" />
           <Button size="icon" variant="ghost" onClick={onRemove}
-            className="h-8 w-8 text-destructive shrink-0">
+            className="h-9 w-9 text-destructive shrink-0">
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
-
-      {/* Apartment-Units-style grid: labelled fields in clean rows */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> Location
-          </Label>
-          <Input value={local.area} onChange={e => set("area", e.target.value)} onBlur={flush}
-            placeholder="e.g. Kitchen, Dish Pit, Exterior" className="h-10 text-sm" />
-        </div>
-        <div>
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Condition
-          </Label>
-          <Input value={local.condition} onChange={e => set("condition", e.target.value)} onBlur={flush}
-            placeholder="e.g. Trash overflow at back door" className="h-10 text-sm" />
-        </div>
-        <div className="sm:col-span-2">
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Detail
-          </Label>
-          <Textarea value={local.detail} onChange={e => set("detail", e.target.value)} onBlur={flush}
-            placeholder="Describe what you saw, why it matters, anything the customer needs to act on…"
-            rows={2} className="text-sm" />
-        </div>
-        <div>
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Severity
-          </Label>
-          <Select value={local.severity} onValueChange={(v: any) => { set("severity", v); onChange({ ...local, severity: v }); }}>
-            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Responsibility
-          </Label>
-          <Select value={local.responsibility} onValueChange={(v: any) => { set("responsibility", v); onChange({ ...local, responsibility: v }); }}>
-            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Customer">Customer</SelectItem>
-              <SelectItem value="Crest">Crest</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="sm:col-span-2">
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Recommended Action
-          </Label>
-          <Select value={local.action} onValueChange={v => { set("action", v); onChange({ ...local, action: v }); }}>
-            <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ACTION_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="sm:col-span-2">
-          <Label className="text-[10.5px] uppercase font-bold text-muted-foreground mb-1 block">
-            Notes / Comments (optional)
-          </Label>
-          <Textarea value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
-            placeholder="Internal notes about this condition…" rows={2} className="text-sm" />
-        </div>
-      </div>
-
-      {/* Photo section — REQUIRED */}
-      <div className={`rounded-md border-2 ${hasPhoto ? "border-border bg-muted/30" : "border-amber-400 bg-amber-50"} p-2.5 space-y-2`}>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-            <Camera className="w-3.5 h-3.5" /> Photos
-            {!hasPhoto && <span className="text-amber-700 ml-1">· Required</span>}
-            {hasPhoto && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{photos.length}</Badge>}
-          </p>
-          <label className="inline-flex">
-            <input type="file" accept="image/*" capture="environment" multiple className="hidden"
-              disabled={uploading}
-              onChange={(e) => { uploadPhotos(e.target.files, "photos"); e.currentTarget.value = ""; }} />
-            <span className="inline-flex items-center gap-1 h-9 px-3 rounded-md border border-border bg-background text-xs font-semibold cursor-pointer hover:bg-muted">
-              <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Uploading…" : hasPhoto ? "Add More" : "Add Photo"}
-            </span>
-          </label>
-        </div>
-        {!hasPhoto ? (
-          <p className="text-[11px] text-amber-800 italic">
-            Snap a photo of the condition — required to save and notify the customer.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {photos.map((url, i) => (
-              <div key={url} className="relative w-20 h-20 rounded border overflow-hidden bg-background group">
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  <img src={url} alt={`Condition ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                </a>
-                <button type="button" onClick={() => removePhoto(url)}
-                  className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition">
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Close-out flow */}
-      {closing && local.status !== "Closed" && (
-        <div className="rounded-md border-2 border-emerald-300 bg-emerald-50 p-3 space-y-2">
-          <p className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> Close this condition
-          </p>
-          <p className="text-[11px] text-emerald-900/80">
-            Attach a photo proving the condition was resolved, then confirm.
-          </p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <label className="inline-flex">
-              <input type="file" accept="image/*" capture="environment" className="hidden"
-                disabled={uploading}
-                onChange={(e) => { uploadPhotos(e.target.files, "resolution_photo"); e.currentTarget.value = ""; }} />
-              <span className="inline-flex items-center gap-1 h-9 px-3 rounded-md border border-emerald-400 bg-background text-xs font-semibold cursor-pointer hover:bg-emerald-100">
-                <Upload className="w-3.5 h-3.5" />
-                {uploading ? "Uploading…" : local.resolution_photo ? "Replace Photo" : "Add Resolution Photo"}
-              </span>
-            </label>
-            {local.resolution_photo && (
-              <a href={local.resolution_photo} target="_blank" rel="noopener noreferrer"
-                className="block w-12 h-12 rounded border-2 border-emerald-400 overflow-hidden bg-white">
-                <img src={local.resolution_photo} alt="Resolution" className="w-full h-full object-cover" />
-              </a>
-            )}
-          </div>
-          <Textarea value={local.resolution_note || ""} onChange={e => set("resolution_note", e.target.value)}
-            onBlur={flush} placeholder="What was done? (optional)" rows={2} className="text-sm" />
-          <div className="flex items-center gap-2">
-            <Button size="sm" className="h-9 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={closeOut}>
-              <Check className="w-3.5 h-3.5" /> Confirm Closed
-            </Button>
-            <Button size="sm" variant="ghost" className="h-9 text-xs" onClick={() => setClosing(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -699,9 +538,15 @@ export function DeviceTrendingSection({ services }: { services: SpragueService[]
       <div>
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" /> Device Trending
+          <span
+            title="Each point is one completed service visit (last 12). 'Devices' is the total count of monitoring devices and equipment serviced that visit (e.g. snap traps, glue boards, bait stations, ILTs). 'Types' is how many distinct equipment categories were touched. A rising 'Devices' line on a steady 'Types' line usually means heavier activity in the same areas; rising 'Types' means coverage is expanding."
+            className="inline-flex"
+          >
+            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+          </span>
         </h3>
         <p className="text-xs text-muted-foreground">
-          Number of monitoring devices and equipment types deployed / serviced per visit.
+          Number of monitoring devices and equipment types deployed / serviced per visit (last 12 visits).
         </p>
       </div>
       <Card>

@@ -540,65 +540,15 @@ export default function CommercialDashboardView({
     if (!note) return;
     const { error } = await supabase
       .from("portal_requests")
-      .update({
-        response_notes: note,
-        // Crest reply auto-closes the sighting per cofounder workflow.
-        status: "completed",
-        sighting_status: "closed",
-        closed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as any)
+      .update({ response_notes: note, status: "in_progress", updated_at: new Date().toISOString() } as any)
       .eq("id", id);
     if (error) {
       toast({ title: "Couldn't save response", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Response sent — sighting closed" });
+    toast({ title: "Response saved" });
     setResponseDraft(d => ({ ...d, [id]: "" }));
     loadRequests();
-  };
-
-  const setSightingStatus = async (id: string, status: "open" | "in_progress" | "closed") => {
-    const patch: any = {
-      sighting_status: status,
-      status: status === "closed" ? "completed" : (status === "in_progress" ? "in_progress" : "pending"),
-      updated_at: new Date().toISOString(),
-    };
-    if (status === "closed") patch.closed_at = new Date().toISOString();
-    const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
-    if (error) {
-      toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
-      return;
-    }
-    loadRequests();
-  };
-
-  // Notify the customer when a brand-new condition (with photo) is added.
-  const notifyConditionAdded = async (serviceId: string, condition: any) => {
-    try {
-      await supabase.functions.invoke("send-portal-message", {
-        body: {
-          propertyName: property.name,
-          subject: `New Condition Identified — ${property.name}`,
-          message: [
-            `A new condition was identified at ${property.name}:`,
-            ``,
-            `Location: ${condition.area || "—"}`,
-            `Condition: ${condition.condition || "—"}`,
-            condition.detail ? `Detail: ${condition.detail}` : "",
-            `Severity: ${condition.severity}`,
-            `Recommended action: ${condition.action}`,
-            `Responsibility: ${condition.responsibility}`,
-            ``,
-            `View it anytime in the Active Conditions tab of your portal.`,
-          ].filter(Boolean).join("\n"),
-          senderName: "Crest Pest Control",
-        },
-      });
-      toast({ title: "Customer notified", description: "Email sent." });
-    } catch (e: any) {
-      toast({ title: "Couldn't send notification", description: e?.message, variant: "destructive" });
-    }
   };
 
   const markRequestComplete = async (id: string) => {
@@ -686,7 +636,7 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map, Plan &amp; Team</span>
@@ -879,6 +829,9 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
+                          <FileText className="w-3 h-3" /> Report
+                        </Button>
                         <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -886,25 +839,6 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
-                        {/* 0. Recent Pest Sightings — surfaces open/in-progress
-                            sightings so they're addressed on this visit. */}
-                        {openRequests.length > 0 && (
-                          <div className="rounded-md border-2 border-amber-300 bg-amber-50 p-2.5">
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1.5 flex items-center gap-1">
-                              <Bug className="w-3 h-3" /> Recent Pest Sightings
-                              <Badge variant="secondary" className="ml-1 text-[10px] h-4">{openRequests.length}</Badge>
-                            </p>
-                            <ul className="space-y-1">
-                              {openRequests.map(r => (
-                                <li key={r.id} className="text-xs text-amber-950 leading-relaxed">
-                                  <span className="font-semibold">{r.pest_type || r.request_type}</span>
-                                  {r.location_type ? ` — ${r.location_type}` : ""}
-                                  {r.description ? ` · ${r.description}` : ""}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
@@ -1043,12 +977,11 @@ export default function CommercialDashboardView({
                         )}
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> Active Conditions
+                            <ClipboardList className="w-3 h-3" /> Conditions
                           </p>
                           <ConditionsReportSection
                             services={[s as any]}
                             onSaveServiceReportData={persistServiceReportData}
-                            onConditionAdded={notifyConditionAdded}
                           />
                         </div>
                       </div>
@@ -1082,25 +1015,6 @@ export default function CommercialDashboardView({
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
-                      {/* Recent Pest Sightings — auto-populated from open
-                          sightings so they're addressed on this upcoming visit. */}
-                      {openRequests.length > 0 && (
-                        <div className="rounded-md border-2 border-amber-300 bg-amber-50 p-2.5">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1.5 flex items-center gap-1">
-                            <Bug className="w-3 h-3" /> Recent Pest Sightings
-                            <Badge variant="secondary" className="ml-1 text-[10px] h-4">{openRequests.length}</Badge>
-                          </p>
-                          <ul className="space-y-1">
-                            {openRequests.map(r => (
-                              <li key={r.id} className="text-xs text-amber-950 leading-relaxed">
-                                <span className="font-semibold">{r.pest_type || r.request_type}</span>
-                                {r.location_type ? ` — ${r.location_type}` : ""}
-                                {r.description ? ` · ${r.description}` : ""}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
@@ -1242,6 +1156,9 @@ export default function CommercialDashboardView({
                       </div>
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
+                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
+                          <FileText className="w-3 h-3" /> Open Report
+                        </Button>
                         <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
                           <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
@@ -1251,13 +1168,12 @@ export default function CommercialDashboardView({
                       </div>
                       <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
                         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Active Conditions
+                          <ClipboardList className="w-3 h-3" /> Conditions
                         </p>
                         <ConditionsReportSection
                           services={[s as any]}
                           onSaveServiceReportData={persistServiceReportData}
                           includeUndated
-                          onConditionAdded={notifyConditionAdded}
                         />
                       </div>
                     </CardContent>
@@ -1334,19 +1250,9 @@ export default function CommercialDashboardView({
                               {r.pest_type || r.request_type}
                               {r.location_type ? ` — ${r.location_type}` : ""}
                             </p>
-                            <p className="text-xs text-muted-foreground">Reported {fmtDateTime(r.created_at)}</p>
+                            <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
                           </div>
-                          <Select
-                            value={r.sighting_status || (r.status === "in_progress" ? "in_progress" : "open")}
-                            onValueChange={(v: any) => setSightingStatus(r.id, v)}
-                          >
-                            <SelectTrigger className="h-8 w-32 text-xs shrink-0"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Badge variant="secondary" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
                         </div>
                         {r.description && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
@@ -1400,16 +1306,10 @@ export default function CommercialDashboardView({
                           </p>
                           <Badge variant="outline" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Reported {fmtDateTime(r.created_at)}
-                          {r.closed_at ? ` · Closed ${fmtDateTime(r.closed_at)}` : ""}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
                         {r.description && <p className="text-xs whitespace-pre-wrap">{r.description}</p>}
                         {r.response_notes && (
-                          <div className="mt-1 pt-1.5 border-t border-border/60">
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Crest Response</p>
-                            <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
-                          </div>
+                          <p className="text-xs italic text-muted-foreground"><span className="font-semibold">Response:</span> {r.response_notes}</p>
                         )}
                       </CardContent>
                     </Card>
