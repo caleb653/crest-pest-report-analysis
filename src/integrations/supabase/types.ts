@@ -136,9 +136,11 @@ export type Database = {
       }
       portal_clients: {
         Row: {
+          auto_generate_reports: boolean
           company: string | null
           created_at: string
           email: string | null
+          fieldroutes_customer_id: string | null
           id: string
           name: string
           notes: string | null
@@ -146,9 +148,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_generate_reports?: boolean
           company?: string | null
           created_at?: string
           email?: string | null
+          fieldroutes_customer_id?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -156,9 +160,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_generate_reports?: boolean
           company?: string | null
           created_at?: string
           email?: string | null
+          fieldroutes_customer_id?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -166,6 +172,84 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      portal_conditions: {
+        Row: {
+          action: string | null
+          closed_at: string | null
+          condition: string
+          created_at: string
+          detail: string | null
+          id: string
+          identified_at: string
+          identified_by: string | null
+          location: string
+          photos: Json
+          property_id: string
+          resolution_note: string | null
+          resolution_photos: Json
+          responsibility: string
+          service_id: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string | null
+          closed_at?: string | null
+          condition?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          identified_at?: string
+          identified_by?: string | null
+          location?: string
+          photos?: Json
+          property_id: string
+          resolution_note?: string | null
+          resolution_photos?: Json
+          responsibility?: string
+          service_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string | null
+          closed_at?: string | null
+          condition?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          identified_at?: string
+          identified_by?: string | null
+          location?: string
+          photos?: Json
+          property_id?: string
+          resolution_note?: string | null
+          resolution_photos?: Json
+          responsibility?: string
+          service_id?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_conditions_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_conditions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "portal_services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portal_documents: {
         Row: {
@@ -446,7 +530,9 @@ export type Database = {
       }
       portal_requests: {
         Row: {
+          closed_at: string | null
           created_at: string
+          crest_comments: Json
           description: string
           id: string
           link_id: string | null
@@ -464,6 +550,7 @@ export type Database = {
           right_to_treat_signed_at: string | null
           right_to_treat_signer_name: string | null
           right_to_treat_token: string | null
+          sighting_status: string | null
           status: string
           tenant_email: string | null
           tenant_email_sent_at: string | null
@@ -471,7 +558,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
+          crest_comments?: Json
           description: string
           id?: string
           link_id?: string | null
@@ -489,6 +578,7 @@ export type Database = {
           right_to_treat_signed_at?: string | null
           right_to_treat_signer_name?: string | null
           right_to_treat_token?: string | null
+          sighting_status?: string | null
           status?: string
           tenant_email?: string | null
           tenant_email_sent_at?: string | null
@@ -496,7 +586,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
+          crest_comments?: Json
           description?: string
           id?: string
           link_id?: string | null
@@ -514,6 +606,7 @@ export type Database = {
           right_to_treat_signed_at?: string | null
           right_to_treat_signer_name?: string | null
           right_to_treat_token?: string | null
+          sighting_status?: string | null
           status?: string
           tenant_email?: string | null
           tenant_email_sent_at?: string | null
