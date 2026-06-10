@@ -212,47 +212,106 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
         </CardContent></Card>
       )}
 
-      {past.map(s => {
-        const rows = conditionsFor(s);
-        const empty = rows.length === 0;
-        if (readOnly && empty) return null;
-        return (
-          <Card key={s.id}>
-            <div className="bg-muted/60 border-b border-border px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-              <p className="text-sm font-semibold">
-                {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
-                <span className="text-muted-foreground">{s.service_type}</span>
-                {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
-              </p>
-              {!readOnly && (
-                <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
-                  onClick={() => save(s, [...rows, newConditionRow()])}>
-                  <Plus className="w-3 h-3" /> Add Condition
-                </Button>
-              )}
-            </div>
-            <CardContent className="p-0">
-              {empty ? (
-                <p className="px-3 py-4 text-sm text-muted-foreground italic">
-                  {readOnly ? "No conditions noted on this visit." : "No conditions logged yet."}
-                </p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {rows.map((c, idx) => (
-                    <ConditionRowEditor
-                      key={c.id}
-                      row={c}
-                      readOnly={readOnly}
-                      onChange={(next) => save(s, rows.map((r, i) => i === idx ? next : r))}
-                      onRemove={() => save(s, rows.filter((_, i) => i !== idx))}
-                    />
-                  ))}
+      {/* ─── ACTIVE ─── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-red-900">Active</h4>
+          <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50 text-[10px]">
+            {open.length}
+          </Badge>
+        </div>
+        {visitsWithActive.length === 0 ? (
+          <Card><CardContent className="p-4 text-sm text-muted-foreground text-center italic">
+            No active conditions.
+          </CardContent></Card>
+        ) : (
+          visitsWithActive.map(({ s, rows: activeRows }) => {
+            const allRows = conditionsFor(s);
+            return (
+              <Card key={`active-${s.id}`}>
+                <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-sm font-semibold">
+                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
+                    <span className="text-muted-foreground">{s.service_type}</span>
+                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                  </p>
+                  {!readOnly && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
+                      onClick={() => save(s, [...allRows, newConditionRow()])}>
+                      <Plus className="w-3 h-3" /> Add Condition
+                    </Button>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {activeRows.map((c) => {
+                      const idx = allRows.findIndex(r => r.id === c.id);
+                      return (
+                        <ConditionRowEditor
+                          key={c.id}
+                          row={c}
+                          readOnly={readOnly}
+                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                        />
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+
+      {/* ─── CLOSED ─── */}
+      {visitsWithClosed.length > 0 && (
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowClosed(v => !v)}
+            className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-green-900 hover:text-green-700 transition"
+          >
+            <span>Closed</span>
+            <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50 text-[10px]">
+              {closed.length}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground normal-case font-normal">
+              ({showClosed ? "hide" : "show"})
+            </span>
+          </button>
+          {showClosed && visitsWithClosed.map(({ s, rows: closedRows }) => {
+            const allRows = conditionsFor(s);
+            return (
+              <Card key={`closed-${s.id}`} className="opacity-90">
+                <div className="bg-green-50/60 border-b border-green-200 px-3 py-2">
+                  <p className="text-sm font-semibold">
+                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
+                    <span className="text-muted-foreground">{s.service_type}</span>
+                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                  </p>
+                </div>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {closedRows.map((c) => {
+                      const idx = allRows.findIndex(r => r.id === c.id);
+                      return (
+                        <ConditionRowEditor
+                          key={c.id}
+                          row={c}
+                          readOnly={readOnly}
+                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                        />
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
