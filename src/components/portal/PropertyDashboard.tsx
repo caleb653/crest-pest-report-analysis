@@ -2095,6 +2095,23 @@ const PropertyDashboard = ({
       setSubmittingWorkOrder(false);
       return;
     }
+    // Persist the optional move-in date onto the property's tenant_move_ins
+    // map so the 🏠 New Tenant tag shows up on this unit everywhere.
+    if (!isGeneral && canonical && workOrder.tenant_move_in_date) {
+      try {
+        const prefs: any = property.customer_preferences || {};
+        const map = { ...(prefs.tenant_move_ins || {}) };
+        map[String(canonical).trim()] = workOrder.tenant_move_in_date;
+        const updatedPrefs = { ...prefs, tenant_move_ins: map };
+        await supabase
+          .from("portal_properties")
+          .update({ customer_preferences: updatedPrefs })
+          .eq("id", property.id);
+        (property as any).customer_preferences = updatedPrefs;
+      } catch (e) {
+        console.error("save tenant_move_in failed", e);
+      }
+    }
     toast({ title: isGeneral
       ? "General request submitted"
       : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
