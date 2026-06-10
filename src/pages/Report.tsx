@@ -2140,13 +2140,14 @@ Crest Pest Control`;
                   linkedLabel={editableCustomer || null}
                   onSelect={(c) => {
                     setFieldroutesCustomerId(c.customer_id);
+                    setFieldroutesLoginLink(c.loginLink || null);
                     if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
                     if (c.email) setCustomerEmail(c.email);
                     const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
                       .filter(Boolean).join(", ");
                     if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
                   }}
-                  onClear={() => setFieldroutesCustomerId(null)}
+                  onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
                 />
               </div>
             )}
