@@ -454,7 +454,7 @@ const PropertyDashboard = ({
       completionDraftTimers.current[serviceId] = setTimeout(async () => {
         try {
           // Strip transient upload flags before persisting.
-          const cleanRows = (data.unitRows || []).map((r: any) => ({
+          let cleanRows = (data.unitRows || []).map((r: any) => ({
             ...r,
             photos: Array.isArray(r.photos)
               ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
@@ -472,6 +472,17 @@ const PropertyDashboard = ({
           const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
             ? (latest as any).report_data
             : existing;
+          const dismissed = new Set<string>();
+          const dismissedRaw = Array.isArray((latestReportData as any).dismissed_units)
+            ? (latestReportData as any).dismissed_units as any[]
+            : [];
+          dismissedRaw.forEach((entry) => {
+            const label = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+            if (label) dismissed.add(label);
+          });
+          if (dismissed.size > 0) {
+            cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
+          }
           const next = {
             ...latestReportData,
             completion_draft: {
