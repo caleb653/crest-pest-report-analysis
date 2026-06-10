@@ -373,14 +373,12 @@ const Report = () => {
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
   // FieldRoutes customer-portal URL ({loginlink}) — shown as a prominent
   // "Customer Portal" button in the report header and emailed to the customer.
+  // Per-customer FieldPortals auto-login link ({{loginLink}}). Auto-captured by
+  // the inspection webhook from the FieldRoutes Trigger, or pasted manually in
+  // the loginLink field. The "Open Customer Portal" button + email only render
+  // when this real link is present — we deliberately do NOT fall back to the
+  // generic portal login page (that drops the customer on a login screen).
   const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
-  // FieldRoutes/FieldPortals customer portal login page. The per-customer
-  // auto-login {loginlink} is NOT exposed by the FieldRoutes API (confirmed
-  // against the live customer object), so the button/email fall back to this
-  // generic portal login — the customer signs in to manage their account and add
-  // a payment method. If a real per-customer link is ever captured, it wins.
-  const FIELDROUTES_PORTAL_URL = "https://crestpestco.pestportals.com/";
-  const customerPortalHref = fieldroutesLoginLink || FIELDROUTES_PORTAL_URL;
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
 
