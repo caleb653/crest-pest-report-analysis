@@ -192,14 +192,13 @@ serve(async (req) => {
       clean(body.zip),
     ].filter(Boolean).join(", ") || null;
 
-    // FieldRoutes customer-portal login (FieldPortals {{loginLink}}). The Trigger
-    // resolves this per-customer server-side, exactly like {{fname}}/{{email}} —
-    // captured here so the proposal's "Open Customer Portal" button auto-logs the
-    // customer in (manage account / add payment). portalURL/username accepted as
-    // fallbacks if a given trigger template sends those names instead.
-    const loginLink = clean(
-      body.loginLink ?? body.login_link ?? body.portalURL ?? body.portal_url,
-    );
+    // FieldRoutes per-customer auto-login link (FieldPortals {{loginLink}}). The
+    // Trigger resolves this server-side, exactly like {{fname}}/{{email}}.
+    // ONLY accept {{loginLink}} — never {{portalURL}}: portalURL is the generic
+    // homepage (the bare login screen), and falling back to it drops customers on
+    // a login page instead of auto-logging them in. If loginLink is empty, store
+    // nothing and let the button hide rather than link to the generic page.
+    const loginLink = clean(body.loginLink ?? body.login_link);
 
     const serviceDate = clean(body.serviceDate ?? body.service_date);
     // Tech assigned to the appointment in FieldRoutes. Different trigger templates
