@@ -24,6 +24,8 @@ interface SendReportRequest {
   pdfFilename?: string;
   buttonText?: string;
   reportType?: "sales" | "multi-proposal" | "initial";
+  /** FieldRoutes {loginlink} — direct URL to the customer's billing/wallet portal. */
+  customerPortalUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -46,6 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
       pdfFilename,
       buttonText,
       reportType,
+      customerPortalUrl,
     }: SendReportRequest = await req.json();
 
     const sanitizeEmail = (e: string) => e.trim().replace(/[.\s,;]+$/, "");
@@ -86,7 +89,21 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Content -->
             <tr>
               <td style="padding: 40px;">
-                
+                ${customerPortalUrl ? `
+                <!-- Customer Portal (top, prominent) -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 28px;">
+                  <tr>
+                    <td align="center" style="background-color: #f4f7f5; border: 1px solid #C3D1C5; border-radius: 10px; padding: 22px 20px;">
+                      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: #2A2A2A; text-transform: uppercase;">Customer Portal</p>
+                      <p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.55;">
+                        Manage your account and <strong>add a payment method in the Wallet section</strong> of your Customer Portal.
+                      </p>
+                      <a href="${customerPortalUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 36px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px;">Open Customer Portal</a>
+                    </td>
+                  </tr>
+                </table>
+                ` : ""}
+
                 <!-- Message Box -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                   <tr>
