@@ -92,21 +92,6 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Content -->
             <tr>
               <td style="padding: 40px;">
-                ${customerPortalUrl ? `
-                <!-- Customer Portal (top, prominent) -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 28px;">
-                  <tr>
-                    <td align="center" style="background-color: #f4f7f5; border: 1px solid #C3D1C5; border-radius: 10px; padding: 22px 20px;">
-                      <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: #2A2A2A; text-transform: uppercase;">Customer Portal</p>
-                      <p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.55;">
-                        If you'd like to move ahead, here is <a href="${customerPortalUrl}" style="color: #2A2A2A; font-weight: 700; text-decoration: underline;">your personal portal</a> where you can add a payment method and review service notes.
-                      </p>
-                      <a href="${customerPortalUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 36px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px;">Open Customer Portal</a>
-                    </td>
-                  </tr>
-                </table>
-                ` : ""}
-
                 <!-- Message Box -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                   <tr>
@@ -117,7 +102,25 @@ const handler = async (req: Request): Promise<Response> => {
                     </td>
                   </tr>
                 </table>
-                
+
+                ${customerPortalUrl ? `
+                <!-- Customer Portal Button -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
+                  <tr>
+                    <td style="text-align: center;">
+                      <a href="${customerPortalUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">Open Customer Portal</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: center; padding-top: 10px;">
+                      <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
+                        Add a payment method and review service notes.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                ` : ""}
+
                 ${reportUrl ? `
                 <!-- Button -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
