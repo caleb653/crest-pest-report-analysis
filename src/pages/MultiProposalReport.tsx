@@ -1037,6 +1037,13 @@ const Report = () => {
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
       setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
+      // Hydrate the customer portal link from customer_preferences JSON.
+      {
+        const prefs = (row as { customer_preferences?: { fieldroutes_login_link?: string | null } | null }).customer_preferences;
+        if (prefs && typeof prefs === "object" && prefs.fieldroutes_login_link) {
+          setFieldroutesLoginLink(String(prefs.fieldroutes_login_link));
+        }
+      }
       setCustomerPhone(row.customer_phone || "");
       setEditableFindings((row.findings as string[]) || []);
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
