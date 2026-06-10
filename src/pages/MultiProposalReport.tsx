@@ -3146,6 +3146,7 @@ Crest Pest Control`;
                 linkedLabel={editableCustomer || null}
                 onSelect={(c) => {
                   setFieldroutesCustomerId(c.customer_id);
+                  setFieldroutesLoginLink(c.loginLink || null);
                   if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
                   if (c.email) setCustomerEmail(c.email);
                   if (c.phone) setCustomerPhone(c.phone);
@@ -3153,7 +3154,7 @@ Crest Pest Control`;
                     .filter(Boolean).join(", ");
                   if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
                 }}
-                onClear={() => setFieldroutesCustomerId(null)}
+                onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
               />
             </div>
           )}
