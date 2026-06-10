@@ -2123,6 +2123,7 @@ const PropertyDashboard = ({
       request_type: "", occupancy_status: "",
       email_tenant: false, tenant_email: "", prep_sheet_id: "", right_to_treat: false,
       customer_name: "", customer_phone: "",
+      tenant_move_in_date: "",
     });
     setWorkOrderPhotos([]);
     // Refresh requests
