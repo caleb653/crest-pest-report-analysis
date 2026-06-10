@@ -108,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
                   <tr>
                     <td style="text-align: center;">
-                      <a href="${reportUrl}" style="display: inline-block; background-color: #C3D1C5; color: #2A2A2A; padding: 16px 36px; text-decoration: none; border-radius: 0; font-weight: 700; font-size: 16px; border: 1px solid #95A197;">${buttonText || "View Your Proposal"}</a>
+                      <a href="${reportUrl}" style="display: inline-block; background-color: #C3D1C5; color: #2A2A2A; padding: 22px 64px; text-decoration: none; border-radius: 0; font-weight: 700; font-size: 20px; letter-spacing: 0.02em; border: 1px solid #95A197;">${buttonText || "View Your Proposal"}</a>
                     </td>
                   </tr>
                   <tr>
