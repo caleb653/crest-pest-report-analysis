@@ -377,9 +377,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
             <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
             <TabsTrigger value="trending" className="text-[11px] gap-1 flex-1 min-w-[88px]"><TrendingUp className="w-3.5 h-3.5" />Trending</TabsTrigger>
-            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Materials</TabsTrigger>
+            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />SDS</TabsTrigger>
             <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
-            <TabsTrigger value="prep" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
             <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
             <TabsTrigger value="contact" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
@@ -720,12 +719,12 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <PestTrendingSection requests={requests as any} />
             <DeviceTrendingSection services={services as any} />
             <ServiceRecordsSection services={services as any} />
+            <MaterialUseLogSection services={services as any} />
           </TabsContent>
 
-          {/* ─── MATERIALS ─── */}
+          {/* ─── SAFETY DATA SHEETS ─── */}
           <TabsContent value="materials" className="mt-3 space-y-6">
             <CommercialApprovedMaterials />
-            <MaterialUseLogSection services={services as any} />
           </TabsContent>
 
           {/* ─── TEAM & LICENSING ─── */}
