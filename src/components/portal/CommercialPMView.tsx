@@ -370,7 +370,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         </Card>
 
         <Tabs defaultValue="visits" className="w-full">
-          <TabsList className="flex w-full flex-wrap h-auto p-1 gap-1 justify-start">
+          <TabsList className="sticky top-0 z-30 flex w-full flex-wrap h-auto p-1 gap-1 justify-start bg-background/95 backdrop-blur border border-border rounded-lg shadow-sm">
             <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
             <TabsTrigger value="map" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
             <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
