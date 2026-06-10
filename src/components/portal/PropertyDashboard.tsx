@@ -403,7 +403,7 @@ const PropertyDashboard = ({
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   type CompletionDraft = {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string; follow_up_needed?: boolean; sanitization_concern?: boolean; photos?: { url: string; uploading?: boolean }[]; kind?: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -464,8 +464,16 @@ const PropertyDashboard = ({
           const existing = (svc as any).report_data && typeof (svc as any).report_data === "object"
             ? (svc as any).report_data
             : {};
+          const { data: latest } = await supabase
+            .from("portal_services")
+            .select("report_data")
+            .eq("id", serviceId)
+            .maybeSingle();
+          const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
+            ? (latest as any).report_data
+            : existing;
           const next = {
-            ...existing,
+            ...latestReportData,
             completion_draft: {
               ...data,
               unitRows: cleanRows,
@@ -474,6 +482,7 @@ const PropertyDashboard = ({
             },
           };
           await supabase.from("portal_services").update({ report_data: next }).eq("id", serviceId);
+          (svc as any).report_data = next;
         } catch (e) {
           console.warn("completion draft autosave failed", e);
         }
