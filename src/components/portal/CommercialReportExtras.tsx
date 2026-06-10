@@ -102,7 +102,7 @@ export const normalizeNonChemEquipment = (raw: any): NonChemEquipmentEntry[] => 
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Concerns Observed editor — toggle a concern, prompted to attach photos to it.
+// Active Conditions editor — toggle a condition, prompted to attach photos to it.
 // Read-only mode shows the chips + photos.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -181,7 +181,7 @@ export function CommercialConcernsObserved({
       <div className="flex items-center justify-between gap-2">
         <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5 text-primary" />
-          Concerns Observed
+          Active Conditions
         </Label>
         {!readOnly && (
           <p className="text-[10.5px] text-muted-foreground">
