@@ -648,6 +648,9 @@ const Report = () => {
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  // FieldRoutes customer-portal URL ({loginlink}) — shown as a prominent
+  // "Customer Portal" button in the report header and emailed to the customer.
+  const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
   const frAutoPushRef = useRef(false);
   const currentStaff = useCurrentStaff();
   const signatureRef = useRef<SignatureCanvasRef>(null);
