@@ -1779,7 +1779,7 @@ Based on our assessment, we've put together a plan designed to effectively addre
 
 Our goal is to provide reliable, proactive protection so you can have peace of mind knowing your property is covered.
 
-Please feel free to reach out with any questions or if you'd like to move forward, we're happy to help.
+Please feel free to reach out with any questions or if you'd like to move forward, we're happy to help. You can also add a payment method anytime through the customer portal button below.
 
 Best,
 
