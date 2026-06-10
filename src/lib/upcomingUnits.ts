@@ -223,6 +223,15 @@ export interface UpcomingUnitContext {
   findings?: string;
   /** Pre-filled notes text (for the technician — internal). */
   notes?: string;
+  /**
+   * NEW-TENANT MOVE-IN DATE (YYYY-MM-DD). Populated when the property's
+   * customer_preferences.tenant_move_ins map has an entry for this unit
+   * whose date is in the future. Auto-disappears once the date passes
+   * (filter happens inside computeUpcomingUnits — past dates never reach
+   * the UI). Surfaced as a mission-critical badge so techs and PMs know
+   * to prioritize this unit until move-in day.
+   */
+  tenant_move_in_date?: string;
 }
 
 /**
@@ -247,8 +256,27 @@ export function computeUpcomingUnits(args: {
   mostRecentPast: ServiceRow | null;
   /** Optional: ALL past services, used to look up the most-recent detail per unit. */
   allPastServices?: ServiceRow[];
+  /**
+   * Optional: unit_number → move-in-date (YYYY-MM-DD) map sourced from
+   * `portal_properties.customer_preferences.tenant_move_ins`. Only entries
+   * whose date is today-or-later are attached to the returned contexts so
+   * stale move-ins auto-drop off appointments.
+   */
+  tenantMoveIns?: Record<string, string> | null;
 }) {
-  const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices } = args;
+  const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices, tenantMoveIns } = args;
+  // Build a normalized-unit → future-move-in-date map. Past dates are
+  // dropped here so the badge disappears the moment the date passes.
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const moveInByUnit = new Map<string, string>();
+  if (tenantMoveIns && typeof tenantMoveIns === "object") {
+    for (const [rawUnit, rawDate] of Object.entries(tenantMoveIns)) {
+      const u = normalizeUnit(rawUnit);
+      const d = typeof rawDate === "string" ? rawDate.slice(0, 10) : "";
+      if (!u || !d) continue;
+      if (d >= todayISO) moveInByUnit.set(u, d);
+    }
+  }
   // Units the admin explicitly removed from THIS upcoming service. We keep
   // them in `report_data.dismissed_units` so they survive page refreshes
   // and never re-enter the merged set from work orders / follow-ups that
@@ -418,6 +446,7 @@ export function computeUpcomingUnits(args: {
       context,
       findings,
       notes,
+      tenant_move_in_date: moveInByUnit.get(unit),
     };
   };
 
