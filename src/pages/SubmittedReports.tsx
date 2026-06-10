@@ -621,8 +621,8 @@ const SubmittedReports = () => {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="sales-all">Sales (All)</SelectItem>
-                  <SelectItem value="sales">Single Sales</SelectItem>
-                  <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
+                  <SelectItem value="multi-proposal">Sales</SelectItem>
+                  <SelectItem value="sales">Archived Sales</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                   <SelectItem value="pre-proposal">Pre-Proposal</SelectItem>
                   <SelectItem value="won">Won Deals</SelectItem>
