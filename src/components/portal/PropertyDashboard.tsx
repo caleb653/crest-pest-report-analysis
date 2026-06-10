@@ -5701,6 +5701,7 @@ const PropertyDashboard = ({
                 isFirstUpcoming: isFirst,
                 requests: pendingRequests,
                 mostRecentPast: pastServices[0] || null,
+                allPastServices: pastServicesForDisplay,
                 tenantMoveIns:
                   (property.customer_preferences as any)?.tenant_move_ins || null,
               });
