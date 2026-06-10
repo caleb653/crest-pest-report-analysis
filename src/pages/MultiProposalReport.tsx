@@ -1481,6 +1481,9 @@ const Report = () => {
     customer_email: customerEmail || null,
     customer_phone: customerPhone || null,
     fieldroutes_customer_id: fieldroutesCustomerId,
+    // Persist FieldRoutes customer-portal link so it survives reload and
+    // can be shown as the "Customer Portal" button on the report header.
+    customer_preferences: { fieldroutes_login_link: fieldroutesLoginLink || null },
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
