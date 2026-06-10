@@ -5461,6 +5461,34 @@ const PropertyDashboard = ({
             </div>
             )}
 
+            {/* Optional new-tenant move-in date — flags this unit until the date passes. */}
+            {workOrder.request_type !== "general" && !isHOA && (
+              <div className="rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+                  🏠 New Tenant Move-In <span className="text-rose-900/70 normal-case font-medium">(optional)</span>
+                </span>
+                <input
+                  type="date"
+                  className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                  value={workOrder.tenant_move_in_date}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={e => setWorkOrder(wo => ({ ...wo, tenant_move_in_date: e.target.value }))}
+                />
+                {workOrder.tenant_move_in_date && (
+                  <button
+                    type="button"
+                    className="text-xs underline text-rose-900/80 hover:text-rose-900"
+                    onClick={() => setWorkOrder(wo => ({ ...wo, tenant_move_in_date: "" }))}
+                  >
+                    Clear
+                  </button>
+                )}
+                <span className="text-[11px] text-rose-900/80 basis-full">
+                  Tag stays on this unit through every follow-up until the date passes, then auto-clears.
+                </span>
+              </div>
+            )}
+
             {/* Tenant Notification — full PM-portal parity */}
             <div className={`rounded-lg border border-border bg-muted/30 p-3 space-y-3 ${isHOA || workOrder.request_type === "general" ? "hidden" : ""}`}>
               <label className="flex items-center gap-2 cursor-pointer">
