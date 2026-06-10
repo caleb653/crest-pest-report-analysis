@@ -21,8 +21,8 @@ const reportTypes = [
   },
   {
     id: "sales",
-    title: "Sales Report (Old Version)",
-    description: "Create a single-service sales report",
+    title: "Archived Sales Report",
+    description: "Legacy single-service report (archive only — do not create new)",
     icon: FileText,
     path: "/report",
     color: "text-blue-600",

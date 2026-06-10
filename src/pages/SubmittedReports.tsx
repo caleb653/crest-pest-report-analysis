@@ -621,8 +621,8 @@ const SubmittedReports = () => {
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="sales-all">Sales (All)</SelectItem>
-                  <SelectItem value="sales">Single Sales</SelectItem>
-                  <SelectItem value="multi-proposal">Multi-Proposal</SelectItem>
+                  <SelectItem value="multi-proposal">Sales</SelectItem>
+                  <SelectItem value="sales">Archived Sales</SelectItem>
                   <SelectItem value="initial">Initial</SelectItem>
                   <SelectItem value="pre-proposal">Pre-Proposal</SelectItem>
                   <SelectItem value="won">Won Deals</SelectItem>
@@ -751,7 +751,7 @@ const SubmittedReports = () => {
                             </Badge>
 
                             <Badge variant={report.report_type === "initial" ? "secondary" : report.report_type === "multi-proposal" ? "outline" : "default"}>
-                              {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Multi-Proposal" : "Sales"}
+                              {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Sales" : "Archived Sales"}
                             </Badge>
 
                             {report.is_pre_proposal && (

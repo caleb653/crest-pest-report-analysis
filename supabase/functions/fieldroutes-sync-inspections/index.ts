@@ -232,7 +232,10 @@ serve(async (req) => {
           service_date: c.appointment_date || null,
           report_title: c.service_name,
           target_pests: isRodent ? ["Rodents"] : [],
-          notes: null,
+          // Auto-created FR reports always use the NEW Sales (multi-proposal)
+          // format. The legacy /report flow is archived.
+          notes: JSON.stringify({ _reportFormat: "multi-proposal", _source: "fieldroutes-sync" }),
+          customer_preferences: { reportFormat: "multi-proposal" },
           fieldroutes_customer_id: c.customer_id,
           fieldroutes_appointment_id: c.appointment_id,
         };
