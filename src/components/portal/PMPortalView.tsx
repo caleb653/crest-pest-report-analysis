@@ -2630,6 +2630,41 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       {/* Card body — 2-column grid mirroring admin upcoming */}
                                       {isUcOpen && (
                                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                                        {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                                        <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                                          <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
+                                            🏠 New Tenant Move-In
+                                          </span>
+                                          <input
+                                            type="date"
+                                            className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                                            value={uc.tenant_move_in_date || ""}
+                                            min={new Date().toISOString().slice(0, 10)}
+                                            onChange={async (e) => {
+                                              const dateVal = e.target.value || null;
+                                              const prefs: any = property.customer_preferences || {};
+                                              const map = { ...(prefs.tenant_move_ins || {}) };
+                                              const key = String(uc.unit_number).trim();
+                                              if (dateVal) map[key] = dateVal;
+                                              else delete map[key];
+                                              const updatedPrefs = { ...prefs, tenant_move_ins: map };
+                                              const { error } = await supabase
+                                                .from("portal_properties")
+                                                .update({ customer_preferences: updatedPrefs })
+                                                .eq("id", property.id);
+                                              if (error) {
+                                                toast({ title: "Couldn't save move-in date", description: error.message, variant: "destructive" });
+                                              } else {
+                                                (property as any).customer_preferences = updatedPrefs;
+                                                setProperty({ ...property, customer_preferences: updatedPrefs } as any);
+                                                toast({ title: dateVal ? "Move-in date saved" : "Move-in date cleared", duration: 1500 });
+                                              }
+                                            }}
+                                          />
+                                          <span className="text-[11px] text-rose-900/80">
+                                            Tag stays on this unit through every follow-up until the date passes, then auto-clears.
+                                          </span>
+                                        </div>
                                         <div>
                                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
                                           <p className="text-sm font-medium">{uc.target_pest || "—"}</p>
