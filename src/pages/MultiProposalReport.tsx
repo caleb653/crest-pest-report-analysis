@@ -370,6 +370,9 @@ const Report = () => {
 
   // FieldRoutes customer link (chosen via the picker) + autofilled phone.
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  // FieldRoutes customer-portal URL ({loginlink}) — shown as a prominent
+  // "Customer Portal" button in the report header and emailed to the customer.
+  const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
 
