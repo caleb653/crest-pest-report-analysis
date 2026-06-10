@@ -26,6 +26,8 @@ interface SendReportRequest {
   reportType?: "sales" | "multi-proposal" | "initial";
   /** FieldRoutes {loginlink} — direct URL to the customer's billing/wallet portal. */
   customerPortalUrl?: string;
+  /** Additional file attachments fetched by URL (e.g. prep sheets). */
+  extraAttachments?: Array<{ url: string; filename: string }>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -49,6 +51,7 @@ const handler = async (req: Request): Promise<Response> => {
       buttonText,
       reportType,
       customerPortalUrl,
+      extraAttachments,
     }: SendReportRequest = await req.json();
 
     const sanitizeEmail = (e: string) => e.trim().replace(/[.\s,;]+$/, "");
@@ -180,6 +183,37 @@ const handler = async (req: Request): Promise<Response> => {
         ? "sales@crestpestco.com"
         : "office@crestpestcontrol.com";
 
+    // Fetch any extra attachments (prep sheets) and base64-encode them.
+    const fetchedExtras: Array<{ filename: string; content: string }> = [];
+    if (extraAttachments && extraAttachments.length > 0) {
+      for (const a of extraAttachments) {
+        try {
+          const r = await fetch(a.url);
+          if (!r.ok) {
+            console.warn("Failed to fetch attachment", a.url, r.status);
+            continue;
+          }
+          const buf = new Uint8Array(await r.arrayBuffer());
+          let binary = "";
+          const chunk = 0x8000;
+          for (let i = 0; i < buf.length; i += chunk) {
+            binary += String.fromCharCode.apply(
+              null,
+              Array.from(buf.subarray(i, i + chunk)) as unknown as number[],
+            );
+          }
+          fetchedExtras.push({ filename: a.filename, content: btoa(binary) });
+        } catch (e) {
+          console.warn("Attachment fetch error", a.url, e);
+        }
+      }
+    }
+
+    const allAttachments: Array<{ filename: string; content: string }> = [
+      ...(pdfBase64 ? [{ filename: pdfFilename || "Crest_Proposal.pdf", content: pdfBase64 }] : []),
+      ...fetchedExtras,
+    ];
+
     const requestBody: Record<string, unknown> = {
       from: "Crest Pest Control <reports@crestpestco.com>",
       reply_to: replyToAddress,
@@ -187,12 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
       ...(cleanCcEmails && cleanCcEmails.length > 0 ? { cc: cleanCcEmails } : {}),
       subject: finalSubject,
       html: emailHtml,
-      ...(pdfBase64 ? {
-        attachments: [{
-          filename: pdfFilename || "Crest_Proposal.pdf",
-          content: pdfBase64,
-        }],
-      } : {}),
+      ...(allAttachments.length > 0 ? { attachments: allAttachments } : {}),
     };
 
     const res = await fetch("https://api.resend.com/emails", {

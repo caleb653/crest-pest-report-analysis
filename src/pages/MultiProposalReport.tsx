@@ -33,6 +33,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
 import CustomerPicker from "@/components/CustomerPicker";
+import { PrepSheetPicker, buildPrepSheetAttachments } from "@/components/PrepSheetPicker";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import crestLogo from "@/assets/crest-logo.png";
@@ -600,6 +601,8 @@ const Report = () => {
   const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("none");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
+  const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
+  const [selectedPrepSheets, setSelectedPrepSheets] = useState<Array<{ id: string; title: string; file_url: string | null }>>([]);
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
@@ -1815,6 +1818,9 @@ Crest Pest Control`;
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
           customerPortalUrl: fieldroutesLoginLink || undefined,
+          ...(selectedPrepSheets.length > 0 ? {
+            extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),
+          } : {}),
           ...(pdfBase64 ? {
             pdfBase64,
             pdfFilename: `Crest_MultiProposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
@@ -4016,6 +4022,12 @@ Crest Pest Control`;
                 <Label htmlFor="pdf-none" className="text-sm cursor-pointer">No PDF attachment</Label>
               </div>
             </RadioGroup>
+          </div>
+          <div className="pt-2">
+            <PrepSheetPicker
+              selectedIds={selectedPrepSheetIds}
+              onChange={(ids, sheets) => { setSelectedPrepSheetIds(ids); setSelectedPrepSheets(sheets); }}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowComposeDialog(false)}>Cancel</Button>
