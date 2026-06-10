@@ -458,18 +458,15 @@ const Report = () => {
     return lines.join("<br>");
   };
 
-  // Auto-update content when pests change
+  // Services Completed and Recommendations are now snippet-pick only — they
+  // do NOT autopopulate from the pest list. We still keep "What to Expect"
+  // pre-filled with the boilerplate copy on first load.
   useEffect(() => {
-    // Skip only on initial load of existing report (handled by loadReport)
-    if (hasManuallyEditedFindings) return;
-    
-    if (editableTargetPests.length > 0 || editableEquipment.length > 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
-      setEditableFindings([content]);
+    if (!hasManuallyEditedFindings && editableExpectations.length === 0) {
       setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
-  }, [editableTargetPests, editableEquipment, editableProductsUsed, hasManuallyEditedFindings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-add rodent equipment when Rodents is selected
   useEffect(() => {
@@ -483,15 +480,44 @@ const Report = () => {
     }
   }, [editableTargetPests]);
 
-  // Initialize findings on first load (for new reports with default pests)
-  useEffect(() => {
-    if (!reportId && editableTargetPests.length > 0 && editableFindings.length === 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
-      setEditableFindings([content]);
-      setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
+  // Snippet toggle helpers — used by chip pickers above Services Completed
+  // and Recommendations. Chips are "active" when their snippet is already
+  // present; clicking removes it. Otherwise the snippet is appended.
+  const toggleFindingSnippet = (snippet: string) => {
+    const current = editableFindings[0] || "";
+    const lines = current.split("\n");
+    const idx = lines.findIndex((l) => l.trim() === snippet.trim());
+    let next: string;
+    if (idx >= 0) {
+      next = lines.filter((_, i) => i !== idx).join("\n").replace(/\n{3,}/g, "\n\n");
+    } else {
+      next = current.trim() ? `${current.replace(/\s+$/, "")}\n${snippet}` : snippet;
     }
-  }, []);
+    setEditableFindings([next]);
+    setHasManuallyEditedFindings(true);
+  };
+  const isFindingSnippetActive = (snippet: string) =>
+    (editableFindings[0] || "")
+      .split("\n")
+      .some((l) => l.trim() === snippet.trim());
+
+  const toggleRecSnippet = (snippet: string) => {
+    const current = editableRecommendations[0] || "";
+    const parts = current
+      .split(/<br\s*\/?>(?:\s*)/i)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const idx = parts.findIndex((p) => p === snippet);
+    let next: string;
+    if (idx >= 0) {
+      next = parts.filter((_, i) => i !== idx).join("<br>");
+    } else {
+      next = parts.length ? `${parts.join("<br>")}<br>${snippet}` : snippet;
+    }
+    setEditableRecommendations([next]);
+  };
+  const isRecSnippetActive = (snippet: string) =>
+    (editableRecommendations[0] || "").includes(snippet);
 
   const expandWithAI = async (
     text: string,
