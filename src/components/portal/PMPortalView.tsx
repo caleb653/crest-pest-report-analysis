@@ -517,6 +517,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setTenantEmail("");
       setSelectedPrepSheetId("");
       setRequestRightToTreat(false);
+      setTenantMoveInDate("");
       setWorkOrderPhotos([]);
       const { data: reqs } = await supabase
         .from("portal_requests")
