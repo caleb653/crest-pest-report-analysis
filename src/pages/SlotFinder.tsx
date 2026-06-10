@@ -369,7 +369,7 @@ function FindMode({
           window: window === "none" ? null : window,
           use_google: true,
           dates: selectedDates,
-          slots_per_day: 5,
+          slots_per_day: 2,
         },
       });
       if (error) throw error;
@@ -618,15 +618,24 @@ function SlotCard({
           <span className="flex items-center gap-1">
             After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
           </span>
-          {after.est_finish_min != null && (
-            <span>Finishes ~<span className="font-medium">{fmtTime(after.est_finish_min)}</span></span>
+          {after.est_finish_min != null && after.est_route_hours != null ? (
+            <span className="text-muted-foreground">
+              Day ≈ <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
+              {"–"}
+              <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
+              {" · "}{after.est_route_hours}h active (stops + drive, excl. commute)
+              {snap.has_home
+                ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
+                : " (no home base on file)"}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              ~{after.est_route_hours}h active
+              {snap.has_home
+                ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
+                : " (no home base on file)"}
+            </span>
           )}
-          <span className="text-muted-foreground">
-            ~{after.est_route_hours}h day (stops only)
-            {snap.has_home
-              ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-              : " (no home base on file)"}
-          </span>
         </div>
       )}
 
