@@ -31,8 +31,7 @@ import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedM
 import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
   ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
-  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
-  LogbookDateBadge,
+  BusinessLicenseSection, HelpTutorialSection,
 } from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
 import { AlertTriangle, TrendingUp, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
@@ -370,17 +369,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           </CardContent>
         </Card>
 
-        {/* Sprague-style logbook header */}
-        <Card>
-          <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <LogbookDateBadge services={services as any} />
-              <span className="text-[11px] text-muted-foreground">Online Logbook</span>
-            </div>
-            <DownloadLogbookButton propertyName={property.name} />
-          </CardContent>
-        </Card>
-
         <Tabs defaultValue="visits" className="w-full">
           <TabsList className="flex w-full flex-wrap h-auto p-1 gap-1 justify-start">
             <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
@@ -389,9 +377,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
             <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
             <TabsTrigger value="trending" className="text-[11px] gap-1 flex-1 min-w-[88px]"><TrendingUp className="w-3.5 h-3.5" />Trending</TabsTrigger>
-            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Materials</TabsTrigger>
+            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />SDS</TabsTrigger>
             <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
-            <TabsTrigger value="prep" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FileDown className="w-3.5 h-3.5" />Prep</TabsTrigger>
             <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
             <TabsTrigger value="contact" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
@@ -466,7 +453,14 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             </div>
                             <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                           </button>
-                          {isOpen && (
+                          {isOpen && (() => {
+                            const rd: any = (s as any).report_data || {};
+                            const targetPests: string[] = Array.isArray(rd.target_pests) ? rd.target_pests : [];
+                            const equipment: any[] = Array.isArray(rd.non_chem_equipment) ? rd.non_chem_equipment : [];
+                            const conditions: any[] = Array.isArray(rd.conditions)
+                              ? rd.conditions.filter((c: any) => c && c.status !== "Closed")
+                              : (Array.isArray(rd.concerns) ? rd.concerns : []);
+                            return (
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/60">
                               {hasFollowUp && s.follow_up_notes && (
                                 <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
@@ -474,44 +468,98 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                   <p className="text-sm text-orange-900 whitespace-pre-wrap leading-relaxed">{s.follow_up_notes}</p>
                                 </div>
                               )}
-                              {s.summary && (
+
+                              {/* 1. Service Notes (summary + findings + notes) */}
+                              {(s.summary || s.findings || s.notes) && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Summary</p>
-                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Service Notes</p>
+                                  <div className="space-y-1.5">
+                                    {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
+                                    {s.findings && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.findings}</p>}
+                                    {s.notes && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.notes}</p>}
+                                  </div>
                                 </div>
                               )}
-                              {s.findings && (
+
+                              {/* 2. Target Pests */}
+                              {targetPests.length > 0 && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Findings</p>
-                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.findings}</p>
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Target Pests</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {targetPests.map((p, i) => (
+                                      <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
-                              {s.notes && (
-                                <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Notes</p>
-                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.notes}</p>
-                                </div>
-                              )}
+
+                              {/* 3. Product Used */}
                               {products.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                                    <FlaskConical className="w-3 h-3" /> Products Used
+                                    <FlaskConical className="w-3 h-3" /> Product Used
                                   </p>
                                   <ProductUsageSummary entries={products} />
                                 </div>
                               )}
+
+                              {/* 4. Equipment Used */}
+                              {equipment.length > 0 && (
+                                <div>
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                    <Wrench className="w-3 h-3" /> Equipment Used
+                                  </p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {equipment.map((e: any, i: number) => (
+                                      <Badge key={i} variant="outline" className="text-[11px]">
+                                        {e?.name || String(e)}{e?.qty ? ` × ${e.qty}` : ""}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 5. Active Conditions */}
+                              {conditions.length > 0 && (
+                                <div>
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" /> Active Conditions
+                                  </p>
+                                  <ul className="space-y-1.5">
+                                    {conditions.map((c: any, i: number) => (
+                                      <li key={i} className="text-sm bg-muted/40 rounded-md p-2 border border-border/60">
+                                        <p className="font-semibold">{c.condition || c.name || c.area || "Condition"}</p>
+                                        {c.detail && <p className="text-xs text-muted-foreground mt-0.5">{c.detail}</p>}
+                                        {Array.isArray(c.photos) && c.photos.length > 0 && (
+                                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                            {c.photos.map((url: string, j: number) => (
+                                              <a key={j} href={url} target="_blank" rel="noopener noreferrer"
+                                                className="block w-full max-w-[180px] aspect-[4/3] rounded border overflow-hidden bg-background">
+                                                <img src={url} alt="Condition" loading="lazy" className="w-full h-full object-contain bg-muted/30" />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {/* 6. Other Property Images */}
                               {photos.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                                    <Camera className="w-3 h-3" /> Photos
+                                    <Camera className="w-3 h-3" /> Other Property Images
                                   </p>
-                                  <div className="flex flex-wrap gap-1.5">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {photos.map((p: any, i: number) => {
                                       const url = typeof p === "string" ? p : p?.url;
                                       if (!url) return null;
                                       return (
-                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-md border border-border overflow-hidden bg-muted">
-                                          <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                          className="block w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30">
+                                          <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
                                         </a>
                                       );
                                     })}
@@ -520,7 +568,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               )}
                               <PesticideNotice />
                             </div>
-                          )}
+                            );
+                          })()}
                         </CardContent>
                       </Card>
                     );
@@ -732,12 +781,12 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <PestTrendingSection requests={requests as any} />
             <DeviceTrendingSection services={services as any} />
             <ServiceRecordsSection services={services as any} />
+            <MaterialUseLogSection services={services as any} />
           </TabsContent>
 
-          {/* ─── MATERIALS ─── */}
+          {/* ─── SAFETY DATA SHEETS ─── */}
           <TabsContent value="materials" className="mt-3 space-y-6">
             <CommercialApprovedMaterials />
-            <MaterialUseLogSection services={services as any} />
           </TabsContent>
 
           {/* ─── TEAM & LICENSING ─── */}
@@ -749,77 +798,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           {/* ─── HELP ─── */}
           <TabsContent value="help" className="mt-3">
             <HelpTutorialSection />
-          </TabsContent>
-
-          {/* ─── PREP SHEETS ─── */}
-          <TabsContent value="prep" className="space-y-3 mt-3">
-            <div className="border-b-2 border-primary/70 pb-2 mb-2">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <FileDown className="w-5 h-5 text-primary" />Prep Sheets
-                <Badge variant="secondary" className="text-xs ml-1">{prepSheets.length}</Badge>
-              </h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                Treatment prep instructions you can view, download, or share.
-              </p>
-            </div>
-            {prepSheets.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">
-                No prep sheets available yet.
-              </CardContent></Card>
-            ) : (
-              <div className="space-y-2">
-                {prepSheets.map(ps => {
-                  const open = expandedPrep === ps.id;
-                  return (
-                    <Card key={ps.id}>
-                      <button
-                        type="button"
-                        className="w-full text-left p-3 flex items-center justify-between"
-                        onClick={() => setExpandedPrep(open ? null : ps.id)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{ps.title}</p>
-                          <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-                      </button>
-                      {open && (
-                        <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
-                          {ps.description && (
-                            <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
-                              <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
-                            </div>
-                          )}
-                          <div className="flex flex-wrap gap-1.5">
-                            {ps.file_url && (
-                              <Button size="sm" variant="outline" className="h-9 text-xs"
-                                onClick={() => window.open(ps.file_url!, "_blank", "noopener,noreferrer")}>
-                                <Eye className="w-3.5 h-3.5 mr-1" />View
-                              </Button>
-                            )}
-                            {ps.file_url && (
-                              <Button size="sm" variant="outline" className="h-9 text-xs"
-                                onClick={() => { window.open(ps.file_url!, "_blank"); }}>
-                                <Download className="w-3.5 h-3.5 mr-1" />Download
-                              </Button>
-                            )}
-                            {ps.file_url && (
-                              <Button size="sm" variant="outline" className="h-9 text-xs"
-                                onClick={async () => {
-                                  await navigator.clipboard.writeText(ps.file_url!);
-                                  toast({ title: "Link copied" });
-                                }}>
-                                <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
           </TabsContent>
 
           {/* ─── CONTACT ─── */}

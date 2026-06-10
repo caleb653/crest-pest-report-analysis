@@ -90,11 +90,11 @@ export default function CommercialApprovedMaterials({ highlightOnly, compact }: 
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <p className="text-base font-bold flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-primary" /> Approved Materials
+            <ShieldCheck className="w-5 h-5 text-primary" /> Safety Data Sheets
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 max-w-prose">
-            The complete list of products Crest is approved to use on this commercial site.
-            Click <span className="font-semibold">SDS</span> next to any product to view its
+            Every product Crest is approved to use on this commercial site. Click
+            <span className="font-semibold"> SDS </span>next to any product to view its
             Safety Data Sheet.
           </p>
         </div>
