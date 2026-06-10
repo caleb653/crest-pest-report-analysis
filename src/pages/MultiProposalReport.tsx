@@ -4023,6 +4023,12 @@ Crest Pest Control`;
               </div>
             </RadioGroup>
           </div>
+          <div className="pt-2">
+            <PrepSheetPicker
+              selectedIds={selectedPrepSheetIds}
+              onChange={(ids, sheets) => { setSelectedPrepSheetIds(ids); setSelectedPrepSheets(sheets); }}
+            />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowComposeDialog(false)}>Cancel</Button>
             <Button onClick={handleSendEmail} disabled={isSendingEmail || !customerEmail || !reportId}>
