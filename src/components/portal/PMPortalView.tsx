@@ -464,7 +464,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         description: "Crest will reach out shortly.",
       });
       // Persist optional move-in date onto property prefs (keyed by unit).
-      if (!isGeneral && canonical && tenantMoveInDate) {
+      if (!isGeneral && canonical && tenantMoveInDate && property) {
         try {
           const prefs: any = property.customer_preferences || {};
           const map = { ...(prefs.tenant_move_ins || {}) };
