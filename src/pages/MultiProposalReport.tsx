@@ -1851,7 +1851,7 @@ Crest Pest Control`;
           emailMessage,
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
-          customerPortalUrl: fieldroutesLoginLink || customerPortalHref,
+          customerPortalUrl: fieldroutesLoginLink || undefined,
           ...(selectedPrepSheets.length > 0 ? {
             extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),
           } : {}),
