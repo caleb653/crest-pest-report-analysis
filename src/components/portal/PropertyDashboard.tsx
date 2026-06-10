@@ -2866,6 +2866,10 @@ const PropertyDashboard = ({
       isFirstUpcoming: isUpcoming && isFirstUpcoming,
       requests: pendingRequests,
       mostRecentPast: pastServices[0] || null,
+      // Include ad-hoc completed visits in the lookup so per-unit notes
+      // from an ad-hoc visit carry forward to the next scheduled visit's
+      // pre-fill (cadence/follow-up math still uses pastServices only).
+      allPastServices: pastServicesForDisplay,
       tenantMoveIns:
         (property.customer_preferences as any)?.tenant_move_ins || null,
     });
@@ -5697,6 +5701,7 @@ const PropertyDashboard = ({
                 isFirstUpcoming: isFirst,
                 requests: pendingRequests,
                 mostRecentPast: pastServices[0] || null,
+                allPastServices: pastServicesForDisplay,
                 tenantMoveIns:
                   (property.customer_preferences as any)?.tenant_move_ins || null,
               });
