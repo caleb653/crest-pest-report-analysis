@@ -625,7 +625,7 @@ const AppointmentReport = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Concerns Observed</Label>
+                  <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Active Conditions</Label>
                   <div className="flex flex-wrap gap-2">
                     {COMMERCIAL_CONCERNS.map(c => {
                       const active = concerns.includes(c);

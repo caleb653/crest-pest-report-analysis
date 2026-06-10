@@ -612,17 +612,6 @@ export default function CommercialDashboardView({
         </CardContent>
       </Card>
 
-      {/* Sprague-style logbook header — date range + one-click download */}
-      <Card>
-        <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <LogbookDateBadge services={services as any} />
-            <span className="text-xs text-muted-foreground">Online Logbook for {property.name}</span>
-          </div>
-          <DownloadLogbookButton propertyName={property.name} />
-        </CardContent>
-      </Card>
-
       {/* Portal links for this property */}
       {propertyLinks.length > 0 && (
         <Card>
@@ -676,7 +665,7 @@ export default function CommercialDashboardView({
           </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FlaskConical className="w-5 h-5" />
-            <span>Materials &amp; Prep Sheets <Badge variant="secondary" className="ml-1 text-xs h-4">{prepSheets.length}</Badge></span>
+            <span>Safety Data Sheets</span>
           </TabsTrigger>
           <TabsTrigger value="help" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
@@ -1340,87 +1329,10 @@ export default function CommercialDashboardView({
           </div>
         </TabsContent>
 
-        {/* ════════ TAB: Materials & Prep Sheets ════════ */}
+        {/* ════════ TAB: Safety Data Sheets ════════ */}
         <TabsContent value="materials" className="mt-0 space-y-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <CommercialApprovedMaterials />
-            <PropertyEquipmentCard
-              propertyId={property.id}
-              initial={property.equipment}
-              onSaved={onRefresh}
-            />
-            <MaterialUseLogSection services={services as any} />
-            <Card>
-              <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <FileDown className="w-5 h-5 text-primary" /> Prep Sheets
-                  <Badge variant="secondary" className="ml-1 text-xs">{prepSheets.length}</Badge>
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Treatment prep instructions you can view, download, or share with the customer.
-                </p>
-              </CardHeader>
-              <CardContent className="p-4">
-                {prepSheets.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No prep sheets uploaded yet.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {prepSheets.map(ps => {
-                      const open = expandedPrep === ps.id;
-                      return (
-                        <Card key={ps.id} className="border-border/60">
-                          <button
-                            type="button"
-                            className="w-full text-left p-3 flex items-center justify-between"
-                            onClick={() => setExpandedPrep(open ? null : ps.id)}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold truncate">{ps.title}</p>
-                              <p className="text-[11px] text-muted-foreground">{ps.treatment_type}</p>
-                            </div>
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-                          </button>
-                          {open && (
-                            <div className="px-3 pb-3 border-t border-border pt-3 space-y-2">
-                              {ps.description && (
-                                <div className="bg-muted/30 rounded-lg p-3 max-h-[360px] overflow-y-auto">
-                                  <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{ps.description}</pre>
-                                </div>
-                              )}
-                              <div className="flex flex-wrap gap-1.5">
-                                {ps.file_url && (
-                                  <Button size="sm" variant="outline" className="h-9 text-xs"
-                                    onClick={() => window.open(ps.file_url, "_blank", "noopener,noreferrer")}>
-                                    <Eye className="w-3.5 h-3.5 mr-1" />View
-                                  </Button>
-                                )}
-                                {ps.file_url && (
-                                  <Button size="sm" variant="outline" className="h-9 text-xs"
-                                    onClick={() => window.open(ps.file_url, "_blank")}>
-                                    <Download className="w-3.5 h-3.5 mr-1" />Download
-                                  </Button>
-                                )}
-                                {ps.file_url && (
-                                  <Button size="sm" variant="outline" className="h-9 text-xs"
-                                    onClick={async () => {
-                                      await navigator.clipboard.writeText(ps.file_url);
-                                      toast({ title: "Link copied" });
-                                    }}>
-                                    <Copy className="w-3.5 h-3.5 mr-1" />Copy Link
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
