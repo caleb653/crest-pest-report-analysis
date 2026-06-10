@@ -2165,7 +2165,7 @@ Crest Pest Control`;
 
             {/* FieldRoutes customer link — search & select to autofill + link */}
             {!isReadOnly && (
-              <div className="mb-3 no-print">
+              <div className="mb-3 no-print space-y-2">
                 <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
                 <CustomerPicker
                   staffName={currentStaff?.fullName}
@@ -2182,6 +2182,19 @@ Crest Pest Control`;
                   }}
                   onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
                 />
+                {fieldroutesCustomerId && (
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                      Customer Portal loginLink (paste from FieldRoutes — used by the "Open Customer Portal" button)
+                    </p>
+                    <Input
+                      value={fieldroutesLoginLink ?? ""}
+                      onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                      placeholder="https://crestpest.pestportals.com/?loginHash=…"
+                      className="text-xs font-mono"
+                    />
+                  </div>
+                )}
               </div>
             )}
             {isReadOnly && fieldroutesCustomerId && (
