@@ -196,8 +196,8 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
       const newlyClosed: ConditionRow[] = [];
       for (const r of rows) {
         const p = prevById.get(r.id);
-        const prevDesc = (p?.description || "").trim();
-        const nextDesc = (r.description || "").trim();
+        const prevDesc = ((p?.condition || "") + (p?.detail || "")).trim();
+        const nextDesc = ((r.condition || "") + (r.detail || "")).trim();
         if (!prevDesc && nextDesc) newlyDescribed.push(r);
         if (p && p.status !== "Closed" && r.status === "Closed") newlyClosed.push(r);
       }
@@ -216,7 +216,8 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
               `Severity: ${r.severity}\n` +
               `Responsible: ${r.responsibility || "—"}\n` +
               `Status: ${r.status}\n\n` +
-              `Description:\n${r.description}\n\n` +
+              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
+              `Detail:\n${r.detail || "—"}\n\n` +
               `Action requested:\n${r.action || "—"}`,
           },
         });
@@ -232,7 +233,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
               `A condition was marked Closed.\n\n` +
               `Visit: ${visitLabel}\n` +
               `Area: ${r.area || "—"}\n` +
-              `Description:\n${r.description}\n\n` +
+              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
               `Resolution note:\n${r.resolution_note || "—"}`,
           },
         });
