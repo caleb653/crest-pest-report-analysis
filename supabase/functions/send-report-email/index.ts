@@ -103,8 +103,26 @@ const handler = async (req: Request): Promise<Response> => {
                   </tr>
                 </table>
 
+                ${reportUrl ? `
+                <!-- View Proposal Button (Sage Green, Squared) -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
+                  <tr>
+                    <td style="text-align: center;">
+                      <a href="${reportUrl}" style="display: inline-block; background-color: #C3D1C5; color: #2A2A2A; padding: 16px 36px; text-decoration: none; border-radius: 0; font-weight: 700; font-size: 16px; border: 1px solid #95A197;">${buttonText || "View Your Proposal"}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: center; padding-top: 16px;">
+                      <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
+                        Click the button above to view and sign your proposal.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                ` : ""}
+
                 ${customerPortalUrl ? `
-                <!-- Customer Portal Button -->
+                <!-- Customer Portal Button (Black) -->
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 24px;">
                   <tr>
                     <td style="text-align: center;">
@@ -115,24 +133,6 @@ const handler = async (req: Request): Promise<Response> => {
                     <td style="text-align: center; padding-top: 10px;">
                       <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
                         Add a payment method and review service notes.
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-                ` : ""}
-
-                ${reportUrl ? `
-                <!-- Button -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 32px;">
-                  <tr>
-                    <td style="text-align: center;">
-                      <a href="${reportUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">${buttonText || "View Your Proposal"}</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style="text-align: center; padding-top: 16px;">
-                      <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
-                        Click the button above to view and sign your proposal.
                       </p>
                     </td>
                   </tr>
