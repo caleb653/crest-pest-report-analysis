@@ -1184,9 +1184,6 @@ export default function CommercialDashboardView({
                       </div>
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Open Report
-                        </Button>
                         <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
                           <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
