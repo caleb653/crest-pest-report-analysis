@@ -70,30 +70,107 @@ const TECHNICIANS = [
   { name: "David Longoria", license: "FR 71710" },
 ];
 
+const GENERAL_PESTS_LABEL =
+  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)";
+
 const PEST_OPTIONS = [
-  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)",
-  "Ants",
-  "Spiders",
-  "Rodents",
-  "Roaches",
-  "American Roaches",
-  "Wasps",
-  "Bed Bugs",
-  "Fleas",
-  "Ticks",
-  "Mosquitoes",
-  "Silverfish",
-  "Earwigs",
-  "Crickets",
-  "Centipedes",
-  "Millipedes",
-  "Drain Flies",
+  GENERAL_PESTS_LABEL,
+  ...[
+    "Ants",
+    "Spiders",
+    "Rodents",
+    "Roaches",
+    "American Roaches",
+    "Wasps",
+    "Bed Bugs",
+    "Fleas",
+    "Ticks",
+    "Mosquitoes",
+    "Silverfish",
+    "Earwigs",
+    "Crickets",
+    "Centipedes",
+    "Millipedes",
+    "Drain Flies",
+  ].sort((a, b) => a.localeCompare(b)),
   "Other",
 ];
 
+// Per-pest snippet libraries. Techs tap chips to add/remove bullets; nothing
+// is preselected. Keys must match entries in PEST_OPTIONS (or the General
+// Pests label) so chip groups appear when that pest is selected.
+const SERVICE_SNIPPETS: Record<string, string[]> = {
+  [GENERAL_PESTS_LABEL]: [
+    "• Inspected interior and exterior for general pest activity and entry points",
+    "• Applied targeted general pest treatments to ensure a protective barrier around the home",
+    "• Applied targeted general pest treatments, including organic solutions, to ensure a protective barrier around the home",
+    "• De-webbed the entire home",
+  ],
+  Ants: ["• Inspected for ant activity and treated ant trails and entry points"],
+  Spiders: [
+    "• Inspected for spider activity, removed webs, and applied spider-targeted treatments",
+  ],
+  Roaches: [
+    "• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas",
+  ],
+  "American Roaches": [
+    "• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas",
+  ],
+  Wasps: ["• Inspected for wasp nests and treated active wasp activity areas"],
+  Earwigs: ["• Inspected for earwig activity and treated entry points and harborage areas"],
+  Crickets: ["• Inspected for cricket activity and treated perimeter and entry points"],
+  Silverfish: ["• Inspected for silverfish activity in moisture-prone areas and applied treatments"],
+  Centipedes: ["• Inspected for centipede/millipede activity and treated perimeter and foundation areas"],
+  Millipedes: ["• Inspected for centipede/millipede activity and treated perimeter and foundation areas"],
+  Fleas: ["• Inspected for flea and tick activity in outdoor areas and applied treatments"],
+  Ticks: ["• Inspected for flea and tick activity in outdoor areas and applied treatments"],
+  Rodents: [
+    "• Inspected for rodent activity and strategically placed traps in areas of highest activity",
+    "• Will monitor and adjust trap placement as needed to ensure effective rodent control",
+    "• Installed rodent bait stations around the property perimeter",
+  ],
+  Mosquitoes: [
+    "• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations",
+    "• Targeted adult mosquitoes and larvae with long-lasting products",
+  ],
+  "Bed Bugs": [
+    "• Inspected sleeping areas, furniture, and baseboards for bed bug activity",
+    "• Applied targeted bed bug treatments to affected areas",
+  ],
+  "Drain Flies": ["• Inspected and treated drains for drain fly breeding activity"],
+};
+
+const RECOMMENDATION_SNIPPETS: Record<string, string[]> = {
+  [GENERAL_PESTS_LABEL]: [
+    "<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering",
+    "<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting",
+  ],
+  Ants: ["<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering"],
+  Spiders: ["<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting"],
+  "American Roaches": [
+    "<strong>American & Oriental Cockroaches:</strong> (1) Keep garages/laundry clutter-free (2) Don't leave pet food/water out",
+  ],
+  Roaches: [
+    "<strong>American & Oriental Cockroaches:</strong> (1) Keep garages/laundry clutter-free (2) Don't leave pet food/water out",
+  ],
+  Crickets: ["<strong>Crickets:</strong> (1) Reduce moisture & fix leaks (2) Turn off exterior lights"],
+  Earwigs: ["<strong>Earwigs:</strong> (1) Clear mulch/debris near home (2) Avoid overwatering foundations"],
+  Fleas: ["<strong>Fleas:</strong> (1) Wash pet bedding hot (2) Vacuum pet areas often"],
+  Ticks: ["<strong>Fleas:</strong> (1) Wash pet bedding hot (2) Vacuum pet areas often"],
+  Silverfish: ["<strong>Silverfish:</strong> (1) Lower humidity (2) Declutter & vacuum cracks"],
+  Wasps: ["<strong>Wasps:</strong> (1) Cover food/drinks outdoors (2) Seal & rinse trash cans"],
+  "Bed Bugs": ["<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements"],
+  Mosquitoes: ["<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation"],
+  "Drain Flies": ["<strong>Drain Flies:</strong> (1) Clean drains regularly (2) Avoid grease/food waste"],
+  Rodents: [
+    "<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free",
+    "<strong>Mice:</strong> (1) Store food sealed (2) Clean crumbs & spills promptly",
+  ],
+};
+
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
-const GENERAL_PESTS_OPTION = PEST_OPTIONS[0];
+const GENERAL_PESTS_OPTION = GENERAL_PESTS_LABEL;
 
 const PRODUCT_OPTIONS = [
   "Alpine WSG",
@@ -192,7 +269,7 @@ const Report = () => {
   };
   const [editableTargetPests, setEditableTargetPests] = useState<string[]>(
     targetPests?.filter((p: string) => p) ||
-      (isRodentExclusion ? ["Rodents"] : [GENERAL_PESTS_OPTION]),
+      (isRodentExclusion ? ["Rodents"] : []),
   );
   const [editableProductsUsed, setEditableProductsUsed] = useState<string[]>(
     productsUsed?.filter((p: string) => p) || [],
@@ -381,18 +458,15 @@ const Report = () => {
     return lines.join("<br>");
   };
 
-  // Auto-update content when pests change
+  // Services Completed and Recommendations are now snippet-pick only — they
+  // do NOT autopopulate from the pest list. We still keep "What to Expect"
+  // pre-filled with the boilerplate copy on first load.
   useEffect(() => {
-    // Skip only on initial load of existing report (handled by loadReport)
-    if (hasManuallyEditedFindings) return;
-    
-    if (editableTargetPests.length > 0 || editableEquipment.length > 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
-      setEditableFindings([content]);
+    if (!hasManuallyEditedFindings && editableExpectations.length === 0) {
       setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
     }
-  }, [editableTargetPests, editableEquipment, editableProductsUsed, hasManuallyEditedFindings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-add rodent equipment when Rodents is selected
   useEffect(() => {
@@ -406,15 +480,44 @@ const Report = () => {
     }
   }, [editableTargetPests]);
 
-  // Initialize findings on first load (for new reports with default pests)
-  useEffect(() => {
-    if (!reportId && editableTargetPests.length > 0 && editableFindings.length === 0) {
-      const content = generateContentFromSelections(editableTargetPests, editableEquipment, editableProductsUsed);
-      setEditableFindings([content]);
-      setEditableExpectations([generateExpectations()]);
-      setEditableRecommendations([generateRecommendations(editableTargetPests)]);
+  // Snippet toggle helpers — used by chip pickers above Services Completed
+  // and Recommendations. Chips are "active" when their snippet is already
+  // present; clicking removes it. Otherwise the snippet is appended.
+  const toggleFindingSnippet = (snippet: string) => {
+    const current = editableFindings[0] || "";
+    const lines = current.split("\n");
+    const idx = lines.findIndex((l) => l.trim() === snippet.trim());
+    let next: string;
+    if (idx >= 0) {
+      next = lines.filter((_, i) => i !== idx).join("\n").replace(/\n{3,}/g, "\n\n");
+    } else {
+      next = current.trim() ? `${current.replace(/\s+$/, "")}\n${snippet}` : snippet;
     }
-  }, []);
+    setEditableFindings([next]);
+    setHasManuallyEditedFindings(true);
+  };
+  const isFindingSnippetActive = (snippet: string) =>
+    (editableFindings[0] || "")
+      .split("\n")
+      .some((l) => l.trim() === snippet.trim());
+
+  const toggleRecSnippet = (snippet: string) => {
+    const current = editableRecommendations[0] || "";
+    const parts = current
+      .split(/<br\s*\/?>(?:\s*)/i)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const idx = parts.findIndex((p) => p === snippet);
+    let next: string;
+    if (idx >= 0) {
+      next = parts.filter((_, i) => i !== idx).join("<br>");
+    } else {
+      next = parts.length ? `${parts.join("<br>")}<br>${snippet}` : snippet;
+    }
+    setEditableRecommendations([next]);
+  };
+  const isRecSnippetActive = (snippet: string) =>
+    (editableRecommendations[0] || "").includes(snippet);
 
   const expandWithAI = async (
     text: string,
@@ -2493,6 +2596,45 @@ Crest Pest Control
                   </div>
                 ) : (
                   <>
+                    {editableTargetPests.length > 0 && (
+                      <div className="no-print space-y-2">
+                        {editableTargetPests
+                          .filter((p) => SERVICE_SNIPPETS[p]?.length)
+                          .map((pest) => (
+                            <div key={pest} className="space-y-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {pest.startsWith("General Pests") ? "General Pests" : pest}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {SERVICE_SNIPPETS[pest].map((snip) => {
+                                  const active = isFindingSnippetActive(snip);
+                                  return (
+                                    <button
+                                      key={snip}
+                                      type="button"
+                                      onClick={() => toggleFindingSnippet(snip)}
+                                      className={cn(
+                                        "text-left text-xs px-2.5 py-1.5 rounded-full border transition-colors",
+                                        active
+                                          ? "bg-primary text-primary-foreground border-primary"
+                                          : "bg-background text-foreground border-border hover:border-primary/50",
+                                      )}
+                                    >
+                                      {active && "✓ "}
+                                      {snip.replace(/^•\s*/, "")}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        {editableTargetPests.every((p) => !SERVICE_SNIPPETS[p]?.length) && (
+                          <p className="text-xs text-muted-foreground italic">
+                            No preset snippets for the selected pests — type your own below.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <Textarea
                       value={editableFindings[0] || ""}
                       onChange={(e) => {
@@ -2537,6 +2679,40 @@ Crest Pest Control
             {/* Recommendations Section */}
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
+              {editableTargetPests.length > 0 && (
+                <div className="no-print px-3 pb-2 space-y-2">
+                  {editableTargetPests
+                    .filter((p) => RECOMMENDATION_SNIPPETS[p]?.length)
+                    .map((pest) => (
+                      <div key={pest} className="space-y-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {pest.startsWith("General Pests") ? "General Pests" : pest}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {RECOMMENDATION_SNIPPETS[pest].map((snip) => {
+                            const active = isRecSnippetActive(snip);
+                            return (
+                              <button
+                                key={snip}
+                                type="button"
+                                onClick={() => toggleRecSnippet(snip)}
+                                className={cn(
+                                  "text-left text-xs px-2.5 py-1.5 rounded-full border transition-colors",
+                                  active
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-background text-foreground border-border hover:border-primary/50",
+                                )}
+                                dangerouslySetInnerHTML={{
+                                  __html: `${active ? "✓ " : ""}${snip}`,
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
               <div className="p-3 no-print">
                 <RichTextEditor
                   value={editableRecommendations[0] || ""}
@@ -2544,13 +2720,13 @@ Crest Pest Control
                   placeholder="Enter recommendations for the customer..."
                   fontSize={recommendationsFontSize}
                   onFontSizeChange={setRecommendationsFontSize}
-                  className="min-h-[120px] text-dark-sage"
+                  className="min-h-[120px] text-foreground"
                   showControls={true}
                 />
               </div>
               {/* Print version */}
               <div
-                className="hidden print-content-formatted text-dark-sage p-3"
+                className="hidden print-content-formatted text-foreground p-3"
                 style={{ fontSize: `${recommendationsFontSize}px` }}
                 dangerouslySetInnerHTML={{
                   __html: (editableRecommendations[0] || "").replace(/\n/g, "<br/>"),
