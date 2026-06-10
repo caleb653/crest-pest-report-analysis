@@ -867,6 +867,33 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
+                        {/* Recent Pest Sightings — auto-surfaced at top so the
+                            Route Manager can address open issues during this visit. */}
+                        {recentSightings.length > 0 && (
+                          <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
+                              <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                {recentSightings.length} open
+                              </Badge>
+                            </p>
+                            <div className="space-y-1">
+                              {recentSightings.slice(0, 4).map((sg: any) => (
+                                <p key={sg.id} className="text-xs text-amber-950 leading-snug">
+                                  <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                  {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                  {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
+                                </p>
+                              ))}
+                              {recentSightings.length > 4 && (
+                                <p className="text-[10px] text-amber-800 italic">
+                                  +{recentSightings.length - 4} more in Pest Sightings tab
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
