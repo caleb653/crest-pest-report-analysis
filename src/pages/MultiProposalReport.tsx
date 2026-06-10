@@ -374,6 +374,13 @@ const Report = () => {
   // FieldRoutes customer-portal URL ({loginlink}) — shown as a prominent
   // "Customer Portal" button in the report header and emailed to the customer.
   const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
+  // FieldRoutes/FieldPortals customer portal login page. The per-customer
+  // auto-login {loginlink} is NOT exposed by the FieldRoutes API (confirmed
+  // against the live customer object), so the button/email fall back to this
+  // generic portal login — the customer signs in to manage their account and add
+  // a payment method. If a real per-customer link is ever captured, it wins.
+  const FIELDROUTES_PORTAL_URL = "https://crestpestco.pestportals.com/";
+  const customerPortalHref = fieldroutesLoginLink || FIELDROUTES_PORTAL_URL;
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
 
@@ -1844,7 +1851,7 @@ Crest Pest Control`;
           emailMessage,
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
-          customerPortalUrl: fieldroutesLoginLink || undefined,
+          customerPortalUrl: customerPortalHref,
           ...(selectedPrepSheets.length > 0 ? {
             extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),
           } : {}),
@@ -3194,11 +3201,12 @@ Crest Pest Control`;
           )}
 
           {/* Customer Portal button — prominent at the top of the report header.
-              Uses the FieldRoutes {loginlink} for the linked customer. */}
-          {fieldroutesLoginLink && (
+              Prefers the FieldRoutes {loginlink} for the linked customer; falls
+              back to the generic FieldPortals login so it always appears. */}
+          {customerPortalHref && (
             <div className="mb-4">
               <a
-                href={fieldroutesLoginLink}
+                href={customerPortalHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 hover:bg-primary/15 transition-colors no-underline"
