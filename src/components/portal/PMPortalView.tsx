@@ -463,6 +463,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           : requestKind === "inspection" ? "Inspection request submitted" : "Work order submitted",
         description: "Crest will reach out shortly.",
       });
+      // Persist optional move-in date onto property prefs (keyed by unit).
+      if (!isGeneral && canonical && tenantMoveInDate) {
+        try {
+          const prefs: any = property.customer_preferences || {};
+          const map = { ...(prefs.tenant_move_ins || {}) };
+          map[String(canonical).trim()] = tenantMoveInDate;
+          const updatedPrefs = { ...prefs, tenant_move_ins: map };
+          await supabase
+            .from("portal_properties")
+            .update({ customer_preferences: updatedPrefs })
+            .eq("id", propertyId);
+          (property as any).customer_preferences = updatedPrefs;
+          setProperty({ ...property, customer_preferences: updatedPrefs } as any);
+        } catch (e) { console.error("save tenant_move_in failed", e); }
+      }
       if (pmInserted?.id) {
         try {
           await supabase.functions.invoke("notify-submission", {
