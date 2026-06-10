@@ -477,12 +477,13 @@ export default function CommercialDashboardView({
     await saveServiceField(s.id, { report_data: next });
   };
 
-  // Recent pest sightings (open + last 30 days) — surfaced on every visit
-  // card so the cofounder can see what to address.
+  // Recent pest sightings (Open + In Progress) — surfaced inline on every
+  // visit card so the Route Manager sees what's still outstanding without
+  // bouncing to the Sightings tab.
   const recentSightings = requests
-    .filter((r) => {
-      const created = new Date(r.created_at).getTime();
-      return Date.now() - created < 1000 * 60 * 60 * 24 * 45;
+    .filter((r: any) => {
+      const sStatus = (r.sighting_status || r.status || "").toLowerCase();
+      return sStatus !== "closed" && sStatus !== "completed" && sStatus !== "cancelled";
     })
     .slice(0, 6);
 
