@@ -504,7 +504,7 @@ function ConditionRowEditor({
             Notes / Comments (optional)
           </Label>
           <Textarea value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
-            placeholder="Internal notes about this condition…" rows={1.5 as any} className="text-sm" />
+            placeholder="Internal notes about this condition…" rows={2} className="text-sm" />
         </div>
       </div>
 
@@ -574,7 +574,7 @@ function ConditionRowEditor({
             )}
           </div>
           <Textarea value={local.resolution_note || ""} onChange={e => set("resolution_note", e.target.value)}
-            onBlur={flush} placeholder="What was done? (optional)" rows={1.5 as any} className="text-sm" />
+            onBlur={flush} placeholder="What was done? (optional)" rows={2} className="text-sm" />
           <div className="flex items-center gap-2">
             <Button size="sm" className="h-9 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={closeOut}>
               <Check className="w-3.5 h-3.5" /> Confirm Closed
