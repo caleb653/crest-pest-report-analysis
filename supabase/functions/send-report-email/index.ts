@@ -99,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
                     <td align="center" style="background-color: #f4f7f5; border: 1px solid #C3D1C5; border-radius: 10px; padding: 22px 20px;">
                       <p style="margin: 0 0 6px 0; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; color: #2A2A2A; text-transform: uppercase;">Customer Portal</p>
                       <p style="margin: 0 0 16px 0; font-size: 14px; color: #4b5563; line-height: 1.55;">
-                        Manage your account and <strong>add a payment method in the Wallet section</strong> of your Customer Portal.
+                        If you'd like to move forward, a payment method can be added at <a href="${customerPortalUrl}" style="color: #2A2A2A; font-weight: 700; text-decoration: underline;">this link</a> to your personal customer portal.
                       </p>
                       <a href="${customerPortalUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 14px 36px; text-decoration: none; border-radius: 6px; font-weight: 700; font-size: 16px;">Open Customer Portal</a>
                     </td>
