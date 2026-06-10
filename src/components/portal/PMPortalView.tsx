@@ -2611,6 +2611,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                               {uc.target_pest}
                                             </span>
                                           )}
+                                          {uc.tenant_move_in_date && (
+                                            <span
+                                              className="text-xs font-bold uppercase tracking-wide text-rose-900 bg-rose-100 border border-rose-400 px-2 py-0.5 rounded shadow-sm"
+                                              title="New tenant move-in date — keep this unit pristine"
+                                            >
+                                              🏠 New Tenant · {formatShortDate(uc.tenant_move_in_date)}
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="flex items-center gap-2">
                                           <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
