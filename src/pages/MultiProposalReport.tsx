@@ -988,6 +988,33 @@ const Report = () => {
     duplicateRenderedMapImagesRef.current = duplicateRenderedMapImages;
   }, [duplicateRenderedMapImages]);
 
+  // Backfill the FieldRoutes {loginlink} when the report is already linked to a
+  // customer but no portal URL was captured at link time (older reports). Looks
+  // the customer up by email and copies the loginLink so the prominent
+  // "Customer Portal" button can appear at the top of the report.
+  useEffect(() => {
+    if (!fieldroutesCustomerId || fieldroutesLoginLink) return;
+    const query = (customerEmail || editableCustomer || "").trim();
+    if (query.length < 2) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("fieldroutes-customer-search", {
+          body: { q: query, staffName: currentStaff?.fullName, limit: 25 },
+        });
+        if (cancelled || !data?.ok) return;
+        const match = (data.results ?? []).find(
+          (r: { customer_id?: string; loginLink?: string | null }) =>
+            String(r.customer_id) === String(fieldroutesCustomerId),
+        );
+        if (match?.loginLink) setFieldroutesLoginLink(String(match.loginLink));
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fieldroutesCustomerId, fieldroutesLoginLink, customerEmail, editableCustomer, currentStaff?.fullName]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (pestsDropdownRef.current && !pestsDropdownRef.current.contains(event.target as Node)) {
