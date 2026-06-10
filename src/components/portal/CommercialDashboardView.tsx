@@ -1082,6 +1082,25 @@ export default function CommercialDashboardView({
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
+                      {/* Recent Pest Sightings — auto-populated from open
+                          sightings so they're addressed on this upcoming visit. */}
+                      {openRequests.length > 0 && (
+                        <div className="rounded-md border-2 border-amber-300 bg-amber-50 p-2.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1.5 flex items-center gap-1">
+                            <Bug className="w-3 h-3" /> Recent Pest Sightings
+                            <Badge variant="secondary" className="ml-1 text-[10px] h-4">{openRequests.length}</Badge>
+                          </p>
+                          <ul className="space-y-1">
+                            {openRequests.map(r => (
+                              <li key={r.id} className="text-xs text-amber-950 leading-relaxed">
+                                <span className="font-semibold">{r.pest_type || r.request_type}</span>
+                                {r.location_type ? ` — ${r.location_type}` : ""}
+                                {r.description ? ` · ${r.description}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
@@ -1223,9 +1242,6 @@ export default function CommercialDashboardView({
                       </div>
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Open Report
-                        </Button>
                         <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
                           <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
@@ -1235,12 +1251,13 @@ export default function CommercialDashboardView({
                       </div>
                       <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
                         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                          <ClipboardList className="w-3 h-3" /> Conditions
+                          <AlertTriangle className="w-3 h-3" /> Active Conditions
                         </p>
                         <ConditionsReportSection
                           services={[s as any]}
                           onSaveServiceReportData={persistServiceReportData}
                           includeUndated
+                          onConditionAdded={notifyConditionAdded}
                         />
                       </div>
                     </CardContent>
