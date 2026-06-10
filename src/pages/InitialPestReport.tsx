@@ -2596,6 +2596,45 @@ Crest Pest Control
                   </div>
                 ) : (
                   <>
+                    {editableTargetPests.length > 0 && (
+                      <div className="no-print space-y-2">
+                        {editableTargetPests
+                          .filter((p) => SERVICE_SNIPPETS[p]?.length)
+                          .map((pest) => (
+                            <div key={pest} className="space-y-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {pest.startsWith("General Pests") ? "General Pests" : pest}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {SERVICE_SNIPPETS[pest].map((snip) => {
+                                  const active = isFindingSnippetActive(snip);
+                                  return (
+                                    <button
+                                      key={snip}
+                                      type="button"
+                                      onClick={() => toggleFindingSnippet(snip)}
+                                      className={cn(
+                                        "text-left text-xs px-2.5 py-1.5 rounded-full border transition-colors",
+                                        active
+                                          ? "bg-primary text-primary-foreground border-primary"
+                                          : "bg-background text-foreground border-border hover:border-primary/50",
+                                      )}
+                                    >
+                                      {active && "✓ "}
+                                      {snip.replace(/^•\s*/, "")}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        {editableTargetPests.every((p) => !SERVICE_SNIPPETS[p]?.length) && (
+                          <p className="text-xs text-muted-foreground italic">
+                            No preset snippets for the selected pests — type your own below.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <Textarea
                       value={editableFindings[0] || ""}
                       onChange={(e) => {
