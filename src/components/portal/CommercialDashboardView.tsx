@@ -879,9 +879,6 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Report
-                        </Button>
                         <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -889,6 +886,25 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
+                        {/* 0. Recent Pest Sightings — surfaces open/in-progress
+                            sightings so they're addressed on this visit. */}
+                        {openRequests.length > 0 && (
+                          <div className="rounded-md border-2 border-amber-300 bg-amber-50 p-2.5">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1.5 flex items-center gap-1">
+                              <Bug className="w-3 h-3" /> Recent Pest Sightings
+                              <Badge variant="secondary" className="ml-1 text-[10px] h-4">{openRequests.length}</Badge>
+                            </p>
+                            <ul className="space-y-1">
+                              {openRequests.map(r => (
+                                <li key={r.id} className="text-xs text-amber-950 leading-relaxed">
+                                  <span className="font-semibold">{r.pest_type || r.request_type}</span>
+                                  {r.location_type ? ` — ${r.location_type}` : ""}
+                                  {r.description ? ` · ${r.description}` : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
@@ -1027,11 +1043,12 @@ export default function CommercialDashboardView({
                         )}
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                            <ClipboardList className="w-3 h-3" /> Conditions
+                            <AlertTriangle className="w-3 h-3" /> Active Conditions
                           </p>
                           <ConditionsReportSection
                             services={[s as any]}
                             onSaveServiceReportData={persistServiceReportData}
+                            onConditionAdded={notifyConditionAdded}
                           />
                         </div>
                       </div>
