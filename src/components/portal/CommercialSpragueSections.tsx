@@ -165,9 +165,12 @@ interface ConditionsProps {
   onSaveServiceReportData?: (serviceId: string, nextReportData: any) => Promise<void> | void;
   /** Include services even when they have no service_date (e.g. upcoming visits). */
   includeUndated?: boolean;
+  /** Used for email notifications when conditions are added or closed. */
+  propertyName?: string;
+  notifyEmail?: string | null;
 }
 
-export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated }: ConditionsProps) {
+export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated, propertyName, notifyEmail }: ConditionsProps) {
   const past = useMemo(
     () => services
       .filter(s => includeUndated || s.service_date)
@@ -185,6 +188,60 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
     if (!onSaveServiceReportData) return;
     const next = { ...(s.report_data || {}), conditions: rows };
     await onSaveServiceReportData(s.id, next);
+    // ── Notify office when a condition gets first real description, or is closed ──
+    try {
+      const prev = conditionsFor(s);
+      const prevById = new Map(prev.map(r => [r.id, r]));
+      const newlyDescribed: ConditionRow[] = [];
+      const newlyClosed: ConditionRow[] = [];
+      for (const r of rows) {
+        const p = prevById.get(r.id);
+        const prevDesc = ((p?.condition || "") + (p?.detail || "")).trim();
+        const nextDesc = ((r.condition || "") + (r.detail || "")).trim();
+        if (!prevDesc && nextDesc) newlyDescribed.push(r);
+        if (p && p.status !== "Closed" && r.status === "Closed") newlyClosed.push(r);
+      }
+      const visitLabel = `${s.service_date ? fmtDay(s.service_date) : "Upcoming"} · ${s.service_type}`;
+      for (const r of newlyDescribed) {
+        await supabase.functions.invoke("send-portal-message", {
+          body: {
+            senderName: "Crest Portal — Conditions Log",
+            senderEmail: notifyEmail || undefined,
+            propertyName: propertyName || "Property",
+            subject: `New condition logged — ${propertyName || "Property"}`,
+            message:
+              `A new condition was logged.\n\n` +
+              `Visit: ${visitLabel}\n` +
+              `Area: ${r.area || "—"}\n` +
+              `Severity: ${r.severity}\n` +
+              `Responsible: ${r.responsibility || "—"}\n` +
+              `Status: ${r.status}\n\n` +
+              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
+              `Detail:\n${r.detail || "—"}\n\n` +
+              `Action requested:\n${r.action || "—"}`,
+          },
+        });
+      }
+      for (const r of newlyClosed) {
+        await supabase.functions.invoke("send-portal-message", {
+          body: {
+            senderName: "Crest Portal — Conditions Log",
+            senderEmail: notifyEmail || undefined,
+            propertyName: propertyName || "Property",
+            subject: `Condition resolved — ${propertyName || "Property"}`,
+            message:
+              `A condition was marked Closed.\n\n` +
+              `Visit: ${visitLabel}\n` +
+              `Area: ${r.area || "—"}\n` +
+              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
+              `Resolution note:\n${r.resolution_note || "—"}`,
+          },
+        });
+      }
+    } catch (e) {
+      // non-blocking — UI still saved
+      console.warn("[Conditions] notify failed", e);
+    }
   };
 
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
