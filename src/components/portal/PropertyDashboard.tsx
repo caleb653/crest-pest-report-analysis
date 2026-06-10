@@ -2745,6 +2745,8 @@ const PropertyDashboard = ({
       isFirstUpcoming: isUpcoming && isFirstUpcoming,
       requests: pendingRequests,
       mostRecentPast: pastServices[0] || null,
+      tenantMoveIns:
+        (property.customer_preferences as any)?.tenant_move_ins || null,
     });
     const displayUnits = isUpcoming ? merged.units : unitsPlanned;
 
@@ -5560,6 +5562,8 @@ const PropertyDashboard = ({
                 isFirstUpcoming: isFirst,
                 requests: pendingRequests,
                 mostRecentPast: pastServices[0] || null,
+                tenantMoveIns:
+                  (property.customer_preferences as any)?.tenant_move_ins || null,
               });
               const unitsPlanned = mergedHeader.units;
               const pmNotesMapHeader: Record<string, string> =
