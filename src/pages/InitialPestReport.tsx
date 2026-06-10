@@ -70,26 +70,103 @@ const TECHNICIANS = [
   { name: "David Longoria", license: "FR 71710" },
 ];
 
+const GENERAL_PESTS_LABEL =
+  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)";
+
 const PEST_OPTIONS = [
-  "General Pests: ants, spiders, cockroaches, earwigs, crickets, silverfish, centipedes, millipedes, wasps, fleas & ticks (outdoor only)",
-  "Ants",
-  "Spiders",
-  "Rodents",
-  "Roaches",
-  "American Roaches",
-  "Wasps",
-  "Bed Bugs",
-  "Fleas",
-  "Ticks",
-  "Mosquitoes",
-  "Silverfish",
-  "Earwigs",
-  "Crickets",
-  "Centipedes",
-  "Millipedes",
-  "Drain Flies",
+  GENERAL_PESTS_LABEL,
+  ...[
+    "Ants",
+    "Spiders",
+    "Rodents",
+    "Roaches",
+    "American Roaches",
+    "Wasps",
+    "Bed Bugs",
+    "Fleas",
+    "Ticks",
+    "Mosquitoes",
+    "Silverfish",
+    "Earwigs",
+    "Crickets",
+    "Centipedes",
+    "Millipedes",
+    "Drain Flies",
+  ].sort((a, b) => a.localeCompare(b)),
   "Other",
 ];
+
+// Per-pest snippet libraries. Techs tap chips to add/remove bullets; nothing
+// is preselected. Keys must match entries in PEST_OPTIONS (or the General
+// Pests label) so chip groups appear when that pest is selected.
+const SERVICE_SNIPPETS: Record<string, string[]> = {
+  [GENERAL_PESTS_LABEL]: [
+    "• Inspected interior and exterior for general pest activity and entry points",
+    "• Applied targeted general pest treatments to ensure a protective barrier around the home",
+    "• Applied targeted general pest treatments, including organic solutions, to ensure a protective barrier around the home",
+    "• De-webbed the entire home",
+  ],
+  Ants: ["• Inspected for ant activity and treated ant trails and entry points"],
+  Spiders: [
+    "• Inspected for spider activity, removed webs, and applied spider-targeted treatments",
+  ],
+  Roaches: [
+    "• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas",
+  ],
+  "American Roaches": [
+    "• Inspected for cockroach activity and applied cockroach-targeted treatments to harborage areas",
+  ],
+  Wasps: ["• Inspected for wasp nests and treated active wasp activity areas"],
+  Earwigs: ["• Inspected for earwig activity and treated entry points and harborage areas"],
+  Crickets: ["• Inspected for cricket activity and treated perimeter and entry points"],
+  Silverfish: ["• Inspected for silverfish activity in moisture-prone areas and applied treatments"],
+  Centipedes: ["• Inspected for centipede/millipede activity and treated perimeter and foundation areas"],
+  Millipedes: ["• Inspected for centipede/millipede activity and treated perimeter and foundation areas"],
+  Fleas: ["• Inspected for flea and tick activity in outdoor areas and applied treatments"],
+  Ticks: ["• Inspected for flea and tick activity in outdoor areas and applied treatments"],
+  Rodents: [
+    "• Inspected for rodent activity and strategically placed traps in areas of highest activity",
+    "• Will monitor and adjust trap placement as needed to ensure effective rodent control",
+    "• Installed rodent bait stations around the property perimeter",
+  ],
+  Mosquitoes: [
+    "• Set up mosquito stations to interrupt breeding cycle and neutralize future mosquito generations",
+    "• Targeted adult mosquitoes and larvae with long-lasting products",
+  ],
+  "Bed Bugs": [
+    "• Inspected sleeping areas, furniture, and baseboards for bed bug activity",
+    "• Applied targeted bed bug treatments to affected areas",
+  ],
+  "Drain Flies": ["• Inspected and treated drains for drain fly breeding activity"],
+};
+
+const RECOMMENDATION_SNIPPETS: Record<string, string[]> = {
+  [GENERAL_PESTS_LABEL]: [
+    "<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering",
+    "<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting",
+  ],
+  Ants: ["<strong>Ants:</strong> (1) Wipe food/sugar spills fast (2) Fix leaks & avoid overwatering"],
+  Spiders: ["<strong>Spiders:</strong> (1) Remove webs regularly (2) Reduce insects & outdoor lighting"],
+  "American Roaches": [
+    "<strong>American & Oriental Cockroaches:</strong> (1) Keep garages/laundry clutter-free (2) Don't leave pet food/water out",
+  ],
+  Roaches: [
+    "<strong>American & Oriental Cockroaches:</strong> (1) Keep garages/laundry clutter-free (2) Don't leave pet food/water out",
+  ],
+  Crickets: ["<strong>Crickets:</strong> (1) Reduce moisture & fix leaks (2) Turn off exterior lights"],
+  Earwigs: ["<strong>Earwigs:</strong> (1) Clear mulch/debris near home (2) Avoid overwatering foundations"],
+  Fleas: ["<strong>Fleas:</strong> (1) Wash pet bedding hot (2) Vacuum pet areas often"],
+  Ticks: ["<strong>Fleas:</strong> (1) Wash pet bedding hot (2) Vacuum pet areas often"],
+  Silverfish: ["<strong>Silverfish:</strong> (1) Lower humidity (2) Declutter & vacuum cracks"],
+  Wasps: ["<strong>Wasps:</strong> (1) Cover food/drinks outdoors (2) Seal & rinse trash cans"],
+  "Bed Bugs": ["<strong>Bed Bugs:</strong> (1) Inspect luggage after travel (2) Use mattress encasements"],
+  Mosquitoes: ["<strong>Mosquitoes:</strong> (1) Remove standing water (2) Trim vegetation"],
+  "Drain Flies": ["<strong>Drain Flies:</strong> (1) Clean drains regularly (2) Avoid grease/food waste"],
+  Rodents: [
+    "<strong>Rats:</strong> (1) Seal food & clean outdoor debris (2) Keep yards clutter-free",
+    "<strong>Mice:</strong> (1) Store food sealed (2) Clean crumbs & spills promptly",
+  ],
+};
 
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
