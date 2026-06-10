@@ -751,7 +751,7 @@ const SubmittedReports = () => {
                             </Badge>
 
                             <Badge variant={report.report_type === "initial" ? "secondary" : report.report_type === "multi-proposal" ? "outline" : "default"}>
-                              {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Multi-Proposal" : "Sales"}
+                              {report.report_type === "initial" ? "Initial" : report.report_type === "multi-proposal" ? "Sales" : "Archived Sales"}
                             </Badge>
 
                             {report.is_pre_proposal && (
