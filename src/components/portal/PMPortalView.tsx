@@ -2113,13 +2113,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
                 {/* Optional new-tenant move-in date — flags this unit until the date passes. */}
                 {!isHOA && requestKind !== "general" && (
-                  <div className="rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-rose-900 uppercase tracking-wide">
-                      🏠 New Tenant Move-In <span className="text-rose-900/70 normal-case font-medium">(optional)</span>
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label className="text-xs text-muted-foreground font-normal">
+                      New tenant move-in <span className="opacity-70">(optional)</span>
+                    </Label>
                     <input
                       type="date"
-                      className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                      className="h-8 rounded border border-input bg-background px-2 text-sm text-muted-foreground"
                       value={tenantMoveInDate}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={(e) => setTenantMoveInDate(e.target.value)}
@@ -2127,15 +2127,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     {tenantMoveInDate && (
                       <button
                         type="button"
-                        className="text-xs underline text-rose-900/80 hover:text-rose-900"
+                        className="text-xs underline text-muted-foreground hover:text-foreground"
                         onClick={() => setTenantMoveInDate("")}
                       >
                         Clear
                       </button>
                     )}
-                    <span className="text-[11px] text-rose-900/80 basis-full">
-                      Tag stays on this unit through every follow-up until the date passes, then auto-clears.
-                    </span>
                   </div>
                 )}
 
