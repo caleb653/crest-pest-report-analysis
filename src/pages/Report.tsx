@@ -1032,6 +1032,13 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       if (row.fieldroutes_customer_id) {
         setFieldroutesCustomerId(String(row.fieldroutes_customer_id));
       }
+      // Hydrate the customer portal link from customer_preferences JSON.
+      {
+        const prefs = (row as { customer_preferences?: { fieldroutes_login_link?: string | null } | null }).customer_preferences;
+        if (prefs && typeof prefs === "object" && prefs.fieldroutes_login_link) {
+          setFieldroutesLoginLink(String(prefs.fieldroutes_login_link));
+        }
+      }
       if (row.services && Array.isArray(row.services) && row.services.length > 0) {
         const normalizedServices = normalizeServices(row.services);
         setServices(normalizedServices);
