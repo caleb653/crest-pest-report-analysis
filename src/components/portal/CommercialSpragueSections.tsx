@@ -466,9 +466,15 @@ export function DeviceTrendingSection({ services }: { services: SpragueService[]
       <div>
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Activity className="w-5 h-5 text-primary" /> Device Trending
+          <span
+            title="Each point is one completed service visit (last 12). 'Devices' is the total count of monitoring devices and equipment serviced that visit (e.g. snap traps, glue boards, bait stations, ILTs). 'Types' is how many distinct equipment categories were touched. A rising 'Devices' line on a steady 'Types' line usually means heavier activity in the same areas; rising 'Types' means coverage is expanding."
+            className="inline-flex"
+          >
+            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+          </span>
         </h3>
         <p className="text-xs text-muted-foreground">
-          Number of monitoring devices and equipment types deployed / serviced per visit.
+          Number of monitoring devices and equipment types deployed / serviced per visit (last 12 visits).
         </p>
       </div>
       <Card>
