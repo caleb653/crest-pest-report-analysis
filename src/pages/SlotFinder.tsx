@@ -613,7 +613,7 @@ function SlotCard({
       {snap && after && (
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
           <span>
-            Stops: <span className="font-semibold">{snap.stops} → {after.stops}</span>
+            Stops: <span className="font-semibold">{snap.stops_excluding_tasks} → {after.stops_excluding_tasks}</span>
           </span>
           <span className="flex items-center gap-1">
             After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
