@@ -33,6 +33,7 @@ import { MapCanvas } from "@/components/MapCanvas";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import RichTextEditor from "@/components/RichTextEditor";
 import CustomerPicker from "@/components/CustomerPicker";
+import { PrepSheetPicker, buildPrepSheetAttachments } from "@/components/PrepSheetPicker";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import crestLogo from "@/assets/crest-logo.png";
