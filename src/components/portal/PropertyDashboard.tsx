@@ -403,7 +403,7 @@ const PropertyDashboard = ({
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   type CompletionDraft = {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string; follow_up_needed?: boolean; sanitization_concern?: boolean; photos?: { url: string; uploading?: boolean }[]; kind?: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -454,7 +454,7 @@ const PropertyDashboard = ({
       completionDraftTimers.current[serviceId] = setTimeout(async () => {
         try {
           // Strip transient upload flags before persisting.
-          const cleanRows = (data.unitRows || []).map((r: any) => ({
+          let cleanRows = (data.unitRows || []).map((r: any) => ({
             ...r,
             photos: Array.isArray(r.photos)
               ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
@@ -464,8 +464,27 @@ const PropertyDashboard = ({
           const existing = (svc as any).report_data && typeof (svc as any).report_data === "object"
             ? (svc as any).report_data
             : {};
+          const { data: latest } = await supabase
+            .from("portal_services")
+            .select("report_data")
+            .eq("id", serviceId)
+            .maybeSingle();
+          const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
+            ? (latest as any).report_data
+            : existing;
+          const dismissed = new Set<string>();
+          const dismissedRaw = Array.isArray((latestReportData as any).dismissed_units)
+            ? (latestReportData as any).dismissed_units as any[]
+            : [];
+          dismissedRaw.forEach((entry) => {
+            const label = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+            if (label) dismissed.add(label);
+          });
+          if (dismissed.size > 0) {
+            cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
+          }
           const next = {
-            ...existing,
+            ...latestReportData,
             completion_draft: {
               ...data,
               unitRows: cleanRows,
@@ -474,6 +493,7 @@ const PropertyDashboard = ({
             },
           };
           await supabase.from("portal_services").update({ report_data: next }).eq("id", serviceId);
+          (svc as any).report_data = next;
         } catch (e) {
           console.warn("completion draft autosave failed", e);
         }
@@ -1323,24 +1343,41 @@ const PropertyDashboard = ({
     //    automatically while the admin types. It's wiped on completion. ──
     const svcRow = propServices.find(s => s.id === serviceId) as any;
     const draft = svcRow?.report_data?.completion_draft;
-    if (draft && Array.isArray(draft.unitRows)) {
+      if (draft && Array.isArray(draft.unitRows)) {
+        const dismissed = new Set<string>();
+        const dismissedRaw = Array.isArray((svcRow as any)?.report_data?.dismissed_units)
+          ? (svcRow as any).report_data.dismissed_units as any[]
+          : [];
+        dismissedRaw.forEach((entry) => {
+          const u = typeof entry === "string" ? entry : entry?.unit;
+          const label = String(u || "").trim();
+          if (label) dismissed.add(label);
+        });
+        const liveUnits = new Set((unitContexts || []).map(c => String(c.unit_number || "").trim()).filter(Boolean));
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
-          unitRows: draft.unitRows.map((r: any) => ({
-            unit_number: r.unit_number || "",
-            target_pest: r.target_pest || "",
-            findings: r.findings || "",
-            pest_activity: r.pest_activity || "None",
-            products_used: normalizeUsageList(r.products_used) || [],
-            status: r.status || "To Be Treated",
-            notes: r.notes || "",
-            source: r.source || "planned",
-            request_id: r.request_id || r.request?.id || undefined,
-            follow_up_needed: r.follow_up_needed === true,
-            sanitization_concern: r.sanitization_concern === true,
-            photos: Array.isArray(r.photos) ? r.photos : [],
-          })),
+          unitRows: draft.unitRows
+            .filter((r: any) => {
+              const label = String(r?.unit_number || "").trim();
+              if (!label) return false;
+              if (dismissed.has(label)) return false;
+              return liveUnits.size === 0 || liveUnits.has(label);
+            })
+            .map((r: any) => ({
+              unit_number: r.unit_number || "",
+              target_pest: r.target_pest || "",
+              findings: r.findings || "",
+              pest_activity: r.pest_activity || "None",
+              products_used: normalizeUsageList(r.products_used) || [],
+              status: r.status || "To Be Treated",
+              notes: r.notes || "",
+              source: r.source || "planned",
+              request_id: r.request_id || r.request?.id || undefined,
+              follow_up_needed: r.follow_up_needed === true,
+              sanitization_concern: r.sanitization_concern === true,
+              photos: Array.isArray(r.photos) ? r.photos : [],
+            })),
           summary: draft.summary || "",
           findings: draft.findings || "",
           notes: draft.notes || "",
@@ -1591,12 +1628,22 @@ const PropertyDashboard = ({
         new Set(unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean))
       );
       if (treatedUnits.length > 0) {
-        await supabase
+        const { data: openUnitRequests } = await supabase
           .from("portal_requests")
-          .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+          .select("id, unit_number")
           .eq("property_id", property.id)
-          .in("status", ["pending", "in_progress"])
-          .in("unit_number", treatedUnits);
+          .in("status", ["pending", "in_progress"]);
+        const treatedSet = new Set(treatedUnits.map(u => u.toLowerCase()));
+        const requestIds = (openUnitRequests || [])
+          .filter((r: any) => treatedSet.has(String(r.unit_number || "").trim().toLowerCase()))
+          .map((r: any) => r.id)
+          .filter(Boolean);
+        if (requestIds.length > 0) {
+          await supabase
+            .from("portal_requests")
+            .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+            .in("id", requestIds);
+        }
       }
       // Also auto-close any open GENERAL requests (work orders without a
       // unit_number, e.g. "front gate is broken"). Without this they would
@@ -1613,6 +1660,80 @@ const PropertyDashboard = ({
         .or("request_type.ilike.%general%,description.ilike.%[GENERAL]%");
     } catch (e) {
       console.warn("auto-resolve work orders failed", e);
+    }
+
+    // ─── If an ad-hoc/follow-up visit cleared a unit, remove that unit from
+    //     any future scheduled visit and suppress the old follow-up flag so it
+    //     cannot keep reappearing as "Upcoming" after a Free and Clear. ───
+    try {
+      const settledUnits = Array.from(new Set(
+        unitRows
+          .filter((r: any) => {
+            const status = String(r.status || "").trim();
+            if (r.follow_up_needed === true) return false;
+            if (!String(r.unit_number || "").trim()) return false;
+            return !["To Be Treated", "Not Treated", "Inspection: Not Performed", "Not Serviced"].includes(status);
+          })
+          .map((r: any) => String(r.unit_number || "").trim())
+      ));
+      if (settledUnits.length > 0) {
+        const settledLower = new Set(settledUnits.map(u => u.toLowerCase()));
+        const stamp = new Date().toISOString();
+        const futureRows = propServices.filter((svc: any) =>
+          svc.id !== serviceId &&
+          svc.status !== "completed" &&
+          !isAdHocService(svc) &&
+          Array.isArray(svc.units_planned) &&
+          (svc.units_planned as any[]).some(u => settledLower.has(String(u || "").trim().toLowerCase()))
+        );
+        await Promise.all(futureRows.map(async (svc: any) => {
+          const nextPlanned = (svc.units_planned as any[])
+            .map(u => String(u || "").trim())
+            .filter(u => u && !settledLower.has(u.toLowerCase()));
+          const rd = svc.report_data && typeof svc.report_data === "object" ? { ...svc.report_data } : {};
+          const existingDismissed = Array.isArray(rd.dismissed_units) ? rd.dismissed_units : [];
+          const normalized = existingDismissed
+            .map((entry: any) => {
+              const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+              return unit ? { unit, at: String(typeof entry === "string" ? "" : entry?.at || "") } : null;
+            })
+            .filter(Boolean) as { unit: string; at: string }[];
+          const kept = normalized.filter(e => !settledLower.has(e.unit.toLowerCase()));
+          rd.dismissed_units = [...kept, ...settledUnits.map(unit => ({ unit, at: stamp }))];
+          if (rd.completion_draft && Array.isArray(rd.completion_draft.unitRows)) {
+            rd.completion_draft = {
+              ...rd.completion_draft,
+              unitRows: rd.completion_draft.unitRows.filter((r: any) =>
+                !settledLower.has(String(r?.unit_number || "").trim().toLowerCase())
+              ),
+            };
+          }
+          return supabase.from("portal_services").update({ units_planned: nextPlanned, report_data: rd }).eq("id", svc.id);
+        }));
+
+        const priorFollowUpRows = pastServices.filter((svc: any) =>
+          svc.id !== serviceId &&
+          Array.isArray(svc.unit_details) &&
+          (svc.unit_details as any[]).some((u: any) =>
+            u?.follow_up_needed === true && settledLower.has(String(u?.unit_number || "").trim().toLowerCase())
+          )
+        );
+        await Promise.all(priorFollowUpRows.map(async (svc: any) => {
+          const rd = svc.report_data && typeof svc.report_data === "object" ? { ...svc.report_data } : {};
+          const existingDismissed = Array.isArray(rd.dismissed_follow_ups) ? rd.dismissed_follow_ups : [];
+          const normalized = existingDismissed
+            .map((entry: any) => {
+              const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+              return unit ? { unit, at: String(typeof entry === "string" ? "" : entry?.at || "") } : null;
+            })
+            .filter(Boolean) as { unit: string; at: string }[];
+          const kept = normalized.filter(e => !settledLower.has(e.unit.toLowerCase()));
+          rd.dismissed_follow_ups = [...kept, ...settledUnits.map(unit => ({ unit, at: stamp }))];
+          return supabase.from("portal_services").update({ report_data: rd }).eq("id", svc.id);
+        }));
+      }
+    } catch (e) {
+      console.warn("clear settled units from future services failed", e);
     }
 
     // ─── Resolve every open submission we just snapshotted (community +
