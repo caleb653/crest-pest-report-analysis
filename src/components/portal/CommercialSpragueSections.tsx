@@ -38,6 +38,7 @@ import {
   AlertTriangle, CalendarRange, ChevronDown, FileDown, FlaskConical,
   HelpCircle, Phone, ShieldCheck, Users, Wrench, Activity, ClipboardList,
   TrendingUp, FileText, Plus, Trash2, Check, X, ExternalLink, Edit3, Mail,
+  Camera, Upload, Lock,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
