@@ -1851,7 +1851,7 @@ Crest Pest Control`;
           emailMessage,
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
-          customerPortalUrl: customerPortalHref,
+          customerPortalUrl: fieldroutesLoginLink || undefined,
           ...(selectedPrepSheets.length > 0 ? {
             extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),
           } : {}),
@@ -3179,7 +3179,7 @@ Crest Pest Control`;
 
           {/* FieldRoutes customer link — search & select to autofill + link */}
           {!isReadOnly && (
-            <div className="mb-4 no-print">
+            <div className="mb-4 no-print space-y-2">
               <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
               <CustomerPicker
                 staffName={currentStaff?.fullName}
@@ -3197,16 +3197,29 @@ Crest Pest Control`;
                 }}
                 onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
               />
+              {fieldroutesCustomerId && (
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                    Customer Portal loginLink (paste from FieldRoutes — used by the "Open Customer Portal" button)
+                  </p>
+                  <Input
+                    value={fieldroutesLoginLink ?? ""}
+                    onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                    placeholder="https://crestpest.pestportals.com/?loginHash=…"
+                    className="text-xs font-mono"
+                  />
+                </div>
+              )}
             </div>
           )}
 
           {/* Customer Portal button — prominent at the top of the report header.
-              Prefers the FieldRoutes {loginlink} for the linked customer; falls
-              back to the generic FieldPortals login so it always appears. */}
-          {customerPortalHref && (
+              Only shown when the FieldRoutes {loginlink} for the linked customer
+              is known, so the button always logs the customer straight in. */}
+          {fieldroutesLoginLink && (
             <div className="mb-4">
               <a
-                href={customerPortalHref}
+                href={fieldroutesLoginLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 hover:bg-primary/15 transition-colors no-underline"
