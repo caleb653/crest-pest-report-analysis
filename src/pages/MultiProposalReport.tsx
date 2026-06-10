@@ -600,6 +600,8 @@ const Report = () => {
   const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("none");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
+  const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
+  const [selectedPrepSheets, setSelectedPrepSheets] = useState<Array<{ id: string; title: string; file_url: string | null }>>([]);
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
