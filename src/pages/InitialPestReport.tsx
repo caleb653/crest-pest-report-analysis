@@ -2678,7 +2678,7 @@ Crest Pest Control
 
             {/* Recommendations Section */}
             <Card className="print-section p-3 md:p-4">
-              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-dark-sage">Recommendations</h2>
+              <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-foreground">Recommendations</h2>
               {editableTargetPests.length > 0 && (
                 <div className="no-print px-3 pb-2 space-y-2">
                   {editableTargetPests

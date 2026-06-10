@@ -477,12 +477,13 @@ export default function CommercialDashboardView({
     await saveServiceField(s.id, { report_data: next });
   };
 
-  // Recent pest sightings (open + last 30 days) — surfaced on every visit
-  // card so the cofounder can see what to address.
+  // Recent pest sightings (Open + In Progress) — surfaced inline on every
+  // visit card so the Route Manager sees what's still outstanding without
+  // bouncing to the Sightings tab.
   const recentSightings = requests
-    .filter((r) => {
-      const created = new Date(r.created_at).getTime();
-      return Date.now() - created < 1000 * 60 * 60 * 24 * 45;
+    .filter((r: any) => {
+      const sStatus = (r.sighting_status || r.status || "").toLowerCase();
+      return sStatus !== "closed" && sStatus !== "completed" && sStatus !== "cancelled";
     })
     .slice(0, 6);
 
@@ -538,16 +539,46 @@ export default function CommercialDashboardView({
   const sendResponse = async (id: string) => {
     const note = (responseDraft[id] || "").trim();
     if (!note) return;
+    // Crest reply auto-closes the sighting + stamps closed_at and appends
+    // to the new crest_comments column (kept alongside legacy response_notes
+    // for backward compatibility with older portal builds).
+    const now = new Date().toISOString();
+    const existing = requests.find(r => r.id === id) as any;
+    const priorComments = Array.isArray(existing?.crest_comments) ? existing.crest_comments : [];
+    const nextComments = [...priorComments, { ts: now, note }];
     const { error } = await supabase
       .from("portal_requests")
-      .update({ response_notes: note, status: "in_progress", updated_at: new Date().toISOString() } as any)
+      .update({
+        response_notes: note,
+        status: "completed",
+        sighting_status: "closed",
+        crest_comments: nextComments,
+        closed_at: now,
+        updated_at: now,
+      } as any)
       .eq("id", id);
     if (error) {
       toast({ title: "Couldn't save response", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Response saved" });
+    toast({ title: "Response sent · sighting closed" });
     setResponseDraft(d => ({ ...d, [id]: "" }));
+    loadRequests();
+  };
+
+  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed") => {
+    const now = new Date().toISOString();
+    const patch: any = {
+      sighting_status: next,
+      updated_at: now,
+      status: next === "closed" ? "completed" : (next === "in_progress" ? "in_progress" : "pending"),
+    };
+    if (next === "closed") patch.closed_at = now;
+    const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
+      return;
+    }
     loadRequests();
   };
 
@@ -829,9 +860,6 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Report
-                        </Button>
                         <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
@@ -839,6 +867,33 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
+                        {/* Recent Pest Sightings — auto-surfaced at top so the
+                            Route Manager can address open issues during this visit. */}
+                        {recentSightings.length > 0 && (
+                          <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
+                              <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                {recentSightings.length} open
+                              </Badge>
+                            </p>
+                            <div className="space-y-1">
+                              {recentSightings.slice(0, 4).map((sg: any) => (
+                                <p key={sg.id} className="text-xs text-amber-950 leading-snug">
+                                  <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                  {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                  {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
+                                </p>
+                              ))}
+                              {recentSightings.length > 4 && (
+                                <p className="text-[10px] text-amber-800 italic">
+                                  +{recentSightings.length - 4} more in Pest Sightings tab
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
@@ -1015,6 +1070,27 @@ export default function CommercialDashboardView({
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
+                      {/* Recent Pest Sightings — Route Manager sees outstanding
+                          issues right on the upcoming-visit card. */}
+                      {recentSightings.length > 0 && (
+                        <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
+                            <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                              {recentSightings.length} open
+                            </Badge>
+                          </p>
+                          <div className="space-y-1">
+                            {recentSightings.slice(0, 4).map((sg: any) => (
+                              <p key={sg.id} className="text-xs text-amber-950 leading-snug">
+                                <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
@@ -1156,9 +1232,6 @@ export default function CommercialDashboardView({
                       </div>
 
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-9 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Open Report
-                        </Button>
                         <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
                           <CheckCircle2 className="w-3 h-3" /> Mark Completed
                         </Button>
@@ -1252,7 +1325,17 @@ export default function CommercialDashboardView({
                             </p>
                             <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
                           </div>
-                          <Badge variant="secondary" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
+                          <Select
+                            value={(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in_progress" : "open"))}
+                            onValueChange={(v: any) => setSightingStatus(r.id, v)}
+                          >
+                            <SelectTrigger className="h-7 text-[10px] w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="open">Open</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="closed">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         {r.description && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>

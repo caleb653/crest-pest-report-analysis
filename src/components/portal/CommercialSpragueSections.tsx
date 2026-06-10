@@ -38,6 +38,7 @@ import {
   AlertTriangle, CalendarRange, ChevronDown, FileDown, FlaskConical,
   HelpCircle, Phone, ShieldCheck, Users, Wrench, Activity, ClipboardList,
   TrendingUp, FileText, Plus, Trash2, Check, X, ExternalLink, Edit3, Mail,
+  Camera, Upload, Lock,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -93,6 +94,18 @@ export interface ConditionRow {
   responsibility: "Customer" | "Crest";
   comments: string;
   status: "Open" | "Ongoing" | "Closed";
+  /** Photos documenting the condition when identified. At least one is required
+   *  before the condition is considered "complete". */
+  photos?: string[];
+  /** Resolution photos uploaded when the condition is closed. Required to
+   *  mark status = "Closed". */
+  resolution_photos?: string[];
+  /** Optional note posted at close time. */
+  resolution_note?: string;
+  /** ISO timestamp when condition was first added. */
+  identified_at?: string;
+  /** ISO timestamp when condition was moved to "Closed". */
+  closed_at?: string | null;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -117,6 +130,11 @@ const newConditionRow = (): ConditionRow => ({
   responsibility: "Customer",
   comments: "",
   status: "Open",
+  photos: [],
+  resolution_photos: [],
+  resolution_note: "",
+  identified_at: new Date().toISOString(),
+  closed_at: null,
 });
 
 const ACTION_OPTIONS = [
@@ -322,11 +340,70 @@ function ConditionRowEditor({
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
 }) {
-  const [local, setLocal] = useState(row);
+  const [local, setLocal] = useState<ConditionRow>(row);
+  const [uploading, setUploading] = useState<"id" | "res" | null>(null);
   // Local-then-blur pattern so typing in tables doesn't lose focus mid-keystroke.
   const set = <K extends keyof ConditionRow>(k: K, v: ConditionRow[K]) =>
     setLocal(prev => ({ ...prev, [k]: v }));
   const flush = () => { if (JSON.stringify(local) !== JSON.stringify(row)) onChange(local); };
+
+  const photos = local.photos || [];
+  const resPhotos = local.resolution_photos || [];
+  const needsIdentifyPhoto = photos.length === 0;
+
+  // Upload helper — pushes the public URL onto the named bucket field.
+  const uploadTo = async (
+    field: "photos" | "resolution_photos",
+    files: FileList | null,
+  ) => {
+    if (!files || files.length === 0) return;
+    setUploading(field === "photos" ? "id" : "res");
+    try {
+      const next = [...(local[field] || [])];
+      for (const file of Array.from(files)) {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+        const path = `conditions/${local.id}/${field}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("portal-documents")
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
+        if (upErr) {
+          toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
+          continue;
+        }
+        const { data: pub } = supabase.storage.from("portal-documents").getPublicUrl(path);
+        if (pub?.publicUrl) next.push(pub.publicUrl);
+      }
+      const merged = { ...local, [field]: next } as ConditionRow;
+      setLocal(merged);
+      onChange(merged);
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const removePhoto = (field: "photos" | "resolution_photos", idx: number) => {
+    const next = [...(local[field] || [])];
+    next.splice(idx, 1);
+    const merged = { ...local, [field]: next } as ConditionRow;
+    setLocal(merged);
+    onChange(merged);
+  };
+
+  // Gate Close: must have a resolution photo before flipping status → Closed.
+  const tryChangeStatus = (v: ConditionRow["status"]) => {
+    if (v === "Closed" && resPhotos.length === 0) {
+      toast({
+        title: "Resolution photo required",
+        description: "Upload at least one photo showing the condition was resolved before closing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const closedAt = v === "Closed" ? new Date().toISOString() : null;
+    const merged = { ...local, status: v, closed_at: closedAt } as ConditionRow;
+    setLocal(merged);
+    onChange(merged);
+  };
 
   if (readOnly) {
     return (
@@ -339,6 +416,15 @@ function ConditionRowEditor({
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Condition</p>
           <p>{row.condition || "—"}</p>
           {row.detail && <p className="text-xs text-muted-foreground mt-0.5">{row.detail}</p>}
+          {(row.photos?.length || 0) > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {row.photos!.slice(0, 4).map((u, i) => (
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded border border-border overflow-hidden block">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Action</p>
@@ -359,13 +445,32 @@ function ConditionRowEditor({
           {row.comments && (
             <p className="text-xs text-muted-foreground mt-1">{row.comments}</p>
           )}
+          {row.status === "Closed" && (row.resolution_photos?.length || 0) > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {row.resolution_photos!.slice(0, 3).map((u, i) => (
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded border border-emerald-300 overflow-hidden block">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+                </a>
+              ))}
+            </div>
+          )}
+          {row.status === "Closed" && row.resolution_note && (
+            <p className="text-[11px] text-emerald-900 italic mt-1">"{row.resolution_note}"</p>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-3 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end">
+    <div className={`p-3 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end ${needsIdentifyPhoto ? "bg-amber-50/40" : ""}`}>
+      {needsIdentifyPhoto && (
+        <div className="sm:col-span-6 -mb-1 flex items-center gap-2 text-[11px] text-amber-900 bg-amber-100 border border-amber-300 rounded px-2 py-1">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          <span><b>Photo required.</b> Upload at least one photo of the condition before this entry is considered complete.</span>
+          <Badge variant="outline" className="ml-auto border-amber-400 text-amber-900 bg-amber-50 text-[10px]">Required</Badge>
+        </div>
+      )}
       <div className="sm:col-span-1">
         <Label className="text-[10px] uppercase font-bold text-muted-foreground">Area</Label>
         <Input value={local.area} onChange={e => set("area", e.target.value)} onBlur={flush}
@@ -407,12 +512,14 @@ function ConditionRowEditor({
       </div>
       <div className="flex flex-col gap-1">
         <Label className="text-[10px] uppercase font-bold text-muted-foreground">Status</Label>
-        <Select value={local.status} onValueChange={(v: any) => { set("status", v); onChange({ ...local, status: v }); }}>
+        <Select value={local.status} onValueChange={(v: any) => tryChangeStatus(v)}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Open">Open</SelectItem>
             <SelectItem value="Ongoing">Ongoing</SelectItem>
-            <SelectItem value="Closed">Closed</SelectItem>
+            <SelectItem value="Closed">
+              Closed {resPhotos.length === 0 ? "(needs resolution photo)" : ""}
+            </SelectItem>
           </SelectContent>
         </Select>
         <div className="flex gap-1">
@@ -424,6 +531,92 @@ function ConditionRowEditor({
           </Button>
         </div>
       </div>
+
+      {/* ── Identifying photos ── */}
+      <div className="sm:col-span-6 rounded-md border border-dashed border-border p-2 space-y-1.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
+            <Camera className="w-3 h-3" /> Condition Photos
+            {needsIdentifyPhoto && (
+              <Badge variant="outline" className="ml-1 text-[9px] border-amber-400 text-amber-900 bg-amber-50">Required</Badge>
+            )}
+          </p>
+          <label className="cursor-pointer">
+            <input type="file" accept="image/*" multiple className="hidden"
+              onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
+            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-muted">
+              <Upload className="w-3 h-3" /> {uploading === "id" ? "Uploading…" : "Add Photo"}
+            </span>
+          </label>
+        </div>
+        {photos.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {photos.map((u, i) => (
+              <div key={i} className="relative w-16 h-16 rounded border border-border overflow-hidden group">
+                <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+                <button type="button" onClick={() => removePhoto("photos", i)}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Resolution (only shown when working toward Closed) ── */}
+      {(local.status !== "Open" || resPhotos.length > 0 || (local.resolution_note || "").length > 0) && (
+        <div className="sm:col-span-6 rounded-md border border-emerald-300 bg-emerald-50/40 p-2 space-y-1.5">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] uppercase font-bold text-emerald-900 flex items-center gap-1">
+              <Check className="w-3 h-3" /> Resolution
+              {local.status !== "Closed" && resPhotos.length === 0 && (
+                <Badge variant="outline" className="ml-1 text-[9px] border-emerald-400 text-emerald-900 bg-emerald-50">
+                  Photo required to close
+                </Badge>
+              )}
+            </p>
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={e => { uploadTo("resolution_photos", e.target.files); e.currentTarget.value = ""; }} />
+              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-background px-2 py-1 text-[11px] hover:bg-emerald-100">
+                <Upload className="w-3 h-3" /> {uploading === "res" ? "Uploading…" : "Add Resolution Photo"}
+              </span>
+            </label>
+          </div>
+          {resPhotos.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {resPhotos.map((u, i) => (
+                <div key={i} className="relative w-16 h-16 rounded border border-emerald-400 overflow-hidden group">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removePhoto("resolution_photos", i)}
+                    className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Input
+            value={local.resolution_note || ""}
+            onChange={e => set("resolution_note", e.target.value)}
+            onBlur={flush}
+            placeholder="Resolution note (optional, shown to customer)"
+            className="h-8 text-xs"
+          />
+          {local.status !== "Closed" && resPhotos.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => tryChangeStatus("Closed")}
+              className="h-7 text-xs gap-1 border-emerald-400 text-emerald-900 hover:bg-emerald-100">
+              <Lock className="w-3 h-3" /> Mark Closed
+            </Button>
+          )}
+          {local.status === "Closed" && local.closed_at && (
+            <p className="text-[10px] text-emerald-900 italic">
+              Closed {fmtDay(local.closed_at)}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
