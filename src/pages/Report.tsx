@@ -1369,6 +1369,15 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
         if (match) {
           reportData.fieldroutes_customer_id = match.customerId;
           setFieldroutesCustomerId(match.customerId);
+          if (match.loginLink) {
+            setFieldroutesLoginLink(match.loginLink);
+            const existingPrefs =
+              (reportData.customer_preferences as Record<string, unknown> | null | undefined) || {};
+            reportData.customer_preferences = {
+              ...existingPrefs,
+              fieldroutes_login_link: match.loginLink,
+            };
+          }
         }
       } catch (e) {
         console.warn("FieldRoutes auto-match skipped", e);
