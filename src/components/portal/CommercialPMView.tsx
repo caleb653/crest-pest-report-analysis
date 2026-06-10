@@ -31,8 +31,7 @@ import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedM
 import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
   ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
-  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
-  LogbookDateBadge,
+  BusinessLicenseSection, HelpTutorialSection,
 } from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
 import { AlertTriangle, TrendingUp, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
@@ -367,17 +366,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date) : "—"}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Sprague-style logbook header */}
-        <Card>
-          <CardContent className="p-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <LogbookDateBadge services={services as any} />
-              <span className="text-[11px] text-muted-foreground">Online Logbook</span>
-            </div>
-            <DownloadLogbookButton propertyName={property.name} />
           </CardContent>
         </Card>
 
