@@ -1818,6 +1818,9 @@ Crest Pest Control`;
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
           customerPortalUrl: fieldroutesLoginLink || undefined,
+          ...(selectedPrepSheets.length > 0 ? {
+            extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),
+          } : {}),
           ...(pdfBase64 ? {
             pdfBase64,
             pdfFilename: `Crest_MultiProposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
