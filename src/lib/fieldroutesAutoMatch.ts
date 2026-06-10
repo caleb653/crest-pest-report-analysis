@@ -21,7 +21,9 @@ type AutoMatchInput = {
   staffName?: string | null;
 };
 
-export type AutoMatchResult = { customerId: string; matchedOn: "email" | "address" } | null;
+export type AutoMatchResult =
+  | { customerId: string; matchedOn: "email" | "address"; loginLink?: string | null }
+  | null;
 
 const norm = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -44,7 +46,11 @@ export async function autoMatchCustomerId(input: AutoMatchInput): Promise<AutoMa
     const results = await search(email, input.staffName);
     const exact = results.filter((r) => norm(r.email) === norm(email) && r.customer_id);
     if (exact.length === 1) {
-      return { customerId: String(exact[0].customer_id), matchedOn: "email" };
+      return {
+        customerId: String(exact[0].customer_id),
+        matchedOn: "email",
+        loginLink: (exact[0].loginLink as string | null | undefined) ?? null,
+      };
     }
   }
 
@@ -60,7 +66,11 @@ export async function autoMatchCustomerId(input: AutoMatchInput): Promise<AutoMa
       return r.customer_id && ra.length > 0 && (ra === ns || ra.startsWith(ns));
     });
     if (exact.length === 1) {
-      return { customerId: String(exact[0].customer_id), matchedOn: "address" };
+      return {
+        customerId: String(exact[0].customer_id),
+        matchedOn: "address",
+        loginLink: (exact[0].loginLink as string | null | undefined) ?? null,
+      };
     }
   }
 

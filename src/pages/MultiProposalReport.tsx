@@ -370,6 +370,9 @@ const Report = () => {
 
   // FieldRoutes customer link (chosen via the picker) + autofilled phone.
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  // FieldRoutes customer-portal URL ({loginlink}) — shown as a prominent
+  // "Customer Portal" button in the report header and emailed to the customer.
+  const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
 
@@ -1034,6 +1037,13 @@ const Report = () => {
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
       setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
+      // Hydrate the customer portal link from customer_preferences JSON.
+      {
+        const prefs = (row as { customer_preferences?: { fieldroutes_login_link?: string | null } | null }).customer_preferences;
+        if (prefs && typeof prefs === "object" && prefs.fieldroutes_login_link) {
+          setFieldroutesLoginLink(String(prefs.fieldroutes_login_link));
+        }
+      }
       setCustomerPhone(row.customer_phone || "");
       setEditableFindings((row.findings as string[]) || []);
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
@@ -1471,6 +1481,9 @@ const Report = () => {
     customer_email: customerEmail || null,
     customer_phone: customerPhone || null,
     fieldroutes_customer_id: fieldroutesCustomerId,
+    // Persist FieldRoutes customer-portal link so it survives reload and
+    // can be shown as the "Customer Portal" button on the report header.
+    customer_preferences: { fieldroutes_login_link: fieldroutesLoginLink || null },
   });
 
   const persistReport = async (reportData: Record<string, unknown>) => {
@@ -1490,6 +1503,15 @@ const Report = () => {
         if (match) {
           reportData.fieldroutes_customer_id = match.customerId;
           setFieldroutesCustomerId(match.customerId);
+          if (match.loginLink) {
+            setFieldroutesLoginLink(match.loginLink);
+            const existingPrefs =
+              (reportData.customer_preferences as Record<string, unknown> | null | undefined) || {};
+            reportData.customer_preferences = {
+              ...existingPrefs,
+              fieldroutes_login_link: match.loginLink,
+            };
+          }
         }
       } catch (e) {
         console.warn("FieldRoutes auto-match skipped", e);
@@ -1792,6 +1814,7 @@ Crest Pest Control`;
           emailMessage,
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
+          customerPortalUrl: fieldroutesLoginLink || undefined,
           ...(pdfBase64 ? {
             pdfBase64,
             pdfFilename: `Crest_MultiProposal_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
@@ -3124,6 +3147,7 @@ Crest Pest Control`;
                 linkedLabel={editableCustomer || null}
                 onSelect={(c) => {
                   setFieldroutesCustomerId(c.customer_id);
+                  setFieldroutesLoginLink(c.loginLink || null);
                   if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
                   if (c.email) setCustomerEmail(c.email);
                   if (c.phone) setCustomerPhone(c.phone);
@@ -3131,8 +3155,31 @@ Crest Pest Control`;
                     .filter(Boolean).join(", ");
                   if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
                 }}
-                onClear={() => setFieldroutesCustomerId(null)}
+                onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
               />
+            </div>
+          )}
+
+          {/* Customer Portal button — prominent at the top of the report header.
+              Uses the FieldRoutes {loginlink} for the linked customer. */}
+          {fieldroutesLoginLink && (
+            <div className="mb-4">
+              <a
+                href={fieldroutesLoginLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 hover:bg-primary/15 transition-colors no-underline"
+              >
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary/80">Customer Portal</p>
+                  <p className="text-sm font-bold text-foreground truncate">
+                    Open Customer Portal &nbsp;→&nbsp; manage account &amp; add a payment method in Wallet
+                  </p>
+                </div>
+                <span className="hidden sm:inline-flex items-center rounded-md bg-foreground text-background text-xs font-bold px-3 py-1.5">
+                  Open
+                </span>
+              </a>
             </div>
           )}
 
