@@ -556,6 +556,28 @@ const ClientPortal = () => {
 
   // ─── Property Detail View ───
   if (selectedProperty) {
+    // Commercial properties get the full Sprague-style PM view (tabs,
+    // conditions log, trending, SDS, etc.) instead of the apartments layout.
+    const _ptype = (selectedProperty.customer_preferences as any)?.property_type;
+    if (_ptype === "commercial") {
+      return (
+        <div className="min-h-screen bg-background">
+          <div className="bg-card border-b px-4 py-3 sticky top-0 z-40">
+            <div className="max-w-3xl mx-auto flex items-center gap-3">
+              <button
+                onClick={() => { setSelectedProperty(null); setServiceView(null); setExpandedServiceId(null); }}
+                className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors"
+                aria-label="Back to properties"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <CommercialPMView propertyId={selectedProperty.id} linkId={linkData?.id || ""} />
+        </div>
+      );
+    }
+
     const pastSvcs = sortServices(getPastServices(selectedProperty.id));
     const futureSvcs = getFutureServices(selectedProperty.id);
     const equipment = Array.isArray(selectedProperty.equipment) ? selectedProperty.equipment as string[] : [];
