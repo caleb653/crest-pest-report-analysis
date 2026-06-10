@@ -2157,6 +2157,29 @@ Crest Pest Control`;
               </div>
             )}
 
+            {/* Customer Portal button — prominent at the top of the report header.
+                Uses the FieldRoutes {loginlink} for the linked customer. */}
+            {fieldroutesLoginLink && (
+              <div className="mb-3">
+                <a
+                  href={fieldroutesLoginLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 hover:bg-primary/15 transition-colors no-underline"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-primary/80">Customer Portal</p>
+                    <p className="text-sm font-bold text-foreground truncate">
+                      Open Customer Portal &nbsp;→&nbsp; manage account &amp; add a payment method in Wallet
+                    </p>
+                  </div>
+                  <span className="hidden sm:inline-flex items-center rounded-md bg-foreground text-background text-xs font-bold px-3 py-1.5">
+                    Open
+                  </span>
+                </a>
+              </div>
+            )}
+
             {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
             <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
               {/* Column 1: Customer Details */}
