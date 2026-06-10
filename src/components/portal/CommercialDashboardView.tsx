@@ -860,9 +860,6 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="sm" variant="outline" onClick={() => onOpenServiceReport(s)} className="h-8 gap-1 text-xs">
-                          <FileText className="w-3 h-3" /> Report
-                        </Button>
                         <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
