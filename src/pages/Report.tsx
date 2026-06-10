@@ -911,6 +911,32 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reportId, customerSignature, fieldroutesCustomerId]);
 
+  // Backfill FieldRoutes {loginlink} when the report is linked but no portal URL
+  // was captured at link time (older reports). Looks the customer up by email
+  // and surfaces the prominent "Customer Portal" button in the header.
+  useEffect(() => {
+    if (!fieldroutesCustomerId || fieldroutesLoginLink) return;
+    const query = (customerEmail || "").trim();
+    if (query.length < 2) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("fieldroutes-customer-search", {
+          body: { q: query, staffName: currentStaff?.fullName, limit: 25 },
+        });
+        if (cancelled || !data?.ok) return;
+        const match = (data.results ?? []).find(
+          (r: { customer_id?: string; loginLink?: string | null }) =>
+            String(r.customer_id) === String(fieldroutesCustomerId),
+        );
+        if (match?.loginLink) setFieldroutesLoginLink(String(match.loginLink));
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fieldroutesCustomerId, fieldroutesLoginLink, customerEmail, currentStaff?.fullName]);
+
   const expandWithAI = async (
     text: string,
     type: "findings" | "expect",
