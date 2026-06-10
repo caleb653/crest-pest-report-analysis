@@ -1037,6 +1037,7 @@ export default function CommercialDashboardView({
                           <ConditionsReportSection
                             services={[s as any]}
                             onSaveServiceReportData={persistServiceReportData}
+                            propertyName={property?.name}
                           />
                         </div>
                       </div>
@@ -1247,6 +1248,7 @@ export default function CommercialDashboardView({
                           services={[s as any]}
                           onSaveServiceReportData={persistServiceReportData}
                           includeUndated
+                          propertyName={property?.name}
                         />
                       </div>
                     </CardContent>
