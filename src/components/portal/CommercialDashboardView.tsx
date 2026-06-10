@@ -540,15 +540,65 @@ export default function CommercialDashboardView({
     if (!note) return;
     const { error } = await supabase
       .from("portal_requests")
-      .update({ response_notes: note, status: "in_progress", updated_at: new Date().toISOString() } as any)
+      .update({
+        response_notes: note,
+        // Crest reply auto-closes the sighting per cofounder workflow.
+        status: "completed",
+        sighting_status: "closed",
+        closed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any)
       .eq("id", id);
     if (error) {
       toast({ title: "Couldn't save response", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Response saved" });
+    toast({ title: "Response sent — sighting closed" });
     setResponseDraft(d => ({ ...d, [id]: "" }));
     loadRequests();
+  };
+
+  const setSightingStatus = async (id: string, status: "open" | "in_progress" | "closed") => {
+    const patch: any = {
+      sighting_status: status,
+      status: status === "closed" ? "completed" : (status === "in_progress" ? "in_progress" : "pending"),
+      updated_at: new Date().toISOString(),
+    };
+    if (status === "closed") patch.closed_at = new Date().toISOString();
+    const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
+      return;
+    }
+    loadRequests();
+  };
+
+  // Notify the customer when a brand-new condition (with photo) is added.
+  const notifyConditionAdded = async (serviceId: string, condition: any) => {
+    try {
+      await supabase.functions.invoke("send-portal-message", {
+        body: {
+          propertyName: property.name,
+          subject: `New Condition Identified — ${property.name}`,
+          message: [
+            `A new condition was identified at ${property.name}:`,
+            ``,
+            `Location: ${condition.area || "—"}`,
+            `Condition: ${condition.condition || "—"}`,
+            condition.detail ? `Detail: ${condition.detail}` : "",
+            `Severity: ${condition.severity}`,
+            `Recommended action: ${condition.action}`,
+            `Responsibility: ${condition.responsibility}`,
+            ``,
+            `View it anytime in the Active Conditions tab of your portal.`,
+          ].filter(Boolean).join("\n"),
+          senderName: "Crest Pest Control",
+        },
+      });
+      toast({ title: "Customer notified", description: "Email sent." });
+    } catch (e: any) {
+      toast({ title: "Couldn't send notification", description: e?.message, variant: "destructive" });
+    }
   };
 
   const markRequestComplete = async (id: string) => {
