@@ -93,6 +93,18 @@ export interface ConditionRow {
   responsibility: "Customer" | "Crest";
   comments: string;
   status: "Open" | "Ongoing" | "Closed";
+  /** Photos documenting the condition when identified. At least one is required
+   *  before the condition is considered "complete". */
+  photos?: string[];
+  /** Resolution photos uploaded when the condition is closed. Required to
+   *  mark status = "Closed". */
+  resolution_photos?: string[];
+  /** Optional note posted at close time. */
+  resolution_note?: string;
+  /** ISO timestamp when condition was first added. */
+  identified_at?: string;
+  /** ISO timestamp when condition was moved to "Closed". */
+  closed_at?: string | null;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -117,6 +129,11 @@ const newConditionRow = (): ConditionRow => ({
   responsibility: "Customer",
   comments: "",
   status: "Open",
+  photos: [],
+  resolution_photos: [],
+  resolution_note: "",
+  identified_at: new Date().toISOString(),
+  closed_at: null,
 });
 
 const ACTION_OPTIONS = [
