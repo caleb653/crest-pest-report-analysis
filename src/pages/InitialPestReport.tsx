@@ -170,7 +170,7 @@ const RECOMMENDATION_SNIPPETS: Record<string, string[]> = {
 
 const CUSTOMER_KEY_AREAS = ["Children", "Pets", "Elderly", "Garden"];
 
-const GENERAL_PESTS_OPTION = PEST_OPTIONS[0];
+const GENERAL_PESTS_OPTION = GENERAL_PESTS_LABEL;
 
 const PRODUCT_OPTIONS = [
   "Alpine WSG",
