@@ -1628,12 +1628,22 @@ const PropertyDashboard = ({
         new Set(unitRows.map((r: any) => String(r.unit_number || "").trim()).filter(Boolean))
       );
       if (treatedUnits.length > 0) {
-        await supabase
+        const { data: openUnitRequests } = await supabase
           .from("portal_requests")
-          .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+          .select("id, unit_number")
           .eq("property_id", property.id)
-          .in("status", ["pending", "in_progress"])
-          .in("unit_number", treatedUnits);
+          .in("status", ["pending", "in_progress"]);
+        const treatedSet = new Set(treatedUnits.map(u => u.toLowerCase()));
+        const requestIds = (openUnitRequests || [])
+          .filter((r: any) => treatedSet.has(String(r.unit_number || "").trim().toLowerCase()))
+          .map((r: any) => r.id)
+          .filter(Boolean);
+        if (requestIds.length > 0) {
+          await supabase
+            .from("portal_requests")
+            .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+            .in("id", requestIds);
+        }
       }
       // Also auto-close any open GENERAL requests (work orders without a
       // unit_number, e.g. "front gate is broken"). Without this they would
