@@ -636,7 +636,7 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map, Plan &amp; Team</span>
