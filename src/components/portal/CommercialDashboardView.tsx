@@ -1400,10 +1400,16 @@ export default function CommercialDashboardView({
                           </p>
                           <Badge variant="outline" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Reported {fmtDateTime(r.created_at)}
+                          {r.closed_at ? ` · Closed ${fmtDateTime(r.closed_at)}` : ""}
+                        </p>
                         {r.description && <p className="text-xs whitespace-pre-wrap">{r.description}</p>}
                         {r.response_notes && (
-                          <p className="text-xs italic text-muted-foreground"><span className="font-semibold">Response:</span> {r.response_notes}</p>
+                          <div className="mt-1 pt-1.5 border-t border-border/60">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Crest Response</p>
+                            <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
+                          </div>
                         )}
                       </CardContent>
                     </Card>
