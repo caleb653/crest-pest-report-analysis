@@ -3983,6 +3983,52 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                            <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
+                              <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
+                                🏠 New Tenant Move-In
+                              </span>
+                              {(() => {
+                                const prefs: any = property.customer_preferences || {};
+                                const map = (prefs.tenant_move_ins || {}) as Record<string, string>;
+                                const key = String(row.unit_number || "").trim();
+                                const current = key ? (map[key] || "") : "";
+                                return (
+                                  <>
+                                    <input
+                                      type="date"
+                                      className="h-8 rounded border border-rose-300 bg-background px-2 text-sm"
+                                      value={current}
+                                      min={new Date().toISOString().slice(0, 10)}
+                                      disabled={!key}
+                                      onChange={async (e) => {
+                                        if (!key) return;
+                                        const dateVal = e.target.value || null;
+                                        const nextMap = { ...map };
+                                        if (dateVal) nextMap[key] = dateVal;
+                                        else delete nextMap[key];
+                                        const updatedPrefs = { ...prefs, tenant_move_ins: nextMap };
+                                        const { error } = await supabase
+                                          .from("portal_properties")
+                                          .update({ customer_preferences: updatedPrefs })
+                                          .eq("id", property.id);
+                                        if (error) {
+                                          toast({ title: "Couldn't save move-in date", description: error.message, variant: "destructive" });
+                                        } else {
+                                          (property as any).customer_preferences = updatedPrefs;
+                                          toast({ title: dateVal ? "Move-in date saved" : "Move-in date cleared", duration: 1500 });
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-[11px] text-rose-900/80">
+                                      {key
+                                        ? "Tag stays on this unit through every follow-up until the date passes, then auto-clears."
+                                        : "Enter a unit number above to set a move-in date."}
+                                    </span>
+                                  </>
+                                );
+                              })()}
+                            </div>
                             {(() => {
                               const uc = merged.unitContexts.find(
                                 (c) => String(c.unit_number) === String(row.unit_number)
