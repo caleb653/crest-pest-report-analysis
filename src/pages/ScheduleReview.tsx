@@ -1051,6 +1051,9 @@ type FillRouteSummary = {
   onsite_min: number;
   paperwork_min: number;
   drive_min: number;
+  paid_drive_min?: number;
+  commute_min?: number;
+  total_miles?: number;
   total_min: number;
   total_hours: number;
   production: number;
@@ -1073,6 +1076,9 @@ type FillTopSummary = {
   route_count: number;
   total_stops: number;
   total_drive_min: number;
+  total_paid_drive_min?: number;
+  total_commute_min?: number;
+  total_miles?: number;
   total_onsite_min: number;
   total_min: number;
   total_production: number;
@@ -1108,6 +1114,22 @@ type FillUnscheduled = {
   special_scheduling: string | null;
   reason: string;
 };
+type FillDeferredBestDay = {
+  date: string;
+  weekday: string;
+  in_zone?: boolean;
+  in_window?: boolean;
+  load?: number;
+};
+type FillDeferred = {
+  customer: string;
+  city: string;
+  service: string;
+  due_date: string;
+  tech: string | null;
+  reason: string;
+  best_day?: FillDeferredBestDay | null;
+};
 type FillResult = {
   start: string;
   end: string;
@@ -1123,6 +1145,8 @@ type FillResult = {
   manual: FillUnscheduled[];
   needs_reassignment: FillUnscheduled[];
   unplaced: FillUnscheduled[];
+  deferred?: FillDeferred[];
+  deferred_count?: number;
   summary?: FillTopSummary;
 };
 
