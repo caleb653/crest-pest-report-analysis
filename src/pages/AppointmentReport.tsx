@@ -157,12 +157,15 @@ const AppointmentReport = () => {
 
       return {
         unit: unitKey,
-        targetPests: details.pest_activity && details.pest_activity !== "None" ? details.pest_activity : "",
-        notes: details.findings || "",
+        // For follow-up units, do NOT prefill notes/pests/products from the
+        // prior service — the tech should enter fresh observations. The prior
+        // service notes are still visible in the unit history section.
+        targetPests: isFollowUp ? "" : (details.pest_activity && details.pest_activity !== "None" ? details.pest_activity : ""),
+        notes: isFollowUp ? "" : (details.findings || ""),
         areasTreated: "",
-        productsUsed: details.products_used || "",
+        productsUsed: isFollowUp ? "" : (details.products_used || ""),
         followUp: isFollowUp ? "Yes" : "No",
-        followUpNotes: isFollowUp ? "Follow-up from last service" : "",
+        followUpNotes: "",
         status: "To Be Treated",
         activityLevel: "",
         flags: "",
