@@ -1426,7 +1426,10 @@ const PropertyDashboard = ({
           return {
             unit_number: u,
             target_pest: ctx?.target_pest || "",
-            findings: ctx?.findings || "",
+            // Never prefill technician findings on an upcoming service — the
+            // tech must enter fresh notes. Last-visit notes still show in the
+            // read-only "Findings (from last visit)" block.
+            findings: "",
             pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
             products_used: [] as ProductUsage[],
             status: "To Be Treated",
@@ -1460,7 +1463,7 @@ const PropertyDashboard = ({
           return {
             unit_number: u,
             target_pest: ctx?.target_pest || "",
-            findings: ctx?.findings || "",
+            findings: "",
             pest_activity: ctx?.follow_up?.pest_activity || ctx?.last_unit_detail?.pest_activity || "None",
             products_used: [] as ProductUsage[],
             status: "To Be Treated",
@@ -3667,7 +3670,7 @@ const PropertyDashboard = ({
                     return {
                       unit_number: ctx.unit_number,
                       target_pest: ctx.target_pest || "",
-                      findings: ctx.findings || "",
+                      findings: "",
                       pest_activity: fu?.pest_activity || lastDetail?.pest_activity || "None",
                       products_used: [] as ProductUsage[],
                       status: "To Be Treated",
