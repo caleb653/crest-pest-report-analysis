@@ -1837,9 +1837,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {/* Header row: DATE is now the primary label,
                                     service/cycle name is demoted to secondary text. */}
                                 <div className="pb-2.5 mb-2.5 border-b border-border">
-                                  <p className="font-bold text-base leading-tight">
-                                    {formatShortDate(service.service_date)}
-                                  </p>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-bold text-base leading-tight">
+                                      {formatShortDate(service.service_date)}
+                                    </p>
+                                    {isMostRecent && (
+                                      <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
+                                    )}
+                                  </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{(() => {
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
                                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
