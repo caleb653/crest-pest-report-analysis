@@ -4015,7 +4015,15 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                            {/* ── New-tenant move-in date editor (mission-critical) ──
+                                Hidden when the unit is currently Occupied — the move-in
+                                date is only meaningful for vacant/turnover units. */}
+                            {(() => {
+                              const uc = merged.unitContexts.find(
+                                (c) => String(c.unit_number).trim() === String(row.unit_number || "").trim()
+                              );
+                              if (uc?.occupancy_status === "Occupied") return null;
+                              return (
                             <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
                               <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
                                 🏠 New Tenant Move-In
@@ -4061,6 +4069,8 @@ const PropertyDashboard = ({
                                 );
                               })()}
                             </div>
+                              );
+                            })()}
                             {(() => {
                               const uc = merged.unitContexts.find(
                                 (c) => String(c.unit_number) === String(row.unit_number)
