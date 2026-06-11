@@ -164,6 +164,44 @@ export function getFollowUpDetailsFromPast(
   });
 }
 
+/**
+ * Build a SYNTHETIC "most recent past" service whose unit_details collapse
+ * the latest entry per unit across every past visit (including ad-hoc).
+ * This guarantees that a follow_up_needed flag set on ANY past visit
+ * (regular OR ad-hoc) rolls forward — until a newer visit for that unit
+ * clears it. Dismissed-follow-up entries are unioned across all visits.
+ */
+export function buildMergedMostRecentPast(
+  allPastServices: ServiceRow[] | null | undefined
+): ServiceRow | null {
+  const list = Array.isArray(allPastServices) ? allPastServices : [];
+  if (list.length === 0) return null;
+  // Sort newest first so the first time we see a unit is its latest detail.
+  const sorted = [...list].sort((a, b) =>
+    (b.service_date || "").localeCompare(a.service_date || "")
+  );
+  const latestByUnit = new Map<string, UnitDetailRow>();
+  const dismissed: any[] = [];
+  sorted.forEach((svc) => {
+    const dets = Array.isArray(svc.unit_details) ? (svc.unit_details as UnitDetailRow[]) : [];
+    dets.forEach((d) => {
+      const u = String(d?.unit_number || "").trim();
+      if (!u) return;
+      if (!latestByUnit.has(u)) latestByUnit.set(u, d);
+    });
+    const dRaw = (svc as any)?.report_data?.dismissed_follow_ups;
+    if (Array.isArray(dRaw)) dismissed.push(...dRaw);
+  });
+  return {
+    ...sorted[0],
+    unit_details: Array.from(latestByUnit.values()),
+    report_data: {
+      ...((sorted[0] as any)?.report_data || {}),
+      dismissed_follow_ups: dismissed,
+    },
+  } as ServiceRow;
+}
+
 /** Units flagged for follow-up on the most recent past service. */
 export function getFollowUpUnitsFromPast(mostRecentPast: ServiceRow | null | undefined): Set<string> {
   return new Set(getFollowUpDetailsFromPast(mostRecentPast).map(u => String(u.unit_number)));
