@@ -1759,7 +1759,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               | { kind: "request"; date: string; request: any; isInitial: boolean }
                             > = [];
                             entries.forEach(({ service, unitDetail }) => {
-                              timeline.push({ kind: "service", date: service.service_date || "", service, unitDetail });
+                              timeline.push({ kind: "service", date: (service.service_date || "").slice(0, 10), service, unitDetail });
                             });
                             const sortedReqs = [...unitReqs].sort(
                               (a, b) => (a.created_at || "").localeCompare(b.created_at || "")
@@ -1772,8 +1772,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 isInitial: idx === 0,
                               });
                             });
-                            timeline.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+                            // Newest first (oldest at bottom). Empty dates sink to the bottom.
+                            timeline.sort((a, b) => {
+                              const ad = a.date || "";
+                              const bd = b.date || "";
+                              if (!ad && !bd) return 0;
+                              if (!ad) return 1;
+                              if (!bd) return -1;
+                              return bd.localeCompare(ad);
+                            });
                             return timeline.map((item, j) => {
+                              const isMostRecent = j === 0 && timeline.length > 1;
                               if (item.kind === "request") {
                                 const r = item.request;
                                 const contact = parseResidentContact(r);
@@ -1788,6 +1797,9 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                         <Badge className="text-[10px] bg-primary text-primary-foreground">
                                           {item.isInitial ? "Initial Work Order" : "Work Order"}
                                         </Badge>
+                                        {isMostRecent && (
+                                          <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
+                                        )}
                                         {r.request_type && (
                                           <Badge variant="secondary" className="text-[10px]">
                                             {String(r.request_type).toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
@@ -1825,9 +1837,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 {/* Header row: DATE is now the primary label,
                                     service/cycle name is demoted to secondary text. */}
                                 <div className="pb-2.5 mb-2.5 border-b border-border">
-                                  <p className="font-bold text-base leading-tight">
-                                    {formatShortDate(service.service_date)}
-                                  </p>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="font-bold text-base leading-tight">
+                                      {formatShortDate(service.service_date)}
+                                    </p>
+                                    {isMostRecent && (
+                                      <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
+                                    )}
+                                  </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{(() => {
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
                                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
