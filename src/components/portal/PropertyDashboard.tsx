@@ -2135,6 +2135,27 @@ const PropertyDashboard = ({
         console.error("save tenant_move_in failed", e);
       }
     }
+    // Mirror the work order's Occupied/Vacant pick into the property's
+    // unit_occupancy map so the per-unit toggle on Areas Treated stays in
+    // lock-step with the work order. Clearing the field on the WO clears the
+    // unit's badge here too.
+    if (!isGeneral && canonical) {
+      try {
+        const prefs: any = property.customer_preferences || {};
+        const occMap = { ...((prefs.unit_occupancy || {}) as Record<string, string>) };
+        const key = String(canonical).trim();
+        if (workOrder.occupancy_status) occMap[key] = workOrder.occupancy_status;
+        else delete occMap[key];
+        const updatedPrefs = { ...prefs, unit_occupancy: occMap };
+        await supabase
+          .from("portal_properties")
+          .update({ customer_preferences: updatedPrefs })
+          .eq("id", property.id);
+        (property as any).customer_preferences = updatedPrefs;
+      } catch (e) {
+        console.error("save unit_occupancy failed", e);
+      }
+    }
     toast({ title: isGeneral
       ? "General request submitted"
       : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
