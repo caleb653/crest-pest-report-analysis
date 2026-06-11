@@ -217,6 +217,13 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property?.map_image_url || property?.image_url || null;
 
+  // Recent Pest Sightings (Open + In-Progress) — surfaced at the top of
+  // every visit so the Route Manager / customer sees what's outstanding.
+  const recentSightings = requests.filter(r => {
+    const status = ((r as any).sighting_status || r.status || "").toLowerCase();
+    return status !== "closed" && status !== "completed" && status !== "cancelled";
+  });
+
   // Build the scope of work — service types we've actually got on this
   // property, falling back to any commercial-specific defaults we know.
   const scopeTypes = Array.from(new Set(services.map(s => s.service_type).filter(Boolean)));
@@ -386,34 +393,158 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           {/* ─── VISITS ─── */}
           <TabsContent value="visits" className="space-y-4 mt-3">
             {/* Upcoming */}
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <Clock className="w-3 h-3" /> Upcoming Visits
-              </p>
-              {upcoming.length === 0 ? (
-                <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
-                  No upcoming visits scheduled.
-                </CardContent></Card>
-              ) : (
-                <div className="space-y-2">
-                  {upcoming.slice(0, 12).map(s => (
-                    <Card key={s.id}>
-                      <CardContent className="p-3 flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm truncate">{s.service_type}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {fmtDate(s.service_date)}
-                            {s.service_time && ` • ${s.service_time}`}
-                            {s.technician && ` • ${s.technician}`}
-                          </p>
-                        </div>
-                        <Badge variant="secondary" className="text-[10px]">Scheduled</Badge>
-                      </CardContent>
-                    </Card>
-                  ))}
+            <Card className="border-2 border-primary/30 bg-primary/[0.03]">
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" /> Upcoming Services
+                  </p>
+                  <Badge variant="secondary" className="text-[10px]">{upcoming.length}</Badge>
                 </div>
-              )}
-            </div>
+                {upcoming.length === 0 ? (
+                  <p className="p-3 text-center text-sm text-muted-foreground">
+                    No upcoming visits scheduled.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {upcoming.slice(0, 12).map(s => {
+                      const rd: any = (s as any).report_data || {};
+                      const targetPests: string[] = Array.isArray(rd.target_pests) ? rd.target_pests : [];
+                      const upProducts = normalizeUsageList(s.products_used);
+                      const equipment: any[] = Array.isArray(rd.non_chem_equipment) ? rd.non_chem_equipment : [];
+                      const conditions: any[] = Array.isArray(rd.conditions)
+                        ? rd.conditions.filter((c: any) => c && c.status !== "Closed")
+                        : (Array.isArray(rd.concerns) ? rd.concerns : []);
+                      const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
+                      return (
+                        <Card key={s.id} className="border-border">
+                          <CardContent className="p-3 space-y-3">
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="font-bold text-sm truncate">{s.service_type}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {fmtDate(s.service_date)}
+                                  {s.service_time && ` • ${s.service_time}`}
+                                  {s.technician && ` • ${s.technician}`}
+                                </p>
+                              </div>
+                              <Badge variant="secondary" className="text-[10px] shrink-0">Scheduled</Badge>
+                            </div>
+
+                            {/* 1. Recent Pest Sightings */}
+                            {recentSightings.length > 0 && (
+                              <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1">
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
+                                  <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                    {recentSightings.length} open
+                                  </Badge>
+                                </p>
+                                <div className="space-y-0.5">
+                                  {recentSightings.slice(0, 4).map((sg: any) => (
+                                    <p key={sg.id} className="text-xs text-amber-950 leading-snug">
+                                      <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                      {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                      {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 2. Service Notes / Prep */}
+                            {(s.special_notes || s.summary) && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Service Notes</p>
+                                {s.special_notes && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.special_notes}</p>}
+                                {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
+                              </div>
+                            )}
+
+                            {/* 3. Target Pests */}
+                            {targetPests.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Target Pests</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {targetPests.map((p, i) => (
+                                    <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 4. Product Used */}
+                            {upProducts.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <FlaskConical className="w-3 h-3" /> Product Used
+                                </p>
+                                <ProductUsageSummary entries={upProducts} />
+                              </div>
+                            )}
+
+                            {/* 5. Equipment Used */}
+                            {equipment.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <Wrench className="w-3 h-3" /> Equipment Used
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {equipment.map((e: any, i: number) => (
+                                    <Badge key={i} variant="outline" className="text-[11px]">
+                                      {e?.name || String(e)}{e?.qty ? ` × ${e.qty}` : ""}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* 6. Active Conditions */}
+                            {conditions.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> Active Conditions
+                                </p>
+                                <ul className="space-y-1.5">
+                                  {conditions.map((c: any, i: number) => (
+                                    <li key={i} className="text-sm bg-muted/40 rounded-md p-2 border border-border/60">
+                                      <p className="font-semibold">{c.condition || c.name || c.area || "Condition"}</p>
+                                      {c.detail && <p className="text-xs text-muted-foreground mt-0.5">{c.detail}</p>}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* 7. Other Property Images */}
+                            {photos.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <Camera className="w-3 h-3" /> Other Property Images
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {photos.map((p: any, i: number) => {
+                                    const url = typeof p === "string" ? p : p?.url;
+                                    if (!url) return null;
+                                    return (
+                                      <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                        className="block w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30">
+                                        <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Past */}
             <div>
@@ -469,7 +600,28 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 1. Service Notes (summary + findings + notes) */}
+                              {/* 1. Recent Pest Sightings */}
+                              {recentSightings.length > 0 && (
+                                <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1">
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
+                                    <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                      {recentSightings.length} open
+                                    </Badge>
+                                  </p>
+                                  <div className="space-y-0.5">
+                                    {recentSightings.slice(0, 4).map((sg: any) => (
+                                      <p key={sg.id} className="text-xs text-amber-950 leading-snug">
+                                        <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                        {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                        {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 2. Service Notes (summary + findings + notes) */}
                               {(s.summary || s.findings || s.notes) && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Service Notes</p>
