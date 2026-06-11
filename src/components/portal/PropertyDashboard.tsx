@@ -3560,13 +3560,9 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {s.follow_up_recommended && s.follow_up_notes && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2.5">
-            <p className="text-sm font-medium text-orange-700">⚠️ Follow-up: {s.follow_up_notes}</p>
-          </div>
-        )}
+        {/* Follow-up callout removed — surfaced in the top banner already. */}
 
-        {s.special_notes && (
+        {s.special_notes && !/^\s*Follow-up units from/i.test(s.special_notes) && (
           <div className="bg-amber-50 border border-amber-400 rounded-lg p-2.5">
             <p className="text-sm text-amber-700">{s.special_notes}</p>
           </div>
