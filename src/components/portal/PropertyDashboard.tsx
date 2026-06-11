@@ -3929,10 +3929,34 @@ const PropertyDashboard = ({
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
                               {(() => {
+                                const ctx = merged.unitContexts.find(
+                                  (u) => String(u.unit_number).trim() === String(row.unit_number || "").trim()
+                                );
+                                const occ = ctx?.occupancy_status;
+                                if (!occ) return null;
+                                return (
+                                  <span
+                                    className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                                      occ === "Occupied"
+                                        ? "text-emerald-800 bg-emerald-50 border-emerald-400"
+                                        : "text-slate-700 bg-slate-100 border-slate-400"
+                                    }`}
+                                    title="Occupancy from the most recent work order"
+                                  >
+                                    {occ}
+                                  </span>
+                                );
+                              })()}
+                              {(() => {
                                 const todayStr = new Date().toISOString().slice(0, 10);
                                 const moveIns = ((property.customer_preferences as any)?.tenant_move_ins || {}) as Record<string, string>;
                                 const moveDate = moveIns[String(row.unit_number || "").trim()];
                                 if (!moveDate || moveDate.slice(0, 10) < todayStr) return null;
+                                // Don't show the new-tenant move-in tag when the unit is occupied.
+                                const ctx = merged.unitContexts.find(
+                                  (u) => String(u.unit_number).trim() === String(row.unit_number || "").trim()
+                                );
+                                if (ctx?.occupancy_status === "Occupied") return null;
                                 return (
                                   <span
                                     className="text-xs font-bold uppercase tracking-wide text-rose-900 bg-rose-100 border border-rose-400 px-2 py-0.5 rounded shadow-sm"
@@ -3991,7 +4015,15 @@ const PropertyDashboard = ({
                           {isUnitOpen && (
                           <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                            {/* ── New-tenant move-in date editor (mission-critical) ──
+                                Hidden when the unit is currently Occupied — the move-in
+                                date is only meaningful for vacant/turnover units. */}
+                            {(() => {
+                              const uc = merged.unitContexts.find(
+                                (c) => String(c.unit_number).trim() === String(row.unit_number || "").trim()
+                              );
+                              if (uc?.occupancy_status === "Occupied") return null;
+                              return (
                             <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
                               <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
                                 🏠 New Tenant Move-In
@@ -4037,6 +4069,8 @@ const PropertyDashboard = ({
                                 );
                               })()}
                             </div>
+                              );
+                            })()}
                             {(() => {
                               const uc = merged.unitContexts.find(
                                 (c) => String(c.unit_number) === String(row.unit_number)
