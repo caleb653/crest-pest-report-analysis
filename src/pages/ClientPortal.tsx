@@ -109,6 +109,23 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
       </button>
       {isExpanded && (
         <div className="px-4 pb-4 space-y-3 border-t pt-3">
+          {hasFollowUp && (
+            <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+              <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+              {followUpUnits.length > 0 ? (
+                <>
+                  {followUpUnits.length} {followUpUnits.length === 1 ? "unit" : "units"}
+                  {(() => {
+                    const list = followUpUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+                    return list ? ` (${list})` : "";
+                  })()}{" "}
+                  will auto-roll into the next scheduled service.
+                </>
+              ) : (
+                service.follow_up_notes || "Flagged for a return visit on the next scheduled service."
+              )}
+            </p>
+          )}
           {service.summary && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Summary</p><p className="text-sm">{service.summary}</p></div>}
           {service.findings && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Findings</p><p className="text-sm">{service.findings}</p></div>}
           {service.notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Notes</p><p className="text-sm">{service.notes}</p></div>}
