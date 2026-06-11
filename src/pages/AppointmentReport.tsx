@@ -120,6 +120,7 @@ const AppointmentReport = () => {
     status: string;
     activityLevel: string;
     flags: string;
+    originalWorkOrder?: string;
   }
 
   const emptyUnit: UnitRow = {
@@ -133,6 +134,7 @@ const AppointmentReport = () => {
     status: "To Be Treated",
     activityLevel: "",
     flags: "",
+    originalWorkOrder: "",
   };
 
   const normalizeUnit = (value: unknown) => String(value ?? "").trim();
@@ -141,10 +143,12 @@ const AppointmentReport = () => {
     units,
     pestData,
     flaggedFollowUps,
+    workOrders,
   }: {
     units: string[];
     pestData?: Record<string, { findings?: string; pest_activity?: string; products_used?: string }>;
     flaggedFollowUps?: string[];
+    workOrders?: Record<string, string>;
   }) => {
     if (!Array.isArray(units) || units.length === 0) {
       return [{ ...emptyUnit }];
@@ -154,6 +158,7 @@ const AppointmentReport = () => {
       const unitKey = normalizeUnit(unitNumber);
       const details = pestData?.[unitKey] || pestData?.[unitNumber] || {};
       const isFollowUp = Array.isArray(flaggedFollowUps) && flaggedFollowUps.some((unit) => normalizeUnit(unit) === unitKey);
+      const originalWO = workOrders?.[unitKey] || workOrders?.[unitNumber] || "";
 
       return {
         unit: unitKey,
@@ -169,6 +174,7 @@ const AppointmentReport = () => {
         status: "To Be Treated",
         activityLevel: "",
         flags: "",
+        originalWorkOrder: originalWO,
       };
     });
   };
@@ -344,7 +350,7 @@ const AppointmentReport = () => {
       const hasRealPrefill = prefilledRows.some((row) => normalizeUnit(row.unit));
 
       if (!hasRealPrefill && data.property_id) {
-        const [{ data: recentCompleted }, { data: pendingReqs }] = await Promise.all([
+        const [{ data: recentCompleted }, { data: pendingReqs }, { data: allReqs }] = await Promise.all([
           supabase
             .from("portal_services")
             .select("unit_details")
@@ -358,11 +364,26 @@ const AppointmentReport = () => {
             .select("unit_number, pest_type, location_type, description")
             .eq("property_id", data.property_id)
             .in("status", ["pending", "in_progress"]),
+          supabase
+            .from("portal_requests")
+            .select("unit_number, pest_type, location_type, description, created_at")
+            .eq("property_id", data.property_id)
+            .order("created_at", { ascending: true }),
         ]);
 
         const unitsPlanned = Array.isArray(data.units_planned) ? (data.units_planned as string[]) : [];
         const followUps: string[] = [];
         const pestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
+        // Earliest portal_request per unit = the ORIGINAL work order. Persists
+        // across however many follow-ups occur so the tech always sees the
+        // request that started this chain of visits.
+        const workOrders: Record<string, string> = {};
+        (allReqs || []).forEach((request: any) => {
+          const unitNumber = normalizeUnit(request?.unit_number);
+          if (!unitNumber || workOrders[unitNumber]) return;
+          const context = [request.pest_type, request.location_type, request.description].filter(Boolean).join(" - ");
+          if (context) workOrders[unitNumber] = context;
+        });
 
         const details = Array.isArray(recentCompleted?.unit_details) ? (recentCompleted.unit_details as any[]) : [];
         details.forEach((unit: any) => {
@@ -406,6 +427,7 @@ const AppointmentReport = () => {
           units: mergedUnits,
           pestData,
           flaggedFollowUps: followUps,
+          workOrders,
         });
       }
 
@@ -445,6 +467,10 @@ const AppointmentReport = () => {
                     productsUsed: row.productsUsed || matchingPrefill.productsUsed,
                     followUp: matchingPrefill.followUp === "Yes" ? "Yes" : (row.followUp || "No"),
                     followUpNotes: row.followUpNotes || matchingPrefill.followUpNotes,
+                    // Always prefer the freshly-resolved original work order
+                    // so chains of follow-ups keep showing the request that
+                    // started them, even after the row has been saved.
+                    originalWorkOrder: matchingPrefill.originalWorkOrder || row.originalWorkOrder || "",
                   }
                 : row;
             }),
@@ -799,6 +825,11 @@ const AppointmentReport = () => {
                           </Popover>
                         </td>
                         <td className="border p-0.5">
+                          {row.originalWorkOrder && (
+                            <div className="mx-1.5 mt-1 mb-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] leading-snug text-amber-900">
+                              <span className="font-semibold">Original Work Order:</span> {row.originalWorkOrder}
+                            </div>
+                          )}
                           <Textarea
                             value={row.notes}
                             onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))}
