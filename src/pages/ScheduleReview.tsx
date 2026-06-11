@@ -1340,7 +1340,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                           <span className="text-muted-foreground flex gap-2 flex-wrap justify-end items-baseline">
                             <span>{r.stop_count} stops</span>
                             <span>· {r.total_hours}h</span>
-                            <span>· {fmtHM(r.drive_min)} drive</span>
+                            <span>· {fmtHM(r.paid_drive_min ?? r.drive_min)} paid drive</span>
+                            {r.total_miles != null && <span>· {Math.round(r.total_miles)} mi</span>}
+                            {r.commute_min != null && r.commute_min > 0 && (
+                              <span className="opacity-70">· +{Math.round(r.commute_min)}m commute</span>
+                            )}
                             <span>· {r.est_start}–{r.est_finish}</span>
                             <span className="font-semibold text-foreground">· ${r.production.toLocaleString()}</span>
                             <span className={`font-semibold ${efficiencyTone(r.efficiency_pct)}`}>· {r.efficiency_pct}%</span>
