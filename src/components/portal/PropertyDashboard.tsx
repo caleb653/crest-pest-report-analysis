@@ -3249,56 +3249,8 @@ const PropertyDashboard = ({
             <p className="text-sm whitespace-pre-wrap font-medium text-red-900">{redNotesValue}</p>
           </div>
         )}
-        {/* ─── Past-service follow-up banner ───
-            When the technician explicitly flagged any unit as
-            follow_up_needed, surface those units at the very top of the
-            past-service body so admins see them before any other detail. */}
-        {!isUpcoming && (() => {
-          const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
-          if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
-          return (
-            <div className="rounded-xl border-2 border-orange-500 bg-orange-50 ring-2 ring-orange-200 shadow-md overflow-hidden">
-              <div className="bg-orange-500 text-white px-3.5 py-2 flex items-center gap-2">
-                <span className="text-base leading-none">⚠️</span>
-                <p className="font-extrabold text-[13px] uppercase tracking-wide">
-                  Follow-up Needed{fuUnits.length > 0 ? ` — ${fuUnits.length} ${fuUnits.length === 1 ? "Unit" : "Units"}` : ""}
-                </p>
-              </div>
-              <div className="p-3.5 space-y-2 text-sm">
-                {fuUnits.length > 0 ? (
-                  <>
-                    <p className="text-orange-900 font-semibold">
-                      The technician flagged the following {fuUnits.length === 1 ? "unit" : "units"} for a return visit. They will auto-roll into the next scheduled service.
-                    </p>
-                    <ul className="space-y-1.5">
-                      {fuUnits.map((u: any, idx: number) => (
-                        <li key={idx} className="bg-white border border-orange-200 rounded-md px-3 py-2">
-                          <div className="flex flex-wrap items-baseline gap-2">
-                            <span className="font-bold text-orange-900">{u.unit_number || "—"}</span>
-                            {u.target_pest && (
-                              <span className="text-[11px] font-semibold uppercase tracking-wide text-orange-700">
-                                {u.target_pest}
-                              </span>
-                            )}
-                          </div>
-                          {(u.findings || u.notes) && (
-                            <p className="text-orange-900/90 whitespace-pre-wrap mt-1 leading-snug text-xs">
-                              {u.findings || u.notes}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  s.follow_up_notes && (
-                    <p className="text-orange-900 whitespace-pre-wrap">{s.follow_up_notes}</p>
-                  )
-                )}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Past-service follow-up banner moved to the BOTTOM of the body as
+            a single-sentence note (see below). */}
         {/* HOA mode (past service): MAP + SUMMARY are ~90% of the report.
             Everything else (per-unit/area table, products) is collapsed into
             a tiny "Visit Details" twirl-down underneath the narrative. */}
@@ -3461,7 +3413,26 @@ const PropertyDashboard = ({
                 </p>
               </div>
             )}
-            {/* 2) Products */}
+            {/* 2) Unit Summary — editable only when admin opted in */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
+              {renderEditableUnitTable(s, isPastEditing(s.id))}
+            </div>
+            {/* 3) Follow-up note — one sentence at the bottom */}
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "unit" : "units"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
+            {/* 4) Products — moved to the very bottom */}
             {products.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
@@ -3471,11 +3442,6 @@ const PropertyDashboard = ({
                 <ProductUsageSummary entries={products} />
               </div>
             )}
-            {/* 3) Unit Summary — editable only when admin opted in */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
-              {renderEditableUnitTable(s, isPastEditing(s.id))}
-            </div>
           </>
         )}
 
@@ -3524,6 +3490,19 @@ const PropertyDashboard = ({
                 </div>
               </div>
             </details>
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "home" : "homes"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
           </>
         )}
 
