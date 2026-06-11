@@ -482,6 +482,26 @@ export function computeUpcomingUnits(args: {
       lastDetail?.notes ||
       "";
 
+    // Normalize occupancy from the work order (preferred) or the most recent
+    // unit detail. Anything not matching Occupied/Vacant is dropped so the UI
+    // can rely on a clean union type.
+    const rawOccupancy = String(
+      request?.occupancy_status ||
+        (followUp as any)?.occupancy_status ||
+        (lastDetail as any)?.occupancy_status ||
+        ""
+    ).toLowerCase();
+    const occupancy_status: "Occupied" | "Vacant" | undefined = rawOccupancy.includes(
+      "occupied"
+    )
+      ? "Occupied"
+      : rawOccupancy.includes("vacant")
+        ? "Vacant"
+        : undefined;
+    // If the unit is occupied, the new-tenant move-in date is irrelevant —
+    // suppress it so it never displays alongside an Occupied badge.
+    const moveIn = occupancy_status === "Occupied" ? undefined : moveInByUnit.get(unit);
+
     return {
       unit_number: unit,
       source,
@@ -492,7 +512,8 @@ export function computeUpcomingUnits(args: {
       context,
       findings,
       notes,
-      tenant_move_in_date: moveInByUnit.get(unit),
+      tenant_move_in_date: moveIn,
+      occupancy_status,
     };
   };
 
