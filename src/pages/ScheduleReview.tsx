@@ -1478,7 +1478,13 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         {day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
             <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
-            <span>· {fmtHM(day.summary.drive_min)} drive</span>
+            <span>· {fmtHM(day.summary.paid_drive_min ?? day.summary.drive_min)} paid drive</span>
+            {day.summary.total_miles != null && (
+              <span>· {Math.round(day.summary.total_miles)} mi total</span>
+            )}
+            {day.summary.commute_min != null && day.summary.commute_min > 0 && (
+              <span className="opacity-70">· +{Math.round(day.summary.commute_min)}m commute (unpaid)</span>
+            )}
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
             <span>· ${day.summary.production.toLocaleString()} production</span>
             <span className={`font-semibold ${efficiencyTone(day.summary.efficiency_pct)}`}>
