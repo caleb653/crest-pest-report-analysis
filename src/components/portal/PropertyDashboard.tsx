@@ -3413,7 +3413,26 @@ const PropertyDashboard = ({
                 </p>
               </div>
             )}
-            {/* 2) Products */}
+            {/* 2) Unit Summary — editable only when admin opted in */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
+              {renderEditableUnitTable(s, isPastEditing(s.id))}
+            </div>
+            {/* 3) Follow-up note — one sentence at the bottom */}
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "unit" : "units"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
+            {/* 4) Products — moved to the very bottom */}
             {products.length > 0 && (
               <div className="mt-2">
                 <p className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
@@ -3423,11 +3442,6 @@ const PropertyDashboard = ({
                 <ProductUsageSummary entries={products} />
               </div>
             )}
-            {/* 3) Unit Summary — editable only when admin opted in */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
-              {renderEditableUnitTable(s, isPastEditing(s.id))}
-            </div>
           </>
         )}
 
