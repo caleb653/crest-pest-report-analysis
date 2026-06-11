@@ -2840,48 +2840,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               </div>
             )}
 
-            {/* Future projected visits — date only, no details */}
-            {futureProjectedDates.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Following {futureProjectedDates.length} visits ({FREQUENCY_LABELS[propertyFrequency]})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {futureProjectedDates.map((d, idx) => {
-                    const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
-                    const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
-                    const planArr = (planMap[propertyFrequency] || []) as string[];
-                    const nextRotIdx = pastServices.length % cycleLength;
-                    const slot = (nextRotIdx + (idx + 1)) % cycleLength;
-                    const note = cycleLength > 1 ? (planArr[slot] || "").trim() : "";
-                    return (
-                      <div
-                        key={`future-${idx}`}
-                        className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-lg px-4 py-3"
-                      >
-                        <span className="w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 2}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-sm font-medium block">
-                            {(propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")
-                              ? formatWeekOfMonth(d)
-                              : formatDate(d)}
-                          </span>
-                          {note && (
-                            <span className="text-xs text-primary font-semibold block mt-0.5 leading-snug">{note}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-muted-foreground italic mt-2.5">
-                  Projected dates only — service details are confirmed closer to each visit.
-                </p>
-              </div>
-            )}
+            {/* Future projected visits intentionally hidden — only the very
+                next visit is shown above. */}
           </div>
         </TabsContent>
 

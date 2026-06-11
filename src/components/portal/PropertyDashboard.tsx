@@ -6221,53 +6221,8 @@ const PropertyDashboard = ({
           </div>
         )}
 
-        {/* Future projected visits — date only, no details */}
-        {futureProjectedDates.length > 0 && (
-          <div className="mt-6">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5" />
-              Following {futureProjectedDates.length} visits ({propertyFrequency.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())})
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {futureProjectedDates.map((d, idx) => {
-                const cycleLength = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
-                const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
-                // Cadence rotation index: the "next" visit (allUpcoming[0])
-                // is at rotation slot (pastServices.length % cycleLength).
-                // Each future-projected visit is one step further around the
-                // rotation. (visitInCycle is 1-based for display.)
-                const nextRotIdx = pastServices.length % cycleLength;
-                const slot = (nextRotIdx + (idx + 1)) % cycleLength;
-                const visitInCycle = slot + 1;
-                const note = cycleLength > 1 ? (planArr[slot] || "").trim() : "";
-                return (
-                  <div
-                    key={`future-${idx}`}
-                    className="flex items-start gap-2 bg-muted/40 border border-border rounded-md px-3 py-2"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      {idx + 2}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs block">{formatDate(d)}</span>
-                      {cycleLength > 1 && (
-                        <span className="text-xs text-primary font-semibold uppercase tracking-wide">
-                          Visit {visitInCycle} of {cycleLength}
-                        </span>
-                      )}
-                      {note && (
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{note}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground italic mt-2">
-              Projected dates only — service details are confirmed closer to each visit.
-            </p>
-          </div>
-        )}
+        {/* Future projected visits intentionally hidden — only the very next
+            visit is shown above. */}
         </div>
       </TabsContent>
 
