@@ -395,7 +395,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       setKnownUnits(Array.from(units).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })));
     }
 
-    if (Array.isArray(sheets)) setPrepSheets(sheets);
+    if (Array.isArray(sheets)) {
+      // Client-facing portal: only show Apartment prep sheets
+      // (hide Commercial / Standard variants from PMs).
+      setPrepSheets(sheets.filter((s: PrepSheet) => /^apartment\b/i.test(s.title || "")));
+    }
     if (Array.isArray(reqs)) setRequests(reqs);
 
     setLoading(false);

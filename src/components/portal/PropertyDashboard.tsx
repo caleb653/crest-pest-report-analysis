@@ -846,7 +846,11 @@ const PropertyDashboard = ({
       const { data } = await supabase.from("portal_prep_sheets")
         .select("*")
         .order("title");
-      if (data) setPrepSheets(data);
+      if (data) {
+        // Client-facing portal: only Apartment prep sheets
+        // (hide Commercial / Standard variants).
+        setPrepSheets(data.filter((s: any) => /^apartment\b/i.test(s.title || "")));
+      }
     };
     loadRequests();
     loadSignedAuthorizations();
