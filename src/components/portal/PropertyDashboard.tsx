@@ -5286,7 +5286,7 @@ const PropertyDashboard = ({
                             kind: "request" as const,
                             date: String(req.created_at || "").slice(0, 10),
                             req,
-                            isInitial: i === unitReqs.length - 1 || unitReqs.length === 1 ? true : i === 0 && false,
+                            isInitial: false,
                           })),
                           ...entries.map(({ service, unitDetail }, j) => ({
                             kind: "service" as const,
