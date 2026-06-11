@@ -92,35 +92,13 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
     : [];
   const hasFollowUp = followUpUnits.length > 0 || !!service.follow_up_recommended;
   return (
-  <Card className={`transition-all ${
-    hasFollowUp
-      ? "border-2 border-orange-500 ring-2 ring-orange-300/60 shadow-lg"
-      : isExpanded ? "border-primary/40 shadow-md" : "hover:border-primary/20"
-  }`}>
+  <Card className={`transition-all ${isExpanded ? "border-primary/40 shadow-md" : "hover:border-primary/20"}`}>
     <CardContent className="p-0">
-      {hasFollowUp && (
-        <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-t-lg px-3 py-2">
-          <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
-          {followUpUnits.length > 0 ? (
-            <>
-              {followUpUnits.length} {followUpUnits.length === 1 ? "unit" : "units"}
-              {(() => {
-                const list = followUpUnits.map(u => u.unit_number).filter(Boolean).join(", ");
-                return list ? ` (${list})` : "";
-              })()}{" "}
-              will auto-roll into the next scheduled service.
-            </>
-          ) : (
-            service.follow_up_notes || "Flagged for a return visit on the next scheduled service."
-          )}
-        </p>
-      )}
       <button className="w-full text-left p-4 flex items-center justify-between" onClick={onToggle}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <p className="font-semibold text-sm">{service.service_type}</p>
             <Badge variant={service.status === "completed" ? "default" : "secondary"} className="text-xs">{service.status}</Badge>
-            {service.follow_up_recommended && <Badge className="text-xs bg-orange-500 hover:bg-orange-600">Follow-up Needed</Badge>}
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>{service.service_date ? new Date(service.service_date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "No date"}</span>
