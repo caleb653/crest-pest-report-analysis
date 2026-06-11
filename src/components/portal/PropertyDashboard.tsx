@@ -6446,6 +6446,26 @@ const PropertyDashboard = ({
               </div>
             )}
           </div>
+
+          {/* Property document uploads — admin / PM only, lives inside the
+              Prep / Auth / Docs tab so it doesn't leak across every tab. */}
+          <div className="mt-8">
+            <div className="flex justify-end mb-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => downloadBlankRightToTreatPdf(property.name)}
+              >
+                <Download className="w-4 h-4 mr-1.5" />Download Blank Right-to-Treat Agreement
+              </Button>
+            </div>
+            <PropertyDocuments
+              propertyId={property.id}
+              uploadedBy="Admin"
+              heading="Property Documents"
+              helperText="Upload PDFs, notices, agreements, or other files. Visible to anyone with the property link (admin, PMs, and clients)."
+            />
+          </div>
         </div>
       </TabsContent>
 
