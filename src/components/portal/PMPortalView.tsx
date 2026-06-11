@@ -2319,14 +2319,50 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     const matchedUpcoming = r.unit_number
                       ? upcomingServices.find(s => Array.isArray(s.units_planned) && (s.units_planned as string[]).includes(r.unit_number!))
                       : null;
+                    // ─── Effective resolution ──────────────────────────────
+                    // A work order is only truly "Resolved" once the most
+                    // recent past service for this unit was completed AND the
+                    // technician did NOT check Follow-up Needed. If a
+                    // follow-up is still pending (either flagged on the last
+                    // visit or already scheduled on an upcoming visit), the
+                    // work order is treated as still open regardless of the
+                    // raw r.status value.
+                    const unitKey = String(r.unit_number || "").trim();
+                    let latestUnitRow: any = null;
+                    let latestUnitDate: string = "";
+                    if (unitKey) {
+                      for (const s of pastServices) {
+                        const rows: any[] = Array.isArray(s.unit_details) ? (s.unit_details as any[]) : [];
+                        const match = rows.find(u => String(u?.unit_number || "").trim() === unitKey);
+                        if (match && (s.service_date || "") >= latestUnitDate) {
+                          latestUnitDate = s.service_date || "";
+                          latestUnitRow = match;
+                        }
+                      }
+                    }
+                    const hasPendingFollowUp =
+                      !!matchedUpcoming ||
+                      (latestUnitRow ? latestUnitRow.follow_up_needed === true : false);
+                    const effectiveStatus = hasPendingFollowUp
+                      ? "follow_up"
+                      : (latestUnitRow && latestUnitRow.follow_up_needed !== true)
+                        ? "resolved"
+                        : r.status;
+                    const statusLabel =
+                      effectiveStatus === "follow_up" ? "Follow-up Needed"
+                      : effectiveStatus === "in_progress" ? "In Progress"
+                      : effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1);
                     return (
                       <Card key={r.id}>
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-2">
-                              {getStatusIcon(r.status)}
-                              <Badge variant="outline" className="text-xs">
-                                {r.status === "in_progress" ? "In Progress" : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                              {getStatusIcon(effectiveStatus === "follow_up" ? "in_progress" : effectiveStatus)}
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${effectiveStatus === "follow_up" ? "bg-orange-50 border-orange-400 text-orange-800" : ""}`}
+                              >
+                                {statusLabel}
                               </Badge>
                               {r.request_type && (
                                 <Badge variant="secondary" className="text-[10px]">
