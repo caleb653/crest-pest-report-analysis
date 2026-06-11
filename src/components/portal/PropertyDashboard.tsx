@@ -4022,8 +4022,22 @@ const PropertyDashboard = ({
                                     .eq("id", property.id);
                                   if (error) {
                                     toast({ title: "Couldn't save occupancy", description: error.message, variant: "destructive" });
+                                    return;
                                   } else {
                                     (property as any).customer_preferences = updatedPrefs;
+                                  }
+                                  // Keep the open work order(s) for this unit
+                                  // in sync so the WO record always reflects
+                                  // the latest Occupied/Vacant call.
+                                  try {
+                                    await supabase
+                                      .from("portal_requests")
+                                      .update({ occupancy_status: next || null, updated_at: new Date().toISOString() } as any)
+                                      .eq("property_id", property.id)
+                                      .eq("unit_number", key)
+                                      .in("status", ["pending", "in_progress"]);
+                                  } catch (e) {
+                                    console.warn("sync work order occupancy failed", e);
                                   }
                                 };
                                 const btn = (val: "Occupied" | "Vacant", cls: string) => (
