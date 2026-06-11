@@ -1315,12 +1315,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="whitespace-pre-wrap">{s.special_notes}</p>
           </div>
         )}
-        {s.follow_up_recommended && s.follow_up_notes && (
-          <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
-            <p className="font-semibold text-orange-900 mb-0.5">Follow-up Recommended</p>
-            <p className="text-orange-800 whitespace-pre-wrap">{s.follow_up_notes}</p>
-          </div>
-        )}
+        {/* Follow-up callout intentionally removed here — already surfaced
+            in the top banner for this past service. */}
         {/* Pesticide / safety disclaimer — last item in past service report */}
         <PesticideNotice />
         {/* Apartment-specific inspection disclaimer (non-HOA only) */}
