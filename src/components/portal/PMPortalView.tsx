@@ -1184,23 +1184,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 return (
                   <div
                     key={i}
-                    className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
-                      isFollowUp ? "border-orange-500" : "border-primary/60"
-                    }`}
+                    className="rounded-xl border-2 border-primary/60 bg-card shadow-md ring-1 ring-border overflow-hidden"
                   >
                     {/* Bold colored header bar */}
                     <button
                       type="button"
                       onClick={() => toggleUnitKey(unitKey)}
                       aria-expanded={isUnitOpen}
-                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
-                        isFollowUp ? "bg-orange-100 hover:bg-orange-200/60 border-b-2 border-orange-500" : "bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60"
-                      } ${isUnitOpen ? "" : "border-b-0"}`}
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition-colors bg-primary/10 hover:bg-primary/15 border-b-2 border-primary/60 ${isUnitOpen ? "" : "border-b-0"}`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm ${
-                          isFollowUp ? "bg-orange-500 text-white" : "bg-primary text-primary-foreground"
-                        }`}>
+                        <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm bg-primary text-primary-foreground">
                           {i + 1}
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -1219,7 +1213,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       </div>
                       <div className="flex items-center gap-2">
                         {u.status && (
-                          <Badge variant="outline" className={`text-xs font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
+                          <Badge variant="outline" className="text-xs font-semibold border-primary/70 bg-background">
                             {friendlyUnitStatus(u.status, (u as any).kind)}
                           </Badge>
                         )}
@@ -1265,14 +1259,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{u.findings}</p>
                           </div>
                         )}
-                        {(u.follow_up_needed || u.sanitization_concern) && (
+                        {/* Follow-up is already called out in the top banner —
+                            no need to repeat the badge on every unit. The
+                            sanitization concern flag is still surfaced. */}
+                        {u.sanitization_concern && (
                           <div className="flex flex-wrap gap-2">
-                            {u.follow_up_needed && (
-                              <Badge className="text-[11px] bg-orange-500 text-white">Follow Up Needed</Badge>
-                            )}
-                            {u.sanitization_concern && (
-                              <Badge className="text-[11px] bg-amber-600 text-white">Sanitization Concern</Badge>
-                            )}
+                            <Badge className="text-[11px] bg-amber-600 text-white">Sanitization Concern</Badge>
                           </div>
                         )}
                       </div>
