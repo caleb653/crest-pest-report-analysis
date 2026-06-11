@@ -467,6 +467,10 @@ const AppointmentReport = () => {
                     productsUsed: row.productsUsed || matchingPrefill.productsUsed,
                     followUp: matchingPrefill.followUp === "Yes" ? "Yes" : (row.followUp || "No"),
                     followUpNotes: row.followUpNotes || matchingPrefill.followUpNotes,
+                    // Always prefer the freshly-resolved original work order
+                    // so chains of follow-ups keep showing the request that
+                    // started them, even after the row has been saved.
+                    originalWorkOrder: matchingPrefill.originalWorkOrder || row.originalWorkOrder || "",
                   }
                 : row;
             }),
