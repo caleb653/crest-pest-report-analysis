@@ -252,6 +252,10 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   // FieldRoutes customer link (chosen via the picker) + autofilled phone.
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  // FieldPortals loginLink for the linked customer — powers the prominent
+  // "Open Customer Portal" button at the top of the report (same UX as
+  // the sales / multi-proposal report).
+  const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
@@ -670,6 +674,9 @@ const Report = () => {
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
+        if (typeof prefs.fieldroutes_login_link === "string" && prefs.fieldroutes_login_link) {
+          setFieldroutesLoginLink(prefs.fieldroutes_login_link as string);
+        }
       }
       if (row.notes) {
         setTodaysFindings(row.notes as string);
@@ -941,6 +948,7 @@ const Report = () => {
           propertyType,
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
         },
         customer_email: customerEmail || null,
@@ -1012,6 +1020,7 @@ const Report = () => {
           propertyType,
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
         },
         customer_email: customerEmail || null,
@@ -1242,6 +1251,7 @@ Crest Pest Control
           propertyType,
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
         },
         customer_email: customerEmail,
@@ -1781,6 +1791,7 @@ Crest Pest Control
                       linkedLabel={editableCustomer || null}
                       onSelect={(c) => {
                         setFieldroutesCustomerId(c.customer_id);
+                        setFieldroutesLoginLink(c.loginLink || null);
                         if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
                         if (c.email) setCustomerEmail(c.email);
                         if (c.phone) setCustomerPhone(c.phone);
@@ -1788,9 +1799,45 @@ Crest Pest Control
                           .filter(Boolean).join(", ");
                         if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
                       }}
-                      onClear={() => setFieldroutesCustomerId(null)}
+                      onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
                     />
+                    {fieldroutesCustomerId && (
+                      <div className="mt-2">
+                        <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                          Customer Portal loginLink (paste from FieldRoutes — used by the "Open Customer Portal" button)
+                        </p>
+                        <Input
+                          value={fieldroutesLoginLink ?? ""}
+                          onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                          placeholder="https://crestpest.pestportals.com/?loginHash=…"
+                          className="text-xs font-mono"
+                        />
+                      </div>
+                    )}
                   </div>
+
+                  {/* Prominent "Open Customer Portal" button — appears once the
+                      FieldPortals {loginlink} for the linked customer is known. */}
+                  {fieldroutesLoginLink && (
+                    <div className="mb-3">
+                      <a
+                        href={fieldroutesLoginLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 hover:bg-primary/15 transition-colors no-underline"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary/80">Customer Portal</p>
+                          <p className="text-xs font-bold text-foreground truncate">
+                            Open Customer Portal &nbsp;→&nbsp; manage account &amp; add a payment method in Wallet
+                          </p>
+                        </div>
+                        <span className="hidden sm:inline-flex items-center rounded-md bg-foreground text-background text-[11px] font-bold px-2.5 py-1">
+                          Open
+                        </span>
+                      </a>
+                    </div>
+                  )}
 
                   <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 text-xs">
                     <div className="flex-[2] space-y-0">
