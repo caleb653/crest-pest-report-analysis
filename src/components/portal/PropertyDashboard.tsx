@@ -5273,51 +5273,72 @@ const PropertyDashboard = ({
                     </AccordionTrigger>
                     <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
                       {(() => {
-                        // ─── Initial Work Order box ───
-                        // Surface the original/earliest work order for this
-                        // unit so admins see what kicked off the series.
-                        if (unitNum === "General") return null;
-                        const unitReqs = (allRequests as any[])
+                        // ─── Combined chronological timeline ───
+                        // Work orders + treatments, MOST RECENT AT TOP,
+                        // oldest (typically the original work order) at the bottom.
+                        const unitReqs = unitNum === "General" ? [] : (allRequests as any[])
                           .filter(r => String(r.unit_number || "").trim() === unitNum);
-                        const initial = unitReqs[0];
-                        if (!initial) return null;
-                        const contact = parseResidentContact(initial);
-                        const desc = contact.cleanedDescription || initial.description || "";
-                        return (
-                          <div className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-2.5 shadow-sm mb-1.5">
-                            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <Badge className="text-[10px] bg-primary text-primary-foreground">Initial Work Order</Badge>
-                                {initial.request_type && (
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {String(initial.request_type).toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
-                                  </Badge>
-                                )}
-                                {initial.location_type && (
-                                  <span className="text-[10px] text-muted-foreground">• {initial.location_type}</span>
+                        type TimelineItem =
+                          | { kind: "request"; date: string; req: any; isInitial: boolean }
+                          | { kind: "service"; date: string; service: any; unitDetail: any; j: number };
+                        const items: TimelineItem[] = [
+                          ...unitReqs.map((req, i) => ({
+                            kind: "request" as const,
+                            date: String(req.created_at || "").slice(0, 10),
+                            req,
+                            isInitial: i === unitReqs.length - 1 || unitReqs.length === 1 ? true : i === 0 && false,
+                          })),
+                          ...entries.map(({ service, unitDetail }, j) => ({
+                            kind: "service" as const,
+                            date: String(service.service_date || "").slice(0, 10),
+                            service,
+                            unitDetail,
+                            j,
+                          })),
+                        ];
+                        // Mark the EARLIEST request as the Initial Work Order.
+                        const sortedReqIdx = [...unitReqs].sort((a, b) =>
+                          String(a.created_at || "").localeCompare(String(b.created_at || ""))
+                        );
+                        const initialId = sortedReqIdx[0]?.id;
+                        // Newest first → oldest at the bottom.
+                        items.sort((a, b) => b.date.localeCompare(a.date));
+                        return items.map((item, idx) => {
+                          if (item.kind === "request") {
+                            const contact = parseResidentContact(item.req);
+                            const desc = contact.cleanedDescription || item.req.description || "";
+                            const isInit = item.req.id ? item.req.id === initialId : idx === items.length - 1;
+                            return (
+                              <div key={`req-${item.req.id || idx}`} className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-2.5 text-xs shadow-sm">
+                                <div className="pb-2 mb-2 border-b border-primary/20">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="font-bold text-sm leading-tight">
+                                      {new Date(item.req.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                    </p>
+                                    <Badge className="text-[10px] bg-primary text-primary-foreground">
+                                      {isInit ? "Initial Work Order" : "Work Order"}
+                                    </Badge>
+                                    {item.req.location_type && (
+                                      <span className="text-[10px] text-muted-foreground">• {item.req.location_type}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {desc && (
+                                  <p className="text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">{desc}</p>
                                 )}
                               </div>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(initial.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                              </span>
-                            </div>
-                            {desc && (
-                              <p className="text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">{desc}</p>
-                            )}
-                            {unitReqs.length > 1 && (
-                              <p className="text-[10px] text-muted-foreground mt-1">
-                                +{unitReqs.length - 1} additional work order{unitReqs.length - 1 === 1 ? "" : "s"} for this unit
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })()}
-                      {entries.map(({ service, unitDetail }, j) => (
+                            );
+                          }
+                          const { service, unitDetail, j } = item;
+                          return (
                         <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
                           {/* Date is now the primary header; service name moved underneath. */}
                           <div>
-                            <p className="font-bold text-sm leading-tight">{formatShortDate(service.service_date)}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-sm leading-tight">{formatShortDate(service.service_date)}</p>
+                              <Badge className="text-[10px] bg-primary text-primary-foreground">Treatment</Badge>
+                            </div>
                             <p className="text-muted-foreground text-[11px] mt-0.5">{(() => {
                               if ((service as any).appointment_service) return (service as any).appointment_service;
                               const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
