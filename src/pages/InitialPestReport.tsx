@@ -252,6 +252,10 @@ const Report = () => {
   const [editableCustomer, setEditableCustomer] = useState(customerName || "");
   // FieldRoutes customer link (chosen via the picker) + autofilled phone.
   const [fieldroutesCustomerId, setFieldroutesCustomerId] = useState<string | null>(null);
+  // FieldPortals loginLink for the linked customer — powers the prominent
+  // "Open Customer Portal" button at the top of the report (same UX as
+  // the sales / multi-proposal report).
+  const [fieldroutesLoginLink, setFieldroutesLoginLink] = useState<string | null>(null);
   const [customerPhone, setCustomerPhone] = useState("");
   const currentStaff = useCurrentStaff();
   const [editableServiceDate, setEditableServiceDate] = useState(serviceDate || new Date().toISOString().split("T")[0]);
