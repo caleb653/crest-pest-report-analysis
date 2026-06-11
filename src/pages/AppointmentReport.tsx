@@ -120,6 +120,7 @@ const AppointmentReport = () => {
     status: string;
     activityLevel: string;
     flags: string;
+    originalWorkOrder?: string;
   }
 
   const emptyUnit: UnitRow = {
@@ -133,6 +134,7 @@ const AppointmentReport = () => {
     status: "To Be Treated",
     activityLevel: "",
     flags: "",
+    originalWorkOrder: "",
   };
 
   const normalizeUnit = (value: unknown) => String(value ?? "").trim();
@@ -141,10 +143,12 @@ const AppointmentReport = () => {
     units,
     pestData,
     flaggedFollowUps,
+    workOrders,
   }: {
     units: string[];
     pestData?: Record<string, { findings?: string; pest_activity?: string; products_used?: string }>;
     flaggedFollowUps?: string[];
+    workOrders?: Record<string, string>;
   }) => {
     if (!Array.isArray(units) || units.length === 0) {
       return [{ ...emptyUnit }];
@@ -154,6 +158,7 @@ const AppointmentReport = () => {
       const unitKey = normalizeUnit(unitNumber);
       const details = pestData?.[unitKey] || pestData?.[unitNumber] || {};
       const isFollowUp = Array.isArray(flaggedFollowUps) && flaggedFollowUps.some((unit) => normalizeUnit(unit) === unitKey);
+      const originalWO = workOrders?.[unitKey] || workOrders?.[unitNumber] || "";
 
       return {
         unit: unitKey,
@@ -169,6 +174,7 @@ const AppointmentReport = () => {
         status: "To Be Treated",
         activityLevel: "",
         flags: "",
+        originalWorkOrder: originalWO,
       };
     });
   };
