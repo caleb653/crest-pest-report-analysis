@@ -1354,6 +1354,20 @@ const PropertyDashboard = ({
     //    automatically while the admin types. It's wiped on completion. ──
     const svcRow = propServices.find(s => s.id === serviceId) as any;
     const draft = svcRow?.report_data?.completion_draft;
+    // Map of unit → context so we can detect (and strip) findings that were
+    // carried over from the LAST visit by an old autosaved draft. Technician
+    // findings must NEVER be prefilled on an upcoming service.
+    const ctxFindingsByUnit = new Map<string, string>();
+    (unitContexts || []).forEach(c => {
+      const carried = String((c as any)?.findings || (c as any)?.last_unit_detail?.findings || "").trim();
+      if (carried) ctxFindingsByUnit.set(String(c.unit_number || "").trim(), carried);
+    });
+    const scrubFindings = (unit: string, f: string): string => {
+      const val = String(f || "").trim();
+      if (!val) return "";
+      const carried = ctxFindingsByUnit.get(String(unit || "").trim());
+      return carried && val === carried ? "" : f;
+    };
       if (draft && Array.isArray(draft.unitRows)) {
         const dismissed = new Set<string>();
         const dismissedRaw = Array.isArray((svcRow as any)?.report_data?.dismissed_units)
@@ -1378,7 +1392,7 @@ const PropertyDashboard = ({
             .map((r: any) => ({
               unit_number: r.unit_number || "",
               target_pest: r.target_pest || "",
-              findings: r.findings || "",
+              findings: scrubFindings(r.unit_number || "", r.findings || ""),
               pest_activity: r.pest_activity || "None",
               products_used: normalizeUsageList(r.products_used) || [],
               status: r.status || "To Be Treated",
@@ -1476,8 +1490,9 @@ const PropertyDashboard = ({
     const draft = {
       unitRows: rows,
       summary: service.summary || "",
-      findings: service.findings || "",
-      notes: service.notes || "",
+      // Never prefill technician findings/notes on an upcoming service.
+      findings: "",
+      notes: "",
       technician: service.technician || "",
       time_in: "",
       time_out: "",
