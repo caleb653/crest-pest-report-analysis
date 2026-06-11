@@ -117,12 +117,6 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
               <div className="flex flex-wrap gap-1">{(service.products_used as string[]).map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}</div>
             </div>
           )}
-          {service.follow_up_recommended && service.follow_up_notes && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <p className="text-xs font-semibold text-orange-700 mb-1">Follow-up Recommended</p>
-              <p className="text-sm text-orange-600">{service.follow_up_notes}</p>
-            </div>
-          )}
           {service.unit_details && Array.isArray(service.unit_details) && (service.unit_details as any[]).length > 0 && (
             <div>
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">
