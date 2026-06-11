@@ -707,11 +707,6 @@ const ClientPortal = () => {
                 <ClipboardList className="w-8 h-8 mx-auto mb-2 text-secondary group-hover:scale-110 transition-transform" />
                 <p className="text-2xl font-bold">{futureSvcs.length}</p>
                 <p className="text-sm font-semibold text-muted-foreground mt-0.5">Upcoming</p>
-                {futureSvcs.length > 0 && futureSvcs[0].service_date && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Next: {new Date(futureSvcs[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </p>
-                )}
               </button>
             </div>
           )}
@@ -785,14 +780,6 @@ const ClientPortal = () => {
             </div>
           )}
 
-          {/* Property documents (uploads from PMs/admins) */}
-          {!serviceView && (
-            <PropertyDocuments
-              propertyId={selectedProperty.id}
-              heading="Property Documents"
-              helperText="Notices, agreements, and other files shared for this property."
-            />
-          )}
         </div>
 
         {/* Footer */}
@@ -855,9 +842,6 @@ const ClientPortal = () => {
             {properties.map(p => {
               const propPast = getPastServices(p.id);
               const propFuture = getFutureServices(p.id);
-              const nextDate = propFuture.length > 0 && propFuture[0].service_date
-                ? new Date(propFuture[0].service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : null;
               return (
                 <Card key={p.id} className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all overflow-hidden group active:scale-[0.99]"
                   onClick={() => setSelectedProperty(p)}>
@@ -878,7 +862,6 @@ const ClientPortal = () => {
                       <span>{propPast.length} completed</span>
                       <span>•</span>
                       <span>{propFuture.length} upcoming</span>
-                      {nextDate && <><span>•</span><span className="text-primary font-medium">Next: {nextDate}</span></>}
                     </div>
                   </CardContent>
                 </Card>
