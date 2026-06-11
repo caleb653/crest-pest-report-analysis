@@ -39,6 +39,8 @@ import {
 } from "@/lib/surveyDefaults";
 import { ServiceComments, type ServiceComment } from "@/components/portal/ServiceComments";
 import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
+import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
+import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -6443,6 +6445,26 @@ const PropertyDashboard = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Property document uploads — admin / PM only, lives inside the
+              Prep / Auth / Docs tab so it doesn't leak across every tab. */}
+          <div className="mt-8">
+            <div className="flex justify-end mb-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => downloadBlankRightToTreatPdf(property.name)}
+              >
+                <Download className="w-4 h-4 mr-1.5" />Download Blank Right-to-Treat Agreement
+              </Button>
+            </div>
+            <PropertyDocuments
+              propertyId={property.id}
+              uploadedBy="Admin"
+              heading="Property Documents"
+              helperText="Upload PDFs, notices, agreements, or other files. Visible to anyone with the property link (admin, PMs, and clients)."
+            />
           </div>
         </div>
       </TabsContent>
