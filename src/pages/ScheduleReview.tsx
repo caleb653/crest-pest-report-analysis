@@ -29,6 +29,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import RouteMap from "@/components/scheduling/RouteMap";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -1017,6 +1019,10 @@ type FillStop = {
   customer: string;
   city: string;
   address: string;
+  // Optional geocoded coordinates (added by the planner when available).
+  // Stops with null/undefined lat-lng are skipped on the map.
+  lat?: number | null;
+  lng?: number | null;
   services: string[];
   service_label: string;
   frequency: number;
@@ -1364,6 +1370,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [mapOpen, setMapOpen] = useState(false);
   // Per-card exclusion set: when the user X's someone, we drop them from the
   // queueing list so they will NOT be sent to FieldRoutes for this day.
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -1449,6 +1456,11 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
             </span>
           </div>
         )}
+        <div className="pt-1">
+          <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}>
+            <MapPin className="w-3.5 h-3.5 mr-1" /> View map
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
@@ -1560,6 +1572,17 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
           </Button>
         </div>
       </CardContent>
+      <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+        <DialogContent className="max-w-5xl w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>
+              {day.tech} · {weekdayLabel(day.date)} · {day.stop_count} stops
+              {day.summary ? ` · ${day.summary.efficiency_pct}% efficient` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <RouteMap stops={day.stops} />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
