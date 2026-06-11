@@ -5171,8 +5171,10 @@ const PropertyDashboard = ({
                       {entries.map(({ service, unitDetail }, j) => (
                         <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">{(() => {
+                          {/* Date is now the primary header; service name moved underneath. */}
+                          <div>
+                            <p className="font-bold text-sm leading-tight">{formatShortDate(service.service_date)}</p>
+                            <p className="text-muted-foreground text-[11px] mt-0.5">{(() => {
                               if ((service as any).appointment_service) return (service as any).appointment_service;
                               const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                               if (cycleLen <= 1) return service.service_type;
@@ -5181,8 +5183,7 @@ const PropertyDashboard = ({
                               const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
                               const planArr = (cadencePlanDraft[propertyFrequency] || []) as string[];
                               return (planArr[rotIdx] || "").trim() || service.service_type;
-                            })()}</span>
-                            <span className="text-muted-foreground">{formatShortDate(service.service_date)}</span>
+                            })()}</p>
                           </div>
                           {unitDetail && (
                             <div className="mt-1 text-muted-foreground space-y-0.5">
@@ -5193,6 +5194,29 @@ const PropertyDashboard = ({
                             </div>
                           )}
                           {!unitDetail && service.summary && <p className="text-muted-foreground mt-1">{service.summary}</p>}
+                          {(() => {
+                            const unitPhotos = Array.isArray((unitDetail as any)?.photos) ? (unitDetail as any).photos : [];
+                            const svcPhotos = Array.isArray((service as any)?.photos) ? (service as any).photos : [];
+                            const photos = (unitPhotos.length ? unitPhotos : svcPhotos)
+                              .map((p: any) => (typeof p === "string" ? p : p?.url || p?.src))
+                              .filter(Boolean);
+                            if (photos.length === 0) return null;
+                            return (
+                              <div className="mt-2 grid grid-cols-4 gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                {photos.map((url: string, k: number) => (
+                                  <a
+                                    key={k}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50"
+                                  >
+                                    <img src={url} alt={`Photo ${k + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                  </a>
+                                ))}
+                              </div>
+                            );
+                          })()}
                         </div>
                       ))}
                     </AccordionContent>
