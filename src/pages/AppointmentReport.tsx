@@ -825,6 +825,11 @@ const AppointmentReport = () => {
                           </Popover>
                         </td>
                         <td className="border p-0.5">
+                          {row.originalWorkOrder && (
+                            <div className="mx-1.5 mt-1 mb-1 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[10px] leading-snug text-amber-900">
+                              <span className="font-semibold">Original Work Order:</span> {row.originalWorkOrder}
+                            </div>
+                          )}
                           <Textarea
                             value={row.notes}
                             onChange={e => setUnitRows(prev => prev.map((r, j) => j === i ? { ...r, notes: e.target.value } : r))}
