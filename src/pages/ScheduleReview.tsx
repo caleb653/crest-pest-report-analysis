@@ -1302,7 +1302,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     ["Routes", String(result.summary.route_count)],
                     ["Total stops", String(result.summary.total_stops)],
                     ["On-site", fmtHM(result.summary.total_onsite_min)],
-                    ["Drive time", fmtHM(result.summary.total_drive_min)],
+                    ["Paid drive", fmtHM(result.summary.total_paid_drive_min ?? result.summary.total_drive_min)],
+                    ["Commute (unpaid)", fmtHM(result.summary.total_commute_min ?? 0)],
+                    ["Total miles", result.summary.total_miles != null ? `${Math.round(result.summary.total_miles)} mi` : "—"],
                     ["Production", `$${result.summary.total_production.toLocaleString()}`],
                     ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
                   ] as [string, string][]).map(([label, value]) => (
