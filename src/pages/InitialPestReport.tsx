@@ -2130,7 +2130,7 @@ Crest Pest Control
                     <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
                       <Plus className="w-7 h-7 text-dark-sage" />
                       <span className="text-sm font-semibold text-foreground leading-tight">
-                        Add Extra After Photos
+                        Upload "After" photos then Drag and Drop into place
                       </span>
                       <span className="text-[10px] text-muted-foreground">
                         {usedAfters}/12 · unpaired
