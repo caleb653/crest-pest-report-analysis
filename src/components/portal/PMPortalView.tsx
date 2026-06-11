@@ -1693,7 +1693,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     const planArrPast = (planMapPast[propertyFrequency] || []) as string[];
                     const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
                     const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
-                    const displayTitle = (s as any).appointment_service || cadenceLabel || s.service_type;
+                     const isAdHocPast = !!((s as any)?.report_data?.is_ad_hoc === true);
+                     const displayTitle = isAdHocPast
+                       ? "Ad Hoc Visit"
+                       : ((s as any).appointment_service || cadenceLabel || s.service_type);
                     return (
                       <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                         <div
@@ -1705,7 +1708,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
+                             {isFirst && <Badge className="text-[10px] bg-primary text-primary-foreground">Most Recent</Badge>}
+                             {isAdHocPast && <Badge className="text-[10px] bg-purple-600 text-white border-transparent hover:bg-purple-600">Ad Hoc</Badge>}
                               <p className={`font-semibold ${isFirst ? "text-sm" : "text-xs"}`}>{displayTitle}</p>
                               <Badge variant="default" className="text-[10px]">Completed</Badge>
                               {s.follow_up_recommended && <Badge className="text-[10px] bg-orange-500 text-white">Follow-up</Badge>}
@@ -2438,7 +2442,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
-                            <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
+                             <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
+                              // Ad-hoc visits always display as "Ad Hoc Visit"
+                              // regardless of underlying service_type.
+                              if ((s as any)?.report_data?.is_ad_hoc === true) return "Ad Hoc Visit";
                               // Prefer a saved label on the row first.
                               const savedLabel = (s as any).appointment_service;
                               if (savedLabel) return savedLabel;
