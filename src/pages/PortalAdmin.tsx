@@ -1005,27 +1005,6 @@ const PortalAdmin = () => {
           propertyType={getPropertyType(selectedProperty)}
         />
         )}
-
-        {/* Property document uploads — hidden for commercial accounts */}
-        {getPropertyType(selectedProperty) !== "commercial" && (
-        <div className="mt-8">
-          <div className="flex justify-end mb-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => downloadBlankRightToTreatPdf(selectedProperty.name)}
-            >
-              <Download className="w-4 h-4 mr-1.5" />Download Blank Right-to-Treat Agreement
-            </Button>
-          </div>
-          <PropertyDocuments
-            propertyId={selectedProperty.id}
-            uploadedBy="Admin"
-            heading="Property Documents"
-            helperText="Upload PDFs, notices, agreements, or other files. Visible to anyone with the property link (admin, PMs, and clients)."
-          />
-        </div>
-        )}
       </div>
 
       {/* Service Detail Modal */}
