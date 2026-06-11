@@ -1490,8 +1490,9 @@ const PropertyDashboard = ({
     const draft = {
       unitRows: rows,
       summary: service.summary || "",
-      findings: service.findings || "",
-      notes: service.notes || "",
+      // Never prefill technician findings/notes on an upcoming service.
+      findings: "",
+      notes: "",
       technician: service.technician || "",
       time_in: "",
       time_out: "",
