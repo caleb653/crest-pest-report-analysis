@@ -1370,6 +1370,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [mapOpen, setMapOpen] = useState(false);
   // Per-card exclusion set: when the user X's someone, we drop them from the
   // queueing list so they will NOT be sent to FieldRoutes for this day.
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
@@ -1455,6 +1456,11 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
             </span>
           </div>
         )}
+        <div className="pt-1">
+          <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}>
+            <MapPin className="w-3.5 h-3.5 mr-1" /> View map
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
