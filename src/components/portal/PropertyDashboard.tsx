@@ -839,6 +839,13 @@ const PropertyDashboard = ({
         .order("created_at", { ascending: false });
       if (data) setPendingRequests(data);
     };
+    const loadAllRequests = async () => {
+      const { data } = await supabase.from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("created_at", { ascending: true });
+      if (data) setAllRequests(data);
+    };
     const loadSignedAuthorizations = async () => {
       const { data } = await supabase.from("portal_requests")
         .select("*")
@@ -858,6 +865,7 @@ const PropertyDashboard = ({
       }
     };
     loadRequests();
+    loadAllRequests();
     loadSignedAuthorizations();
     loadPrepSheets();
   }, [property.id]);
