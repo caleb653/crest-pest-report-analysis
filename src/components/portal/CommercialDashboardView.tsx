@@ -47,7 +47,7 @@ import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedM
 import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
   ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
-  BusinessLicenseSection, HelpTutorialSection, DownloadLogbookButton,
+  BusinessLicenseSection, HelpTutorialSection,
   LogbookDateBadge, persistServiceReportData,
 } from "@/components/portal/CommercialSpragueSections";
 import {
