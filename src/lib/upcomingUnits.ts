@@ -270,6 +270,13 @@ export interface UpcomingUnitContext {
    * to prioritize this unit until move-in day.
    */
   tenant_move_in_date?: string;
+  /**
+   * Occupancy snapshot for this unit on the upcoming visit. Auto-populated
+   * from the most recent work order (request.occupancy_status) and falls
+   * back to the most recent past unit detail when no work order exists.
+   * Normalized to "Occupied" | "Vacant" (or undefined when unknown).
+   */
+  occupancy_status?: "Occupied" | "Vacant";
 }
 
 /**
