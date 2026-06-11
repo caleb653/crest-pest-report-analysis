@@ -1783,8 +1783,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 className="rounded-lg border border-border bg-background p-3.5 shadow-sm"
                               >
                                 {/* Header row: service type + date */}
-                                <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-border">
-                                  <span className="font-semibold text-sm">{(() => {
+                                {/* Header row: DATE is now the primary label,
+                                    service/cycle name is demoted to secondary text. */}
+                                <div className="pb-2.5 mb-2.5 border-b border-border">
+                                  <p className="font-bold text-base leading-tight">
+                                    {formatShortDate(service.service_date)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">{(() => {
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
                                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                                     if (cycleLen <= 1) return service.service_type;
@@ -1794,10 +1799,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     const planMap2 = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
                                     const planArr2 = (planMap2[propertyFrequency] || []) as string[];
                                     return (planArr2[rotIdx] || "").trim() || service.service_type;
-                                  })()}</span>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatShortDate(service.service_date)}
-                                  </span>
+                                  })()}</p>
                                 </div>
 
                                 {unitDetail ? (
@@ -1832,6 +1834,35 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{service.summary}</p>
                                   )
                                 )}
+                                {/* Photos: prefer unit-level photos, fall back to service-level. */}
+                                {(() => {
+                                  const unitPhotos = Array.isArray((unitDetail as any)?.photos) ? (unitDetail as any).photos : [];
+                                  const svcPhotos = Array.isArray((service as any)?.photos) ? (service as any).photos : [];
+                                  const photos = (unitPhotos.length ? unitPhotos : svcPhotos)
+                                    .map((p: any) => (typeof p === "string" ? p : p?.url || p?.src))
+                                    .filter(Boolean);
+                                  if (photos.length === 0) return null;
+                                  return (
+                                    <div className="mt-3">
+                                      <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1.5">
+                                        Photos ({photos.length})
+                                      </p>
+                                      <div className="grid grid-cols-4 gap-1.5">
+                                        {photos.map((url: string, k: number) => (
+                                          <a
+                                            key={k}
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-all"
+                                          >
+                                            <img src={url} alt={`Service photo ${k + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             );
                           })}
