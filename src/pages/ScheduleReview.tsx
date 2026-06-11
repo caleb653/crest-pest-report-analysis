@@ -1297,7 +1297,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           {result.summary && result.summary.route_count > 0 && (
             <>
               <Card className="border-l-4 border-l-emerald-500">
-                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
+                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm">
                   {([
                     ["Routes", String(result.summary.route_count)],
                     ["Total stops", String(result.summary.total_stops)],
