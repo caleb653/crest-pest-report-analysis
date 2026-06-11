@@ -4206,38 +4206,45 @@ const PropertyDashboard = ({
                                       the same fields are already surfaced inside the
                                       Treatment Request Context block below to avoid
                                       redundancy. */}
-                                  {uc.context && (
-                                    <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3">
-                                      <div className="flex items-center gap-1.5 mb-1.5">
-                                        <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
-                                        <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
-                                          {isWorkOrder
-                                            ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
-                                            : "Last Service Context"}
-                                        </Label>
-                                      </div>
-                                      {isWorkOrder && uc.request && (() => {
-                                        const contact = parseResidentContact(uc.request as any);
-                                        return contact.hasAny ? (
-                                          <ResidentContactCard contact={contact} className="mb-2" />
-                                        ) : null;
-                                      })()}
-                                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                        {uc.context}
-                                      </p>
-                                    </div>
-                                  )}
-                                  {uc.findings && (
-                                    <div className="md:col-span-2 rounded-lg border-2 border-amber-400 bg-amber-50/40 p-3">
-                                      <div className="flex items-center gap-1.5 mb-1.5">
-                                        <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                                        <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                                          Findings (from last visit)
-                                        </Label>
-                                      </div>
-                                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                        {uc.findings}
-                                      </p>
+                                  {(uc.context || uc.findings) && (
+                                    <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 space-y-3">
+                                      {uc.context && (
+                                        <div>
+                                          <div className="flex items-center gap-1.5 mb-1.5">
+                                            <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                                            <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                                              {isWorkOrder
+                                                ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
+                                                : "Last Service Context"}
+                                            </Label>
+                                          </div>
+                                          {isWorkOrder && uc.request && (() => {
+                                            const contact = parseResidentContact(uc.request as any);
+                                            return contact.hasAny ? (
+                                              <ResidentContactCard contact={contact} className="mb-2" />
+                                            ) : null;
+                                          })()}
+                                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                            {uc.context}
+                                          </p>
+                                        </div>
+                                      )}
+                                      {uc.context && uc.findings && (
+                                        <div className="border-t border-sky-200" />
+                                      )}
+                                      {uc.findings && (
+                                        <div>
+                                          <div className="flex items-center gap-1.5 mb-1.5">
+                                            <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                                            <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                                              Findings (from last visit)
+                                            </Label>
+                                          </div>
+                                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                            {uc.findings}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </>
