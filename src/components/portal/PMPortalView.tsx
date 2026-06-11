@@ -1800,11 +1800,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                         {isMostRecent && (
                                           <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
                                         )}
-                                        {r.request_type && (
-                                          <Badge variant="secondary" className="text-[10px]">
-                                            {String(r.request_type).toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
-                                          </Badge>
-                                        )}
                                         {r.location_type && (
                                           <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>
                                         )}
@@ -1841,6 +1836,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     <p className="font-bold text-base leading-tight">
                                       {formatShortDate(service.service_date)}
                                     </p>
+                                    <Badge className="text-[10px] bg-primary text-primary-foreground">Treatment</Badge>
                                     {isMostRecent && (
                                       <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
                                     )}
