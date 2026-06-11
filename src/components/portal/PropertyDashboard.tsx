@@ -2135,6 +2135,27 @@ const PropertyDashboard = ({
         console.error("save tenant_move_in failed", e);
       }
     }
+    // Mirror the work order's Occupied/Vacant pick into the property's
+    // unit_occupancy map so the per-unit toggle on Areas Treated stays in
+    // lock-step with the work order. Clearing the field on the WO clears the
+    // unit's badge here too.
+    if (!isGeneral && canonical) {
+      try {
+        const prefs: any = property.customer_preferences || {};
+        const occMap = { ...((prefs.unit_occupancy || {}) as Record<string, string>) };
+        const key = String(canonical).trim();
+        if (workOrder.occupancy_status) occMap[key] = workOrder.occupancy_status;
+        else delete occMap[key];
+        const updatedPrefs = { ...prefs, unit_occupancy: occMap };
+        await supabase
+          .from("portal_properties")
+          .update({ customer_preferences: updatedPrefs })
+          .eq("id", property.id);
+        (property as any).customer_preferences = updatedPrefs;
+      } catch (e) {
+        console.error("save unit_occupancy failed", e);
+      }
+    }
     toast({ title: isGeneral
       ? "General request submitted"
       : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
@@ -4001,8 +4022,22 @@ const PropertyDashboard = ({
                                     .eq("id", property.id);
                                   if (error) {
                                     toast({ title: "Couldn't save occupancy", description: error.message, variant: "destructive" });
+                                    return;
                                   } else {
                                     (property as any).customer_preferences = updatedPrefs;
+                                  }
+                                  // Keep the open work order(s) for this unit
+                                  // in sync so the WO record always reflects
+                                  // the latest Occupied/Vacant call.
+                                  try {
+                                    await supabase
+                                      .from("portal_requests")
+                                      .update({ occupancy_status: next || null, updated_at: new Date().toISOString() } as any)
+                                      .eq("property_id", property.id)
+                                      .eq("unit_number", key)
+                                      .in("status", ["pending", "in_progress"]);
+                                  } catch (e) {
+                                    console.warn("sync work order occupancy failed", e);
                                   }
                                 };
                                 const btn = (val: "Occupied" | "Vacant", cls: string) => (
