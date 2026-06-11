@@ -1760,6 +1760,48 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4 pt-3 space-y-3">
+                          {(() => {
+                            // ─── Initial Work Order box ───
+                            // Surface the original/earliest work order for
+                            // this unit right at the top of its history so
+                            // PMs see what kicked off the series of visits.
+                            if (unitNum === "General") return null;
+                            const unitReqs = (requests as any[])
+                              .filter(r => String(r.unit_number || "").trim() === unitNum)
+                              .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
+                            const initial = unitReqs[0];
+                            if (!initial) return null;
+                            const contact = parseResidentContact(initial);
+                            const desc = contact.cleanedDescription || initial.description || "";
+                            return (
+                              <div className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 shadow-sm">
+                                <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge className="text-[10px] bg-primary text-primary-foreground">Initial Work Order</Badge>
+                                    {initial.request_type && (
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {String(initial.request_type).toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
+                                      </Badge>
+                                    )}
+                                    {initial.location_type && (
+                                      <span className="text-[10px] text-muted-foreground">• {initial.location_type}</span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {new Date(initial.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                  </span>
+                                </div>
+                                {desc && (
+                                  <p className="text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">{desc}</p>
+                                )}
+                                {unitReqs.length > 1 && (
+                                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                                    +{unitReqs.length - 1} additional work order{unitReqs.length - 1 === 1 ? "" : "s"} for this unit
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                           {entries.map(({ service, unitDetail }, j) => {
                             const productsText = unitDetail?.products_used
                               ? (Array.isArray(unitDetail.products_used)
