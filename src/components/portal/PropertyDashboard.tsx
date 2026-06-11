@@ -2888,7 +2888,9 @@ const PropertyDashboard = ({
       service: s,
       isFirstUpcoming: isUpcoming && isFirstUpcoming,
       requests: pendingRequests,
-      mostRecentPast: pastServices[0] || null,
+      // Use the most recent visit INCLUDING ad-hoc so follow_up_needed flags
+      // set on an ad-hoc visit roll forward to the next scheduled service.
+      mostRecentPast: pastServicesForDisplay[0] || null,
       // Include ad-hoc completed visits in the lookup so per-unit notes
       // from an ad-hoc visit carry forward to the next scheduled visit's
       // pre-fill (cadence/follow-up math still uses pastServices only).
@@ -5794,7 +5796,9 @@ const PropertyDashboard = ({
                 service: s,
                 isFirstUpcoming: isFirst,
                 requests: pendingRequests,
-                mostRecentPast: pastServices[0] || null,
+                // Include ad-hoc visits so their follow-up flags surface
+                // as orange follow-ups on the next scheduled service.
+                mostRecentPast: pastServicesForDisplay[0] || null,
                 allPastServices: pastServicesForDisplay,
                 tenantMoveIns:
                   (property.customer_preferences as any)?.tenant_move_ins || null,
