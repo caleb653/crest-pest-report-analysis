@@ -1787,13 +1787,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 const r = item.request;
                                 const contact = parseResidentContact(r);
                                 const desc = contact.cleanedDescription || r.description || "";
+                                const reqDateStr = r.created_at
+                                  ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                                  : "";
                                 return (
                                   <div
                                     key={`req-${r.id || j}`}
                                     className={`rounded-lg p-3 shadow-sm ${item.isInitial ? "border-2 border-primary/40 bg-primary/[0.04]" : "border border-primary/30 bg-primary/[0.03]"}`}
                                   >
-                                    <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                                    {/* Header row mirrors the service card: date is the
+                                        primary label, badges sit alongside it. */}
+                                    <div className="pb-2.5 mb-2.5 border-b border-primary/20">
                                       <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="font-bold text-base leading-tight">
+                                          {reqDateStr || "Work Order"}
+                                        </p>
                                         <Badge className="text-[10px] bg-primary text-primary-foreground">
                                           {item.isInitial ? "Initial Work Order" : "Work Order"}
                                         </Badge>
@@ -1804,9 +1812,6 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                           <span className="text-[10px] text-muted-foreground">• {r.location_type}</span>
                                         )}
                                       </div>
-                                      <span className="text-[10px] text-muted-foreground">
-                                        {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                      </span>
                                     </div>
                                     {desc && (
                                       <p className="text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">{desc}</p>
