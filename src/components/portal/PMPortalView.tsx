@@ -2659,6 +2659,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                               {uc.target_pest}
                                             </span>
                                           )}
+                                          {uc.occupancy_status && (
+                                            <span
+                                              className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${
+                                                uc.occupancy_status === "Occupied"
+                                                  ? "text-emerald-800 bg-emerald-50 border-emerald-400"
+                                                  : "text-slate-700 bg-slate-100 border-slate-400"
+                                              }`}
+                                              title="Occupancy from the most recent work order"
+                                            >
+                                              {uc.occupancy_status}
+                                            </span>
+                                          )}
                                           {uc.tenant_move_in_date && (
                                             <span
                                               className="text-xs font-bold uppercase tracking-wide text-rose-900 bg-rose-100 border border-rose-400 px-2 py-0.5 rounded shadow-sm"
