@@ -2442,7 +2442,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
-                            <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
+                             <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
+                              // Ad-hoc visits always display as "Ad Hoc Visit"
+                              // regardless of underlying service_type.
+                              if ((s as any)?.report_data?.is_ad_hoc === true) return "Ad Hoc Visit";
                               // Prefer a saved label on the row first.
                               const savedLabel = (s as any).appointment_service;
                               if (savedLabel) return savedLabel;
