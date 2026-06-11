@@ -1027,47 +1027,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         {(() => {
           const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
           if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+          const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
           return (
-            <div className="rounded-xl border-2 border-orange-500 bg-orange-50 ring-2 ring-orange-200 shadow-md overflow-hidden">
-              <div className="bg-orange-500 text-white px-3.5 py-2 flex items-center gap-2">
-                <span className="text-base leading-none">⚠️</span>
-                <p className="font-extrabold text-[13px] uppercase tracking-wide">
-                  Follow-up Needed{fuUnits.length > 0 ? ` — ${fuUnits.length} ${fuUnits.length === 1 ? "Unit" : "Units"}` : ""}
-                </p>
-              </div>
-              <div className="p-3.5 space-y-2 text-[12px]">
-                {fuUnits.length > 0 ? (
-                  <>
-                    <p className="text-orange-900 font-semibold">
-                      The technician flagged the following {fuUnits.length === 1 ? "unit" : "units"} for a return visit:
-                    </p>
-                    <ul className="space-y-1.5">
-                      {fuUnits.map((u: any, idx: number) => (
-                        <li key={idx} className="bg-white border border-orange-200 rounded-md px-3 py-2">
-                          <div className="flex flex-wrap items-baseline gap-2">
-                            <span className="font-bold text-orange-900">{u.unit_number || "—"}</span>
-                            {u.target_pest && (
-                              <span className="text-[11px] font-semibold uppercase tracking-wide text-orange-700">
-                                {u.target_pest}
-                              </span>
-                            )}
-                          </div>
-                          {(u.findings || u.notes) && (
-                            <p className="text-orange-900/90 whitespace-pre-wrap mt-1 leading-snug">
-                              {u.findings || u.notes}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  s.follow_up_notes && (
-                    <p className="text-orange-900 whitespace-pre-wrap">{s.follow_up_notes}</p>
-                  )
-                )}
-              </div>
-            </div>
+            <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+              <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+              {fuUnits.length > 0
+                ? <>{fuUnits.length} {fuUnits.length === 1 ? "unit" : "units"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+            </p>
           );
         })()}
         {(() => {
@@ -1309,7 +1276,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-amber-800 whitespace-pre-wrap">{s.prep_notes}</p>
           </div>
         )}
-        {s.special_notes && (
+        {s.special_notes && !/^\s*Follow-up units from/i.test(s.special_notes) && (
           <div>
             <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1">Special Notes</p>
             <p className="whitespace-pre-wrap">{s.special_notes}</p>
