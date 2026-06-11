@@ -1012,27 +1012,9 @@ export default function CommercialDashboardView({
                             <ProductUsageSummary entries={products} />
                           </div>
                         )}
-                        {photos.length > 0 && (
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                              <Camera className="w-3 h-3" /> Photos
-                            </p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {photos.map((p: any, i: number) => {
-                                const url = typeof p === "string" ? p : p?.url;
-                                if (!url) return null;
-                                return (
-                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-md border border-border overflow-hidden bg-muted">
-                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
-                                  </a>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                            <ClipboardList className="w-3 h-3" /> Conditions
+                            <AlertTriangle className="w-3 h-3" /> Active Conditions
                           </p>
                           <ConditionsReportSection
                             services={[s as any]}
@@ -1040,6 +1022,24 @@ export default function CommercialDashboardView({
                             propertyName={property?.name}
                           />
                         </div>
+                        {photos.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                              <Camera className="w-3 h-3" /> Other Property Images
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {photos.map((p: any, i: number) => {
+                                const url = typeof p === "string" ? p : p?.url;
+                                if (!url) return null;
+                                return (
+                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30">
+                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>
