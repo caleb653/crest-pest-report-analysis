@@ -29,6 +29,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import RouteMap from "@/components/scheduling/RouteMap";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
