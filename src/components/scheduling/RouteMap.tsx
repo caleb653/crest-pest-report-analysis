@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
+import { supabase } from "@/integrations/supabase/client";
 
 // Shape we need off each stop. Keeps this component reusable for the Fill
 // day card AND the Schedule-Review route card — both expose `stops[]` with
@@ -44,7 +45,19 @@ function pinIcon(color: string) {
 }
 
 export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.functions.invoke("get-maps-key").then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) { setKeyError(String(error.message || error)); return; }
+      const k = (data as { key?: string } | null)?.key || "";
+      if (!k) setKeyError("Maps key not configured.");
+      else setApiKey(k);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey || "",
@@ -59,12 +72,11 @@ export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
     [stops],
   );
 
+  if (keyError) {
+    return <div className="p-6 text-sm text-red-600">{keyError}</div>;
+  }
   if (!apiKey) {
-    return (
-      <div className="p-6 text-sm text-muted-foreground">
-        Google Maps key not configured. Add <code>VITE_GOOGLE_MAPS_KEY</code> to enable the route map.
-      </div>
-    );
+    return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
   }
   if (loadError) {
     return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
