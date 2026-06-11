@@ -217,6 +217,13 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property?.map_image_url || property?.image_url || null;
 
+  // Recent Pest Sightings (Open + In-Progress) — surfaced at the top of
+  // every visit so the Route Manager / customer sees what's outstanding.
+  const recentSightings = requests.filter(r => {
+    const status = ((r as any).sighting_status || r.status || "").toLowerCase();
+    return status !== "closed" && status !== "completed" && status !== "cancelled";
+  });
+
   // Build the scope of work — service types we've actually got on this
   // property, falling back to any commercial-specific defaults we know.
   const scopeTypes = Array.from(new Set(services.map(s => s.service_type).filter(Boolean)));
