@@ -350,7 +350,7 @@ const AppointmentReport = () => {
       const hasRealPrefill = prefilledRows.some((row) => normalizeUnit(row.unit));
 
       if (!hasRealPrefill && data.property_id) {
-        const [{ data: recentCompleted }, { data: pendingReqs }] = await Promise.all([
+        const [{ data: recentCompleted }, { data: pendingReqs }, { data: allReqs }] = await Promise.all([
           supabase
             .from("portal_services")
             .select("unit_details")
@@ -364,11 +364,26 @@ const AppointmentReport = () => {
             .select("unit_number, pest_type, location_type, description")
             .eq("property_id", data.property_id)
             .in("status", ["pending", "in_progress"]),
+          supabase
+            .from("portal_requests")
+            .select("unit_number, pest_type, location_type, description, created_at")
+            .eq("property_id", data.property_id)
+            .order("created_at", { ascending: true }),
         ]);
 
         const unitsPlanned = Array.isArray(data.units_planned) ? (data.units_planned as string[]) : [];
         const followUps: string[] = [];
         const pestData: Record<string, { findings?: string; pest_activity?: string; products_used?: string }> = {};
+        // Earliest portal_request per unit = the ORIGINAL work order. Persists
+        // across however many follow-ups occur so the tech always sees the
+        // request that started this chain of visits.
+        const workOrders: Record<string, string> = {};
+        (allReqs || []).forEach((request: any) => {
+          const unitNumber = normalizeUnit(request?.unit_number);
+          if (!unitNumber || workOrders[unitNumber]) return;
+          const context = [request.pest_type, request.location_type, request.description].filter(Boolean).join(" - ");
+          if (context) workOrders[unitNumber] = context;
+        });
 
         const details = Array.isArray(recentCompleted?.unit_details) ? (recentCompleted.unit_details as any[]) : [];
         details.forEach((unit: any) => {
@@ -412,6 +427,7 @@ const AppointmentReport = () => {
           units: mergedUnits,
           pestData,
           flaggedFollowUps: followUps,
+          workOrders,
         });
       }
 
