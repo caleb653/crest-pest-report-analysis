@@ -3427,51 +3427,6 @@ const PropertyDashboard = ({
             small collapsible "Specific Homes Treated" section underneath.
             Apartment / commercial views render the editable table inline as
             before so per-unit data entry stays primary. */}
-        {/* Read-only / Edit toggle for past services (admin-only).
-            Past services are LOCKED by default to prevent accidental edits
-            (e.g. status dropdowns auto-promoting units to "Needs Follow Up"). */}
-        {!isUpcoming && !isProjected && (
-          <div className="flex items-center justify-between rounded-lg border bg-muted/40 px-3 py-2">
-            <div className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-              {isPastEditing(s.id) ? "Editing this past service" : "Past service — read-only"}
-            </div>
-            <div className="flex items-center gap-2">
-              {isPastEditing(s.id) && (
-                <label className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Visit date
-                  <input
-                    type="date"
-                    className="h-7 rounded border border-input bg-background px-2 text-xs"
-                    defaultValue={(s.service_date || "").slice(0, 10)}
-                    onChange={async (e) => {
-                      const newDate = e.target.value;
-                      if (!newDate || newDate === (s.service_date || "").slice(0, 10)) return;
-                      const { error } = await supabase
-                        .from("portal_services")
-                        .update({ service_date: newDate })
-                        .eq("id", s.id);
-                      if (error) {
-                        toast({ title: "Couldn't update visit date", description: error.message, variant: "destructive" });
-                      } else {
-                        toast({ title: "Visit date updated", description: formatDate(newDate), duration: 1500 });
-                        onRefresh();
-                      }
-                    }}
-                  />
-                </label>
-              )}
-              <Button
-                variant={isPastEditing(s.id) ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => togglePastEditing(s.id)}
-              >
-                {isPastEditing(s.id) ? "Done editing" : "Edit Previous Service"}
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* ─── NEW ORDER for past services ───
             1) Summary (Technician Findings)
