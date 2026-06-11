@@ -4054,26 +4054,30 @@ const PropertyDashboard = ({
                                     console.warn("sync work order occupancy failed", e);
                                   }
                                 };
-                                const btn = (val: "Occupied" | "Vacant", cls: string) => (
-                                  <button
-                                    type="button"
-                                    data-no-toggle
-                                    disabled={!key}
-                                    onClick={(e) => { e.stopPropagation(); setOcc(current === val ? "" : val); }}
-                                    className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border transition-colors ${
-                                      current === val
-                                        ? cls
-                                        : "text-muted-foreground bg-background border-border hover:bg-muted"
-                                    } ${!key ? "opacity-50 cursor-not-allowed" : ""}`}
-                                    title="Click to toggle occupancy"
-                                  >
-                                    {val}
-                                  </button>
-                                );
+                                // Show ONLY the unit's current occupancy
+                                // (whichever was filled out on the work order).
+                                // When nothing has been set, default to Vacant.
+                                // Click the badge to flip to the other state.
+                                const effective: "Occupied" | "Vacant" =
+                                  current === "Occupied" ? "Occupied" : "Vacant";
+                                const cls = effective === "Occupied"
+                                  ? "text-emerald-800 bg-emerald-50 border-emerald-400"
+                                  : "text-slate-800 bg-slate-100 border-slate-400";
                                 return (
-                                  <div className="flex items-center gap-1" data-no-toggle onClick={(e) => e.stopPropagation()}>
-                                    {btn("Occupied", "text-emerald-800 bg-emerald-50 border-emerald-400")}
-                                    {btn("Vacant", "text-slate-800 bg-slate-100 border-slate-400")}
+                                  <div className="flex items-center" data-no-toggle onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                      type="button"
+                                      data-no-toggle
+                                      disabled={!key}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOcc(effective === "Occupied" ? "Vacant" : "Occupied");
+                                      }}
+                                      className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border transition-colors ${cls} ${!key ? "opacity-50 cursor-not-allowed" : ""}`}
+                                      title="Click to switch occupancy"
+                                    >
+                                      {effective}
+                                    </button>
                                   </div>
                                 );
                               })()}
