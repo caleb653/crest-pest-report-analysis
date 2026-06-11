@@ -5383,7 +5383,9 @@ const PropertyDashboard = ({
                             );
                           })()}
                         </div>
-                      ))}
+                          );
+                        });
+                      })()}
                     </AccordionContent>
                   </AccordionItem>
                     ))}
