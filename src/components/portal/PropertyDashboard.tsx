@@ -1749,9 +1749,26 @@ const PropertyDashboard = ({
     //     service requests) so they stop bleeding into the next upcoming
     //     visit. They live on the past service from now on. ───
     try {
+      // Build the set of units that still need follow-up after this visit.
+      // Any work order tied to one of those units must STAY open — the unit
+      // isn't actually free & clear yet. Only resolve when a completed visit
+      // leaves the unit with no follow_up_needed flag.
+      const stillFollowingUp = new Set(
+        (flagged || [])
+          .map((u: any) => String(u || "").trim().toLowerCase())
+          .filter(Boolean)
+      );
+      const keepOpenForFollowUp = (req: any) => {
+        const unit = String(req?.unit_number || "").trim().toLowerCase();
+        return unit && stillFollowingUp.has(unit);
+      };
       const allIds = [
-        ...addressedCommunitySightings.map((s) => s.id),
-        ...addressedServiceRequests.map((s) => s.id),
+        ...addressedCommunitySightings
+          .filter((s) => !keepOpenForFollowUp(s))
+          .map((s) => s.id),
+        ...addressedServiceRequests
+          .filter((s) => !keepOpenForFollowUp(s))
+          .map((s) => s.id),
       ].filter(Boolean);
       if (allIds.length > 0) {
         await supabase
