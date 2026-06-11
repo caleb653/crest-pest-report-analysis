@@ -1208,14 +1208,14 @@ export default function CommercialDashboardView({
                           </label>
                         </div>
                         {upPhotosRaw.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {upPhotosRaw.map((p: any, i: number) => {
                               const url = typeof p === "string" ? p : p?.url;
                               if (!url) return null;
                               return (
-                                <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
+                                <div key={i} className="relative w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30 group">
                                   <a href={url} target="_blank" rel="noopener noreferrer">
-                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
                                   </a>
                                   <button
                                     type="button"
