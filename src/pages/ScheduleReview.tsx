@@ -1572,6 +1572,17 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
           </Button>
         </div>
       </CardContent>
+      <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+        <DialogContent className="max-w-5xl w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>
+              {day.tech} · {weekdayLabel(day.date)} · {day.stop_count} stops
+              {day.summary ? ` · ${day.summary.efficiency_pct}% efficient` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <RouteMap stops={day.stops} />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
