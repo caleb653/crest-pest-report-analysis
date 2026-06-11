@@ -1019,6 +1019,10 @@ type FillStop = {
   customer: string;
   city: string;
   address: string;
+  // Optional geocoded coordinates (added by the planner when available).
+  // Stops with null/undefined lat-lng are skipped on the map.
+  lat?: number | null;
+  lng?: number | null;
   services: string[];
   service_label: string;
   frequency: number;
