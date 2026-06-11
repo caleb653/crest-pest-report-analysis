@@ -3975,22 +3975,57 @@ const PropertyDashboard = ({
                                 <span className="text-xs font-semibold uppercase tracking-wide text-orange-700 bg-background border border-orange-500 px-2 py-0.5 rounded">Follow-up</span>
                               )}
                               {(() => {
+                                // Per-unit occupancy editor. Shows on EVERY
+                                // unit row so the tech can mark Vacant /
+                                // Occupied at a glance. Falls back to the
+                                // occupancy from the most recent work order
+                                // when nothing has been set on this property
+                                // yet. Persists to
+                                // property.customer_preferences.unit_occupancy.
+                                const key = String(row.unit_number || "").trim();
+                                const prefs: any = property.customer_preferences || {};
+                                const occMap = (prefs.unit_occupancy || {}) as Record<string, "Occupied" | "Vacant">;
                                 const ctx = merged.unitContexts.find(
-                                  (u) => String(u.unit_number).trim() === String(row.unit_number || "").trim()
+                                  (u) => String(u.unit_number).trim() === key
                                 );
-                                const occ = ctx?.occupancy_status;
-                                if (!occ) return null;
-                                return (
-                                  <span
-                                    className={`text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${
-                                      occ === "Occupied"
-                                        ? "text-emerald-800 bg-emerald-50 border-emerald-400"
-                                        : "text-slate-700 bg-slate-100 border-slate-400"
-                                    }`}
-                                    title="Occupancy from the most recent work order"
+                                const current = (key && occMap[key]) || ctx?.occupancy_status || "";
+                                const setOcc = async (next: "Occupied" | "Vacant" | "") => {
+                                  if (!key) return;
+                                  const nextMap = { ...occMap };
+                                  if (next) nextMap[key] = next;
+                                  else delete nextMap[key];
+                                  const updatedPrefs = { ...prefs, unit_occupancy: nextMap };
+                                  const { error } = await supabase
+                                    .from("portal_properties")
+                                    .update({ customer_preferences: updatedPrefs })
+                                    .eq("id", property.id);
+                                  if (error) {
+                                    toast({ title: "Couldn't save occupancy", description: error.message, variant: "destructive" });
+                                  } else {
+                                    (property as any).customer_preferences = updatedPrefs;
+                                  }
+                                };
+                                const btn = (val: "Occupied" | "Vacant", cls: string) => (
+                                  <button
+                                    type="button"
+                                    data-no-toggle
+                                    disabled={!key}
+                                    onClick={(e) => { e.stopPropagation(); setOcc(current === val ? "" : val); }}
+                                    className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border transition-colors ${
+                                      current === val
+                                        ? cls
+                                        : "text-muted-foreground bg-background border-border hover:bg-muted"
+                                    } ${!key ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    title="Click to toggle occupancy"
                                   >
-                                    {occ}
-                                  </span>
+                                    {val}
+                                  </button>
+                                );
+                                return (
+                                  <div className="flex items-center gap-1" data-no-toggle onClick={(e) => e.stopPropagation()}>
+                                    {btn("Occupied", "text-emerald-800 bg-emerald-50 border-emerald-400")}
+                                    {btn("Vacant", "text-slate-800 bg-slate-100 border-slate-400")}
+                                  </div>
                                 );
                               })()}
                               {(() => {
