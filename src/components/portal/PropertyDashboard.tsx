@@ -3399,6 +3399,20 @@ const PropertyDashboard = ({
             Crest/PM service-level comment thread is removed. */}
         {!isUpcoming && !isHOA && (
           <>
+            {/* Follow-up note — at the top */}
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "unit" : "units"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
             {/* 1) Summary */}
             {(s.summary || s.findings || s.notes) && (
               <div className="rounded-lg border-2 border-primary/70 bg-gradient-to-br from-primary/[0.06] to-transparent p-3.5 shadow-sm">
@@ -3418,20 +3432,6 @@ const PropertyDashboard = ({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Unit Summary</p>
               {renderEditableUnitTable(s, isPastEditing(s.id))}
             </div>
-            {/* 3) Follow-up note — one sentence at the bottom */}
-            {(() => {
-              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
-              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
-              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
-              return (
-                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
-                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
-                  {fuUnits.length > 0
-                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "unit" : "units"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
-                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
-                </p>
-              );
-            })()}
             {/* 4) Products — moved to the very bottom */}
             {products.length > 0 && (
               <div className="mt-2">
@@ -3447,6 +3447,19 @@ const PropertyDashboard = ({
 
         {!isUpcoming && isHOA && (
           <>
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "home" : "homes"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
             {/* Technician Report — large, prominent narrative (the "summary"
                 half of the 90/10 split with the map). */}
             {(s.summary || s.findings || s.notes) && (
@@ -3490,19 +3503,6 @@ const PropertyDashboard = ({
                 </div>
               </div>
             </details>
-            {(() => {
-              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
-              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
-              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
-              return (
-                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
-                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
-                  {fuUnits.length > 0
-                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "home" : "homes"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
-                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
-                </p>
-              );
-            })()}
           </>
         )}
 
