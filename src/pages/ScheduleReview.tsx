@@ -1386,6 +1386,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             items={result.unplaced}
             blurb="Due within tolerance, but every eligible day was at capacity or constraints left no slot. Widen the window or raise max stops."
           />
+          <DeferredBucket items={result.deferred ?? []} count={result.deferred_count ?? (result.deferred?.length ?? 0)} />
         </>
       )}
     </>
@@ -1648,6 +1649,48 @@ function UnscheduledBucket({ title, items, blurb }: { title: string; items: Fill
             {m.special_scheduling && m.special_scheduling !== m.reason && (
               <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
             )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Customers the planner intentionally held for a later week — not failures.
+// Shown separately so they don't get confused with the "couldn't fit" bucket.
+function DeferredBucket({ items, count }: { items: FillDeferred[]; count: number }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <Card className="border-l-4 border-l-sky-500">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <CalendarPlus className="w-4 h-4 text-sky-600" /> Held for a later week ({count})
+        </CardTitle>
+        <CardDescription>
+          Due soon but a better-fit week is coming up — the planner is waiting on
+          purpose. Not failures. The <code>reason</code> is the source of truth;{" "}
+          <em>best fit</em> is a soft pointer to the nearest matching zone-day.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {items.map((m, i) => (
+          <div key={`${m.customer}-${m.due_date}-${i}`} className="text-xs bg-sky-50 rounded p-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-semibold text-sm">{m.customer}</span>
+              <span className="text-muted-foreground">due {m.due_date}</span>
+            </div>
+            <div className="text-muted-foreground mt-0.5">
+              {m.city} · {m.service}{m.tech ? <> · prefers {m.tech}</> : null}
+            </div>
+            {m.best_day && (
+              <div className="text-sky-700 mt-0.5">
+                best fit {m.best_day.weekday} {m.best_day.date}
+                {m.best_day.in_zone === false && " · off-zone"}
+                {m.best_day.in_window === false && " · outside current window"}
+                {typeof m.best_day.load === "number" && ` · load ${m.best_day.load}`}
+              </div>
+            )}
+            <div className="text-sky-800/80 mt-0.5 italic">{m.reason}</div>
           </div>
         ))}
       </CardContent>
