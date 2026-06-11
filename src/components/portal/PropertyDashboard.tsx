@@ -425,6 +425,9 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  // Full request history (including resolved/closed) — used by the unit
+  // history view to surface each unit's original "Initial Work Order".
+  const [allRequests, setAllRequests] = useState<any[]>([]);
   const [signedAuthorizations, setSignedAuthorizations] = useState<any[]>([]);
   // Per-service local set of units the admin just removed, applied immediately
   // so the auto-merge effect doesn't re-add the unit between the local state
