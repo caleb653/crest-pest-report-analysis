@@ -425,6 +425,9 @@ const PropertyDashboard = ({
   // Tracks per-unit photo uploads in the in-progress completion form (rows aren't saved yet)
   const [uploadingCompletionUnitPhotoFor, setUploadingCompletionUnitPhotoFor] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  // Full request history (including resolved/closed) — used by the unit
+  // history view to surface each unit's original "Initial Work Order".
+  const [allRequests, setAllRequests] = useState<any[]>([]);
   const [signedAuthorizations, setSignedAuthorizations] = useState<any[]>([]);
   // Per-service local set of units the admin just removed, applied immediately
   // so the auto-merge effect doesn't re-add the unit between the local state
@@ -836,6 +839,13 @@ const PropertyDashboard = ({
         .order("created_at", { ascending: false });
       if (data) setPendingRequests(data);
     };
+    const loadAllRequests = async () => {
+      const { data } = await supabase.from("portal_requests")
+        .select("*")
+        .eq("property_id", property.id)
+        .order("created_at", { ascending: true });
+      if (data) setAllRequests(data);
+    };
     const loadSignedAuthorizations = async () => {
       const { data } = await supabase.from("portal_requests")
         .select("*")
@@ -855,6 +865,7 @@ const PropertyDashboard = ({
       }
     };
     loadRequests();
+    loadAllRequests();
     loadSignedAuthorizations();
     loadPrepSheets();
   }, [property.id]);
@@ -5275,6 +5286,46 @@ const PropertyDashboard = ({
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-3 pb-3 space-y-1.5 pt-2">
+                      {(() => {
+                        // ─── Initial Work Order box ───
+                        // Surface the original/earliest work order for this
+                        // unit so admins see what kicked off the series.
+                        if (unitNum === "General") return null;
+                        const unitReqs = (allRequests as any[])
+                          .filter(r => String(r.unit_number || "").trim() === unitNum);
+                        const initial = unitReqs[0];
+                        if (!initial) return null;
+                        const contact = parseResidentContact(initial);
+                        const desc = contact.cleanedDescription || initial.description || "";
+                        return (
+                          <div className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-2.5 shadow-sm mb-1.5">
+                            <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Badge className="text-[10px] bg-primary text-primary-foreground">Initial Work Order</Badge>
+                                {initial.request_type && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {String(initial.request_type).toLowerCase().includes("inspection") ? "Inspection" : "Treatment"}
+                                  </Badge>
+                                )}
+                                {initial.location_type && (
+                                  <span className="text-[10px] text-muted-foreground">• {initial.location_type}</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">
+                                {new Date(initial.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                              </span>
+                            </div>
+                            {desc && (
+                              <p className="text-xs whitespace-pre-wrap leading-relaxed text-foreground/90">{desc}</p>
+                            )}
+                            {unitReqs.length > 1 && (
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                +{unitReqs.length - 1} additional work order{unitReqs.length - 1 === 1 ? "" : "s"} for this unit
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {entries.map(({ service, unitDetail }, j) => (
                         <div key={`${service.id}-${j}`} className="bg-muted/40 rounded-lg p-2.5 text-xs cursor-pointer hover:bg-muted/70 transition-colors border border-transparent hover:border-border"
                           onClick={() => onOpenServiceReport(service)}>
