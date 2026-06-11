@@ -2690,7 +2690,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       {/* Card body — 2-column grid mirroring admin upcoming */}
                                       {isUcOpen && (
                                       <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-xs">
-                                        {/* ── New-tenant move-in date editor (mission-critical) ── */}
+                                        {/* ── New-tenant move-in date editor (mission-critical) ──
+                                            Hidden when the unit is currently Occupied — the move-in
+                                            date only makes sense for vacant/turnover units. */}
+                                        {uc.occupancy_status !== "Occupied" && (
                                         <div className="md:col-span-2 rounded-lg border-2 border-rose-300 bg-rose-50/60 p-3 flex flex-wrap items-center gap-2">
                                           <span className="text-[11px] font-bold text-rose-900 uppercase tracking-wide">
                                             🏠 New Tenant Move-In
