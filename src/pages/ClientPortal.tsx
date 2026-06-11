@@ -214,7 +214,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
               </div>
             </div>
           )}
-          {service.special_notes && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Special Notes</p><p className="text-sm">{service.special_notes}</p></div>}
+          {service.special_notes && !/^\s*Follow-up units from/i.test(service.special_notes) && <div><p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Special Notes</p><p className="text-sm">{service.special_notes}</p></div>}
           {/* Service-level photos. Anyone can view; Crest staff (admin) can add
               more — to ANY service, past or upcoming — from camera or gallery. */}
           {(() => {
