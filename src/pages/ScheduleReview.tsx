@@ -1051,6 +1051,9 @@ type FillRouteSummary = {
   onsite_min: number;
   paperwork_min: number;
   drive_min: number;
+  paid_drive_min?: number;
+  commute_min?: number;
+  total_miles?: number;
   total_min: number;
   total_hours: number;
   production: number;
@@ -1073,6 +1076,9 @@ type FillTopSummary = {
   route_count: number;
   total_stops: number;
   total_drive_min: number;
+  total_paid_drive_min?: number;
+  total_commute_min?: number;
+  total_miles?: number;
   total_onsite_min: number;
   total_min: number;
   total_production: number;
@@ -1108,6 +1114,22 @@ type FillUnscheduled = {
   special_scheduling: string | null;
   reason: string;
 };
+type FillDeferredBestDay = {
+  date: string;
+  weekday: string;
+  in_zone?: boolean;
+  in_window?: boolean;
+  load?: number;
+};
+type FillDeferred = {
+  customer: string;
+  city: string;
+  service: string;
+  due_date: string;
+  tech: string | null;
+  reason: string;
+  best_day?: FillDeferredBestDay | null;
+};
 type FillResult = {
   start: string;
   end: string;
@@ -1123,6 +1145,8 @@ type FillResult = {
   manual: FillUnscheduled[];
   needs_reassignment: FillUnscheduled[];
   unplaced: FillUnscheduled[];
+  deferred?: FillDeferred[];
+  deferred_count?: number;
   summary?: FillTopSummary;
 };
 
@@ -1273,12 +1297,14 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           {result.summary && result.summary.route_count > 0 && (
             <>
               <Card className="border-l-4 border-l-emerald-500">
-                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-6 gap-3 text-sm">
+                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm">
                   {([
                     ["Routes", String(result.summary.route_count)],
                     ["Total stops", String(result.summary.total_stops)],
                     ["On-site", fmtHM(result.summary.total_onsite_min)],
-                    ["Drive time", fmtHM(result.summary.total_drive_min)],
+                    ["Paid drive", fmtHM(result.summary.total_paid_drive_min ?? result.summary.total_drive_min)],
+                    ["Commute (unpaid)", fmtHM(result.summary.total_commute_min ?? 0)],
+                    ["Total miles", result.summary.total_miles != null ? `${Math.round(result.summary.total_miles)} mi` : "—"],
                     ["Production", `$${result.summary.total_production.toLocaleString()}`],
                     ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
                   ] as [string, string][]).map(([label, value]) => (
@@ -1314,7 +1340,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                           <span className="text-muted-foreground flex gap-2 flex-wrap justify-end items-baseline">
                             <span>{r.stop_count} stops</span>
                             <span>· {r.total_hours}h</span>
-                            <span>· {fmtHM(r.drive_min)} drive</span>
+                            <span>· {fmtHM(r.paid_drive_min ?? r.drive_min)} paid drive</span>
+                            {r.total_miles != null && <span>· {Math.round(r.total_miles)} mi</span>}
+                            {r.commute_min != null && r.commute_min > 0 && (
+                              <span className="opacity-70">· +{Math.round(r.commute_min)}m commute</span>
+                            )}
                             <span>· {r.est_start}–{r.est_finish}</span>
                             <span className="font-semibold text-foreground">· ${r.production.toLocaleString()}</span>
                             <span className={`font-semibold ${efficiencyTone(r.efficiency_pct)}`}>· {r.efficiency_pct}%</span>
@@ -1356,6 +1386,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             items={result.unplaced}
             blurb="Due within tolerance, but every eligible day was at capacity or constraints left no slot. Widen the window or raise max stops."
           />
+          <DeferredBucket items={result.deferred ?? []} count={result.deferred_count ?? (result.deferred?.length ?? 0)} />
         </>
       )}
     </>
@@ -1448,7 +1479,13 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
         {day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
             <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
-            <span>· {fmtHM(day.summary.drive_min)} drive</span>
+            <span>· {fmtHM(day.summary.paid_drive_min ?? day.summary.drive_min)} paid drive</span>
+            {day.summary.total_miles != null && (
+              <span>· {Math.round(day.summary.total_miles)} mi total</span>
+            )}
+            {day.summary.commute_min != null && day.summary.commute_min > 0 && (
+              <span className="opacity-70">· +{Math.round(day.summary.commute_min)}m commute (unpaid)</span>
+            )}
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
             <span>· ${day.summary.production.toLocaleString()} production</span>
             <span className={`font-semibold ${efficiencyTone(day.summary.efficiency_pct)}`}>
@@ -1612,6 +1649,48 @@ function UnscheduledBucket({ title, items, blurb }: { title: string; items: Fill
             {m.special_scheduling && m.special_scheduling !== m.reason && (
               <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
             )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Customers the planner intentionally held for a later week — not failures.
+// Shown separately so they don't get confused with the "couldn't fit" bucket.
+function DeferredBucket({ items, count }: { items: FillDeferred[]; count: number }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <Card className="border-l-4 border-l-sky-500">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <CalendarPlus className="w-4 h-4 text-sky-600" /> Held for a later week ({count})
+        </CardTitle>
+        <CardDescription>
+          Due soon but a better-fit week is coming up — the planner is waiting on
+          purpose. Not failures. The <code>reason</code> is the source of truth;{" "}
+          <em>best fit</em> is a soft pointer to the nearest matching zone-day.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {items.map((m, i) => (
+          <div key={`${m.customer}-${m.due_date}-${i}`} className="text-xs bg-sky-50 rounded p-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-semibold text-sm">{m.customer}</span>
+              <span className="text-muted-foreground">due {m.due_date}</span>
+            </div>
+            <div className="text-muted-foreground mt-0.5">
+              {m.city} · {m.service}{m.tech ? <> · prefers {m.tech}</> : null}
+            </div>
+            {m.best_day && (
+              <div className="text-sky-700 mt-0.5">
+                best fit {m.best_day.weekday} {m.best_day.date}
+                {m.best_day.in_zone === false && " · off-zone"}
+                {m.best_day.in_window === false && " · outside current window"}
+                {typeof m.best_day.load === "number" && ` · load ${m.best_day.load}`}
+              </div>
+            )}
+            <div className="text-sky-800/80 mt-0.5 italic">{m.reason}</div>
           </div>
         ))}
       </CardContent>
