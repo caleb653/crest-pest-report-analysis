@@ -58,9 +58,15 @@ export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
     });
     return () => { cancelled = true; };
   }, []);
+  if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
+  if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
+  return <RouteMapInner stops={stops} apiKey={apiKey} />;
+}
+
+function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: string }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
-    googleMapsApiKey: apiKey || "",
+    googleMapsApiKey: apiKey,
   });
   const [activeOrder, setActiveOrder] = useState<number | null>(null);
 
@@ -72,12 +78,6 @@ export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
     [stops],
   );
 
-  if (keyError) {
-    return <div className="p-6 text-sm text-red-600">{keyError}</div>;
-  }
-  if (!apiKey) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  }
   if (loadError) {
     return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
   }
