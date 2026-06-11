@@ -2728,6 +2728,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             Tag stays on this unit through every follow-up until the date passes, then auto-clears.
                                           </span>
                                         </div>
+                                        )}
                                         <div>
                                           <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target Pest</p>
                                           <p className="text-sm font-medium">{uc.target_pest || "—"}</p>
