@@ -3490,6 +3490,19 @@ const PropertyDashboard = ({
                 </div>
               </div>
             </details>
+            {(() => {
+              const fuUnits = unitDetails.filter((u: any) => u?.follow_up_needed === true);
+              if (fuUnits.length === 0 && !s.follow_up_recommended) return null;
+              const list = fuUnits.map((u: any) => u.unit_number).filter(Boolean).join(", ");
+              return (
+                <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-md px-2.5 py-1.5">
+                  <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+                  {fuUnits.length > 0
+                    ? <>{fuUnits.length} {fuUnits.length === 1 ? "home" : "homes"}{list ? ` (${list})` : ""} will auto-roll into the next scheduled service.</>
+                    : (s.follow_up_notes || "Flagged for a return visit on the next scheduled service.")}
+                </p>
+              );
+            })()}
           </>
         )}
 
