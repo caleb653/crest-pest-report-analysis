@@ -99,19 +99,21 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
   }`}>
     <CardContent className="p-0">
       {hasFollowUp && (
-        <div className="bg-orange-500 text-white px-4 py-2.5 flex items-start gap-2 rounded-t-lg">
-          <span className="text-lg leading-none">⚠️</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm uppercase tracking-wide leading-tight">
-              Follow-up Needed{followUpUnits.length > 0 ? ` — ${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}` : ""}
-            </p>
-            {followUpUnits.length > 0 && (
-              <p className="text-xs mt-0.5 text-white/95 break-words">
-                Units: {followUpUnits.map(u => u.unit_number).filter(Boolean).join(", ")}
-              </p>
-            )}
-          </div>
-        </div>
+        <p className="text-xs text-orange-800 bg-orange-50 border border-orange-300 rounded-t-lg px-3 py-2">
+          <span className="font-bold uppercase tracking-wide">Follow-up needed:</span>{" "}
+          {followUpUnits.length > 0 ? (
+            <>
+              {followUpUnits.length} {followUpUnits.length === 1 ? "unit" : "units"}
+              {(() => {
+                const list = followUpUnits.map(u => u.unit_number).filter(Boolean).join(", ");
+                return list ? ` (${list})` : "";
+              })()}{" "}
+              will auto-roll into the next scheduled service.
+            </>
+          ) : (
+            service.follow_up_notes || "Flagged for a return visit on the next scheduled service."
+          )}
+        </p>
       )}
       <button className="w-full text-left p-4 flex items-center justify-between" onClick={onToggle}>
         <div className="flex-1 min-w-0">
