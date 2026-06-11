@@ -27,7 +27,7 @@ import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { PRESET_NOTES } from "@/lib/presetNotes";
-import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
+import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
@@ -2888,9 +2888,11 @@ const PropertyDashboard = ({
       service: s,
       isFirstUpcoming: isUpcoming && isFirstUpcoming,
       requests: pendingRequests,
-      // Use the most recent visit INCLUDING ad-hoc so follow_up_needed flags
-      // set on an ad-hoc visit roll forward to the next scheduled service.
-      mostRecentPast: pastServicesForDisplay[0] || null,
+      // Roll forward follow_up_needed flags from EVERY past visit (regular +
+      // ad-hoc). buildMergedMostRecentPast collapses the latest entry per
+      // unit across all past services so a flag from any prior visit
+      // surfaces until a newer visit for that unit clears it.
+      mostRecentPast: buildMergedMostRecentPast(pastServicesForDisplay),
       // Include ad-hoc completed visits in the lookup so per-unit notes
       // from an ad-hoc visit carry forward to the next scheduled visit's
       // pre-fill (cadence/follow-up math still uses pastServices only).
@@ -5796,9 +5798,9 @@ const PropertyDashboard = ({
                 service: s,
                 isFirstUpcoming: isFirst,
                 requests: pendingRequests,
-                // Include ad-hoc visits so their follow-up flags surface
-                // as orange follow-ups on the next scheduled service.
-                mostRecentPast: pastServicesForDisplay[0] || null,
+                // Merge follow_up_needed flags across ALL past visits so
+                // every unit still needing a follow-up surfaces as orange.
+                mostRecentPast: buildMergedMostRecentPast(pastServicesForDisplay),
                 allPastServices: pastServicesForDisplay,
                 tenantMoveIns:
                   (property.customer_preferences as any)?.tenant_move_ins || null,
