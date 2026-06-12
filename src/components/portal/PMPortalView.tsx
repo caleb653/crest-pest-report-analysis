@@ -2905,6 +2905,41 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             )}
                                           </div>
                                         )}
+                                        {/* ORIGINAL WORK ORDER — visible on follow-up /
+                                            carried units so the PM (and tech) can always
+                                            trace a visit back to the request that opened
+                                            the thread, even after that request closed. */}
+                                        {!isWO && uc.original_request && (() => {
+                                          const orig = uc.original_request as any;
+                                          const contact = parseResidentContact(orig);
+                                          const origIsInspection = String(orig.request_type || "").toLowerCase().includes("inspection");
+                                          const summary = [
+                                            `${orig.pest_type || "Pest"} activity reported${orig.location_type ? ` (${orig.location_type})` : ""}${orig.description ? `: ${orig.description}` : ""}`,
+                                            orig.occupancy_status ? `Unit status: ${orig.occupancy_status}` : null,
+                                          ].filter(Boolean).join("\n");
+                                          const opened = orig.created_at
+                                            ? new Date(orig.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                            : null;
+                                          return (
+                                            <div className="md:col-span-2 rounded-lg border-2 border-indigo-500 bg-indigo-50/60 p-3 mt-1">
+                                              <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                                                <ClipboardList className="w-3.5 h-3.5 text-indigo-700" />
+                                                <p className="text-[11px] font-bold text-indigo-900 uppercase tracking-wide">
+                                                  Original {origIsInspection ? "Inspection" : "Work"} Order
+                                                </p>
+                                                {opened && (
+                                                  <span className="text-[11px] text-indigo-900/70">opened {opened}</span>
+                                                )}
+                                              </div>
+                                              {contact.hasAny && (
+                                                <ResidentContactCard contact={contact} className="mb-2" />
+                                              )}
+                                              <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
+                                                {summary}
+                                              </p>
+                                            </div>
+                                          );
+                                        })()}
                                       </div>
                                       )}
                                     </div>
