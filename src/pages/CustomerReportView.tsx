@@ -850,6 +850,165 @@ export default function CustomerReportView() {
 
   return (
     <div className="min-h-screen bg-background" ref={reportRootRef}>
+      {(() => {
+        const prefs = (report.customer_preferences as any) || {};
+        if (prefs.reportFormat !== "rodent-exclusion") return null;
+        const beforePhotos: PropertyImage[] = Array.isArray(prefs?.beforeAfter?.before)
+          ? prefs.beforeAfter.before
+          : [];
+        const afterPhotos: PropertyImage[] = Array.isArray(report.property_images)
+          ? report.property_images.filter((p) => p && (p.image || p.url))
+          : [];
+        const pairCount = Math.max(beforePhotos.length, afterPhotos.length);
+        const findingsTextHtml = Array.isArray(report.findings)
+          ? report.findings.join("<br/>")
+          : (report.findings || "");
+        return (
+          <>
+            <div className="max-w-5xl mx-auto">
+              <header className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
+                  <h1 className="text-lg font-bold">Rodent Exclusion Report</h1>
+                </div>
+                <span className="text-xs font-bold text-foreground">PEST CONTROL</span>
+              </header>
+
+              <main className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4">
+                    <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Customer Details</h2>
+                    <div className="space-y-1 text-sm">
+                      <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{report.customer_name || "—"}</span></p>
+                      <p><span className="text-muted-foreground">Address:</span> <span className="font-medium">{report.address || "—"}</span></p>
+                      <p><span className="text-muted-foreground">Date:</span> <span className="font-medium">{report.service_date || "—"}</span></p>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Technician Information</h2>
+                    <div className="space-y-1 text-sm">
+                      <p><span className="text-muted-foreground">Name:</span> <span className="font-medium">{report.technician_name}</span></p>
+                      <p><span className="text-muted-foreground">License:</span> <span className="font-medium">{report.license_number || "—"}</span></p>
+                    </div>
+                  </Card>
+                </div>
+
+                {findingsTextHtml && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Service Summary / Findings</span>
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{
+                          __html: findingsTextHtml
+                            .replace(/^(.*?:)/gm, "<strong>$1</strong>")
+                            .replace(/\n/g, "<br/>"),
+                        }}
+                      />
+                    </div>
+                  </Card>
+                )}
+
+                {report.equipment && report.equipment.length > 0 && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Materials Used</span>
+                    </div>
+                    <div className="p-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {report.equipment.map((mat, idx) => (
+                          <span key={idx} className="bg-primary text-primary-foreground px-2.5 py-1 rounded-full text-xs font-medium">
+                            {mat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {pairCount > 0 && (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2 flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase">Before &amp; After</span>
+                      <span className="text-[10px] opacity-80">
+                        {beforePhotos.length} before · {afterPhotos.length} after
+                      </span>
+                    </div>
+                    <div className="p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {Array.from({ length: pairCount }, (_, i) => {
+                          const before = beforePhotos[i];
+                          const after = afterPhotos[i];
+                          const beforeSrc = before?.image || before?.url;
+                          const afterSrc = after?.image || after?.url;
+                          return (
+                            <div key={`pair-${i}`} className="rounded-xl border-2 border-dark-sage/40 bg-card p-2">
+                              <div className="flex items-center justify-between mb-1.5 px-0.5">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                  Pair {i + 1}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
+                                  <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                                    {beforeSrc ? (
+                                      <img src={beforeSrc} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">—</div>
+                                    )}
+                                  </div>
+                                  {before?.caption && (
+                                    <p className="text-[10px] leading-tight text-foreground bg-muted/40 rounded px-1.5 py-1">{before.caption}</p>
+                                  )}
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
+                                  <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
+                                    {afterSrc ? (
+                                      <img src={afterSrc} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">—</div>
+                                    )}
+                                  </div>
+                                  {after?.caption && (
+                                    <p className="text-[10px] leading-tight text-foreground bg-muted/40 rounded px-1.5 py-1">{after.caption}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                <Card className="overflow-hidden">
+                  <div className="bg-brand-black text-white px-4 py-2">
+                    <span className="text-xs font-bold uppercase">Crest Guarantee</span>
+                  </div>
+                  <div className="p-4 text-sm leading-relaxed space-y-2">
+                    <p>
+                      Our exclusion work carries a <strong>lifetime warranty</strong> on any area we sealed for as long as you remain on an ongoing rodent bait box service. If you are not on an ongoing bait box service, the warranty covers re-sealing at no charge for <strong>one year</strong>.
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      The warranty excludes new openings made by others or natural deterioration. Crest is not liable for any structural or property damage caused by rodents.
+                    </p>
+                  </div>
+                </Card>
+
+                <div className="text-center text-xs text-muted-foreground py-2">
+                  Questions? Call Crest Pest Control at <span className="font-semibold text-foreground">949-424-5000</span>.
+                </div>
+              </main>
+            </div>
+          </>
+        );
+      })() || (
+      <>
       {!isInitialReport && report.customer_signature && (
         <div className="bg-sage/50 border-b border-sage py-3 px-4">
           <div className="max-w-5xl mx-auto flex items-center gap-3 justify-center">
