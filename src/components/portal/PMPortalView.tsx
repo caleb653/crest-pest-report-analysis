@@ -3009,7 +3009,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
 
-                          {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
+                          {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s, { hideUnitSummary: true })}
 
                           </>
                           )}
