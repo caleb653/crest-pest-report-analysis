@@ -2970,6 +2970,9 @@ const PropertyDashboard = ({
       // from an ad-hoc visit carry forward to the next scheduled visit's
       // pre-fill (cadence/follow-up math still uses pastServices only).
       allPastServices: pastServicesForDisplay,
+      // Surface the original work order on follow-up / carried units even
+      // after the request itself has been closed.
+      allRequests: allRequests,
       tenantMoveIns:
         (property.customer_preferences as any)?.tenant_move_ins || null,
     });
