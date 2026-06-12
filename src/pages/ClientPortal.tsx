@@ -672,7 +672,7 @@ const ClientPortal = () => {
               {followUpItems.map(s => (
                 <div key={s.id} className="text-sm text-orange-700">
                   <span className="font-medium">{s.service_type}</span>
-                  {s.service_date && <span className="text-orange-500 ml-1">({new Date(s.service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })})</span>}
+                  {s.service_date && <span className="text-orange-500 ml-1">({new Date(s.service_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })})</span>}
                   <span className="mx-1">—</span>
                   <span>{s.follow_up_notes}</span>
                 </div>

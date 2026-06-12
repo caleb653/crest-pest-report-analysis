@@ -2476,7 +2476,7 @@ const PropertyDashboard = ({
     }
     return date.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" });
   };
-  const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "TBD";
+  const formatShortDate = (d: string | null) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD";
 
   const propertyLink = links.find(l => l.link_type === "sub" && l.assigned_property_ids && (l.assigned_property_ids as string[]).includes(property.id));
 
@@ -4264,7 +4264,9 @@ const PropertyDashboard = ({
                                       `${orig.pest_type || "Pest"} activity reported${orig.location_type ? ` (${orig.location_type})` : ""}${orig.description ? `: ${orig.description}` : ""}`,
                                       orig.occupancy_status ? `Unit status: ${orig.occupancy_status}` : null,
                                     ].filter(Boolean).join("\n");
-                                    const opened = orig.created_at ? new Date(orig.created_at).toLocaleDateString() : null;
+                                    const opened = orig.created_at
+                                      ? new Date(orig.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                      : null;
                                     return (
                                       <div className="md:col-span-2 rounded-lg border-2 border-indigo-500 bg-indigo-50/60 p-3">
                                         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
