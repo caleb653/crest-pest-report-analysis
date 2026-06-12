@@ -1788,7 +1788,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 const contact = parseResidentContact(r);
                                 const desc = contact.cleanedDescription || r.description || "";
                                 const reqDateStr = r.created_at
-                                  ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                                  ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                                   : "";
                                 return (
                                   <div
@@ -2437,7 +2437,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               )}
                             </div>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </span>
                           </div>
                           {r.unit_number && (
