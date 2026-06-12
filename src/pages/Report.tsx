@@ -1128,6 +1128,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
               setSetupMaterials(parsed.setupMaterials || []);
               setLimitationsText(parsed.limitationsText || "");
               setSelectedExclusions(Array.isArray(parsed.selectedExclusions) ? parsed.selectedExclusions : []);
+              if (Array.isArray(parsed.guaranteeBoxes)) {
+                setGuaranteeBoxes(parsed.guaranteeBoxes);
+                guaranteeBoxesHydratedRef.current = true;
+              }
             } else {
               setAdditionalDetails(row.notes);
             }
