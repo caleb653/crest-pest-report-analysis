@@ -29,6 +29,51 @@ interface PropertyImage {
   caption?: string;
 }
 
+/**
+ * Split a services HTML blob into the main "what we do" content and the
+ * disclaimer/warranty/additional-details content. Returns both as HTML strings.
+ * Used so the customer-facing proposal view can present disclaimers in their
+ * own box near the bottom of the page rather than inline with each service.
+ */
+const splitProposalDisclaimers = (html: string): { mainHtml: string; disclaimerHtml: string } => {
+  if (!html) return { mainHtml: "", disclaimerHtml: "" };
+  // Split on two or more <br> tags (the chunk separator used when assembling
+  // the proposal HTML in Report.tsx / MultiProposalReport.tsx).
+  const chunks = html.split(/(?:<br\s*\/?>\s*){2,}/i).map((c) => c.trim()).filter(Boolean);
+  const disclaimerHeader = /^<b>\s*(additional details|disclaimer|[^<]*guarantee|[^<]*warranty|not included[^<]*)\s*:?\s*<\/b>/i;
+  const serviceHeader = /^<b>\s*([^<:]+?)\s*:\s*<\/b>/i;
+
+  let currentService = "";
+  const mainChunks: string[] = [];
+  const disclaimerGroups: Record<string, string[]> = {};
+  const serviceOrder: string[] = [];
+
+  chunks.forEach((chunk) => {
+    if (disclaimerHeader.test(chunk)) {
+      const key = currentService || "General";
+      if (!disclaimerGroups[key]) {
+        disclaimerGroups[key] = [];
+        serviceOrder.push(key);
+      }
+      disclaimerGroups[key].push(chunk);
+    } else {
+      const m = chunk.match(serviceHeader);
+      if (m) currentService = m[1].trim();
+      mainChunks.push(chunk);
+    }
+  });
+
+  const mainHtml = mainChunks.join("<br><br>");
+  const disclaimerHtml = serviceOrder
+    .map((svc) => {
+      const body = disclaimerGroups[svc].join("<br><br>");
+      return `<div class="mb-3"><div class="text-[11px] font-bold uppercase tracking-wide text-foreground mb-1">${svc}</div><div>${body}</div></div>`;
+    })
+    .join("");
+
+  return { mainHtml, disclaimerHtml };
+};
+
 const getRecurringLabel = (services: ServiceItem[]) => {
   const recurringServices = services.filter(s => {
     const freq = typeof s.frequency === 'string' ? parseInt(s.frequency, 10) : s.frequency;
@@ -545,10 +590,11 @@ export default function CustomerReportView() {
     const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
     const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
     if (contentHtml) {
+      const { mainHtml } = splitProposalDisclaimers(contentHtml);
       return (
         <div
           className="text-sm leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: contentHtml }}
+          dangerouslySetInnerHTML={{ __html: mainHtml || contentHtml }}
         />
       );
     }
@@ -828,6 +874,29 @@ export default function CustomerReportView() {
               )}
 
               {/* Pesticide Notice — shown on every proposal page */}
+              {(() => {
+                const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
+                const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+                const { disclaimerHtml } = splitProposalDisclaimers(contentHtml);
+                if (!disclaimerHtml) return null;
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Disclaimers & Additional Details</span>
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
+                        dangerouslySetInnerHTML={{ __html: disclaimerHtml }}
+                      />
+                      <p className="text-[11px] italic text-muted-foreground mt-3 pt-3 border-t border-border">
+                        Crest Pest Control is not liable for any structural or property damage caused by any pests or rodents.
+                      </p>
+                    </div>
+                  </Card>
+                );
+              })()}
+
               <Card className="overflow-hidden">
                 <div className="bg-brand-black text-white px-4 py-2">
                   <span className="text-xs font-bold uppercase">Pesticide Notice</span>
