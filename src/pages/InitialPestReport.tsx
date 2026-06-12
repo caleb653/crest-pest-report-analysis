@@ -312,7 +312,11 @@ const Report = () => {
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [includePdf, setIncludePdf] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
+  const [emailSubject, setEmailSubject] = useState(
+    variant === "rodent-exclusion"
+      ? "Your Rodent Exclusion Report from Crest"
+      : "Your Initial Pest Report from Crest",
+  );
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
@@ -670,7 +674,10 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
-        if (prefs.reportFormat === "rodent-exclusion") setIsRodentExclusion(true);
+        if (prefs.reportFormat === "rodent-exclusion") {
+          setIsRodentExclusion(true);
+          setEmailSubject("Your Rodent Exclusion Report from Crest");
+        }
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
