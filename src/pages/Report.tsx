@@ -55,6 +55,11 @@ import {
 } from "@/lib/rodentExclusionAutoCreate";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
+import {
+  RODENT_GUARANTEE_HTML,
+  hasRodentGuaranteeService,
+  stripRodentGuaranteeFromHtml,
+} from "@/lib/rodentGuarantee";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -164,7 +169,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replacing framing, and any other general construction work.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replacing framing, and any other general construction work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -180,7 +185,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -2804,13 +2809,29 @@ Crest Pest Control`;
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{
-                        __html: formatProposedServices(editableFindings[0] || ""),
+                        __html: formatProposedServices(stripRodentGuaranteeFromHtml(editableFindings[0] || "")),
                       }}
                     />
                   </>
                 )}
               </div>
             </Card>
+            {hasRodentGuaranteeService(services.map((s) => s.serviceType)) && (
+              <Card
+                data-pdf-section="rodent-guarantee"
+                className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg mt-2 print:mt-1"
+              >
+                <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">
+                    Rodent Service Guarantee & Warranty
+                  </span>
+                </div>
+                <div
+                  className="p-3 print:p-1.5 text-xs print:text-[10px] leading-relaxed text-foreground/90"
+                  dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
+                />
+              </Card>
+            )}
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
