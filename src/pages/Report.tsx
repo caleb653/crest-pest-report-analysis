@@ -722,7 +722,7 @@ const Report = () => {
   const [limitationsText, setLimitationsText] = useState("");
   const [selectedExclusions, setSelectedExclusions] = useState<string[]>([]);
   const [guaranteeBoxes, setGuaranteeBoxes] = useState<GuaranteeBox[]>([]);
-  const guaranteeBoxesHydratedRef = React.useRef(false);
+  const guaranteeBoxesHydratedRef = useRef(false);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
