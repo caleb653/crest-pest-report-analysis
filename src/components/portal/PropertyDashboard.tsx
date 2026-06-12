@@ -3713,7 +3713,7 @@ const PropertyDashboard = ({
             <div className="flex items-center gap-1.5 mb-1.5">
               <ClipboardList className="w-3.5 h-3.5 text-primary" />
               <p className="text-xs font-bold uppercase tracking-wide text-primary">
-                Technician Findings{s.technician ? ` — ${s.technician}` : ""}
+                {isAdHocService(s) ? "Appointment Summary" : "Technician Findings"}{s.technician ? ` — ${s.technician}` : ""}
               </p>
             </div>
             <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">
