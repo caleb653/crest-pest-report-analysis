@@ -989,7 +989,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return map;
   })();
 
-  const renderServiceDetailsRO = (s: ServiceData) => {
+  const renderServiceDetailsRO = (s: ServiceData, opts?: { hideUnitSummary?: boolean }) => {
+    const hideUnitSummary = opts?.hideUnitSummary === true;
     const unitDetails = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
