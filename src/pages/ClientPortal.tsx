@@ -11,6 +11,7 @@ import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, Chev
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
+import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import crestLogo from "@/assets/crest-logo.png";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import CommercialPMView from "@/components/portal/CommercialPMView";
@@ -83,7 +84,9 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
   isAdmin: boolean;
   uploadingPhotoId: string | null;
   onUploadPhotos: (serviceId: string, files: FileList | null) => void;
+  property?: PropertyData | null;
 }) => {
+  const property = (arguments[0] as any)?.property as PropertyData | undefined | null;
   // Surface follow-up units extremely prominently — pull every unit the
   // technician explicitly flagged so the customer sees exactly which
   // units still need attention without expanding the unit list.
