@@ -759,6 +759,7 @@ const ClientPortal = () => {
                         isAdmin={isAdmin}
                         uploadingPhotoId={uploadingPhotoId}
                         onUploadPhotos={uploadServicePhotos}
+                        property={selectedProperty}
                       />
                     ))}
                   </div>
@@ -786,6 +787,7 @@ const ClientPortal = () => {
                       isAdmin={isAdmin}
                       uploadingPhotoId={uploadingPhotoId}
                       onUploadPhotos={uploadServicePhotos}
+                      property={selectedProperty}
                     />
                   ))}
                 </div>
