@@ -6165,8 +6165,53 @@ const PropertyDashboard = ({
             <div className="space-y-2">
               {pendingAdHoc.map((s) => {
                 const isCompleted = s.status === "completed";
+                const isDropActive =
+                  !!dragUnit &&
+                  dragUnit.sourceServiceId !== s.id;
+                const isDropHover = isDropActive && dragOverAdHocId === s.id;
                 return (
-                  <Card key={s.id} className="shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent">
+                  <Card
+                    key={s.id}
+                    onDragOver={(e) => {
+                      if (!isDropActive) return;
+                      e.preventDefault();
+                      try { e.dataTransfer.dropEffect = "move"; } catch {}
+                      if (dragOverAdHocId !== s.id) setDragOverAdHocId(s.id);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!isDropActive) return;
+                      // Only clear when leaving the card itself, not children.
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                      if (dragOverAdHocId === s.id) setDragOverAdHocId(null);
+                    }}
+                    onDrop={async (e) => {
+                      if (!isDropActive || !dragUnit) return;
+                      e.preventDefault();
+                      const payload = dragUnit;
+                      setDragOverAdHocId(null);
+                      setDragUnit(null);
+                      // Look up source's renderServiceDetails-bound mover via DOM
+                      // isn't available here, so do the move inline via a shared
+                      // helper stored on window during render is overkill —
+                      // instead, dispatch a custom event the source card listens for.
+                      window.dispatchEvent(new CustomEvent("pd-move-unit-to-adhoc", {
+                        detail: {
+                          adHocId: s.id,
+                          sourceServiceId: payload.sourceServiceId,
+                          unit: payload.unit,
+                          row: payload.row,
+                        },
+                      }));
+                    }}
+                    className={`shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent transition-all ${
+                      isDropHover ? "border-secondary ring-2 ring-secondary/60 bg-secondary/15" : isDropActive ? "border-secondary/80" : ""
+                    }`}
+                  >
+                    {isDropActive && (
+                      <div className="px-3 pt-2 -mb-1 text-[11px] font-semibold text-secondary-foreground/80">
+                        Drop here to move {dragUnit?.unit} into this ad-hoc visit
+                      </div>
+                    )}
                     <div className="p-3 flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
