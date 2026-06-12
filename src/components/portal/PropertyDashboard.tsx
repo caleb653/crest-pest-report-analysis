@@ -30,6 +30,7 @@ import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProdu
 import { PRESET_NOTES } from "@/lib/presetNotes";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
+import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
   DEFAULT_SURVEY_INTRO,
