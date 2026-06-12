@@ -18,6 +18,32 @@ const WINDOW_DAYS = 7;
 const FREE_CLEAR_LOOKBACK_DAYS = 45;
 const FREE_CLEAR_STATUS = "Inspected: Free and Clear";
 
+// owner_tech (stored on portal_properties) → Crest staff email. Mirrors
+// src/lib/staffRoster.ts; kept inline so the edge function has no app deps.
+const OWNER_TECH_EMAIL: Record<string, string> = {
+  "Darrell Tanner": "dtanner@crestpestcontrol.com",
+  "Jake Shubin": "jake@crestpestcontrol.com",
+  "Caleb Whalen": "caleb@crestpestcontrol.com",
+  "Jackson Latham": "jlatham@crestpestcontrol.com",
+  "Dylan Gallegos": "dgallegos@crestpestcontrol.com",
+  "Michael Muniz": "mmuniz@crestpestcontrol.com",
+  "Carmen Lopez": "clopez@crestpestcontrol.com",
+  "David Longoria": "dlongoria@crestpestcontrol.com",
+};
+const lookupOwnerEmail = (ownerTech: unknown): string | null => {
+  const raw = String(ownerTech || "").trim();
+  if (!raw) return null;
+  if (OWNER_TECH_EMAIL[raw]) return OWNER_TECH_EMAIL[raw];
+  // Tolerate stored usernames (e.g. "jake") in addition to full names.
+  const lower = raw.toLowerCase();
+  for (const [name, email] of Object.entries(OWNER_TECH_EMAIL)) {
+    if (email.split("@")[0].toLowerCase() === lower || name.toLowerCase() === lower) {
+      return email;
+    }
+  }
+  return null;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -42,7 +68,7 @@ serve(async (req) => {
 
     const { data: properties, error: propErr } = await supabase
       .from("portal_properties")
-      .select("id, name, address, customer_preferences");
+      .select("id, name, address, customer_preferences, owner_tech");
     if (propErr) throw propErr;
 
     type Flagged = {
@@ -53,6 +79,7 @@ serve(async (req) => {
       days_until: number;
       last_service_date: string | null;
       last_status: string | null;
+      owner_email: string | null;
     };
     const flagged: Flagged[] = [];
 
@@ -62,6 +89,7 @@ serve(async (req) => {
         .map(([unit, date]) => ({ unit: String(unit).trim(), date: String(date || "").slice(0, 10) }))
         .filter((x) => x.unit && x.date && x.date >= today && x.date <= windowEnd);
       if (upcoming.length === 0) continue;
+      const ownerEmail = lookupOwnerEmail((prop as any).owner_tech);
 
       // Pull recent services for this property and inspect unit_details.
       const { data: svcs, error: svcErr } = await supabase
@@ -98,6 +126,7 @@ serve(async (req) => {
           days_until: daysUntil,
           last_service_date: lastService?.date || null,
           last_status: lastService?.status || null,
+          owner_email: ownerEmail,
         });
       }
     }
@@ -153,6 +182,12 @@ serve(async (req) => {
         </p>
       </div>`;
 
+    // Always send to the office; CC every distinct owner-tech tied to a
+    // flagged unit so the property's account owner sees their items.
+    const ownerCcs = Array.from(
+      new Set(flagged.map((f) => f.owner_email).filter((x): x is string => !!x))
+    );
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -162,6 +197,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: "Crest Pest Control <reports@crestpestco.com>",
         to: [OFFICE_EMAIL],
+        cc: ownerCcs,
         subject: `[Move-In Clearance] ${flagged.length} unit${flagged.length === 1 ? "" : "s"} need clearance within 7 days`,
         html,
       }),
@@ -171,7 +207,7 @@ serve(async (req) => {
       throw new Error(`Resend ${res.status}: ${t}`);
     }
 
-    return new Response(JSON.stringify({ ok: true, flagged: flagged.length, sent: true }), {
+    return new Response(JSON.stringify({ ok: true, flagged: flagged.length, sent: true, cc: ownerCcs }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
