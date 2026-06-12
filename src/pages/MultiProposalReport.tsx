@@ -58,7 +58,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import GuaranteeBoxesEditor from "@/components/GuaranteeBoxesEditor";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
