@@ -1023,6 +1023,19 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   }, [coordinates, zoomLevel]);
 
+  // Auto-seed default rodent guarantee box once when a rodent service is
+  // added and no boxes have been saved yet. After hydration or any admin
+  // edit (including deletion), we leave the saved list alone.
+  useEffect(() => {
+    if (guaranteeBoxesHydratedRef.current) return;
+    if (guaranteeBoxes.length > 0) return;
+    const seeded = resolveInitialGuaranteeBoxes(undefined, services.map((s) => s.serviceType));
+    if (seeded.length > 0) {
+      setGuaranteeBoxes(seeded);
+      guaranteeBoxesHydratedRef.current = true;
+    }
+  }, [services, guaranteeBoxes.length]);
+
   const fetchStaticMap = async () => {
     if (!coordinates) return;
     // Static map (Mapbox) fetching has been removed — users upload custom maps instead.
