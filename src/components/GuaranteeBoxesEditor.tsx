@@ -46,8 +46,11 @@ const GuaranteeBoxesEditor: React.FC<Props> = ({ boxes, onChange, showRodentDefa
               value={box.title}
               onChange={(e) => updateBox(idx, { title: e.target.value })}
               placeholder="Box title (e.g. Mosquito Service Guarantee)"
-              className="h-7 text-xs font-bold uppercase bg-white/90 border-0 focus-visible:ring-1"
+              className="h-7 text-xs font-bold uppercase bg-white/90 border-0 focus-visible:ring-1 no-print"
             />
+            <span className="hidden print:inline text-xs font-bold uppercase text-white">
+              {box.title || "Guarantee & Warranty"}
+            </span>
             <Button
               type="button"
               variant="ghost"
@@ -61,7 +64,8 @@ const GuaranteeBoxesEditor: React.FC<Props> = ({ boxes, onChange, showRodentDefa
             </Button>
           </div>
           <div className="p-2 print:p-1.5">
-            <RichTextEditor
+            <div className="no-print">
+              <RichTextEditor
               value={box.html}
               onChange={(html) => updateBox(idx, { html })}
               placeholder="Enter guarantee / warranty details..."
@@ -69,6 +73,11 @@ const GuaranteeBoxesEditor: React.FC<Props> = ({ boxes, onChange, showRodentDefa
               onFontSizeChange={setFontSize}
               showControls
               className="min-h-[80px]"
+              />
+            </div>
+            <div
+              className="hidden print:block text-[10px] leading-relaxed text-foreground/90"
+              dangerouslySetInnerHTML={{ __html: box.html || "" }}
             />
           </div>
         </Card>
