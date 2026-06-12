@@ -520,6 +520,8 @@ export default function CustomerReportView() {
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
   const proposalFindingsMap = structuredNotes?.proposalFindings || {};
+  const proposalGuaranteeBoxesMap = structuredNotes?.proposalGuaranteeBoxes || {};
+  const singleGuaranteeBoxes = structuredNotes?.guaranteeBoxes;
 
   const isMultiProposal =
     report.services &&
