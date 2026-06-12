@@ -530,7 +530,7 @@ export function HOAServiceView(props: HOAServiceViewProps) {
               <ul className="space-y-2">
                 {communityFeedback.map((f) => {
                   const dateStr = (() => {
-                    try { return new Date(f.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" }); }
+                    try { return new Date(f.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
                     catch { return ""; }
                   })();
                   // Strip the "[COMMUNITY SIGHTING] " tag the form prepends.
