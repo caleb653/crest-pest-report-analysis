@@ -59,7 +59,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import GuaranteeBoxesEditor, { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -718,6 +721,8 @@ const Report = () => {
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
   const [limitationsText, setLimitationsText] = useState("");
   const [selectedExclusions, setSelectedExclusions] = useState<string[]>([]);
+  const [guaranteeBoxes, setGuaranteeBoxes] = useState<GuaranteeBox[]>([]);
+  const guaranteeBoxesHydratedRef = React.useRef(false);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
