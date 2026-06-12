@@ -2541,15 +2541,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             ) : (
               <div className="space-y-4">
                 {upcomingServices.map((s, i) => {
-                  const isFirst = i === 0;
-                  const isExpanded = isFirst || expandedUpcomingId === s.id;
+                  const isAdHocCard = isAdHocService(s);
+                  // "Next Service" highlight goes to the first NON-ad-hoc
+                  // upcoming visit so ad-hoc spot visits never hijack the
+                  // cadence headline.
+                  const isFirst = !isAdHocCard && i === firstRealUpcomingIdx;
+                  // Ad-hoc cards auto-expand too — their whole purpose is to
+                  // show the units the tech will treat on that one-off visit.
+                  const isExpanded = isFirst || isAdHocCard || expandedUpcomingId === s.id;
                   const lastPast = pastServices[0] || null;
                   const merged = computeUpcomingUnits({
                     service: s,
+                    // Ad-hoc visits NEVER pull in follow-ups or open work
+                    // orders — they're entirely separate from the cadence.
                     isFirstUpcoming: isFirst,
-                    requests,
-                    mostRecentPast: lastPast,
-                    allPastServices: pastServices,
+                    requests: isAdHocCard ? [] : requests,
+                    mostRecentPast: isAdHocCard ? null : lastPast,
+                    allPastServices: isAdHocCard ? [] : pastServices,
                     tenantMoveIns:
                       (property.customer_preferences as any)?.tenant_move_ins || null,
                   });
