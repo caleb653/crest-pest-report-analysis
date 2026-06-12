@@ -590,10 +590,11 @@ export default function CustomerReportView() {
     const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
     const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
     if (contentHtml) {
+      const { mainHtml } = splitProposalDisclaimers(contentHtml);
       return (
         <div
           className="text-sm leading-relaxed prose prose-sm max-w-none"
-          dangerouslySetInnerHTML={{ __html: contentHtml }}
+          dangerouslySetInnerHTML={{ __html: mainHtml || contentHtml }}
         />
       );
     }
