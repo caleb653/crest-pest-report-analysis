@@ -317,7 +317,11 @@ const Report = () => {
       ? "Your Rodent Exclusion Report from Crest"
       : "Your Initial Pest Report from Crest",
   );
-  const [emailMessage, setEmailMessage] = useState("");
+  const [emailMessage, setEmailMessage] = useState(
+    variant === "rodent-exclusion"
+      ? "Hi,\n\nThank you for choosing Crest for your rodent exclusion work. Attached/linked is your Rodent Exclusion Report, which documents the entry points we sealed, the exclusion materials used, and before & after photos of the work performed on your property.\n\nA few reminders:\n• Our exclusion work carries a lifetime warranty on areas we sealed as long as you remain on an ongoing rodent bait box service (1-year warranty otherwise).\n• If you notice any new rodent activity, give us a call right away so we can re-inspect.\n\nPlease let us know if you have any questions — we're happy to walk through the report with you.\n\nThank you,\nThe Crest Team"
+      : "",
+  );
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [recommendationsFontSize, setRecommendationsFontSize] = useState(14);
