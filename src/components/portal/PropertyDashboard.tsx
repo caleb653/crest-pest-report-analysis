@@ -6061,6 +6061,7 @@ const PropertyDashboard = ({
                 // every unit still needing a follow-up surfaces as orange.
                 mostRecentPast: buildMergedMostRecentPast(pastServicesForDisplay),
                 allPastServices: pastServicesForDisplay,
+                allRequests: allRequests,
                 tenantMoveIns:
                   (property.customer_preferences as any)?.tenant_move_ins || null,
               });
