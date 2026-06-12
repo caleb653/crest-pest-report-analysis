@@ -150,6 +150,15 @@ export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => 
   drawField("Phone/Contact:", ctx.phoneContact || "949-424-5000");
 
   y += 24;
+  // Typed signature (cursive) above the signature line
+  if (inspectorName) {
+    pdf.setFont("times", "italic").setFontSize(18);
+    pdf.text(inspectorName, margin + 4, y - 4);
+  }
+  if (inspectionDate) {
+    pdf.setFont("times", "italic").setFontSize(14);
+    pdf.text(inspectionDate, W - margin - 196, y - 4);
+  }
   pdf.setDrawColor(120).line(margin, y, margin + 240, y);
   pdf.setFont("helvetica", "bold").setFontSize(10);
   pdf.text("Inspector Signature", margin, y + 14);
