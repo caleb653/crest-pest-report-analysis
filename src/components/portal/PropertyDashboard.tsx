@@ -4203,91 +4203,67 @@ const PropertyDashboard = ({
                                 (c) => String(c.unit_number) === String(row.unit_number)
                               );
                               if (!uc) return null;
+                              const orig = !isWorkOrder ? (uc.original_request as any) : null;
+                              const origSummary = orig
+                                ? [
+                                    `${orig.pest_type || "Pest"} activity reported${orig.location_type ? ` (${orig.location_type})` : ""}${orig.description ? `: ${orig.description}` : ""}`,
+                                    orig.occupancy_status ? `Unit status: ${orig.occupancy_status}` : null,
+                                  ].filter(Boolean).join("\n")
+                                : "";
+                              const origIsInspection = orig
+                                ? String(orig.request_type || "").toLowerCase().includes("inspection")
+                                : false;
+                              const origOpened = orig?.created_at
+                                ? new Date(orig.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                : null;
+                              if (!uc.context && !uc.findings && !orig) return null;
                               return (
-                                <>
-                                  {/* Structured work-order pills intentionally omitted —
-                                      the same fields are already surfaced inside the
-                                      Treatment Request Context block below to avoid
-                                      redundancy. */}
-                                  {(uc.context || uc.findings) && (
-                                    <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 space-y-3">
-                                      {uc.context && (
-                                        <div>
-                                          <div className="flex items-center gap-1.5 mb-1.5">
-                                            <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
-                                            <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
-                                              {isWorkOrder
-                                                ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
-                                                : "Last Service Context"}
-                                            </Label>
-                                          </div>
-                                          {isWorkOrder && uc.request && (() => {
-                                            const contact = parseResidentContact(uc.request as any);
-                                            return contact.hasAny ? (
-                                              <ResidentContactCard contact={contact} className="mb-2" />
-                                            ) : null;
-                                          })()}
-                                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                            {uc.context}
-                                          </p>
-                                        </div>
-                                      )}
-                                      {uc.context && uc.findings && (
-                                        <div className="border-t border-sky-200" />
-                                      )}
-                                      {uc.findings && (
-                                        <div>
-                                          <div className="flex items-center gap-1.5 mb-1.5">
-                                            <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
-                                            <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
-                                              Findings (from last visit)
-                                            </Label>
-                                          </div>
-                                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                            {uc.findings}
-                                          </p>
-                                        </div>
-                                      )}
+                                <div className="md:col-span-2 rounded-lg border-2 border-sky-500 bg-sky-50/60 p-3 space-y-2.5">
+                                  {uc.context && (
+                                    <div>
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        <ClipboardList className="w-3.5 h-3.5 text-sky-700" />
+                                        <Label className="text-xs font-bold text-sky-900 uppercase tracking-wide">
+                                          {isWorkOrder
+                                            ? (isInspectionWO ? "Inspection Request Context" : "Treatment Request Context")
+                                            : "Last Service Context"}
+                                        </Label>
+                                      </div>
+                                      <p className="text-sm whitespace-pre-wrap leading-snug text-foreground">
+                                        {uc.context}
+                                      </p>
                                     </div>
                                   )}
-                                  {/* ORIGINAL WORK ORDER — surfaced on follow-up /
-                                      carried units so the technician can always
-                                      trace the thread back to the request that
-                                      opened it, even after that request closed.
-                                      Hidden when this row IS the active open
-                                      work order (already shown above). */}
-                                  {!isWorkOrder && uc.original_request && (() => {
-                                    const orig = uc.original_request as any;
-                                    const contact = parseResidentContact(orig);
-                                    const origIsInspection = String(orig.request_type || "").toLowerCase().includes("inspection");
-                                    const summary = [
-                                      `${orig.pest_type || "Pest"} activity reported${orig.location_type ? ` (${orig.location_type})` : ""}${orig.description ? `: ${orig.description}` : ""}`,
-                                      orig.occupancy_status ? `Unit status: ${orig.occupancy_status}` : null,
-                                    ].filter(Boolean).join("\n");
-                                    const opened = orig.created_at
-                                      ? new Date(orig.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                                      : null;
-                                    return (
-                                      <div className="md:col-span-2 rounded-lg border-2 border-indigo-500 bg-indigo-50/60 p-3">
-                                        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                                          <ClipboardList className="w-3.5 h-3.5 text-indigo-700" />
-                                          <Label className="text-xs font-bold text-indigo-900 uppercase tracking-wide">
-                                            Original {origIsInspection ? "Inspection" : "Work"} Order
-                                          </Label>
-                                          {opened && (
-                                            <span className="text-[11px] text-indigo-900/70">opened {opened}</span>
-                                          )}
-                                        </div>
-                                        {contact.hasAny && (
-                                          <ResidentContactCard contact={contact} className="mb-2" />
-                                        )}
-                                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">
-                                          {summary}
-                                        </p>
+                                  {uc.findings && (
+                                    <div className={uc.context ? "pt-2 border-t border-sky-200" : ""}>
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        <ClipboardList className="w-3.5 h-3.5 text-amber-700" />
+                                        <Label className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                                          Findings (from last visit)
+                                        </Label>
                                       </div>
-                                    );
-                                  })()}
-                                </>
+                                      <p className="text-sm whitespace-pre-wrap leading-snug text-foreground">
+                                        {uc.findings}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {orig && (
+                                    <div className={(uc.context || uc.findings) ? "pt-2 border-t border-sky-200" : ""}>
+                                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                                        <ClipboardList className="w-3.5 h-3.5 text-indigo-700" />
+                                        <Label className="text-xs font-bold text-indigo-900 uppercase tracking-wide">
+                                          Original {origIsInspection ? "Inspection" : "Work"} Order
+                                        </Label>
+                                        {origOpened && (
+                                          <span className="text-[11px] text-indigo-900/70">opened {origOpened}</span>
+                                        )}
+                                      </div>
+                                      <p className="text-sm whitespace-pre-wrap leading-snug text-foreground">
+                                        {origSummary}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
                               );
                             })()}
                             <div className="md:col-span-2">
