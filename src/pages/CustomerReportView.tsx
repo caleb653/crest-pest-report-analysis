@@ -14,7 +14,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
 interface ServiceItem {
   serviceType: string;
@@ -131,6 +134,8 @@ interface StructuredNotes {
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
   proposalFindings?: Record<string, string>;
+  guaranteeBoxes?: GuaranteeBox[];
+  proposalGuaranteeBoxes?: Record<string, GuaranteeBox[]>;
 }
 
 interface ReportData {
