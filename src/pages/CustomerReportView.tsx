@@ -1581,6 +1581,8 @@ export default function CustomerReportView() {
         <p>Questions? Contact Crest Pest Control</p>
         <p className="font-medium">(949) 424-5000</p>
       </div>
+      </>
+      )}
     </div>
   );
 }
