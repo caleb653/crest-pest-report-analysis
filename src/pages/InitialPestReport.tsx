@@ -312,7 +312,11 @@ const Report = () => {
   const [hasManuallyEditedFindings, setHasManuallyEditedFindings] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
   const [includePdf, setIncludePdf] = useState(false);
-  const [emailSubject, setEmailSubject] = useState("Your Initial Pest Report from Crest");
+  const [emailSubject, setEmailSubject] = useState(
+    variant === "rodent-exclusion"
+      ? "Your Rodent Exclusion Report from Crest"
+      : "Your Initial Pest Report from Crest",
+  );
   const [emailMessage, setEmailMessage] = useState("");
   const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "caleb@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
