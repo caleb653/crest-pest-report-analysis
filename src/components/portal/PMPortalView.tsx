@@ -1681,9 +1681,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                     const planMapPast = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
                     const planArrPast = (planMapPast[propertyFrequency] || []) as string[];
-                    const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
-                    const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
                      const isAdHocPast = !!((s as any)?.report_data?.is_ad_hoc === true);
+                    // Cadence rotation ignores ad-hoc visits entirely — find
+                    // this row's position in the cadence-only sequence so an
+                    // ad-hoc inserted in the middle doesn't bump the label.
+                    const cadenceIdx = isAdHocPast
+                      ? -1
+                      : pastServicesForCadence.findIndex((p) => p.id === s.id);
+                    const rotIdx = cycleLen > 1 && cadenceIdx >= 0
+                      ? (pastServicesForCadence.length - 1 - cadenceIdx) % cycleLen
+                      : -1;
+                    const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
                      const displayTitle = isAdHocPast
                        ? "Ad Hoc Visit"
                        : ((s as any).appointment_service || cadenceLabel || s.service_type);
