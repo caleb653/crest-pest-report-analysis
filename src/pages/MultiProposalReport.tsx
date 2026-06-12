@@ -1174,6 +1174,10 @@ const Report = () => {
               if (parsed.proposalSelectedExclusions && typeof parsed.proposalSelectedExclusions === 'object') {
                 setProposalSelectedExclusions(parsed.proposalSelectedExclusions);
               }
+              if (parsed.proposalGuaranteeBoxes && typeof parsed.proposalGuaranteeBoxes === 'object') {
+                setProposalGuaranteeBoxes(parsed.proposalGuaranteeBoxes);
+                guaranteeBoxesHydratedRef.current = true;
+              }
 
               // Per-option target pests + edited flags
               if (parsed.proposalTargetPests && typeof parsed.proposalTargetPests === 'object') {
