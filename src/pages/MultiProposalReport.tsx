@@ -783,6 +783,29 @@ const Report = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceTypesKey, proposals.length]);
 
+  // Auto-seed default rodent guarantee box for any proposal that contains a
+  // rodent service but has no boxes saved yet. Once a proposal's array exists
+  // (after hydration or any admin edit), we leave it alone.
+  useEffect(() => {
+    setProposalGuaranteeBoxes(prev => {
+      const next = { ...prev };
+      let changed = false;
+      proposals.forEach((proposal, idx) => {
+        if (next[idx] !== undefined) return;
+        const seeded = resolveInitialGuaranteeBoxes(
+          undefined,
+          proposal.services.map((s) => s.serviceType),
+        );
+        if (seeded.length > 0) {
+          next[idx] = seeded;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceTypesKey, proposals.length]);
+
   // Auto-populate Attic Services additional details per proposal when Attic is selected
   // and the additional details box is empty for that proposal.
   useEffect(() => {
