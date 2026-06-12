@@ -4264,7 +4264,9 @@ const PropertyDashboard = ({
                                       `${orig.pest_type || "Pest"} activity reported${orig.location_type ? ` (${orig.location_type})` : ""}${orig.description ? `: ${orig.description}` : ""}`,
                                       orig.occupancy_status ? `Unit status: ${orig.occupancy_status}` : null,
                                     ].filter(Boolean).join("\n");
-                                    const opened = orig.created_at ? new Date(orig.created_at).toLocaleDateString() : null;
+                                    const opened = orig.created_at
+                                      ? new Date(orig.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                      : null;
                                     return (
                                       <div className="md:col-span-2 rounded-lg border-2 border-indigo-500 bg-indigo-50/60 p-3">
                                         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
