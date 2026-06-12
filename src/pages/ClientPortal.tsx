@@ -161,6 +161,26 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
                             {friendlyUnitStatus(unit.status, (unit as any).kind)}
                           </Badge>
                         )}
+                        {isFreeAndClearStatus(unit.status) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2 ml-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateFreeAndClearCertificatePdf({
+                                propertyName: property?.name,
+                                propertyAddress: property?.address,
+                                unitNumber: unit.unit_number,
+                                inspectionDate: service.service_date,
+                                inspectorName: service.technician,
+                              });
+                            }}
+                          >
+                            Download Free & Clear Certificate
+                          </Button>
+                        )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
                         {unit.target_pest && (
