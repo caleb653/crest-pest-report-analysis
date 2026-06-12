@@ -15,7 +15,8 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle,
+  GripVertical
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
