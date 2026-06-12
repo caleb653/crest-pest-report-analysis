@@ -857,8 +857,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const pastServicesForCadence = pastServices.filter(
     (s) => (s as any)?.report_data?.is_ad_hoc !== true,
   );
+  // Ad-hoc visits are tracked separately from the regular cadence so they
+  // never compete to be the "Next Service" card. The customer portal renders
+  // them as their own cards above the recurring upcoming visit, with their
+  // own units (no work-order / follow-up merging) — exactly the way the
+  // admin portal already shows them.
+  const isAdHocService = (s: any) => !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
   const scheduledServices = services
-    .filter(s => s.status !== "completed")
+    .filter(s => s.status !== "completed" && !isAdHocService(s))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  const adHocPending = services
+    .filter(s => s.status !== "completed" && isAdHocService(s))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level frequency toggle (managed by admin). Default bi-weekly.
