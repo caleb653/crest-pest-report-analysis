@@ -15,7 +15,8 @@ import {
   ChevronDown, Calendar, Plus, Edit, Trash2,
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
-  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle
+  BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle,
+  GripVertical
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -385,6 +386,15 @@ const PropertyDashboard = ({
   const [adHocDate, setAdHocDate] = useState("");
   const [adHocType, setAdHocType] = useState("General Pest Control");
   const [adHocNote, setAdHocNote] = useState("");
+  // Drag-and-drop: move a unit from an upcoming service into an existing
+  // ad-hoc visit. The dragged unit is dismissed from the source upcoming
+  // service (so it disappears from admin + customer "Next Service" lists)
+  // and added to the target ad-hoc visit's units_planned + unit_details.
+  const [dragUnit, setDragUnit] = useState<
+    | { sourceServiceId: string; unit: string; row?: any }
+    | null
+  >(null);
+  const [dragOverAdHocId, setDragOverAdHocId] = useState<string | null>(null);
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
@@ -1052,6 +1062,149 @@ const PropertyDashboard = ({
     if (dateCmp !== 0) return dateCmp;
     return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
   });
+
+  // Move a unit from a source upcoming service into an existing ad-hoc visit.
+  // Mirrors the unit-row dismissal logic so the unit drops off the upcoming
+  // visit on both admin + customer views, and then APPENDs it (with any
+  // draft row data) onto the target ad-hoc service's units_planned +
+  // unit_details.
+  const moveUnitToAdHocService = async (
+    adHocId: string,
+    sourceService: any,
+    unitLabel: string,
+    rowSnapshot?: any,
+  ) => {
+    const label = String(unitLabel || "").trim();
+    if (!label || !adHocId || !sourceService) return;
+    const target = propServices.find((p) => p.id === adHocId);
+    if (!target) {
+      toast({ title: "Ad-hoc visit not found", variant: "destructive" });
+      return;
+    }
+    try {
+      // 1) Append unit to the AD-HOC target.
+      const existingPlanned = Array.isArray(target.units_planned)
+        ? (target.units_planned as string[]).map((u) => String(u).trim()).filter(Boolean)
+        : [];
+      const nextPlanned = existingPlanned.includes(label)
+        ? existingPlanned
+        : [...existingPlanned, label];
+      const existingDetails = Array.isArray(target.unit_details)
+        ? (target.unit_details as any[])
+        : [];
+      const detailsWithoutLabel = existingDetails.filter(
+        (d: any) => String(d?.unit_number || "").trim() !== label,
+      );
+      const srcDetails = Array.isArray(sourceService.unit_details)
+        ? (sourceService.unit_details as any[])
+        : [];
+      const carriedDetail = rowSnapshot
+        ? { ...rowSnapshot, unit_number: label }
+        : (srcDetails.find((d: any) => String(d?.unit_number || "").trim() === label) || { unit_number: label });
+      const nextDetails = [...detailsWithoutLabel, carriedDetail];
+      const { error: addErr } = await supabase
+        .from("portal_services")
+        .update({ units_planned: nextPlanned, unit_details: nextDetails })
+        .eq("id", adHocId);
+      if (addErr) throw addErr;
+
+      // 2) Dismiss the unit on the SOURCE upcoming service.
+      setCompletionData((prev) => {
+        const draft = prev[sourceService.id];
+        if (!draft || !Array.isArray(draft.unitRows)) return prev;
+        return {
+          ...prev,
+          [sourceService.id]: {
+            ...draft,
+            unitRows: draft.unitRows.filter(
+              (r: any) => String(r?.unit_number || "").trim() !== label,
+            ),
+          },
+        };
+      });
+      setRecentlyDismissedUnits((prev) => {
+        const next = new Set(prev[sourceService.id] || []);
+        next.add(label);
+        return { ...prev, [sourceService.id]: next };
+      });
+
+      if (sourceService.isProjected || !sourceService.id || String(sourceService.id).startsWith("projected-")) {
+        const mostRecent = pastServices[0];
+        if (mostRecent?.id) {
+          const existingRD =
+            (mostRecent as any).report_data && typeof (mostRecent as any).report_data === "object"
+              ? { ...((mostRecent as any).report_data as any) }
+              : {};
+          const rawFollow = Array.isArray(existingRD.dismissed_follow_ups)
+            ? (existingRD.dismissed_follow_ups as any[])
+            : [];
+          const norm = rawFollow
+            .map((e) =>
+              typeof e === "string"
+                ? { unit: String(e).trim(), at: "" }
+                : e && typeof e === "object"
+                  ? { unit: String((e as any).unit || "").trim(), at: String((e as any).at || "") }
+                  : null,
+            )
+            .filter(Boolean) as { unit: string; at: string }[];
+          const kept = norm.filter((e) => e.unit !== label);
+          await supabase
+            .from("portal_services")
+            .update({
+              report_data: {
+                ...existingRD,
+                dismissed_follow_ups: [...kept, { unit: label, at: new Date().toISOString() }],
+              },
+            })
+            .eq("id", mostRecent.id);
+        }
+      } else {
+        const existingReportData =
+          (sourceService as any).report_data && typeof (sourceService as any).report_data === "object"
+            ? { ...((sourceService as any).report_data as any) }
+            : {};
+        const rawDis = Array.isArray(existingReportData.dismissed_units)
+          ? (existingReportData.dismissed_units as any[])
+          : [];
+        const norm = rawDis
+          .map((entry) =>
+            typeof entry === "string"
+              ? { unit: String(entry).trim(), at: "" }
+              : entry && typeof entry === "object"
+                ? { unit: String((entry as any).unit || "").trim(), at: String((entry as any).at || "") }
+                : null,
+          )
+          .filter(Boolean) as { unit: string; at: string }[];
+        const kept = norm.filter((e) => e.unit !== label);
+        const nextDismissed = [...kept, { unit: label, at: new Date().toISOString() }];
+        const srcPlanned = Array.isArray(sourceService.units_planned)
+          ? (sourceService.units_planned as string[]).map((u: string) => String(u).trim()).filter(Boolean)
+          : [];
+        await supabase
+          .from("portal_services")
+          .update({
+            units_planned: srcPlanned.filter((u) => u !== label),
+            unit_details: srcDetails.filter(
+              (d: any) => String(d?.unit_number || "").trim() !== label,
+            ),
+            report_data: { ...existingReportData, dismissed_units: nextDismissed },
+          })
+          .eq("id", sourceService.id);
+      }
+
+      toast({
+        title: `Moved ${label} to ad-hoc visit`,
+        description: `Scheduled for ${target.service_date || "ad-hoc"}`,
+      });
+      onRefresh();
+    } catch (err: any) {
+      toast({
+        title: "Could not move unit",
+        description: err?.message || "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Plan config (included units + overage $) — single read used everywhere below.
   const planCfg = readUnitPlanConfig(property.customer_preferences);
@@ -3930,16 +4083,36 @@ const PropertyDashboard = ({
                       const woLabel = isInspection ? "Inspection" : "Treatment";
                       const unitKey = `pd-up:${s.id}:${idx}`;
                       const isUnitOpen = expandedUnitKeys.has(unitKey);
+                      const pendingAdHocCount = adHocServices.filter(
+                        (a) => a.status !== "completed" && a.id !== s.id
+                      ).length;
+                      const canDragToAdHoc =
+                        isUpcoming && pendingAdHocCount > 0 && !!String(row.unit_number || "").trim();
                       return (
                         <div
                           key={idx}
+                          draggable={canDragToAdHoc}
+                          onDragStart={(e) => {
+                            if (!canDragToAdHoc) return;
+                            const label = String(row.unit_number || "").trim();
+                            if (!label) return;
+                            setDragUnit({ sourceServiceId: s.id, unit: label, row });
+                            try {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", `unit:${label}`);
+                            } catch {}
+                          }}
+                          onDragEnd={() => {
+                            setDragUnit(null);
+                            setDragOverAdHocId(null);
+                          }}
                           className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
                             isFollowUp
                               ? "border-orange-500"
                               : isWorkOrder
                                 ? "border-primary/70"
                                 : "border-primary/60"
-                          }`}
+                          } ${canDragToAdHoc ? "cursor-grab active:cursor-grabbing" : ""}`}
                         >
                           {/* Bold colored header bar — visually separates each area */}
                           <div
@@ -5998,8 +6171,49 @@ const PropertyDashboard = ({
             <div className="space-y-2">
               {pendingAdHoc.map((s) => {
                 const isCompleted = s.status === "completed";
+                const isDropActive =
+                  !!dragUnit &&
+                  dragUnit.sourceServiceId !== s.id;
+                const isDropHover = isDropActive && dragOverAdHocId === s.id;
                 return (
-                  <Card key={s.id} className="shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent">
+                  <Card
+                    key={s.id}
+                    onDragOver={(e) => {
+                      if (!isDropActive) return;
+                      e.preventDefault();
+                      try { e.dataTransfer.dropEffect = "move"; } catch {}
+                      if (dragOverAdHocId !== s.id) setDragOverAdHocId(s.id);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!isDropActive) return;
+                      // Only clear when leaving the card itself, not children.
+                      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                      if (dragOverAdHocId === s.id) setDragOverAdHocId(null);
+                    }}
+                    onDrop={async (e) => {
+                      if (!isDropActive || !dragUnit) return;
+                      e.preventDefault();
+                      const payload = dragUnit;
+                      setDragOverAdHocId(null);
+                      setDragUnit(null);
+                      const sourceService = propServices.find(
+                        (p) => p.id === payload.sourceServiceId,
+                      );
+                      if (!sourceService) {
+                        toast({ title: "Source service not found", variant: "destructive" });
+                        return;
+                      }
+                      await moveUnitToAdHocService(s.id, sourceService, payload.unit, payload.row);
+                    }}
+                    className={`shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent transition-all ${
+                      isDropHover ? "border-secondary ring-2 ring-secondary/60 bg-secondary/15" : isDropActive ? "border-secondary/80" : ""
+                    }`}
+                  >
+                    {isDropActive && (
+                      <div className="px-3 pt-2 -mb-1 text-[11px] font-semibold text-secondary-foreground/80">
+                        Drop here to move {dragUnit?.unit} into this ad-hoc visit
+                      </div>
+                    )}
                     <div className="p-3 flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
