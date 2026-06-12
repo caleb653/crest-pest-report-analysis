@@ -851,6 +851,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       // visits share the same date, the one finished latest is "most recent").
       return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
     });
+  // Cadence rotation MUST ignore ad-hoc visits — those are extra/spot visits
+  // outside the regular cycle, so they should never advance the "Nth Weekly
+  // Visit" label or rotate the visit number on the upcoming service.
+  const pastServicesForCadence = pastServices.filter(
+    (s) => (s as any)?.report_data?.is_ad_hoc !== true,
+  );
   const scheduledServices = services
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
