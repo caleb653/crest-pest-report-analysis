@@ -4077,16 +4077,36 @@ const PropertyDashboard = ({
                       const woLabel = isInspection ? "Inspection" : "Treatment";
                       const unitKey = `pd-up:${s.id}:${idx}`;
                       const isUnitOpen = expandedUnitKeys.has(unitKey);
+                      const pendingAdHocCount = adHocServices.filter(
+                        (a) => a.status !== "completed" && a.id !== s.id
+                      ).length;
+                      const canDragToAdHoc =
+                        isUpcoming && pendingAdHocCount > 0 && !!String(row.unit_number || "").trim();
                       return (
                         <div
                           key={idx}
+                          draggable={canDragToAdHoc}
+                          onDragStart={(e) => {
+                            if (!canDragToAdHoc) return;
+                            const label = String(row.unit_number || "").trim();
+                            if (!label) return;
+                            setDragUnit({ sourceServiceId: s.id, unit: label, row });
+                            try {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", `unit:${label}`);
+                            } catch {}
+                          }}
+                          onDragEnd={() => {
+                            setDragUnit(null);
+                            setDragOverAdHocId(null);
+                          }}
                           className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
                             isFollowUp
                               ? "border-orange-500"
                               : isWorkOrder
                                 ? "border-primary/70"
                                 : "border-primary/60"
-                          }`}
+                          } ${canDragToAdHoc ? "cursor-grab active:cursor-grabbing" : ""}`}
                         >
                           {/* Bold colored header bar — visually separates each area */}
                           <div
