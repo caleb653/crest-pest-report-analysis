@@ -874,6 +874,29 @@ export default function CustomerReportView() {
               )}
 
               {/* Pesticide Notice — shown on every proposal page */}
+              {(() => {
+                const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
+                const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+                const { disclaimerHtml } = splitProposalDisclaimers(contentHtml);
+                if (!disclaimerHtml) return null;
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">Disclaimers & Additional Details</span>
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
+                        dangerouslySetInnerHTML={{ __html: disclaimerHtml }}
+                      />
+                      <p className="text-[11px] italic text-muted-foreground mt-3 pt-3 border-t border-border">
+                        Crest Pest Control is not liable for any structural or property damage caused by any pests or rodents.
+                      </p>
+                    </div>
+                  </Card>
+                );
+              })()}
+
               <Card className="overflow-hidden">
                 <div className="bg-brand-black text-white px-4 py-2">
                   <span className="text-xs font-bold uppercase">Pesticide Notice</span>
