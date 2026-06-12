@@ -593,7 +593,8 @@ export default function CustomerReportView() {
   const renderProposalServicesContent = (proposal: Proposal, proposalIndex: number) => {
     // Use per-proposal findings if available, fall back to main findings for index 0
     const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
-    const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+    const rawContentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+    const contentHtml = stripRodentGuaranteeFromHtml(rawContentHtml);
     if (contentHtml) {
       const { mainHtml } = splitProposalDisclaimers(contentHtml);
       return (
@@ -881,7 +882,8 @@ export default function CustomerReportView() {
               {/* Pesticide Notice — shown on every proposal page */}
               {(() => {
                 const perProposalHtml = proposalFindingsMap[proposalIndex.toString()] || proposalFindingsMap[proposalIndex as any] || "";
-                const contentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+                const rawContentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
+                const contentHtml = stripRodentGuaranteeFromHtml(rawContentHtml);
                 const { disclaimerHtml } = splitProposalDisclaimers(contentHtml);
                 if (!disclaimerHtml) return null;
                 return (
@@ -897,6 +899,34 @@ export default function CustomerReportView() {
                       <p className="text-[11px] italic text-muted-foreground mt-3 pt-3 border-t border-border">
                         Crest Pest Control is not liable for any structural or property damage caused by any pests or rodents.
                       </p>
+                    </div>
+                  </Card>
+                );
+              })()}
+
+              {/* Rodent Service Guarantee & Warranty — shown when proposal includes rodent exclusion / trapping & exclusion */}
+              {(() => {
+                const proposalServiceTypes = proposal.services.map((s) => s.serviceType);
+                const rawContentHtml =
+                  proposalFindingsMap[proposalIndex.toString()] ||
+                  proposalFindingsMap[proposalIndex as any] ||
+                  (proposalIndex === 0 ? findingsHtml : "");
+                const show =
+                  hasRodentGuaranteeService(proposalServiceTypes) ||
+                  /Rodent Exclusion Guarantee:|Extended Warranty for Ongoing Rodent Control/i.test(rawContentHtml || "");
+                if (!show) return null;
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-brand-black text-white px-4 py-2">
+                      <span className="text-xs font-bold uppercase">
+                        Rodent Service Guarantee & Warranty
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
+                        dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
+                      />
                     </div>
                   </Card>
                 );
