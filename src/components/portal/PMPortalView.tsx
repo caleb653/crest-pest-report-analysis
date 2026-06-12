@@ -1231,6 +1231,26 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             {friendlyUnitStatus(u.status, (u as any).kind)}
                           </Badge>
                         )}
+                        {isFreeAndClearStatus(u.status) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateFreeAndClearCertificatePdf({
+                                propertyName: property?.name,
+                                propertyAddress: property?.address,
+                                unitNumber: u.unit_number,
+                                inspectionDate: s.service_date,
+                                inspectorName: s.technician,
+                              });
+                            }}
+                          >
+                            <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                          </Button>
+                        )}
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
                       </div>
                     </button>
