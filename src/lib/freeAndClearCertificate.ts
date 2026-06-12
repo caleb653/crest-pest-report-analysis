@@ -7,6 +7,21 @@
 // PropertyDashboard, PMPortalView, and the customer-facing ClientPortal.
 
 import { jsPDF } from "jspdf";
+import crestLogo from "@/assets/crest-logo-black.png";
+
+// Crest brand colors
+const BRAND_BLACK: [number, number, number] = [42, 42, 42];      // #2A2A2A
+const BRAND_DARK_SAGE: [number, number, number] = [149, 161, 151]; // #95A197
+const BRAND_SAGE: [number, number, number] = [195, 209, 197];      // #C3D1C5
+
+const loadImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
 
 // Hardcoded technician → CA structural pest control license map, kept in
 // sync with `TECHNICIANS` in AppointmentReport.tsx so the certificate can
@@ -48,7 +63,7 @@ const formatDate = (iso?: string | null): string => {
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 };
 
-export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => {
+export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContext) => {
   const pdf = new jsPDF({ unit: "pt", format: "letter" });
   const W = pdf.internal.pageSize.getWidth();
   const margin = 54; // 0.75"
@@ -61,10 +76,41 @@ export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => 
   const areas = ctx.areasInspected && ctx.areasInspected.length ? ctx.areasInspected : DEFAULT_AREAS;
   const fullAddress = [ctx.propertyName, ctx.propertyAddress].filter(Boolean).join(" — ");
 
-  // Title
-  pdf.setFont("helvetica", "bold").setFontSize(14);
-  pdf.text("PEST INSPECTION CERTIFICATION — FREE AND CLEAR", margin, y);
-  y += 22;
+  // Branded header band
+  const headerH = 86;
+  pdf.setFillColor(...BRAND_BLACK);
+  pdf.rect(0, 0, W, headerH, "F");
+  // Sage accent stripe under header
+  pdf.setFillColor(...BRAND_DARK_SAGE);
+  pdf.rect(0, headerH, W, 4, "F");
+
+  // Logo
+  try {
+    const img = await loadImage(crestLogo);
+    // Render logo on a small white plate so the black wordmark is legible on black header
+    const logoH = 54;
+    const logoW = logoH * (img.width / img.height);
+    const plateW = logoW + 20;
+    const plateH = logoH + 14;
+    const plateX = margin;
+    const plateY = (headerH - plateH) / 2;
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(plateX, plateY, plateW, plateH, 6, 6, "F");
+    pdf.addImage(img, "PNG", plateX + 10, plateY + 7, logoW, logoH);
+  } catch {
+    // ignore — header text still renders
+  }
+
+  // Header text (right aligned)
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold").setFontSize(15);
+  pdf.text("PEST INSPECTION CERTIFICATION", W - margin, 38, { align: "right" });
+  pdf.setTextColor(...BRAND_SAGE);
+  pdf.setFont("helvetica", "normal").setFontSize(11);
+  pdf.text("Free and Clear", W - margin, 58, { align: "right" });
+  pdf.setTextColor(...BRAND_BLACK);
+
+  y = headerH + 28;
 
   // Field block
   pdf.setFontSize(11);
@@ -85,10 +131,11 @@ export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => 
   drawField("License Number:", inspectorLicense);
 
   y += 8;
-  pdf.setDrawColor(180).line(margin, y, W - margin, y);
+  pdf.setDrawColor(...BRAND_DARK_SAGE).line(margin, y, W - margin, y);
   y += 18;
 
   // Section: Certification
+  pdf.setTextColor(...BRAND_BLACK);
   pdf.setFont("helvetica", "bold").setFontSize(12);
   pdf.text("CERTIFICATION OF NO PEST ACTIVITY", margin, y);
   y += 16;
@@ -125,7 +172,7 @@ export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => 
   });
 
   y += 10;
-  pdf.setDrawColor(180).line(margin, y, W - margin, y);
+  pdf.setDrawColor(...BRAND_DARK_SAGE).line(margin, y, W - margin, y);
   y += 18;
 
   // Inspector Declaration
@@ -153,17 +200,28 @@ export const generateFreeAndClearCertificatePdf = (ctx: FreeAndClearContext) => 
   // Typed signature (cursive) above the signature line
   if (inspectorName) {
     pdf.setFont("times", "italic").setFontSize(18);
+    pdf.setTextColor(...BRAND_BLACK);
     pdf.text(inspectorName, margin + 4, y - 4);
   }
   if (inspectionDate) {
     pdf.setFont("times", "italic").setFontSize(14);
     pdf.text(inspectionDate, W - margin - 196, y - 4);
   }
-  pdf.setDrawColor(120).line(margin, y, margin + 240, y);
+  pdf.setDrawColor(...BRAND_BLACK).line(margin, y, margin + 240, y);
   pdf.setFont("helvetica", "bold").setFontSize(10);
   pdf.text("Inspector Signature", margin, y + 14);
-  pdf.setDrawColor(120).line(W - margin - 200, y, W - margin, y);
+  pdf.setDrawColor(...BRAND_BLACK).line(W - margin - 200, y, W - margin, y);
   pdf.text("Date", W - margin - 200, y + 14);
+
+  // Footer band
+  const PH = pdf.internal.pageSize.getHeight();
+  pdf.setFillColor(...BRAND_BLACK);
+  pdf.rect(0, PH - 28, W, 28, "F");
+  pdf.setFillColor(...BRAND_DARK_SAGE);
+  pdf.rect(0, PH - 32, W, 4, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "normal").setFontSize(9);
+  pdf.text("Crest Pest Control  ·  CA License #9859  ·  949-424-5000", W / 2, PH - 11, { align: "center" });
 
   const safeUnit = (ctx.unitNumber || "Unit").replace(/[^a-z0-9-]+/gi, "-");
   const safeProp = (ctx.propertyName || "Property").replace(/[^a-z0-9-]+/gi, "-");
