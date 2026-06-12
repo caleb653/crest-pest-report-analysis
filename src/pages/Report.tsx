@@ -2809,13 +2809,29 @@ Crest Pest Control`;
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{
-                        __html: formatProposedServices(editableFindings[0] || ""),
+                        __html: formatProposedServices(stripRodentGuaranteeFromHtml(editableFindings[0] || "")),
                       }}
                     />
                   </>
                 )}
               </div>
             </Card>
+            {hasRodentGuaranteeService(services.map((s) => s.serviceType)) && (
+              <Card
+                data-pdf-section="rodent-guarantee"
+                className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg mt-2 print:mt-1"
+              >
+                <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
+                  <span className="text-xs print:text-[10px] font-bold uppercase">
+                    Rodent Service Guarantee & Warranty
+                  </span>
+                </div>
+                <div
+                  className="p-3 print:p-1.5 text-xs print:text-[10px] leading-relaxed text-foreground/90"
+                  dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
+                />
+              </Card>
+            )}
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
