@@ -1161,7 +1161,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           );
         })()}
-        {unitDetails.length > 0 && (
+        {unitDetails.length > 0 && !hideUnitSummary && (
           <div>
             <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">
               {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Unit Summary (${unitDetails.length})`}
