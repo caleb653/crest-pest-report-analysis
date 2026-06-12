@@ -11,6 +11,7 @@ import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, Chev
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
+import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import crestLogo from "@/assets/crest-logo.png";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import CommercialPMView from "@/components/portal/CommercialPMView";
@@ -75,7 +76,7 @@ interface ChatMessage {
 }
 
 // ─── Service Snapshot Component ───
-const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, uploadingPhotoId, onUploadPhotos }: {
+const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, uploadingPhotoId, onUploadPhotos, property }: {
   service: ServiceData;
   isExpanded: boolean;
   onToggle: () => void;
@@ -83,6 +84,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
   isAdmin: boolean;
   uploadingPhotoId: string | null;
   onUploadPhotos: (serviceId: string, files: FileList | null) => void;
+  property?: PropertyData | null;
 }) => {
   // Surface follow-up units extremely prominently — pull every unit the
   // technician explicitly flagged so the customer sees exactly which
@@ -158,6 +160,26 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
                           <Badge variant="outline" className={`text-[10px] ${isFollowUp ? "border-orange-300 text-orange-700 bg-orange-50" : ""}`}>
                             {friendlyUnitStatus(unit.status, (unit as any).kind)}
                           </Badge>
+                        )}
+                        {isFreeAndClearStatus(unit.status) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-[10px] px-2 ml-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generateFreeAndClearCertificatePdf({
+                                propertyName: property?.name,
+                                propertyAddress: property?.address,
+                                unitNumber: unit.unit_number,
+                                inspectionDate: service.service_date,
+                                inspectorName: service.technician,
+                              });
+                            }}
+                          >
+                            Download Free & Clear Certificate
+                          </Button>
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -737,6 +759,7 @@ const ClientPortal = () => {
                         isAdmin={isAdmin}
                         uploadingPhotoId={uploadingPhotoId}
                         onUploadPhotos={uploadServicePhotos}
+                        property={selectedProperty}
                       />
                     ))}
                   </div>
@@ -764,6 +787,7 @@ const ClientPortal = () => {
                       isAdmin={isAdmin}
                       uploadingPhotoId={uploadingPhotoId}
                       onUploadPhotos={uploadServicePhotos}
+                      property={selectedProperty}
                     />
                   ))}
                 </div>

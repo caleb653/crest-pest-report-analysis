@@ -30,6 +30,7 @@ import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProdu
 import { PRESET_NOTES } from "@/lib/presetNotes";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
+import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
   DEFAULT_SURVEY_INTRO,
@@ -2703,6 +2704,26 @@ const PropertyDashboard = ({
                       <Badge variant="outline" className={`text-[11px] font-semibold ${isFollowUp ? "border-orange-500 text-orange-700 bg-orange-50" : "border-primary/70 bg-background"}`}>
                         {friendlyUnitStatus(unit.status, (unit as any).kind)}
                       </Badge>
+                    )}
+                    {isFreeAndClearStatus(unit.status) && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[10px] px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          generateFreeAndClearCertificatePdf({
+                            propertyName: property.name,
+                            propertyAddress: property.address,
+                            unitNumber: unit.unit_number,
+                            inspectionDate: s.service_date,
+                            inspectorName: s.technician,
+                          });
+                        }}
+                      >
+                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                      </Button>
                     )}
                   </div>
                   <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
