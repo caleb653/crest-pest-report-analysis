@@ -6196,18 +6196,14 @@ const PropertyDashboard = ({
                       const payload = dragUnit;
                       setDragOverAdHocId(null);
                       setDragUnit(null);
-                      // Look up source's renderServiceDetails-bound mover via DOM
-                      // isn't available here, so do the move inline via a shared
-                      // helper stored on window during render is overkill —
-                      // instead, dispatch a custom event the source card listens for.
-                      window.dispatchEvent(new CustomEvent("pd-move-unit-to-adhoc", {
-                        detail: {
-                          adHocId: s.id,
-                          sourceServiceId: payload.sourceServiceId,
-                          unit: payload.unit,
-                          row: payload.row,
-                        },
-                      }));
+                      const sourceService = propServices.find(
+                        (p) => p.id === payload.sourceServiceId,
+                      );
+                      if (!sourceService) {
+                        toast({ title: "Source service not found", variant: "destructive" });
+                        return;
+                      }
+                      await moveUnitToAdHocService(s.id, sourceService, payload.unit, payload.row);
                     }}
                     className={`shadow-sm border-2 border-dashed border-secondary/50 bg-gradient-to-br from-secondary/[0.08] to-transparent transition-all ${
                       isDropHover ? "border-secondary ring-2 ring-secondary/60 bg-secondary/15" : isDropActive ? "border-secondary/80" : ""
