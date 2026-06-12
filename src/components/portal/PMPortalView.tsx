@@ -943,7 +943,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     }
     return dates;
   })();
-  const upcomingServices: ServiceData[] = nextService ? [nextService] : [];
+  // Ad-hoc visits (if any) appear FIRST in the upcoming list so the customer
+  // sees them as their own separate cards above the regular recurring visit.
+  const upcomingServices: ServiceData[] = [
+    ...adHocPending,
+    ...(nextService ? [nextService] : []),
+  ];
+  // Index of the first NON-ad-hoc card — that's the real "Next Service".
+  const firstRealUpcomingIdx = upcomingServices.findIndex(
+    (s) => !isAdHocService(s),
+  );
 
   // PM upcoming-notes map (date -> note). The draft state + save effect are placed
   // above the early returns to satisfy Rules of Hooks. We resolve the key here for display.
