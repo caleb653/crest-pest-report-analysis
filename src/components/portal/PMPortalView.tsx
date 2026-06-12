@@ -1864,9 +1864,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
                                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                                     if (cycleLen <= 1) return service.service_type;
-                                    const idx = pastServices.findIndex(p => p.id === service.id);
+                                    // Ad-hoc visits aren't part of the cadence rotation.
+                                    if ((service as any)?.report_data?.is_ad_hoc === true) return service.service_type;
+                                    const idx = pastServicesForCadence.findIndex(p => p.id === service.id);
                                     if (idx < 0) return service.service_type;
-                                    const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
+                                    const rotIdx = (pastServicesForCadence.length - 1 - idx) % cycleLen;
                                     const planMap2 = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
                                     const planArr2 = (planMap2[propertyFrequency] || []) as string[];
                                     return (planArr2[rotIdx] || "").trim() || service.service_type;
