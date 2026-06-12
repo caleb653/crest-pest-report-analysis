@@ -21,6 +21,7 @@ import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
+import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import crestLogo from "@/assets/crest-logo.png";
 import {
