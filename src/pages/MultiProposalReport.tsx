@@ -2702,23 +2702,19 @@ Crest Pest Control`;
                 )}
               </div>
             </Card>
-            {proposals[proposalIndex] && hasRodentGuaranteeService(
-              proposals[proposalIndex].services.map((s) => s.serviceType),
-            ) && (
-              <Card
-                data-pdf-section="rodent-guarantee"
-                className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl"
-              >
-                <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
-                  <span className="text-lg print:text-base font-bold uppercase">
-                    Rodent Service Guarantee & Warranty — {proposalName}
-                  </span>
-                </div>
-                <div
-                  className="p-4 print:p-2.5 text-sm print:text-xs leading-relaxed text-foreground/90"
-                  dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
+            {proposals[proposalIndex] && (
+              <div data-pdf-section="guarantee-boxes">
+                <GuaranteeBoxesEditor
+                  boxes={proposalGuaranteeBoxes[proposalIndex] ?? []}
+                  onChange={(next) => {
+                    setProposalGuaranteeBoxes((prev) => ({ ...prev, [proposalIndex]: next }));
+                    pendingAutoSaveRef.current = true;
+                  }}
+                  showRodentDefaultButton={hasRodentGuaranteeService(
+                    proposals[proposalIndex].services.map((s) => s.serviceType),
+                  )}
                 />
-              </Card>
+              </div>
             )}
 
             {/* Target Pests — per option (compact) */}
