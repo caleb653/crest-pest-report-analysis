@@ -246,6 +246,16 @@ export interface UpcomingUnitContext {
   follow_up?: UnitDetailRow;
   /** All-time most-recent unit detail for this unit (any past service) — fallback context. */
   last_unit_detail?: UnitDetailRow;
+  /**
+   * The ORIGINAL (most-recent historical) work order that opened a thread on
+   * this unit. Surfaced on follow-up / carried units so the technician can
+   * always see the request — and tenant contact info — that started the
+   * recurring visits, even after the request itself has been closed.
+   *
+   * For `source === "work_order"`, this is intentionally undefined because
+   * the active open request is already surfaced via `request`.
+   */
+  original_request?: RequestRow;
   /** Pre-filled target pest (for the technician). */
   target_pest?: string;
   /**
@@ -302,6 +312,13 @@ export function computeUpcomingUnits(args: {
   /** Optional: ALL past services, used to look up the most-recent detail per unit. */
   allPastServices?: ServiceRow[];
   /**
+   * Optional: ALL portal_requests (open + closed) for the property. Used to
+   * surface the ORIGINAL work order on follow-up / carried units. When omitted
+   * we fall back to `requests` (typically only open ones), which means
+   * follow-ups for already-closed work orders won't show their origin.
+   */
+  allRequests?: RequestRow[];
+  /**
    * Optional: unit_number → move-in-date (YYYY-MM-DD) map sourced from
    * `portal_properties.customer_preferences.tenant_move_ins`. Only entries
    * whose date is today-or-later are attached to the returned contexts so
@@ -309,7 +326,7 @@ export function computeUpcomingUnits(args: {
    */
   tenantMoveIns?: Record<string, string> | null;
 }) {
-  const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices, tenantMoveIns } = args;
+  const { service, isFirstUpcoming, requests, mostRecentPast, allPastServices, allRequests, tenantMoveIns } = args;
   // Build a normalized-unit → future-move-in-date map. Past dates are
   // dropped here so the badge disappears the moment the date passes.
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -415,6 +432,23 @@ export function computeUpcomingUnits(args: {
     });
   });
 
+  // For each unit, find the most-recent request of any status (open OR closed).
+  // This becomes `original_request` on follow-up / carried contexts so the
+  // technician can always trace a follow-up back to the work order that
+  // started the thread.
+  const originalRequestByUnit = new Map<string, RequestRow>();
+  const requestPool: RequestRow[] = Array.isArray(allRequests) && allRequests.length > 0
+    ? allRequests
+    : requests;
+  [...(requestPool || [])]
+    .filter(r => !isGeneralRequest(r))
+    .sort((a, b) => String(b?.created_at || "").localeCompare(String(a?.created_at || "")))
+    .forEach(r => {
+      const u = normalizeUnit(r?.unit_number);
+      if (!u) return;
+      if (!originalRequestByUnit.has(u)) originalRequestByUnit.set(u, r);
+    });
+
   const buildContext = (unit: string): UpcomingUnitContext => {
     const request = requestByUnit.get(unit);
     const followUp = followUpByUnit.get(unit);
@@ -508,6 +542,9 @@ export function computeUpcomingUnits(args: {
       request,
       follow_up: followUp,
       last_unit_detail: lastDetail,
+      // Don't duplicate the active open request as "original" when source is
+      // already "work_order" — the dedicated request block handles that case.
+      original_request: source === "work_order" ? undefined : originalRequestByUnit.get(unit),
       target_pest,
       context,
       findings,
