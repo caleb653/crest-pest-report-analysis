@@ -10,6 +10,11 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import crestLogoVideo from "@/assets/crest-logo-video.png";
 import { buildSignedReportPDF } from "@/lib/pdfExport";
+import {
+  RODENT_GUARANTEE_HTML,
+  hasRodentGuaranteeService,
+  stripRodentGuaranteeFromHtml,
+} from "@/lib/rodentGuarantee";
 
 interface ServiceItem {
   serviceType: string;

@@ -55,6 +55,11 @@ import {
 } from "@/lib/rodentExclusionAutoCreate";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
+import {
+  RODENT_GUARANTEE_HTML,
+  hasRodentGuaranteeService,
+  stripRodentGuaranteeFromHtml,
+} from "@/lib/rodentGuarantee";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },

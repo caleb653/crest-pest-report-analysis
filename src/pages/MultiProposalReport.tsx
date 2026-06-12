@@ -54,6 +54,11 @@ import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  RODENT_GUARANTEE_HTML,
+  hasRodentGuaranteeService,
+  stripRodentGuaranteeFromHtml,
+} from "@/lib/rodentGuarantee";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
