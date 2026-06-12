@@ -851,6 +851,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       // visits share the same date, the one finished latest is "most recent").
       return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
     });
+  // Cadence rotation MUST ignore ad-hoc visits — those are extra/spot visits
+  // outside the regular cycle, so they should never advance the "Nth Weekly
+  // Visit" label or rotate the visit number on the upcoming service.
+  const pastServicesForCadence = pastServices.filter(
+    (s) => (s as any)?.report_data?.is_ad_hoc !== true,
+  );
   const scheduledServices = services
     .filter(s => s.status !== "completed")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
@@ -1675,9 +1681,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                     const planMapPast = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
                     const planArrPast = (planMapPast[propertyFrequency] || []) as string[];
-                    const rotIdx = cycleLen > 1 ? (pastServices.length - 1 - i) % cycleLen : -1;
-                    const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
                      const isAdHocPast = !!((s as any)?.report_data?.is_ad_hoc === true);
+                    // Cadence rotation ignores ad-hoc visits entirely — find
+                    // this row's position in the cadence-only sequence so an
+                    // ad-hoc inserted in the middle doesn't bump the label.
+                    const cadenceIdx = isAdHocPast
+                      ? -1
+                      : pastServicesForCadence.findIndex((p) => p.id === s.id);
+                    const rotIdx = cycleLen > 1 && cadenceIdx >= 0
+                      ? (pastServicesForCadence.length - 1 - cadenceIdx) % cycleLen
+                      : -1;
+                    const cadenceLabel = rotIdx >= 0 ? ((planArrPast[rotIdx] || "").trim()) : "";
                      const displayTitle = isAdHocPast
                        ? "Ad Hoc Visit"
                        : ((s as any).appointment_service || cadenceLabel || s.service_type);
@@ -1850,9 +1864,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
                                     const cycleLen = propertyFrequency === "weekly" ? 4 : propertyFrequency === "bi-weekly" ? 2 : 1;
                                     if (cycleLen <= 1) return service.service_type;
-                                    const idx = pastServices.findIndex(p => p.id === service.id);
+                                    // Ad-hoc visits aren't part of the cadence rotation.
+                                    if ((service as any)?.report_data?.is_ad_hoc === true) return service.service_type;
+                                    const idx = pastServicesForCadence.findIndex(p => p.id === service.id);
                                     if (idx < 0) return service.service_type;
-                                    const rotIdx = (pastServices.length - 1 - idx) % cycleLen;
+                                    const rotIdx = (pastServicesForCadence.length - 1 - idx) % cycleLen;
                                     const planMap2 = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
                                     const planArr2 = (planMap2[propertyFrequency] || []) as string[];
                                     return (planArr2[rotIdx] || "").trim() || service.service_type;
@@ -2555,7 +2571,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               // so visits roll forward (1 → 2 → 3 → 4 → 1) automatically.
                               if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
                                 const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
-                                const label = getCadenceVisitLabel(pastServices.length, planMap[propertyFrequency]);
+                                const label = getCadenceVisitLabel(pastServicesForCadence.length, planMap[propertyFrequency]);
                                 if (label) return label;
                               }
                               return s.service_type;
