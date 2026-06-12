@@ -989,7 +989,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     return map;
   })();
 
-  const renderServiceDetailsRO = (s: ServiceData) => {
+  const renderServiceDetailsRO = (s: ServiceData, opts?: { hideUnitSummary?: boolean }) => {
+    const hideUnitSummary = opts?.hideUnitSummary === true;
     const unitDetails = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
@@ -1160,7 +1161,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             </div>
           );
         })()}
-        {unitDetails.length > 0 && (
+        {unitDetails.length > 0 && !hideUnitSummary && (
           <div>
             <p className="font-bold text-muted-foreground uppercase text-[11px] tracking-wide mb-2">
               {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Unit Summary (${unitDetails.length})`}
@@ -3008,7 +3009,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </div>
                           )}
 
-                          {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s)}
+                          {(ownHasNotes || s.prep_required) && renderServiceDetailsRO(s, { hideUnitSummary: true })}
 
                           </>
                           )}
