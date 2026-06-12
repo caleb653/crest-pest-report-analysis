@@ -1098,9 +1098,25 @@ const PropertyDashboard = ({
       const srcDetails = Array.isArray(sourceService.unit_details)
         ? (sourceService.unit_details as any[])
         : [];
+      // Preserve the "follow-up" identity when carrying the unit over so the
+      // ad-hoc visit still shows the orange Follow-up styling everywhere.
+      const wasFollowUp =
+        (rowSnapshot && (rowSnapshot.source === "follow-up" || rowSnapshot.follow_up_needed === true)) ||
+        false;
       const carriedDetail = rowSnapshot
-        ? { ...rowSnapshot, unit_number: label }
-        : (srcDetails.find((d: any) => String(d?.unit_number || "").trim() === label) || { unit_number: label });
+        ? {
+            ...rowSnapshot,
+            unit_number: label,
+            follow_up_needed: wasFollowUp ? true : rowSnapshot.follow_up_needed === true,
+          }
+        : (() => {
+            const found = srcDetails.find(
+              (d: any) => String(d?.unit_number || "").trim() === label,
+            );
+            return found
+              ? { ...found, unit_number: label }
+              : { unit_number: label };
+          })();
       const nextDetails = [...detailsWithoutLabel, carriedDetail];
       const { error: addErr } = await supabase
         .from("portal_services")
