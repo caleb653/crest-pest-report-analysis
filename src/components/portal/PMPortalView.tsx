@@ -2581,11 +2581,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   const carriedCount = unitContexts.filter(u => u.source === "carried" || u.source === "planned").length;
 
                   return (
-                    <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                    <Card key={s.id} className={`transition-all shadow-sm ${isAdHocCard ? "border-2 border-dashed border-secondary/60 bg-gradient-to-br from-secondary/[0.08] to-transparent" : isFirst ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                       <button className="w-full text-left p-5 flex items-center justify-between gap-4" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
+                            {isAdHocCard && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Ad Hoc</Badge>}
                              <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
                               // Ad-hoc visits always display as "Ad Hoc Visit"
                               // regardless of underlying service_type.
