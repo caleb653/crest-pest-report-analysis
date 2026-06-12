@@ -1331,6 +1331,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       setupMaterials,
       limitationsText,
       selectedExclusions,
+      guaranteeBoxes,
     });
 
   const buildServicesPayload = () =>
