@@ -688,6 +688,10 @@ const Report = () => {
   const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
   // Per-option preset exclusion labels (keyed by proposalIndex)
   const [proposalSelectedExclusions, setProposalSelectedExclusions] = useState<Record<number, string[]>>({});
+  // Per-option guarantee/warranty boxes (keyed by proposalIndex). Auto-seeded
+  // with the default rodent box on first encounter; fully editable afterward.
+  const [proposalGuaranteeBoxes, setProposalGuaranteeBoxes] = useState<Record<number, GuaranteeBox[]>>({});
+  const guaranteeBoxesHydratedRef = useRef(false);
   // Per-option additional details (keyed by proposalIndex)
   const [proposalAdditionalDetails, setProposalAdditionalDetails] = useState<Record<number, string>>({});
   // Per-option target pests (keyed by proposalIndex). When undefined, auto-computed from services.
