@@ -4257,9 +4257,13 @@ const PropertyDashboard = ({
                                   (u) => String(u.unit_number).trim() === String(row.unit_number || "").trim()
                                 );
                                 if (ctx?.occupancy_status === "Occupied") return null;
+                                const isFollowUp = row.source === "follow-up" || row.kind === "follow-up";
+                                const badgeCls = isFollowUp
+                                  ? "text-orange-900 bg-orange-100 border border-orange-400"
+                                  : "text-rose-900 bg-rose-100 border border-rose-400";
                                 return (
                                   <span
-                                    className="text-xs font-bold uppercase tracking-wide text-rose-900 bg-rose-100 border border-rose-400 px-2 py-0.5 rounded shadow-sm"
+                                    className={`text-xs font-bold uppercase tracking-wide ${badgeCls} px-2 py-0.5 rounded shadow-sm`}
                                     title="New tenant move-in date — keep this unit pristine"
                                   >
                                     🏠 New Tenant · {moveDate.slice(5, 10).replace("-", "/")}
