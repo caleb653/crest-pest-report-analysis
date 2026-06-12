@@ -2705,6 +2705,26 @@ const PropertyDashboard = ({
                         {friendlyUnitStatus(unit.status, (unit as any).kind)}
                       </Badge>
                     )}
+                    {isFreeAndClearStatus(unit.status) && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[10px] px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          generateFreeAndClearCertificatePdf({
+                            propertyName: property.name,
+                            propertyAddress: property.address,
+                            unitNumber: unit.unit_number,
+                            inspectionDate: s.service_date,
+                            inspectorName: s.technician,
+                          });
+                        }}
+                      >
+                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                      </Button>
+                    )}
                   </div>
                   <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                     <div className="md:col-span-2 space-y-2">
