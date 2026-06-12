@@ -58,7 +58,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import GuaranteeBoxesEditor from "@/components/GuaranteeBoxesEditor";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -685,6 +688,10 @@ const Report = () => {
   const [proposalSetupMaterials, setProposalSetupMaterials] = useState<Record<number, SetupMaterial[]>>({});
   // Per-option preset exclusion labels (keyed by proposalIndex)
   const [proposalSelectedExclusions, setProposalSelectedExclusions] = useState<Record<number, string[]>>({});
+  // Per-option guarantee/warranty boxes (keyed by proposalIndex). Auto-seeded
+  // with the default rodent box on first encounter; fully editable afterward.
+  const [proposalGuaranteeBoxes, setProposalGuaranteeBoxes] = useState<Record<number, GuaranteeBox[]>>({});
+  const guaranteeBoxesHydratedRef = useRef(false);
   // Per-option additional details (keyed by proposalIndex)
   const [proposalAdditionalDetails, setProposalAdditionalDetails] = useState<Record<number, string>>({});
   // Per-option target pests (keyed by proposalIndex). When undefined, auto-computed from services.
@@ -772,6 +779,29 @@ const Report = () => {
         }
       });
       return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceTypesKey, proposals.length]);
+
+  // Auto-seed default rodent guarantee box for any proposal that contains a
+  // rodent service but has no boxes saved yet. Once a proposal's array exists
+  // (after hydration or any admin edit), we leave it alone.
+  useEffect(() => {
+    setProposalGuaranteeBoxes(prev => {
+      const next = { ...prev };
+      let changed = false;
+      proposals.forEach((proposal, idx) => {
+        if (next[idx] !== undefined) return;
+        const seeded = resolveInitialGuaranteeBoxes(
+          undefined,
+          proposal.services.map((s) => s.serviceType),
+        );
+        if (seeded.length > 0) {
+          next[idx] = seeded;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceTypesKey, proposals.length]);
@@ -1167,6 +1197,10 @@ const Report = () => {
               if (parsed.proposalSelectedExclusions && typeof parsed.proposalSelectedExclusions === 'object') {
                 setProposalSelectedExclusions(parsed.proposalSelectedExclusions);
               }
+              if (parsed.proposalGuaranteeBoxes && typeof parsed.proposalGuaranteeBoxes === 'object') {
+                setProposalGuaranteeBoxes(parsed.proposalGuaranteeBoxes);
+                guaranteeBoxesHydratedRef.current = true;
+              }
 
               // Per-option target pests + edited flags
               if (parsed.proposalTargetPests && typeof parsed.proposalTargetPests === 'object') {
@@ -1331,6 +1365,7 @@ const Report = () => {
       proposalTargetPests,
       proposalTargetPestsEdited,
       proposalSelectedExclusions,
+      proposalGuaranteeBoxes,
       propertyType,
       companyName,
       preferredServiceDay,
@@ -2667,23 +2702,19 @@ Crest Pest Control`;
                 )}
               </div>
             </Card>
-            {proposals[proposalIndex] && hasRodentGuaranteeService(
-              proposals[proposalIndex].services.map((s) => s.serviceType),
-            ) && (
-              <Card
-                data-pdf-section="rodent-guarantee"
-                className="print-section p-0 overflow-hidden print:overflow-visible rounded-xl"
-              >
-                <div className="print-section-header py-2.5 px-3.5 print:px-3 rounded-t-xl">
-                  <span className="text-lg print:text-base font-bold uppercase">
-                    Rodent Service Guarantee & Warranty — {proposalName}
-                  </span>
-                </div>
-                <div
-                  className="p-4 print:p-2.5 text-sm print:text-xs leading-relaxed text-foreground/90"
-                  dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
+            {proposals[proposalIndex] && (
+              <div data-pdf-section="guarantee-boxes">
+                <GuaranteeBoxesEditor
+                  boxes={proposalGuaranteeBoxes[proposalIndex] ?? []}
+                  onChange={(next) => {
+                    setProposalGuaranteeBoxes((prev) => ({ ...prev, [proposalIndex]: next }));
+                    pendingAutoSaveRef.current = true;
+                  }}
+                  showRodentDefaultButton={hasRodentGuaranteeService(
+                    proposals[proposalIndex].services.map((s) => s.serviceType),
+                  )}
                 />
-              </Card>
+              </div>
             )}
 
             {/* Target Pests — per option (compact) */}

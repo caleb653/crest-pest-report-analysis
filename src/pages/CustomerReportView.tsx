@@ -14,7 +14,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
 interface ServiceItem {
   serviceType: string;
@@ -131,6 +134,8 @@ interface StructuredNotes {
   duplicateMapData?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
   proposalFindings?: Record<string, string>;
+  guaranteeBoxes?: GuaranteeBox[];
+  proposalGuaranteeBoxes?: Record<string, GuaranteeBox[]>;
 }
 
 interface ReportData {
@@ -515,6 +520,8 @@ export default function CustomerReportView() {
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
   const proposalFindingsMap = structuredNotes?.proposalFindings || {};
+  const proposalGuaranteeBoxesMap = structuredNotes?.proposalGuaranteeBoxes || {};
+  const singleGuaranteeBoxes = structuredNotes?.guaranteeBoxes;
 
   const isMultiProposal =
     report.services &&
@@ -904,32 +911,21 @@ export default function CustomerReportView() {
                 );
               })()}
 
-              {/* Rodent Service Guarantee & Warranty — shown when proposal includes rodent exclusion / trapping & exclusion */}
+              {/* Guarantee / Warranty boxes — editable per proposal in admin. */}
               {(() => {
                 const proposalServiceTypes = proposal.services.map((s) => s.serviceType);
-                const rawContentHtml =
-                  proposalFindingsMap[proposalIndex.toString()] ||
-                  proposalFindingsMap[proposalIndex as any] ||
-                  (proposalIndex === 0 ? findingsHtml : "");
-                const show =
-                  hasRodentGuaranteeService(proposalServiceTypes) ||
-                  /Rodent Exclusion Guarantee:|Extended Warranty for Ongoing Rodent Control/i.test(rawContentHtml || "");
-                if (!show) return null;
-                return (
-                  <Card className="overflow-hidden">
-                    <div className="bg-brand-black text-white px-4 py-2">
-                      <span className="text-xs font-bold uppercase">
-                        Rodent Service Guarantee & Warranty
-                      </span>
-                    </div>
-                    <div className="p-4">
-                      <div
-                        className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
-                        dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
-                      />
-                    </div>
-                  </Card>
+                const savedPer = proposalGuaranteeBoxesMap[proposalIndex.toString()]
+                  ?? proposalGuaranteeBoxesMap[proposalIndex as any];
+                // For legacy single-report data, also accept top-level guaranteeBoxes
+                // when there's only one proposal.
+                const savedFallback = !parsedProposals || parsedProposals.length <= 1
+                  ? singleGuaranteeBoxes
+                  : undefined;
+                const boxes = resolveInitialGuaranteeBoxes(
+                  savedPer ?? savedFallback,
+                  proposalServiceTypes,
                 );
+                return <GuaranteeBoxesReadOnly boxes={boxes} />;
               })()}
 
               <Card className="overflow-hidden">

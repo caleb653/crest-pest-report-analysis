@@ -59,7 +59,10 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  resolveInitialGuaranteeBoxes,
+  GuaranteeBox,
 } from "@/lib/rodentGuarantee";
+import GuaranteeBoxesEditor, { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523" },
@@ -718,6 +721,8 @@ const Report = () => {
   const [setupMaterials, setSetupMaterials] = useState<SetupMaterial[]>([]);
   const [limitationsText, setLimitationsText] = useState("");
   const [selectedExclusions, setSelectedExclusions] = useState<string[]>([]);
+  const [guaranteeBoxes, setGuaranteeBoxes] = useState<GuaranteeBox[]>([]);
+  const guaranteeBoxesHydratedRef = useRef(false);
   const [newMaterialName, setNewMaterialName] = useState("");
   const [newMaterialQty, setNewMaterialQty] = useState("");
   
@@ -1018,6 +1023,19 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
     }
   }, [coordinates, zoomLevel]);
 
+  // Auto-seed default rodent guarantee box once when a rodent service is
+  // added and no boxes have been saved yet. After hydration or any admin
+  // edit (including deletion), we leave the saved list alone.
+  useEffect(() => {
+    if (guaranteeBoxesHydratedRef.current) return;
+    if (guaranteeBoxes.length > 0) return;
+    const seeded = resolveInitialGuaranteeBoxes(undefined, services.map((s) => s.serviceType));
+    if (seeded.length > 0) {
+      setGuaranteeBoxes(seeded);
+      guaranteeBoxesHydratedRef.current = true;
+    }
+  }, [services, guaranteeBoxes.length]);
+
   const fetchStaticMap = async () => {
     if (!coordinates) return;
     // Static map (Mapbox) fetching has been removed — users upload custom maps instead.
@@ -1123,6 +1141,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
               setSetupMaterials(parsed.setupMaterials || []);
               setLimitationsText(parsed.limitationsText || "");
               setSelectedExclusions(Array.isArray(parsed.selectedExclusions) ? parsed.selectedExclusions : []);
+              if (Array.isArray(parsed.guaranteeBoxes)) {
+                setGuaranteeBoxes(parsed.guaranteeBoxes);
+                guaranteeBoxesHydratedRef.current = true;
+              }
             } else {
               setAdditionalDetails(row.notes);
             }
@@ -1322,6 +1344,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       setupMaterials,
       limitationsText,
       selectedExclusions,
+      guaranteeBoxes,
     });
 
   const buildServicesPayload = () =>
@@ -2816,22 +2839,13 @@ Crest Pest Control`;
                 )}
               </div>
             </Card>
-            {hasRodentGuaranteeService(services.map((s) => s.serviceType)) && (
-              <Card
-                data-pdf-section="rodent-guarantee"
-                className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg mt-2 print:mt-1"
-              >
-                <div className="print-section-header py-1.5 px-2.5 print:px-2 rounded-t-lg">
-                  <span className="text-xs print:text-[10px] font-bold uppercase">
-                    Rodent Service Guarantee & Warranty
-                  </span>
-                </div>
-                <div
-                  className="p-3 print:p-1.5 text-xs print:text-[10px] leading-relaxed text-foreground/90"
-                  dangerouslySetInnerHTML={{ __html: RODENT_GUARANTEE_HTML }}
-                />
-              </Card>
-            )}
+            <div className="mt-2 print:mt-1" data-pdf-section="guarantee-boxes">
+              <GuaranteeBoxesEditor
+                boxes={guaranteeBoxes}
+                onChange={setGuaranteeBoxes}
+                showRodentDefaultButton={hasRodentGuaranteeService(services.map((s) => s.serviceType))}
+              />
+            </div>
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
