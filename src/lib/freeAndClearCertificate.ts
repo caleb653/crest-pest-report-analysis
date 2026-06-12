@@ -213,6 +213,24 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.setDrawColor(...BRAND_BLACK).line(W - margin - 200, y, W - margin, y);
   pdf.text("Date", W - margin - 200, y + 14);
 
+  // Liability disclaimer
+  y += 36;
+  const PH_check = pdf.internal.pageSize.getHeight();
+  if (y > PH_check - 110) {
+    pdf.addPage();
+    y = margin;
+  }
+  pdf.setFont("helvetica", "bold").setFontSize(9);
+  pdf.setTextColor(...BRAND_BLACK);
+  pdf.text("IMPORTANT DISCLAIMER", margin, y);
+  y += 12;
+  pdf.setFont("helvetica", "italic").setFontSize(8);
+  const disclaimer =
+    'This report documents the observable pest conditions present in the above-referenced unit at the date and time of inspection only. A "free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Crest Pest Control expressly disclaims any and all liability for: (1) pest activity originating after the inspection date; (2) conditions concealed behind walls, under flooring, or in areas inaccessible at the time of inspection; (3) infestation migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or introduction of infested items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently pest-free environment.';
+  const dLines = pdf.splitTextToSize(disclaimer, W - margin * 2);
+  pdf.text(dLines, margin, y);
+  y += dLines.length * 10;
+
   // Footer band
   const PH = pdf.internal.pageSize.getHeight();
   pdf.setFillColor(...BRAND_BLACK);
