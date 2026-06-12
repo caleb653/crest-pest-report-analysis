@@ -460,6 +460,20 @@ export function computeUpcomingUnits(args: {
       else if (followUp) source = "follow_up";
       else if (!ownPlannedSet.has(unit) && lastPastUnits.includes(unit)) source = "carried";
     }
+    // Ad-hoc visits aren't the "first upcoming" but they still need to keep
+    // the follow-up identity of any unit that was dragged into them. The
+    // marker rides along on the service's own unit_details row.
+    if (source === "planned") {
+      const ownDets = Array.isArray((service as any)?.unit_details)
+        ? ((service as any).unit_details as UnitDetailRow[])
+        : [];
+      const ownDet = ownDets.find(
+        (d) => normalizeUnit((d as any)?.unit_number) === unit,
+      );
+      if (ownDet && (ownDet as any).follow_up_needed === true) {
+        source = "follow_up";
+      }
+    }
 
     // Pre-fill defaults so technician + PM never see blanks for an actionable unit.
     const target_pest =
