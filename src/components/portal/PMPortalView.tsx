@@ -760,7 +760,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Compute the soonest scheduled service date OR the projected next date.
   // This must mirror the `nextService` derivation below but only depends on raw state.
   const _propertyForHook = property; // capture latest reference
-  const _scheduled = services.filter(s => s.status !== "completed").sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  // Mirror the production filter below: ad-hoc visits are NOT the next
+  // cadence service, so they must be excluded from this hook's date pick.
+  const _scheduled = services
+    .filter(s => s.status !== "completed" && !((s as any)?.report_data?.is_ad_hoc === true))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const _past = services.filter(s => s.status === "completed").sort((a, b) => {
     const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
     if (dateCmp !== 0) return dateCmp;
@@ -857,8 +861,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const pastServicesForCadence = pastServices.filter(
     (s) => (s as any)?.report_data?.is_ad_hoc !== true,
   );
+  // Ad-hoc visits are tracked separately from the regular cadence so they
+  // never compete to be the "Next Service" card. The customer portal renders
+  // them as their own cards above the recurring upcoming visit, with their
+  // own units (no work-order / follow-up merging) — exactly the way the
+  // admin portal already shows them.
+  const isAdHocService = (s: any) => !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
   const scheduledServices = services
-    .filter(s => s.status !== "completed")
+    .filter(s => s.status !== "completed" && !isAdHocService(s))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  const adHocPending = services
+    .filter(s => s.status !== "completed" && isAdHocService(s))
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
 
   // Property-level frequency toggle (managed by admin). Default bi-weekly.
@@ -934,7 +947,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     }
     return dates;
   })();
-  const upcomingServices: ServiceData[] = nextService ? [nextService] : [];
+  // Ad-hoc visits (if any) appear FIRST in the upcoming list so the customer
+  // sees them as their own separate cards above the regular recurring visit.
+  const upcomingServices: ServiceData[] = [
+    ...adHocPending,
+    ...(nextService ? [nextService] : []),
+  ];
+  // Index of the first NON-ad-hoc card — that's the real "Next Service".
+  const firstRealUpcomingIdx = upcomingServices.findIndex(
+    (s) => !isAdHocService(s),
+  );
 
   // PM upcoming-notes map (date -> note). The draft state + save effect are placed
   // above the early returns to satisfy Rules of Hooks. We resolve the key here for display.
@@ -2523,15 +2545,23 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             ) : (
               <div className="space-y-4">
                 {upcomingServices.map((s, i) => {
-                  const isFirst = i === 0;
-                  const isExpanded = isFirst || expandedUpcomingId === s.id;
+                  const isAdHocCard = isAdHocService(s);
+                  // "Next Service" highlight goes to the first NON-ad-hoc
+                  // upcoming visit so ad-hoc spot visits never hijack the
+                  // cadence headline.
+                  const isFirst = !isAdHocCard && i === firstRealUpcomingIdx;
+                  // Ad-hoc cards auto-expand too — their whole purpose is to
+                  // show the units the tech will treat on that one-off visit.
+                  const isExpanded = isFirst || isAdHocCard || expandedUpcomingId === s.id;
                   const lastPast = pastServices[0] || null;
                   const merged = computeUpcomingUnits({
                     service: s,
+                    // Ad-hoc visits NEVER pull in follow-ups or open work
+                    // orders — they're entirely separate from the cadence.
                     isFirstUpcoming: isFirst,
-                    requests,
-                    mostRecentPast: lastPast,
-                    allPastServices: pastServices,
+                    requests: isAdHocCard ? [] : requests,
+                    mostRecentPast: isAdHocCard ? null : lastPast,
+                    allPastServices: isAdHocCard ? [] : pastServices,
                     tenantMoveIns:
                       (property.customer_preferences as any)?.tenant_move_ins || null,
                   });
@@ -2555,11 +2585,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   const carriedCount = unitContexts.filter(u => u.source === "carried" || u.source === "planned").length;
 
                   return (
-                    <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                    <Card key={s.id} className={`transition-all shadow-sm ${isAdHocCard ? "border-2 border-dashed border-secondary/60 bg-gradient-to-br from-secondary/[0.08] to-transparent" : isFirst ? "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.06] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                       <button className="w-full text-left p-5 flex items-center justify-between gap-4" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2.5 flex-wrap">
                             {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Next Service</Badge>}
+                            {isAdHocCard && <Badge className="text-xs bg-secondary text-secondary-foreground py-1 px-2.5">Ad Hoc</Badge>}
                              <p className={`font-bold ${isFirst ? "text-xl" : "text-base"}`}>{(() => {
                               // Ad-hoc visits always display as "Ad Hoc Visit"
                               // regardless of underlying service_type.
