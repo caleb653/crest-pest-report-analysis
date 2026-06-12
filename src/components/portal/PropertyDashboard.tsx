@@ -385,6 +385,15 @@ const PropertyDashboard = ({
   const [adHocDate, setAdHocDate] = useState("");
   const [adHocType, setAdHocType] = useState("General Pest Control");
   const [adHocNote, setAdHocNote] = useState("");
+  // Drag-and-drop: move a unit from an upcoming service into an existing
+  // ad-hoc visit. The dragged unit is dismissed from the source upcoming
+  // service (so it disappears from admin + customer "Next Service" lists)
+  // and added to the target ad-hoc visit's units_planned + unit_details.
+  const [dragUnit, setDragUnit] = useState<
+    | { sourceServiceId: string; unit: string; row?: any }
+    | null
+  >(null);
+  const [dragOverAdHocId, setDragOverAdHocId] = useState<string | null>(null);
   // Inline add-unit state
   const [addingUnitToService, setAddingUnitToService] = useState<string | null>(null);
   const [newUnitData, setNewUnitData] = useState<any>({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
