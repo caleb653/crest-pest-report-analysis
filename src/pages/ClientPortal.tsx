@@ -76,7 +76,7 @@ interface ChatMessage {
 }
 
 // ─── Service Snapshot Component ───
-const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, uploadingPhotoId, onUploadPhotos }: {
+const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, uploadingPhotoId, onUploadPhotos, property }: {
   service: ServiceData;
   isExpanded: boolean;
   onToggle: () => void;
@@ -86,7 +86,6 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
   onUploadPhotos: (serviceId: string, files: FileList | null) => void;
   property?: PropertyData | null;
 }) => {
-  const property = (arguments[0] as any)?.property as PropertyData | undefined | null;
   // Surface follow-up units extremely prominently — pull every unit the
   // technician explicitly flagged so the customer sees exactly which
   // units still need attention without expanding the unit list.
