@@ -674,7 +674,10 @@ const Report = () => {
         if (prefs.notes) setCustomerPreferenceNotes(prefs.notes);
         if (prefs.propertyType) setPropertyType(prefs.propertyType);
         if (prefs.companyName) setCompanyName(prefs.companyName);
-        if (prefs.reportFormat === "rodent-exclusion") setIsRodentExclusion(true);
+        if (prefs.reportFormat === "rodent-exclusion") {
+          setIsRodentExclusion(true);
+          setEmailSubject("Your Rodent Exclusion Report from Crest");
+        }
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
