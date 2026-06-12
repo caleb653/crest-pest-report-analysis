@@ -760,7 +760,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // Compute the soonest scheduled service date OR the projected next date.
   // This must mirror the `nextService` derivation below but only depends on raw state.
   const _propertyForHook = property; // capture latest reference
-  const _scheduled = services.filter(s => s.status !== "completed").sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
+  // Mirror the production filter below: ad-hoc visits are NOT the next
+  // cadence service, so they must be excluded from this hook's date pick.
+  const _scheduled = services
+    .filter(s => s.status !== "completed" && !((s as any)?.report_data?.is_ad_hoc === true))
+    .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const _past = services.filter(s => s.status === "completed").sort((a, b) => {
     const dateCmp = (b.service_date || "").localeCompare(a.service_date || "");
     if (dateCmp !== 0) return dateCmp;
