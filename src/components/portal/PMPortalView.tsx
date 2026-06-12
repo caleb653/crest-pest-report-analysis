@@ -2571,7 +2571,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               // so visits roll forward (1 → 2 → 3 → 4 → 1) automatically.
                               if (isFirst && (propertyFrequency === "weekly" || propertyFrequency === "bi-weekly")) {
                                 const planMap = ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
-                                const label = getCadenceVisitLabel(pastServices.length, planMap[propertyFrequency]);
+                                const label = getCadenceVisitLabel(pastServicesForCadence.length, planMap[propertyFrequency]);
                                 if (label) return label;
                               }
                               return s.service_type;
