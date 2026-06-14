@@ -84,6 +84,21 @@ export const stripRodentGuaranteeFromHtml = (html: string): string => {
   return out.trim();
 };
 
+// Strip the per-service `<b>Disclaimer:</b> ...` paragraph from a services
+// HTML blob. Used when hydrating the Proposed Services editor for legacy
+// reports — the global SALES_REPORT_DISCLAIMER_HTML now lives as a footnote
+// at the bottom of every sales report, so the inline copy is redundant.
+export const stripDisclaimerFromHtml = (html: string): string => {
+  if (!html) return html;
+  let out = html;
+  out = out.replace(
+    /(<br\s*\/?\>\s*){0,4}\s*<b>\s*Disclaimer:\s*<\/b>[\s\S]*?(?=(<br\s*\/?\>\s*){2,}<b>|$)/gi,
+    "",
+  );
+  out = out.replace(/(?:\s*<br\s*\/?\>\s*){3,}/gi, "<br><br>");
+  return out.trim();
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sales-report-wide disclaimer + Additional Details relocation.
 // ─────────────────────────────────────────────────────────────────────────────
