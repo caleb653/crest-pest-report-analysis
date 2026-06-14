@@ -1646,7 +1646,7 @@ export default function CustomerReportView() {
         </div>
       ))}
 
-      {report.property_images && report.property_images.length > 0 && (
+      {(report.customer_preferences as any)?.reportFormat !== "rodent-exclusion" && report.property_images && report.property_images.length > 0 && (
         <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
           {renderHeader("Property Images")}
           <main className="p-4">
