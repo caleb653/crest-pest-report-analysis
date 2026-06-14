@@ -2722,7 +2722,7 @@ Crest Pest Control`;
                       data-pdf-content="proposed-services"
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: formatProposedServices(stripRodentGuaranteeFromHtml(servicesContent)) }}
+                      dangerouslySetInnerHTML={{ __html: formatProposedServices(stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(servicesContent))) }}
                     />
                   </>
                 )}
