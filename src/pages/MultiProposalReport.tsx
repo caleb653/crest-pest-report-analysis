@@ -290,6 +290,32 @@ const SERVICE_CONFIG: Record<
 
 const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Manufacturer's Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Not Included Services (Unless Otherwise Specified or Pictured Below):</b><br>• Garage door repair<br>• Exclusion work in areas other than the attic<br>• Rodent clean up in areas other than the attic<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
+// Strip the "Additional Details" and "Disclaimer" sub-sections out of any
+// Proposed Services HTML. They have been moved to the dedicated Additional
+// Details card (Additional Details) and the global report footer (Disclaimer).
+const stripAdditionalDetailsAndDisclaimer = (html: string): string => {
+  if (!html) return html;
+  return html
+    .replace(/(?:<br>\s*){1,2}<b>\s*Additional (?:Details|Information):\s*<\/b>[\s\S]*?(?=(?:<br>\s*){2}<b>(?!\/)|$)/gi, "")
+    .replace(/(?:<br>\s*){1,2}<b>\s*Disclaimer:\s*<\/b>[\s\S]*?(?=(?:<br>\s*){2}<b>(?!\/)|$)/gi, "")
+    .replace(/(?:<br>\s*)+$/i, "");
+};
+
+// Extract the "Additional Details" body (text only, no header) from a
+// Proposed Services HTML blob. Returns "" when there is none.
+const extractAdditionalDetailsBody = (html: string): string => {
+  if (!html) return "";
+  const m = html.match(/<b>\s*Additional (?:Details|Information):\s*<\/b>([\s\S]*?)(?=(?:<br>\s*){2}<b>(?!\/)|$)/i);
+  return m ? m[1].replace(/^(?:<br>\s*)+/, "").trim() : "";
+};
+
+// Extract the leading "<b>Service Name:</b>" header label (without trailing colon)
+const extractServiceHeaderLabel = (html: string): string => {
+  if (!html) return "";
+  const m = html.match(/<b>([^<]+?)<\/b>/);
+  return m ? m[1].replace(/:\s*$/, "").trim() : "";
+};
+
 const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
 
 // Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
