@@ -2954,49 +2954,54 @@ Crest Pest Control
             <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
               <div className="flex items-center gap-3">
                 <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
-                <h1 className="text-lg font-bold text-foreground">Before &amp; After</h1>
+                <h1 className="text-lg font-bold text-foreground">Entry Point Photos</h1>
               </div>
             </div>
 
-            {beforePhotos.length > 0 && (
-              <div className="mb-5">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">Before</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {beforePhotos.map((p, i) => (
-                    <div key={`pdf-before-${i}`} className="space-y-1">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
-                      </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
-                          {p.caption}
+            {(() => {
+              const total = Math.max(beforePhotos.length, propertyImages.length);
+              const indices = Array.from({ length: total }, (_, i) => i).filter(
+                (i) => beforePhotos[i]?.image || propertyImages[i]?.image,
+              );
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {indices.map((i) => {
+                    const before = beforePhotos[i];
+                    const after = propertyImages[i];
+                    const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
+                    return (
+                      <div key={`pdf-pair-${i}`} className="rounded-lg border border-border bg-card p-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-foreground mb-1.5">
+                          {label}
                         </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {propertyImages.some((p) => p.image) && (
-              <div>
-                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {propertyImages.filter((p) => p.image).map((p, i) => (
-                    <div key={`pdf-after-${i}`} className="space-y-1">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Before</span>
+                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                              {before?.image ? (
+                                <img src={before.image} alt={`${label} before`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-primary">After</span>
+                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                              {after?.image ? (
+                                <img src={after.image} alt={`${label} after`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
-                          {p.caption}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}
