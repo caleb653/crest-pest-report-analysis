@@ -972,10 +972,8 @@ export default function CustomerReportView() {
         const afterPhotos: PropertyImage[] = Array.isArray(report.property_images)
           ? report.property_images.filter((p) => p && (p.image || p.url))
           : [];
-        const pairLabels: string[] = Array.isArray(prefs?.beforeAfter?.pairLabels)
-          ? prefs.beforeAfter.pairLabels
-          : [];
         const pairCount = Math.max(beforePhotos.length, afterPhotos.length);
+        const pairLabels = normalizeRodentPairLabels(prefs?.beforeAfter?.pairLabels, pairCount);
         const findingsTextHtml = Array.isArray(report.findings)
           ? report.findings.join("<br/>")
           : (report.findings || "");
@@ -1059,7 +1057,7 @@ export default function CustomerReportView() {
                           const after = afterPhotos[i];
                           const beforeSrc = before?.image || before?.url;
                           const afterSrc = after?.image || after?.url;
-                          const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
+                          const label = pairLabels[i] || defaultRodentPairLabel(i);
                           return (
                             <div key={`pair-${i}`} className="rounded-xl border-2 border-dark-sage/40 bg-card p-2">
                               <div className="flex items-center justify-between mb-1.5 px-0.5">
