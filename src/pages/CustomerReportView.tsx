@@ -38,6 +38,17 @@ interface PropertyImage {
   caption?: string;
 }
 
+const defaultRodentPairLabel = (index: number) => `Entry Point #${index + 1}`;
+
+const normalizeRodentPairLabels = (labels: unknown, count = 0): string[] => {
+  const source = Array.isArray(labels) ? labels : [];
+  const length = Math.max(count, source.length);
+  return Array.from({ length }, (_, index) => {
+    const raw = typeof source[index] === "string" ? source[index].trim() : "";
+    return !raw || /^Pair\s*#?\s*\d+$/i.test(raw) ? defaultRodentPairLabel(index) : raw;
+  });
+};
+
 /**
  * Split a services HTML blob into the main "what we do" content and the
  * disclaimer/warranty/additional-details content. Returns both as HTML strings.
@@ -961,10 +972,8 @@ export default function CustomerReportView() {
         const afterPhotos: PropertyImage[] = Array.isArray(report.property_images)
           ? report.property_images.filter((p) => p && (p.image || p.url))
           : [];
-        const pairLabels: string[] = Array.isArray(prefs?.beforeAfter?.pairLabels)
-          ? prefs.beforeAfter.pairLabels
-          : [];
         const pairCount = Math.max(beforePhotos.length, afterPhotos.length);
+        const pairLabels = normalizeRodentPairLabels(prefs?.beforeAfter?.pairLabels, pairCount);
         const findingsTextHtml = Array.isArray(report.findings)
           ? report.findings.join("<br/>")
           : (report.findings || "");
@@ -1048,7 +1057,7 @@ export default function CustomerReportView() {
                           const after = afterPhotos[i];
                           const beforeSrc = before?.image || before?.url;
                           const afterSrc = after?.image || after?.url;
-                          const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
+                          const label = pairLabels[i] || defaultRodentPairLabel(i);
                           return (
                             <div key={`pair-${i}`} className="rounded-xl border-2 border-dark-sage/40 bg-card p-2">
                               <div className="flex items-center justify-between mb-1.5 px-0.5">
@@ -1637,7 +1646,7 @@ export default function CustomerReportView() {
         </div>
       ))}
 
-      {report.property_images && report.property_images.length > 0 && (
+      {(report.customer_preferences as any)?.reportFormat !== "rodent-exclusion" && report.property_images && report.property_images.length > 0 && (
         <div className="max-w-5xl mx-auto border-t-4 border-border mt-8">
           {renderHeader("Property Images")}
           <main className="p-4">

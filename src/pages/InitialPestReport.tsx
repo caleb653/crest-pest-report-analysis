@@ -96,6 +96,17 @@ const PEST_OPTIONS = [
   "Other",
 ];
 
+const defaultRodentPairLabel = (index: number) => `Entry Point #${index + 1}`;
+
+const normalizeRodentPairLabels = (labels: unknown, count = 0): string[] => {
+  const source = Array.isArray(labels) ? labels : [];
+  const length = Math.max(count, source.length);
+  return Array.from({ length }, (_, index) => {
+    const raw = typeof source[index] === "string" ? source[index].trim() : "";
+    return !raw || /^Pair\s*#?\s*\d+$/i.test(raw) ? defaultRodentPairLabel(index) : raw;
+  });
+};
+
 // Per-pest snippet libraries. Techs tap chips to add/remove bullets; nothing
 // is preselected. Keys must match entries in PEST_OPTIONS (or the General
 // Pests label) so chip groups appear when that pest is selected.
@@ -691,10 +702,11 @@ const Report = () => {
           );
         }
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
-          setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
-        }
-        if (prefs.beforeAfter && Array.isArray((prefs.beforeAfter as any).pairLabels)) {
-          setPairLabels((prefs.beforeAfter as any).pairLabels as string[]);
+          const savedBefore = prefs.beforeAfter.before as Array<{ image: string; caption?: string }>;
+          setBeforePhotos(savedBefore);
+          setPairLabels(normalizeRodentPairLabels((prefs.beforeAfter as any).pairLabels, savedBefore.length));
+        } else if (prefs.beforeAfter && Array.isArray((prefs.beforeAfter as any).pairLabels)) {
+          setPairLabels(normalizeRodentPairLabels((prefs.beforeAfter as any).pairLabels));
         }
         if (typeof prefs.fieldroutes_login_link === "string" && prefs.fieldroutes_login_link) {
           setFieldroutesLoginLink(prefs.fieldroutes_login_link as string);
@@ -971,7 +983,7 @@ const Report = () => {
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
+          ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
@@ -1043,7 +1055,7 @@ const Report = () => {
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
+          ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
@@ -1274,7 +1286,7 @@ Crest Pest Control
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
+          ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
         customer_email: customerEmail,
         customer_phone: customerPhone || null,
@@ -2790,7 +2802,7 @@ Crest Pest Control
                   {rows.map((i) => {
                     const before = beforePhotos[i];
                     const after = propertyImages[i];
-                    const labelValue = pairLabels[i] ?? `Entry Point #${i + 1}`;
+                    const labelValue = normalizeRodentPairLabels(pairLabels, pairCount)[i] || defaultRodentPairLabel(i);
                     return (
                       <div
                         key={`pair-${i}`}
@@ -2805,14 +2817,15 @@ Crest Pest Control
                           />
                           <Button
                             type="button"
-                            size="icon"
+                            size="sm"
                             variant="ghost"
-                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                            className="h-7 px-2 text-[11px] text-destructive hover:bg-destructive/10"
                             onClick={() => deletePairAt(i)}
                             aria-label={`Delete ${labelValue}`}
                             title="Delete this pair"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3 mr-1" />
+                            Delete pairing
                           </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -3017,73 +3030,6 @@ Crest Pest Control
                       </div>
                     </div>
                   )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
-
-      {/* Second Page (rodent-exclusion variant) — Before / After photo gallery.
-          Renders Before photos carried over from the sales report, then the
-          After photos uploaded on this report. Included in the PDF capture so
-          customers see the full before/after story. */}
-      {isRodentExclusion && (beforePhotos.length > 0 || propertyImages.length > 0) && (
-        <div
-          data-pdf-page="2"
-          data-pdf-capture="2"
-          data-report-type="initial-pest"
-          className="print-page-break bg-background"
-        >
-          <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
-            <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
-              <div className="flex items-center gap-3">
-                <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
-                <h1 className="text-lg font-bold text-foreground">Entry Point Photos</h1>
-              </div>
-            </div>
-
-            {(() => {
-              const total = Math.max(beforePhotos.length, propertyImages.length);
-              const indices = Array.from({ length: total }, (_, i) => i).filter(
-                (i) => beforePhotos[i]?.image || propertyImages[i]?.image,
-              );
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {indices.map((i) => {
-                    const before = beforePhotos[i];
-                    const after = propertyImages[i];
-                    const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
-                    return (
-                      <div key={`pdf-pair-${i}`} className="rounded-lg border border-border bg-card p-2">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-foreground mb-1.5">
-                          {label}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Before</span>
-                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
-                              {before?.image ? (
-                                <img src={before.image} alt={`${label} before`} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-primary">After</span>
-                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
-                              {after?.image ? (
-                                <img src={after.image} alt={`${label} after`} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               );
             })()}
