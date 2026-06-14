@@ -187,6 +187,17 @@ function DetourBadge({ c }: { c: SlotCandidate }) {
   );
 }
 
+// Same color scale as DetourBadge — used to tint the "Book in" pill so the
+// recommendation visually matches the slot's overall proximity.
+function tierPillClasses(c: SlotCandidate): string {
+  const min = detourMinutes(c);
+  if (min >= 20) return "bg-red-600 hover:bg-red-600 text-white";
+  if (min >= 15) return "bg-amber-500 hover:bg-amber-500 text-white";
+  if (min >= 10) return "bg-yellow-400 hover:bg-yellow-400 text-black";
+  if (min >= 5) return "bg-green-500 hover:bg-green-500 text-white";
+  return "bg-emerald-600 hover:bg-emerald-600 text-white";
+}
+
 function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?: string | null }) {
   if (!counts) return null;
   const order: (keyof WindowCounts)[] = ["8-12", "10-2", "1-5"];
@@ -516,6 +527,44 @@ function FindMode({
             {result.stops_in_horizon} stops. Geocoded to{" "}
             <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
           </p>
+          {(() => {
+            // Find the single best slot across every returned day. Tie-break:
+            // smallest detour → fewer extra miles → earliest (sort order).
+            type Best = { date: string; weekday: string; idx: number; c: SlotCandidate };
+            let best: Best | null = null;
+            byDay.forEach((day) => {
+              day.slots.forEach((c, idx) => {
+                if (!best) { best = { date: day.date, weekday: day.weekday, idx, c }; return; }
+                const a = detourMinutes(c);
+                const b = detourMinutes(best.c);
+                if (a < b) best = { date: day.date, weekday: day.weekday, idx, c };
+                else if (a === b) {
+                  const am = parseFloat(detourMiles(c));
+                  const bm = parseFloat(detourMiles(best.c));
+                  if (am < bm) best = { date: day.date, weekday: day.weekday, idx, c };
+                }
+              });
+            });
+            if (!best) return null;
+            const recKey = (best.c.after_insert?.new_stop_window as string | null) ?? null;
+            const recLabel = windowLabel(recKey)
+              ?? fmtWindow(best.c.next_stop?.start_time, best.c.next_stop?.end_time);
+            return (
+              <div className={`rounded-md p-3 border-2 ${tierBorder(best.c)} flex flex-wrap items-center gap-3`}>
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
+                  ★ Best Fit
+                </Badge>
+                <span className="text-sm">
+                  <span className="font-semibold">{best.c.tech_name}</span>
+                  {" · "}
+                  <span className="font-semibold">{best.weekday}, {best.date}</span>
+                  {" · "}
+                  <span className="font-semibold">{recLabel}</span>
+                </span>
+                <span className="ml-auto"><DetourBadge c={best.c} /></span>
+              </div>
+            );
+          })()}
           {!canSchedule && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
               Pick a customer{!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.
@@ -526,7 +575,23 @@ function FindMode({
               No field-tech routes on the selected day(s).
             </p>
           )}
-          {byDay.map((day) => (
+          {(() => {
+            // Recompute the same best-fit key so we can flag the matching SlotCard.
+            let bestKey: string | null = null;
+            let bestMin = Infinity;
+            let bestMiles = Infinity;
+            byDay.forEach((day) => {
+              day.slots.forEach((c, idx) => {
+                const m = detourMinutes(c);
+                const mi = parseFloat(detourMiles(c));
+                if (m < bestMin || (m === bestMin && mi < bestMiles)) {
+                  bestMin = m;
+                  bestMiles = mi;
+                  bestKey = `${day.date}#${idx}`;
+                }
+              });
+            });
+            return byDay.map((day) => (
             <Card key={day.date}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
@@ -539,11 +604,19 @@ function FindMode({
                   <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
                 )}
                 {day.slots.map((c, i) => (
-                  <SlotCard key={i} c={c} rank={i + 1} date={day.date} scheduleContext={scheduleContext} />
+                  <SlotCard
+                    key={i}
+                    c={c}
+                    rank={i + 1}
+                    date={day.date}
+                    scheduleContext={scheduleContext}
+                    isBestFit={bestKey === `${day.date}#${i}`}
+                  />
                 ))}
               </CardContent>
             </Card>
-          ))}
+            ));
+          })()}
         </div>
       )}
     </>
@@ -558,12 +631,13 @@ type ScheduleContext = {
 };
 
 function SlotCard({
-  c, rank, date, scheduleContext,
+  c, rank, date, scheduleContext, isBestFit,
 }: {
   c: SlotCandidate;
   rank: number;
   date?: string;
   scheduleContext?: ScheduleContext | null;
+  isBestFit?: boolean;
 }) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
@@ -603,12 +677,17 @@ function SlotCard({
   };
 
   return (
-    <div className={`rounded-md p-3 ${tierBorder(c)}`}>
+    <div className={`rounded-md p-3 ${tierBorder(c)} ${isBestFit ? "ring-2 ring-emerald-500 ring-offset-1" : ""}`}>
       {/* ── Top row: rank + tech + drive tier ─────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant="secondary">#{rank}</Badge>
           <span className="font-semibold">{c.tech_name}</span>
+          {isBestFit && (
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
+              ★ Best Fit
+            </Badge>
+          )}
         </div>
         <DetourBadge c={c} />
       </div>
@@ -629,19 +708,19 @@ function SlotCard({
         const isDayFull = afterTotal >= DAILY_MAX_STOPS;
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-md bg-emerald-600 text-white px-3 py-1.5 shadow-sm">
+            <div className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 shadow-sm ${tierPillClasses(c)}`}>
               <Target className="w-4 h-4" />
               <span className="text-[11px] font-bold uppercase tracking-wide opacity-90">Book in</span>
               <span className="text-sm font-bold">{recLabel}</span>
             </div>
             {isCrowded && (
-              <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold uppercase tracking-wide">
+              <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Risk — already {beforeCount} stops in this window
               </Badge>
             )}
             {isDayFull && (
-              <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold uppercase tracking-wide">
+              <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
               </Badge>
