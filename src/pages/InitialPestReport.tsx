@@ -1659,6 +1659,52 @@ Crest Pest Control
     pendingAutoSaveRef.current = true;
   };
 
+  // Touch-friendly: move the After photo in a slot up/down by one position.
+  // Works on iPad where native HTML5 drag-and-drop is unreliable.
+  const moveAfterBy = (index: number, delta: -1 | 1) => {
+    const target = index + delta;
+    if (target < 0) return;
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      while (next.length <= Math.max(index, target)) next.push({ image: "" });
+      [next[index], next[target]] = [next[target], next[index]];
+      while (next.length > 0 && !next[next.length - 1].image) next.pop();
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  // Remove an entire pair (Before + After + Label) at the given index.
+  const deletePairAt = (index: number) => {
+    setBeforePhotos((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    setPairLabels((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  // Update the editable label for a specific pair (e.g. "Entry Point #1").
+  const setPairLabelAt = (index: number, value: string) => {
+    setPairLabels((prev) => {
+      const next = [...prev];
+      while (next.length <= index) next.push("");
+      next[index] = value;
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
