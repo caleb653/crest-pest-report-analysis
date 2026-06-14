@@ -59,6 +59,7 @@ import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
+  stripDisclaimerFromHtml,
   resolveInitialGuaranteeBoxes,
   GuaranteeBox,
   splitServicesContent,
@@ -993,7 +994,9 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
   useEffect(() => {
     if (analysis) {
-      setEditableFindings(analysis.findings || []);
+      // Strip the legacy per-service `<b>Disclaimer:</b>` paragraph on the way
+      // in — it lives globally at the bottom of the report now.
+      setEditableFindings((analysis.findings || []).map((f) => stripDisclaimerFromHtml(f || "")));
     }
   }, [analysis]);
 
@@ -1071,7 +1074,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       setEditableCustomer(row.customer_name || "");
       setExtractedAddress(row.address || "");
       setEditableAddress(row.address || "");
-      setEditableFindings(normalizeStringArray(row.findings));
+      setEditableFindings(normalizeStringArray(row.findings).map((f) => stripDisclaimerFromHtml(f || "")));
       // Mark findings as edited if there was saved data, to prevent auto-override
       if (row.findings && Array.isArray(row.findings) && row.findings.length > 0) {
         findingsEditedRef.current = true;
