@@ -61,6 +61,8 @@ import {
   stripRodentGuaranteeFromHtml,
   resolveInitialGuaranteeBoxes,
   GuaranteeBox,
+  splitServicesContent,
+  SALES_REPORT_DISCLAIMER_HTML,
 } from "@/lib/rodentGuarantee";
 import GuaranteeBoxesEditor, { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
