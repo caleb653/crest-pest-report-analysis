@@ -302,6 +302,9 @@ const Report = () => {
   // "Before" photos carried over from the source sales report (rodent-exclusion
   // variant only). Read-only — represent the property's pre-service state.
   const [beforePhotos, setBeforePhotos] = useState<Array<{ image: string; caption?: string }>>([]);
+  // Editable labels for each Before/After pair (rodent-exclusion only).
+  // Defaults to "Entry Point #N"; tech can rename to anything (e.g. "Clean Up Spot #1").
+  const [pairLabels, setPairLabels] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
