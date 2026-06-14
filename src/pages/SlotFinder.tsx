@@ -624,6 +624,9 @@ function SlotCard({
           ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
           : 0;
         const isCrowded = beforeCount >= 4;
+        const DAILY_MAX_STOPS = 13;
+        const afterTotal = after?.stops_excluding_tasks ?? 0;
+        const isDayFull = afterTotal >= DAILY_MAX_STOPS;
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 rounded-md bg-emerald-600 text-white px-3 py-1.5 shadow-sm">
@@ -635,6 +638,12 @@ function SlotCard({
               <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Risk — already {beforeCount} stops in this window
+              </Badge>
+            )}
+            {isDayFull && (
+              <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold uppercase tracking-wide">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
               </Badge>
             )}
           </div>
