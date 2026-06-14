@@ -1728,6 +1728,12 @@ Crest Pest Control
     pendingAutoSaveRef.current = true;
   };
 
+  const moveAfterToIndex = (from: number, toValue: string) => {
+    const to = Number.parseInt(toValue, 10);
+    if (!Number.isFinite(to)) return;
+    swapAfterAt(from, to);
+  };
+
   // Handle pasting images from clipboard for custom map
   const handleMapPaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
