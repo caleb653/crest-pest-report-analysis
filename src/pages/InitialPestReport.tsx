@@ -702,10 +702,11 @@ const Report = () => {
           );
         }
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
-          setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
-        }
-        if (prefs.beforeAfter && Array.isArray((prefs.beforeAfter as any).pairLabels)) {
-          setPairLabels((prefs.beforeAfter as any).pairLabels as string[]);
+          const savedBefore = prefs.beforeAfter.before as Array<{ image: string; caption?: string }>;
+          setBeforePhotos(savedBefore);
+          setPairLabels(normalizeRodentPairLabels((prefs.beforeAfter as any).pairLabels, savedBefore.length));
+        } else if (prefs.beforeAfter && Array.isArray((prefs.beforeAfter as any).pairLabels)) {
+          setPairLabels(normalizeRodentPairLabels((prefs.beforeAfter as any).pairLabels));
         }
         if (typeof prefs.fieldroutes_login_link === "string" && prefs.fieldroutes_login_link) {
           setFieldroutesLoginLink(prefs.fieldroutes_login_link as string);
