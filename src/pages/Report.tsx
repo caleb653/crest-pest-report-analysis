@@ -2834,13 +2834,43 @@ Crest Pest Control`;
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
                       dangerouslySetInnerHTML={{
-                        __html: formatProposedServices(stripRodentGuaranteeFromHtml(editableFindings[0] || "")),
+                        __html: formatProposedServices(
+                          splitServicesContent(
+                            stripRodentGuaranteeFromHtml(editableFindings[0] || ""),
+                          ).cleanedHtml,
+                        ),
                       }}
                     />
                   </>
                 )}
               </div>
             </Card>
+            {(() => {
+              const split = splitServicesContent(
+                stripRodentGuaranteeFromHtml(editableFindings[0] || ""),
+              );
+              if (split.additionalDetails.length === 0) return null;
+              return (
+                <div
+                  className="hidden print-content-formatted mt-2 print:mt-1 border border-border rounded-md bg-card overflow-hidden"
+                  data-pdf-section="additional-details"
+                >
+                  <div className="print-section-header py-1.5 px-2.5 print:px-2">
+                    <span className="text-xs print:text-[10px] font-bold uppercase">Additional Details</span>
+                  </div>
+                  <div className="p-2.5 print:p-2 space-y-2" style={{ fontSize: `${proposedServicesFontSize}px` }}>
+                    {split.additionalDetails.map((d, i) => (
+                      <div key={`addl-${i}`} className="leading-snug">
+                        {d.serviceName && (
+                          <p className="font-bold mb-0.5">{d.serviceName}</p>
+                        )}
+                        <div dangerouslySetInnerHTML={{ __html: d.html }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="mt-2 print:mt-1" data-pdf-section="guarantee-boxes">
               <GuaranteeBoxesEditor
                 boxes={guaranteeBoxes}
