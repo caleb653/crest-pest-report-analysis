@@ -595,7 +595,7 @@ const Report = () => {
 
     if (newServiceTypes.length > 0) {
       const newDescriptions = newServiceTypes
-        .map((st) => SERVICE_CONFIG[st]?.proposedServices)
+        .map((st) => stripAdditionalDetailsAndDisclaimer(SERVICE_CONFIG[st]?.proposedServices || ""))
         .filter(Boolean) as string[];
 
       if (newDescriptions.length > 0) {
@@ -2425,7 +2425,7 @@ Crest Pest Control`;
     if (!proposal) return "";
     const descriptions = proposal.services
       .filter(s => s.serviceType)
-      .map(s => SERVICE_CONFIG[s.serviceType]?.proposedServices)
+      .map(s => stripAdditionalDetailsAndDisclaimer(SERVICE_CONFIG[s.serviceType]?.proposedServices || ""))
       .filter(Boolean) as string[];
     return descriptions.join("<br><br>");
   };
