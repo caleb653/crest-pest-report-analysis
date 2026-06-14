@@ -2802,7 +2802,7 @@ Crest Pest Control
                   {rows.map((i) => {
                     const before = beforePhotos[i];
                     const after = propertyImages[i];
-                    const labelValue = pairLabels[i] ?? `Entry Point #${i + 1}`;
+                    const labelValue = normalizeRodentPairLabels(pairLabels, pairCount)[i] || defaultRodentPairLabel(i);
                     return (
                       <div
                         key={`pair-${i}`}
@@ -2817,14 +2817,15 @@ Crest Pest Control
                           />
                           <Button
                             type="button"
-                            size="icon"
+                            size="sm"
                             variant="ghost"
-                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                            className="h-7 px-2 text-[11px] text-destructive hover:bg-destructive/10"
                             onClick={() => deletePairAt(i)}
                             aria-label={`Delete ${labelValue}`}
                             title="Delete this pair"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3 mr-1" />
+                            Delete pairing
                           </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
