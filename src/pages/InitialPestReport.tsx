@@ -96,6 +96,17 @@ const PEST_OPTIONS = [
   "Other",
 ];
 
+const defaultRodentPairLabel = (index: number) => `Entry Point #${index + 1}`;
+
+const normalizeRodentPairLabels = (labels: unknown, count = 0): string[] => {
+  const source = Array.isArray(labels) ? labels : [];
+  const length = Math.max(count, source.length);
+  return Array.from({ length }, (_, index) => {
+    const raw = typeof source[index] === "string" ? source[index].trim() : "";
+    return !raw || /^Pair\s*#?\s*\d+$/i.test(raw) ? defaultRodentPairLabel(index) : raw;
+  });
+};
+
 // Per-pest snippet libraries. Techs tap chips to add/remove bullets; nothing
 // is preselected. Keys must match entries in PEST_OPTIONS (or the General
 // Pests label) so chip groups appear when that pest is selected.
