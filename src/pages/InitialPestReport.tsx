@@ -2722,6 +2722,38 @@ Crest Pest Control
                 />
               </div>
             </Card>
+
+            {/* Rodent Exclusion Disclaimer — mirrors the sales-report wording so
+                customers see the same scope/liability language on the service
+                report. Renders only for the rodent-exclusion variant. */}
+            {isRodentExclusion && (
+              <Card className="print-section p-3 md:p-4 border-2 border-dark-sage/60 bg-sage/10">
+                <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Scope &amp; Disclaimer</h2>
+                <div className="p-3 text-xs md:text-sm leading-relaxed text-foreground space-y-2">
+                  <p>
+                    <strong>Additional Details:</strong> We are a licensed pest control company, not a licensed contractor.
+                    We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential
+                    rodent entry points. We do not make structural alterations like cutting into drywall or stucco,
+                    replacing framing, and any other general construction work.
+                  </p>
+                  <p>
+                    <strong>Rodent Exclusion Guarantee:</strong> Our standard guarantee for rodent exclusion work is
+                    6 months. If rodents re-enter your property through previously sealed entry points during this
+                    period, we will re-seal them and reset traps at no additional cost. This guarantee does not
+                    cover any newly created entry points.
+                  </p>
+                  <p>
+                    <strong>Extended Warranty for Ongoing Rodent Control Customers:</strong> Customers enrolled in
+                    our ongoing rodent control program receive an extended warranty for as long as their service
+                    remains active.
+                  </p>
+                  <p>
+                    <strong>Disclaimer:</strong> Crest Pest Control is not liable for any structural or property
+                    damage caused by rodents.
+                  </p>
+                </div>
+              </Card>
+            )}
             </>
             )}
           </div>
