@@ -2983,23 +2983,39 @@ Crest Pest Control
                   {/* Trailing card to add unpaired After photos (extras beyond
                       what the sales report provided). Stops at 12 total. */}
                   {usedAfters < 12 && (
-                    <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
+                    <div className="rounded-xl border-2 border-dashed border-dark-sage bg-card min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
                       <Plus className="w-7 h-7 text-dark-sage" />
                       <span className="text-sm font-semibold text-foreground leading-tight">
-                        Upload "After" photos (choose from library or camera)
+                        Upload "After" photos
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {usedAfters}/12 · use arrows ↑↓ on each tile to reorder
+                        {usedAfters}/12 · pick several from Photo Library, or use Camera one at a time
                       </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) => handleRodentGroupUpload(e, "After")}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        aria-label="Add extra after photos"
-                      />
-                    </label>
+                      <div className="grid grid-cols-2 gap-2 w-full max-w-[260px]">
+                        <label className="relative inline-flex h-9 items-center justify-center rounded-md border border-dark-sage bg-card px-2 text-xs font-semibold text-foreground cursor-pointer hover:bg-sage/30 active:bg-sage/40">
+                          Photo Library
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleRodentGroupUpload(e, "After")}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            aria-label="Choose after photos from photo library"
+                          />
+                        </label>
+                        <label className="relative inline-flex h-9 items-center justify-center rounded-md border border-border bg-muted px-2 text-xs font-semibold text-foreground cursor-pointer hover:bg-sage/30 active:bg-sage/40">
+                          Camera
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={(e) => handleRodentGroupUpload(e, "After")}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            aria-label="Take after photo with camera"
+                          />
+                        </label>
+                      </div>
+                    </div>
                   )}
                 </div>
               );
