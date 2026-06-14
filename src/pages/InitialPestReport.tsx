@@ -3049,6 +3049,96 @@ Crest Pest Control
         </div>
       )}
 
+      {/* Second Page - Before/After Photos (rodent-exclusion variant).
+          Mirrors the editor grid into a clean, captured PDF page so the
+          Before vs After labels and pairing are obvious in the export. */}
+      {isRodentExclusion && (
+      <div
+        data-pdf-page="2"
+        data-pdf-capture="2"
+        data-report-type="initial-pest"
+        className={`print-page-break bg-background ${beforePhotos.length === 0 && propertyImages.filter((p) => p.image).length === 0 ? 'print:hidden' : ''}`}
+      >
+        <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
+          {/* Page Header */}
+          <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
+            <div className="flex items-center gap-3">
+              <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
+              <h1 className="text-lg font-bold text-foreground">Entry Point Photos — Before &amp; After</h1>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {beforePhotos.filter((b) => b?.image).length} before · {propertyImages.filter((p) => p.image).length} after
+            </span>
+          </div>
+
+          {(() => {
+            const pairCount = Math.max(beforePhotos.length, propertyImages.length);
+            if (pairCount === 0) {
+              return (
+                <div className="no-images-placeholder text-center py-12 text-muted-foreground">
+                  <p>No before/after photos uploaded yet.</p>
+                </div>
+              );
+            }
+            const labels = normalizeRodentPairLabels(pairLabels, pairCount);
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {Array.from({ length: pairCount }, (_, i) => {
+                  const before = beforePhotos[i];
+                  const after = propertyImages[i];
+                  if (!before?.image && !after?.image) return null;
+                  const label = (labels[i] && labels[i].trim()) || defaultRodentPairLabel(i);
+                  return (
+                    <div
+                      key={`pdf-pair-${i}`}
+                      className="rounded-lg border-2 border-dark-sage/60 bg-card p-2"
+                    >
+                      <div className="text-xs font-bold uppercase tracking-wide text-foreground mb-1.5 px-0.5">
+                        {label}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wide text-dark-sage text-center bg-sage/30 rounded py-0.5">
+                            Before
+                          </div>
+                          <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                            {before?.image ? (
+                              <img src={before.image} alt={`${label} — before`} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                No before photo
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wide text-primary-foreground text-center bg-primary rounded py-0.5">
+                            After
+                          </div>
+                          <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                            {after?.image ? (
+                              <img src={after.image} alt={`${label} — after`} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                                No after photo
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {after?.caption && (
+                        <p className="mt-1.5 px-0.5 text-[10px] leading-tight text-foreground">{after.caption}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+      )}
+
       {/* Second Page - Property Images (non-rodent variant) */}
       {!isRodentExclusion && (
       <div 
