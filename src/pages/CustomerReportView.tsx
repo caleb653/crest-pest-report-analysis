@@ -38,6 +38,17 @@ interface PropertyImage {
   caption?: string;
 }
 
+const defaultRodentPairLabel = (index: number) => `Entry Point #${index + 1}`;
+
+const normalizeRodentPairLabels = (labels: unknown, count = 0): string[] => {
+  const source = Array.isArray(labels) ? labels : [];
+  const length = Math.max(count, source.length);
+  return Array.from({ length }, (_, index) => {
+    const raw = typeof source[index] === "string" ? source[index].trim() : "";
+    return !raw || /^Pair\s*#?\s*\d+$/i.test(raw) ? defaultRodentPairLabel(index) : raw;
+  });
+};
+
 /**
  * Split a services HTML blob into the main "what we do" content and the
  * disclaimer/warranty/additional-details content. Returns both as HTML strings.
