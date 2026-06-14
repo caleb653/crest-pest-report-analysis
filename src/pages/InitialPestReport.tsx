@@ -1575,43 +1575,54 @@ Crest Pest Control
     e: React.ChangeEvent<HTMLInputElement>,
     targetIndex: number,
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size === 0) {
-      toast.error("That photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
-      e.currentTarget.value = "";
-      return;
-    }
-    if (file.type && !file.type.startsWith("image/")) {
-      toast.error("Please upload only image files");
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    const valid = files.filter((f) => {
+      if (f.size === 0) {
+        toast.error("A photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
+        return false;
+      }
+      if (f.type && !f.type.startsWith("image/")) return false;
+      return true;
+    });
+    if (valid.length === 0) {
       e.currentTarget.value = "";
       return;
     }
     try {
-      const { ext, contentType } = inferImageUploadMeta(file);
-      let uploadBlob: Blob = file;
-      try {
-        const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
-        uploadBlob = compressed.blob;
-        URL.revokeObjectURL(compressed.localUrl);
-      } catch (compressErr) {
-        console.warn("Image compression failed, uploading original:", compressErr);
-      }
-      const fileName = `${Math.random()}.${ext}`;
-      const filePath = `${reportId || "temp"}/property/${fileName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("report-images")
-        .upload(filePath, uploadBlob, { upsert: true, contentType });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+      const uploaded = await Promise.all(
+        valid.map(async (file) => {
+          const { ext, contentType } = inferImageUploadMeta(file);
+          let uploadBlob: Blob = file;
+          try {
+            const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+            uploadBlob = compressed.blob;
+            URL.revokeObjectURL(compressed.localUrl);
+          } catch (compressErr) {
+            console.warn("Image compression failed, uploading original:", compressErr);
+          }
+          const fileName = `${Math.random()}.${ext}`;
+          const filePath = `${reportId || "temp"}/property/${fileName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("report-images")
+            .upload(filePath, uploadBlob, { upsert: true, contentType });
+          if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+          return publicUrl;
+        }),
+      );
       setPropertyImages((prev) => {
         const next = [...prev];
-        while (next.length <= targetIndex) next.push({ image: "" });
-        next[targetIndex] = { image: publicUrl, caption: next[targetIndex]?.caption || "" };
+        let cursor = targetIndex;
+        for (const url of uploaded) {
+          while (next.length <= cursor) next.push({ image: "" });
+          next[cursor] = { image: url, caption: next[cursor]?.caption || "" };
+          cursor += 1;
+        }
         return next;
       });
       pendingAutoSaveRef.current = true;
-      toast.success("After photo added");
+      toast.success(`${uploaded.length} after photo${uploaded.length > 1 ? "s" : ""} added`);
     } catch (error) {
       console.error("Error uploading after image:", error);
       toast.error("Failed to upload image");
