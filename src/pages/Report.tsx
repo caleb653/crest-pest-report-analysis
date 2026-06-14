@@ -174,7 +174,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replacing framing, and any other general construction work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replacing framing, and any other general construction work.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -182,7 +182,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping:</b><br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> Rodent trapping is specifically targeted at eliminating the existing rodent population. After we've completed our follow-up visits, we can't guarantee that rodents will not re-enter your property unless we are also performing rodent exclusion work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Trapping:</b><br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> Rodent trapping is specifically targeted at eliminating the existing rodent population. After we've completed our follow-up visits, we can't guarantee that rodents will not re-enter your property unless we are also performing rodent exclusion work.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -190,7 +190,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -198,7 +198,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Bait Boxes:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Rodent Bait Boxes:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.`,
     defaultInitial: 200,
     defaultRecurring: 70,
   },
@@ -246,7 +246,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Commercial Rodent:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on rodent activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Commercial Rodent:</b><br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on rodent activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.`,
     defaultInitial: 200,
     defaultRecurring: 70,
   },
@@ -254,7 +254,7 @@ const SERVICE_CONFIG: Record<
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks", "Rodents"],
     proposedServices:
-      `<b>Commercial General Pest & Rodent:</b><br>• Inspect exterior and interior (including placing and monitoring pest traps) for pest activity<br>• Treat the exterior perimeter of the property and interior common areas (restrooms, break rooms, lounges, etc.). Treat other interior areas as needed<br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on pest sightings and activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.`,
+      `<b>Commercial General Pest & Rodent:</b><br>• Inspect exterior and interior (including placing and monitoring pest traps) for pest activity<br>• Treat the exterior perimeter of the property and interior common areas (restrooms, break rooms, lounges, etc.). Treat other interior areas as needed<br>• Install rodent bait boxes around the property to maintain consistent control of rodent populations<br>• Monitor, replenish, and adjust bait boxes depending on ongoing rodent activity<br>• Provide ongoing communication with management on pest sightings and activity levels<br><br><b>Additional Details:</b> Rodent bait stations are designed to reduce the amount of rodent activity around your property. You may still see rodent activity around the exterior of your property.`,
     defaultInitial: 250,
     defaultRecurring: 150,
   },
@@ -293,7 +293,7 @@ const SERVICE_CONFIG: Record<
 };
 
 // Attic Services additional details content for page 2 (HTML formatted)
-const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Manufacturer's Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Not Included Services (Unless Otherwise Specified or Pictured Below):</b><br>• Garage door repair<br>• Exclusion work in areas other than the attic<br>• Rodent clean up in areas other than the attic<br><br><b>Disclaimer:</b> Crest Pest Control is not liable for any structural or property damage caused by rodents.<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
+const ATTIC_SERVICES_ADDITIONAL_DETAILS = `<b>Attic Service (additional details):</b><br><br><b>Manufacturer's Insulation Warranty:</b> The product will, for the lifetime of the structure:<br>a.) be free from manufacturing defects;<br>b.) not deteriorate under normal and proper use, including the pesticides, active ingredient, and the chemical fire retardant treatment if the insulation is installed according to Pest Control Insulation's label instructions.<br><br><b>Rodent Exclusion Guarantee:</b> Our standard guarantee for rodent exclusion work is 6 months. If rodents re-enter your property through previously sealed entry points during this period, we will re-seal them and reset traps at no additional cost. Please note that this guarantee does not cover any newly created entry points.<br><br><b>Extended Warranty for Ongoing Rodent Control Customers:</b> Customers enrolled in our ongoing rodent control program receive an extended warranty for as long as their service remains active. Because ongoing treatment helps reduce the rodent population around your property, it significantly lowers the likelihood of re-entry through previously sealed points.<br><br><b>Not Included Services (Unless Otherwise Specified or Pictured Below):</b><br>• Garage door repair<br>• Exclusion work in areas other than the attic<br>• Rodent clean up in areas other than the attic<br><br><b>Attic Specific Equipment:</b> TAP (Thermal, Acoustic, and Pest Control) Insulation [Active Ingredients: Boric Acid (&lt;15%)], Simple Green® d Pro 3 Plus disinfectant<br><br><b>Target Pests:</b> Rodents`;
 
 // Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
 const EXCLUSION_PRESETS: { label: string; text: string }[] = [
