@@ -527,6 +527,44 @@ function FindMode({
             {result.stops_in_horizon} stops. Geocoded to{" "}
             <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
           </p>
+          {(() => {
+            // Find the single best slot across every returned day. Tie-break:
+            // smallest detour → fewer extra miles → earliest (sort order).
+            type Best = { date: string; weekday: string; idx: number; c: SlotCandidate };
+            let best: Best | null = null;
+            byDay.forEach((day) => {
+              day.slots.forEach((c, idx) => {
+                if (!best) { best = { date: day.date, weekday: day.weekday, idx, c }; return; }
+                const a = detourMinutes(c);
+                const b = detourMinutes(best.c);
+                if (a < b) best = { date: day.date, weekday: day.weekday, idx, c };
+                else if (a === b) {
+                  const am = parseFloat(detourMiles(c));
+                  const bm = parseFloat(detourMiles(best.c));
+                  if (am < bm) best = { date: day.date, weekday: day.weekday, idx, c };
+                }
+              });
+            });
+            if (!best) return null;
+            const recKey = (best.c.after_insert?.new_stop_window as string | null) ?? null;
+            const recLabel = windowLabel(recKey)
+              ?? fmtWindow(best.c.next_stop?.start_time, best.c.next_stop?.end_time);
+            return (
+              <div className={`rounded-md p-3 border-2 ${tierBorder(best.c)} flex flex-wrap items-center gap-3`}>
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
+                  ★ Best Fit
+                </Badge>
+                <span className="text-sm">
+                  <span className="font-semibold">{best.c.tech_name}</span>
+                  {" · "}
+                  <span className="font-semibold">{best.weekday}, {best.date}</span>
+                  {" · "}
+                  <span className="font-semibold">{recLabel}</span>
+                </span>
+                <span className="ml-auto"><DetourBadge c={best.c} /></span>
+              </div>
+            );
+          })()}
           {!canSchedule && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
               Pick a customer{!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.
@@ -537,7 +575,23 @@ function FindMode({
               No field-tech routes on the selected day(s).
             </p>
           )}
-          {byDay.map((day) => (
+          {(() => {
+            // Recompute the same best-fit key so we can flag the matching SlotCard.
+            let bestKey: string | null = null;
+            let bestMin = Infinity;
+            let bestMiles = Infinity;
+            byDay.forEach((day) => {
+              day.slots.forEach((c, idx) => {
+                const m = detourMinutes(c);
+                const mi = parseFloat(detourMiles(c));
+                if (m < bestMin || (m === bestMin && mi < bestMiles)) {
+                  bestMin = m;
+                  bestMiles = mi;
+                  bestKey = `${day.date}#${idx}`;
+                }
+              });
+            });
+            return byDay.map((day) => (
             <Card key={day.date}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">
@@ -550,11 +604,19 @@ function FindMode({
                   <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
                 )}
                 {day.slots.map((c, i) => (
-                  <SlotCard key={i} c={c} rank={i + 1} date={day.date} scheduleContext={scheduleContext} />
+                  <SlotCard
+                    key={i}
+                    c={c}
+                    rank={i + 1}
+                    date={day.date}
+                    scheduleContext={scheduleContext}
+                    isBestFit={bestKey === `${day.date}#${i}`}
+                  />
                 ))}
               </CardContent>
             </Card>
-          ))}
+            ));
+          })()}
         </div>
       )}
     </>
