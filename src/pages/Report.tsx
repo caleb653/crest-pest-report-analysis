@@ -3446,8 +3446,11 @@ Crest Pest Control`;
               * Scheduling and billing run on four-week cycles to help ensure consistency (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.
             </p>
           )}
-          <p className="text-[10px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug">
-            Crest Pest Control is not liable for any structural or property damage caused by any pests or rodents.
+          <p
+            className="text-[10px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug px-4"
+            data-pdf-section="sales-report-disclaimer"
+          >
+            {SALES_REPORT_DISCLAIMER_HTML.replace(/<[^>]+>/g, "")}
           </p>
         </div>
       </div>
