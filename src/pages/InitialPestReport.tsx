@@ -302,6 +302,9 @@ const Report = () => {
   // "Before" photos carried over from the source sales report (rodent-exclusion
   // variant only). Read-only — represent the property's pre-service state.
   const [beforePhotos, setBeforePhotos] = useState<Array<{ image: string; caption?: string }>>([]);
+  // Editable labels for each Before/After pair (rodent-exclusion only).
+  // Defaults to "Entry Point #N"; tech can rename to anything (e.g. "Clean Up Spot #1").
+  const [pairLabels, setPairLabels] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
@@ -690,6 +693,9 @@ const Report = () => {
         if (prefs.beforeAfter && Array.isArray(prefs.beforeAfter.before)) {
           setBeforePhotos(prefs.beforeAfter.before as Array<{ image: string; caption?: string }>);
         }
+        if (prefs.beforeAfter && Array.isArray((prefs.beforeAfter as any).pairLabels)) {
+          setPairLabels((prefs.beforeAfter as any).pairLabels as string[]);
+        }
         if (typeof prefs.fieldroutes_login_link === "string" && prefs.fieldroutes_login_link) {
           setFieldroutesLoginLink(prefs.fieldroutes_login_link as string);
         }
@@ -965,7 +971,7 @@ const Report = () => {
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
         },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
@@ -1037,7 +1043,7 @@ const Report = () => {
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
         },
         customer_email: customerEmail || null,
         customer_phone: customerPhone || null,
@@ -1268,7 +1274,7 @@ Crest Pest Control
           companyName: companyName || undefined,
           ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
-          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos } } : {}),
+          ...(beforePhotos.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels } } : {}),
         },
         customer_email: customerEmail,
         customer_phone: customerPhone || null,
@@ -1550,7 +1556,19 @@ Crest Pest Control
         return { image: publicUrl, caption: "" };
       });
       const uploadedImages = await Promise.all(uploadPromises);
-      setPropertyImages((prev) => [...prev, ...uploadedImages]);
+      // Fill empty slots first (so newly uploaded "After" photos pair with
+      // existing "Before" photos that don't have a partner yet), then append.
+      setPropertyImages((prev) => {
+        const next = [...prev];
+        let queue = [...uploadedImages];
+        for (let i = 0; i < next.length && queue.length > 0; i++) {
+          if (!next[i]?.image) {
+            const u = queue.shift()!;
+            next[i] = { ...u, caption: next[i]?.caption || u.caption || "" };
+          }
+        }
+        return [...next, ...queue];
+      });
       pendingAutoSaveRef.current = true;
       toast.success(`${uploadedImages.length} photo(s) added`);
     } catch (error) {
@@ -1569,43 +1587,54 @@ Crest Pest Control
     e: React.ChangeEvent<HTMLInputElement>,
     targetIndex: number,
   ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size === 0) {
-      toast.error("That photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
-      e.currentTarget.value = "";
-      return;
-    }
-    if (file.type && !file.type.startsWith("image/")) {
-      toast.error("Please upload only image files");
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    const valid = files.filter((f) => {
+      if (f.size === 0) {
+        toast.error("A photo isn't downloaded yet (iCloud). Download it in Photos and try again.");
+        return false;
+      }
+      if (f.type && !f.type.startsWith("image/")) return false;
+      return true;
+    });
+    if (valid.length === 0) {
       e.currentTarget.value = "";
       return;
     }
     try {
-      const { ext, contentType } = inferImageUploadMeta(file);
-      let uploadBlob: Blob = file;
-      try {
-        const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
-        uploadBlob = compressed.blob;
-        URL.revokeObjectURL(compressed.localUrl);
-      } catch (compressErr) {
-        console.warn("Image compression failed, uploading original:", compressErr);
-      }
-      const fileName = `${Math.random()}.${ext}`;
-      const filePath = `${reportId || "temp"}/property/${fileName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("report-images")
-        .upload(filePath, uploadBlob, { upsert: true, contentType });
-      if (uploadError) throw uploadError;
-      const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+      const uploaded = await Promise.all(
+        valid.map(async (file) => {
+          const { ext, contentType } = inferImageUploadMeta(file);
+          let uploadBlob: Blob = file;
+          try {
+            const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+            uploadBlob = compressed.blob;
+            URL.revokeObjectURL(compressed.localUrl);
+          } catch (compressErr) {
+            console.warn("Image compression failed, uploading original:", compressErr);
+          }
+          const fileName = `${Math.random()}.${ext}`;
+          const filePath = `${reportId || "temp"}/property/${fileName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("report-images")
+            .upload(filePath, uploadBlob, { upsert: true, contentType });
+          if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+          return publicUrl;
+        }),
+      );
       setPropertyImages((prev) => {
         const next = [...prev];
-        while (next.length <= targetIndex) next.push({ image: "" });
-        next[targetIndex] = { image: publicUrl, caption: next[targetIndex]?.caption || "" };
+        let cursor = targetIndex;
+        for (const url of uploaded) {
+          while (next.length <= cursor) next.push({ image: "" });
+          next[cursor] = { image: url, caption: next[cursor]?.caption || "" };
+          cursor += 1;
+        }
         return next;
       });
       pendingAutoSaveRef.current = true;
-      toast.success("After photo added");
+      toast.success(`${uploaded.length} after photo${uploaded.length > 1 ? "s" : ""} added`);
     } catch (error) {
       console.error("Error uploading after image:", error);
       toast.error("Failed to upload image");
@@ -1648,6 +1677,52 @@ Crest Pest Control
       const max = Math.max(from, to);
       while (next.length <= max) next.push({ image: "" });
       [next[from], next[to]] = [next[to], next[from]];
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  // Touch-friendly: move the After photo in a slot up/down by one position.
+  // Works on iPad where native HTML5 drag-and-drop is unreliable.
+  const moveAfterBy = (index: number, delta: -1 | 1) => {
+    const target = index + delta;
+    if (target < 0) return;
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      while (next.length <= Math.max(index, target)) next.push({ image: "" });
+      [next[index], next[target]] = [next[target], next[index]];
+      while (next.length > 0 && !next[next.length - 1].image) next.pop();
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  // Remove an entire pair (Before + After + Label) at the given index.
+  const deletePairAt = (index: number) => {
+    setBeforePhotos((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    setPropertyImages((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    setPairLabels((prev) => {
+      const next = [...prev];
+      if (index < next.length) next.splice(index, 1);
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  // Update the editable label for a specific pair (e.g. "Entry Point #1").
+  const setPairLabelAt = (index: number, value: string) => {
+    setPairLabels((prev) => {
+      const next = [...prev];
+      while (next.length <= index) next.push("");
+      next[index] = value;
       return next;
     });
     pendingAutoSaveRef.current = true;
@@ -1997,177 +2072,6 @@ Crest Pest Control
         </div>
       )}
 
-      {/* Rodent Exclusion / Attic — grouped photo capture panel.
-          Renders only for the rodent-exclusion variant. Designed to be
-          ultra simple on mobile: stacked, full-width "Add Photos" buttons
-          per category that append to propertyImages with a caption tag. */}
-      {isRodentExclusion && (
-        <div className="no-print bg-sage/20 border-y-2 border-dark-sage/40">
-          <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                Before &amp; After
-              </h3>
-              <span className="text-[11px] text-muted-foreground">
-                {beforePhotos.length} before · {propertyImages.filter((p) => p.image).length} after
-              </span>
-            </div>
-            {(() => {
-              const pairCount = Math.max(beforePhotos.length, propertyImages.length);
-              const rows = Array.from({ length: pairCount }, (_, i) => i);
-              const usedAfters = propertyImages.filter((p) => p.image).length;
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {rows.map((i) => {
-                    const before = beforePhotos[i];
-                    const after = propertyImages[i];
-                    return (
-                      <div
-                        key={`pair-${i}`}
-                        className="rounded-xl border-2 border-dark-sage/50 bg-card p-2"
-                      >
-                        <div className="flex items-center justify-between mb-1.5 px-0.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                            Pair {i + 1}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {/* Before — draggable to swap with another Before tile */}
-                          <div className="space-y-1">
-                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
-                            <div
-                              className={`aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted transition-shadow ${before?.image ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-dark-sage" : ""}`}
-                              draggable={!!before?.image}
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "before", index: i }));
-                                e.dataTransfer.effectAllowed = "move";
-                              }}
-                              onDragOver={(e) => {
-                                const types = e.dataTransfer.types;
-                                if (types && Array.from(types).includes("application/x-photo")) {
-                                  e.preventDefault();
-                                  e.dataTransfer.dropEffect = "move";
-                                }
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                try {
-                                  const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
-                                  if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
-                                } catch {}
-                              }}
-                            >
-                              {before?.image ? (
-                                <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground text-center px-2">
-                                  Drop a Before here
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          {/* After — draggable to swap with another After tile */}
-                          <div className="space-y-1">
-                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
-                            {after?.image ? (
-                              <div
-                                className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary transition-shadow"
-                                draggable
-                                onDragStart={(e) => {
-                                  e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "after", index: i }));
-                                  e.dataTransfer.effectAllowed = "move";
-                                }}
-                                onDragOver={(e) => {
-                                  const types = e.dataTransfer.types;
-                                  if (types && Array.from(types).includes("application/x-photo")) {
-                                    e.preventDefault();
-                                    e.dataTransfer.dropEffect = "move";
-                                  }
-                                }}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  try {
-                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
-                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
-                                  } catch {}
-                                }}
-                              >
-                                <img src={after.image} alt={`After ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
-                                <Button
-                                  size="icon"
-                                  variant="destructive"
-                                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => clearAfterAtIndex(i)}
-                                  aria-label="Remove after photo"
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <label
-                                className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center"
-                                onDragOver={(e) => {
-                                  const types = e.dataTransfer.types;
-                                  if (types && Array.from(types).includes("application/x-photo")) {
-                                    e.preventDefault();
-                                    e.dataTransfer.dropEffect = "move";
-                                  }
-                                }}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  try {
-                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
-                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
-                                  } catch {}
-                                }}
-                              >
-                                <Plus className="w-5 h-5 text-dark-sage" />
-                                <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
-                                  Add or drop After
-                                </span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  capture="environment"
-                                  onChange={(e) => handleAfterUploadAtIndex(e, i)}
-                                  className="absolute inset-0 opacity-0 cursor-pointer"
-                                  aria-label={`Add after photo for pair ${i + 1}`}
-                                />
-                              </label>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Trailing card to add unpaired After photos (extras beyond
-                      what the sales report provided). Stops at 12 total. */}
-                  {usedAfters < 12 && (
-                    <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
-                      <Plus className="w-7 h-7 text-dark-sage" />
-                      <span className="text-sm font-semibold text-foreground leading-tight">
-                        Upload "After" photos then Drag and Drop into place
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {usedAfters}/12 · unpaired
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        capture="environment"
-                        onChange={(e) => handleRodentGroupUpload(e, "After")}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        aria-label="Add extra after photos"
-                      />
-                    </label>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
@@ -2818,11 +2722,254 @@ Crest Pest Control
                 />
               </div>
             </Card>
+
+            {/* Rodent Exclusion Disclaimer — mirrors the sales-report wording so
+                customers see the same scope/liability language on the service
+                report. Renders only for the rodent-exclusion variant. */}
+            {isRodentExclusion && (
+              <Card className="print-section p-3 md:p-4 border-2 border-dark-sage/60 bg-sage/10">
+                <h2 className="print-section-header text-lg md:text-xl font-bold mb-2">Scope &amp; Disclaimer</h2>
+                <div className="p-3 text-xs md:text-sm leading-relaxed text-foreground space-y-2">
+                  <p>
+                    <strong>Additional Details:</strong> We are a licensed pest control company, not a licensed contractor.
+                    We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential
+                    rodent entry points. We do not make structural alterations like cutting into drywall or stucco,
+                    replacing framing, and any other general construction work.
+                  </p>
+                  <p>
+                    <strong>Rodent Exclusion Guarantee:</strong> Our standard guarantee for rodent exclusion work is
+                    6 months. If rodents re-enter your property through previously sealed entry points during this
+                    period, we will re-seal them and reset traps at no additional cost. This guarantee does not
+                    cover any newly created entry points.
+                  </p>
+                  <p>
+                    <strong>Extended Warranty for Ongoing Rodent Control Customers:</strong> Customers enrolled in
+                    our ongoing rodent control program receive an extended warranty for as long as their service
+                    remains active.
+                  </p>
+                  <p>
+                    <strong>Disclaimer:</strong> Crest Pest Control is not liable for any structural or property
+                    damage caused by rodents.
+                  </p>
+                </div>
+              </Card>
+            )}
             </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Rodent Exclusion / Attic — grouped photo capture panel.
+          Renders only for the rodent-exclusion variant. Designed to be
+          ultra simple on mobile: stacked, full-width "Add Photos" buttons
+          per category that append to propertyImages with a caption tag. */}
+      {isRodentExclusion && (
+        <div className="no-print bg-sage/20 border-y-2 border-dark-sage/40">
+          <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                Entry Point Photos
+              </h3>
+              <span className="text-[11px] text-muted-foreground">
+                {beforePhotos.length} before · {propertyImages.filter((p) => p.image).length} after
+              </span>
+            </div>
+            {(() => {
+              const pairCount = Math.max(beforePhotos.length, propertyImages.length);
+              const rows = Array.from({ length: pairCount }, (_, i) => i);
+              const usedAfters = propertyImages.filter((p) => p.image).length;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {rows.map((i) => {
+                    const before = beforePhotos[i];
+                    const after = propertyImages[i];
+                    const labelValue = pairLabels[i] ?? `Entry Point #${i + 1}`;
+                    return (
+                      <div
+                        key={`pair-${i}`}
+                        className="rounded-xl border-2 border-dark-sage/50 bg-card p-2"
+                      >
+                        <div className="flex items-center gap-1 mb-1.5 px-0.5">
+                          <Input
+                            value={labelValue}
+                            onChange={(e) => setPairLabelAt(i, e.target.value)}
+                            placeholder={`Entry Point #${i + 1}`}
+                            className="h-7 text-xs font-bold uppercase tracking-wide flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                            onClick={() => deletePairAt(i)}
+                            aria-label={`Delete ${labelValue}`}
+                            title="Delete this pair"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {/* Before — draggable to swap with another Before tile */}
+                          <div className="space-y-1">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
+                            <div
+                              className={`aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted transition-shadow ${before?.image ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-dark-sage" : ""}`}
+                              draggable={!!before?.image}
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "before", index: i }));
+                                e.dataTransfer.effectAllowed = "move";
+                              }}
+                              onDragOver={(e) => {
+                                const types = e.dataTransfer.types;
+                                if (types && Array.from(types).includes("application/x-photo")) {
+                                  e.preventDefault();
+                                  e.dataTransfer.dropEffect = "move";
+                                }
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                try {
+                                  const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                  if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
+                                } catch {}
+                              }}
+                            >
+                              {before?.image ? (
+                                <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground text-center px-2">
+                                  Drop a Before here
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* After — draggable to swap with another After tile */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
+                              {after?.image && (
+                                <div className="flex items-center gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveAfterBy(i, -1)}
+                                    disabled={i === 0}
+                                    className="h-5 w-5 inline-flex items-center justify-center rounded border border-border text-[10px] hover:bg-muted disabled:opacity-30"
+                                    aria-label="Move after photo up"
+                                    title="Swap with previous pair"
+                                  >
+                                    ↑
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveAfterBy(i, 1)}
+                                    className="h-5 w-5 inline-flex items-center justify-center rounded border border-border text-[10px] hover:bg-muted"
+                                    aria-label="Move after photo down"
+                                    title="Swap with next pair"
+                                  >
+                                    ↓
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            {after?.image ? (
+                              <div
+                                className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary transition-shadow"
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "after", index: i }));
+                                  e.dataTransfer.effectAllowed = "move";
+                                }}
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
+                                <img src={after.image} alt={`After ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => clearAfterAtIndex(i)}
+                                  aria-label="Remove after photo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <label
+                                className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center"
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "after" && typeof data.index === "number") swapAfterAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
+                                <Plus className="w-5 h-5 text-dark-sage" />
+                                <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
+                                  Add or drop After
+                                </span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                  aria-label={`Add after photo for pair ${i + 1}`}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Trailing card to add unpaired After photos (extras beyond
+                      what the sales report provided). Stops at 12 total. */}
+                  {usedAfters < 12 && (
+                    <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
+                      <Plus className="w-7 h-7 text-dark-sage" />
+                      <span className="text-sm font-semibold text-foreground leading-tight">
+                        Upload "After" photos (choose from library or camera)
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {usedAfters}/12 · use arrows ↑↓ on each tile to reorder
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleRodentGroupUpload(e, "After")}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        aria-label="Add extra after photos"
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Second Page (rodent-exclusion variant) — Before / After photo gallery.
           Renders Before photos carried over from the sales report, then the
@@ -2839,49 +2986,54 @@ Crest Pest Control
             <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-border">
               <div className="flex items-center gap-3">
                 <img src={crestLogo} alt="Crest Pest Control" className="h-10 no-print-compress" />
-                <h1 className="text-lg font-bold text-foreground">Before &amp; After</h1>
+                <h1 className="text-lg font-bold text-foreground">Entry Point Photos</h1>
               </div>
             </div>
 
-            {beforePhotos.length > 0 && (
-              <div className="mb-5">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">Before</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {beforePhotos.map((p, i) => (
-                    <div key={`pdf-before-${i}`} className="space-y-1">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={p.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
-                      </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
-                          {p.caption}
+            {(() => {
+              const total = Math.max(beforePhotos.length, propertyImages.length);
+              const indices = Array.from({ length: total }, (_, i) => i).filter(
+                (i) => beforePhotos[i]?.image || propertyImages[i]?.image,
+              );
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {indices.map((i) => {
+                    const before = beforePhotos[i];
+                    const after = propertyImages[i];
+                    const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
+                    return (
+                      <div key={`pdf-pair-${i}`} className="rounded-lg border border-border bg-card p-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-foreground mb-1.5">
+                          {label}
                         </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {propertyImages.some((p) => p.image) && (
-              <div>
-                <h2 className="text-sm font-bold uppercase tracking-wide text-foreground mb-2">After</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {propertyImages.filter((p) => p.image).map((p, i) => (
-                    <div key={`pdf-after-${i}`} className="space-y-1">
-                      <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
-                        <img src={p.image} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Before</span>
+                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                              {before?.image ? (
+                                <img src={before.image} alt={`${label} before`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full" />
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-semibold uppercase tracking-wide text-primary">After</span>
+                            <div className="aspect-[4/3] rounded overflow-hidden border border-border bg-muted">
+                              {after?.image ? (
+                                <img src={after.image} alt={`${label} after`} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      {p.caption && (
-                        <p className="text-[10px] leading-tight text-foreground bg-card rounded px-1.5 py-1 border border-border">
-                          {p.caption}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}

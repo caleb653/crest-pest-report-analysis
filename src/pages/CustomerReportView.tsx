@@ -959,6 +959,9 @@ export default function CustomerReportView() {
         const afterPhotos: PropertyImage[] = Array.isArray(report.property_images)
           ? report.property_images.filter((p) => p && (p.image || p.url))
           : [];
+        const pairLabels: string[] = Array.isArray(prefs?.beforeAfter?.pairLabels)
+          ? prefs.beforeAfter.pairLabels
+          : [];
         const pairCount = Math.max(beforePhotos.length, afterPhotos.length);
         const findingsTextHtml = Array.isArray(report.findings)
           ? report.findings.join("<br/>")
@@ -1031,7 +1034,7 @@ export default function CustomerReportView() {
                 {pairCount > 0 && (
                   <Card className="overflow-hidden">
                     <div className="bg-brand-black text-white px-4 py-2 flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase">Before &amp; After</span>
+                      <span className="text-xs font-bold uppercase">Entry Point Photos</span>
                       <span className="text-[10px] opacity-80">
                         {beforePhotos.length} before · {afterPhotos.length} after
                       </span>
@@ -1043,11 +1046,12 @@ export default function CustomerReportView() {
                           const after = afterPhotos[i];
                           const beforeSrc = before?.image || before?.url;
                           const afterSrc = after?.image || after?.url;
+                          const label = (pairLabels[i] && pairLabels[i].trim()) || `Entry Point #${i + 1}`;
                           return (
                             <div key={`pair-${i}`} className="rounded-xl border-2 border-dark-sage/40 bg-card p-2">
                               <div className="flex items-center justify-between mb-1.5 px-0.5">
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                                  Pair {i + 1}
+                                  {label}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
