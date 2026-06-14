@@ -974,7 +974,7 @@ const Report = () => {
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
@@ -1046,7 +1046,7 @@ const Report = () => {
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
@@ -1277,7 +1277,7 @@ Crest Pest Control
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
