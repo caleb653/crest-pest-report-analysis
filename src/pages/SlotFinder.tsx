@@ -569,12 +569,13 @@ type ScheduleContext = {
 };
 
 function SlotCard({
-  c, rank, date, scheduleContext,
+  c, rank, date, scheduleContext, isBestFit,
 }: {
   c: SlotCandidate;
   rank: number;
   date?: string;
   scheduleContext?: ScheduleContext | null;
+  isBestFit?: boolean;
 }) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
@@ -614,12 +615,17 @@ function SlotCard({
   };
 
   return (
-    <div className={`rounded-md p-3 ${tierBorder(c)}`}>
+    <div className={`rounded-md p-3 ${tierBorder(c)} ${isBestFit ? "ring-2 ring-emerald-500 ring-offset-1" : ""}`}>
       {/* ── Top row: rank + tech + drive tier ─────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant="secondary">#{rank}</Badge>
           <span className="font-semibold">{c.tech_name}</span>
+          {isBestFit && (
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
+              ★ Best Fit
+            </Badge>
+          )}
         </div>
         <DetourBadge c={c} />
       </div>
@@ -640,19 +646,19 @@ function SlotCard({
         const isDayFull = afterTotal >= DAILY_MAX_STOPS;
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-md bg-emerald-600 text-white px-3 py-1.5 shadow-sm">
+            <div className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 shadow-sm ${tierPillClasses(c)}`}>
               <Target className="w-4 h-4" />
               <span className="text-[11px] font-bold uppercase tracking-wide opacity-90">Book in</span>
               <span className="text-sm font-bold">{recLabel}</span>
             </div>
             {isCrowded && (
-              <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold uppercase tracking-wide">
+              <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Risk — already {beforeCount} stops in this window
               </Badge>
             )}
             {isDayFull && (
-              <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold uppercase tracking-wide">
+              <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
               </Badge>
