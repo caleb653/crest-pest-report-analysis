@@ -651,6 +651,13 @@ const Report = () => {
 
       setEditableTech(row.technician_name);
       setEditableCustomer(row.customer_name || "");
+      // Fallback variant detection: legacy rodent-exclusion reports may have
+      // been saved before customer_preferences.reportFormat existed. Treat
+      // any row whose saved report_title says so as rodent-exclusion so the
+      // page renders the correct UI on reload.
+      if (typeof row.report_title === "string" && /rodent\s*exclusion/i.test(row.report_title)) {
+        setIsRodentExclusion(true);
+      }
       setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
       setCustomerPhone(row.customer_phone || "");
       setExtractedAddress(row.address || "");
@@ -974,7 +981,7 @@ const Report = () => {
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
@@ -1046,7 +1053,7 @@ const Report = () => {
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
@@ -1277,7 +1284,7 @@ Crest Pest Control
         target_pests: editableTargetPests,
         products_used: editableProductsUsed,
         equipment: editableEquipment,
-        report_title: "Initial Pest Report",
+        report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
         customer_key_areas: customerKeyAreas.length > 0 || customerKeyAreasNotes ? { areas: customerKeyAreas, notes: customerKeyAreasNotes } : null,
         customer_preferences: {
           preference: customerPreference,
@@ -1888,7 +1895,9 @@ Crest Pest Control
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-4 mb-1">
-                    <h1 className="text-2xl font-bold text-foreground whitespace-nowrap">Initial Pest Report</h1>
+                    <h1 className="text-2xl font-bold text-foreground whitespace-nowrap">
+                      {isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report"}
+                    </h1>
                   </div>
 
                   {/* FieldRoutes customer link — search & select to autofill + link */}
