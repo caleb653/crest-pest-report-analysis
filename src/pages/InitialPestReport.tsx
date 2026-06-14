@@ -2905,16 +2905,31 @@ Crest Pest Control
                                 <Button
                                   size="icon"
                                   variant="destructive"
-                                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute top-1 right-1 h-6 w-6 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                                   onClick={() => clearAfterAtIndex(i)}
                                   aria-label="Remove after photo"
                                 >
                                   <X className="w-3 h-3" />
                                 </Button>
+                                <div className="absolute left-1 right-1 bottom-1 flex items-center gap-1 rounded-md bg-background/90 p-1 shadow-sm md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                  <span className="text-[10px] font-semibold text-muted-foreground shrink-0">Move to</span>
+                                  <Select value={String(i)} onValueChange={(value) => moveAfterToIndex(i, value)}>
+                                    <SelectTrigger className="h-7 min-w-0 flex-1 text-[11px] bg-card">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {rows.map((target) => (
+                                        <SelectItem key={`after-target-${i}-${target}`} value={String(target)}>
+                                          {(pairLabels[target] && pairLabels[target].trim()) || `Entry Point #${target + 1}`}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                             ) : (
-                              <label
-                                className="relative aspect-[4/3] flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer text-center"
+                              <div
+                                className="aspect-[4/3] flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-dark-sage bg-card p-2 text-center"
                                 onDragOver={(e) => {
                                   const types = e.dataTransfer.types;
                                   if (types && Array.from(types).includes("application/x-photo")) {
@@ -2932,17 +2947,33 @@ Crest Pest Control
                               >
                                 <Plus className="w-5 h-5 text-dark-sage" />
                                 <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
-                                  Add or drop After
+                                  Add After
                                 </span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  onChange={(e) => handleAfterUploadAtIndex(e, i)}
-                                  className="absolute inset-0 opacity-0 cursor-pointer"
-                                  aria-label={`Add after photo for pair ${i + 1}`}
-                                />
-                              </label>
+                                <div className="flex flex-col gap-1 w-full">
+                                  <label className="relative inline-flex h-8 items-center justify-center rounded-md border border-dark-sage bg-card px-2 text-[11px] font-semibold text-foreground cursor-pointer hover:bg-sage/30">
+                                    Photo Library
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                      className="absolute inset-0 opacity-0 cursor-pointer"
+                                      aria-label={`Choose after photo from photo library for pair ${i + 1}`}
+                                    />
+                                  </label>
+                                  <label className="relative inline-flex h-8 items-center justify-center rounded-md border border-border bg-muted px-2 text-[11px] font-semibold text-foreground cursor-pointer hover:bg-sage/30">
+                                    Camera
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      capture="environment"
+                                      onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                      className="absolute inset-0 opacity-0 cursor-pointer"
+                                      aria-label={`Take after photo with camera for pair ${i + 1}`}
+                                    />
+                                  </label>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>
