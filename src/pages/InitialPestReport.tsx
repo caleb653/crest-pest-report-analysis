@@ -651,6 +651,13 @@ const Report = () => {
 
       setEditableTech(row.technician_name);
       setEditableCustomer(row.customer_name || "");
+      // Fallback variant detection: legacy rodent-exclusion reports may have
+      // been saved before customer_preferences.reportFormat existed. Treat
+      // any row whose saved report_title says so as rodent-exclusion so the
+      // page renders the correct UI on reload.
+      if (typeof row.report_title === "string" && /rodent\s*exclusion/i.test(row.report_title)) {
+        setIsRodentExclusion(true);
+      }
       setFieldroutesCustomerId((row as { fieldroutes_customer_id?: string | null }).fieldroutes_customer_id || null);
       setCustomerPhone(row.customer_phone || "");
       setExtractedAddress(row.address || "");
