@@ -1059,7 +1059,7 @@ export default function CommercialDashboardView({
           <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
-              <Button size="sm" variant="outline" onClick={onAddUpcomingService} className="h-8 text-xs gap-1">
+              <Button size="sm" variant="outline" onClick={() => quickAddVisit("scheduled")} className="h-8 text-xs gap-1">
                 <Plus className="w-3 h-3" /> Add Visit
               </Button>
             </div>
