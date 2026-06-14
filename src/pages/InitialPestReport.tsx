@@ -2058,7 +2058,7 @@ Crest Pest Control
           <div className={isMobile ? "p-4" : "p-4 max-w-[1800px] mx-auto"}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
-                Before &amp; After
+                Entry Point Photos
               </h3>
               <span className="text-[11px] text-muted-foreground">
                 {beforePhotos.length} before · {propertyImages.filter((p) => p.image).length} after
@@ -2073,15 +2073,30 @@ Crest Pest Control
                   {rows.map((i) => {
                     const before = beforePhotos[i];
                     const after = propertyImages[i];
+                    const labelValue = pairLabels[i] ?? `Entry Point #${i + 1}`;
                     return (
                       <div
                         key={`pair-${i}`}
                         className="rounded-xl border-2 border-dark-sage/50 bg-card p-2"
                       >
-                        <div className="flex items-center justify-between mb-1.5 px-0.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                            Pair {i + 1}
-                          </span>
+                        <div className="flex items-center gap-1 mb-1.5 px-0.5">
+                          <Input
+                            value={labelValue}
+                            onChange={(e) => setPairLabelAt(i, e.target.value)}
+                            placeholder={`Entry Point #${i + 1}`}
+                            className="h-7 text-xs font-bold uppercase tracking-wide flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                            onClick={() => deletePairAt(i)}
+                            aria-label={`Delete ${labelValue}`}
+                            title="Delete this pair"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           {/* Before — draggable to swap with another Before tile */}
@@ -2120,7 +2135,32 @@ Crest Pest Control
                           </div>
                           {/* After — draggable to swap with another After tile */}
                           <div className="space-y-1">
-                            <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">After</span>
+                              {after?.image && (
+                                <div className="flex items-center gap-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveAfterBy(i, -1)}
+                                    disabled={i === 0}
+                                    className="h-5 w-5 inline-flex items-center justify-center rounded border border-border text-[10px] hover:bg-muted disabled:opacity-30"
+                                    aria-label="Move after photo up"
+                                    title="Swap with previous pair"
+                                  >
+                                    ↑
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveAfterBy(i, 1)}
+                                    className="h-5 w-5 inline-flex items-center justify-center rounded border border-border text-[10px] hover:bg-muted"
+                                    aria-label="Move after photo down"
+                                    title="Swap with next pair"
+                                  >
+                                    ↓
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                             {after?.image ? (
                               <div
                                 className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary transition-shadow"
@@ -2180,7 +2220,6 @@ Crest Pest Control
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  capture="environment"
                                   onChange={(e) => handleAfterUploadAtIndex(e, i)}
                                   className="absolute inset-0 opacity-0 cursor-pointer"
                                   aria-label={`Add after photo for pair ${i + 1}`}
@@ -2198,16 +2237,15 @@ Crest Pest Control
                     <label className="relative rounded-xl border-2 border-dashed border-dark-sage bg-card hover:bg-sage/30 active:bg-sage/40 transition-colors cursor-pointer min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
                       <Plus className="w-7 h-7 text-dark-sage" />
                       <span className="text-sm font-semibold text-foreground leading-tight">
-                        Upload "After" photos then Drag and Drop into place
+                        Upload "After" photos (choose from library or camera)
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {usedAfters}/12 · unpaired
+                        {usedAfters}/12 · use arrows ↑↓ on each tile to reorder
                       </span>
                       <input
                         type="file"
                         accept="image/*"
                         multiple
-                        capture="environment"
                         onChange={(e) => handleRodentGroupUpload(e, "After")}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         aria-label="Add extra after photos"
