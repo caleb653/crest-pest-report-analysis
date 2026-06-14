@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus,
+  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus, Target,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -207,6 +207,17 @@ function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?:
       })}
     </span>
   );
+}
+
+// Canonical pretty label for a window key ("8-12" → "8 AM – 12 PM").
+function windowLabel(w?: string | null): string | null {
+  if (!w) return null;
+  switch (w) {
+    case "8-12": return "8:00 AM – 12:00 PM";
+    case "10-2": return "10:00 AM – 2:00 PM";
+    case "1-5":  return "1:00 PM – 5:00 PM";
+    default: return w;
+  }
 }
 
 // Next `count` business days (incl. today) as {iso, label} using local time.
@@ -593,16 +604,42 @@ function SlotCard({
 
   return (
     <div className={`rounded-md p-3 ${tierBorder(c)}`}>
+      {/* ── Top row: rank + tech + drive tier ─────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant="secondary">#{rank}</Badge>
           <span className="font-semibold">{c.tech_name}</span>
-          <span className="text-sm text-muted-foreground">
-            {fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time)} window
-          </span>
         </div>
         <DetourBadge c={c} />
       </div>
+
+      {/* ── BIG recommendation pill — single source of truth for the window
+          we're telling the office to book. Derived from `new_stop_window`
+          (the algorithm's actual pick) and falls back to the next_stop
+          window only when upstream didn't return one. ────────────────── */}
+      {(() => {
+        const recKey = (after?.new_stop_window as string | null) ?? null;
+        const recLabel = windowLabel(recKey) ?? fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time);
+        const beforeCount = recKey && snap?.stops_by_window
+          ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
+          : 0;
+        const isCrowded = beforeCount >= 4;
+        return (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-md bg-emerald-600 text-white px-3 py-1.5 shadow-sm">
+              <Target className="w-4 h-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wide opacity-90">Book in</span>
+              <span className="text-sm font-bold">{recLabel}</span>
+            </div>
+            {isCrowded && (
+              <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-bold uppercase tracking-wide">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Risk — already {beforeCount} stops in this window
+              </Badge>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="mt-2 text-xs text-muted-foreground">
         Inserts between <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
@@ -620,17 +657,17 @@ function SlotCard({
           </span>
           {after.est_finish_min != null && after.est_route_hours != null ? (
             <span className="text-muted-foreground">
-              Day ≈ <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
+              Day spans <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
               {"–"}
               <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
-              {" · "}{after.est_route_hours}h active (stops + drive, excl. commute)
+              {" "}({after.est_route_hours}h first stop → last stop, incl. gaps)
               {snap.has_home
                 ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
                 : " (no home base on file)"}
             </span>
           ) : (
             <span className="text-muted-foreground">
-              ~{after.est_route_hours}h active
+              ~{after.est_route_hours}h first stop → last stop
               {snap.has_home
                 ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
                 : " (no home base on file)"}
