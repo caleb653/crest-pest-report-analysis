@@ -832,22 +832,59 @@ const Report = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceTypesKey, proposals.length]);
 
-  // Auto-populate Attic Services additional details per proposal when Attic is selected
-  // and the additional details box is empty for that proposal.
+  // Auto-populate per-proposal Additional Details from the selected service
+  // types. Each service contributes its own "Additional Details" body; when
+  // more than one service has details, each block is prefixed with the
+  // service type name so the customer can tell them apart. Attic Services
+  // contributes the longer ATTIC_SERVICES_ADDITIONAL_DETAILS constant.
+  // Only seeds when the proposal's details box is currently empty.
   useEffect(() => {
     setProposalAdditionalDetails(prev => {
       const next = { ...prev };
       let changed = false;
       proposals.forEach((proposal, idx) => {
-        const hasAttic = proposal.services.some(
-          (s) => s.serviceType === "Attic Services (see details below)"
-        );
         const current = next[idx] ?? (idx === 0 ? additionalDetails : "");
-        if (hasAttic && (!current || current.trim() === "")) {
-          next[idx] = ATTIC_SERVICES_ADDITIONAL_DETAILS;
-          changed = true;
-          if (idx === 0) setAdditionalDetails(ATTIC_SERVICES_ADDITIONAL_DETAILS);
-        }
+        if (current && current.trim() !== "") return;
+
+        // Collect unique service types in selection order
+        const seen = new Set<string>();
+        const orderedTypes: string[] = [];
+        proposal.services.forEach((s) => {
+          if (s.serviceType && !seen.has(s.serviceType)) {
+            seen.add(s.serviceType);
+            orderedTypes.push(s.serviceType);
+          }
+        });
+
+        type Block = { header: string; body: string; standalone: boolean };
+        const blocks: Block[] = [];
+        orderedTypes.forEach((type) => {
+          if (type === "Attic Services (see details below)") {
+            blocks.push({
+              header: "Attic Services",
+              body: ATTIC_SERVICES_ADDITIONAL_DETAILS,
+              standalone: true, // already includes its own header inside
+            });
+            return;
+          }
+          const cfg = SERVICE_CONFIG[type];
+          if (!cfg) return;
+          const body = extractAdditionalDetailsBody(cfg.proposedServices);
+          if (!body) return;
+          const header = extractServiceHeaderLabel(cfg.proposedServices) || type;
+          blocks.push({ header, body, standalone: false });
+        });
+
+        if (blocks.length === 0) return;
+
+        const multi = blocks.length > 1;
+        const composed = blocks
+          .map((b) => (b.standalone || !multi ? b.body : `<b>${b.header}:</b><br>${b.body}`))
+          .join("<br><br>");
+
+        next[idx] = composed;
+        changed = true;
+        if (idx === 0) setAdditionalDetails(composed);
       });
       return changed ? next : prev;
     });
