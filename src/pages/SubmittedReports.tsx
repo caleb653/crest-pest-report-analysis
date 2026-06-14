@@ -113,7 +113,7 @@ const SubmittedReports = () => {
 
   const [techFilter, setTechFilter] = useState(defaultTech);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("recent");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
 
   const locationFilter = (location.state as any)?.filter;
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
