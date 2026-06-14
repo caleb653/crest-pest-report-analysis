@@ -1536,9 +1536,9 @@ Crest Pest Control
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const fileArray = Array.from(files).slice(0, 12 - propertyImages.length);
+    const fileArray = Array.from(files).slice(0, 20 - propertyImages.length);
     if (fileArray.length === 0) {
-      toast.error("Maximum 12 images allowed");
+      toast.error("Maximum 20 images allowed");
       e.currentTarget.value = "";
       return;
     }
@@ -1808,9 +1808,9 @@ Crest Pest Control
     e.preventDefault();
 
     // Limit to 5 images total for this report type
-    const maxNew = Math.min(imageFiles.length, 12 - propertyImages.length);
+    const maxNew = Math.min(imageFiles.length, 20 - propertyImages.length);
     if (maxNew <= 0) {
-      toast.error("Maximum 12 images allowed");
+      toast.error("Maximum 20 images allowed");
       return;
     }
 
@@ -2317,14 +2317,14 @@ Crest Pest Control
                   })}
                   {/* Trailing card to add unpaired After photos (extras beyond
                       what the sales report provided). Stops at 12 total. */}
-                  {usedAfters < 12 && (
+                  {usedAfters < 20 && (
                     <div className="rounded-xl border-2 border-dashed border-dark-sage bg-card min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
                       <Plus className="w-7 h-7 text-dark-sage" />
                       <span className="text-sm font-semibold text-foreground leading-tight">
                         Upload "After" photos
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {usedAfters}/12 · pick several from Photo Library, or use Camera one at a time
+                        {usedAfters}/20 · pick several from Photo Library, or use Camera one at a time
                       </span>
                       <div className="grid grid-cols-2 gap-2 w-full max-w-[260px]">
                         <label className="relative inline-flex h-9 items-center justify-center rounded-md border border-dark-sage bg-card px-2 text-xs font-semibold text-foreground cursor-pointer hover:bg-sage/30 active:bg-sage/40">
@@ -3071,7 +3071,7 @@ Crest Pest Control
             <div className="relative inline-flex">
               <Button variant="outline" size="lg" type="button">
                 <FileDown className="w-5 h-5 mr-2" />
-                Upload Images (up to 12)
+                Upload Images (up to 20)
               </Button>
               <input
                 id="property-images-upload"
@@ -3154,7 +3154,7 @@ Crest Pest Control
 
           {propertyImages.length === 0 && (
             <div className="no-images-placeholder text-center py-12 text-muted-foreground">
-              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 12 images.</p>
+              <p>No images uploaded yet. Upload or paste (Ctrl+V / Cmd+V) up to 20 images.</p>
             </div>
           )}
         </div>
