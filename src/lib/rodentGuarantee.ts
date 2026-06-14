@@ -83,3 +83,72 @@ export const stripRodentGuaranteeFromHtml = (html: string): string => {
   out = out.replace(/(?:\s*<br\s*\/?\>\s*){3,}/gi, "<br><br>");
   return out.trim();
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sales-report-wide disclaimer + Additional Details relocation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// One disclaimer that appears at the bottom of every sales report (replaces
+// the per-service `<b>Disclaimer:</b>` lines that used to live inside each
+// proposed-services block). Covers both pests and rodents per request.
+export const SALES_REPORT_DISCLAIMER_HTML =
+  `Crest Pest Control is not liable for any structural or property damage caused by pests or rodents. ` +
+  `Pest control is an ongoing process — results depend on environmental, structural, and seasonal factors. ` +
+  `We do not guarantee that pests or rodents will be entirely eliminated from your property, and we make ` +
+  `no warranty of habitability. New entry points, conditions made by others, and natural deterioration are ` +
+  `excluded from any service warranty.`;
+
+export interface ServiceAdditionalDetail {
+  serviceName: string;
+  html: string;
+}
+
+export interface SplitServicesResult {
+  cleanedHtml: string;
+  additionalDetails: ServiceAdditionalDetail[];
+}
+
+// Splits a proposed-services HTML blob into:
+//  - cleanedHtml: services with `<b>Additional Details:</b>` and `<b>Disclaimer:</b>`
+//    sub-paragraphs removed (so they no longer render inline)
+//  - additionalDetails: an ordered list of `{ serviceName, html }` for each
+//    Additional Details block, attributed to the most-recent service header
+//    (so multi-service reports show "Rodent Trapping & Exclusion — ...").
+export const splitServicesContent = (rawHtml: string): SplitServicesResult => {
+  const html = rawHtml || "";
+  if (!html.trim()) return { cleanedHtml: "", additionalDetails: [] };
+
+  // Normalize <br/> variants then split on paragraph boundaries (double-break).
+  const normalized = html.replace(/<br\s*\/?\>/gi, "<br>");
+  const paragraphs = normalized.split(/(?:\s*<br>\s*){2,}/g);
+
+  const cleaned: string[] = [];
+  const details: ServiceAdditionalDetail[] = [];
+  let currentService = "";
+
+  for (const raw of paragraphs) {
+    const p = raw.trim();
+    if (!p) continue;
+    // Extract a leading `<b>Label:</b>` (case-insensitive, allow <strong>).
+    const m = p.match(/^<(?:b|strong)>\s*([^<]+?)\s*:\s*<\/(?:b|strong)>\s*([\s\S]*)$/i);
+    const label = m ? m[1].trim() : "";
+    const body = m ? m[2].trim() : p;
+    if (/^additional details$/i.test(label)) {
+      if (body) details.push({ serviceName: currentService, html: body });
+      continue;
+    }
+    if (/^disclaimer$/i.test(label)) {
+      // Drop — replaced by the global SALES_REPORT_DISCLAIMER_HTML at the bottom.
+      continue;
+    }
+    // Treat any other bold-labeled paragraph as a service header; remember the
+    // most recent one so following Additional Details get attributed to it.
+    if (label) currentService = label;
+    cleaned.push(p);
+  }
+
+  return {
+    cleanedHtml: cleaned.join("<br><br>"),
+    additionalDetails: details,
+  };
+};

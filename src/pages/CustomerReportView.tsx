@@ -16,6 +16,7 @@ import {
   stripRodentGuaranteeFromHtml,
   resolveInitialGuaranteeBoxes,
   GuaranteeBox,
+  SALES_REPORT_DISCLAIMER_HTML,
 } from "@/lib/rodentGuarantee";
 import { GuaranteeBoxesReadOnly } from "@/components/GuaranteeBoxesEditor";
 
@@ -892,19 +893,20 @@ export default function CustomerReportView() {
                 const rawContentHtml = perProposalHtml || (proposalIndex === 0 ? findingsHtml : "");
                 const contentHtml = stripRodentGuaranteeFromHtml(rawContentHtml);
                 const { disclaimerHtml } = splitProposalDisclaimers(contentHtml);
-                if (!disclaimerHtml) return null;
                 return (
                   <Card className="overflow-hidden">
                     <div className="bg-brand-black text-white px-4 py-2">
                       <span className="text-xs font-bold uppercase">Disclaimers & Additional Details</span>
                     </div>
                     <div className="p-4">
-                      <div
-                        className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
-                        dangerouslySetInnerHTML={{ __html: disclaimerHtml }}
-                      />
-                      <p className="text-[11px] italic text-muted-foreground mt-3 pt-3 border-t border-border">
-                        Crest Pest Control is not liable for any structural or property damage caused by any pests or rodents.
+                      {disclaimerHtml && (
+                        <div
+                          className="text-xs leading-relaxed prose prose-xs max-w-none text-foreground/90"
+                          dangerouslySetInnerHTML={{ __html: disclaimerHtml }}
+                        />
+                      )}
+                      <p className={`text-[11px] italic text-muted-foreground ${disclaimerHtml ? "mt-3 pt-3 border-t border-border" : ""}`}>
+                        {SALES_REPORT_DISCLAIMER_HTML.replace(/<[^>]+>/g, "")}
                       </p>
                     </div>
                   </Card>
