@@ -2899,6 +2899,7 @@ Crest Pest Control
                                 <input
                                   type="file"
                                   accept="image/*"
+                                  multiple
                                   onChange={(e) => handleAfterUploadAtIndex(e, i)}
                                   className="absolute inset-0 opacity-0 cursor-pointer"
                                   aria-label={`Add after photo for pair ${i + 1}`}
