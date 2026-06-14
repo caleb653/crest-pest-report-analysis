@@ -345,11 +345,15 @@ export default function CommercialDashboardView({
   };
 
   const today = todayISO();
+  // Past vs Upcoming is driven by STATUS only. We deliberately do NOT
+  // re-classify a scheduled visit as "past" just because its service_date
+  // is on or before today — that made the editor look like it was
+  // auto-submitting a report the moment the route manager typed a date.
   const past = services
-    .filter(s => s.status === "completed" || (s.service_date && s.service_date <= today))
+    .filter(s => s.status === "completed")
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcoming = services
-    .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
+    .filter(s => s.status === "scheduled")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property.map_image_url || property.image_url || null;
   const followUpCount = past.filter(s => !!s.follow_up_recommended).length;
@@ -682,13 +686,13 @@ export default function CommercialDashboardView({
               )}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <ClipboardList className="w-5 h-5" />
-            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
-          </TabsTrigger>
           <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Wrench className="w-5 h-5" />
             <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
+          </TabsTrigger>
+          <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <ClipboardList className="w-5 h-5" />
+            <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
           </TabsTrigger>
           <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FileText className="w-5 h-5" />
@@ -1055,7 +1059,7 @@ export default function CommercialDashboardView({
           <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
-              <Button size="sm" variant="outline" onClick={onAddUpcomingService} className="h-8 text-xs gap-1">
+              <Button size="sm" variant="outline" onClick={() => quickAddVisit("scheduled")} className="h-8 text-xs gap-1">
                 <Plus className="w-3 h-3" /> Add Visit
               </Button>
             </div>
