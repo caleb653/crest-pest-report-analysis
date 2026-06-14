@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus,
+  ArrowLeft, MapPin, CalendarClock, CheckCircle2, AlertTriangle, XCircle, ChevronDown, CalendarPlus, Target,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -207,6 +207,17 @@ function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?:
       })}
     </span>
   );
+}
+
+// Canonical pretty label for a window key ("8-12" → "8 AM – 12 PM").
+function windowLabel(w?: string | null): string | null {
+  if (!w) return null;
+  switch (w) {
+    case "8-12": return "8:00 AM – 12:00 PM";
+    case "10-2": return "10:00 AM – 2:00 PM";
+    case "1-5":  return "1:00 PM – 5:00 PM";
+    default: return w;
+  }
 }
 
 // Next `count` business days (incl. today) as {iso, label} using local time.
