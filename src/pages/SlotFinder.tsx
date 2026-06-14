@@ -187,6 +187,17 @@ function DetourBadge({ c }: { c: SlotCandidate }) {
   );
 }
 
+// Same color scale as DetourBadge — used to tint the "Book in" pill so the
+// recommendation visually matches the slot's overall proximity.
+function tierPillClasses(c: SlotCandidate): string {
+  const min = detourMinutes(c);
+  if (min >= 20) return "bg-red-600 hover:bg-red-600 text-white";
+  if (min >= 15) return "bg-amber-500 hover:bg-amber-500 text-white";
+  if (min >= 10) return "bg-yellow-400 hover:bg-yellow-400 text-black";
+  if (min >= 5) return "bg-green-500 hover:bg-green-500 text-white";
+  return "bg-emerald-600 hover:bg-emerald-600 text-white";
+}
+
 function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?: string | null }) {
   if (!counts) return null;
   const order: (keyof WindowCounts)[] = ["8-12", "10-2", "1-5"];
