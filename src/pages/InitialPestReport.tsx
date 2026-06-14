@@ -1556,7 +1556,19 @@ Crest Pest Control
         return { image: publicUrl, caption: "" };
       });
       const uploadedImages = await Promise.all(uploadPromises);
-      setPropertyImages((prev) => [...prev, ...uploadedImages]);
+      // Fill empty slots first (so newly uploaded "After" photos pair with
+      // existing "Before" photos that don't have a partner yet), then append.
+      setPropertyImages((prev) => {
+        const next = [...prev];
+        let queue = [...uploadedImages];
+        for (let i = 0; i < next.length && queue.length > 0; i++) {
+          if (!next[i]?.image) {
+            const u = queue.shift()!;
+            next[i] = { ...u, caption: next[i]?.caption || u.caption || "" };
+          }
+        }
+        return [...next, ...queue];
+      });
       pendingAutoSaveRef.current = true;
       toast.success(`${uploadedImages.length} photo(s) added`);
     } catch (error) {
