@@ -3172,6 +3172,14 @@ Crest Pest Control
               If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
             </p>
           </div>
+          {isRodentExclusion && (
+            <p
+              className="text-[10px] italic text-muted-foreground text-center mt-3 leading-snug px-4"
+              data-pdf-section="rodent-exclusion-disclaimer"
+            >
+              {SALES_REPORT_DISCLAIMER_HTML.replace(/<[^>]+>/g, "")}
+            </p>
+          )}
         </div>
       </div>
 
