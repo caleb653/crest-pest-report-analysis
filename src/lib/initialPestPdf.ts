@@ -160,14 +160,14 @@ function drawHeader(page: PDFPage, fonts: Fonts, opts: InitialPestPdfOptions, pa
   }
 
   const titleX = logo ? 116 : MARGIN;
-  page.drawText(opts.reportTitle || "Initial Pest Report", {
+  page.drawText(safePdfText(opts.reportTitle || "Initial Pest Report"), {
     x: titleX,
     y: PAGE_H - 40,
     size: 29,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
-  page.drawText(`${opts.customerName || "Customer"}  •  ${displayDate(opts.serviceDate)}`, {
+  page.drawText(safePdfText(`${opts.customerName || "Customer"}  •  ${displayDate(opts.serviceDate)}`), {
     x: titleX,
     y: PAGE_H - 66,
     size: 16,
@@ -275,7 +275,7 @@ function drawChips(page: PDFPage, items: string[], x: number, top: number, width
       cy -= 32;
     }
     page.drawRectangle({ x: cx, y: cy - 24, width: chipW, height: 24, color: BRAND_SAGE, borderColor: BRAND_DARK_SAGE, borderWidth: 1 });
-    page.drawText(item, { x: cx + 14, y: cy - 17, size: 14, font: fonts.bold, color: BRAND_BLACK });
+  page.drawText(safePdfText(item), { x: cx + 14, y: cy - 17, size: 14, font: fonts.bold, color: BRAND_BLACK });
     cx += chipW + 8;
   });
   return top - cy + 32;
@@ -288,7 +288,7 @@ function drawSectionOnPage(page: PDFPage, title: string, lines: string[], x: num
   const height = headerH + pad * 2 + bodyH;
   page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 1.2 });
   page.drawRectangle({ x, y: top - headerH, width, height: headerH, color: BRAND_BLACK });
-  page.drawText(title.toUpperCase(), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
+  page.drawText(safePdfText(title.toUpperCase()), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
   drawBodyLines(page, lines, x + pad, top - headerH - pad, width - pad * 2, fonts, bodySize);
   return height;
 }
@@ -300,7 +300,7 @@ function drawChipSectionOnPage(page: PDFPage, title: string, items: string[], x:
   const height = headerH + pad * 2 + chipsH;
   page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 1.2 });
   page.drawRectangle({ x, y: top - headerH, width, height: headerH, color: BRAND_BLACK });
-  page.drawText(title.toUpperCase(), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
+  page.drawText(safePdfText(title.toUpperCase()), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
   drawChips(page, items, x + pad, top - headerH - pad, width - pad * 2, fonts);
   return height;
 }
@@ -350,7 +350,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
   cursor.y = pageInfo.y;
   cursor.pageNumber = pageInfo.pageNumber;
 
-  pageInfo.page.drawText(opts.isRodentExclusion ? "Entry Point Photos — Before & After" : "Property Images", {
+  pageInfo.page.drawText(opts.isRodentExclusion ? "Entry Point Photos - Before & After" : "Property Images", {
     x: MARGIN,
     y: cursor.y - 22,
     size: 24,
@@ -379,7 +379,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
       }
       cursor.page.drawRectangle({ x, y: y - cardH, width: cardW, height: cardH, color: WHITE, borderColor: BORDER, borderWidth: 1.2 });
       const label = labels[i] || `Entry Point #${i + 1}`;
-      cursor.page.drawText(label, { x: x + 12, y: y - 24, size: 17, font: fonts.bold, color: BRAND_BLACK });
+      cursor.page.drawText(safePdfText(label), { x: x + 12, y: y - 24, size: 17, font: fonts.bold, color: BRAND_BLACK });
       const imageTop = y - 42;
       const imageW = (cardW - 34) / 2;
       const imageH = 126;
