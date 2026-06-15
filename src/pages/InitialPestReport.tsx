@@ -1123,26 +1123,52 @@ const Report = () => {
     });
   };
 
+  const buildCurrentInitialPdf = async (mapOverride?: string | null) => {
+    return buildInitialPestReportPDF({
+      reportTitle: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
+      logoSrc: crestLogo,
+      customerName: editableCustomer || "Customer",
+      address: editableAddress || extractedAddress || address || "—",
+      serviceDate: editableServiceDate,
+      technicianName: editableTech || "—",
+      licenseNumber: editableLicenseNumber,
+      propertyType,
+      companyName,
+      targetPests: editableTargetPests,
+      productsUsed: editableProductsUsed,
+      equipment: editableEquipment,
+      serviceSummary: editableFindings[0] || "",
+      todaysFindings,
+      recommendationsHtml: editableRecommendations[0] || "",
+      expectations: editableExpectations[0] || "",
+      mapImage: mapOverride || renderedMapImage || customMapImage,
+      isRodentExclusion,
+      beforePhotos,
+      afterPhotos: propertyImages,
+      pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)),
+      customerKeyAreas,
+      customerKeyAreasNotes,
+      customerPreference,
+      customerPreferenceNotes,
+    });
+  };
+
   const exportToPDF = async () => {
     try {
       toast.info("Generating PDF...", { duration: 15000, id: "pdf-gen" });
 
       // Capture a fresh map render BEFORE entering PDF mode (which unmounts the canvas)
+      let freshMapImage: string | null = null;
       const exportFn = (window as any).exportMapAsImage;
       if (exportFn) {
         const freshRender = await exportFn();
-        if (freshRender) setRenderedMapImage(freshRender);
+        if (freshRender) {
+          freshMapImage = freshRender;
+          setRenderedMapImage(freshRender);
+        }
       }
 
-      setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 200));
-
-      const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-      const pdfBytes = await buildSimplePDF({ reportPages });
+      const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
 
       setPdfExportMode(false);
       toast.dismiss("pdf-gen");
