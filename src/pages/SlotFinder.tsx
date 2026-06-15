@@ -549,6 +549,15 @@ function FindMode({
             const recKey = (best.c.after_insert?.new_stop_window as string | null) ?? null;
             const recLabel = windowLabel(recKey)
               ?? fmtWindow(best.c.next_stop?.start_time, best.c.next_stop?.end_time);
+            const bestSnap = best.c.route_snapshot;
+            const bestAfter = best.c.after_insert;
+            const bestBeforeCount = recKey && bestSnap?.stops_by_window
+              ? (bestSnap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
+              : 0;
+            const bestIsCrowded = bestBeforeCount >= 4;
+            const BEST_DAILY_MAX_STOPS = 13;
+            const bestAfterTotal = bestAfter?.stops_excluding_tasks ?? 0;
+            const bestIsDayFull = bestAfterTotal >= BEST_DAILY_MAX_STOPS;
             return (
               <div className={`rounded-md p-3 border-2 ${tierBorder(best.c)} flex flex-wrap items-center gap-3`}>
                 <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
@@ -561,6 +570,18 @@ function FindMode({
                   {" · "}
                   <span className="font-semibold">{recLabel}</span>
                 </span>
+                {bestIsCrowded && (
+                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Risk — already {bestBeforeCount} stops in this window
+                  </Badge>
+                )}
+                {bestIsDayFull && (
+                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Risk — tech {bestAfterTotal > BEST_DAILY_MAX_STOPS ? "over" : "at"} daily max ({bestAfterTotal} stops)
+                  </Badge>
+                )}
                 <span className="ml-auto"><DetourBadge c={best.c} /></span>
               </div>
             );
@@ -744,21 +765,29 @@ function SlotCard({
             After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
           </span>
           {after.est_finish_min != null && after.est_route_hours != null ? (
-            <span className="text-muted-foreground">
-              Day spans <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
-              {"–"}
-              <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
-              {" "}({after.est_route_hours}h first stop → last stop, incl. gaps)
-              {snap.has_home
-                ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                : " (no home base on file)"}
-            </span>
+            (() => {
+              const LUNCH_MIN = 30;
+              const workedHrs = Math.max(0, after.est_route_hours - LUNCH_MIN / 60);
+              return (
+                <span className="text-muted-foreground">
+                  First stop <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
+                  {" → last stop "}
+                  <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
+                  {" · "}
+                  <span className="font-medium">~{workedHrs.toFixed(1)}h on the clock</span>
+                  {" (after 30-min lunch)"}
+                  {snap.has_home
+                    ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
+                    : " · no home base on file"}
+                </span>
+              );
+            })()
           ) : (
             <span className="text-muted-foreground">
-              ~{after.est_route_hours}h first stop → last stop
+              ~{Math.max(0, after.est_route_hours - 0.5).toFixed(1)}h on the clock (after 30-min lunch)
               {snap.has_home
                 ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                : " (no home base on file)"}
+                : " · no home base on file"}
             </span>
           )}
         </div>
