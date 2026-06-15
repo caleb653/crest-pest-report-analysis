@@ -2431,8 +2431,6 @@ Crest Pest Control
                         "Removed contaminated insulation from the attic and disposed of it per industry guidelines.",
                         "Vacuumed and sanitized the attic to remove rodent droppings and odors.",
                         "Blew in new TAP insulation to restore R-value and provide ongoing pest protection.",
-                        "Checked roofline, vents, weep holes, and utility penetrations for vulnerabilities.",
-                        "No structural alterations (drywall/stucco) were performed as part of this scope.",
                         "Advised customer to remove yard debris and trim vegetation away from the structure to reduce harborage.",
                       ].map((preset) => (
                         <button
