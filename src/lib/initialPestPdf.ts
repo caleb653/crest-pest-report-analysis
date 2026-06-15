@@ -231,7 +231,7 @@ function drawImageContain(page: PDFPage, image: PDFImage, x: number, top: number
 }
 
 function drawImageCover(page: PDFPage, image: PDFImage, x: number, top: number, width: number, height: number) {
-  const scale = Math.max(width / image.width, height / image.height);
+  const scale = Math.min(width / image.width, height / image.height);
   const drawW = image.width * scale;
   const drawH = image.height * scale;
   page.drawImage(image, { x: x + (width - drawW) / 2, y: top - height + (height - drawH) / 2, width: drawW, height: drawH });
