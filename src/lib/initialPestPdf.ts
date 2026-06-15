@@ -444,8 +444,8 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
     `Technician: ${opts.technicianName || "-"}${opts.licenseNumber ? ` (${opts.licenseNumber})` : ""}`,
     `Property Type: ${opts.propertyType || "Residential"}${opts.companyName ? ` - ${opts.companyName}` : ""}`,
   ];
-  drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 16);
-  cursor.y -= 124;
+  const detailsH = drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 16);
+  cursor.y -= detailsH + 14;
 
   const mapW = 274;
   const mapH = 364;
@@ -466,14 +466,16 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
   rightY -= drawChipSectionOnPage(cursor.page, "Target Pests", opts.targetPests, rightX, rightY, rightW, fonts) + 12;
   rightY -= drawChipSectionOnPage(cursor.page, opts.isRodentExclusion ? "Materials Used" : "Equipment Used", opts.equipment, rightX, rightY, rightW, fonts) + 12;
   const summaryLines = toLines(opts.serviceSummary);
-  const availableSummaryHeight = Math.max(120, rightY - MARGIN);
-  const summaryCapacity = Math.max(3, Math.floor((availableSummaryHeight - 62) / 23));
-  const firstSummary = summaryLines.slice(0, summaryCapacity);
-  rightY -= drawSectionOnPage(cursor.page, "Services Completed", firstSummary, rightX, rightY, rightW, fonts, 17);
+  const availableSummaryHeight = rightY - MARGIN;
+  const summaryCapacity = availableSummaryHeight >= 160 ? Math.max(1, Math.floor((availableSummaryHeight - 70) / 27)) : 0;
+  const firstSummary = summaryCapacity > 0 ? summaryLines.slice(0, summaryCapacity) : [];
+  if (firstSummary.length) {
+    rightY -= drawSectionOnPage(cursor.page, "Services Completed", firstSummary, rightX, rightY, rightW, fonts, 17);
+  }
   cursor.y = Math.min(contentTop - mapH, rightY) - 14;
 
   const remainingSummary = summaryLines.slice(firstSummary.length);
-  if (remainingSummary.length) addFlowSection(doc, cursor, fonts, opts, "Services Completed Continued", remainingSummary, logo, 17);
+  if (remainingSummary.length) addFlowSection(doc, cursor, fonts, opts, firstSummary.length ? "Services Completed Continued" : "Services Completed", remainingSummary, logo, 17);
   addFlowSection(doc, cursor, fonts, opts, "Today's Findings", toLines(opts.todaysFindings), logo, 17);
   addFlowChipSection(doc, cursor, fonts, opts, "Products Used", opts.productsUsed, logo);
 
