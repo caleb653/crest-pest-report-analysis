@@ -520,105 +520,124 @@ function ConditionRowEditor({
   }
 
   return (
-    <div className={`p-3 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end ${needsIdentifyPhoto ? "bg-amber-50/40" : ""}`}>
+    <div className={`p-3 space-y-3 ${needsIdentifyPhoto ? "bg-amber-50/40" : ""}`}>
       {needsIdentifyPhoto && (
-        <div className="sm:col-span-6 -mb-1 flex items-center gap-2 text-[11px] text-amber-900 bg-amber-100 border border-amber-300 rounded px-2 py-1">
+        <div className="flex items-center gap-2 text-[11px] text-amber-900 bg-amber-100 border border-amber-300 rounded px-2 py-1">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           <span><b>Photo required.</b> Upload at least one photo of the condition before this entry is considered complete.</span>
           <Badge variant="outline" className="ml-auto border-amber-400 text-amber-900 bg-amber-50 text-[10px]">Required</Badge>
         </div>
       )}
-      <div className="sm:col-span-1">
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Area</Label>
-        <Input value={local.area} onChange={e => set("area", e.target.value)} onBlur={flush}
-          placeholder="Kitchen" className="h-9 text-sm" />
-      </div>
-      <div className="sm:col-span-2">
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Condition / Detail</Label>
-        <Input value={local.condition} onChange={e => set("condition", e.target.value)} onBlur={flush}
-          placeholder="Trash and clutter noted" className="h-9 text-sm" />
-        <Textarea value={local.detail} onChange={e => set("detail", e.target.value)} onBlur={flush}
-          placeholder="More detail (optional)" rows={1} className="mt-1 text-xs" />
-      </div>
-      <div>
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Action</Label>
-        <Select value={local.action} onValueChange={v => { set("action", v); onChange({ ...local, action: v }); }}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {ACTION_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Severity / Resp.</Label>
-        <Select value={local.severity} onValueChange={(v: any) => { set("severity", v); onChange({ ...local, severity: v }); }}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Low">Low</SelectItem>
-            <SelectItem value="Medium">Medium</SelectItem>
-            <SelectItem value="High">High</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={local.responsibility} onValueChange={(v: any) => { set("responsibility", v); onChange({ ...local, responsibility: v }); }}>
-          <SelectTrigger className="h-9 text-sm mt-1"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Customer">Customer</SelectItem>
-            <SelectItem value="Crest">Crest</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1">
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Status</Label>
-        <Select value={local.status} onValueChange={(v: any) => tryChangeStatus(v)}>
-          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Open">Open</SelectItem>
-            <SelectItem value="Ongoing">Ongoing</SelectItem>
-            <SelectItem value="Closed">
-              Closed {resPhotos.length === 0 ? "(needs resolution photo)" : ""}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex gap-1">
-          <Input value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
-            placeholder="Comments" className="h-9 text-xs flex-1" />
-          <Button size="icon" variant="ghost" onClick={onRemove}
-            className="h-9 w-9 text-destructive shrink-0">
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </div>
 
-      {/* ── Identifying photos ── */}
-      <div className="sm:col-span-6 rounded-md border border-dashed border-border p-2 space-y-1.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <p className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1">
-            <Camera className="w-3 h-3" /> Condition Photos
-            {needsIdentifyPhoto && (
-              <Badge variant="outline" className="ml-1 text-[9px] border-amber-400 text-amber-900 bg-amber-50">Required</Badge>
-            )}
-          </p>
-          <label className="cursor-pointer">
-            <input type="file" accept="image/*" multiple className="hidden"
-              onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
-            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-muted">
-              <Upload className="w-3 h-3" /> {uploading === "id" ? "Uploading…" : "Add Photo"}
-            </span>
-          </label>
-        </div>
-        {photos.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {photos.map((u, i) => (
-              <div key={i} className="relative w-16 h-16 rounded border border-border overflow-hidden group">
-                <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => removePhoto("photos", i)}
-                  className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <X className="w-2.5 h-2.5" />
-                </button>
-              </div>
-            ))}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* ── Photos as the hero (left, large) ── */}
+        <div className="lg:col-span-7 rounded-md border-2 border-dashed border-border p-2 space-y-2 bg-muted/20">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[11px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" /> Condition Photos
+              {needsIdentifyPhoto && (
+                <Badge variant="outline" className="ml-1 text-[9px] border-amber-400 text-amber-900 bg-amber-50">Required</Badge>
+              )}
+            </p>
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
+              <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-[12px] hover:bg-muted">
+                <Upload className="w-3.5 h-3.5" /> {uploading === "id" ? "Uploading…" : "Add Photo"}
+              </span>
+            </label>
           </div>
-        )}
+          {photos.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {photos.map((u, i) => (
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer"
+                   className="relative aspect-square rounded-md border border-border overflow-hidden group block bg-background">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  <button type="button"
+                    onClick={(e) => { e.preventDefault(); removePhoto("photos", i); }}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 shadow">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <label className="cursor-pointer flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed border-border rounded-md py-10 hover:bg-muted/50">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
+              <Camera className="w-8 h-8 mb-1.5 opacity-60" />
+              <p className="text-sm font-medium">Add condition photos</p>
+              <p className="text-[11px]">Photos are the primary record of this condition.</p>
+            </label>
+          )}
+        </div>
+
+        {/* ── Supporting fields (right, compact) ── */}
+        <div className="lg:col-span-5 grid grid-cols-2 gap-2 content-start">
+          <div className="col-span-2">
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Condition / Detail</Label>
+            <Input value={local.condition} onChange={e => set("condition", e.target.value)} onBlur={flush}
+              placeholder="Trash and clutter noted" className="h-9 text-sm" />
+            <Textarea value={local.detail} onChange={e => set("detail", e.target.value)} onBlur={flush}
+              placeholder="More detail (optional)" rows={2} className="mt-1 text-xs" />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Area</Label>
+            <Input value={local.area} onChange={e => set("area", e.target.value)} onBlur={flush}
+              placeholder="Kitchen" className="h-9 text-sm" />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Action</Label>
+            <Select value={local.action} onValueChange={v => { set("action", v); onChange({ ...local, action: v }); }}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ACTION_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Severity</Label>
+            <Select value={local.severity} onValueChange={(v: any) => { set("severity", v); onChange({ ...local, severity: v }); }}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Low">Low</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Responsibility</Label>
+            <Select value={local.responsibility} onValueChange={(v: any) => { set("responsibility", v); onChange({ ...local, responsibility: v }); }}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Customer">Customer</SelectItem>
+                <SelectItem value="Crest">Crest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Status</Label>
+            <Select value={local.status} onValueChange={(v: any) => tryChangeStatus(v)}>
+              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Open">Open</SelectItem>
+                <SelectItem value="Ongoing">Ongoing</SelectItem>
+                <SelectItem value="Closed">
+                  Closed {resPhotos.length === 0 ? "(needs resolution photo)" : ""}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-2 flex gap-1">
+            <Input value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
+              placeholder="Comments" className="h-9 text-xs flex-1" />
+            <Button size="icon" variant="ghost" onClick={onRemove}
+              className="h-9 w-9 text-destructive shrink-0">
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* ── Resolution (only shown when working toward Closed) ── */}
