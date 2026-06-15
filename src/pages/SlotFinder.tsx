@@ -528,61 +528,67 @@ function FindMode({
             <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
           </p>
           {(() => {
-            // Find the single best slot across every returned day. Tie-break:
-            // smallest detour → fewer extra miles → earliest (sort order).
-            type Best = { date: string; weekday: string; idx: number; c: SlotCandidate };
-            let best: Best | null = null;
+            // Rank every slot across every day by smallest detour minutes,
+            // then fewest extra miles, and surface the top 2 at the top.
+            type Ranked = { date: string; weekday: string; idx: number; c: SlotCandidate };
+            const all: Ranked[] = [];
             byDay.forEach((day) => {
               day.slots.forEach((c, idx) => {
-                if (!best) { best = { date: day.date, weekday: day.weekday, idx, c }; return; }
-                const a = detourMinutes(c);
-                const b = detourMinutes(best.c);
-                if (a < b) best = { date: day.date, weekday: day.weekday, idx, c };
-                else if (a === b) {
-                  const am = parseFloat(detourMiles(c));
-                  const bm = parseFloat(detourMiles(best.c));
-                  if (am < bm) best = { date: day.date, weekday: day.weekday, idx, c };
-                }
+                all.push({ date: day.date, weekday: day.weekday, idx, c });
               });
             });
-            if (!best) return null;
-            const recKey = (best.c.after_insert?.new_stop_window as string | null) ?? null;
-            const recLabel = windowLabel(recKey)
-              ?? fmtWindow(best.c.next_stop?.start_time, best.c.next_stop?.end_time);
-            const bestSnap = best.c.route_snapshot;
-            const bestAfter = best.c.after_insert;
-            const bestBeforeCount = recKey && bestSnap?.stops_by_window
-              ? (bestSnap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
-              : 0;
-            const bestIsCrowded = bestBeforeCount >= 4;
-            const BEST_DAILY_MAX_STOPS = 13;
-            const bestAfterTotal = bestAfter?.stops_excluding_tasks ?? 0;
-            const bestIsDayFull = bestAfterTotal >= BEST_DAILY_MAX_STOPS;
+            all.sort((a, b) => {
+              const am = detourMinutes(a.c);
+              const bm = detourMinutes(b.c);
+              if (am !== bm) return am - bm;
+              return parseFloat(detourMiles(a.c)) - parseFloat(detourMiles(b.c));
+            });
+            const top = all.slice(0, 2);
+            if (top.length === 0) return null;
+            const DAILY_MAX_STOPS = 13;
             return (
-              <div className={`rounded-md p-3 border-2 ${tierBorder(best.c)} flex flex-wrap items-center gap-3`}>
-                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
-                  ★ Best Fit
-                </Badge>
-                <span className="text-sm">
-                  <span className="font-semibold">{best.c.tech_name}</span>
-                  {" · "}
-                  <span className="font-semibold">{best.weekday}, {best.date}</span>
-                  {" · "}
-                  <span className="font-semibold">{recLabel}</span>
-                </span>
-                {bestIsCrowded && (
-                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Risk — already {bestBeforeCount} stops in this window
-                  </Badge>
-                )}
-                {bestIsDayFull && (
-                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Risk — tech {bestAfterTotal > BEST_DAILY_MAX_STOPS ? "over" : "at"} daily max ({bestAfterTotal} stops)
-                  </Badge>
-                )}
-                <span className="ml-auto"><DetourBadge c={best.c} /></span>
+              <div className="space-y-2">
+                {top.map((r, i) => {
+                  const recKey = (r.c.after_insert?.new_stop_window as string | null) ?? null;
+                  const recLabel = windowLabel(recKey)
+                    ?? fmtWindow(r.c.next_stop?.start_time, r.c.next_stop?.end_time);
+                  const snap = r.c.route_snapshot;
+                  const after = r.c.after_insert;
+                  const beforeCount = recKey && snap?.stops_by_window
+                    ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
+                    : 0;
+                  const isCrowded = beforeCount >= 4;
+                  const afterTotal = after?.stops_excluding_tasks ?? 0;
+                  const isDayFull = afterTotal >= DAILY_MAX_STOPS;
+                  const isPrimary = i === 0;
+                  return (
+                    <div key={`${r.date}#${r.idx}`} className={`rounded-md p-3 border-2 ${tierBorder(r.c)} flex flex-wrap items-center gap-3`}>
+                      <Badge className={`${isPrimary ? "bg-emerald-600 hover:bg-emerald-600" : "bg-emerald-500/80 hover:bg-emerald-500/80"} text-white font-bold uppercase tracking-wide`}>
+                        {isPrimary ? "★ Best Fit" : "★ 2nd Best"}
+                      </Badge>
+                      <span className="text-sm">
+                        <span className="font-semibold">{r.c.tech_name}</span>
+                        {" · "}
+                        <span className="font-semibold">{r.weekday}, {r.date}</span>
+                        {" · "}
+                        <span className="font-semibold">{recLabel}</span>
+                      </span>
+                      {isCrowded && (
+                        <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Risk — already {beforeCount} stops in this window
+                        </Badge>
+                      )}
+                      {isDayFull && (
+                        <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
+                        </Badge>
+                      )}
+                      <span className="ml-auto"><DetourBadge c={r.c} /></span>
+                    </div>
+                  );
+                })}
               </div>
             );
           })()}
