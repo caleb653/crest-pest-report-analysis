@@ -681,6 +681,60 @@ async function captureElement(el: HTMLElement): Promise<string> {
             color: ${BRAND.black} !important;
           }
         `;
+        if (isPestReport) {
+          // Initial Pest Report — larger, prettier PDF typography.
+          // Overrides above 12-13px defaults so the downloaded PDF
+          // doesn't feel barren. Scoped to the pest-report wrapper only.
+          style.textContent += `
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-header,
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-header * {
+              font-size: 16px !important;
+              letter-spacing: 0.06em !important;
+              min-height: 34px !important;
+              padding-top: 8px !important;
+              padding-bottom: 7px !important;
+              line-height: 1.15 !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted,
+            .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted *,
+            .pdf-export-root[data-report-type="initial-pest"] .pdf-services-content,
+            .pdf-export-root[data-report-type="initial-pest"] .pdf-services-content * {
+              font-size: 19px !important;
+              line-height: 1.55 !important;
+              font-weight: 500 !important;
+              color: ${BRAND.black} !important;
+              letter-spacing: 0.005em !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted b,
+            .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted strong {
+              font-size: 20px !important;
+              font-weight: 800 !important;
+              color: #111111 !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted {
+              padding: 12px 16px 14px 16px !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-content,
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-content * {
+              font-size: 15px !important;
+              line-height: 1.5 !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-content li {
+              margin-bottom: 4px !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-tag,
+            .pdf-export-root[data-report-type="initial-pest"] .print-tag * {
+              font-size: 15px !important;
+              padding: 5px 14px !important;
+              border-radius: 999px !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-section {
+              border-radius: 10px !important;
+              border: 1px solid ${BRAND.border} !important;
+              margin-bottom: 10px !important;
+            }
+          `;
+        }
         clonedDoc.head.appendChild(style);
 
         if (!captureKey) return;
