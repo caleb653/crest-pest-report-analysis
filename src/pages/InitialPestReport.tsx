@@ -2478,7 +2478,7 @@ Crest Pest Control
                 <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">
                   Materials Used
                 </h2>
-                <div className="flex flex-wrap gap-2 p-2">
+                <div className="flex flex-wrap gap-2 p-2 no-print">
                   {[
                     "Steel Wool",
                     "Chicken Wire",
@@ -2516,6 +2516,22 @@ Crest Pest Control
                       </button>
                     );
                   })}
+                </div>
+                {/* Print-only rendering of selected materials as non-button
+                    chips — html2canvas hides <button> in the PDF export. */}
+                <div className="hidden print-content-formatted print-tags flex flex-wrap gap-2 p-3">
+                  {editableEquipment.length === 0 ? (
+                    <span className="text-foreground">—</span>
+                  ) : (
+                    editableEquipment.map((mat) => (
+                      <span
+                        key={`print-${mat}`}
+                        className="print-tag inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-primary text-primary-foreground"
+                      >
+                        {mat}
+                      </span>
+                    ))
+                  )}
                 </div>
                 {editableEquipment.length === 0 && (
                   <p className="text-xs text-muted-foreground p-2 no-print">
