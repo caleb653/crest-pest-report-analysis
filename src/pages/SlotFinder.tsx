@@ -549,6 +549,15 @@ function FindMode({
             const recKey = (best.c.after_insert?.new_stop_window as string | null) ?? null;
             const recLabel = windowLabel(recKey)
               ?? fmtWindow(best.c.next_stop?.start_time, best.c.next_stop?.end_time);
+            const bestSnap = best.c.route_snapshot;
+            const bestAfter = best.c.after_insert;
+            const bestBeforeCount = recKey && bestSnap?.stops_by_window
+              ? (bestSnap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
+              : 0;
+            const bestIsCrowded = bestBeforeCount >= 4;
+            const BEST_DAILY_MAX_STOPS = 13;
+            const bestAfterTotal = bestAfter?.stops_excluding_tasks ?? 0;
+            const bestIsDayFull = bestAfterTotal >= BEST_DAILY_MAX_STOPS;
             return (
               <div className={`rounded-md p-3 border-2 ${tierBorder(best.c)} flex flex-wrap items-center gap-3`}>
                 <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
@@ -561,6 +570,18 @@ function FindMode({
                   {" · "}
                   <span className="font-semibold">{recLabel}</span>
                 </span>
+                {bestIsCrowded && (
+                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Risk — already {bestBeforeCount} stops in this window
+                  </Badge>
+                )}
+                {bestIsDayFull && (
+                  <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Risk — tech {bestAfterTotal > BEST_DAILY_MAX_STOPS ? "over" : "at"} daily max ({bestAfterTotal} stops)
+                  </Badge>
+                )}
                 <span className="ml-auto"><DetourBadge c={best.c} /></span>
               </div>
             );
