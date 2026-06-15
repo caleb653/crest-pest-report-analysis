@@ -41,7 +41,7 @@ import CustomerPicker from "@/components/CustomerPicker";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { buildInitialPestReportPDF } from "@/lib/initialPestPdf";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SALES_REPORT_DISCLAIMER_HTML } from "@/lib/rodentGuarantee";
@@ -1123,26 +1123,52 @@ const Report = () => {
     });
   };
 
+  const buildCurrentInitialPdf = async (mapOverride?: string | null) => {
+    return buildInitialPestReportPDF({
+      reportTitle: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
+      logoSrc: crestLogo,
+      customerName: editableCustomer || "Customer",
+      address: editableAddress || extractedAddress || address || "—",
+      serviceDate: editableServiceDate,
+      technicianName: editableTech || "—",
+      licenseNumber: editableLicenseNumber,
+      propertyType,
+      companyName,
+      targetPests: editableTargetPests,
+      productsUsed: editableProductsUsed,
+      equipment: editableEquipment,
+      serviceSummary: editableFindings[0] || "",
+      todaysFindings,
+      recommendationsHtml: editableRecommendations[0] || "",
+      expectations: editableExpectations[0] || "",
+      mapImage: mapOverride || renderedMapImage || customMapImage,
+      isRodentExclusion,
+      beforePhotos,
+      afterPhotos: propertyImages,
+      pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)),
+      customerKeyAreas,
+      customerKeyAreasNotes,
+      customerPreference,
+      customerPreferenceNotes,
+    });
+  };
+
   const exportToPDF = async () => {
     try {
       toast.info("Generating PDF...", { duration: 15000, id: "pdf-gen" });
 
       // Capture a fresh map render BEFORE entering PDF mode (which unmounts the canvas)
+      let freshMapImage: string | null = null;
       const exportFn = (window as any).exportMapAsImage;
       if (exportFn) {
         const freshRender = await exportFn();
-        if (freshRender) setRenderedMapImage(freshRender);
+        if (freshRender) {
+          freshMapImage = freshRender;
+          setRenderedMapImage(freshRender);
+        }
       }
 
-      setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 200));
-
-      const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-      const pdfBytes = await buildSimplePDF({ reportPages });
+      const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
 
       setPdfExportMode(false);
       toast.dismiss("pdf-gen");
@@ -1178,15 +1204,16 @@ const Report = () => {
     }
     try {
       toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      let freshMapImage: string | null = null;
       const exportFn = (window as any).exportMapAsImage;
-      if (exportFn) { const fresh = await exportFn(); if (fresh) setRenderedMapImage(fresh); }
-      setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 200));
-      const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-      const pdfBytes = await buildSimplePDF({ reportPages });
+      if (exportFn) {
+        const fresh = await exportFn();
+        if (fresh) {
+          freshMapImage = fresh;
+          setRenderedMapImage(fresh);
+        }
+      }
+      const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
       setPdfExportMode(false);
       let bin = "";
       const chunk = 0x8000;
@@ -1330,21 +1357,17 @@ Crest Pest Control
       if (includePdf) {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
+          let freshMapImage: string | null = null;
           const emailExportFn = (window as any).exportMapAsImage;
           if (emailExportFn) {
             const freshRender = await emailExportFn();
-            if (freshRender) setRenderedMapImage(freshRender);
+            if (freshRender) {
+              freshMapImage = freshRender;
+              setRenderedMapImage(freshRender);
+            }
           }
 
-          setPdfExportMode(true);
-          await new Promise((r) => setTimeout(r, 200));
-
-          const pageEls = Array.from(
-            document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-          ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-          const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-          const pdfBytes = await buildSimplePDF({ reportPages });
+          const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
 
           setPdfExportMode(false);
           const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
