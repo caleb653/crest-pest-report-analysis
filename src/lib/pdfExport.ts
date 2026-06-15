@@ -694,6 +694,9 @@ async function captureElement(el: HTMLElement): Promise<string> {
               padding-top: 8px !important;
               padding-bottom: 7px !important;
               line-height: 1.15 !important;
+              color: #ffffff !important;
+              font-weight: 800 !important;
+              text-transform: uppercase !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted,
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted *,
