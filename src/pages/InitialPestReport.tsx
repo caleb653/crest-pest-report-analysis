@@ -41,7 +41,7 @@ import CustomerPicker from "@/components/CustomerPicker";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { buildInitialPestReportPDF } from "@/lib/initialPestPdf";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SALES_REPORT_DISCLAIMER_HTML } from "@/lib/rodentGuarantee";
