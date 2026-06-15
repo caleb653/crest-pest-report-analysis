@@ -43,8 +43,17 @@ const BORDER = rgb(0.79, 0.84, 0.80);
 type Fonts = { regular: PDFFont; bold: PDFFont };
 type Cursor = { page: PDFPage; y: number; pageNumber: number };
 
+function safePdfText(value: string) {
+  return value
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/[^\x20-\x7E•]/g, "");
+}
+
 function cleanText(value?: string) {
-  return (value || "")
+  return safePdfText(value || "")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
     .replace(/<\/li>/gi, "\n")
@@ -75,7 +84,7 @@ function displayDate(value: string) {
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = safePdfText(text).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";
 
