@@ -765,21 +765,29 @@ function SlotCard({
             After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
           </span>
           {after.est_finish_min != null && after.est_route_hours != null ? (
-            <span className="text-muted-foreground">
-              Day spans <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
-              {"–"}
-              <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
-              {" "}({after.est_route_hours}h first stop → last stop, incl. gaps)
-              {snap.has_home
-                ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                : " (no home base on file)"}
-            </span>
+            (() => {
+              const LUNCH_MIN = 30;
+              const workedHrs = Math.max(0, after.est_route_hours - LUNCH_MIN / 60);
+              return (
+                <span className="text-muted-foreground">
+                  First stop <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
+                  {" → last stop "}
+                  <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
+                  {" · "}
+                  <span className="font-medium">~{workedHrs.toFixed(1)}h on the clock</span>
+                  {" (after 30-min lunch)"}
+                  {snap.has_home
+                    ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
+                    : " · no home base on file"}
+                </span>
+              );
+            })()
           ) : (
             <span className="text-muted-foreground">
-              ~{after.est_route_hours}h first stop → last stop
+              ~{Math.max(0, after.est_route_hours - 0.5).toFixed(1)}h on the clock (after 30-min lunch)
               {snap.has_home
                 ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                : " (no home base on file)"}
+                : " · no home base on file"}
             </span>
           )}
         </div>
