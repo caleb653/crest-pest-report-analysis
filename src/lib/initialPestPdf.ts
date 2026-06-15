@@ -159,18 +159,23 @@ function drawHeader(page: PDFPage, fonts: Fonts, opts: InitialPestPdfOptions, pa
     page.drawImage(logo, { x: MARGIN, y: PAGE_H - 58, width: 36 * ratio, height: 36 });
   }
 
-  const titleX = logo ? 84 : MARGIN;
-  page.drawText(safePdfText(opts.reportTitle || "Initial Pest Report"), {
-    x: titleX,
+  const titleText = safePdfText(opts.reportTitle || "Initial Pest Report");
+  const subtitleText = safePdfText(`${opts.customerName || "Customer"}  •  ${displayDate(opts.serviceDate)}`);
+  const titleSize = 18;
+  const subtitleSize = 10;
+  const titleW = fonts.bold.widthOfTextAtSize(titleText, titleSize);
+  const subtitleW = fonts.bold.widthOfTextAtSize(subtitleText, subtitleSize);
+  page.drawText(titleText, {
+    x: (PAGE_W - titleW) / 2,
     y: PAGE_H - 30,
-    size: 18,
+    size: titleSize,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
-  page.drawText(safePdfText(`${opts.customerName || "Customer"}  •  ${displayDate(opts.serviceDate)}`), {
-    x: titleX,
+  page.drawText(subtitleText, {
+    x: (PAGE_W - subtitleW) / 2,
     y: PAGE_H - 48,
-    size: 10,
+    size: subtitleSize,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
