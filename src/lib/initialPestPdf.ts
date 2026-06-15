@@ -133,19 +133,19 @@ function estimateTextHeight(lines: string[], width: number, fonts: Fonts, size: 
   }, 0);
 }
 
-function drawBodyLines(page: PDFPage, lines: string[], x: number, top: number, width: number, fonts: Fonts, size = 17) {
-  const lineHeight = size + 6;
+function drawBodyLines(page: PDFPage, lines: string[], x: number, top: number, width: number, fonts: Fonts, size = 11) {
+  const lineHeight = size + 3;
   let y = top;
   lines.forEach((raw) => {
     const bullet = /^([•\-–])\s+/.test(raw);
     const text = raw.replace(/^([•\-–])\s+/, "");
     if (bullet) {
-      page.drawText("•", { x, y: y - size, size: size + 2, font: fonts.bold, color: BRAND_BLACK });
-      y -= drawWrappedLine(page, text, x + 22, y, width - 22, fonts.regular, size, lineHeight);
+      page.drawText("•", { x, y: y - size, size: size + 1, font: fonts.bold, color: BRAND_BLACK });
+      y -= drawWrappedLine(page, text, x + 14, y, width - 14, fonts.regular, size, lineHeight);
     } else {
       y -= drawWrappedLine(page, text, x, y, width, fonts.regular, size, lineHeight);
     }
-    y -= 4;
+    y -= 2;
   });
   return top - y;
 }
@@ -247,60 +247,60 @@ function drawImageCover(page: PDFPage, image: PDFImage, x: number, top: number, 
 }
 
 function estimateChipsHeight(items: string[], width: number, fonts: Fonts) {
-  if (!items.length) return 28;
+  if (!items.length) return 18;
   let x = 0;
   let rows = 1;
   items.forEach((item) => {
-    const chipW = Math.min(width, fonts.bold.widthOfTextAtSize(item, 14) + 30);
+    const chipW = Math.min(width, fonts.bold.widthOfTextAtSize(item, 9) + 18);
     if (x && x + chipW > width) {
       rows += 1;
       x = 0;
     }
-    x += chipW + 8;
+    x += chipW + 5;
   });
-  return rows * 32;
+  return rows * 20;
 }
 
 function drawChips(page: PDFPage, items: string[], x: number, top: number, width: number, fonts: Fonts) {
   if (!items.length) {
-    page.drawText("-", { x, y: top - 18, size: 17, font: fonts.regular, color: BRAND_BLACK });
-    return 28;
+    page.drawText("-", { x, y: top - 12, size: 11, font: fonts.regular, color: BRAND_BLACK });
+    return 18;
   }
   let cx = x;
   let cy = top;
   items.forEach((item) => {
-    const chipW = Math.min(width, fonts.bold.widthOfTextAtSize(item, 14) + 30);
+    const chipW = Math.min(width, fonts.bold.widthOfTextAtSize(item, 9) + 18);
     if (cx > x && cx + chipW > x + width) {
       cx = x;
-      cy -= 32;
+      cy -= 20;
     }
-    page.drawRectangle({ x: cx, y: cy - 24, width: chipW, height: 24, color: BRAND_SAGE, borderColor: BRAND_DARK_SAGE, borderWidth: 1 });
-  page.drawText(safePdfText(item), { x: cx + 14, y: cy - 17, size: 14, font: fonts.bold, color: BRAND_BLACK });
-    cx += chipW + 8;
+    page.drawRectangle({ x: cx, y: cy - 16, width: chipW, height: 16, color: BRAND_SAGE, borderColor: BRAND_DARK_SAGE, borderWidth: 0.8 });
+    page.drawText(safePdfText(item), { x: cx + 9, y: cy - 11, size: 9, font: fonts.bold, color: BRAND_BLACK });
+    cx += chipW + 5;
   });
-  return top - cy + 32;
+  return top - cy + 20;
 }
 
-function drawSectionOnPage(page: PDFPage, title: string, lines: string[], x: number, top: number, width: number, fonts: Fonts, bodySize = 17) {
-  const headerH = 32;
-  const pad = 14;
-  const bodyH = estimateTextHeight(lines, width - pad * 2, fonts, bodySize, bodySize + 6);
+function drawSectionOnPage(page: PDFPage, title: string, lines: string[], x: number, top: number, width: number, fonts: Fonts, bodySize = 11) {
+  const headerH = 20;
+  const pad = 8;
+  const bodyH = estimateTextHeight(lines, width - pad * 2, fonts, bodySize, bodySize + 3);
   const height = headerH + pad * 2 + bodyH;
-  page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 1.2 });
+  page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 0.8 });
   page.drawRectangle({ x, y: top - headerH, width, height: headerH, color: BRAND_BLACK });
-  page.drawText(safePdfText(title.toUpperCase()), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
+  page.drawText(safePdfText(title.toUpperCase()), { x: x + 9, y: top - 14, size: 11, font: fonts.bold, color: WHITE });
   drawBodyLines(page, lines, x + pad, top - headerH - pad, width - pad * 2, fonts, bodySize);
   return height;
 }
 
 function drawChipSectionOnPage(page: PDFPage, title: string, items: string[], x: number, top: number, width: number, fonts: Fonts) {
-  const headerH = 32;
-  const pad = 14;
+  const headerH = 20;
+  const pad = 8;
   const chipsH = estimateChipsHeight(items, width - pad * 2, fonts);
   const height = headerH + pad * 2 + chipsH;
-  page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 1.2 });
+  page.drawRectangle({ x, y: top - height, width, height, color: WHITE, borderColor: BORDER, borderWidth: 0.8 });
   page.drawRectangle({ x, y: top - headerH, width, height: headerH, color: BRAND_BLACK });
-  page.drawText(safePdfText(title.toUpperCase()), { x: x + 14, y: top - 22, size: 17, font: fonts.bold, color: WHITE });
+  page.drawText(safePdfText(title.toUpperCase()), { x: x + 9, y: top - 14, size: 11, font: fonts.bold, color: WHITE });
   drawChips(page, items, x + pad, top - headerH - pad, width - pad * 2, fonts);
   return height;
 }
@@ -308,12 +308,12 @@ function drawChipSectionOnPage(page: PDFPage, title: string, items: string[], x:
 function addPage(doc: PDFDocument, fonts: Fonts, opts: InitialPestPdfOptions, pageNumber: number, logo?: PDFImage | null): Cursor {
   const page = doc.addPage([PAGE_W, PAGE_H]);
   drawHeader(page, fonts, opts, pageNumber, logo);
-  return { page, y: PAGE_H - 116, pageNumber };
+  return { page, y: PAGE_H - 78, pageNumber };
 }
 
-function addFlowSection(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts: InitialPestPdfOptions, title: string, lines: string[], logo?: PDFImage | null, bodySize = 17) {
+function addFlowSection(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts: InitialPestPdfOptions, title: string, lines: string[], logo?: PDFImage | null, bodySize = 11) {
   const width = PAGE_W - MARGIN * 2;
-  const estimated = 32 + 28 + estimateTextHeight(lines, width - 28, fonts, bodySize, bodySize + 6);
+  const estimated = 20 + 16 + estimateTextHeight(lines, width - 16, fonts, bodySize, bodySize + 3);
   if (cursor.y - estimated < MARGIN) {
     const next = addPage(doc, fonts, opts, cursor.pageNumber + 1, logo);
     cursor.page = next.page;
@@ -321,12 +321,12 @@ function addFlowSection(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts: In
     cursor.pageNumber = next.pageNumber;
   }
   const used = drawSectionOnPage(cursor.page, title, lines, MARGIN, cursor.y, width, fonts, bodySize);
-  cursor.y -= used + 14;
+  cursor.y -= used + 8;
 }
 
 function addFlowChipSection(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts: InitialPestPdfOptions, title: string, items: string[], logo?: PDFImage | null) {
   const width = PAGE_W - MARGIN * 2;
-  const estimated = 32 + 28 + estimateChipsHeight(items, width - 28, fonts);
+  const estimated = 20 + 16 + estimateChipsHeight(items, width - 16, fonts);
   if (cursor.y - estimated < MARGIN) {
     const next = addPage(doc, fonts, opts, cursor.pageNumber + 1, logo);
     cursor.page = next.page;
@@ -334,7 +334,7 @@ function addFlowChipSection(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts
     cursor.pageNumber = next.pageNumber;
   }
   const used = drawChipSectionOnPage(cursor.page, title, items, MARGIN, cursor.y, width, fonts);
-  cursor.y -= used + 14;
+  cursor.y -= used + 8;
 }
 
 async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, opts: InitialPestPdfOptions, logo?: PDFImage | null) {
