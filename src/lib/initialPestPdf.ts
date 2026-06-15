@@ -151,33 +151,33 @@ function drawBodyLines(page: PDFPage, lines: string[], x: number, top: number, w
 }
 
 function drawHeader(page: PDFPage, fonts: Fonts, opts: InitialPestPdfOptions, pageNumber: number, logo?: PDFImage | null) {
-  drawTopRect(page, 0, PAGE_H, PAGE_W, 92, BRAND_SAGE);
-  page.drawRectangle({ x: 0, y: PAGE_H - 94, width: PAGE_W, height: 2, color: BRAND_DARK_SAGE });
+  drawTopRect(page, 0, PAGE_H, PAGE_W, 64, BRAND_SAGE);
+  page.drawRectangle({ x: 0, y: PAGE_H - 65, width: PAGE_W, height: 1.5, color: BRAND_DARK_SAGE });
 
   if (logo) {
     const ratio = logo.width / logo.height;
-    page.drawImage(logo, { x: MARGIN, y: PAGE_H - 76, width: 54 * ratio, height: 54 });
+    page.drawImage(logo, { x: MARGIN, y: PAGE_H - 58, width: 36 * ratio, height: 36 });
   }
 
-  const titleX = logo ? 116 : MARGIN;
+  const titleX = logo ? 84 : MARGIN;
   page.drawText(safePdfText(opts.reportTitle || "Initial Pest Report"), {
     x: titleX,
-    y: PAGE_H - 40,
-    size: 29,
+    y: PAGE_H - 30,
+    size: 18,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
   page.drawText(safePdfText(`${opts.customerName || "Customer"}  •  ${displayDate(opts.serviceDate)}`), {
     x: titleX,
-    y: PAGE_H - 66,
-    size: 16,
+    y: PAGE_H - 48,
+    size: 10,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
   page.drawText(`Page ${pageNumber}`, {
-    x: PAGE_W - 78,
-    y: PAGE_H - 38,
-    size: 13,
+    x: PAGE_W - 60,
+    y: PAGE_H - 28,
+    size: 9,
     font: fonts.bold,
     color: BRAND_BLACK,
   });
