@@ -446,39 +446,39 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
     `Technician: ${opts.technicianName || "-"}${opts.licenseNumber ? ` (${opts.licenseNumber})` : ""}`,
     `Property Type: ${opts.propertyType || "Residential"}${opts.companyName ? ` - ${opts.companyName}` : ""}`,
   ];
-  const detailsH = drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 16);
-  cursor.y -= detailsH + 14;
+  const detailsH = drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 10);
+  cursor.y -= detailsH + 8;
 
-  const mapW = 274;
-  const mapH = 364;
-  const rightX = MARGIN + mapW + 18;
+  const mapW = 200;
+  const mapH = 264;
+  const rightX = MARGIN + mapW + 12;
   const rightW = PAGE_W - rightX - MARGIN;
   const contentTop = cursor.y;
 
-  cursor.page.drawRectangle({ x: MARGIN, y: contentTop - mapH, width: mapW, height: mapH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 1.2 });
-  cursor.page.drawRectangle({ x: MARGIN, y: contentTop - 32, width: mapW, height: 32, color: BRAND_BLACK });
-  cursor.page.drawText("SERVICE MAP", { x: MARGIN + 14, y: contentTop - 22, size: 17, font: fonts.bold, color: WHITE });
+  cursor.page.drawRectangle({ x: MARGIN, y: contentTop - mapH, width: mapW, height: mapH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.8 });
+  cursor.page.drawRectangle({ x: MARGIN, y: contentTop - 20, width: mapW, height: 20, color: BRAND_BLACK });
+  cursor.page.drawText("SERVICE MAP", { x: MARGIN + 9, y: contentTop - 14, size: 11, font: fonts.bold, color: WHITE });
   if (map) {
-    drawImageCover(cursor.page, map, MARGIN + 10, contentTop - 44, mapW - 20, mapH - 56);
+    drawImageCover(cursor.page, map, MARGIN + 6, contentTop - 26, mapW - 12, mapH - 32);
   } else {
-    cursor.page.drawText("No map image added", { x: MARGIN + 54, y: contentTop - 190, size: 18, font: fonts.bold, color: BRAND_BLACK });
+    cursor.page.drawText("No map image added", { x: MARGIN + 30, y: contentTop - 130, size: 12, font: fonts.bold, color: BRAND_BLACK });
   }
 
   let rightY = contentTop;
-  rightY -= drawChipSectionOnPage(cursor.page, "Target Pests", opts.targetPests, rightX, rightY, rightW, fonts) + 12;
-  rightY -= drawChipSectionOnPage(cursor.page, opts.isRodentExclusion ? "Materials Used" : "Equipment Used", opts.equipment, rightX, rightY, rightW, fonts) + 12;
+  rightY -= drawChipSectionOnPage(cursor.page, "Target Pests", opts.targetPests, rightX, rightY, rightW, fonts) + 8;
+  rightY -= drawChipSectionOnPage(cursor.page, opts.isRodentExclusion ? "Materials Used" : "Equipment Used", opts.equipment, rightX, rightY, rightW, fonts) + 8;
   const summaryLines = toLines(opts.serviceSummary);
   const availableSummaryHeight = rightY - MARGIN;
-  const summaryCapacity = availableSummaryHeight >= 160 ? Math.max(1, Math.floor((availableSummaryHeight - 70) / 27)) : 0;
+  const summaryCapacity = availableSummaryHeight >= 110 ? Math.max(1, Math.floor((availableSummaryHeight - 50) / 17)) : 0;
   const firstSummary = summaryCapacity > 0 ? summaryLines.slice(0, summaryCapacity) : [];
   if (firstSummary.length) {
-    rightY -= drawSectionOnPage(cursor.page, "Services Completed", firstSummary, rightX, rightY, rightW, fonts, 17);
+    rightY -= drawSectionOnPage(cursor.page, "Services Completed", firstSummary, rightX, rightY, rightW, fonts, 11);
   }
-  cursor.y = Math.min(contentTop - mapH, rightY) - 14;
+  cursor.y = Math.min(contentTop - mapH, rightY) - 8;
 
   const remainingSummary = summaryLines.slice(firstSummary.length);
-  if (remainingSummary.length) addFlowSection(doc, cursor, fonts, opts, firstSummary.length ? "Services Completed Continued" : "Services Completed", remainingSummary, logo, 17);
-  addFlowSection(doc, cursor, fonts, opts, "Today's Findings", toLines(opts.todaysFindings), logo, 17);
+  if (remainingSummary.length) addFlowSection(doc, cursor, fonts, opts, firstSummary.length ? "Services Completed Continued" : "Services Completed", remainingSummary, logo, 11);
+  addFlowSection(doc, cursor, fonts, opts, "Today's Findings", toLines(opts.todaysFindings), logo, 11);
   addFlowChipSection(doc, cursor, fonts, opts, "Products Used", opts.productsUsed, logo);
 
   if (opts.customerKeyAreas?.length || opts.customerKeyAreasNotes) {
@@ -490,7 +490,7 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
       "Customer Key Areas",
       toLines([opts.customerKeyAreas?.join(", "), opts.customerKeyAreasNotes].filter(Boolean).join(" - ")),
       logo,
-      17,
+      11,
     );
   }
   if (opts.customerPreference || opts.customerPreferenceNotes) {
@@ -502,12 +502,12 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
       "Customer Preferences",
       toLines([opts.customerPreference, opts.customerPreferenceNotes].filter(Boolean).join(" - ")),
       logo,
-      17,
+      11,
     );
   }
 
-  addFlowSection(doc, cursor, fonts, opts, "Recommendations", toLines(opts.recommendationsHtml), logo, 17);
-  addFlowSection(doc, cursor, fonts, opts, "What to Expect", toLines(opts.expectations), logo, 17);
+  addFlowSection(doc, cursor, fonts, opts, "Recommendations", toLines(opts.recommendationsHtml), logo, 11);
+  addFlowSection(doc, cursor, fonts, opts, "What to Expect", toLines(opts.expectations), logo, 11);
 
   if (opts.isRodentExclusion) {
     addFlowSection(
@@ -522,7 +522,7 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
         "Crest Pest Control is not liable for structural or property damage caused by rodents.",
       ],
       logo,
-      15,
+      9,
     );
   }
 
