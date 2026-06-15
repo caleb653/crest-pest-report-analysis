@@ -73,12 +73,12 @@ function cleanText(value?: string) {
 
 function toLines(value?: string) {
   const text = cleanText(value);
-  if (!text) return ["—"];
+  if (!text) return ["-"];
   return text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
 }
 
 function displayDate(value: string) {
-  if (!value) return "—";
+  if (!value) return "-";
   const [y, m, d] = value.split("-");
   return y && m && d ? `${m}/${d}/${y}` : value;
 }
@@ -263,7 +263,7 @@ function estimateChipsHeight(items: string[], width: number, fonts: Fonts) {
 
 function drawChips(page: PDFPage, items: string[], x: number, top: number, width: number, fonts: Fonts) {
   if (!items.length) {
-    page.drawText("—", { x, y: top - 18, size: 17, font: fonts.regular, color: BRAND_BLACK });
+    page.drawText("-", { x, y: top - 18, size: 17, font: fonts.regular, color: BRAND_BLACK });
     return 28;
   }
   let cx = x;
@@ -440,9 +440,9 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
   let cursor = addPage(doc, fonts, opts, 1, logo);
 
   const metaLines = [
-    `Address: ${opts.address || "—"}`,
-    `Technician: ${opts.technicianName || "—"}${opts.licenseNumber ? ` (${opts.licenseNumber})` : ""}`,
-    `Property Type: ${opts.propertyType || "Residential"}${opts.companyName ? ` — ${opts.companyName}` : ""}`,
+    `Address: ${opts.address || "-"}`,
+    `Technician: ${opts.technicianName || "-"}${opts.licenseNumber ? ` (${opts.licenseNumber})` : ""}`,
+    `Property Type: ${opts.propertyType || "Residential"}${opts.companyName ? ` - ${opts.companyName}` : ""}`,
   ];
   drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 16);
   cursor.y -= 124;
@@ -484,7 +484,7 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
       fonts,
       opts,
       "Customer Key Areas",
-      toLines([opts.customerKeyAreas?.join(", "), opts.customerKeyAreasNotes].filter(Boolean).join(" — ")),
+      toLines([opts.customerKeyAreas?.join(", "), opts.customerKeyAreasNotes].filter(Boolean).join(" - ")),
       logo,
       17,
     );
@@ -496,7 +496,7 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
       fonts,
       opts,
       "Customer Preferences",
-      toLines([opts.customerPreference, opts.customerPreferenceNotes].filter(Boolean).join(" — ")),
+      toLines([opts.customerPreference, opts.customerPreferenceNotes].filter(Boolean).join(" - ")),
       logo,
       17,
     );
