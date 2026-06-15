@@ -688,53 +688,64 @@ async function captureElement(el: HTMLElement): Promise<string> {
           style.textContent += `
             .pdf-export-root[data-report-type="initial-pest"] .print-section-header,
             .pdf-export-root[data-report-type="initial-pest"] .print-section-header * {
-              font-size: 16px !important;
+              font-size: 24px !important;
               letter-spacing: 0.06em !important;
-              min-height: 34px !important;
-              padding-top: 8px !important;
-              padding-bottom: 7px !important;
-              line-height: 1.15 !important;
+              min-height: 46px !important;
+              padding-top: 11px !important;
+              padding-bottom: 10px !important;
+              line-height: 1.2 !important;
               color: #ffffff !important;
               font-weight: 800 !important;
               text-transform: uppercase !important;
+            }
+            /* Belt-and-suspenders: force the bar's first text node white
+               even if a Tailwind text-* utility (e.g. text-dark-sage) was
+               applied directly to the h2. */
+            .pdf-export-root[data-report-type="initial-pest"] h2.print-section-header,
+            .pdf-export-root[data-report-type="initial-pest"] .print-section-header > * {
+              color: #ffffff !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted,
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted *,
             .pdf-export-root[data-report-type="initial-pest"] .pdf-services-content,
             .pdf-export-root[data-report-type="initial-pest"] .pdf-services-content * {
-              font-size: 19px !important;
-              line-height: 1.55 !important;
+              font-size: 26px !important;
+              line-height: 1.5 !important;
               font-weight: 500 !important;
               color: ${BRAND.black} !important;
               letter-spacing: 0.005em !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted b,
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted strong {
-              font-size: 20px !important;
+              font-size: 27px !important;
               font-weight: 800 !important;
               color: #111111 !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-content-formatted {
-              padding: 12px 16px 14px 16px !important;
+              padding: 18px 22px 20px 22px !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-section-content,
             .pdf-export-root[data-report-type="initial-pest"] .print-section-content * {
-              font-size: 15px !important;
+              font-size: 22px !important;
               line-height: 1.5 !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-section-content li {
-              margin-bottom: 4px !important;
+              margin-bottom: 6px !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-tag,
             .pdf-export-root[data-report-type="initial-pest"] .print-tag * {
-              font-size: 15px !important;
-              padding: 5px 14px !important;
+              font-size: 22px !important;
+              padding: 8px 20px !important;
               border-radius: 999px !important;
+            }
+            .pdf-export-root[data-report-type="initial-pest"] .print-tags {
+              gap: 10px !important;
+              padding: 14px 18px !important;
             }
             .pdf-export-root[data-report-type="initial-pest"] .print-section {
               border-radius: 10px !important;
               border: 1px solid ${BRAND.border} !important;
-              margin-bottom: 10px !important;
+              margin-bottom: 14px !important;
             }
           `;
         }
