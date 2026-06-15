@@ -385,14 +385,16 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
       const imageH = 126;
       const beforeImg = await embedJpeg(doc, before[i]?.image, 1200);
       const afterImg = await embedJpeg(doc, after[i]?.image, 1200);
-      [["Before", beforeImg, x + 12], ["After", afterImg, x + 22 + imageW]]
-        .forEach(([labelText, img, ix]) => {
-          const imageX = ix as number;
-          cursor.page.drawRectangle({ x: imageX, y: imageTop - 22, width: imageW, height: 20, color: labelText === "After" ? BRAND_BLACK : BRAND_SAGE });
-          cursor.page.drawText(labelText as string, { x: imageX + 8, y: imageTop - 17, size: 12, font: fonts.bold, color: labelText === "After" ? WHITE : BRAND_BLACK });
-          cursor.page.drawRectangle({ x: imageX, y: imageTop - 22 - imageH, width: imageW, height: imageH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 1 });
-          if (img) drawImageCover(cursor.page, img as PDFImage, imageX, imageTop - 22, imageW, imageH);
-        });
+      const imageSlots: Array<{ label: "Before" | "After"; img: PDFImage | null; x: number }> = [
+        { label: "Before", img: beforeImg, x: x + 12 },
+        { label: "After", img: afterImg, x: x + 22 + imageW },
+      ];
+      imageSlots.forEach((slot) => {
+        cursor.page.drawRectangle({ x: slot.x, y: imageTop - 22, width: imageW, height: 20, color: slot.label === "After" ? BRAND_BLACK : BRAND_SAGE });
+        cursor.page.drawText(slot.label, { x: slot.x + 8, y: imageTop - 17, size: 12, font: fonts.bold, color: slot.label === "After" ? WHITE : BRAND_BLACK });
+        cursor.page.drawRectangle({ x: slot.x, y: imageTop - 22 - imageH, width: imageW, height: imageH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 1 });
+        if (slot.img) drawImageCover(cursor.page, slot.img, slot.x, imageTop - 22, imageW, imageH);
+      });
       const caption = after[i]?.caption || before[i]?.caption || "";
       if (caption) drawWrappedLine(cursor.page, caption, x + 12, y - 190, cardW - 24, fonts.regular, 12, 15);
 
