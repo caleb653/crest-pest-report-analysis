@@ -1204,15 +1204,16 @@ const Report = () => {
     }
     try {
       toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      let freshMapImage: string | null = null;
       const exportFn = (window as any).exportMapAsImage;
-      if (exportFn) { const fresh = await exportFn(); if (fresh) setRenderedMapImage(fresh); }
-      setPdfExportMode(true);
-      await new Promise((r) => setTimeout(r, 200));
-      const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-      const pdfBytes = await buildSimplePDF({ reportPages });
+      if (exportFn) {
+        const fresh = await exportFn();
+        if (fresh) {
+          freshMapImage = fresh;
+          setRenderedMapImage(fresh);
+        }
+      }
+      const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
       setPdfExportMode(false);
       let bin = "";
       const chunk = 0x8000;
@@ -1356,21 +1357,17 @@ Crest Pest Control
       if (includePdf) {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
+          let freshMapImage: string | null = null;
           const emailExportFn = (window as any).exportMapAsImage;
           if (emailExportFn) {
             const freshRender = await emailExportFn();
-            if (freshRender) setRenderedMapImage(freshRender);
+            if (freshRender) {
+              freshMapImage = freshRender;
+              setRenderedMapImage(freshRender);
+            }
           }
 
-          setPdfExportMode(true);
-          await new Promise((r) => setTimeout(r, 200));
-
-          const pageEls = Array.from(
-            document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-          ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-          const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-
-          const pdfBytes = await buildSimplePDF({ reportPages });
+          const pdfBytes = await buildCurrentInitialPdf(freshMapImage);
 
           setPdfExportMode(false);
           const binary = Array.from(pdfBytes as Uint8Array).map((b: number) => String.fromCharCode(b)).join("");
