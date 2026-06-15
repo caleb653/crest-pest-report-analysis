@@ -368,7 +368,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
     const labels = opts.pairLabels || [];
     const cardGap = 10;
     const cardW = (PAGE_W - MARGIN * 2 - cardGap) / 2;
-    const cardH = 150;
+    const cardH = 220;
     let x = MARGIN;
     let y = cursor.y;
 
@@ -387,7 +387,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
       cursor.page.drawText(safePdfText(label), { x: x + 8, y: y - 16, size: 11, font: fonts.bold, color: BRAND_BLACK });
       const imageTop = y - 28;
       const imageW = (cardW - 24) / 2;
-      const imageH = 92;
+      const imageH = 160;
       const beforeImg = await embedJpeg(doc, before[i]?.image, 1200);
       const afterImg = await embedJpeg(doc, after[i]?.image, 1200);
       const imageSlots: Array<{ label: "Before" | "After"; img: PDFImage | null; x: number }> = [
@@ -401,7 +401,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
         if (slot.img) drawImageCover(cursor.page, slot.img, slot.x, imageTop - 14, imageW, imageH);
       });
       const caption = after[i]?.caption || before[i]?.caption || "";
-      if (caption) drawWrappedLine(cursor.page, caption, x + 8, y - 138, cardW - 16, fonts.regular, 8, 10);
+      if (caption) drawWrappedLine(cursor.page, caption, x + 8, y - 208, cardW - 16, fonts.regular, 8, 10);
 
       x = x === MARGIN ? MARGIN + cardW + cardGap : MARGIN;
       if (x === MARGIN) y -= cardH + 10;
@@ -409,7 +409,7 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
   } else {
     const gap = 10;
     const cardW = (PAGE_W - MARGIN * 2 - gap) / 2;
-    const cardH = 150;
+    const cardH = 220;
     let x = MARGIN;
     let y = cursor.y;
     for (const [index, photo] of nonRodentPhotos.entries()) {
@@ -424,9 +424,9 @@ async function drawPhotoPages(doc: PDFDocument, cursor: Cursor, fonts: Fonts, op
       const img = await embedJpeg(doc, photo.image, 1200);
       cursor.page.drawRectangle({ x, y: y - cardH, width: cardW, height: cardH, color: WHITE, borderColor: BORDER, borderWidth: 0.8 });
       cursor.page.drawText(`Property Image ${index + 1}`, { x: x + 8, y: y - 15, size: 11, font: fonts.bold, color: BRAND_BLACK });
-      cursor.page.drawRectangle({ x: x + 8, y: y - 128, width: cardW - 16, height: 100, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.6 });
-      if (img) drawImageContain(cursor.page, img, x + 8, y - 28, cardW - 16, 100);
-      if (photo.caption) drawWrappedLine(cursor.page, photo.caption, x + 8, y - 138, cardW - 16, fonts.regular, 8, 10);
+      cursor.page.drawRectangle({ x: x + 8, y: y - 198, width: cardW - 16, height: 170, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.6 });
+      if (img) drawImageContain(cursor.page, img, x + 8, y - 28, cardW - 16, 170);
+      if (photo.caption) drawWrappedLine(cursor.page, photo.caption, x + 8, y - 208, cardW - 16, fonts.regular, 8, 10);
       x = x === MARGIN ? MARGIN + cardW + gap : MARGIN;
       if (x === MARGIN) y -= cardH + 10;
     }
