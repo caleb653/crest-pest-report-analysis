@@ -2418,6 +2418,41 @@ Crest Pest Control
                   Service Summary / Findings
                 </h2>
                 <div className="p-2 no-print">
+                  <div className="mb-3">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+                      Quick add — tap a preset to append
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        "Inspected the attic, garage, crawl space, and exterior of the property for rodent activity and entry points.",
+                        "Sealed identified entry points using steel wool, hardware cloth, and sealant to prevent re-entry.",
+                        "Installed snap traps in high-activity areas; will monitor and adjust placement on follow-up visits.",
+                        "Installed exterior rodent bait stations around the perimeter of the property.",
+                        "Removed contaminated insulation from the attic and disposed of it per industry guidelines.",
+                        "Vacuumed and sanitized the attic to remove rodent droppings and odors.",
+                        "Blew in new TAP insulation to restore R-value and provide ongoing pest protection.",
+                        "Checked roofline, vents, weep holes, and utility penetrations for vulnerabilities.",
+                        "No structural alterations (drywall/stucco) were performed as part of this scope.",
+                        "Advised customer to remove yard debris and trim vegetation away from the structure to reduce harborage.",
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            const current = editableFindings[0] || "";
+                            const line = `• ${preset}`;
+                            if (current.includes(preset)) return;
+                            const next = current.trim().length === 0 ? line : `${current.replace(/\s+$/, "")}\n${line}`;
+                            setEditableFindings([next]);
+                          }}
+                          className="text-xs px-2.5 py-1 rounded-full border border-dark-sage/40 bg-sage/10 hover:bg-sage/30 transition-colors text-left max-w-[280px] truncate"
+                          title={preset}
+                        >
+                          {preset.length > 48 ? preset.slice(0, 46) + "…" : preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <Textarea
                     value={editableFindings[0] || ""}
                     onChange={(e) => updateItem(0, e.target.value, setEditableFindings)}

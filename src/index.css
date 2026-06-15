@@ -1008,6 +1008,43 @@
     min-height: 0 !important;
     height: auto !important;
   }
+
+  /* ============================================================
+     Initial Pest Report — larger, prettier PDF typography
+     Scoped to [data-report-type="initial-pest"] so other reports
+     (sales, multi-proposal) are unaffected.
+     ============================================================ */
+  [data-report-type="initial-pest"] .print-section-header,
+  [data-report-type="initial-pest"] .print-section-header > * {
+    font-size: 15px !important;
+    letter-spacing: 0.06em !important;
+    min-height: 8mm !important;
+    padding-top: 1.6mm !important;
+    padding-bottom: 1.4mm !important;
+  }
+  [data-report-type="initial-pest"] .print-content-formatted,
+  [data-report-type="initial-pest"] .print-content-formatted * {
+    font-size: 19px !important;
+    line-height: 1.55 !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.005em !important;
+  }
+  [data-report-type="initial-pest"] .print-content-formatted strong {
+    font-weight: 700 !important;
+    color: hsl(0 0% 12%) !important;
+  }
+  [data-report-type="initial-pest"] .print-content-formatted {
+    padding: 3mm 4mm 3.5mm 4mm !important;
+  }
+  [data-report-type="initial-pest"] .print-section-content,
+  [data-report-type="initial-pest"] .print-section-content * {
+    font-size: 14px !important;
+    line-height: 1.45 !important;
+  }
+  [data-report-type="initial-pest"] .print-tag {
+    font-size: 13px !important;
+    padding: 1.2mm 3mm !important;
+  }
 }
 
 /* Customer Report View - Prose styling for HTML content */
