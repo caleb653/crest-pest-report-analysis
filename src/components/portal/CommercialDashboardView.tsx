@@ -985,6 +985,8 @@ export default function CommercialDashboardView({
                             <Input
                               type="date"
                               value={getField(s, "service_date") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "service_date", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               className="h-11 text-sm"
@@ -994,6 +996,8 @@ export default function CommercialDashboardView({
                             <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Technician</Label>
                             <Input
                               value={getField(s, "technician") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "technician", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               placeholder="Tech name"
@@ -1004,6 +1008,7 @@ export default function CommercialDashboardView({
                             <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
                             <Select
                               value={getField(s, "service_type") || ""}
+                              disabled={readOnly}
                               onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
                             >
                               <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
@@ -1020,6 +1025,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
                           <Textarea
                             value={getField(s, "summary") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "summary", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="What was performed during this visit…"
@@ -1031,6 +1038,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Findings</Label>
                           <Textarea
                             value={getField(s, "findings") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "findings", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Pest activity, conditions found, problem areas…"
@@ -1044,6 +1053,7 @@ export default function CommercialDashboardView({
                               type="checkbox"
                               className="w-4 h-4"
                               checked={!!getField(s, "follow_up_recommended")}
+                              disabled={readOnly}
                               onChange={e => {
                                 setField(s.id, "follow_up_recommended", e.target.checked);
                                 saveServiceField(s.id, { follow_up_recommended: e.target.checked });
@@ -1054,6 +1064,8 @@ export default function CommercialDashboardView({
                           {getField(s, "follow_up_recommended") && (
                             <Textarea
                               value={getField(s, "follow_up_notes") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "follow_up_notes", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               placeholder="What needs to happen on the follow-up…"
@@ -1062,11 +1074,13 @@ export default function CommercialDashboardView({
                             />
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button size="sm" variant="outline" onClick={() => onEditService(s)} className="h-9 text-xs gap-1">
-                            <Edit className="w-3 h-3" /> Full Editor (products / photos)
-                          </Button>
-                        </div>
+                        {!readOnly && (
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => onEditService?.(s)} className="h-9 text-xs gap-1">
+                              <Edit className="w-3 h-3" /> Full Editor (products / photos)
+                            </Button>
+                          </div>
+                        )}
 
                         {hasFollowUp && s.follow_up_notes && (
                           <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
@@ -1090,6 +1104,7 @@ export default function CommercialDashboardView({
                             services={[s as any]}
                             onSaveServiceReportData={persistServiceReportData}
                             propertyName={property?.name}
+                            readOnly={readOnly}
                           />
                         </div>
                         {photos.length > 0 && (
