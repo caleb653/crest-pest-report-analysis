@@ -191,10 +191,12 @@ function PropertyEquipmentCard({
   propertyId,
   initial,
   onSaved,
-}: { propertyId: string; initial: any; onSaved?: () => void }) {
+  readOnly,
+}: { propertyId: string; initial: any; onSaved?: () => void; readOnly?: boolean }) {
   const [items, setItems] = useState<EquipItem[]>(normalizeEquipment(initial));
   useEffect(() => { setItems(normalizeEquipment(initial)); }, [propertyId]); // eslint-disable-line
   const save = async (next: EquipItem[]) => {
+    if (readOnly) return;
     setItems(next);
     const { error } = await supabase
       .from("portal_properties")
@@ -228,10 +230,11 @@ function PropertyEquipmentCard({
                 isChecked ? "bg-primary/10 border-primary/60 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"
               }`}
             >
-              <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+              <label className={`flex items-center gap-2.5 flex-1 ${readOnly ? "cursor-default" : "cursor-pointer"}`}>
                 <input
                   type="checkbox"
                   checked={isChecked}
+                  disabled={readOnly}
                   onChange={async () => {
                     const next = isChecked
                       ? items.filter((e) => e.name !== eq)
@@ -248,6 +251,8 @@ function PropertyEquipmentCard({
                   min={1}
                   className="h-8 w-16 text-xs text-center"
                   value={item?.count || 1}
+                  readOnly={readOnly}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const count = parseInt(e.target.value) || 1;
                     setItems((prev) => prev.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
@@ -263,10 +268,11 @@ function PropertyEquipmentCard({
         })}
         {items.filter((e) => !(EQUIPMENT_OPTIONS as readonly string[]).includes(e.name)).map((custom) => (
           <div key={custom.name} className="flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border bg-primary/10 border-primary/60 font-medium">
-            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+            <label className={`flex items-center gap-2.5 flex-1 ${readOnly ? "cursor-default" : "cursor-pointer"}`}>
               <input
                 type="checkbox"
                 checked
+                disabled={readOnly}
                 onChange={async () => { await save(items.filter((e) => e.name !== custom.name)); }}
                 className="rounded w-4 h-4"
               />
@@ -277,6 +283,8 @@ function PropertyEquipmentCard({
               min={1}
               className="h-8 w-16 text-xs text-center"
               value={custom.count || 1}
+              readOnly={readOnly}
+              disabled={readOnly}
               onChange={(e) => {
                 const count = parseInt(e.target.value) || 1;
                 setItems((prev) => prev.map((ei) => (ei.name === custom.name ? { ...ei, count } : ei)));
@@ -285,6 +293,7 @@ function PropertyEquipmentCard({
             />
           </div>
         ))}
+        {!readOnly && (
         <div className="pt-1.5">
           <Input
             className="h-9 text-xs border-dashed"
@@ -301,6 +310,7 @@ function PropertyEquipmentCard({
             }}
           />
         </div>
+        )}
       </CardContent>
     </Card>
   );
