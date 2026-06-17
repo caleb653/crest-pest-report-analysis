@@ -54,7 +54,7 @@ import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
   ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
-  LogbookDateBadge, persistServiceReportData,
+  LogbookDateBadge, persistServiceReportData, ConditionUnitPills,
 } from "@/components/portal/CommercialSpragueSections";
 import {
   CommercialConcernsObserved,
