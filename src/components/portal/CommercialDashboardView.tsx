@@ -1241,7 +1241,19 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
-                      {/* Photos — upload + thumbnails with remove */}
+                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Active Conditions
+                        </p>
+                        <ConditionsReportSection
+                          services={[s as any]}
+                          onSaveServiceReportData={persistServiceReportData}
+                          includeUndated
+                          propertyName={property?.name}
+                        />
+                      </div>
+
+                      {/* Photos — moved to the bottom, below Active Conditions */}
                       <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
@@ -1288,24 +1300,18 @@ export default function CommercialDashboardView({
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        <Button size="sm" variant="outline" onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })} className="h-9 gap-1 text-xs">
-                          <CheckCircle2 className="w-3 h-3" /> Mark Completed
+                      {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                        <Button
+                          size="lg"
+                          onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
+                          className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                        >
+                          <CheckCircle2 className="w-5 h-5" /> Mark Serviced
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-9 gap-1 text-xs text-destructive">
-                          <Trash2 className="w-3 h-3" /> Delete
+                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-12 gap-1 text-xs text-destructive">
+                          <Trash2 className="w-3.5 h-3.5" /> Delete
                         </Button>
-                      </div>
-                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Active Conditions
-                        </p>
-                        <ConditionsReportSection
-                          services={[s as any]}
-                          onSaveServiceReportData={persistServiceReportData}
-                          includeUndated
-                          propertyName={property?.name}
-                        />
                       </div>
                     </CardContent>
                   </Card>
