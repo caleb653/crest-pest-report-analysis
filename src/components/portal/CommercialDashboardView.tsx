@@ -1460,17 +1460,23 @@ export default function CommercialDashboardView({
                             </p>
                             <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
                           </div>
-                          <Select
-                            value={(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in_progress" : "open"))}
-                            onValueChange={(v: any) => setSightingStatus(r.id, v)}
-                          >
-                            <SelectTrigger className="h-7 text-[10px] w-[120px] shrink-0"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {readOnly ? (
+                            <Badge variant="outline" className="text-[10px] capitalize shrink-0">
+                              {(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in progress" : "open")).replace("_", " ")}
+                            </Badge>
+                          ) : (
+                            <Select
+                              value={(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in_progress" : "open"))}
+                              onValueChange={(v: any) => setSightingStatus(r.id, v)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px] w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="open">Open</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                         {r.description && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
@@ -1481,6 +1487,7 @@ export default function CommercialDashboardView({
                             <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
                           </div>
                         )}
+                        {!readOnly && (
                         <div className="space-y-2 pt-1">
                           <Textarea
                             placeholder="Reply to this request (saved on the request, visible to client)…"
@@ -1500,6 +1507,7 @@ export default function CommercialDashboardView({
                             </Button>
                           </div>
                         </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
