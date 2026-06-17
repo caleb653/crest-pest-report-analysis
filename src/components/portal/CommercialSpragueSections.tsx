@@ -168,9 +168,11 @@ interface ConditionsProps {
   /** Used for email notifications when conditions are added or closed. */
   propertyName?: string;
   notifyEmail?: string | null;
+  /** Hide the big title/description/Active subheader (for embedded use). */
+  compact?: boolean;
 }
 
-export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated, propertyName, notifyEmail }: ConditionsProps) {
+export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated, propertyName, notifyEmail, compact }: ConditionsProps) {
   const past = useMemo(
     () => services
       .filter(s => includeUndated || s.service_date)
