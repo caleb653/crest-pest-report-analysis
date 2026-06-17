@@ -1179,6 +1179,7 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
                           <Select
                             value={getField(s, "service_type") || ""}
+                            disabled={readOnly}
                             onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
                           >
                             <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
@@ -1195,6 +1196,8 @@ export default function CommercialDashboardView({
                           <Input
                             type="date"
                             value={getField(s, "service_date") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             className="h-11 text-sm"
@@ -1216,6 +1219,8 @@ export default function CommercialDashboardView({
                                  <Input
                                    type="time"
                                    value={timeIn}
+                                   readOnly={readOnly}
+                                   disabled={readOnly}
                                    onChange={e => commit(e.target.value, timeOut)}
                                    onBlur={() => flushEdits(s.id)}
                                    className="h-11 text-sm flex-1"
@@ -1224,6 +1229,8 @@ export default function CommercialDashboardView({
                                  <Input
                                    type="time"
                                    value={timeOut}
+                                   readOnly={readOnly}
+                                   disabled={readOnly}
                                    onChange={e => commit(timeIn, e.target.value)}
                                    onBlur={() => flushEdits(s.id)}
                                    className="h-11 text-sm flex-1"
@@ -1236,6 +1243,7 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
                           <Select
                             value={getField(s, "technician") || ""}
+                            disabled={readOnly}
                             onValueChange={v => { setField(s.id, "technician", v); saveServiceField(s.id, { technician: v }); }}
                           >
                             <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Select technician" /></SelectTrigger>
@@ -1251,6 +1259,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
                           <Textarea
                             value={getField(s, "special_notes") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "special_notes", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Access info, prep, things to look for…"
