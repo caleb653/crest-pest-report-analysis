@@ -677,6 +677,7 @@ export default function CommercialDashboardView({
       </div>
 
       {/* Property-level Office-Only Notes — applies to the account, not a single visit */}
+      {!readOnly && (
       <Card className="border-dashed">
         <CardContent className="p-3 space-y-1.5">
           <div className="flex items-center gap-2">
@@ -692,6 +693,7 @@ export default function CommercialDashboardView({
           />
         </CardContent>
       </Card>
+      )}
 
       {/* Location summary */}
       <Card>
@@ -721,7 +723,7 @@ export default function CommercialDashboardView({
       </Card>
 
       {/* Portal links for this property */}
-      {propertyLinks.length > 0 && (
+      {!readOnly && propertyLinks.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Portal Links</p>
@@ -729,10 +731,10 @@ export default function CommercialDashboardView({
               {propertyLinks.map(l => (
                 <div key={l.id} className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px]">{l.label || l.link_type}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => onCopyLink(l.token)} className="h-7 text-xs gap-1">
+                  <Button size="sm" variant="outline" onClick={() => onCopyLink?.(l.token)} className="h-7 text-xs gap-1">
                     <Copy className="w-3 h-3" /> Copy
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => onOpenPortal(l.token)} className="h-7 text-xs gap-1">
+                  <Button size="sm" variant="outline" onClick={() => onOpenPortal?.(l.token)} className="h-7 text-xs gap-1">
                     <ExternalLink className="w-3 h-3" /> Open
                   </Button>
                 </div>
