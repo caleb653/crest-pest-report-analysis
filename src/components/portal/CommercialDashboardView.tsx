@@ -1260,6 +1260,7 @@ export default function CommercialDashboardView({
                               onSaveServiceReportData={persistServiceReportData}
                               includeUndated
                               propertyName={property?.name}
+                              compact
                             />
                           </div>
                         )}
