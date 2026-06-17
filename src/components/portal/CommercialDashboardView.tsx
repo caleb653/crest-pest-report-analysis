@@ -43,6 +43,12 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
+
+// Same roster as the Initial Pest Report technician dropdown.
+const TECHNICIAN_NAMES = [
+  "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
+  "Dylan Gallegos", "Michael Muniz", "David Longoria",
+];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
