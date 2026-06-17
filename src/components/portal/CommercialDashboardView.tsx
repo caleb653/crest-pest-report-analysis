@@ -1242,15 +1242,15 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
-                      <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
+                      <div className="pl-3 border-l-2 border-border/60 space-y-1.5">
                         <button
                           type="button"
                           onClick={() => setExpandedConditions(p => ({ ...p, [s.id]: !p[s.id] }))}
                           className="w-full flex items-center justify-between gap-2 text-left"
                         >
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                             <AlertTriangle className="w-3 h-3" /> Active Conditions
-                          </p>
+                          </span>
                           <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedConditions[s.id] ? "rotate-180" : ""}`} />
                         </button>
                         {expandedConditions[s.id] && (
