@@ -109,15 +109,18 @@ interface Props {
   services: ServiceData[];
   links: PortalLink[];
   clientName: string;
-  onOpenServiceReport: (s: ServiceData) => void;
-  onEditService: (s: ServiceData) => void;
-  onDeleteService: (id: string) => void;
-  onCopyLink: (token: string) => void;
-  onOpenPortal: (token: string) => void;
-  onAddUpcomingService: () => void;
+  onOpenServiceReport?: (s: ServiceData) => void;
+  onEditService?: (s: ServiceData) => void;
+  onDeleteService?: (id: string) => void;
+  onCopyLink?: (token: string) => void;
+  onOpenPortal?: (token: string) => void;
+  onAddUpcomingService?: () => void;
   onRefresh?: () => void;
   onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
   uploadingPropertyImage?: boolean;
+  /** When true, hide ALL edit/save/delete/upload affordances —
+   * customer-facing read-only mirror of the admin view. */
+  readOnly?: boolean;
 }
 
 const todayISO = () => new Date().toISOString().split("T")[0];
