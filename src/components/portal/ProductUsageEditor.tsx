@@ -17,11 +17,12 @@ interface Props {
   value: ProductUsage[];
   onChange: (next: ProductUsage[]) => void;
   compact?: boolean; // smaller UI for inline table cells
+  readOnly?: boolean;
 }
 
 const UNIT_OPTIONS = ["gal", "fl oz", "oz", "mL", "cc", "grams", "lbs", "qt", "each", "pkg", "units", "can"];
 
-export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
+export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props) => {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -72,7 +73,8 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
 
   return (
     <div className={compact ? "space-y-1.5" : "space-y-2"}>
-      {/* Single dropdown product picker */}
+      {/* Single dropdown product picker — hidden in readOnly mode */}
+      {!readOnly && (
       <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
         <PopoverTrigger asChild>
           <button
@@ -130,6 +132,7 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
       {/* Per-product amount rows */}
       {value.length > 0 && (
@@ -170,11 +173,14 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
                     placeholder="0"
                     className="h-7 text-[11px] px-1.5 w-full"
                     value={u.applied_amount ?? ""}
+                    readOnly={readOnly}
+                    disabled={readOnly}
                     onChange={e => updateAt(idx, { applied_amount: e.target.value === "" ? null : Number(e.target.value) })}
                   />
                   <select
                     className="h-7 text-[10px] px-1 rounded border border-input bg-background w-16"
                     value={u.applied_unit}
+                    disabled={readOnly}
                     onChange={e => updateAt(idx, { applied_unit: e.target.value })}
                   >
                     {UNIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
@@ -189,25 +195,30 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
                     className="h-7 text-[11px] px-1.5 w-full"
                     value={u.undiluted_amount ?? ""}
                     title={std ? "Auto-calculated from applied gallons (editable)" : ""}
+                    readOnly={readOnly}
+                    disabled={readOnly}
                     onChange={e => updateAt(idx, { undiluted_amount: e.target.value === "" ? null : Number(e.target.value) })}
                   />
                   <select
                     className="h-7 text-[10px] px-1 rounded border border-input bg-background w-16"
                     value={u.undiluted_unit}
+                    disabled={readOnly}
                     onChange={e => updateAt(idx, { undiluted_unit: e.target.value })}
                   >
                     {UNIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="col-span-1 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeAt(idx)}
-                    className="text-muted-foreground hover:text-destructive p-0.5"
-                    title="Remove product"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => removeAt(idx)}
+                      className="text-muted-foreground hover:text-destructive p-0.5"
+                      title="Remove product"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -215,7 +226,7 @@ export const ProductUsageEditor = ({ value, onChange, compact }: Props) => {
         </div>
       )}
 
-      {value.length > 0 && (
+      {value.length > 0 && !readOnly && (
         <p className="text-[9px] text-muted-foreground flex items-center gap-1">
           <Calculator className="w-2.5 h-2.5" />
           Tip: enter gallons applied — undiluted amount auto-calculates for standard products.

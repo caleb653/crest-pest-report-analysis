@@ -19,12 +19,14 @@ export default function PlanRichEditor({
   placeholder,
   className,
   minHeight = 160,
+  readOnly,
 }: {
   value: string;
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
   minHeight?: number;
+  readOnly?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -69,6 +71,7 @@ export default function PlanRichEditor({
 
   return (
     <div className={cn("flex flex-col", className)}>
+      {!readOnly && (
       <div className="flex gap-1 mb-1.5 items-center">
         <Button type="button" variant="outline" size="sm" className="h-7 px-2"
           onMouseDown={(e) => e.preventDefault()}
@@ -82,15 +85,19 @@ export default function PlanRichEditor({
         </Button>
         <span className="text-[11px] text-muted-foreground ml-1">Select text, then click B or U.</span>
       </div>
+      )}
       <div
         ref={ref}
-        contentEditable
+        contentEditable={!readOnly}
         suppressContentEditableWarning
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
+        onInput={readOnly ? undefined : handleInput}
+        onKeyDown={readOnly ? undefined : handleKeyDown}
+        onPaste={readOnly ? undefined : handlePaste}
         data-placeholder={placeholder || ""}
-        className="flex-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring overflow-auto"
+        className={cn(
+          "flex-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring overflow-auto",
+          readOnly && "bg-muted/30 cursor-default"
+        )}
         style={{ minHeight, whiteSpace: "pre-wrap" }}
       />
       <style>{`

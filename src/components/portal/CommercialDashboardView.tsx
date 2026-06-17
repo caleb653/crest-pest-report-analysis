@@ -109,15 +109,18 @@ interface Props {
   services: ServiceData[];
   links: PortalLink[];
   clientName: string;
-  onOpenServiceReport: (s: ServiceData) => void;
-  onEditService: (s: ServiceData) => void;
-  onDeleteService: (id: string) => void;
-  onCopyLink: (token: string) => void;
-  onOpenPortal: (token: string) => void;
-  onAddUpcomingService: () => void;
+  onOpenServiceReport?: (s: ServiceData) => void;
+  onEditService?: (s: ServiceData) => void;
+  onDeleteService?: (id: string) => void;
+  onCopyLink?: (token: string) => void;
+  onOpenPortal?: (token: string) => void;
+  onAddUpcomingService?: () => void;
   onRefresh?: () => void;
   onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
   uploadingPropertyImage?: boolean;
+  /** When true, hide ALL edit/save/delete/upload affordances —
+   * customer-facing read-only mirror of the admin view. */
+  readOnly?: boolean;
 }
 
 const todayISO = () => new Date().toISOString().split("T")[0];
@@ -188,10 +191,12 @@ function PropertyEquipmentCard({
   propertyId,
   initial,
   onSaved,
-}: { propertyId: string; initial: any; onSaved?: () => void }) {
+  readOnly,
+}: { propertyId: string; initial: any; onSaved?: () => void; readOnly?: boolean }) {
   const [items, setItems] = useState<EquipItem[]>(normalizeEquipment(initial));
   useEffect(() => { setItems(normalizeEquipment(initial)); }, [propertyId]); // eslint-disable-line
   const save = async (next: EquipItem[]) => {
+    if (readOnly) return;
     setItems(next);
     const { error } = await supabase
       .from("portal_properties")
@@ -225,10 +230,11 @@ function PropertyEquipmentCard({
                 isChecked ? "bg-primary/10 border-primary/60 font-medium" : "border-transparent hover:bg-muted/50 hover:border-border/50"
               }`}
             >
-              <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+              <label className={`flex items-center gap-2.5 flex-1 ${readOnly ? "cursor-default" : "cursor-pointer"}`}>
                 <input
                   type="checkbox"
                   checked={isChecked}
+                  disabled={readOnly}
                   onChange={async () => {
                     const next = isChecked
                       ? items.filter((e) => e.name !== eq)
@@ -245,6 +251,8 @@ function PropertyEquipmentCard({
                   min={1}
                   className="h-8 w-16 text-xs text-center"
                   value={item?.count || 1}
+                  readOnly={readOnly}
+                  disabled={readOnly}
                   onChange={(e) => {
                     const count = parseInt(e.target.value) || 1;
                     setItems((prev) => prev.map((ei) => (ei.name === eq ? { ...ei, count } : ei)));
@@ -260,10 +268,11 @@ function PropertyEquipmentCard({
         })}
         {items.filter((e) => !(EQUIPMENT_OPTIONS as readonly string[]).includes(e.name)).map((custom) => (
           <div key={custom.name} className="flex items-center gap-2.5 text-sm rounded-md px-2 py-2 border bg-primary/10 border-primary/60 font-medium">
-            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+            <label className={`flex items-center gap-2.5 flex-1 ${readOnly ? "cursor-default" : "cursor-pointer"}`}>
               <input
                 type="checkbox"
                 checked
+                disabled={readOnly}
                 onChange={async () => { await save(items.filter((e) => e.name !== custom.name)); }}
                 className="rounded w-4 h-4"
               />
@@ -274,6 +283,8 @@ function PropertyEquipmentCard({
               min={1}
               className="h-8 w-16 text-xs text-center"
               value={custom.count || 1}
+              readOnly={readOnly}
+              disabled={readOnly}
               onChange={(e) => {
                 const count = parseInt(e.target.value) || 1;
                 setItems((prev) => prev.map((ei) => (ei.name === custom.name ? { ...ei, count } : ei)));
@@ -282,6 +293,7 @@ function PropertyEquipmentCard({
             />
           </div>
         ))}
+        {!readOnly && (
         <div className="pt-1.5">
           <Input
             className="h-9 text-xs border-dashed"
@@ -298,6 +310,7 @@ function PropertyEquipmentCard({
             }}
           />
         </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -306,7 +319,7 @@ function PropertyEquipmentCard({
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
-  onRefresh, onUpdatePropertyImage, uploadingPropertyImage,
+  onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
@@ -664,6 +677,7 @@ export default function CommercialDashboardView({
       </div>
 
       {/* Property-level Office-Only Notes — applies to the account, not a single visit */}
+      {!readOnly && (
       <Card className="border-dashed">
         <CardContent className="p-3 space-y-1.5">
           <div className="flex items-center gap-2">
@@ -679,6 +693,7 @@ export default function CommercialDashboardView({
           />
         </CardContent>
       </Card>
+      )}
 
       {/* Location summary */}
       <Card>
@@ -708,7 +723,7 @@ export default function CommercialDashboardView({
       </Card>
 
       {/* Portal links for this property */}
-      {propertyLinks.length > 0 && (
+      {!readOnly && propertyLinks.length > 0 && (
         <Card>
           <CardContent className="p-4 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Portal Links</p>
@@ -716,10 +731,10 @@ export default function CommercialDashboardView({
               {propertyLinks.map(l => (
                 <div key={l.id} className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px]">{l.label || l.link_type}</Badge>
-                  <Button size="sm" variant="outline" onClick={() => onCopyLink(l.token)} className="h-7 text-xs gap-1">
+                  <Button size="sm" variant="outline" onClick={() => onCopyLink?.(l.token)} className="h-7 text-xs gap-1">
                     <Copy className="w-3 h-3" /> Copy
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => onOpenPortal(l.token)} className="h-7 text-xs gap-1">
+                  <Button size="sm" variant="outline" onClick={() => onOpenPortal?.(l.token)} className="h-7 text-xs gap-1">
                     <ExternalLink className="w-3 h-3" /> Open
                   </Button>
                 </div>
@@ -786,10 +801,11 @@ export default function CommercialDashboardView({
                         <button
                           key={opt.key}
                           type="button"
+                          disabled={readOnly}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                             active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                          }`}
-                          onClick={() => !active && setFrequency(opt.key)}
+                          } ${readOnly ? "cursor-default opacity-80" : ""}`}
+                          onClick={() => !readOnly && !active && setFrequency(opt.key)}
                         >
                           {opt.label}
                         </button>
@@ -809,10 +825,13 @@ export default function CommercialDashboardView({
                     onChange={(html) => setPropertyNotes(html)}
                     placeholder="Account notes, gate codes, manager contact, access instructions, hot spots…"
                     minHeight={120}
+                    readOnly={readOnly}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {savingProp ? "Saving…" : "Saves automatically when you tap away."}
-                  </p>
+                  {!readOnly && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {savingProp ? "Saving…" : "Saves automatically when you tap away."}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -839,7 +858,7 @@ export default function CommercialDashboardView({
                     No site map uploaded yet.
                   </div>
                 )}
-                {onUpdatePropertyImage && (
+                {onUpdatePropertyImage && !readOnly && (
                   <div className="mt-3">
                     <label className="block">
                       <input
@@ -873,6 +892,7 @@ export default function CommercialDashboardView({
               propertyId={property.id}
               initial={property.equipment}
               onSaved={onRefresh}
+              readOnly={readOnly}
             />
           </div>
         </TabsContent>
@@ -881,9 +901,11 @@ export default function CommercialDashboardView({
         <TabsContent value="past" className="mt-0">
           <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Past Visits</p>
-            <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
-              <Plus className="w-3.5 h-3.5" /> Log Past Visit
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
+                <Plus className="w-3.5 h-3.5" /> Log Past Visit
+              </Button>
+            )}
           </div>
           {past.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
@@ -920,9 +942,11 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!readOnly && (
+                          <Button size="icon" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-8 w-8 text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {isOpen && (
@@ -961,6 +985,8 @@ export default function CommercialDashboardView({
                             <Input
                               type="date"
                               value={getField(s, "service_date") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "service_date", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               className="h-11 text-sm"
@@ -970,6 +996,8 @@ export default function CommercialDashboardView({
                             <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Technician</Label>
                             <Input
                               value={getField(s, "technician") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "technician", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               placeholder="Tech name"
@@ -980,6 +1008,7 @@ export default function CommercialDashboardView({
                             <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
                             <Select
                               value={getField(s, "service_type") || ""}
+                              disabled={readOnly}
                               onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
                             >
                               <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
@@ -996,6 +1025,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
                           <Textarea
                             value={getField(s, "summary") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "summary", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="What was performed during this visit…"
@@ -1007,6 +1038,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Findings</Label>
                           <Textarea
                             value={getField(s, "findings") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "findings", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Pest activity, conditions found, problem areas…"
@@ -1020,6 +1053,7 @@ export default function CommercialDashboardView({
                               type="checkbox"
                               className="w-4 h-4"
                               checked={!!getField(s, "follow_up_recommended")}
+                              disabled={readOnly}
                               onChange={e => {
                                 setField(s.id, "follow_up_recommended", e.target.checked);
                                 saveServiceField(s.id, { follow_up_recommended: e.target.checked });
@@ -1030,6 +1064,8 @@ export default function CommercialDashboardView({
                           {getField(s, "follow_up_recommended") && (
                             <Textarea
                               value={getField(s, "follow_up_notes") || ""}
+                              readOnly={readOnly}
+                              disabled={readOnly}
                               onChange={e => setField(s.id, "follow_up_notes", e.target.value)}
                               onBlur={() => flushEdits(s.id)}
                               placeholder="What needs to happen on the follow-up…"
@@ -1038,11 +1074,13 @@ export default function CommercialDashboardView({
                             />
                           )}
                         </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          <Button size="sm" variant="outline" onClick={() => onEditService(s)} className="h-9 text-xs gap-1">
-                            <Edit className="w-3 h-3" /> Full Editor (products / photos)
-                          </Button>
-                        </div>
+                        {!readOnly && (
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button size="sm" variant="outline" onClick={() => onEditService?.(s)} className="h-9 text-xs gap-1">
+                              <Edit className="w-3 h-3" /> Full Editor (products / photos)
+                            </Button>
+                          </div>
+                        )}
 
                         {hasFollowUp && s.follow_up_notes && (
                           <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
@@ -1066,6 +1104,7 @@ export default function CommercialDashboardView({
                             services={[s as any]}
                             onSaveServiceReportData={persistServiceReportData}
                             propertyName={property?.name}
+                            readOnly={readOnly}
                           />
                         </div>
                         {photos.length > 0 && (
@@ -1140,6 +1179,7 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
                           <Select
                             value={getField(s, "service_type") || ""}
+                            disabled={readOnly}
                             onValueChange={v => { setField(s.id, "service_type", v); saveServiceField(s.id, { service_type: v }); }}
                           >
                             <SelectTrigger className="h-11 text-sm"><SelectValue /></SelectTrigger>
@@ -1156,6 +1196,8 @@ export default function CommercialDashboardView({
                           <Input
                             type="date"
                             value={getField(s, "service_date") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             className="h-11 text-sm"
@@ -1177,6 +1219,8 @@ export default function CommercialDashboardView({
                                  <Input
                                    type="time"
                                    value={timeIn}
+                                   readOnly={readOnly}
+                                   disabled={readOnly}
                                    onChange={e => commit(e.target.value, timeOut)}
                                    onBlur={() => flushEdits(s.id)}
                                    className="h-11 text-sm flex-1"
@@ -1185,6 +1229,8 @@ export default function CommercialDashboardView({
                                  <Input
                                    type="time"
                                    value={timeOut}
+                                   readOnly={readOnly}
+                                   disabled={readOnly}
                                    onChange={e => commit(timeIn, e.target.value)}
                                    onBlur={() => flushEdits(s.id)}
                                    className="h-11 text-sm flex-1"
@@ -1197,6 +1243,7 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
                           <Select
                             value={getField(s, "technician") || ""}
+                            disabled={readOnly}
                             onValueChange={v => { setField(s.id, "technician", v); saveServiceField(s.id, { technician: v }); }}
                           >
                             <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Select technician" /></SelectTrigger>
@@ -1212,6 +1259,8 @@ export default function CommercialDashboardView({
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
                           <Textarea
                             value={getField(s, "special_notes") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
                             onChange={e => setField(s.id, "special_notes", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Access info, prep, things to look for…"
@@ -1231,6 +1280,7 @@ export default function CommercialDashboardView({
                             value={upProducts}
                             onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
                             compact
+                            readOnly={readOnly}
                           />
                         </div>
                         <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
@@ -1238,6 +1288,7 @@ export default function CommercialDashboardView({
                             value={normalizeNonChemEquipment(getReportData(s).non_chem_equipment)}
                             onChange={(next) => saveReportData(s, { non_chem_equipment: next })}
                             dropdown
+                            readOnly={readOnly}
                           />
                         </div>
                       </div>
@@ -1261,6 +1312,7 @@ export default function CommercialDashboardView({
                               includeUndated
                               propertyName={property?.name}
                               compact
+                              readOnly={readOnly}
                             />
                           </div>
                         )}
@@ -1273,20 +1325,22 @@ export default function CommercialDashboardView({
                             <Camera className="w-3 h-3" /> Photos
                             {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
                           </p>
-                          <label className="inline-flex">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              disabled={uploadingPhotoFor === s.id}
-                              onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
-                            />
-                            <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
-                              <Upload className="w-3 h-3" />
-                              {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
-                            </span>
-                          </label>
+                          {!readOnly && (
+                            <label className="inline-flex">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                disabled={uploadingPhotoFor === s.id}
+                                onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                              />
+                              <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                                <Upload className="w-3 h-3" />
+                                {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                              </span>
+                            </label>
+                          )}
                         </div>
                         {upPhotosRaw.length > 0 && (
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1298,14 +1352,16 @@ export default function CommercialDashboardView({
                                   <a href={url} target="_blank" rel="noopener noreferrer">
                                     <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
                                   </a>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeServicePhoto(s.id, url)}
-                                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    aria-label="Remove photo"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
+                                  {!readOnly && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeServicePhoto(s.id, url)}
+                                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      aria-label="Remove photo"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </div>
                               );
                             })}
@@ -1314,18 +1370,20 @@ export default function CommercialDashboardView({
                       </div>
 
                       {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-                        <Button
-                          size="lg"
-                          onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
-                          className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                        >
-                          <CheckCircle2 className="w-5 h-5" /> Mark Serviced
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-12 gap-1 text-xs text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                          <Button
+                            size="lg"
+                            onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
+                            className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                          >
+                            <CheckCircle2 className="w-5 h-5" /> Mark Serviced
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-12 gap-1 text-xs text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                   );
@@ -1402,17 +1460,23 @@ export default function CommercialDashboardView({
                             </p>
                             <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
                           </div>
-                          <Select
-                            value={(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in_progress" : "open"))}
-                            onValueChange={(v: any) => setSightingStatus(r.id, v)}
-                          >
-                            <SelectTrigger className="h-7 text-[10px] w-[120px] shrink-0"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="open">Open</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {readOnly ? (
+                            <Badge variant="outline" className="text-[10px] capitalize shrink-0">
+                              {(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in progress" : "open")).replace("_", " ")}
+                            </Badge>
+                          ) : (
+                            <Select
+                              value={(((r as any).sighting_status as string) || (r.status === "in_progress" ? "in_progress" : "open"))}
+                              onValueChange={(v: any) => setSightingStatus(r.id, v)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px] w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="open">Open</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                         {r.description && (
                           <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
@@ -1423,6 +1487,7 @@ export default function CommercialDashboardView({
                             <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
                           </div>
                         )}
+                        {!readOnly && (
                         <div className="space-y-2 pt-1">
                           <Textarea
                             placeholder="Reply to this request (saved on the request, visible to client)…"
@@ -1442,6 +1507,7 @@ export default function CommercialDashboardView({
                             </Button>
                           </div>
                         </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
