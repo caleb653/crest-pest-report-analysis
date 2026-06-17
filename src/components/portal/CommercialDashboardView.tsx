@@ -694,10 +694,6 @@ export default function CommercialDashboardView({
             <ClipboardList className="w-5 h-5" />
             <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="trending" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <FileText className="w-5 h-5" />
-            <span>Trending &amp; Records</span>
-          </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FlaskConical className="w-5 h-5" />
             <span>Safety Data Sheets</span>
@@ -1406,15 +1402,6 @@ export default function CommercialDashboardView({
                 </div>
               </div>
             )}
-          </div>
-        </TabsContent>
-
-        {/* ════════ TAB: Trending & Records ════════ */}
-        <TabsContent value="trending" className="mt-0 space-y-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <PestTrendingSection requests={requests as any} />
-            <DeviceTrendingSection services={services as any} />
-            <ServiceRecordsSection services={services as any} />
           </div>
         </TabsContent>
 
