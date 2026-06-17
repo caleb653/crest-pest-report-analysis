@@ -317,6 +317,9 @@ export default function CommercialDashboardView({
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
+  const [officeNotes, setOfficeNotes] = useState<string>(
+    (property.customer_preferences as any)?.office_notes || ""
+  );
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
@@ -370,6 +373,31 @@ export default function CommercialDashboardView({
   // which can clobber characters mid-keystroke after a parent refresh.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setOfficeNotes((property.customer_preferences as any)?.office_notes || "");
+  }, [property.id]);
+
+  // Debounced auto-save for property-level office notes (stored in
+  // customer_preferences JSON so no migration is needed).
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.office_notes || "";
+    if (current === officeNotes) return;
+    const t = setTimeout(async () => {
+      const next = { ...(property.customer_preferences || {}), office_notes: officeNotes || null };
+      const { error } = await supabase.from("portal_properties")
+        .update({ customer_preferences: next }).eq("id", property.id);
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      (property as any).customer_preferences = next;
+      onRefresh?.();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [officeNotes]);
 
   // Debounced auto-save for property notes (rich text editor doesn't fire onBlur naturally)
   useEffect(() => {
@@ -633,6 +661,23 @@ export default function CommercialDashboardView({
         </span>
         <span className="text-amber-800/80">Single-location account · no units / sub-locations</span>
       </div>
+
+      {/* Property-level Office-Only Notes — applies to the account, not a single visit */}
+      <Card className="border-dashed">
+        <CardContent className="p-3 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Office-Only Notes</p>
+            <Badge variant="outline" className="text-[9px] h-4 px-1">Hidden from customer</Badge>
+          </div>
+          <Textarea
+            value={officeNotes}
+            onChange={e => setOfficeNotes(e.target.value)}
+            placeholder="Internal notes about this account — never shown to the client…"
+            rows={2}
+            className="text-sm"
+          />
+        </CardContent>
+      </Card>
 
       {/* Location summary */}
       <Card>
@@ -968,20 +1013,6 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
-                        <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
-                            Office-Only Notes
-                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
-                          </Label>
-                          <Textarea
-                            value={getField(s, "office_notes") || ""}
-                            onChange={e => setField(s.id, "office_notes", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Office-only notes (not shown to client)…"
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
                         <div className="rounded-md border border-border p-2.5 space-y-2">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -1183,20 +1214,6 @@ export default function CommercialDashboardView({
                             onChange={e => setField(s.id, "special_notes", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="Access info, prep, things to look for…"
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
-                            Office-Only Notes
-                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
-                          </Label>
-                          <Textarea
-                            value={getField(s, "office_notes") || ""}
-                            onChange={e => setField(s.id, "office_notes", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Internal notes — never shown to the client…"
                             rows={2}
                             className="text-sm"
                           />
