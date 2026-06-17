@@ -314,6 +314,7 @@ export default function CommercialDashboardView({
   const [prepSheets, setPrepSheets] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
+  const [expandedConditions, setExpandedConditions] = useState<Record<string, boolean>>({});
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
@@ -1242,15 +1243,24 @@ export default function CommercialDashboardView({
                       </div>
 
                       <div className="rounded-md border border-border bg-muted/30 p-2 space-y-1.5">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Active Conditions
-                        </p>
-                        <ConditionsReportSection
-                          services={[s as any]}
-                          onSaveServiceReportData={persistServiceReportData}
-                          includeUndated
-                          propertyName={property?.name}
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setExpandedConditions(p => ({ ...p, [s.id]: !p[s.id] }))}
+                          className="w-full flex items-center justify-between gap-2 text-left"
+                        >
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Active Conditions
+                          </p>
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedConditions[s.id] ? "rotate-180" : ""}`} />
+                        </button>
+                        {expandedConditions[s.id] && (
+                          <ConditionsReportSection
+                            services={[s as any]}
+                            onSaveServiceReportData={persistServiceReportData}
+                            includeUndated
+                            propertyName={property?.name}
+                          />
+                        )}
                       </div>
 
                       {/* Photos — moved to the bottom, below Active Conditions */}
