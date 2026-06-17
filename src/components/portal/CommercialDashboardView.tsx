@@ -892,6 +892,7 @@ export default function CommercialDashboardView({
               propertyId={property.id}
               initial={property.equipment}
               onSaved={onRefresh}
+              readOnly={readOnly}
             />
           </div>
         </TabsContent>
