@@ -1063,16 +1063,6 @@ export default function CommercialDashboardView({
           <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => quickAddVisit("scheduled")}
-                disabled={upcoming.length > 0}
-                title={upcoming.length > 0 ? "An upcoming visit is already scheduled" : undefined}
-                className="h-8 text-xs gap-1"
-              >
-                <Plus className="w-3 h-3" /> Add Visit
-              </Button>
             </div>
             {upcoming.length === 0 ? (
               <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
