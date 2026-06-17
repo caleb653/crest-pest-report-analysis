@@ -317,6 +317,9 @@ export default function CommercialDashboardView({
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
+  const [officeNotes, setOfficeNotes] = useState<string>(
+    (property.customer_preferences as any)?.office_notes || ""
+  );
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
@@ -370,6 +373,31 @@ export default function CommercialDashboardView({
   // which can clobber characters mid-keystroke after a parent refresh.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setPropertyNotes(property.notes || ""); }, [property.id]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setOfficeNotes((property.customer_preferences as any)?.office_notes || "");
+  }, [property.id]);
+
+  // Debounced auto-save for property-level office notes (stored in
+  // customer_preferences JSON so no migration is needed).
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.office_notes || "";
+    if (current === officeNotes) return;
+    const t = setTimeout(async () => {
+      const next = { ...(property.customer_preferences || {}), office_notes: officeNotes || null };
+      const { error } = await supabase.from("portal_properties")
+        .update({ customer_preferences: next }).eq("id", property.id);
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      (property as any).customer_preferences = next;
+      onRefresh?.();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [officeNotes]);
 
   // Debounced auto-save for property notes (rich text editor doesn't fire onBlur naturally)
   useEffect(() => {
