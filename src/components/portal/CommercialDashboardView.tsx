@@ -1123,16 +1123,38 @@ export default function CommercialDashboardView({
                             className="h-11 text-sm"
                           />
                         </div>
-                        <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Time</Label>
-                          <Input
-                            value={getField(s, "service_time") || ""}
-                            onChange={e => setField(s.id, "service_time", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="e.g. 9:00 AM"
-                            className="h-11 text-sm"
-                          />
-                        </div>
+                         <div>
+                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Time In / Time Out</Label>
+                           {(() => {
+                             const raw = (getField(s, "service_time") || "").toString();
+                             const parts = raw.split(/\s*[-–]\s*/);
+                             const timeIn = parts[0] || "";
+                             const timeOut = parts[1] || "";
+                             const commit = (nextIn: string, nextOut: string) => {
+                               const combined = nextIn && nextOut ? `${nextIn} - ${nextOut}` : (nextIn || nextOut || "");
+                               setField(s.id, "service_time", combined);
+                             };
+                             return (
+                               <div className="flex items-center gap-1">
+                                 <Input
+                                   type="time"
+                                   value={timeIn}
+                                   onChange={e => commit(e.target.value, timeOut)}
+                                   onBlur={() => flushEdits(s.id)}
+                                   className="h-11 text-sm flex-1"
+                                 />
+                                 <span className="text-xs text-muted-foreground">→</span>
+                                 <Input
+                                   type="time"
+                                   value={timeOut}
+                                   onChange={e => commit(timeIn, e.target.value)}
+                                   onBlur={() => flushEdits(s.id)}
+                                   className="h-11 text-sm flex-1"
+                                 />
+                               </div>
+                             );
+                           })()}
+                         </div>
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
                           <Input
