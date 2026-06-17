@@ -707,11 +707,6 @@ function ConditionRowEditor({
 // PEST TRENDING — bar chart of pest sightings by month + pest type breakdown
 // ─────────────────────────────────────────────────────────────────────────────
 export function PestTrendingSection({ requests }: { requests: SpragueRequest[] }) {
-  // (placeholder anchor — actual body unchanged below)
-  void requests;
-  return PestTrendingSectionImpl({ requests });
-}
-function PestTrendingSectionImpl({ requests }: { requests: SpragueRequest[] }) {
   const byMonth = useMemo(() => {
     const m = new Map<string, number>();
     requests.forEach(r => {
