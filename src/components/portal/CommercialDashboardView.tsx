@@ -319,7 +319,7 @@ function PropertyEquipmentCard({
 export default function CommercialDashboardView({
   property, services, links, onOpenServiceReport, onEditService,
   onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
-  onRefresh, onUpdatePropertyImage, uploadingPropertyImage,
+  onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
