@@ -901,9 +901,11 @@ export default function CommercialDashboardView({
         <TabsContent value="past" className="mt-0">
           <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Past Visits</p>
-            <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
-              <Plus className="w-3.5 h-3.5" /> Log Past Visit
-            </Button>
+            {!readOnly && (
+              <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
+                <Plus className="w-3.5 h-3.5" /> Log Past Visit
+              </Button>
+            )}
           </div>
           {past.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
@@ -940,9 +942,11 @@ export default function CommercialDashboardView({
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
                       <div className="flex gap-1 shrink-0">
-                        <Button size="icon" variant="outline" onClick={() => onDeleteService(s.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        {!readOnly && (
+                          <Button size="icon" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-8 w-8 text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                     {isOpen && (
