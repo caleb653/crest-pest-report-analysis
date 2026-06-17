@@ -801,10 +801,11 @@ export default function CommercialDashboardView({
                         <button
                           key={opt.key}
                           type="button"
+                          disabled={readOnly}
                           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                             active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                          }`}
-                          onClick={() => !active && setFrequency(opt.key)}
+                          } ${readOnly ? "cursor-default opacity-80" : ""}`}
+                          onClick={() => !readOnly && !active && setFrequency(opt.key)}
                         >
                           {opt.label}
                         </button>
@@ -824,10 +825,13 @@ export default function CommercialDashboardView({
                     onChange={(html) => setPropertyNotes(html)}
                     placeholder="Account notes, gate codes, manager contact, access instructions, hot spots…"
                     minHeight={120}
+                    readOnly={readOnly}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {savingProp ? "Saving…" : "Saves automatically when you tap away."}
-                  </p>
+                  {!readOnly && (
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {savingProp ? "Saving…" : "Saves automatically when you tap away."}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -854,7 +858,7 @@ export default function CommercialDashboardView({
                     No site map uploaded yet.
                   </div>
                 )}
-                {onUpdatePropertyImage && (
+                {onUpdatePropertyImage && !readOnly && (
                   <div className="mt-3">
                     <label className="block">
                       <input
