@@ -43,6 +43,12 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
+
+// Same roster as the Initial Pest Report technician dropdown.
+const TECHNICIAN_NAMES = [
+  "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
+  "Dylan Gallegos", "Michael Muniz", "David Longoria",
+];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
   ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
@@ -1157,13 +1163,18 @@ export default function CommercialDashboardView({
                          </div>
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
-                          <Input
+                          <Select
                             value={getField(s, "technician") || ""}
-                            onChange={e => setField(s.id, "technician", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Tech name"
-                            className="h-11 text-sm"
-                          />
+                            onValueChange={v => { setField(s.id, "technician", v); saveServiceField(s.id, { technician: v }); }}
+                          >
+                            <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                            <SelectContent>
+                              {TECHNICIAN_NAMES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                              {getField(s, "technician") && !TECHNICIAN_NAMES.includes(getField(s, "technician")) && (
+                                <SelectItem value={getField(s, "technician")}>{getField(s, "technician")}</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
