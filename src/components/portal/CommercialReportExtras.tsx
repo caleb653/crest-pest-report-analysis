@@ -291,10 +291,12 @@ interface EquipmentProps {
   value: NonChemEquipmentEntry[];
   onChange?: (next: NonChemEquipmentEntry[]) => void;
   readOnly?: boolean;
+  /** Render as a compact dropdown picker (used on Upcoming visit card). */
+  dropdown?: boolean;
 }
 
 export function CommercialNonChemEquipment({
-  value, onChange, readOnly,
+  value, onChange, readOnly, dropdown,
 }: EquipmentProps) {
   const activeMap = new Map(value.map((e) => [e.name, e.qty]));
 
@@ -315,6 +317,56 @@ export function CommercialNonChemEquipment({
     const safe = Math.max(1, Math.floor(qty) || 1);
     onChange(value.map((e) => (e.name === name ? { ...e, qty: safe } : e)));
   };
+
+  if (dropdown && !readOnly) {
+    const remaining = COMMERCIAL_NON_CHEM_EQUIPMENT.filter(n => !activeMap.has(n));
+    return (
+      <div className="space-y-2">
+        <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+          <Wrench className="w-3 h-3 text-primary" />
+          Equipment Used
+        </Label>
+        <select
+          className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs"
+          value=""
+          onChange={(e) => {
+            const name = e.target.value;
+            if (!name || !onChange) return;
+            onChange([...value, { name, qty: 1 }]);
+            e.currentTarget.value = "";
+          }}
+          disabled={remaining.length === 0}
+        >
+          <option value="">{remaining.length === 0 ? "All equipment added" : "Add equipment…"}</option>
+          {remaining.map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+        {value.length > 0 && (
+          <div className="space-y-1">
+            {value.map(e => (
+              <div key={e.name} className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1">
+                <span className="text-xs flex-1 truncate" title={e.name}>{e.name}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  value={e.qty}
+                  onChange={(ev) => updateQty(e.name, Number(ev.target.value))}
+                  className="h-7 w-14 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => onChange?.(value.filter(v => v.name !== e.name))}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Remove ${e.name}`}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
