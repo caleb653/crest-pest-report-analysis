@@ -1163,13 +1163,18 @@ export default function CommercialDashboardView({
                          </div>
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
-                          <Input
+                          <Select
                             value={getField(s, "technician") || ""}
-                            onChange={e => setField(s.id, "technician", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Tech name"
-                            className="h-11 text-sm"
-                          />
+                            onValueChange={v => { setField(s.id, "technician", v); saveServiceField(s.id, { technician: v }); }}
+                          >
+                            <SelectTrigger className="h-11 text-sm"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                            <SelectContent>
+                              {TECHNICIAN_NAMES.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                              {getField(s, "technician") && !TECHNICIAN_NAMES.includes(getField(s, "technician")) && (
+                                <SelectItem value={getField(s, "technician")}>{getField(s, "technician")}</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
