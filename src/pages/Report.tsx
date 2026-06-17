@@ -183,7 +183,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping:</b><br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> Rodent trapping is specifically targeted at eliminating the existing rodent population. After we've completed our follow-up visits, we can't guarantee that rodents will not re-enter your property unless we are also performing rodent exclusion work.`,
+      `<b>Rodent Trapping:</b><br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Two follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> Rodent trapping is specifically targeted at eliminating the existing rodent population. After we've completed our follow-up visits, we can't guarantee that rodents will not re-enter your property unless we are also performing rodent exclusion work.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
@@ -191,7 +191,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Rodents"],
     proposedServices:
-      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Three follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.`,
+      `<b>Rodent Trapping & Exclusion:</b><br>• Seal rodent entry points (pictured below) using industry-grade materials such as steel mesh, chicken wire, and weatherproof sealants.<br>• Strategically place traps in areas of highest activity to reduce active rodent populations.<br>• Two follow-up visits to monitor activity, dispose of any dead rodents, and adjust traps as needed.<br><br><b>Additional Details:</b> We are a licensed pest control company, not a licensed contractor. We use materials like steel mesh, chicken wire, and weatherproof sealants to block off potential rodent entry points. We do not make structural alterations like cutting into drywall or stucco, replace framing, and any other general construction work.`,
     defaultInitial: 575,
     defaultRecurring: 0,
   },
