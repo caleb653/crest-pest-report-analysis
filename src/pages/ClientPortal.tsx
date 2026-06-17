@@ -588,7 +588,15 @@ const ClientPortal = () => {
               </button>
             </div>
           </div>
-          <CommercialPMView propertyId={selectedProperty.id} linkId={linkData?.id || ""} />
+          <div className="max-w-[1600px] mx-auto px-4 py-4">
+            <CommercialDashboardView
+              property={selectedProperty as any}
+              services={getPropertyServices(selectedProperty.id) as any}
+              links={linkData ? [linkData as any] : []}
+              clientName={client?.company || client?.name || ""}
+              readOnly
+            />
+          </div>
         </div>
       );
     }
