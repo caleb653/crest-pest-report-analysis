@@ -1280,6 +1280,7 @@ export default function CommercialDashboardView({
                             value={upProducts}
                             onChange={(next) => { setField(s.id, "products_used", next); saveServiceField(s.id, { products_used: next }); }}
                             compact
+                            readOnly={readOnly}
                           />
                         </div>
                         <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
@@ -1287,6 +1288,7 @@ export default function CommercialDashboardView({
                             value={normalizeNonChemEquipment(getReportData(s).non_chem_equipment)}
                             onChange={(next) => saveReportData(s, { non_chem_equipment: next })}
                             dropdown
+                            readOnly={readOnly}
                           />
                         </div>
                       </div>
@@ -1310,6 +1312,7 @@ export default function CommercialDashboardView({
                               includeUndated
                               propertyName={property?.name}
                               compact
+                              readOnly={readOnly}
                             />
                           </div>
                         )}
