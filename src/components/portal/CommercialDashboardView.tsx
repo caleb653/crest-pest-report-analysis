@@ -1218,20 +1218,6 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
-                        <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block flex items-center gap-1">
-                            Office-Only Notes
-                            <Badge variant="outline" className="text-[9px] h-4 px-1 ml-1">Hidden from customer</Badge>
-                          </Label>
-                          <Textarea
-                            value={getField(s, "office_notes") || ""}
-                            onChange={e => setField(s.id, "office_notes", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Internal notes — never shown to the client…"
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
                       </div>
 
                       {/* Products used (with amounts/dilution) — same editor as past visits */}
