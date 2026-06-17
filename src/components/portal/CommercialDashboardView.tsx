@@ -389,6 +389,14 @@ export default function CommercialDashboardView({
   };
 
   const quickAddVisit = async (status: "scheduled" | "completed") => {
+    if (status === "scheduled" && upcoming.length > 0) {
+      toast({
+        title: "Upcoming visit already scheduled",
+        description: "Only one upcoming visit can exist at a time. Complete or delete the current one first.",
+        variant: "destructive",
+      });
+      return;
+    }
     const { error } = await supabase.from("portal_services").insert({
       property_id: property.id,
       service_type: "Commercial General Pest",
@@ -1055,7 +1063,14 @@ export default function CommercialDashboardView({
           <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
-              <Button size="sm" variant="outline" onClick={() => quickAddVisit("scheduled")} className="h-8 text-xs gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => quickAddVisit("scheduled")}
+                disabled={upcoming.length > 0}
+                title={upcoming.length > 0 ? "An upcoming visit is already scheduled" : undefined}
+                className="h-8 text-xs gap-1"
+              >
                 <Plus className="w-3 h-3" /> Add Visit
               </Button>
             </div>
