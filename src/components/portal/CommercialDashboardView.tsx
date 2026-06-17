@@ -1325,20 +1325,22 @@ export default function CommercialDashboardView({
                             <Camera className="w-3 h-3" /> Photos
                             {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
                           </p>
-                          <label className="inline-flex">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              multiple
-                              className="hidden"
-                              disabled={uploadingPhotoFor === s.id}
-                              onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
-                            />
-                            <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
-                              <Upload className="w-3 h-3" />
-                              {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
-                            </span>
-                          </label>
+                          {!readOnly && (
+                            <label className="inline-flex">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                                disabled={uploadingPhotoFor === s.id}
+                                onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                              />
+                              <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                                <Upload className="w-3 h-3" />
+                                {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                              </span>
+                            </label>
+                          )}
                         </div>
                         {upPhotosRaw.length > 0 && (
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1350,14 +1352,16 @@ export default function CommercialDashboardView({
                                   <a href={url} target="_blank" rel="noopener noreferrer">
                                     <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
                                   </a>
-                                  <button
-                                    type="button"
-                                    onClick={() => removeServicePhoto(s.id, url)}
-                                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    aria-label="Remove photo"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
+                                  {!readOnly && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeServicePhoto(s.id, url)}
+                                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      aria-label="Remove photo"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </div>
                               );
                             })}
@@ -1366,18 +1370,20 @@ export default function CommercialDashboardView({
                       </div>
 
                       {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-                        <Button
-                          size="lg"
-                          onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
-                          className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                        >
-                          <CheckCircle2 className="w-5 h-5" /> Mark Serviced
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => onDeleteService(s.id)} className="h-12 gap-1 text-xs text-destructive">
-                          <Trash2 className="w-3.5 h-3.5" /> Delete
-                        </Button>
-                      </div>
+                      {!readOnly && (
+                        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+                          <Button
+                            size="lg"
+                            onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
+                            className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                          >
+                            <CheckCircle2 className="w-5 h-5" /> Mark Serviced
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-12 gap-1 text-xs text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                   );
