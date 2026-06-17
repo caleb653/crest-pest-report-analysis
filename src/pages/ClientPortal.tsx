@@ -15,6 +15,7 @@ import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/
 import crestLogo from "@/assets/crest-logo.png";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import CommercialPMView from "@/components/portal/CommercialPMView";
+import CommercialDashboardView from "@/components/portal/CommercialDashboardView";
 
 interface LinkData {
   id: string;
