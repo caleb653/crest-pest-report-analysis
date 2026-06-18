@@ -3996,7 +3996,7 @@ const PropertyDashboard = ({
                 if (additions.length === 0) return prev;
                 return {
                   ...prev,
-                  [s.id]: { ...current, unitRows: [...current.unitRows, ...additions] },
+                  [s.id]: { ...current, unitRows: sortUnitRowsByNumber([...current.unitRows, ...additions]) },
                 };
               });
             }, 0);
@@ -4005,7 +4005,7 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
-              const nextDraft = { ...prev[s.id], unitRows: rows };
+              const nextDraft = { ...prev[s.id], unitRows: field === "unit_number" ? sortUnitRowsByNumber(rows) : rows };
               completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
               return { ...prev, [s.id]: nextDraft };
             });
