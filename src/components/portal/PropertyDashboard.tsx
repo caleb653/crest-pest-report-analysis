@@ -1644,7 +1644,7 @@ const PropertyDashboard = ({
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
-          unitRows: draft.unitRows
+          unitRows: sortUnitRowsByNumber(draft.unitRows
             .filter((r: any) => {
               const label = String(r?.unit_number || "").trim();
               if (!label) return false;
@@ -1668,7 +1668,7 @@ const PropertyDashboard = ({
               follow_up_needed: r.follow_up_needed === true,
               sanitization_concern: r.sanitization_concern === true,
               photos: Array.isArray(r.photos) ? r.photos : [],
-            })),
+            }))),
           summary: draft.summary || "",
           findings: draft.findings || "",
           notes: draft.notes || "",
