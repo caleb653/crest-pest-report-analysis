@@ -1491,6 +1491,18 @@ const PropertyDashboard = ({
     }
   };
 
+  const clearDismissedUnitsFromReportData = (reportData: any, units: string[]) => {
+    const cleared = new Set(units.map((u) => String(u || "").trim().toLowerCase()).filter(Boolean));
+    const next = reportData && typeof reportData === "object" ? { ...reportData } : {};
+    if (Array.isArray(next.dismissed_units) && cleared.size > 0) {
+      next.dismissed_units = next.dismissed_units.filter((entry: any) => {
+        const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim().toLowerCase();
+        return !unit || !cleared.has(unit);
+      });
+    }
+    return next;
+  };
+
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
@@ -1501,8 +1513,21 @@ const PropertyDashboard = ({
       return;
     }
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
-    details.push({ ...newUnitData, unit_number: unitLabel });
-    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    const detailsWithoutUnit = details.filter((d: any) => String(d?.unit_number || "").trim() !== unitLabel);
+    const nextDetails = [...detailsWithoutUnit, { ...newUnitData, unit_number: unitLabel }];
+    const planned = Array.isArray(svc.units_planned)
+      ? (svc.units_planned as string[]).map((u) => String(u || "").trim()).filter(Boolean)
+      : [];
+    const nextPlanned = planned.includes(unitLabel) ? planned : [...planned, unitLabel];
+    const nextReportData = clearDismissedUnitsFromReportData((svc as any).report_data, [unitLabel]);
+    const { error } = await supabase
+      .from("portal_services")
+      .update({ unit_details: nextDetails, units_planned: nextPlanned, report_data: nextReportData })
+      .eq("id", serviceId);
+    if (error) {
+      toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
+      return;
+    }
     setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
@@ -1513,10 +1538,16 @@ const PropertyDashboard = ({
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc || !newPlannedUnit.trim()) return;
     const planned = Array.isArray(svc.units_planned) ? [...(svc.units_planned as string[])] : [];
-    if (!planned.includes(newPlannedUnit.trim())) {
-      planned.push(newPlannedUnit.trim());
+    const unitLabel = newPlannedUnit.trim();
+    if (!planned.includes(unitLabel)) {
+      planned.push(unitLabel);
     }
-    await supabase.from("portal_services").update({ units_planned: planned }).eq("id", serviceId);
+    const nextReportData = clearDismissedUnitsFromReportData((svc as any).report_data, [unitLabel]);
+    const { error } = await supabase.from("portal_services").update({ units_planned: planned, report_data: nextReportData }).eq("id", serviceId);
+    if (error) {
+      toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
+      return;
+    }
     setNewPlannedUnit("");
     setAddingPlannedUnit(null);
     toast({ title: "Unit added to plan" });
@@ -1561,7 +1592,6 @@ const PropertyDashboard = ({
           const label = String(u || "").trim();
           if (label) dismissed.add(label);
         });
-        const liveUnits = new Set((unitContexts || []).map(c => String(c.unit_number || "").trim()).filter(Boolean));
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
@@ -1570,7 +1600,11 @@ const PropertyDashboard = ({
               const label = String(r?.unit_number || "").trim();
               if (!label) return false;
               if (dismissed.has(label)) return false;
-              return liveUnits.size === 0 || liveUnits.has(label);
+              // Keep manually added rows from the autosaved draft even when
+              // they are not part of the computed work-order/follow-up merge.
+              // Otherwise an added unit disappears after refresh before the
+              // service is completed.
+              return true;
             })
             .map((r: any) => ({
               unit_number: r.unit_number || "",
@@ -1701,7 +1735,7 @@ const PropertyDashboard = ({
     unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
   ) => {
     const serviceForDraft = service || propServices.find(p => p.id === serviceId);
-    const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
+    const data = completionData[serviceId] || completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => {
       // When a tech completes a visit, any unit still flagged "To Be Treated"
       // should be promoted to its completed equivalent so the customer-facing
@@ -1874,10 +1908,14 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
-    // ─── If an ad-hoc/follow-up visit cleared a unit, remove that unit from
-    //     any future scheduled visit and suppress the old follow-up flag so it
-    //     cannot keep reappearing as "Upcoming" after a Free and Clear. ───
+    // ─── If a NORMAL cadence visit cleared a unit, remove that unit from any
+    //     future scheduled visit and suppress the old follow-up flag. Ad-hoc
+    //     spot visits are intentionally skipped: an in-between ad-hoc clear
+    //     must NOT erase a follow-up already due on the normal next service. ───
     try {
+      if (isAdHocService(serviceForDraft || svcRow)) {
+        throw new Error("skip-ad-hoc-settled-clear");
+      }
       const settledUnits = Array.from(new Set(
         unitRows
           .filter((r: any) => {
@@ -1944,8 +1982,10 @@ const PropertyDashboard = ({
           return supabase.from("portal_services").update({ report_data: rd }).eq("id", svc.id);
         }));
       }
-    } catch (e) {
-      console.warn("clear settled units from future services failed", e);
+    } catch (e: any) {
+      if (e?.message !== "skip-ad-hoc-settled-clear") {
+        console.warn("clear settled units from future services failed", e);
+      }
     }
 
     // ─── Resolve every open submission we just snapshotted (community +
@@ -3916,13 +3956,19 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
-              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+              const nextDraft = { ...prev[s.id], unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+              return { ...prev, [s.id]: nextDraft };
             });
           };
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
+              [s.id]: (() => {
+                const nextDraft = { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
+                completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+                return nextDraft;
+              })(),
             }));
           };
           // Sort the Areas Treated list numerically by unit number. Pure
@@ -3958,7 +4004,9 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], products_used: next };
-              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+              const nextDraft = { ...prev[s.id], unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+              return { ...prev, [s.id]: nextDraft };
             });
           };
           const removeRow = async (idx: number) => {

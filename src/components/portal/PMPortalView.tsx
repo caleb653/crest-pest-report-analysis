@@ -970,7 +970,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   // and the same set of "follow-up" units are highlighted on both portals.
   const openRequestsList = getOpenRequests(requests);
   const openRequestUnits = new Set(openRequestsList.map(r => String(r.unit_number)));
-  const followUpDetailsFromPast = getFollowUpDetailsFromPast(pastServices[0] || null);
+  const followUpDetailsFromPast = getFollowUpDetailsFromPast(buildMergedMostRecentPast(pastServices));
   const followUpUnits = new Set(followUpDetailsFromPast.map(u => String(u.unit_number)));
 
   const servicesByUnit = (() => {
@@ -2536,8 +2536,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                     let latestUnitDate: string = "";
                     if (unitKey) {
                       for (const s of pastServices) {
+                        const adHocClear = isAdHocService(s);
                         const rows: any[] = Array.isArray(s.unit_details) ? (s.unit_details as any[]) : [];
                         const match = rows.find(u => String(u?.unit_number || "").trim() === unitKey);
+                        if (adHocClear && match?.follow_up_needed !== true) continue;
                         if (match && (s.service_date || "") >= latestUnitDate) {
                           latestUnitDate = s.service_date || "";
                           latestUnitRow = match;

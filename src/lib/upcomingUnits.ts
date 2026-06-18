@@ -176,6 +176,8 @@ export function buildMergedMostRecentPast(
 ): ServiceRow | null {
   const list = Array.isArray(allPastServices) ? allPastServices : [];
   if (list.length === 0) return null;
+  const isAdHocService = (svc: ServiceRow | null | undefined): boolean =>
+    !!((svc as any)?.report_data && (svc as any).report_data.is_ad_hoc === true);
   // Sort newest first so the first time we see a unit is its latest detail.
   const sorted = [...list].sort((a, b) =>
     (b.service_date || "").localeCompare(a.service_date || "")
@@ -187,6 +189,11 @@ export function buildMergedMostRecentPast(
     dets.forEach((d) => {
       const u = String(d?.unit_number || "").trim();
       if (!u) return;
+      // Ad-hoc spot visits are informational in-between visits. A cleared
+      // ad-hoc row must NOT erase a follow-up that was already scheduled for
+      // the normal cadence visit; only an ad-hoc row that is itself flagged
+      // follow_up_needed should become the latest follow-up state.
+      if (isAdHocService(svc) && d?.follow_up_needed !== true) return;
       if (!latestByUnit.has(u)) latestByUnit.set(u, d);
     });
     const dRaw = (svc as any)?.report_data?.dismissed_follow_ups;
@@ -384,7 +391,7 @@ export function computeUpcomingUnits(args: {
   const ownPlannedSet = new Set(ownPlanned);
 
   const openRequests = getOpenRequests(requests);
-  const openRequestUnits = new Set(
+  const rawOpenRequestUnits = new Set(
     openRequests
       .filter(r => {
         const u = normalizeUnit(r.unit_number);
@@ -397,6 +404,9 @@ export function computeUpcomingUnits(args: {
     followUpDetails
       .map(u => normalizeUnit(u.unit_number))
       .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
+  );
+  const openRequestUnits = new Set(
+    Array.from(rawOpenRequestUnits).filter((u) => !followUpUnits.has(u))
   );
   const followUpByUnit = new Map<string, UnitDetailRow>();
   followUpDetails.forEach(u => {
@@ -456,8 +466,8 @@ export function computeUpcomingUnits(args: {
 
     let source: UnitSource = "planned";
     if (isFirstUpcoming) {
-      if (request) source = "work_order";
-      else if (followUp) source = "follow_up";
+      if (followUp) source = "follow_up";
+      else if (request) source = "work_order";
       else if (!ownPlannedSet.has(unit) && lastPastUnits.includes(unit)) source = "carried";
     }
     // Ad-hoc visits aren't the "first upcoming" but they still need to keep
