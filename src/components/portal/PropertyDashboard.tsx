@@ -2654,7 +2654,31 @@ const PropertyDashboard = ({
 
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService, editable: boolean = true) => {
-    const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    const rawUnitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    // Always display units in numeric order so 21, 41, 86, 100 read top-to-bottom
+    // instead of being shuffled by save order. Non-numeric labels (e.g. "Clubhouse")
+    // fall to the bottom alphabetically; empty labels go last.
+    const unitDetails = (() => {
+      const list = [...rawUnitDetails];
+      const keyOf = (r: any) => String(r?.unit_number || "").trim();
+      const numOf = (k: string) => {
+        const m = k.match(/-?\d+(?:\.\d+)?/);
+        return m ? parseFloat(m[0]) : NaN;
+      };
+      list.sort((a, b) => {
+        const ka = keyOf(a), kb = keyOf(b);
+        if (!ka && !kb) return 0;
+        if (!ka) return 1;
+        if (!kb) return -1;
+        const na = numOf(ka), nb = numOf(kb);
+        const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
+        if (aNum && bNum && na !== nb) return na - nb;
+        if (aNum && !bNum) return -1;
+        if (!aNum && bNum) return 1;
+        return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+      });
+      return list;
+    })();
     // ── READ-ONLY VIEW ──
     // Past services are locked unless the admin clicks "Edit". When locked,
     // we render a compact summary so accidental clicks can never mutate
