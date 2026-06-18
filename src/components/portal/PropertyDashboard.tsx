@@ -481,6 +481,7 @@ const PropertyDashboard = ({
   //    cleared on completeService() so it never bleeds into past records. ──
   const completionDraftTimers = useRef<Record<string, any>>({});
   const completionDraftLast = useRef<Record<string, string>>({});
+  const completionDraftSaved = useRef<Record<string, string>>({});
   const completionDraftSaveActive = useRef<Record<string, boolean>>({});
   const completionDraftQueued = useRef<Record<string, { data: CompletionDraft; opts: { toastOnError?: boolean } }>>({});
   const persistCompletionDraftNow = async (
@@ -489,7 +490,7 @@ const PropertyDashboard = ({
     opts: { toastOnError?: boolean } = {},
   ): Promise<boolean> => {
     const svc = servicesRef.current.find(s => s.id === serviceId);
-    if (!data || !svc || svc.status === "completed") return false;
+    if (!data || !serviceId || String(serviceId).startsWith("projected-")) return false;
     try {
       let cleanRows = (data.unitRows || []).map((r: any) => ({
         ...r,
@@ -503,9 +504,10 @@ const PropertyDashboard = ({
         : {};
       const { data: latest } = await supabase
         .from("portal_services")
-        .select("report_data, units_planned")
+        .select("status, report_data, units_planned")
         .eq("id", serviceId)
         .maybeSingle();
+      if ((latest as any)?.status === "completed" || svc?.status === "completed") return false;
       const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
         ? (latest as any).report_data
         : existing;
@@ -559,9 +561,12 @@ const PropertyDashboard = ({
         .update({ report_data: next, units_planned: nextPlanned, unit_details: portalRows })
         .eq("id", serviceId);
       if (error) throw error;
-      (svc as any).report_data = next;
-      (svc as any).units_planned = nextPlanned;
-      (svc as any).unit_details = portalRows;
+      if (svc) {
+        (svc as any).report_data = next;
+        (svc as any).units_planned = nextPlanned;
+        (svc as any).unit_details = portalRows;
+      }
+      completionDraftSaved.current[serviceId] = JSON.stringify(data);
       return true;
     } catch (e: any) {
       console.warn("completion draft autosave failed", e);
@@ -576,6 +581,7 @@ const PropertyDashboard = ({
     data: CompletionDraft,
     opts: { toastOnError?: boolean } = {},
   ) => {
+    if (!serviceId || String(serviceId).startsWith("projected-")) return;
     completionDraftQueued.current[serviceId] = { data, opts };
     if (completionDraftSaveActive.current[serviceId]) return;
     completionDraftSaveActive.current[serviceId] = true;
@@ -603,7 +609,7 @@ const PropertyDashboard = ({
       // mutate their stored draft.
       if (!svc || svc.status === "completed") return;
       const serialized = JSON.stringify(data);
-      if (completionDraftLast.current[serviceId] === serialized) return;
+      if (completionDraftSaved.current[serviceId] === serialized) return;
       completionDraftLast.current[serviceId] = serialized;
       if (completionDraftTimers.current[serviceId]) {
         clearTimeout(completionDraftTimers.current[serviceId]);
@@ -1959,6 +1965,7 @@ const PropertyDashboard = ({
     // Forget the local "last serialized" snapshot so a re-open of this
     // service id (rare) doesn't think there's nothing to save.
     delete completionDraftLast.current[serviceId];
+    delete completionDraftSaved.current[serviceId];
 
     // ─── Close any open work-order requests for the units we just treated ───
     // Without this, a pending request keeps bleeding into the NEXT upcoming
@@ -4057,11 +4064,9 @@ const PropertyDashboard = ({
             // so leaving the page immediately after typing still saves.
             const nextDraft = { ...current, unitRows: rows };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-            if (field === "unit_number") {
-              completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
-              if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
-              queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
-            }
+            completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
+            if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
+            queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
           const addRow = () => {
@@ -4069,6 +4074,8 @@ const PropertyDashboard = ({
             const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
+            completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
+            if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
             queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
           };
           // Sort the Areas Treated list numerically by unit number. Pure
