@@ -4028,24 +4028,9 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const cur = prev[s.id];
               if (!cur || !Array.isArray(cur.unitRows)) return prev;
-              const rows = [...cur.unitRows];
-              const keyOf = (r: any) => String(r?.unit_number || "").trim();
-              const numOf = (k: string) => {
-                const m = k.match(/-?\d+(?:\.\d+)?/);
-                return m ? parseFloat(m[0]) : NaN;
-              };
-              rows.sort((a, b) => {
-                const ka = keyOf(a), kb = keyOf(b);
-                if (!ka && !kb) return 0;
-                if (!ka) return 1;
-                if (!kb) return -1;
-                const na = numOf(ka), nb = numOf(kb);
-                const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
-                if (aNum && bNum && na !== nb) return na - nb;
-                if (aNum && !bNum) return -1;
-                if (!aNum && bNum) return 1;
-                return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
-              });
+              const rows = sortUnitRowsByNumber(cur.unitRows);
+              const nextDraft = { ...cur, unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
               return { ...prev, [s.id]: { ...cur, unitRows: rows } };
             });
           };
