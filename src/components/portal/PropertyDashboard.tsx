@@ -481,6 +481,8 @@ const PropertyDashboard = ({
   //    cleared on completeService() so it never bleeds into past records. ──
   const completionDraftTimers = useRef<Record<string, any>>({});
   const completionDraftLast = useRef<Record<string, string>>({});
+  const completionDraftSaveActive = useRef<Record<string, boolean>>({});
+  const completionDraftQueued = useRef<Record<string, { data: CompletionDraft; opts: { toastOnError?: boolean } }>>({});
   const persistCompletionDraftNow = async (
     serviceId: string,
     data: CompletionDraft,
@@ -569,6 +571,29 @@ const PropertyDashboard = ({
       return false;
     }
   };
+  const queueCompletionDraftSave = (
+    serviceId: string,
+    data: CompletionDraft,
+    opts: { toastOnError?: boolean } = {},
+  ) => {
+    completionDraftQueued.current[serviceId] = { data, opts };
+    if (completionDraftSaveActive.current[serviceId]) return;
+    completionDraftSaveActive.current[serviceId] = true;
+    void (async () => {
+      try {
+        while (completionDraftQueued.current[serviceId]) {
+          const next = completionDraftQueued.current[serviceId];
+          delete completionDraftQueued.current[serviceId];
+          await persistCompletionDraftNow(serviceId, next.data, next.opts);
+        }
+      } finally {
+        completionDraftSaveActive.current[serviceId] = false;
+        if (completionDraftQueued.current[serviceId]) {
+          queueCompletionDraftSave(serviceId, completionDraftQueued.current[serviceId].data, completionDraftQueued.current[serviceId].opts);
+        }
+      }
+    })();
+  };
   useEffect(() => {
     Object.entries(completionData).forEach(([serviceId, data]) => {
       if (!data) return;
@@ -584,7 +609,7 @@ const PropertyDashboard = ({
         clearTimeout(completionDraftTimers.current[serviceId]);
       }
       completionDraftTimers.current[serviceId] = setTimeout(async () => {
-        await persistCompletionDraftNow(serviceId, data);
+        queueCompletionDraftSave(serviceId, data);
       }, 800);
     });
     return () => {
@@ -1786,7 +1811,7 @@ const PropertyDashboard = ({
     completionDataRef.current = { ...completionDataRef.current, [service.id]: draft };
     setCompletionData(prev => ({ ...prev, [service.id]: draft }));
     if (!String(service.id || "").startsWith("projected-") && service.status !== "completed") {
-      void persistCompletionDraftNow(service.id, draft);
+      queueCompletionDraftSave(service.id, draft);
     }
     return draft;
   };
@@ -4035,9 +4060,7 @@ const PropertyDashboard = ({
             if (field === "unit_number") {
               completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
               if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
-              completionDraftTimers.current[s.id] = setTimeout(() => {
-                void persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
-              }, 150);
+              queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
             }
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
@@ -4046,7 +4069,7 @@ const PropertyDashboard = ({
             const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
-            persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
+            queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
           };
           // Sort the Areas Treated list numerically by unit number. Pure
           // numerics first (ascending), then anything non-numeric falls to
@@ -4368,7 +4391,7 @@ const PropertyDashboard = ({
                                   const sortedDraft = { ...draft, unitRows: sortUnitRowsByNumber(draft.unitRows) };
                                   completionDataRef.current = { ...completionDataRef.current, [s.id]: sortedDraft };
                                   setCompletionData(prev => ({ ...prev, [s.id]: sortedDraft }));
-                                  persistCompletionDraftNow(s.id, sortedDraft, { toastOnError: true });
+                                  queueCompletionDraftSave(s.id, sortedDraft, { toastOnError: true });
                                 }}
                               />
                               {/* Visit kind toggle — click to flip Treatment <-> Inspection.
