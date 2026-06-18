@@ -231,6 +231,73 @@ function windowLabel(w?: string | null): string | null {
   }
 }
 
+// ── Arrival-window width ─────────────────────────────────────────────────────
+// The office can tighten the customer-facing arrival window from the default
+// 4-hour FieldRoutes block down to 3 / 2 / 1 hours. Anything narrower than 4h
+// is centered on the estimated arrival time (the algorithm's `est_min`) and
+// slid to stay inside both the route's window and business hours. At 4h we
+// return null so display + booking keep the exact behavior they have today.
+
+const BUSINESS_LO = 7 * 60;   // 7:00 AM
+const BUSINESS_HI = 17 * 60;  // 5:00 PM
+const BUCKET_BOUNDS: Record<string, [number, number]> = {
+  "8-12": [8 * 60, 12 * 60],
+  "10-2": [10 * 60, 14 * 60],
+  "1-5":  [13 * 60, 17 * 60],
+};
+
+function hhmmToMin(s?: string | null): number | null {
+  if (!s) return null;
+  const [h, m] = s.split(":");
+  const hh = parseInt(h, 10);
+  const mm = parseInt(m, 10);
+  return Number.isNaN(hh) || Number.isNaN(mm) ? null : hh * 60 + mm;
+}
+
+function minToHHMMSS(m: number): string {
+  const hh = Math.floor(m / 60);
+  const mm = m % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00`;
+}
+
+// The tightened booking window [lo, hi] in minutes for the chosen width, or null
+// when no narrowing applies (width ≥ 4h, or we lack any time anchor).
+function bookWindowMinutes(c: SlotCandidate, widthHours: number): { lo: number; hi: number } | null {
+  if (!Number.isFinite(widthHours) || widthHours >= 4) return null;
+  const W = Math.round(widthHours * 60);
+  const recKey = (c.after_insert?.new_stop_window as string | null) ?? null;
+  const bucket = recKey ? BUCKET_BOUNDS[recKey] : undefined;
+
+  // Prefer the estimated arrival; fall back to the bucket / next-stop midpoint.
+  let center = c.est_min ?? null;
+  if (center == null && bucket) center = (bucket[0] + bucket[1]) / 2;
+  if (center == null) {
+    const s = hhmmToMin(c.next_stop?.start_time);
+    const e = hhmmToMin(c.next_stop?.end_time);
+    if (s == null || e == null) return null;
+    center = (s + e) / 2;
+  }
+
+  let lo = Math.round(center - W / 2);
+  let hi = lo + W;
+  const slideInto = (bLo: number, bHi: number) => {
+    if (bHi - bLo <= W) { lo = bLo; hi = bHi; return; }  // bounds narrower than width
+    if (lo < bLo) { lo = bLo; hi = bLo + W; }
+    if (hi > bHi) { hi = bHi; lo = bHi - W; }
+  };
+  if (bucket) slideInto(bucket[0], bucket[1]);  // keep the promise inside the route's window
+  slideInto(BUSINESS_LO, BUSINESS_HI);
+  return { lo, hi };
+}
+
+// Display label for the recommended booking window at the chosen width.
+function bookWindowLabel(c: SlotCandidate, widthHours: number): string {
+  const bw = bookWindowMinutes(c, widthHours);
+  if (bw) return `${fmtTime(bw.lo)} – ${fmtTime(bw.hi)}`;
+  const recKey = (c.after_insert?.new_stop_window as string | null) ?? null;
+  return windowLabel(recKey) ?? fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time);
+}
+
 // Next `count` business days (incl. today) as {iso, label} using local time.
 function upcomingBusinessDays(count: number): { iso: string; label: string }[] {
   const out: { iso: string; label: string }[] = [];
@@ -358,6 +425,7 @@ function FindMode({
   const [serviceTypeLabel, setServiceTypeLabel] = useState<string>("");
   const [subscriptionId, setSubscriptionId] = useState<string>("");
   const [window, setWindow] = useState("none");
+  const [windowWidth, setWindowWidth] = useState("4");   // hours: 4 (default) | 3 | 2 | 1
   const [selectedDates, setSelectedDates] = useState<string[]>(
     dayOptions.slice(0, 3).map((d) => d.iso), // default: next 3 working days
   );
@@ -501,16 +569,33 @@ function FindMode({
               <p className="text-xs text-muted-foreground">Next 3 working days are selected by default.</p>
             </div>
 
-            <div className="space-y-2 md:w-64">
-              <Label>Preferred window (optional)</Label>
-              <Select value={window} onValueChange={setWindow}>
-                <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Any time</SelectItem>
-                  <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
-                  <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-4">
+              <div className="space-y-2 md:w-64">
+                <Label>Preferred window (optional)</Label>
+                <Select value={window} onValueChange={setWindow}>
+                  <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Any time</SelectItem>
+                    <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
+                    <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:w-64">
+                <Label>Arrival window width</Label>
+                <Select value={windowWidth} onValueChange={setWindowWidth}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="4">4-hour window (default)</SelectItem>
+                    <SelectItem value="3">3-hour window</SelectItem>
+                    <SelectItem value="2">2-hour window</SelectItem>
+                    <SelectItem value="1">1-hour window</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Narrows the customer's arrival window around the estimated time.
+                </p>
+              </div>
             </div>
 
             <Button type="submit" disabled={loading} className="w-full md:w-auto">
@@ -550,8 +635,7 @@ function FindMode({
               <div className="space-y-2">
                 {top.map((r, i) => {
                   const recKey = (r.c.after_insert?.new_stop_window as string | null) ?? null;
-                  const recLabel = windowLabel(recKey)
-                    ?? fmtWindow(r.c.next_stop?.start_time, r.c.next_stop?.end_time);
+                  const recLabel = bookWindowLabel(r.c, Number(windowWidth));
                   const snap = r.c.route_snapshot;
                   const after = r.c.after_insert;
                   const beforeCount = recKey && snap?.stops_by_window
@@ -638,6 +722,7 @@ function FindMode({
                     date={day.date}
                     scheduleContext={scheduleContext}
                     isBestFit={bestKey === `${day.date}#${i}`}
+                    widthHours={Number(windowWidth)}
                   />
                 ))}
               </CardContent>
@@ -658,13 +743,14 @@ type ScheduleContext = {
 };
 
 function SlotCard({
-  c, rank, date, scheduleContext, isBestFit,
+  c, rank, date, scheduleContext, isBestFit, widthHours = 4,
 }: {
   c: SlotCandidate;
   rank: number;
   date?: string;
   scheduleContext?: ScheduleContext | null;
   isBestFit?: boolean;
+  widthHours?: number;
 }) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
@@ -672,8 +758,11 @@ function SlotCard({
 
   const onSchedule = async () => {
     if (!scheduleContext) return;
-    const start = c.next_stop?.start_time;
-    const end = c.next_stop?.end_time;
+    // Book the tightened window when the office narrowed it; else the slot's
+    // native (4-hour) window. minToHHMMSS keeps the "HH:MM:SS" shape FieldRoutes expects.
+    const bw = bookWindowMinutes(c, widthHours);
+    const start = bw ? minToHHMMSS(bw.lo) : c.next_stop?.start_time;
+    const end = bw ? minToHHMMSS(bw.hi) : c.next_stop?.end_time;
     const useDate = date ?? c.route_date;
     if (!start || !end || !useDate) { toast.error("This slot is missing time data."); return; }
     const subLabel = scheduleContext.subscriptionId === -1 ? "standalone" : `subscription #${scheduleContext.subscriptionId}`;
@@ -725,7 +814,7 @@ function SlotCard({
           window only when upstream didn't return one. ────────────────── */}
       {(() => {
         const recKey = (after?.new_stop_window as string | null) ?? null;
-        const recLabel = windowLabel(recKey) ?? fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time);
+        const recLabel = bookWindowLabel(c, widthHours);
         const beforeCount = recKey && snap?.stops_by_window
           ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
           : 0;
