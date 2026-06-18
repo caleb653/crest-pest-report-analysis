@@ -379,15 +379,22 @@ export function computeUpcomingUnits(args: {
     return new Date(createdAt).getTime() <= new Date(at).getTime();
   };
   // Normalize + dedupe planned units up front so "5" / " 5" / "5 " never count twice.
-  const ownPlanned = Array.isArray(service?.units_planned)
-    ? Array.from(
-        new Set(
-          (service.units_planned as unknown[])
-            .map(normalizeUnit)
-            .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
-        )
-      )
-    : [];
+  // Include saved upcoming unit_details too: inline "Add Area" autosaves the
+  // in-progress service report there, and the customer portal must reflect it
+  // before the visit is completed.
+  const ownPlannedRaw = [
+    ...(Array.isArray(service?.units_planned) ? (service.units_planned as unknown[]) : []),
+    ...(Array.isArray(service?.unit_details)
+      ? (service.unit_details as UnitDetailRow[]).map((d) => d?.unit_number)
+      : []),
+  ];
+  const ownPlanned = Array.from(
+    new Set(
+      ownPlannedRaw
+        .map(normalizeUnit)
+        .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
+    )
+  );
   const ownPlannedSet = new Set(ownPlanned);
 
   const openRequests = getOpenRequests(requests);
