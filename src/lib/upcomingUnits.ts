@@ -176,6 +176,8 @@ export function buildMergedMostRecentPast(
 ): ServiceRow | null {
   const list = Array.isArray(allPastServices) ? allPastServices : [];
   if (list.length === 0) return null;
+  const isAdHocService = (svc: ServiceRow | null | undefined): boolean =>
+    !!((svc as any)?.report_data && (svc as any).report_data.is_ad_hoc === true);
   // Sort newest first so the first time we see a unit is its latest detail.
   const sorted = [...list].sort((a, b) =>
     (b.service_date || "").localeCompare(a.service_date || "")
@@ -187,6 +189,11 @@ export function buildMergedMostRecentPast(
     dets.forEach((d) => {
       const u = String(d?.unit_number || "").trim();
       if (!u) return;
+      // Ad-hoc spot visits are informational in-between visits. A cleared
+      // ad-hoc row must NOT erase a follow-up that was already scheduled for
+      // the normal cadence visit; only an ad-hoc row that is itself flagged
+      // follow_up_needed should become the latest follow-up state.
+      if (isAdHocService(svc) && d?.follow_up_needed !== true) return;
       if (!latestByUnit.has(u)) latestByUnit.set(u, d);
     });
     const dRaw = (svc as any)?.report_data?.dismissed_follow_ups;
