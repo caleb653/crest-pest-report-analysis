@@ -4023,16 +4023,23 @@ const PropertyDashboard = ({
             }, 0);
           }
           const updateRow = (idx: number, field: string, value: any) => {
-            setCompletionData(prev => {
-              const rows = [...prev[s.id].unitRows];
-              rows[idx] = { ...rows[idx], [field]: value };
-              // Do NOT sort while the tech is actively typing a new unit number;
-              // index-based handlers can otherwise jump to a different row before
-              // the autosave runs. Persist the typed unit immediately instead.
-              const nextDraft = { ...prev[s.id], unitRows: rows };
-              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-              return { ...prev, [s.id]: nextDraft };
-            });
+            const current = completionDataRef.current[s.id] || cd;
+            const rows = [...current.unitRows];
+            rows[idx] = { ...rows[idx], [field]: value };
+            // Do NOT sort while the tech is actively typing a new unit number;
+            // index-based handlers can otherwise jump to a different row before
+            // the autosave runs. Persist unit labels on a short dedicated timer
+            // so leaving the page immediately after typing still saves.
+            const nextDraft = { ...current, unitRows: rows };
+            completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+            if (field === "unit_number") {
+              completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
+              if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
+              completionDraftTimers.current[s.id] = setTimeout(() => {
+                void persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
+              }, 150);
+            }
+            setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
           const addRow = () => {
             const current = completionDataRef.current[s.id] || cd;
