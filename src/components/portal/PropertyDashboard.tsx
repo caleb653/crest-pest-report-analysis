@@ -4125,9 +4125,14 @@ const PropertyDashboard = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <Label className="text-xs font-semibold">Areas Treated ({cd.unitRows.length})</Label>
-                    <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
-                      <Plus className="w-3 h-3 mr-0.5" />Add Area
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={sortRowsNumerically} title="Sort areas by unit number">
+                        Sort #
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
+                        <Plus className="w-3 h-3 mr-0.5" />Add Area
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-6">
                     {cd.unitRows.map((row: any, idx: number) => {
