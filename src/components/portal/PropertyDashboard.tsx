@@ -101,6 +101,27 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 const isAdHocService = (s: any): boolean =>
   !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
 
+const compareUnitLabels = (a: unknown, b: unknown): number => {
+  const ka = String(a || "").trim();
+  const kb = String(b || "").trim();
+  if (!ka && !kb) return 0;
+  if (!ka) return 1;
+  if (!kb) return -1;
+  const ma = ka.match(/-?\d+(?:\.\d+)?/);
+  const mb = kb.match(/-?\d+(?:\.\d+)?/);
+  const na = ma ? parseFloat(ma[0]) : NaN;
+  const nb = mb ? parseFloat(mb[0]) : NaN;
+  const aNum = !Number.isNaN(na);
+  const bNum = !Number.isNaN(nb);
+  if (aNum && bNum && na !== nb) return na - nb;
+  if (aNum && !bNum) return -1;
+  if (!aNum && bNum) return 1;
+  return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+};
+
+const sortUnitRowsByNumber = <T extends { unit_number?: unknown }>(rows: T[]): T[] =>
+  [...rows].sort((a, b) => compareUnitLabels(a?.unit_number, b?.unit_number));
+
 type RequestSnapshotRow = {
   id?: string;
   created_at?: string;
