@@ -101,6 +101,27 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
 const isAdHocService = (s: any): boolean =>
   !!(s && s.report_data && (s.report_data as any).is_ad_hoc === true);
 
+const compareUnitLabels = (a: unknown, b: unknown): number => {
+  const ka = String(a || "").trim();
+  const kb = String(b || "").trim();
+  if (!ka && !kb) return 0;
+  if (!ka) return 1;
+  if (!kb) return -1;
+  const ma = ka.match(/-?\d+(?:\.\d+)?/);
+  const mb = kb.match(/-?\d+(?:\.\d+)?/);
+  const na = ma ? parseFloat(ma[0]) : NaN;
+  const nb = mb ? parseFloat(mb[0]) : NaN;
+  const aNum = !Number.isNaN(na);
+  const bNum = !Number.isNaN(nb);
+  if (aNum && bNum && na !== nb) return na - nb;
+  if (aNum && !bNum) return -1;
+  if (!aNum && bNum) return 1;
+  return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+};
+
+const sortUnitRowsByNumber = <T extends { unit_number?: unknown }>(rows: T[]): T[] =>
+  [...rows].sort((a, b) => compareUnitLabels(a?.unit_number, b?.unit_number));
+
 type RequestSnapshotRow = {
   id?: string;
   created_at?: string;
@@ -504,7 +525,8 @@ const PropertyDashboard = ({
           if (dismissed.size > 0) {
             cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
           }
-          const portalRows = cleanRows.filter((r: any) => String(r?.unit_number || "").trim());
+          cleanRows = sortUnitRowsByNumber(cleanRows);
+          const portalRows = sortUnitRowsByNumber(cleanRows.filter((r: any) => String(r?.unit_number || "").trim()));
           const draftUnitLabels = Array.from(
             new Set(portalRows.map((r: any) => String(r?.unit_number || "").trim()).filter(Boolean))
           );
@@ -524,7 +546,7 @@ const PropertyDashboard = ({
               ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !dismissed.has(u)),
               ...draftUnitLabels.filter((u) => !dismissed.has(u)),
             ])
-          );
+          ).sort(compareUnitLabels);
           const next = {
             ...latestReportData,
             completion_draft_units: draftUnitLabels,
@@ -1622,7 +1644,7 @@ const PropertyDashboard = ({
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
-          unitRows: draft.unitRows
+          unitRows: sortUnitRowsByNumber(draft.unitRows
             .filter((r: any) => {
               const label = String(r?.unit_number || "").trim();
               if (!label) return false;
@@ -1646,7 +1668,7 @@ const PropertyDashboard = ({
               follow_up_needed: r.follow_up_needed === true,
               sanitization_concern: r.sanitization_concern === true,
               photos: Array.isArray(r.photos) ? r.photos : [],
-            })),
+            }))),
           summary: draft.summary || "",
           findings: draft.findings || "",
           notes: draft.notes || "",
@@ -3974,7 +3996,7 @@ const PropertyDashboard = ({
                 if (additions.length === 0) return prev;
                 return {
                   ...prev,
-                  [s.id]: { ...current, unitRows: [...current.unitRows, ...additions] },
+                  [s.id]: { ...current, unitRows: sortUnitRowsByNumber([...current.unitRows, ...additions]) },
                 };
               });
             }, 0);
@@ -3983,7 +4005,7 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
-              const nextDraft = { ...prev[s.id], unitRows: rows };
+              const nextDraft = { ...prev[s.id], unitRows: field === "unit_number" ? sortUnitRowsByNumber(rows) : rows };
               completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
               return { ...prev, [s.id]: nextDraft };
             });
@@ -4006,24 +4028,9 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const cur = prev[s.id];
               if (!cur || !Array.isArray(cur.unitRows)) return prev;
-              const rows = [...cur.unitRows];
-              const keyOf = (r: any) => String(r?.unit_number || "").trim();
-              const numOf = (k: string) => {
-                const m = k.match(/-?\d+(?:\.\d+)?/);
-                return m ? parseFloat(m[0]) : NaN;
-              };
-              rows.sort((a, b) => {
-                const ka = keyOf(a), kb = keyOf(b);
-                if (!ka && !kb) return 0;
-                if (!ka) return 1;
-                if (!kb) return -1;
-                const na = numOf(ka), nb = numOf(kb);
-                const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
-                if (aNum && bNum && na !== nb) return na - nb;
-                if (aNum && !bNum) return -1;
-                if (!aNum && bNum) return 1;
-                return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
-              });
+              const rows = sortUnitRowsByNumber(cur.unitRows);
+              const nextDraft = { ...cur, unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
               return { ...prev, [s.id]: { ...cur, unitRows: rows } };
             });
           };
