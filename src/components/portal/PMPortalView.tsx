@@ -1127,6 +1127,37 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
+        {/* Service-level photos (uploaded to the whole visit, not a single
+            unit). These were previously only visible in the By Unit view —
+            now they surface in By Date too so PMs always see the visit
+            photos no matter which timeline they're browsing. */}
+        {(() => {
+          const svcPhotos = Array.isArray((s as any)?.photos) ? (s as any).photos : [];
+          const photos = svcPhotos
+            .map((p: any) => (typeof p === "string" ? p : p?.url || p?.src))
+            .filter(Boolean);
+          if (photos.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3">
+              <p className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">
+                Service Photos <span className="text-muted-foreground font-normal normal-case">({photos.length})</span>
+              </p>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                {photos.map((url: string, k: number) => (
+                  <a
+                    key={k}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-all block"
+                  >
+                    <img src={url} alt={`Service photo ${k + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {/* Products — sits right under the summary so PMs see chemistry
             before drilling into per-unit detail. */}
         {(() => {
