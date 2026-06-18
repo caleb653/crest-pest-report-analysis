@@ -4071,6 +4071,8 @@ const PropertyDashboard = ({
             const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
+            completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
+            if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
             queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
           };
           // Sort the Areas Treated list numerically by unit number. Pure
