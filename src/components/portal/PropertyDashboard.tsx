@@ -504,8 +504,30 @@ const PropertyDashboard = ({
           if (dismissed.size > 0) {
             cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
           }
+          const portalRows = cleanRows.filter((r: any) => String(r?.unit_number || "").trim());
+          const draftUnitLabels = Array.from(
+            new Set(portalRows.map((r: any) => String(r?.unit_number || "").trim()).filter(Boolean))
+          );
+          const previousDraftLabels = new Set(
+            (Array.isArray((latestReportData as any).completion_draft_units)
+              ? (latestReportData as any).completion_draft_units
+              : Array.isArray((latestReportData as any).completion_draft?.unitRows)
+                ? (latestReportData as any).completion_draft.unitRows.map((r: any) => r?.unit_number)
+                : []
+            ).map((u: any) => String(u || "").trim()).filter(Boolean)
+          );
+          const existingPlanned = Array.isArray((svc as any).units_planned)
+            ? ((svc as any).units_planned as any[]).map((u) => String(u || "").trim()).filter(Boolean)
+            : [];
+          const nextPlanned = Array.from(
+            new Set([
+              ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !dismissed.has(u)),
+              ...draftUnitLabels.filter((u) => !dismissed.has(u)),
+            ])
+          );
           const next = {
             ...latestReportData,
+            completion_draft_units: draftUnitLabels,
             completion_draft: {
               ...data,
               unitRows: cleanRows,
@@ -513,8 +535,13 @@ const PropertyDashboard = ({
               _saved_at: new Date().toISOString(),
             },
           };
-          await supabase.from("portal_services").update({ report_data: next }).eq("id", serviceId);
+          await supabase
+            .from("portal_services")
+            .update({ report_data: next, units_planned: nextPlanned, unit_details: portalRows })
+            .eq("id", serviceId);
           (svc as any).report_data = next;
+          (svc as any).units_planned = nextPlanned;
+          (svc as any).unit_details = portalRows;
         } catch (e) {
           console.warn("completion draft autosave failed", e);
         }
