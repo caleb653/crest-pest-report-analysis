@@ -3942,13 +3942,19 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
-              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+              const nextDraft = { ...prev[s.id], unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+              return { ...prev, [s.id]: nextDraft };
             });
           };
           const addRow = () => {
             setCompletionData(prev => ({
               ...prev,
-              [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
+              [s.id]: (() => {
+                const nextDraft = { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
+                completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+                return nextDraft;
+              })(),
             }));
           };
           // Sort the Areas Treated list numerically by unit number. Pure
@@ -3984,7 +3990,9 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], products_used: next };
-              return { ...prev, [s.id]: { ...prev[s.id], unitRows: rows } };
+              const nextDraft = { ...prev[s.id], unitRows: rows };
+              completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+              return { ...prev, [s.id]: nextDraft };
             });
           };
           const removeRow = async (idx: number) => {
