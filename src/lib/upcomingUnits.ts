@@ -391,7 +391,7 @@ export function computeUpcomingUnits(args: {
   const ownPlannedSet = new Set(ownPlanned);
 
   const openRequests = getOpenRequests(requests);
-  const openRequestUnits = new Set(
+  const rawOpenRequestUnits = new Set(
     openRequests
       .filter(r => {
         const u = normalizeUnit(r.unit_number);
@@ -404,6 +404,9 @@ export function computeUpcomingUnits(args: {
     followUpDetails
       .map(u => normalizeUnit(u.unit_number))
       .filter((u) => Boolean(u) && !isDismissedForPlanned(u))
+  );
+  const openRequestUnits = new Set(
+    Array.from(rawOpenRequestUnits).filter((u) => !followUpUnits.has(u))
   );
   const followUpByUnit = new Map<string, UnitDetailRow>();
   followUpDetails.forEach(u => {
@@ -463,8 +466,8 @@ export function computeUpcomingUnits(args: {
 
     let source: UnitSource = "planned";
     if (isFirstUpcoming) {
-      if (request) source = "work_order";
-      else if (followUp) source = "follow_up";
+      if (followUp) source = "follow_up";
+      else if (request) source = "work_order";
       else if (!ownPlannedSet.has(unit) && lastPastUnits.includes(unit)) source = "carried";
     }
     // Ad-hoc visits aren't the "first upcoming" but they still need to keep
