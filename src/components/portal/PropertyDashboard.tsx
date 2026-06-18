@@ -4035,14 +4035,11 @@ const PropertyDashboard = ({
             });
           };
           const addRow = () => {
-            setCompletionData(prev => ({
-              ...prev,
-              [s.id]: (() => {
-                const nextDraft = { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
-                completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-                return nextDraft;
-              })(),
-            }));
+            const current = completionDataRef.current[s.id] || cd;
+            const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
+            completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+            setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
+            persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
           };
           // Sort the Areas Treated list numerically by unit number. Pure
           // numerics first (ascending), then anything non-numeric falls to
