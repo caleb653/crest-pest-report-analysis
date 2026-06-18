@@ -65,7 +65,42 @@ interface ServiceData {
   units_planned: any;
   unit_details: any;
   special_notes: string | null;
+  report_data?: any;
 }
+
+const compareUnitLabels = (a: unknown, b: unknown): number => {
+  const ka = String(a || "").trim();
+  const kb = String(b || "").trim();
+  if (!ka && !kb) return 0;
+  if (!ka) return 1;
+  if (!kb) return -1;
+  const ma = ka.match(/-?\d+(?:\.\d+)?/);
+  const mb = kb.match(/-?\d+(?:\.\d+)?/);
+  const na = ma ? parseFloat(ma[0]) : NaN;
+  const nb = mb ? parseFloat(mb[0]) : NaN;
+  const aNum = !Number.isNaN(na);
+  const bNum = !Number.isNaN(nb);
+  if (aNum && bNum && na !== nb) return na - nb;
+  if (aNum && !bNum) return -1;
+  if (!aNum && bNum) return 1;
+  return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+};
+
+const hydrateUpcomingUnitsForCustomer = (service: ServiceData): ServiceData => {
+  if (service.status === "completed") return service;
+  const byUnit = new Map<string, any>();
+  const add = (raw: any) => {
+    const label = String(typeof raw === "string" ? raw : raw?.unit_number || "").trim();
+    if (!label) return;
+    byUnit.set(label, typeof raw === "string" ? { unit_number: label, status: "To Be Treated" } : { ...raw, unit_number: label });
+  };
+  (Array.isArray(service.units_planned) ? service.units_planned : []).forEach(add);
+  (Array.isArray(service.report_data?.completion_draft?.unitRows) ? service.report_data.completion_draft.unitRows : []).forEach(add);
+  (Array.isArray(service.unit_details) ? service.unit_details : []).forEach(add);
+  const unit_details = Array.from(byUnit.values()).sort((a, b) => compareUnitLabels(a?.unit_number, b?.unit_number));
+  if (unit_details.length === 0) return service;
+  return { ...service, unit_details, units_planned: unit_details.map((u: any) => u.unit_number) };
+};
 
 interface ChatMessage {
   id: string;
@@ -453,7 +488,7 @@ const ClientPortal = () => {
       setProperties(props);
       if (props.length > 0) {
         const { data: svcs } = await supabase.from("portal_services").select("*").in("property_id", props.map(p => p.id)).order("service_date", { ascending: false });
-        if (svcs) setServices(svcs);
+        if (svcs) setServices((svcs as ServiceData[]).map(hydrateUpcomingUnitsForCustomer));
       }
     }
 
@@ -510,9 +545,9 @@ const ClientPortal = () => {
   const today = new Date().toISOString().split("T")[0];
 
   const getPropertyServices = (propertyId: string) => services.filter(s => s.property_id === propertyId);
-  const getPastServices = (propertyId: string) => getPropertyServices(propertyId).filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const getPastServices = (propertyId: string) => getPropertyServices(propertyId).filter(s => s.status === "completed");
   const getFutureServices = (propertyId: string) => {
-    const future = getPropertyServices(propertyId).filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+    const future = getPropertyServices(propertyId).filter(s => s.status !== "completed");
     // Auto-populate follow-up notes from past services
     if (future.length > 0) {
       const past = getPastServices(propertyId);
@@ -818,8 +853,8 @@ const ClientPortal = () => {
   }
 
   // ─── All Properties View ───
-  const allPast = services.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-  const allFuture = services.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+  const allPast = services.filter(s => s.status === "completed");
+  const allFuture = services.filter(s => s.status !== "completed");
 
   return (
     <div className="min-h-screen bg-background">
