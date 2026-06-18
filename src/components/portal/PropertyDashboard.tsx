@@ -1785,6 +1785,9 @@ const PropertyDashboard = ({
     };
     completionDataRef.current = { ...completionDataRef.current, [service.id]: draft };
     setCompletionData(prev => ({ ...prev, [service.id]: draft }));
+    if (!String(service.id || "").startsWith("projected-") && service.status !== "completed") {
+      void persistCompletionDraftNow(service.id, draft);
+    }
     return draft;
   };
 
