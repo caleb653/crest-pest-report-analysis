@@ -481,6 +481,8 @@ const PropertyDashboard = ({
   //    cleared on completeService() so it never bleeds into past records. ──
   const completionDraftTimers = useRef<Record<string, any>>({});
   const completionDraftLast = useRef<Record<string, string>>({});
+  const completionDraftSaveActive = useRef<Record<string, boolean>>({});
+  const completionDraftQueued = useRef<Record<string, { data: CompletionDraft; opts: { toastOnError?: boolean } }>>({});
   const persistCompletionDraftNow = async (
     serviceId: string,
     data: CompletionDraft,
@@ -569,6 +571,29 @@ const PropertyDashboard = ({
       return false;
     }
   };
+  const queueCompletionDraftSave = (
+    serviceId: string,
+    data: CompletionDraft,
+    opts: { toastOnError?: boolean } = {},
+  ) => {
+    completionDraftQueued.current[serviceId] = { data, opts };
+    if (completionDraftSaveActive.current[serviceId]) return;
+    completionDraftSaveActive.current[serviceId] = true;
+    void (async () => {
+      try {
+        while (completionDraftQueued.current[serviceId]) {
+          const next = completionDraftQueued.current[serviceId];
+          delete completionDraftQueued.current[serviceId];
+          await persistCompletionDraftNow(serviceId, next.data, next.opts);
+        }
+      } finally {
+        completionDraftSaveActive.current[serviceId] = false;
+        if (completionDraftQueued.current[serviceId]) {
+          queueCompletionDraftSave(serviceId, completionDraftQueued.current[serviceId].data, completionDraftQueued.current[serviceId].opts);
+        }
+      }
+    })();
+  };
   useEffect(() => {
     Object.entries(completionData).forEach(([serviceId, data]) => {
       if (!data) return;
@@ -584,7 +609,7 @@ const PropertyDashboard = ({
         clearTimeout(completionDraftTimers.current[serviceId]);
       }
       completionDraftTimers.current[serviceId] = setTimeout(async () => {
-        await persistCompletionDraftNow(serviceId, data);
+        queueCompletionDraftSave(serviceId, data);
       }, 800);
     });
     return () => {
