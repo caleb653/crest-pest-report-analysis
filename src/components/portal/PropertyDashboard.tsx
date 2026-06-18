@@ -1592,7 +1592,6 @@ const PropertyDashboard = ({
           const label = String(u || "").trim();
           if (label) dismissed.add(label);
         });
-        const liveUnits = new Set((unitContexts || []).map(c => String(c.unit_number || "").trim()).filter(Boolean));
       setCompletionData(prev => ({
         ...prev,
         [serviceId]: {
