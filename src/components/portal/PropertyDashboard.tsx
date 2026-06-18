@@ -450,7 +450,9 @@ const PropertyDashboard = ({
   };
   const [completionData, setCompletionData] = useState<Record<string, CompletionDraft>>({});
   const completionDataRef = useRef<Record<string, CompletionDraft>>({});
+  const servicesRef = useRef(services);
   useEffect(() => { completionDataRef.current = completionData; }, [completionData]);
+  useEffect(() => { servicesRef.current = services; }, [services]);
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   // Tracks per-unit photo uploads:  `${serviceId}:${unitIndex}` while uploading
   const [uploadingUnitPhotoFor, setUploadingUnitPhotoFor] = useState<string | null>(null);
@@ -484,7 +486,7 @@ const PropertyDashboard = ({
     data: CompletionDraft,
     opts: { toastOnError?: boolean } = {},
   ): Promise<boolean> => {
-    const svc = services.find(s => s.id === serviceId);
+    const svc = servicesRef.current.find(s => s.id === serviceId);
     if (!data || !svc || svc.status === "completed") return false;
     try {
       let cleanRows = (data.unitRows || []).map((r: any) => ({
