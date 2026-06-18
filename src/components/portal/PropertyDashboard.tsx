@@ -4060,9 +4060,7 @@ const PropertyDashboard = ({
             if (field === "unit_number") {
               completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
               if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
-              completionDraftTimers.current[s.id] = setTimeout(() => {
-                queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
-              }, 150);
+              queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
             }
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
