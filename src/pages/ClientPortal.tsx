@@ -488,7 +488,7 @@ const ClientPortal = () => {
       setProperties(props);
       if (props.length > 0) {
         const { data: svcs } = await supabase.from("portal_services").select("*").in("property_id", props.map(p => p.id)).order("service_date", { ascending: false });
-        if (svcs) setServices(svcs);
+        if (svcs) setServices((svcs as ServiceData[]).map(hydrateUpcomingUnitsForCustomer));
       }
     }
 
@@ -545,9 +545,9 @@ const ClientPortal = () => {
   const today = new Date().toISOString().split("T")[0];
 
   const getPropertyServices = (propertyId: string) => services.filter(s => s.property_id === propertyId);
-  const getPastServices = (propertyId: string) => getPropertyServices(propertyId).filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  const getPastServices = (propertyId: string) => getPropertyServices(propertyId).filter(s => s.status === "completed");
   const getFutureServices = (propertyId: string) => {
-    const future = getPropertyServices(propertyId).filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+    const future = getPropertyServices(propertyId).filter(s => s.status !== "completed");
     // Auto-populate follow-up notes from past services
     if (future.length > 0) {
       const past = getPastServices(propertyId);
@@ -853,8 +853,8 @@ const ClientPortal = () => {
   }
 
   // ─── All Properties View ───
-  const allPast = services.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-  const allFuture = services.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
+  const allPast = services.filter(s => s.status === "completed");
+  const allFuture = services.filter(s => s.status !== "completed");
 
   return (
     <div className="min-h-screen bg-background">
