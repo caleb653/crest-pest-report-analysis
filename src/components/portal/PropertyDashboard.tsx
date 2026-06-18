@@ -519,14 +519,21 @@ const PropertyDashboard = ({
         const label = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
         if (label) dismissed.add(label);
       });
-      if (dismissed.size > 0) {
-        cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
-      }
       cleanRows = sortUnitRowsByNumber(cleanRows);
       const portalRows = sortUnitRowsByNumber(cleanRows.filter((r: any) => String(r?.unit_number || "").trim()));
       const draftUnitLabels = Array.from(
         new Set(portalRows.map((r: any) => String(r?.unit_number || "").trim()).filter(Boolean))
       ).sort(compareUnitLabels);
+      // If an admin manually adds an area that was previously removed, that
+      // is an explicit re-add. Clear its dismissed marker instead of silently
+      // stripping it from the save payload (this was making Add Area look like
+      // it worked, then disappear on refresh/customer portal).
+      const activeDismissed = new Set(dismissed);
+      draftUnitLabels.forEach((label) => activeDismissed.delete(label));
+      const nextDismissedUnits = dismissedRaw.filter((entry) => {
+        const label = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+        return label && activeDismissed.has(label);
+      });
       const previousDraftLabels = new Set(
         (Array.isArray((latestReportData as any).completion_draft_units)
           ? (latestReportData as any).completion_draft_units
@@ -542,12 +549,13 @@ const PropertyDashboard = ({
           : [];
       const nextPlanned = Array.from(
         new Set([
-          ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !dismissed.has(u)),
-          ...draftUnitLabels.filter((u) => !dismissed.has(u)),
+          ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !activeDismissed.has(u)),
+          ...draftUnitLabels.filter((u) => !activeDismissed.has(u)),
         ])
       ).sort(compareUnitLabels);
       const next = {
         ...latestReportData,
+        dismissed_units: nextDismissedUnits,
         completion_draft_units: draftUnitLabels,
         completion_draft: {
           ...data,
@@ -6554,7 +6562,18 @@ const PropertyDashboard = ({
 
               return (
                 <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
-                  <button className="w-full text-left p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="w-full text-left p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer"
+                    onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!isFirst) setExpandedUpcomingId(isExpanded ? null : s.id);
+                      }
+                    }}
+                  >
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
@@ -6847,7 +6866,7 @@ const PropertyDashboard = ({
                         </Button>
                       )}
                     </div>
-                  </button>
+                  </div>
                   {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
               );
