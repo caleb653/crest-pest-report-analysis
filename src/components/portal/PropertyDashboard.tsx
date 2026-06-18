@@ -4021,8 +4021,16 @@ const PropertyDashboard = ({
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
               rows[idx] = { ...rows[idx], [field]: value };
-              const nextDraft = { ...prev[s.id], unitRows: field === "unit_number" ? sortUnitRowsByNumber(rows) : rows };
+              // Do NOT sort while the tech is actively typing a new unit number;
+              // index-based handlers can otherwise jump to a different row before
+              // the autosave runs. Persist the typed unit immediately instead.
+              const nextDraft = { ...prev[s.id], unitRows: rows };
               completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
+              if (field === "unit_number" && String(value || "").trim()) {
+                window.setTimeout(() => {
+                  persistCompletionDraftNow(s.id, completionDataRef.current[s.id] || nextDraft, { toastOnError: true });
+                }, 0);
+              }
               return { ...prev, [s.id]: nextDraft };
             });
           };
@@ -4345,6 +4353,14 @@ const PropertyDashboard = ({
                                 placeholder="Area / Unit / Room"
                                 value={row.unit_number}
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
+                                onBlur={() => {
+                                  const draft = completionDataRef.current[s.id];
+                                  if (!draft) return;
+                                  const sortedDraft = { ...draft, unitRows: sortUnitRowsByNumber(draft.unitRows) };
+                                  completionDataRef.current = { ...completionDataRef.current, [s.id]: sortedDraft };
+                                  setCompletionData(prev => ({ ...prev, [s.id]: sortedDraft }));
+                                  persistCompletionDraftNow(s.id, sortedDraft, { toastOnError: true });
+                                }}
                               />
                               {/* Visit kind toggle — click to flip Treatment <-> Inspection.
                                   Always shown so any area can be reclassified, not just
