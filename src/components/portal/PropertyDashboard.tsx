@@ -481,6 +481,7 @@ const PropertyDashboard = ({
   //    cleared on completeService() so it never bleeds into past records. ──
   const completionDraftTimers = useRef<Record<string, any>>({});
   const completionDraftLast = useRef<Record<string, string>>({});
+  const completionDraftSaved = useRef<Record<string, string>>({});
   const completionDraftSaveActive = useRef<Record<string, boolean>>({});
   const completionDraftQueued = useRef<Record<string, { data: CompletionDraft; opts: { toastOnError?: boolean } }>>({});
   const persistCompletionDraftNow = async (
@@ -565,6 +566,7 @@ const PropertyDashboard = ({
         (svc as any).units_planned = nextPlanned;
         (svc as any).unit_details = portalRows;
       }
+      completionDraftSaved.current[serviceId] = JSON.stringify(data);
       return true;
     } catch (e: any) {
       console.warn("completion draft autosave failed", e);
@@ -607,7 +609,7 @@ const PropertyDashboard = ({
       // mutate their stored draft.
       if (!svc || svc.status === "completed") return;
       const serialized = JSON.stringify(data);
-      if (completionDraftLast.current[serviceId] === serialized) return;
+      if (completionDraftSaved.current[serviceId] === serialized) return;
       completionDraftLast.current[serviceId] = serialized;
       if (completionDraftTimers.current[serviceId]) {
         clearTimeout(completionDraftTimers.current[serviceId]);
