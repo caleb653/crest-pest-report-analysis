@@ -1586,7 +1586,11 @@ const PropertyDashboard = ({
               const label = String(r?.unit_number || "").trim();
               if (!label) return false;
               if (dismissed.has(label)) return false;
-              return liveUnits.size === 0 || liveUnits.has(label);
+              // Keep manually added rows from the autosaved draft even when
+              // they are not part of the computed work-order/follow-up merge.
+              // Otherwise an added unit disappears after refresh before the
+              // service is completed.
+              return true;
             })
             .map((r: any) => ({
               unit_number: r.unit_number || "",
@@ -1717,7 +1721,7 @@ const PropertyDashboard = ({
     unitContexts: import("@/lib/upcomingUnits").UpcomingUnitContext[] = [],
   ) => {
     const serviceForDraft = service || propServices.find(p => p.id === serviceId);
-    const data = completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
+    const data = completionData[serviceId] || completionDataRef.current[serviceId] || (serviceForDraft ? ensureCompletionDraft(serviceForDraft, unitContexts) : undefined);
     const unitRows = (data?.unitRows?.filter(r => r.unit_number) || []).map((r: any) => {
       // When a tech completes a visit, any unit still flagged "To Be Treated"
       // should be promoted to its completed equivalent so the customer-facing
