@@ -1890,10 +1890,14 @@ const PropertyDashboard = ({
       console.warn("auto-resolve work orders failed", e);
     }
 
-    // ─── If an ad-hoc/follow-up visit cleared a unit, remove that unit from
-    //     any future scheduled visit and suppress the old follow-up flag so it
-    //     cannot keep reappearing as "Upcoming" after a Free and Clear. ───
+    // ─── If a NORMAL cadence visit cleared a unit, remove that unit from any
+    //     future scheduled visit and suppress the old follow-up flag. Ad-hoc
+    //     spot visits are intentionally skipped: an in-between ad-hoc clear
+    //     must NOT erase a follow-up already due on the normal next service. ───
     try {
+      if (isAdHocService(serviceForDraft || svcRow)) {
+        throw new Error("skip-ad-hoc-settled-clear");
+      }
       const settledUnits = Array.from(new Set(
         unitRows
           .filter((r: any) => {
@@ -1960,8 +1964,10 @@ const PropertyDashboard = ({
           return supabase.from("portal_services").update({ report_data: rd }).eq("id", svc.id);
         }));
       }
-    } catch (e) {
-      console.warn("clear settled units from future services failed", e);
+    } catch (e: any) {
+      if (e?.message !== "skip-ad-hoc-settled-clear") {
+        console.warn("clear settled units from future services failed", e);
+      }
     }
 
     // ─── Resolve every open submission we just snapshotted (community +
