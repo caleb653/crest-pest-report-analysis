@@ -2576,13 +2576,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   // show the units the tech will treat on that one-off visit.
                   const isExpanded = isFirst || isAdHocCard || expandedUpcomingId === s.id;
                   const lastPast = pastServices[0] || null;
+                  // Use the same merged "most recent past" the admin uses so
+                  // a follow_up flag set on ANY prior visit (including an
+                  // ad-hoc) surfaces on the next upcoming, matching the
+                  // Crest portal exactly.
+                  const mergedMostRecentPast = isAdHocCard
+                    ? null
+                    : buildMergedMostRecentPast(pastServices);
                   const merged = computeUpcomingUnits({
                     service: s,
                     // Ad-hoc visits NEVER pull in follow-ups or open work
                     // orders — they're entirely separate from the cadence.
                     isFirstUpcoming: isFirst,
                     requests: isAdHocCard ? [] : requests,
-                    mostRecentPast: isAdHocCard ? null : lastPast,
+                    mostRecentPast: mergedMostRecentPast,
                     allPastServices: isAdHocCard ? [] : pastServices,
                     tenantMoveIns:
                       (property.customer_preferences as any)?.tenant_move_ins || null,
