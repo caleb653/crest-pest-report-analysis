@@ -1811,7 +1811,7 @@ const PropertyDashboard = ({
     completionDataRef.current = { ...completionDataRef.current, [service.id]: draft };
     setCompletionData(prev => ({ ...prev, [service.id]: draft }));
     if (!String(service.id || "").startsWith("projected-") && service.status !== "completed") {
-      void persistCompletionDraftNow(service.id, draft);
+      queueCompletionDraftSave(service.id, draft);
     }
     return draft;
   };
@@ -4061,7 +4061,7 @@ const PropertyDashboard = ({
               completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
               if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
               completionDraftTimers.current[s.id] = setTimeout(() => {
-                void persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
+                queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
               }, 150);
             }
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
@@ -4071,7 +4071,7 @@ const PropertyDashboard = ({
             const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
-            persistCompletionDraftNow(s.id, nextDraft, { toastOnError: true });
+            queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
           };
           // Sort the Areas Treated list numerically by unit number. Pure
           // numerics first (ascending), then anything non-numeric falls to
@@ -4393,7 +4393,7 @@ const PropertyDashboard = ({
                                   const sortedDraft = { ...draft, unitRows: sortUnitRowsByNumber(draft.unitRows) };
                                   completionDataRef.current = { ...completionDataRef.current, [s.id]: sortedDraft };
                                   setCompletionData(prev => ({ ...prev, [s.id]: sortedDraft }));
-                                  persistCompletionDraftNow(s.id, sortedDraft, { toastOnError: true });
+                                  queueCompletionDraftSave(s.id, sortedDraft, { toastOnError: true });
                                 }}
                               />
                               {/* Visit kind toggle — click to flip Treatment <-> Inspection.
