@@ -525,7 +525,8 @@ const PropertyDashboard = ({
           if (dismissed.size > 0) {
             cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
           }
-          const portalRows = cleanRows.filter((r: any) => String(r?.unit_number || "").trim());
+          cleanRows = sortUnitRowsByNumber(cleanRows);
+          const portalRows = sortUnitRowsByNumber(cleanRows.filter((r: any) => String(r?.unit_number || "").trim()));
           const draftUnitLabels = Array.from(
             new Set(portalRows.map((r: any) => String(r?.unit_number || "").trim()).filter(Boolean))
           );
@@ -545,7 +546,7 @@ const PropertyDashboard = ({
               ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !dismissed.has(u)),
               ...draftUnitLabels.filter((u) => !dismissed.has(u)),
             ])
-          );
+          ).sort(compareUnitLabels);
           const next = {
             ...latestReportData,
             completion_draft_units: draftUnitLabels,
