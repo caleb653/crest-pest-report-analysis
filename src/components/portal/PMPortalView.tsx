@@ -1934,6 +1934,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     {isMostRecent && (
                                       <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
                                     )}
+                                    {unitDetail?.status && (
+                                      <Badge variant="outline" className="text-[10px] font-semibold bg-background">
+                                        {friendlyUnitStatus(unitDetail.status, (unitDetail as any)?.kind)}
+                                      </Badge>
+                                    )}
+                                    {unitDetail && isFreeAndClearStatus(unitDetail.status) && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 text-[10px] px-2 ml-auto"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          generateFreeAndClearCertificatePdf({
+                                            propertyName: property?.name,
+                                            propertyAddress: property?.address,
+                                            unitNumber: unitDetail.unit_number,
+                                            inspectionDate: service.service_date,
+                                            inspectorName: service.technician,
+                                          });
+                                        }}
+                                      >
+                                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                                      </Button>
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{(() => {
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
