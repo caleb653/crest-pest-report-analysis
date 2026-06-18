@@ -2698,7 +2698,7 @@ const PropertyDashboard = ({
             {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
           </p>
           <div className="space-y-3">
-            {unitDetails.map((unit: any, j: number) => {
+            {sortedForReadOnly.map((unit: any, j: number) => {
               const kind = unit.kind || "service";
               const isInspection = kind === "inspection";
               const isFollowUp = unit.follow_up_needed === true;
