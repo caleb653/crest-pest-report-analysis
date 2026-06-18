@@ -1501,8 +1501,20 @@ const PropertyDashboard = ({
       return;
     }
     const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
-    details.push({ ...newUnitData, unit_number: unitLabel });
-    await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    const detailsWithoutUnit = details.filter((d: any) => String(d?.unit_number || "").trim() !== unitLabel);
+    const nextDetails = [...detailsWithoutUnit, { ...newUnitData, unit_number: unitLabel }];
+    const planned = Array.isArray(svc.units_planned)
+      ? (svc.units_planned as string[]).map((u) => String(u || "").trim()).filter(Boolean)
+      : [];
+    const nextPlanned = planned.includes(unitLabel) ? planned : [...planned, unitLabel];
+    const { error } = await supabase
+      .from("portal_services")
+      .update({ unit_details: nextDetails, units_planned: nextPlanned })
+      .eq("id", serviceId);
+    if (error) {
+      toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
+      return;
+    }
     setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
@@ -1516,7 +1528,11 @@ const PropertyDashboard = ({
     if (!planned.includes(newPlannedUnit.trim())) {
       planned.push(newPlannedUnit.trim());
     }
-    await supabase.from("portal_services").update({ units_planned: planned }).eq("id", serviceId);
+    const { error } = await supabase.from("portal_services").update({ units_planned: planned }).eq("id", serviceId);
+    if (error) {
+      toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
+      return;
+    }
     setNewPlannedUnit("");
     setAddingPlannedUnit(null);
     toast({ title: "Unit added to plan" });
