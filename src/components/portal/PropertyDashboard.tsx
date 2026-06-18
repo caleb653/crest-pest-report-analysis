@@ -2654,12 +2654,13 @@ const PropertyDashboard = ({
 
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService, editable: boolean = true) => {
-    const rawUnitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
-    // Always display units in numeric order so 21, 41, 86, 100 read top-to-bottom
-    // instead of being shuffled by save order. Non-numeric labels (e.g. "Clubhouse")
-    // fall to the bottom alphabetically; empty labels go last.
-    const unitDetails = (() => {
-      const list = [...rawUnitDetails];
+    const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    // Display-only numeric sort for the read-only view. We deliberately
+    // DON'T sort the editable arrays because their handlers (updateUnitField,
+    // updateRow, removeRow) identify rows by array index — reordering would
+    // make edits target the wrong row.
+    const sortedForReadOnly = (() => {
+      const list = [...unitDetails];
       const keyOf = (r: any) => String(r?.unit_number || "").trim();
       const numOf = (k: string) => {
         const m = k.match(/-?\d+(?:\.\d+)?/);
