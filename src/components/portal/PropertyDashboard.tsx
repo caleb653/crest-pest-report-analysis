@@ -2655,6 +2655,31 @@ const PropertyDashboard = ({
   // ─── Render inline-editable unit table for past services ───
   const renderEditableUnitTable = (s: PortalService, editable: boolean = true) => {
     const unitDetails = s.unit_details && Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    // Display-only numeric sort for the read-only view. We deliberately
+    // DON'T sort the editable arrays because their handlers (updateUnitField,
+    // updateRow, removeRow) identify rows by array index — reordering would
+    // make edits target the wrong row.
+    const sortedForReadOnly = (() => {
+      const list = [...unitDetails];
+      const keyOf = (r: any) => String(r?.unit_number || "").trim();
+      const numOf = (k: string) => {
+        const m = k.match(/-?\d+(?:\.\d+)?/);
+        return m ? parseFloat(m[0]) : NaN;
+      };
+      list.sort((a, b) => {
+        const ka = keyOf(a), kb = keyOf(b);
+        if (!ka && !kb) return 0;
+        if (!ka) return 1;
+        if (!kb) return -1;
+        const na = numOf(ka), nb = numOf(kb);
+        const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
+        if (aNum && bNum && na !== nb) return na - nb;
+        if (aNum && !bNum) return -1;
+        if (!aNum && bNum) return 1;
+        return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+      });
+      return list;
+    })();
     // ── READ-ONLY VIEW ──
     // Past services are locked unless the admin clicks "Edit". When locked,
     // we render a compact summary so accidental clicks can never mutate
@@ -2673,7 +2698,7 @@ const PropertyDashboard = ({
             {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
           </p>
           <div className="space-y-3">
-            {unitDetails.map((unit: any, j: number) => {
+            {sortedForReadOnly.map((unit: any, j: number) => {
               const kind = unit.kind || "service";
               const isInspection = kind === "inspection";
               const isFollowUp = unit.follow_up_needed === true;
@@ -3900,6 +3925,35 @@ const PropertyDashboard = ({
               [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
             }));
           };
+          // Sort the Areas Treated list numerically by unit number. Pure
+          // numerics first (ascending), then anything non-numeric falls to
+          // the bottom alphabetically. Empty rows stay at the end so the
+          // tech can keep filling them in without them jumping around.
+          const sortRowsNumerically = () => {
+            setCompletionData(prev => {
+              const cur = prev[s.id];
+              if (!cur || !Array.isArray(cur.unitRows)) return prev;
+              const rows = [...cur.unitRows];
+              const keyOf = (r: any) => String(r?.unit_number || "").trim();
+              const numOf = (k: string) => {
+                const m = k.match(/-?\d+(?:\.\d+)?/);
+                return m ? parseFloat(m[0]) : NaN;
+              };
+              rows.sort((a, b) => {
+                const ka = keyOf(a), kb = keyOf(b);
+                if (!ka && !kb) return 0;
+                if (!ka) return 1;
+                if (!kb) return -1;
+                const na = numOf(ka), nb = numOf(kb);
+                const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
+                if (aNum && bNum && na !== nb) return na - nb;
+                if (aNum && !bNum) return -1;
+                if (!aNum && bNum) return 1;
+                return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+              });
+              return { ...prev, [s.id]: { ...cur, unitRows: rows } };
+            });
+          };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
@@ -4096,9 +4150,14 @@ const PropertyDashboard = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <Label className="text-xs font-semibold">Areas Treated ({cd.unitRows.length})</Label>
-                    <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
-                      <Plus className="w-3 h-3 mr-0.5" />Add Area
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={sortRowsNumerically} title="Sort areas by unit number">
+                        Sort #
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
+                        <Plus className="w-3 h-3 mr-0.5" />Add Area
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-6">
                     {cd.unitRows.map((row: any, idx: number) => {
