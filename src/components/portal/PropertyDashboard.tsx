@@ -4026,11 +4026,6 @@ const PropertyDashboard = ({
               // the autosave runs. Persist the typed unit immediately instead.
               const nextDraft = { ...prev[s.id], unitRows: rows };
               completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-              if (field === "unit_number" && String(value || "").trim()) {
-                window.setTimeout(() => {
-                  persistCompletionDraftNow(s.id, completionDataRef.current[s.id] || nextDraft, { toastOnError: true });
-                }, 0);
-              }
               return { ...prev, [s.id]: nextDraft };
             });
           };
