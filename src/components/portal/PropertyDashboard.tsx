@@ -4061,11 +4061,9 @@ const PropertyDashboard = ({
             // so leaving the page immediately after typing still saves.
             const nextDraft = { ...current, unitRows: rows };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-            if (field === "unit_number") {
-              completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
-              if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
-              queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
-            }
+            completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
+            if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
+            queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
           const addRow = () => {
