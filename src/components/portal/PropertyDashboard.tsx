@@ -3900,6 +3900,35 @@ const PropertyDashboard = ({
               [s.id]: { ...prev[s.id], unitRows: [...prev[s.id].unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "" }] },
             }));
           };
+          // Sort the Areas Treated list numerically by unit number. Pure
+          // numerics first (ascending), then anything non-numeric falls to
+          // the bottom alphabetically. Empty rows stay at the end so the
+          // tech can keep filling them in without them jumping around.
+          const sortRowsNumerically = () => {
+            setCompletionData(prev => {
+              const cur = prev[s.id];
+              if (!cur || !Array.isArray(cur.unitRows)) return prev;
+              const rows = [...cur.unitRows];
+              const keyOf = (r: any) => String(r?.unit_number || "").trim();
+              const numOf = (k: string) => {
+                const m = k.match(/-?\d+(?:\.\d+)?/);
+                return m ? parseFloat(m[0]) : NaN;
+              };
+              rows.sort((a, b) => {
+                const ka = keyOf(a), kb = keyOf(b);
+                if (!ka && !kb) return 0;
+                if (!ka) return 1;
+                if (!kb) return -1;
+                const na = numOf(ka), nb = numOf(kb);
+                const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
+                if (aNum && bNum && na !== nb) return na - nb;
+                if (aNum && !bNum) return -1;
+                if (!aNum && bNum) return 1;
+                return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+              });
+              return { ...prev, [s.id]: { ...cur, unitRows: rows } };
+            });
+          };
           const setRowProducts = (idx: number, next: ProductUsage[]) => {
             setCompletionData(prev => {
               const rows = [...prev[s.id].unitRows];
