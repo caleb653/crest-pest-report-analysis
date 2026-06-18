@@ -479,6 +479,94 @@ const PropertyDashboard = ({
   //    cleared on completeService() so it never bleeds into past records. ──
   const completionDraftTimers = useRef<Record<string, any>>({});
   const completionDraftLast = useRef<Record<string, string>>({});
+  const persistCompletionDraftNow = async (
+    serviceId: string,
+    data: CompletionDraft,
+    opts: { toastOnError?: boolean } = {},
+  ): Promise<boolean> => {
+    const svc = services.find(s => s.id === serviceId);
+    if (!data || !svc || svc.status === "completed") return false;
+    try {
+      let cleanRows = (data.unitRows || []).map((r: any) => ({
+        ...r,
+        photos: Array.isArray(r.photos)
+          ? r.photos.filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }))
+          : [],
+      }));
+      const cleanPhotos = (data.photos || []).filter((p: any) => p?.url && !p?.uploading).map((p: any) => ({ url: p.url }));
+      const existing = (svc as any).report_data && typeof (svc as any).report_data === "object"
+        ? (svc as any).report_data
+        : {};
+      const { data: latest } = await supabase
+        .from("portal_services")
+        .select("report_data, units_planned")
+        .eq("id", serviceId)
+        .maybeSingle();
+      const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
+        ? (latest as any).report_data
+        : existing;
+      const dismissed = new Set<string>();
+      const dismissedRaw = Array.isArray((latestReportData as any).dismissed_units)
+        ? (latestReportData as any).dismissed_units as any[]
+        : [];
+      dismissedRaw.forEach((entry) => {
+        const label = String((typeof entry === "string" ? entry : entry?.unit) || "").trim();
+        if (label) dismissed.add(label);
+      });
+      if (dismissed.size > 0) {
+        cleanRows = cleanRows.filter((r: any) => !dismissed.has(String(r?.unit_number || "").trim()));
+      }
+      cleanRows = sortUnitRowsByNumber(cleanRows);
+      const portalRows = sortUnitRowsByNumber(cleanRows.filter((r: any) => String(r?.unit_number || "").trim()));
+      const draftUnitLabels = Array.from(
+        new Set(portalRows.map((r: any) => String(r?.unit_number || "").trim()).filter(Boolean))
+      ).sort(compareUnitLabels);
+      const previousDraftLabels = new Set(
+        (Array.isArray((latestReportData as any).completion_draft_units)
+          ? (latestReportData as any).completion_draft_units
+          : Array.isArray((latestReportData as any).completion_draft?.unitRows)
+            ? (latestReportData as any).completion_draft.unitRows.map((r: any) => r?.unit_number)
+            : []
+        ).map((u: any) => String(u || "").trim()).filter(Boolean)
+      );
+      const existingPlanned = Array.isArray((latest as any)?.units_planned)
+        ? ((latest as any).units_planned as any[]).map((u) => String(u || "").trim()).filter(Boolean)
+        : Array.isArray((svc as any).units_planned)
+          ? ((svc as any).units_planned as any[]).map((u) => String(u || "").trim()).filter(Boolean)
+          : [];
+      const nextPlanned = Array.from(
+        new Set([
+          ...existingPlanned.filter((u) => !previousDraftLabels.has(u) && !dismissed.has(u)),
+          ...draftUnitLabels.filter((u) => !dismissed.has(u)),
+        ])
+      ).sort(compareUnitLabels);
+      const next = {
+        ...latestReportData,
+        completion_draft_units: draftUnitLabels,
+        completion_draft: {
+          ...data,
+          unitRows: cleanRows,
+          photos: cleanPhotos,
+          _saved_at: new Date().toISOString(),
+        },
+      };
+      const { error } = await supabase
+        .from("portal_services")
+        .update({ report_data: next, units_planned: nextPlanned, unit_details: portalRows })
+        .eq("id", serviceId);
+      if (error) throw error;
+      (svc as any).report_data = next;
+      (svc as any).units_planned = nextPlanned;
+      (svc as any).unit_details = portalRows;
+      return true;
+    } catch (e: any) {
+      console.warn("completion draft autosave failed", e);
+      if (opts.toastOnError) {
+        toast({ title: "Area did not save", description: e?.message || "Try again", variant: "destructive" });
+      }
+      return false;
+    }
+  };
   useEffect(() => {
     Object.entries(completionData).forEach(([serviceId, data]) => {
       if (!data) return;
