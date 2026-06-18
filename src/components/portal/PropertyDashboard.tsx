@@ -4348,6 +4348,11 @@ const PropertyDashboard = ({
                                 placeholder="Area / Unit / Room"
                                 value={row.unit_number}
                                 onChange={e => updateRow(idx, "unit_number", e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
                                 onBlur={() => {
                                   const draft = completionDataRef.current[s.id];
                                   if (!draft) return;
