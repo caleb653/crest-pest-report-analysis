@@ -489,7 +489,7 @@ const PropertyDashboard = ({
     opts: { toastOnError?: boolean } = {},
   ): Promise<boolean> => {
     const svc = servicesRef.current.find(s => s.id === serviceId);
-    if (!data || !svc || svc.status === "completed") return false;
+    if (!data || !serviceId || String(serviceId).startsWith("projected-")) return false;
     try {
       let cleanRows = (data.unitRows || []).map((r: any) => ({
         ...r,
@@ -503,9 +503,10 @@ const PropertyDashboard = ({
         : {};
       const { data: latest } = await supabase
         .from("portal_services")
-        .select("report_data, units_planned")
+        .select("status, report_data, units_planned")
         .eq("id", serviceId)
         .maybeSingle();
+      if ((latest as any)?.status === "completed" || svc?.status === "completed") return false;
       const latestReportData = (latest as any)?.report_data && typeof (latest as any).report_data === "object"
         ? (latest as any).report_data
         : existing;
@@ -559,9 +560,11 @@ const PropertyDashboard = ({
         .update({ report_data: next, units_planned: nextPlanned, unit_details: portalRows })
         .eq("id", serviceId);
       if (error) throw error;
-      (svc as any).report_data = next;
-      (svc as any).units_planned = nextPlanned;
-      (svc as any).unit_details = portalRows;
+      if (svc) {
+        (svc as any).report_data = next;
+        (svc as any).units_planned = nextPlanned;
+        (svc as any).unit_details = portalRows;
+      }
       return true;
     } catch (e: any) {
       console.warn("completion draft autosave failed", e);
