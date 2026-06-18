@@ -387,6 +387,12 @@ export function computeUpcomingUnits(args: {
     ...(Array.isArray(service?.unit_details)
       ? (service.unit_details as UnitDetailRow[]).map((d) => d?.unit_number)
       : []),
+    ...(Array.isArray((service?.report_data as any)?.completion_draft_units)
+      ? ((service!.report_data as any).completion_draft_units as unknown[])
+      : []),
+    ...(Array.isArray((service?.report_data as any)?.completion_draft?.unitRows)
+      ? ((service!.report_data as any).completion_draft.unitRows as UnitDetailRow[]).map((d) => d?.unit_number)
+      : []),
   ];
   const ownPlanned = Array.from(
     new Set(
