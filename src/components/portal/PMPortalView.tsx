@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
-import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel } from "@/lib/upcomingUnits";
+import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
@@ -1127,6 +1127,37 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
             <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium text-foreground">{summaryCombined}</p>
           </div>
         )}
+        {/* Service-level photos (uploaded to the whole visit, not a single
+            unit). These were previously only visible in the By Unit view —
+            now they surface in By Date too so PMs always see the visit
+            photos no matter which timeline they're browsing. */}
+        {(() => {
+          const svcPhotos = Array.isArray((s as any)?.photos) ? (s as any).photos : [];
+          const photos = svcPhotos
+            .map((p: any) => (typeof p === "string" ? p : p?.url || p?.src))
+            .filter(Boolean);
+          if (photos.length === 0) return null;
+          return (
+            <div className="rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3">
+              <p className="text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">
+                Service Photos <span className="text-muted-foreground font-normal normal-case">({photos.length})</span>
+              </p>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                {photos.map((url: string, k: number) => (
+                  <a
+                    key={k}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary/50 transition-all block"
+                  >
+                    <img src={url} alt={`Service photo ${k + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {/* Products — sits right under the summary so PMs see chemistry
             before drilling into per-unit detail. */}
         {(() => {
@@ -1903,6 +1934,31 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                     {isMostRecent && (
                                       <Badge className="text-[10px] bg-amber-500 text-white hover:bg-amber-500">Most Recent</Badge>
                                     )}
+                                    {unitDetail?.status && (
+                                      <Badge variant="outline" className="text-[10px] font-semibold bg-background">
+                                        {friendlyUnitStatus(unitDetail.status, (unitDetail as any)?.kind)}
+                                      </Badge>
+                                    )}
+                                    {unitDetail && isFreeAndClearStatus(unitDetail.status) && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-6 text-[10px] px-2 ml-auto"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          generateFreeAndClearCertificatePdf({
+                                            propertyName: property?.name,
+                                            propertyAddress: property?.address,
+                                            unitNumber: unitDetail.unit_number,
+                                            inspectionDate: service.service_date,
+                                            inspectorName: service.technician,
+                                          });
+                                        }}
+                                      >
+                                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                                      </Button>
+                                    )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{(() => {
                                     if ((service as any).appointment_service) return (service as any).appointment_service;
@@ -2576,13 +2632,20 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                   // show the units the tech will treat on that one-off visit.
                   const isExpanded = isFirst || isAdHocCard || expandedUpcomingId === s.id;
                   const lastPast = pastServices[0] || null;
+                  // Use the same merged "most recent past" the admin uses so
+                  // a follow_up flag set on ANY prior visit (including an
+                  // ad-hoc) surfaces on the next upcoming, matching the
+                  // Crest portal exactly.
+                  const mergedMostRecentPast = isAdHocCard
+                    ? null
+                    : buildMergedMostRecentPast(pastServices);
                   const merged = computeUpcomingUnits({
                     service: s,
                     // Ad-hoc visits NEVER pull in follow-ups or open work
                     // orders — they're entirely separate from the cadence.
                     isFirstUpcoming: isFirst,
                     requests: isAdHocCard ? [] : requests,
-                    mostRecentPast: isAdHocCard ? null : lastPast,
+                    mostRecentPast: mergedMostRecentPast,
                     allPastServices: isAdHocCard ? [] : pastServices,
                     tenantMoveIns:
                       (property.customer_preferences as any)?.tenant_move_ins || null,
