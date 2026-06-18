@@ -1406,7 +1406,9 @@ const PropertyDashboard = ({
 
   const servicesByUnit = (() => {
     const map = new Map<string, { service: PortalService; unitDetail: any }[]>();
-    pastServices.forEach(s => {
+    // Include ad-hoc completed visits so techs/PMs see them in the
+    // "By Unit" timeline alongside regular cadence services.
+    pastServicesForDisplay.forEach(s => {
       if (Array.isArray(s.unit_details)) {
         (s.unit_details as any[]).forEach(u => {
           const key = u.unit_number || "General";
@@ -1415,7 +1417,7 @@ const PropertyDashboard = ({
         });
       }
     });
-    pastServices.filter(s => !s.unit_details || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length === 0)).forEach(s => {
+    pastServicesForDisplay.filter(s => !s.unit_details || (Array.isArray(s.unit_details) && (s.unit_details as any[]).length === 0)).forEach(s => {
       if (!map.has("General")) map.set("General", []);
       map.get("General")!.push({ service: s, unitDetail: null });
     });
