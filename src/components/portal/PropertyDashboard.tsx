@@ -579,6 +579,7 @@ const PropertyDashboard = ({
     data: CompletionDraft,
     opts: { toastOnError?: boolean } = {},
   ) => {
+    if (!serviceId || String(serviceId).startsWith("projected-")) return;
     completionDraftQueued.current[serviceId] = { data, opts };
     if (completionDraftSaveActive.current[serviceId]) return;
     completionDraftSaveActive.current[serviceId] = true;
