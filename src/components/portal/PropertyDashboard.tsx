@@ -1491,6 +1491,18 @@ const PropertyDashboard = ({
     }
   };
 
+  const clearDismissedUnitsFromReportData = (reportData: any, units: string[]) => {
+    const cleared = new Set(units.map((u) => String(u || "").trim().toLowerCase()).filter(Boolean));
+    const next = reportData && typeof reportData === "object" ? { ...reportData } : {};
+    if (Array.isArray(next.dismissed_units) && cleared.size > 0) {
+      next.dismissed_units = next.dismissed_units.filter((entry: any) => {
+        const unit = String((typeof entry === "string" ? entry : entry?.unit) || "").trim().toLowerCase();
+        return !unit || !cleared.has(unit);
+      });
+    }
+    return next;
+  };
+
   const addUnitToService = async (serviceId: string) => {
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc) return;
@@ -1507,9 +1519,10 @@ const PropertyDashboard = ({
       ? (svc.units_planned as string[]).map((u) => String(u || "").trim()).filter(Boolean)
       : [];
     const nextPlanned = planned.includes(unitLabel) ? planned : [...planned, unitLabel];
+    const nextReportData = clearDismissedUnitsFromReportData((svc as any).report_data, [unitLabel]);
     const { error } = await supabase
       .from("portal_services")
-      .update({ unit_details: nextDetails, units_planned: nextPlanned })
+      .update({ unit_details: nextDetails, units_planned: nextPlanned, report_data: nextReportData })
       .eq("id", serviceId);
     if (error) {
       toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
@@ -1525,10 +1538,12 @@ const PropertyDashboard = ({
     const svc = propServices.find(s => s.id === serviceId);
     if (!svc || !newPlannedUnit.trim()) return;
     const planned = Array.isArray(svc.units_planned) ? [...(svc.units_planned as string[])] : [];
-    if (!planned.includes(newPlannedUnit.trim())) {
-      planned.push(newPlannedUnit.trim());
+    const unitLabel = newPlannedUnit.trim();
+    if (!planned.includes(unitLabel)) {
+      planned.push(unitLabel);
     }
-    const { error } = await supabase.from("portal_services").update({ units_planned: planned }).eq("id", serviceId);
+    const nextReportData = clearDismissedUnitsFromReportData((svc as any).report_data, [unitLabel]);
+    const { error } = await supabase.from("portal_services").update({ units_planned: planned, report_data: nextReportData }).eq("id", serviceId);
     if (error) {
       toast({ title: "Unit did not save", description: error.message, variant: "destructive" });
       return;
