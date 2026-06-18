@@ -1965,6 +1965,7 @@ const PropertyDashboard = ({
     // Forget the local "last serialized" snapshot so a re-open of this
     // service id (rare) doesn't think there's nothing to save.
     delete completionDraftLast.current[serviceId];
+    delete completionDraftSaved.current[serviceId];
 
     // ─── Close any open work-order requests for the units we just treated ───
     // Without this, a pending request keeps bleeding into the NEXT upcoming
