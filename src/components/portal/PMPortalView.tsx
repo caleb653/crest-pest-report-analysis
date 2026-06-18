@@ -992,7 +992,29 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
   const renderServiceDetailsRO = (s: ServiceData, opts?: { hideUnitSummary?: boolean }) => {
     const hideUnitSummary = opts?.hideUnitSummary === true;
-    const unitDetails = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    const unitDetailsRaw = Array.isArray(s.unit_details) ? s.unit_details as any[] : [];
+    // Sort areas numerically by unit number for display (read-only view).
+    const unitDetails = (() => {
+      const list = [...unitDetailsRaw];
+      const keyOf = (r: any) => String(r?.unit_number || "").trim();
+      const numOf = (k: string) => {
+        const m = k.match(/-?\d+(?:\.\d+)?/);
+        return m ? parseFloat(m[0]) : NaN;
+      };
+      list.sort((a, b) => {
+        const ka = keyOf(a), kb = keyOf(b);
+        if (!ka && !kb) return 0;
+        if (!ka) return 1;
+        if (!kb) return -1;
+        const na = numOf(ka), nb = numOf(kb);
+        const aNum = !Number.isNaN(na), bNum = !Number.isNaN(nb);
+        if (aNum && bNum && na !== nb) return na - nb;
+        if (aNum && !bNum) return -1;
+        if (!aNum && bNum) return 1;
+        return ka.localeCompare(kb, undefined, { numeric: true, sensitivity: "base" });
+      });
+      return list;
+    })();
     const unitsPlanned = Array.isArray(s.units_planned) ? s.units_planned as string[] : [];
     const summaryCombined = [s.summary, s.findings, s.notes].filter(Boolean).join("\n\n");
     const products = normalizeUsageList(s.products_used);
