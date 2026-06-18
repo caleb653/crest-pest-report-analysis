@@ -6562,7 +6562,18 @@ const PropertyDashboard = ({
 
               return (
                 <Card key={s.id} className={`transition-all shadow-sm ${isFirst ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent" : isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"} ${isProjected ? "border-dashed" : ""}`}>
-                  <button className="w-full text-left p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="w-full text-left p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer"
+                    onClick={() => !isFirst && setExpandedUpcomingId(isExpanded && !isFirst ? null : s.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!isFirst) setExpandedUpcomingId(isExpanded ? null : s.id);
+                      }
+                    }}
+                  >
                     <div className="flex-1 min-w-0 w-full">
                       <div className="flex items-center gap-2 flex-wrap">
                         {isFirst && <Badge className="text-xs bg-secondary text-secondary-foreground">Next Service</Badge>}
@@ -6855,7 +6866,7 @@ const PropertyDashboard = ({
                         </Button>
                       )}
                     </div>
-                  </button>
+                  </div>
                   {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
               );
