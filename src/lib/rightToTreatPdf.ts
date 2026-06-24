@@ -41,6 +41,7 @@ const POSSIBLE_CHEMICALS = [
   "Delta Dust (Deltamethrin)", "In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)",
   "OneGuard (Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide)",
   "Advion Microflow (Indoxacarb)", "Optigard (Thiamethoxam)",
+  "Crossfire Bedbug Concentrate (Clothianidin, Metofluthrin, Piperonyl Butoxide)",
 ];
 
 export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
