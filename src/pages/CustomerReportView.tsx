@@ -30,6 +30,7 @@ interface ServiceItem {
 interface Proposal {
   name: string;
   services: ServiceItem[];
+  recurringLabel?: string;
 }
 
 interface PropertyImage {
@@ -119,6 +120,9 @@ const getRecurringLabel = (services: ServiceItem[]) => {
   }
   return "Recurring";
 };
+
+const resolveRecurringLabel = (proposal: Proposal) =>
+  (proposal.recurringLabel && proposal.recurringLabel.trim()) || getRecurringLabel(proposal.services);
 
 interface SetupMaterial {
   name: string;
@@ -714,7 +718,7 @@ export default function CustomerReportView() {
                       <tr>
                         <th className="text-left px-3 py-1.5 font-medium text-xs">Service</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Initial</th>
-                        <th className="text-center px-3 py-1.5 font-medium text-xs">{getRecurringLabel(proposal.services)}</th>
+                        <th className="text-center px-3 py-1.5 font-medium text-xs">{resolveRecurringLabel(proposal)}</th>
                         <th className="text-center px-3 py-1.5 font-medium text-xs">Frequency</th>
                       </tr>
                     </thead>
@@ -1316,7 +1320,7 @@ export default function CustomerReportView() {
                         <tr>
                           <th className="text-left px-4 py-2 font-medium">Service Type</th>
                           <th className="text-center px-4 py-2 font-medium">Initial</th>
-                          <th className="text-center px-4 py-2 font-medium">{getRecurringLabel(proposal.services)}</th>
+                          <th className="text-center px-4 py-2 font-medium">{resolveRecurringLabel(proposal)}</th>
                           <th className="text-center px-4 py-2 font-medium">Frequency</th>
                         </tr>
                       </thead>
