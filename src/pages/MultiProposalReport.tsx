@@ -368,6 +368,7 @@ interface ServiceItem {
 interface Proposal {
   name: string;
   services: ServiceItem[];
+  recurringLabel?: string;
 }
 
 const PROPOSAL_NAMES = ["Option A", "Option B", "Option C", "Option D"];
@@ -521,6 +522,17 @@ const Report = () => {
       return "Monthly";
     }
     return "Recurring";
+  };
+
+  const resolveRecurringLabel = (proposal: Proposal) =>
+    (proposal.recurringLabel && proposal.recurringLabel.trim()) || getRecurringLabel(proposal.services);
+
+  const setProposalRecurringLabel = (proposalIndex: number, value: string) => {
+    setProposals((prev) => {
+      const updated = [...prev];
+      updated[proposalIndex] = { ...updated[proposalIndex], recurringLabel: value };
+      return updated;
+    });
   };
 
   const removeServiceFromProposal = (proposalIndex: number, serviceIndex: number) => {
@@ -2291,7 +2303,19 @@ Crest Pest Control`;
           <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
-            <span className="text-center">{getRecurringLabel(proposal.services)}</span>
+            <span className="text-center">
+              {isReadOnly ? (
+                resolveRecurringLabel(proposal)
+              ) : (
+                <input
+                  type="text"
+                  value={resolveRecurringLabel(proposal)}
+                  onChange={(e) => setProposalRecurringLabel(proposalIndex, e.target.value)}
+                  className="w-full text-center bg-transparent border border-dashed border-border/60 rounded px-1 py-0 text-sm font-bold uppercase focus:outline-none focus:border-primary"
+                  title="Click to edit recurring label"
+                />
+              )}
+            </span>
             <span className="text-center">Frequency</span>
             <span className="text-center">Schedule</span>
             <span></span>
@@ -2405,7 +2429,7 @@ Crest Pest Control`;
             <tr>
               <th className="text-left">Service Type</th>
               <th className="text-center">Initial</th>
-              <th className="text-center">{getRecurringLabel(proposal.services)}</th>
+              <th className="text-center">{resolveRecurringLabel(proposal)}</th>
               <th className="text-center">Frequency</th>
               <th className="text-center">Schedule</th>
             </tr>
@@ -2690,7 +2714,7 @@ Crest Pest Control`;
                       <tr className="border-b border-border text-xs font-bold uppercase">
                         <th className="text-left px-2 py-1">Service</th>
                         <th className="text-center px-2 py-1">Initial</th>
-                        <th className="text-center px-2 py-1">{getRecurringLabel(proposals[proposalIndex].services)}</th>
+                        <th className="text-center px-2 py-1">{resolveRecurringLabel(proposals[proposalIndex])}</th>
                         <th className="text-center px-2 py-1">Frequency</th>
                       </tr>
                     </thead>
