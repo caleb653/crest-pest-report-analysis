@@ -80,6 +80,7 @@ const PRODUCTS = [
   "PT Alpine Flea & Bed Bug", "Advion Ant Gel Bait", "Maxforce FC Ant Gel",
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust", "In2Care Mix",
   "OneGuard", "Advion Microflow", "Optigard", "Bifen LP", "MasterLine B MaxxPro",
+  "Crossfire Bedbug Concentrate",
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
