@@ -50,7 +50,8 @@ const PRODUCT_OPTIONS = [
   "Gentrol Aerosol", "Bedlam", "Invade Hot Spot +", "Niban", "Bifen LP",
   "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
-  "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard", "Other",
+  "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
+  "Crossfire Bedbug Concentrate", "Other",
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
