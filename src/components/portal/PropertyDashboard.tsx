@@ -185,6 +185,7 @@ const PRODUCT_OPTIONS_LIST = [
   "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
   "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
+  "Crossfire Bedbug Concentrate",
 ];
 
 interface Props {

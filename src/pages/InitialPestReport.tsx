@@ -212,6 +212,7 @@ const PRODUCT_OPTIONS = [
   "OneGuard",
   "Advion Microflow",
   "Optigard",
+  "Crossfire Bedbug Concentrate",
   "Other",
 ];
 

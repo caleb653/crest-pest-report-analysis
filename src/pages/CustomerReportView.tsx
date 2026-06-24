@@ -210,6 +210,7 @@ const PRODUCT_LIST = [
   { name: "OneGuard", chemical: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl butoxide" },
   { name: "Advion Microflow", chemical: "Indoxacarb" },
   { name: "Optigard", chemical: "Thiamethoxam" },
+  { name: "Crossfire Bedbug Concentrate", chemical: "Clothianidin, Metofluthrin, Piperonyl Butoxide" },
 ];
 
 const formatFrequency = (freq: string | number): string => {

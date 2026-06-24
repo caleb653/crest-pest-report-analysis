@@ -37,6 +37,7 @@ export const APPROVED_COMMERCIAL_MATERIALS: ApprovedMaterial[] = [
   { name: "Bifen I/T",                 activeIngredient: "Bifenthrin",                             epa: "53883-118", sdsUrl: "/sds/Bifen_IT_SDS.pdf" },
   { name: "Bifen LP",                  activeIngredient: "Bifenthrin",                             epa: "53883-124" },
   { name: "Contrac Blox (California)", activeIngredient: "Bromethalin",                            epa: "12455-151", sdsUrl: "/sds/Contrac_CA_Blox_SDS.pdf" },
+  { name: "Crossfire Bedbug Concentrate", activeIngredient: "Clothianidin, Metofluthrin, Piperonyl Butoxide", epa: "1021-2867" },
   { name: "Delta Dust",                activeIngredient: "Deltamethrin",                           epa: "432-772",   sdsUrl: "/sds/Delta_Dust_SDS.pdf" },
   { name: "Gentrol IGR Concentrate",   activeIngredient: "(S)-Hydroprene",                         epa: "2724-351",  sdsUrl: "/sds/Gentrol_IGR_SDS.pdf" },
   { name: "Invade Hot Spot Plus",      activeIngredient: "Citrus terpenes, microbes, surfactants", epa: "Exempt",    sdsUrl: "/sds/Invade_Hot_Spot_Plus_SDS.pdf" },
