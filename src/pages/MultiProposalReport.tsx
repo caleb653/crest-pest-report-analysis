@@ -120,6 +120,7 @@ const PRODUCT_OPTIONS = [
   { name: "OneGuard", chemical: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl butoxide" },
   { name: "Advion Microflow", chemical: "Indoxacarb" },
   { name: "Optigard", chemical: "Thiamethoxam" },
+  { name: "Crossfire Bedbug Concentrate", chemical: "Clothianidin, Metofluthrin, Piperonyl Butoxide" },
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
