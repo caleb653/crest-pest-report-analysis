@@ -203,6 +203,7 @@ const RightToTreat = () => {
                 <li>OneGuard (Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide)</li>
                 <li>Advion Microflow (Indoxacarb)</li>
                 <li>Optigard (Thiamethoxam)</li>
+                <li>Crossfire Bedbug Concentrate (Clothianidin, Metofluthrin, Piperonyl Butoxide)</li>
               </ul>
             </div>
 
