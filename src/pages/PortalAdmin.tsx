@@ -277,6 +277,16 @@ const PortalAdmin = () => {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
         return;
       }
+      // Immediately reflect the new map image on the currently-open property
+      // dashboard. `loadAll` refreshes the `allProperties` list, but the
+      // `selectedProperty` state still points at the stale object — without
+      // this the Site Map tab keeps showing the old image (or no image at
+      // all) until the user navigates away and back.
+      setSelectedProperty(prev =>
+        prev && prev.id === propId
+          ? ({ ...prev, map_image_url: url, image_url: url } as PortalProperty)
+          : prev,
+      );
       loadAll();
       toast({ title: "Site map updated" });
     }
