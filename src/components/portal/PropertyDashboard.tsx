@@ -5550,25 +5550,52 @@ const PropertyDashboard = ({
       {/* ══════════ TAB 2: PREVIOUS SERVICES ══════════ */}
       <TabsContent value="past" className="mt-0">
         <div className="space-y-3 max-w-[1600px] mx-auto">
-        <div className="flex items-center justify-between pb-2.5 border-b-2 border-primary/70">
+        <div className="flex items-center justify-between gap-3 pb-2.5 border-b-2 border-primary/70 flex-wrap">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar className="w-5 h-5 text-secondary" />Previous Services
             <Badge variant="secondary" className="text-xs ml-1">{pastServicesForDisplay.length}</Badge>
           </h3>
-          {isHOA ? (
-            null
-          ) : (
-            <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
-              <button
-                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                onClick={() => setPastViewMode("date")}
-              >By Date</button>
-              <button
-                className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                onClick={() => setPastViewMode("unit")}
-              >By Unit</button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-1 justify-end min-w-[260px]">
+            {!isHOA && (
+              <div className="relative flex-1 max-w-xs">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="h-9 text-xs pl-8 pr-8"
+                  placeholder="Search unit, tech, product…"
+                  value={byUnitSearch}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setByUnitSearch(v);
+                    // Seamless: typing in the search auto-switches to By Unit so
+                    // matching units surface immediately across all past visits.
+                    if (v.trim() && pastViewMode !== "unit") setPastViewMode("unit");
+                  }}
+                />
+                {byUnitSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setByUnitSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+            {!isHOA && (
+              <div className="flex items-center gap-1 bg-muted rounded-xl p-1 shadow-inner">
+                <button
+                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "date" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setPastViewMode("date")}
+                >By Date</button>
+                <button
+                  className={`px-4 py-2 text-sm rounded-lg transition-all font-semibold ${pastViewMode === "unit" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setPastViewMode("unit")}
+                >By Unit</button>
+              </div>
+            )}
+          </div>
         </div>
 
 
