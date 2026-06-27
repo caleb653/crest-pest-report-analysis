@@ -172,6 +172,18 @@ const PortalAdmin = () => {
     }
   }, [allProperties]);
 
+  // Keep `selectedProperty` in sync with the latest row from `allProperties`
+  // whenever `loadAll` refreshes the list. Without this, saves performed via
+  // the dashboard (site map upload, equipment edits, etc.) write to the DB
+  // and refresh the list — but the dashboard keeps rendering the stale prop.
+  useEffect(() => {
+    if (!selectedProperty) return;
+    const fresh = allProperties.find(p => p.id === selectedProperty.id);
+    if (fresh && fresh !== selectedProperty) {
+      setSelectedProperty(fresh);
+    }
+  }, [allProperties]);
+
   const loadAll = async () => {
     const [{ data: c }, { data: p }, { data: s }, { data: l }, { data: ps }, { data: m }] = await Promise.all([
       supabase.from("portal_clients").select("*").order("created_at", { ascending: false }),
@@ -277,6 +289,16 @@ const PortalAdmin = () => {
         toast({ title: "Save failed", description: error.message, variant: "destructive" });
         return;
       }
+      // Immediately reflect the new map image on the currently-open property
+      // dashboard. `loadAll` refreshes the `allProperties` list, but the
+      // `selectedProperty` state still points at the stale object — without
+      // this the Site Map tab keeps showing the old image (or no image at
+      // all) until the user navigates away and back.
+      setSelectedProperty(prev =>
+        prev && prev.id === propId
+          ? ({ ...prev, map_image_url: url, image_url: url } as PortalProperty)
+          : prev,
+      );
       loadAll();
       toast({ title: "Site map updated" });
     }
