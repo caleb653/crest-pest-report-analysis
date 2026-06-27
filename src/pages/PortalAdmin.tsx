@@ -172,6 +172,18 @@ const PortalAdmin = () => {
     }
   }, [allProperties]);
 
+  // Keep `selectedProperty` in sync with the latest row from `allProperties`
+  // whenever `loadAll` refreshes the list. Without this, saves performed via
+  // the dashboard (site map upload, equipment edits, etc.) write to the DB
+  // and refresh the list — but the dashboard keeps rendering the stale prop.
+  useEffect(() => {
+    if (!selectedProperty) return;
+    const fresh = allProperties.find(p => p.id === selectedProperty.id);
+    if (fresh && fresh !== selectedProperty) {
+      setSelectedProperty(fresh);
+    }
+  }, [allProperties]);
+
   const loadAll = async () => {
     const [{ data: c }, { data: p }, { data: s }, { data: l }, { data: ps }, { data: m }] = await Promise.all([
       supabase.from("portal_clients").select("*").order("created_at", { ascending: false }),
