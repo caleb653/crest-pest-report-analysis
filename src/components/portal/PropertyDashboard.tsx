@@ -5834,7 +5834,20 @@ const PropertyDashboard = ({
                             <div className="mt-1 text-muted-foreground space-y-0.5">
                               {unitDetail.findings && <p>Findings: {unitDetail.findings}</p>}
                               {unitDetail.pest_activity && <p>Activity: {unitDetail.pest_activity}</p>}
-                              {unitDetail.products_used && <p>Products: {unitDetail.products_used}</p>}
+                              {(() => {
+                                const pu = unitDetail.products_used;
+                                const text = Array.isArray(pu)
+                                  ? (pu as any[])
+                                      .map((p: any) =>
+                                        typeof p === "string"
+                                          ? p
+                                          : [p?.name, p?.amount].filter(Boolean).join(" — ")
+                                      )
+                                      .filter(Boolean)
+                                      .join(", ")
+                                  : (typeof pu === "string" ? pu : "");
+                                return text ? <p>Products: {text}</p> : null;
+                              })()}
                               {unitDetail.notes && <p>Notes: {unitDetail.notes}</p>}
                             </div>
                           )}
