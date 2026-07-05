@@ -75,6 +75,7 @@ const TECHNICIANS = [
   { name: "Dylan Gallegos", license: "RA 71068" },
   { name: "Michael Muniz", license: "FR 54193" },
   { name: "David Longoria", license: "FR 71710" },
+  { name: "Nick Stovall", license: "FR 69245" },
 ];
 
 const PEST_OPTIONS = [
@@ -3665,6 +3666,7 @@ Crest Pest Control`;
                   "dtanner@crestpestco.com",
                   "dgallegos@crestpestco.com",
                   "mmuniz@crestpestco.com",
+                  "nstovall@crestpestco.com",
                 ].filter(email => !ccEmails.includes(email)).map((email) => (
                   <button
                     key={email}

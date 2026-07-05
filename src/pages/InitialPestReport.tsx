@@ -69,6 +69,7 @@ const TECHNICIANS = [
   { name: "Dylan Gallegos", license: "RA 71068" },
   { name: "Michael Muniz", license: "FR 54193" },
   { name: "David Longoria", license: "FR 71710" },
+  { name: "Nick Stovall", license: "FR 69245" },
 ];
 
 const GENERAL_PESTS_LABEL =

@@ -29,6 +29,7 @@ const OWNER_TECH_EMAIL: Record<string, string> = {
   "Michael Muniz": "mmuniz@crestpestcontrol.com",
   "Carmen Lopez": "clopez@crestpestcontrol.com",
   "David Longoria": "dlongoria@crestpestcontrol.com",
+  "Nick Stovall": "nstovall@crestpestcontrol.com",
 };
 const lookupOwnerEmail = (ownerTech: unknown): string | null => {
   const raw = String(ownerTech || "").trim();
