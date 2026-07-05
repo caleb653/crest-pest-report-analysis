@@ -23,6 +23,7 @@ const STAFF: { username: string; fullName: string; email: string }[] = [
   { username: "mmuniz",    fullName: "Michael Muniz",   email: "mmuniz@crestpestcontrol.com" },
   { username: "clopez",    fullName: "Carmen Lopez",    email: "clopez@crestpestcontrol.com" },
   { username: "dlongoria", fullName: "David Longoria",  email: "dlongoria@crestpestcontrol.com" },
+  { username: "nstovalll", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
 ];
 const findStaffByName = (n?: string | null) => STAFF.find(s => s.fullName === n) || null;
 

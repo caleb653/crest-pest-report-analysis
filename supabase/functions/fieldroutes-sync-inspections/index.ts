@@ -34,6 +34,7 @@ const KNOWN_STAFF = new Set([
   "Michael Muniz",
   "Carmen Lopez",
   "David Longoria",
+  "Nick Stovall",
 ]);
 
 function json(body: unknown, status = 200) {
@@ -67,6 +68,7 @@ const TECHNICIANS = [
   { name: "Dylan Gallegos", license: "RA 71068", aliases: ["dylan", "gallegos", "dylan g"] },
   { name: "Michael Muniz", license: "FR 54193", aliases: ["michael", "mike", "muniz", "munoz", "michael m", "mike muniz"] },
   { name: "David Longoria", license: "FR 71710", aliases: ["david", "longoria", "david l"] },
+  { name: "Nick Stovall", license: "FR 69245", aliases: ["nick", "stovall", "nick s", "nicholas stovall"] },
 ];
 
 function normalizeName(v: string): string {

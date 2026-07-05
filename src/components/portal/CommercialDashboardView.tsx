@@ -47,7 +47,7 @@ import { normalizeUsageList } from "@/lib/productCatalog";
 // Same roster as the Initial Pest Report technician dropdown.
 const TECHNICIAN_NAMES = [
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "David Longoria",
+  "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall",
 ];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
