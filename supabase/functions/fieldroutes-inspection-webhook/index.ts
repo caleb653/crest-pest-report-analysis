@@ -218,14 +218,16 @@ serve(async (req) => {
     });
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
-    // Guard: only inspection service types create a report. New subscriptions
-    // (Monthly/Bi-Monthly/Quarterly/Commercial/etc) must NOT auto-spawn reports
-    // even if a FieldRoutes trigger accidentally fires this webhook for them.
-    const isInspection =
-      INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined ||
-      /inspection/i.test(serviceName);
+    // Guard: ONLY the whitelisted inspection service_type IDs create a report.
+    // New subscriptions (Monthly/Bi-Monthly/Quarterly/Commercial/Initial Service/
+    // etc.) must NEVER auto-spawn a report even if the trigger fires here or the
+    // service name happens to contain the word "inspection".
+    const isInspection = INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined;
     if (!isInspection) {
-      return json({ ok: true, created: false, reason: "not_inspection", service: serviceName });
+      console.log("fieldroutes-inspection-webhook rejected non-inspection", {
+        serviceTypeId, serviceName, appointmentId,
+      });
+      return json({ ok: true, created: false, reason: "not_inspection", service_type_id: serviceTypeId, service: serviceName });
     }
 
     // Idempotency: bail early if this appointment already has a report.
