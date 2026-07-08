@@ -37,6 +37,12 @@ const KNOWN_STAFF = new Set([
   "Nick Stovall",
 ]);
 
+// Whitelist of FieldRoutes service_type IDs that are true inspection appointments.
+// Anything else (Initial Service, Monthly/Bi-Monthly/Quarterly recurring, Commercial,
+// Rodent Bait Boxes, etc.) must NEVER auto-create a report, no matter what the
+// upstream endpoint returns or how the service is named.
+const INSPECTION_SERVICE_TYPE_IDS = new Set<string>(["149", "226", "227"]);
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -215,9 +221,19 @@ serve(async (req) => {
     // 3) Build draft rows for the new ones.
     const rows = candidates
       .filter((c) => !seen.has(c.appointment_id))
-      // Guard: only inspection appointments create reports. Subscription setups
-      // (Monthly/Bi-Monthly/Quarterly/Commercial/etc) must never auto-spawn reports.
-      .filter((c) => /inspection/i.test(c.service_name))
+      // Guard: ONLY whitelisted inspection service_type IDs create reports.
+      // Subscription setups and initial-service appointments must never auto-spawn.
+      .filter((c) => {
+        const ok = INSPECTION_SERVICE_TYPE_IDS.has(String(c.service_type_id ?? ""));
+        if (!ok) {
+          console.log("fieldroutes-sync-inspections skipped non-inspection", {
+            service_type_id: c.service_type_id,
+            service_name: c.service_name,
+            appointment_id: c.appointment_id,
+          });
+        }
+        return ok;
+      })
       .map((c) => {
         const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
           .filter(Boolean).join(", ");
