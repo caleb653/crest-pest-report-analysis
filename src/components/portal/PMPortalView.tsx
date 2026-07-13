@@ -922,14 +922,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const nextService: ServiceData | null = (() => {
     if (scheduledServices.length >= 1) return scheduledServices[0];
     // No scheduled — project the next visit from most recent past (or today).
-    const anchorDate = pastServices[0]?.service_date || todayISO();
+    // Anchor MUST ignore ad-hoc/spot visits so an in-between ad-hoc doesn't
+    // push the projected cadence date off by a full frequency cycle.
+    const anchorDate = pastServicesForCadence[0]?.service_date || todayISO();
     return {
       id: "projected-next",
       property_id: propertyId,
       service_date: addDaysISO(anchorDate, propertyFrequencyDays),
       service_time: null,
-      service_type: pastServices[0]?.service_type || "General Pest Control",
-      technician: pastServices[0]?.technician || null,
+      service_type: pastServicesForCadence[0]?.service_type || "General Pest Control",
+      technician: pastServicesForCadence[0]?.technician || null,
       status: "scheduled",
       summary: null,
       findings: null,
@@ -939,7 +941,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       scheduling_status: "projected",
       prep_required: null,
       prep_notes: null,
-      units_planned: pastServices[0]?.units_planned || null,
+      units_planned: pastServicesForCadence[0]?.units_planned || null,
       unit_details: [],
       special_notes: null,
     };
