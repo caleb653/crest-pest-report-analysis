@@ -2172,9 +2172,14 @@ const PropertyDashboard = ({
         const merged = Array.from(new Set([...existing, ...flagged]));
         await supabase.from("portal_services").update({ units_planned: merged }).eq("id", nextService.id);
       } else {
-        const freq = SERVICE_FREQUENCY_MAP[propServices.find(s => s.id === serviceId)?.service_type || ""] || 30;
-        const nextDate = new Date(Date.now() + freq * 86400000).toISOString().split("T")[0];
         const svc = propServices.find(s => s.id === serviceId);
+        // Use the PROPERTY-level cadence (weekly/bi-weekly/etc.) — not the
+        // per-service-type default — and anchor from the just-completed
+        // service date so the next visit lands on the same weekday. Falling
+        // back to the service-type map or "today" (as the old code did) was
+        // pushing weekly properties like Stonebrook to +30 days.
+        const anchor = svc?.service_date || today;
+        const nextDate = addDaysISO(anchor, propertyFrequencyDays);
         await supabase.from("portal_services").insert({
           property_id: property.id,
           service_type: svc?.service_type || "General Pest Control",
