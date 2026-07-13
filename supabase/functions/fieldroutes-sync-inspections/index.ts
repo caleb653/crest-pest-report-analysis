@@ -186,15 +186,12 @@ serve(async (req) => {
     }
     if (!authed) return json({ ok: false, error: "unauthorized" }, 401);
 
-    // Safety: this function used to run silently from the report list and could
-    // create drafts whenever FieldRoutes returned scheduled appointments. Only an
-    // explicit UI action is allowed to create reports now; scheduled/legacy calls
-    // become no-ops instead of inserting noise.
-    const createReports = body?.createReports === true && (!!sessionToken || KNOWN_STAFF.has(staffName));
-    if (!createReports) {
-      console.log("fieldroutes-sync-inspections create skipped: explicit createReports=true required");
-      return json({ ok: true, created: 0, skipped: 0, total: 0, reason: "create_reports_not_requested" });
-    }
+    // HARD DISABLE: this BigQuery-backed sync must NEVER create reports.
+    // Reports are only created by the live FieldRoutes webhook
+    // (fieldroutes-inspection-webhook). Keeping this path as a no-op so any
+    // lingering callers stop inserting drafts.
+    console.log("fieldroutes-sync-inspections disabled: report creation is webhook-only");
+    return json({ ok: true, created: 0, skipped: 0, total: 0, reason: "sync_disabled_webhook_only" });
 
     // 1) Candidates from Cloud Run.
     const apiUrl = Deno.env.get("SCHEDULING_API_URL");
