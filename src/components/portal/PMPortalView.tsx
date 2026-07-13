@@ -771,6 +771,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (dateCmp !== 0) return dateCmp;
     return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
   });
+  // Ad-hoc visits are one-off spot treatments — they must NEVER anchor the
+  // projected next cadence date, or the upcoming service date drifts (often
+  // by ~1 month when a mid-cycle ad-hoc lands between recurring visits).
+  const _pastCadence = _past.filter(
+    (s) => (s as any)?.report_data?.is_ad_hoc !== true,
+  );
   const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as string) || "bi-weekly";
   const _freqDays = ({
     "weekly": 7, "bi-weekly": 14, "monthly": 30,
@@ -778,7 +784,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   } as Record<string, number>)[_freqKey] ?? 14;
   const _nextDateKey: string = (() => {
     if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
-    const anchor = _past[0]?.service_date || todayISO();
+    const anchor = _pastCadence[0]?.service_date || todayISO();
     return addDaysISO(anchor, _freqDays);
   })();
   const _pmNotesMap: Record<string, string> =
