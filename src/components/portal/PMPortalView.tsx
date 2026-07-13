@@ -771,6 +771,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     if (dateCmp !== 0) return dateCmp;
     return ((b as any).updated_at || "").localeCompare((a as any).updated_at || "");
   });
+  // Ad-hoc visits are one-off spot treatments — they must NEVER anchor the
+  // projected next cadence date, or the upcoming service date drifts (often
+  // by ~1 month when a mid-cycle ad-hoc lands between recurring visits).
+  const _pastCadence = _past.filter(
+    (s) => (s as any)?.report_data?.is_ad_hoc !== true,
+  );
   const _freqKey = ((_propertyForHook?.customer_preferences as any)?.service_frequency as string) || "bi-weekly";
   const _freqDays = ({
     "weekly": 7, "bi-weekly": 14, "monthly": 30,
@@ -778,7 +784,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   } as Record<string, number>)[_freqKey] ?? 14;
   const _nextDateKey: string = (() => {
     if (_scheduled.length >= 1) return _scheduled[0].service_date || "";
-    const anchor = _past[0]?.service_date || todayISO();
+    const anchor = _pastCadence[0]?.service_date || todayISO();
     return addDaysISO(anchor, _freqDays);
   })();
   const _pmNotesMap: Record<string, string> =
@@ -916,14 +922,16 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const nextService: ServiceData | null = (() => {
     if (scheduledServices.length >= 1) return scheduledServices[0];
     // No scheduled — project the next visit from most recent past (or today).
-    const anchorDate = pastServices[0]?.service_date || todayISO();
+    // Anchor MUST ignore ad-hoc/spot visits so an in-between ad-hoc doesn't
+    // push the projected cadence date off by a full frequency cycle.
+    const anchorDate = pastServicesForCadence[0]?.service_date || todayISO();
     return {
       id: "projected-next",
       property_id: propertyId,
       service_date: addDaysISO(anchorDate, propertyFrequencyDays),
       service_time: null,
-      service_type: pastServices[0]?.service_type || "General Pest Control",
-      technician: pastServices[0]?.technician || null,
+      service_type: pastServicesForCadence[0]?.service_type || "General Pest Control",
+      technician: pastServicesForCadence[0]?.technician || null,
       status: "scheduled",
       summary: null,
       findings: null,
@@ -933,7 +941,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       scheduling_status: "projected",
       prep_required: null,
       prep_notes: null,
-      units_planned: pastServices[0]?.units_planned || null,
+      units_planned: pastServicesForCadence[0]?.units_planned || null,
       unit_details: [],
       special_notes: null,
     };
