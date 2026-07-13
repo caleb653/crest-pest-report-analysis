@@ -42,6 +42,7 @@ const KNOWN_STAFF = new Set([
 // Rodent Bait Boxes, etc.) must NEVER auto-create a report, no matter what the
 // upstream endpoint returns or how the service is named.
 const INSPECTION_SERVICE_TYPE_IDS = new Set<string>(["149", "226", "227"]);
+const EXACT_INSPECTION_SERVICE_NAMES = new Set(["pest inspection", "rodent inspection"]);
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -85,6 +86,10 @@ function normalizeName(v: string): string {
     .replace(/\b(fr|ra)\s*\d+\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function normalizeServiceName(v: string): string {
+  return String(v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function similarity(a: string, b: string): number {
@@ -181,6 +186,16 @@ serve(async (req) => {
     }
     if (!authed) return json({ ok: false, error: "unauthorized" }, 401);
 
+    // Safety: this function used to run silently from the report list and could
+    // create drafts whenever FieldRoutes returned scheduled appointments. Only an
+    // explicit UI action is allowed to create reports now; scheduled/legacy calls
+    // become no-ops instead of inserting noise.
+    const createReports = body?.createReports === true && (!!sessionToken || KNOWN_STAFF.has(staffName));
+    if (!createReports) {
+      console.log("fieldroutes-sync-inspections create skipped: explicit createReports=true required");
+      return json({ ok: true, created: 0, skipped: 0, total: 0, reason: "create_reports_not_requested" });
+    }
+
     // 1) Candidates from Cloud Run.
     const apiUrl = Deno.env.get("SCHEDULING_API_URL");
     const apiKey = Deno.env.get("SCHEDULING_API_KEY");
@@ -221,28 +236,35 @@ serve(async (req) => {
     // 3) Build draft rows for the new ones.
     const rows = candidates
       .filter((c) => !seen.has(c.appointment_id))
-      // Guard: ONLY whitelisted inspection service_type IDs create reports.
-      // Subscription setups and initial-service appointments must never auto-spawn.
-      .filter((c) => {
-        const ok = INSPECTION_SERVICE_TYPE_IDS.has(String(c.service_type_id ?? ""));
+      .map((c) => ({ c, matchedTech: resolveTechnician(c.tech_name) }))
+      // Guard: ONLY whitelisted inspection service_type IDs + exact inspection
+      // names create reports. Subscription setups, recurring routes, ad hoc work,
+      // and initial-service appointments must never auto-spawn. Also reject
+      // unassigned/unknown techs so bad upstream batches cannot flood the list.
+      .filter(({ c, matchedTech }) => {
+        const ok =
+          INSPECTION_SERVICE_TYPE_IDS.has(String(c.service_type_id ?? "").trim()) &&
+          EXACT_INSPECTION_SERVICE_NAMES.has(normalizeServiceName(c.service_name)) &&
+          !!matchedTech;
         if (!ok) {
           console.log("fieldroutes-sync-inspections skipped non-inspection", {
             service_type_id: c.service_type_id,
             service_name: c.service_name,
             appointment_id: c.appointment_id,
+            tech_name: c.tech_name,
+            matched_tech: matchedTech?.name ?? null,
           });
         }
         return ok;
       })
-      .map((c) => {
+      .map(({ c, matchedTech }) => {
         const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
           .filter(Boolean).join(", ");
         const isRodent = c.service_name.toLowerCase().includes("rodent");
-        const matchedTech = resolveTechnician(c.tech_name);
         return {
           id: crypto.randomUUID(),
-          technician_name: matchedTech?.name || c.tech_name || "Unassigned",
-          license_number: matchedTech?.license ?? null,
+          technician_name: matchedTech!.name,
+          license_number: matchedTech!.license,
           customer_name: c.customer_name || null,
           customer_email: c.email || null,
           customer_phone: c.phone || null,
