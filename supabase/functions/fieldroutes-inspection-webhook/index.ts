@@ -40,6 +40,8 @@ const INSPECTION_SERVICE_TYPES: Record<string, string> = {
   "227": "Rodent Inspection",
 };
 
+const EXACT_INSPECTION_SERVICE_NAMES = new Set(["pest inspection", "rodent inspection"]);
+
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523", aliases: ["darrell", "tanner", "d tanner", "darrell t"] },
   { name: "Jake Shubin", license: "FR 71068", aliases: ["jake", "shubin", "jake s", "jacob shubin"] },
@@ -68,6 +70,10 @@ function normalizeName(v: string): string {
     .replace(/\b(fr|ra)\s*\d+\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+function normalizeServiceName(v: string): string {
+  return String(v ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 function similarity(a: string, b: string): number {
@@ -218,16 +224,27 @@ serve(async (req) => {
     });
     const isRodent = serviceName.toLowerCase().includes("rodent");
 
-    // Guard: ONLY the whitelisted inspection service_type IDs create a report.
-    // New subscriptions (Monthly/Bi-Monthly/Quarterly/Commercial/Initial Service/
-    // etc.) must NEVER auto-spawn a report even if the trigger fires here or the
-    // service name happens to contain the word "inspection".
-    const isInspection = INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined;
+    // Guard: ONLY the whitelisted inspection service_type IDs + exact inspection
+    // names create a report. New subscriptions (Monthly/Bi-Monthly/Quarterly/
+    // Commercial/Initial Service/etc.) must NEVER auto-spawn a report even if the
+    // FieldRoutes trigger fires here for every scheduled appointment.
+    // Also require a known assigned technician; unassigned auto-created drafts are
+    // almost always noise and should stay in FieldRoutes until a human creates one.
+    const isInspection =
+      INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined &&
+      EXACT_INSPECTION_SERVICE_NAMES.has(normalizeServiceName(serviceName));
     if (!isInspection) {
       console.log("fieldroutes-inspection-webhook rejected non-inspection", {
         serviceTypeId, serviceName, appointmentId,
       });
       return json({ ok: true, created: false, reason: "not_inspection", service_type_id: serviceTypeId, service: serviceName });
+    }
+
+    if (!matchedTech) {
+      console.log("fieldroutes-inspection-webhook rejected unknown technician", {
+        serviceTypeId, serviceName, appointmentId, techName,
+      });
+      return json({ ok: true, created: false, reason: "unknown_technician", service_type_id: serviceTypeId, service: serviceName });
     }
 
     // Idempotency: bail early if this appointment already has a report.
@@ -241,8 +258,8 @@ serve(async (req) => {
 
     const row = {
       id: crypto.randomUUID(),
-      technician_name: matchedTech?.name || techName || "Unassigned", // NOT NULL
-      license_number: matchedTech?.license ?? null,
+      technician_name: matchedTech.name,
+      license_number: matchedTech.license,
       customer_name: customerName,
       customer_email: clean(body.email),
       customer_phone: clean(body.phone1 ?? body.phone),

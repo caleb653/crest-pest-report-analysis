@@ -132,13 +132,6 @@ const SubmittedReports = () => {
 
   useEffect(() => {
     loadReports();
-    syncFieldRoutesInspections({ silent: true });
-
-    const interval = window.setInterval(() => {
-      if (!document.hidden) syncFieldRoutesInspections({ silent: true });
-    }, 60_000);
-
-    return () => window.clearInterval(interval);
   }, []);
 
   const loadReports = async () => {
@@ -214,7 +207,7 @@ const SubmittedReports = () => {
     setSyncingInspections(true);
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-sync-inspections", {
-        body: { sessionToken, staffName: loggedInUser },
+        body: { sessionToken, staffName: loggedInUser, createReports: true },
       });
 
       if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
