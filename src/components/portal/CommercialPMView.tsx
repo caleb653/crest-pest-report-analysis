@@ -352,46 +352,78 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-        {/* Location summary */}
-        <Card>
+      <div className="max-w-5xl mx-auto px-4 py-4 space-y-4">
+        {/* Location summary — branded stat chips */}
+        <Card className="border-2 border-primary/30 shadow-md bg-gradient-to-br from-primary/[0.06] to-transparent">
           <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <div className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-primary" />
+              </div>
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
-                <p className="font-medium truncate">{property.address || "—"}</p>
+                <p className="font-semibold truncate">{property.address || "—"}</p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-primary" />
+              </div>
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Last Visit</p>
-                <p className="font-medium">{past[0] ? fmtDate(past[0].service_date) : "—"}</p>
+                <p className="font-semibold">{past[0] ? fmtDate(past[0].service_date) : "—"}</p>
               </div>
             </div>
-            <div className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex items-start gap-2.5">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-primary" />
+              </div>
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Next Visit</p>
-                <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date) : "—"}</p>
+                <p className="font-semibold">{upcoming[0] ? fmtDate(upcoming[0].service_date) : "—"}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Tabs defaultValue="property" className="w-full">
-          <TabsList className="sticky top-0 z-30 flex w-full flex-wrap h-auto p-1 gap-1 justify-start bg-background/95 backdrop-blur border border-border rounded-lg shadow-sm">
-            {/* IDENTICAL tab set + order + labels as the Route Manager
-                dashboard (CommercialDashboardView) so the two portals read as
-                the same product. Change one, change the other. */}
-            <TabsTrigger value="property" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Site Map, Plan &amp; Team</TabsTrigger>
-            <TabsTrigger value="past" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Previous Services</TabsTrigger>
-            <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Pest Sightings</TabsTrigger>
-            <TabsTrigger value="upcoming" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Clock className="w-3.5 h-3.5" />Upcoming Services</TabsTrigger>
-            <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
-            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Safety Data Sheets</TabsTrigger>
-            <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
+          {/* IDENTICAL tab set + order + labels + STYLING as the Route Manager
+              dashboard (CommercialDashboardView) so the two portals read as
+              the same product. Change one, change the other. */}
+          <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md">
+            <TabsTrigger value="property" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <MapPin className="w-5 h-5" />
+              <span>Site Map, Plan &amp; Team</span>
+            </TabsTrigger>
+            <TabsTrigger value="past" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <Calendar className="w-5 h-5" />
+              <span>Previous Services <Badge variant="secondary" className="ml-1 text-xs h-4">{past.length}</Badge></span>
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <ClipboardList className="w-5 h-5" />
+              <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{recentSightings.length}</Badge></span>
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <Clock className="w-5 h-5" />
+              <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
+            </TabsTrigger>
+            <TabsTrigger value="conditions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <AlertTriangle className="w-5 h-5" />
+              <span>
+                Conditions
+                {activeConditionsAll.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs h-4">{activeConditionsAll.length}</Badge>
+                )}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <FlaskIcon className="w-5 h-5" />
+              <span>Safety Data Sheets</span>
+            </TabsTrigger>
+            <TabsTrigger value="help" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <HelpCircle className="w-5 h-5" />
+              <span>Help</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* ─── UPCOMING SERVICES ─── */}
@@ -830,14 +862,15 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
           {/* ─── REQUESTS ─── */}
           <TabsContent value="requests" className="space-y-3 mt-3">
-            <Card>
+            <Card className="border-2 border-amber-300/80 shadow-md overflow-hidden">
+              <div className="bg-amber-100/70 border-b-2 border-amber-300/70 px-4 py-2.5 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-700" />
+                <p className="text-sm font-bold text-amber-900">Report a Pest Sighting</p>
+              </div>
               <CardContent className="p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4 text-primary" />
-                  <p className="text-sm font-bold">Submit a Request</p>
-                </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Use this to report new pest activity or request an extra visit. Our team will review and follow up.
+                  Use this to report new pest activity or request an extra visit. Our team is
+                  notified immediately and will follow up.
                 </p>
                 <div className="space-y-2">
                   <Select value={reqPest || ""} onValueChange={v => setReqPest(v === "__none__" ? "" : v)}>
