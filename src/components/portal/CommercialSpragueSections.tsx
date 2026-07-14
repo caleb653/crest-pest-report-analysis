@@ -220,6 +220,50 @@ async function notifyConditionChanges(
   }
 }
 
+// ── Read-only condition cards (customer-facing) ─────────────────────────────
+// Same ConditionCard + read-only body the admin dashboard uses, so the
+// customer portal renders conditions IDENTICALLY (badges, photos, dates).
+// Pass all services for the carry-forward pool (upcoming report view) or a
+// single service for that visit's own log (past report view).
+export function ConditionCardsReadOnly({ services }: { services: SpragueService[] }) {
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setOpenIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  const pool = services
+    .slice()
+    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""))
+    .flatMap(s => normalizeConditionRows(s.report_data?.conditions)
+      .filter(r => r.status !== "Closed")
+      .map(r => ({ owner: s, row: r })));
+  if (pool.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      {pool.map(({ owner, row }, i) => (
+        <ConditionCard
+          key={row.id}
+          row={row}
+          index={i}
+          isOpen={openIds.has(row.id)}
+          onToggle={() => toggle(row.id)}
+          serviceDate={owner.service_date}
+        >
+          <ConditionRowEditor
+            row={row}
+            readOnly
+            serviceDate={owner.service_date}
+            onChange={() => {}}
+            onRemove={() => {}}
+          />
+        </ConditionCard>
+      ))}
+    </div>
+  );
+}
+
 // ── Session-surviving condition drafts ──────────────────────────────────────
 // A draft lives in sessionStorage (keyed by service id) so switching tabs or
 // collapsing the card doesn't silently discard typed text + uploaded photos.
