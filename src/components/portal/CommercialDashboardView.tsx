@@ -416,6 +416,12 @@ export default function CommercialDashboardView({
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property.map_image_url || property.image_url || null;
   const followUpCount = past.filter(s => !!s.follow_up_recommended).length;
+  // Active (non-Closed) conditions across every service — Conditions tab badge.
+  const activeConditionsCount = services.reduce((n, s) => {
+    const rows: any[] = Array.isArray((s as any).report_data?.conditions)
+      ? (s as any).report_data.conditions : [];
+    return n + rows.filter((r: any) => r && r.status !== "Closed").length;
+  }, 0);
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
 
@@ -821,6 +827,15 @@ export default function CommercialDashboardView({
           <TabsTrigger value="upcoming" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <ClipboardList className="w-5 h-5" />
             <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
+          </TabsTrigger>
+          <TabsTrigger value="conditions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <AlertTriangle className="w-5 h-5" />
+            <span>
+              Conditions
+              {activeConditionsCount > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs h-4">{activeConditionsCount}</Badge>
+              )}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="materials" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <FlaskConical className="w-5 h-5" />
@@ -1674,6 +1689,19 @@ export default function CommercialDashboardView({
                 </div>
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* ════════ TAB: Conditions (same tab the customer portal has) ════════ */}
+        <TabsContent value="conditions" className="mt-0">
+          <div className="max-w-4xl mx-auto">
+            <ConditionsReportSection
+              services={services as any}
+              includeUndated
+              onSaveServiceReportData={persistServiceReportData}
+              propertyName={property?.name}
+              readOnly={readOnly}
+            />
           </div>
         </TabsContent>
 

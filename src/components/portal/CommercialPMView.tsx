@@ -380,21 +380,22 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="visits" className="w-full">
+        <Tabs defaultValue="property" className="w-full">
           <TabsList className="sticky top-0 z-30 flex w-full flex-wrap h-auto p-1 gap-1 justify-start bg-background/95 backdrop-blur border border-border rounded-lg shadow-sm">
-            {/* Mirrors the Route Manager dashboard's 6-tab grouping so the two
-                portals feel like the same product: map/scope/team live under
-                one "Property" tab, contact lives inside Help. */}
-            <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
-            <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
+            {/* IDENTICAL tab set + order + labels as the Route Manager
+                dashboard (CommercialDashboardView) so the two portals read as
+                the same product. Change one, change the other. */}
+            <TabsTrigger value="property" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Site Map, Plan &amp; Team</TabsTrigger>
+            <TabsTrigger value="past" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Previous Services</TabsTrigger>
+            <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Pest Sightings</TabsTrigger>
+            <TabsTrigger value="upcoming" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Clock className="w-3.5 h-3.5" />Upcoming Services</TabsTrigger>
             <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
-            <TabsTrigger value="property" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Property</TabsTrigger>
-            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />SDS</TabsTrigger>
+            <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />Safety Data Sheets</TabsTrigger>
             <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
           </TabsList>
 
-          {/* ─── VISITS ─── */}
-          <TabsContent value="visits" className="space-y-4 mt-3">
+          {/* ─── UPCOMING SERVICES ─── */}
+          <TabsContent value="upcoming" className="space-y-4 mt-3">
             {/* Upcoming */}
             <Card className="border-2 border-primary/30 bg-primary/[0.03]">
               <CardContent className="p-3 space-y-2">
@@ -570,10 +571,13 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
               </CardContent>
             </Card>
 
-            {/* Past */}
+          </TabsContent>
+
+          {/* ─── PREVIOUS SERVICES ─── */}
+          <TabsContent value="past" className="space-y-4 mt-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <ClipboardList className="w-3 h-3" /> Past Visits
+                <ClipboardList className="w-3 h-3" /> Previous Services
               </p>
               {past.length === 0 ? (
                 <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
