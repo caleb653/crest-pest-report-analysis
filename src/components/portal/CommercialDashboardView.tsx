@@ -814,12 +814,12 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
-          <TabsTrigger value="map" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
+          <TabsTrigger value="map" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map, Plan &amp; Team</span>
           </TabsTrigger>
-          <TabsTrigger value="past" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="past" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <Calendar className="w-5 h-5" />
             <span>
               Previous Services
@@ -829,15 +829,15 @@ export default function CommercialDashboardView({
               )}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="requests" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="requests" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <Wrench className="w-5 h-5" />
             <span>Pest Sightings <Badge variant="secondary" className="ml-1 text-xs h-4">{openRequests.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="upcoming" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="upcoming" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <ClipboardList className="w-5 h-5" />
             <span>Upcoming Services <Badge variant="secondary" className="ml-1 text-xs h-4">{upcoming.length}</Badge></span>
           </TabsTrigger>
-          <TabsTrigger value="conditions" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="conditions" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <AlertTriangle className="w-5 h-5" />
             <span>
               Conditions
@@ -846,11 +846,11 @@ export default function CommercialDashboardView({
               )}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="materials" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="materials" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <FlaskConical className="w-5 h-5" />
             <span>Safety Data Sheets</span>
           </TabsTrigger>
-          <TabsTrigger value="help" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <TabsTrigger value="help" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <FileText className="w-5 h-5" />
             <span>Help</span>
           </TabsTrigger>
