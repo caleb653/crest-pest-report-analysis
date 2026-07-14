@@ -41,6 +41,7 @@ const FIELD_TECHS = [
   "Dylan Gallegos",
   "Jackson Latham",
   "Mike Muniz",
+  "Nick Stovall",
 ];
 
 type ComplianceIssue = {
@@ -221,7 +222,7 @@ const ScheduleReview = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
   useEffect(() => {
-    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham"]);
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham","Nick Stovall"]);
     if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
   }, [staff, navigate]);
 
@@ -1009,7 +1010,7 @@ function PerRouteGrid({
 // Fill mode (schedule planner) — proposes a schedule from the due "job pool"
 // ─────────────────────────────────────────────────────────────────────────
 
-const FILL_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz"];
+const FILL_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz", "Nick Stovall"];
 
 type FillStop = {
   order: number;
