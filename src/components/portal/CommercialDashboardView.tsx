@@ -51,18 +51,14 @@ const TECHNICIAN_NAMES = [
 ];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
-  ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
-  ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
+  ConditionsReportSection, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
-  LogbookDateBadge, persistServiceReportData, ConditionUnitPills,
+  persistServiceReportData, ConditionUnitPills,
 } from "@/components/portal/CommercialSpragueSections";
 import {
-  CommercialConcernsObserved,
   CommercialNonChemEquipment,
   COMMERCIAL_PEST_OPTIONS,
-  normalizeConcerns,
   normalizeNonChemEquipment,
-  type ConcernEntry,
   type NonChemEquipmentEntry,
 } from "@/components/portal/CommercialReportExtras";
 import { supabase as supa } from "@/integrations/supabase/client";
@@ -109,12 +105,10 @@ interface Props {
   services: ServiceData[];
   links: PortalLink[];
   clientName: string;
-  onOpenServiceReport?: (s: ServiceData) => void;
   onEditService?: (s: ServiceData) => void;
   onDeleteService?: (id: string) => void;
   onCopyLink?: (token: string) => void;
   onOpenPortal?: (token: string) => void;
-  onAddUpcomingService?: () => void;
   onRefresh?: () => void;
   onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
   uploadingPropertyImage?: boolean;
@@ -160,6 +154,48 @@ const STATUS_OPTIONS = [
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
 ];
+
+// Target Pests chip editor — toggle badges saved to report_data.target_pests.
+// This is the only place the field is writable now that the separate
+// appointment-report editor is gone for commercial properties.
+function TargetPestsEditor({
+  value, onChange, readOnly,
+}: {
+  value: string[];
+  onChange?: (next: string[]) => void;
+  readOnly?: boolean;
+}) {
+  const toggle = (p: string) => {
+    if (readOnly || !onChange) return;
+    onChange(value.includes(p) ? value.filter(x => x !== p) : [...value, p]);
+  };
+  return (
+    <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-foreground/70 flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3 text-primary" /> Target Pests
+      </p>
+      {readOnly && value.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">None recorded.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {(readOnly ? value : [...COMMERCIAL_PEST_OPTIONS]).map(p => {
+            const active = value.includes(p);
+            return (
+              <Badge
+                key={p}
+                variant={active ? "default" : "outline"}
+                className={`text-[11px] h-7 px-2.5 ${readOnly ? "" : "cursor-pointer"}`}
+                onClick={() => toggle(p)}
+              >
+                {p}
+              </Badge>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Equipment options — kept in sync with the sales report, AppointmentReport,
 // and HOA/apartment PropertyDashboard so the lists "jive" across the app.
@@ -317,8 +353,8 @@ function PropertyEquipmentCard({
 }
 
 export default function CommercialDashboardView({
-  property, services, links, onOpenServiceReport, onEditService,
-  onDeleteService, onCopyLink, onOpenPortal, onAddUpcomingService,
+  property, services, links, onEditService,
+  onDeleteService, onCopyLink, onOpenPortal,
   onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -529,12 +565,21 @@ export default function CommercialDashboardView({
     await saveServiceField(serviceId, { photos: next });
   };
 
-  // Helpers for the inline editable report data (concerns / non-chem equipment)
-  // stored on portal_services.report_data.
+  // Helpers for the inline editable report data (target pests / non-chem
+  // equipment / conditions) stored on portal_services.report_data.
   const getReportData = (s: ServiceData): any => (s as any).report_data || {};
   const saveReportData = async (s: ServiceData, patch: Record<string, any>) => {
-    const next = { ...getReportData(s), ...patch };
-    await saveServiceField(s.id, { report_data: next });
+    // Fetch the LATEST report_data before merging — sibling editors (the
+    // conditions card saves via persistServiceReportData without refreshing
+    // our `services` prop) may have written since this prop loaded; merging
+    // over the stale copy would silently delete their work.
+    const { data } = await supabase
+      .from("portal_services")
+      .select("report_data")
+      .eq("id", s.id)
+      .maybeSingle();
+    const fresh = (data?.report_data as any) || getReportData(s);
+    await saveServiceField(s.id, { report_data: { ...fresh, ...patch } });
   };
 
   // Recent pest sightings (Open + In Progress) — surfaced inline on every
@@ -643,9 +688,17 @@ export default function CommercialDashboardView({
   };
 
   const markRequestComplete = async (id: string) => {
+    // Set BOTH status and sighting_status — the customer portal classifies by
+    // sighting_status first, so leaving it 'in_progress' would keep the
+    // request under Open Requests there forever.
     const { error } = await supabase
       .from("portal_requests")
-      .update({ status: "completed", updated_at: new Date().toISOString() } as any)
+      .update({
+        status: "completed",
+        sighting_status: "closed",
+        closed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any)
       .eq("id", id);
     if (error) {
       toast({ title: "Couldn't update", description: error.message, variant: "destructive" });
@@ -899,20 +952,28 @@ export default function CommercialDashboardView({
 
         {/* ════════ TAB 2: Previous Services ════════ */}
         <TabsContent value="past" className="mt-0">
-          <div className="max-w-4xl mx-auto mb-3 flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Past Visits</p>
+          <div className="max-w-4xl mx-auto">
+          <Card className="rounded-xl border-2 border-border shadow-md overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 bg-muted/40 border-b-2 border-border">
+            <p className="text-sm font-bold uppercase tracking-wide flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-primary" /> Previous Services
+              {past.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px]">{past.length}</Badge>
+              )}
+            </p>
             {!readOnly && (
               <Button size="sm" variant="outline" onClick={() => quickAddVisit("completed")} className="h-9 text-xs gap-1">
                 <Plus className="w-3.5 h-3.5" /> Log Past Visit
               </Button>
             )}
           </div>
+          <CardContent className="p-3">
           {past.length === 0 ? (
             <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
               No past visits yet.
             </CardContent></Card>
           ) : (
-            <div className="space-y-2 max-w-4xl mx-auto">
+            <div className="space-y-2">
               {past.map(s => {
                 const isOpen = openId === s.id;
                 const products = normalizeUsageList(s.products_used);
@@ -1047,6 +1108,12 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
+                        {/* Target Pests — chip editor over report_data.target_pests */}
+                        <TargetPestsEditor
+                          value={Array.isArray(getReportData(s).target_pests) ? getReportData(s).target_pests : []}
+                          onChange={(next) => saveReportData(s, { target_pests: next })}
+                          readOnly={readOnly}
+                        />
                         <div className="rounded-md border border-border p-2.5 space-y-2">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -1096,6 +1163,15 @@ export default function CommercialDashboardView({
                             <ProductUsageSummary entries={products} />
                           </div>
                         )}
+                        {/* Equipment Used — editable inline now that the separate report editor is gone */}
+                        <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+                          <CommercialNonChemEquipment
+                            value={normalizeNonChemEquipment(getReportData(s).non_chem_equipment)}
+                            onChange={(next) => saveReportData(s, { non_chem_equipment: next })}
+                            dropdown
+                            readOnly={readOnly}
+                          />
+                        </div>
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" /> Active Conditions
@@ -1107,22 +1183,55 @@ export default function CommercialDashboardView({
                             readOnly={readOnly}
                           />
                         </div>
-                        {photos.length > 0 && (
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                              <Camera className="w-3 h-3" /> Other Property Images
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {photos.map((p: any, i: number) => {
-                                const url = typeof p === "string" ? p : p?.url;
-                                if (!url) return null;
-                                return (
-                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30">
-                                    <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
-                                  </a>
-                                );
-                              })}
+                        {(photos.length > 0 || !readOnly) && (
+                          <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-500/5 p-2 space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400 flex items-center gap-1">
+                                <Camera className="w-3 h-3" /> Other Property Images
+                                {photos.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{photos.length}</Badge>}
+                              </p>
+                              {!readOnly && (
+                                <label className="inline-flex">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    disabled={uploadingPhotoFor === s.id}
+                                    onChange={(e) => { uploadServicePhotos(s.id, e.target.files); e.currentTarget.value = ""; }}
+                                  />
+                                  <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-border bg-background text-xs cursor-pointer hover:bg-muted">
+                                    <Upload className="w-3 h-3" />
+                                    {uploadingPhotoFor === s.id ? "Uploading…" : "Add Photos"}
+                                  </span>
+                                </label>
+                              )}
                             </div>
+                            {photos.length > 0 && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {photos.map((p: any, i: number) => {
+                                  const url = typeof p === "string" ? p : p?.url;
+                                  if (!url) return null;
+                                  return (
+                                    <div key={i} className="relative w-full aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted/30 group">
+                                      <a href={url} target="_blank" rel="noopener noreferrer">
+                                        <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
+                                      </a>
+                                      {!readOnly && (
+                                        <button
+                                          type="button"
+                                          onClick={() => removeServicePhoto(s.id, url)}
+                                          className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                          aria-label="Remove photo"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1133,14 +1242,31 @@ export default function CommercialDashboardView({
             })}
           </div>
         )}
+          </CardContent>
+          </Card>
+          </div>
         </TabsContent>
 
         {/* ════════ TAB 3: Upcoming Services ════════ */}
         <TabsContent value="upcoming" className="mt-0">
-          <div className="max-w-4xl mx-auto space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Upcoming Visits</p>
+          <div className="max-w-4xl mx-auto">
+            {/* One prominent box around the whole Upcoming Services report so
+                Route Managers can orient at a glance (cofounder feedback). */}
+            <Card className="rounded-xl border-2 border-primary/50 shadow-md overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 py-3 bg-primary/5 border-b-2 border-primary/30">
+              <p className="text-sm font-bold uppercase tracking-wide flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-primary" /> Upcoming Services
+                {upcoming.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-[10px]">{upcoming.length}</Badge>
+                )}
+              </p>
+              {!readOnly && (
+                <Button size="sm" onClick={() => quickAddVisit("scheduled")} className="h-9 text-xs gap-1">
+                  <Plus className="w-3.5 h-3.5" /> Add Upcoming Visit
+                </Button>
+              )}
             </div>
+            <CardContent className="p-3 space-y-3">
             {upcoming.length === 0 ? (
               <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
                 No upcoming visits scheduled.
@@ -1270,6 +1396,13 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
+                      {/* Target Pests — chip editor over report_data.target_pests */}
+                      <TargetPestsEditor
+                        value={Array.isArray(getReportData(s).target_pests) ? getReportData(s).target_pests : []}
+                        onChange={(next) => saveReportData(s, { target_pests: next })}
+                        readOnly={readOnly}
+                      />
+
                       {/* Products + Equipment — side-by-side on the upcoming card */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div className="rounded-md border border-primary/30 bg-primary/5 p-2 space-y-1.5">
@@ -1295,15 +1428,17 @@ export default function CommercialDashboardView({
 
                       <ConditionUnitPills
                         service={s as any}
+                        services={services as any}
                         readOnly={readOnly}
                         onSaveServiceReportData={persistServiceReportData}
+                        propertyName={property?.name}
                       />
 
                       {/* Photos — moved to the bottom, below Active Conditions */}
                       <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-500/5 p-2 space-y-1.5">
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-bold uppercase tracking-wide text-sky-700 dark:text-sky-400 flex items-center gap-1">
-                            <Camera className="w-3 h-3" /> Photos
+                            <Camera className="w-3 h-3" /> Other Property Images
                             {upPhotosRaw.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{upPhotosRaw.length}</Badge>}
                           </p>
                           {!readOnly && (
@@ -1371,6 +1506,8 @@ export default function CommercialDashboardView({
                 })}
               </div>
             )}
+            </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -1404,8 +1541,8 @@ export default function CommercialDashboardView({
                   {newReqPhotos.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {newReqPhotos.map((url, i) => (
-                        <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
-                          <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                        <div key={i} className="relative w-24 aspect-[4/3] rounded-md overflow-hidden border border-border bg-muted">
+                          <img src={url} alt="" loading="lazy" className="w-full h-full object-contain" />
                           <button type="button" onClick={() => setNewReqPhotos(p => p.filter((_, idx) => idx !== i))} className="absolute top-0.5 right-0.5 bg-background/90 rounded-full p-0.5 border border-border">
                             <X className="w-3 h-3" />
                           </button>
@@ -1503,24 +1640,37 @@ export default function CommercialDashboardView({
                   <Badge variant="secondary" className="ml-1 text-[10px]">{closedRequests.length}</Badge>
                 </p>
                 <div className="space-y-2">
-                  {closedRequests.slice(0, 20).map(r => (
+                  {closedRequests.slice(0, 20).map(r => {
+                    const comments: any[] = Array.isArray(r.crest_comments) ? r.crest_comments : [];
+                    const lastComment = comments.length ? comments[comments.length - 1] : null;
+                    const responseText = lastComment?.note || lastComment?.text || r.response_notes || "";
+                    return (
                     <Card key={r.id} className="opacity-80">
-                      <CardContent className="p-3 space-y-1">
+                      <CardContent className="p-3 space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-semibold text-sm truncate">
                             {r.pest_type || r.request_type}
                             {r.location_type ? ` — ${r.location_type}` : ""}
                           </p>
-                          <Badge variant="outline" className="text-[10px] capitalize shrink-0">{r.status}</Badge>
+                          <Badge variant="outline" className="text-[10px] shrink-0 border-emerald-300 text-emerald-900 bg-emerald-50">
+                            Closed
+                          </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">{fmtDateTime(r.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Reported {fmtDateTime(r.created_at)}
+                          {r.closed_at ? ` · Closed ${fmtDateTime(r.closed_at)}` : ""}
+                        </p>
                         {r.description && <p className="text-xs whitespace-pre-wrap">{r.description}</p>}
-                        {r.response_notes && (
-                          <p className="text-xs italic text-muted-foreground"><span className="font-semibold">Response:</span> {r.response_notes}</p>
+                        {responseText && (
+                          <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-900 mb-0.5">Crest Response</p>
+                            <p className="text-xs text-emerald-950 whitespace-pre-wrap">{responseText}</p>
+                          </div>
                         )}
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

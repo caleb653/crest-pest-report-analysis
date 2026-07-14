@@ -1137,7 +1137,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                 Community Site Map — Areas Treated
               </p>
             </div>
-            <div className="bg-background w-full" style={{ height: "70vh", minHeight: 560 }}>
+            <div className="bg-background w-full h-[45vh] min-h-[320px] md:h-[70vh] md:min-h-[560px]">
               {property.map_data ? (
                 <ReadOnlyMapCanvas mapUrl={mapUrl} mapData={property.map_data} imageFit="contain" />
               ) : mapUrl ? (
@@ -1196,8 +1196,8 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
           return (
             <div>
               <p className="font-bold text-foreground uppercase text-[13px] tracking-wide mb-2">Products Used (this service)</p>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full text-[14px]">
+              <div className="border rounded-md overflow-x-auto">
+                <table className="w-full min-w-[420px] text-[14px]">
                   <thead className="bg-muted/60">
                     <tr>
                       <th className="text-left px-3 py-2 font-bold">Product</th>
@@ -1423,7 +1423,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-7xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-6" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
@@ -2050,7 +2050,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wide mb-1.5">
                                         Photos ({photos.length})
                                       </p>
-                                      <div className="grid grid-cols-4 gap-1.5">
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
                                         {photos.map((url: string, k: number) => (
                                           <a
                                             key={k}

@@ -90,6 +90,17 @@
     font-size: 0.85rem !important;
   }
 
+  /* iPhone/iOS: Safari auto-zooms the whole page when focusing any input
+     whose font-size is under 16px. Force 16px on phone-size screens so
+     forms stop zooming/jumping (slot finder, portals, everywhere). */
+  @media screen and (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+
   /* Section styling with brand colors */
   .print-section {
     padding: 0 !important;

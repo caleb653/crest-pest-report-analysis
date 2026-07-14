@@ -29,12 +29,11 @@ import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import {
-  ConditionsReportSection, PestTrendingSection, DeviceTrendingSection,
-  ServiceRecordsSection, MaterialUseLogSection, ServiceTeamSection,
+  ConditionsReportSection, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
 } from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
-import { AlertTriangle, TrendingUp, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
+import { AlertTriangle, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
 
 interface PropertyData {
   id: string;
@@ -77,14 +76,9 @@ interface RequestData {
   created_at: string;
   pest_type?: string | null;
   location_type?: string | null;
-}
-
-interface PrepSheet {
-  id: string;
-  title: string;
-  description: string | null;
-  treatment_type: string;
-  file_url: string | null;
+  sighting_status?: string | null;
+  closed_at?: string | null;
+  crest_comments?: any;
 }
 
 interface CommercialPMViewProps {
@@ -123,7 +117,6 @@ const COMMERCIAL_SERVICE_DESCRIPTIONS: Record<string, string[]> = {
   ],
 };
 
-const todayISO = () => new Date().toISOString().split("T")[0];
 const fmtDate = (iso: string | null) =>
   iso
     ? new Date(iso + "T00:00:00").toLocaleDateString("en-US", {
@@ -141,9 +134,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [requests, setRequests] = useState<RequestData[]>([]);
-  const [prepSheets, setPrepSheets] = useState<PrepSheet[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
-  const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openServiceId, setOpenServiceId] = useState<string | null>(null);
 
@@ -183,17 +174,15 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   };
 
   const loadAll = async () => {
-    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: ps }, { data: dx }] = await Promise.all([
+    const [{ data: prop }, { data: svcs }, { data: reqs }, { data: dx }] = await Promise.all([
       supabase.from("portal_properties").select("*").eq("id", propertyId).maybeSingle(),
       supabase.from("portal_services").select("*").eq("property_id", propertyId).order("service_date", { ascending: false }),
       supabase.from("portal_requests").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
-      supabase.from("portal_prep_sheets").select("*").order("title"),
       supabase.from("portal_documents").select("*").eq("property_id", propertyId).order("created_at", { ascending: false }),
     ]);
     if (prop) setProperty(prop as any);
     if (Array.isArray(svcs)) setServices(svcs as any);
     if (Array.isArray(reqs)) setRequests(reqs as any);
-    if (Array.isArray(ps)) setPrepSheets(ps as any);
     if (Array.isArray(dx)) setDocs(dx as any);
     setLoading(false);
   };
@@ -210,10 +199,16 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 
-  const today = todayISO();
-  const past = services.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
+  // Classification is STATUS-ONLY (mirrors CommercialDashboardView). A
+  // scheduled visit must never appear as a completed/past report just
+  // because a service_date was typed in — only "Mark Serviced" moves it.
+  // Cancelled visits stay visible under Past (badged) so their history
+  // doesn't silently vanish from the customer's view.
+  const past = services
+    .filter(s => s.status === "completed" || s.status === "cancelled")
+    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""));
   const upcoming = services
-    .filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today))
+    .filter(s => s.status === "scheduled")
     .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""));
   const mapUrl = property?.map_image_url || property?.image_url || null;
 
@@ -222,6 +217,15 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
   const recentSightings = requests.filter(r => {
     const status = ((r as any).sighting_status || r.status || "").toLowerCase();
     return status !== "closed" && status !== "completed" && status !== "cancelled";
+  });
+
+  // Carry-forward: every non-Closed condition across ALL services follows the
+  // upcoming report until a Route Manager closes it. Closed conditions only
+  // appear in the Conditions tab history.
+  const activeConditionsAll = services.flatMap(s => {
+    const rd: any = (s as any).report_data || {};
+    const rows: any[] = Array.isArray(rd.conditions) ? rd.conditions : [];
+    return rows.filter((c: any) => c && c.status !== "Closed");
   });
 
   // Build the scope of work — service types we've actually got on this
@@ -380,9 +384,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           <TabsList className="sticky top-0 z-30 flex w-full flex-wrap h-auto p-1 gap-1 justify-start bg-background/95 backdrop-blur border border-border rounded-lg shadow-sm">
             <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
             <TabsTrigger value="map" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
-            <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
             <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
             <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
+            <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
             <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />SDS</TabsTrigger>
             <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
             <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
@@ -411,9 +415,11 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                       const targetPests: string[] = Array.isArray(rd.target_pests) ? rd.target_pests : [];
                       const upProducts = normalizeUsageList(s.products_used);
                       const equipment: any[] = Array.isArray(rd.non_chem_equipment) ? rd.non_chem_equipment : [];
-                      const conditions: any[] = Array.isArray(rd.conditions)
-                        ? rd.conditions.filter((c: any) => c && c.status !== "Closed")
-                        : (Array.isArray(rd.concerns) ? rd.concerns : []);
+                      // Upcoming report carries EVERY open condition on the
+                      // property forward, PLUS this visit's own legacy
+                      // concerns (old data shape) so neither hides the other.
+                      const legacyConcerns: any[] = Array.isArray(rd.concerns) ? rd.concerns : [];
+                      const conditions: any[] = [...activeConditionsAll, ...legacyConcerns];
                       const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                       return (
                         <Card key={s.id} className="border-border">
@@ -581,6 +587,11 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 {fmtDate(s.service_date)}{s.technician && ` • ${s.technician}`}
                               </p>
                             </div>
+                            {s.status === "cancelled" && (
+                              <Badge variant="outline" className="text-[10px] shrink-0 border-red-300 text-red-900 bg-red-50">
+                                Cancelled
+                              </Badge>
+                            )}
                             <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                           </button>
                           {isOpen && (() => {
@@ -632,7 +643,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 2. Target Pests */}
+                              {/* 3. Target Pests */}
                               {targetPests.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Target Pests</p>
@@ -644,7 +655,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 3. Product Used */}
+                              {/* 4. Product Used */}
                               {products.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -654,7 +665,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 4. Equipment Used */}
+                              {/* 5. Equipment Used */}
                               {equipment.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -670,7 +681,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 5. Active Conditions */}
+                              {/* 6. Active Conditions */}
                               {conditions.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -697,7 +708,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 6. Other Property Images */}
+                              {/* 7. Other Property Images */}
                               {photos.length > 0 && (
                                 <div>
                                   <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
@@ -854,8 +865,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {reqPhotos.map((url, i) => (
-                          <div key={url} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group">
-                            <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                          <div key={url} className="relative w-24 aspect-[4/3] rounded-md border border-border overflow-hidden bg-muted group">
+                            <img src={url} alt={`Photo ${i + 1}`} loading="lazy" className="w-full h-full object-contain" />
                             <button
                               type="button"
                               onClick={() => setReqPhotos(p => p.filter(u => u !== url))}
@@ -877,49 +888,117 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
               </CardContent>
             </Card>
 
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <FileText className="w-3 h-3" /> Recent Requests
-              </p>
-              {requests.length === 0 ? (
-                <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
-                  No requests yet.
-                </CardContent></Card>
-              ) : (
-                <div className="space-y-2">
-                  {requests.slice(0, 20).map(r => (
-                    <Card key={r.id}>
-                      <CardContent className="p-3 space-y-1.5">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-bold text-sm truncate">
-                            {r.pest_type || r.request_type}
-                            {r.location_type ? ` — ${r.location_type}` : ""}
-                          </p>
-                          <Badge
-                            variant={REQUEST_STATUS_VARIANT[r.status] || "secondary"}
-                            className="text-[10px] capitalize shrink-0"
-                          >
-                            {r.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </p>
-                        {r.description && (
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
-                        )}
-                        {r.response_notes && (
-                          <div className="mt-1 pt-1.5 border-t border-border/60">
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Response from Crest</p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.response_notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+            {(() => {
+              // Closed if EITHER field says so — the dashboard historically
+              // updated only `status` ("Mark Complete") while newer flows set
+              // `sighting_status`; requiring just one keeps the two portals'
+              // open/closed splits in agreement for legacy rows too.
+              const isClosed = (r: RequestData) => {
+                const ss = (r.sighting_status || "").toLowerCase();
+                const st = (r.status || "").toLowerCase();
+                return ss === "closed" || st === "completed" || st === "cancelled";
+              };
+              const openReqs = requests.filter(r => !isClosed(r));
+              const closedReqs = requests.filter(isClosed);
+              const responseFor = (r: RequestData) => {
+                const comments: any[] = Array.isArray(r.crest_comments) ? r.crest_comments : [];
+                const last = comments.length ? comments[comments.length - 1] : null;
+                return last?.note || last?.text || r.response_notes || "";
+              };
+              const fmtShort = (iso: string) =>
+                new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+              return (
+                <>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" /> Open Requests
+                      {openReqs.length > 0 && (
+                        <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-50">
+                          {openReqs.length}
+                        </Badge>
+                      )}
+                    </p>
+                    {openReqs.length === 0 ? (
+                      <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">
+                        No open requests.
+                      </CardContent></Card>
+                    ) : (
+                      <div className="space-y-2">
+                        {openReqs.slice(0, 20).map(r => (
+                          <Card key={r.id} className="border-amber-300/70 border-2">
+                            <CardContent className="p-3 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold text-sm truncate">
+                                  {r.pest_type || r.request_type}
+                                  {r.location_type ? ` — ${r.location_type}` : ""}
+                                </p>
+                                <Badge
+                                  variant={REQUEST_STATUS_VARIANT[r.status] || "secondary"}
+                                  className="text-[10px] capitalize shrink-0"
+                                >
+                                  {(r.sighting_status || r.status || "").replace("_", " ") || "open"}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">Reported {fmtShort(r.created_at)}</p>
+                              {r.description && (
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
+                              )}
+                              {responseFor(r) && (
+                                <div className="mt-1 pt-1.5 border-t border-border/60">
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Response from Crest</p>
+                                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{responseFor(r)}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {closedReqs.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                        <FileText className="w-3 h-3" /> Closed Requests
+                        <Badge variant="outline" className="ml-1 text-[10px] border-emerald-300 text-emerald-900 bg-emerald-50">
+                          {closedReqs.length}
+                        </Badge>
+                      </p>
+                      <div className="space-y-2">
+                        {closedReqs.slice(0, 20).map(r => (
+                          <Card key={r.id} className="opacity-80">
+                            <CardContent className="p-3 space-y-1.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold text-sm truncate">
+                                  {r.pest_type || r.request_type}
+                                  {r.location_type ? ` — ${r.location_type}` : ""}
+                                </p>
+                                <Badge variant="outline" className="text-[10px] shrink-0 border-emerald-300 text-emerald-900 bg-emerald-50">
+                                  Closed
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Reported {fmtShort(r.created_at)}
+                                {r.closed_at ? ` · Closed ${fmtShort(r.closed_at)}` : ""}
+                              </p>
+                              {r.description && (
+                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.description}</p>
+                              )}
+                              {responseFor(r) && (
+                                <div className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2">
+                                  <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-900 mb-0.5">Crest Response</p>
+                                  <p className="text-sm text-emerald-950 whitespace-pre-wrap leading-relaxed">{responseFor(r)}</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </TabsContent>
 
           {/* ─── CONDITIONS (read-only) ─── */}

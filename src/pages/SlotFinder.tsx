@@ -339,15 +339,15 @@ const SlotFinder = () => {
           <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
             <TabsTrigger
               value="find"
-              className="gap-2 text-base font-semibold px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-1.5 md:gap-2 text-sm md:text-base font-semibold px-3 md:px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
-              <MapPin className="w-4 h-4" /> Find open slots
+              <MapPin className="w-4 h-4 shrink-0" /> Find open slots
             </TabsTrigger>
             <TabsTrigger
               value="check"
-              className="gap-2 text-base font-semibold px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-1.5 md:gap-2 text-sm md:text-base font-semibold px-3 md:px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
-              <CalendarClock className="w-4 h-4" /> Check a day &amp; window
+              <CalendarClock className="w-4 h-4 shrink-0" /> Check a day &amp; window
             </TabsTrigger>
           </TabsList>
 
@@ -388,7 +388,7 @@ function DayMultiSelect({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
+      <DropdownMenuContent className="w-[min(18rem,calc(100vw-2rem))] max-h-80 overflow-y-auto">
         <div className="flex items-center justify-between px-2 py-1.5 text-xs">
           <button type="button" className="underline hover:text-foreground"
             onClick={() => onChange(options.slice(0, 3).map((o) => o.iso))}>Next 3 days</button>
@@ -623,6 +623,11 @@ function FindMode({
               });
             });
             all.sort((a, b) => {
+              // score_sec is the backend's quality-adjusted rank (detour +
+              // crowded-window + late-finish penalties) — trust it first.
+              const as = a.c.score_sec ?? Infinity;
+              const bs = b.c.score_sec ?? Infinity;
+              if (as !== bs) return as - bs;
               const am = detourMinutes(a.c);
               const bm = detourMinutes(b.c);
               if (am !== bm) return am - bm;
@@ -656,6 +661,9 @@ function FindMode({
                         <span className="font-semibold">{r.weekday}, {r.date}</span>
                         {" · "}
                         <span className="font-semibold">{recLabel}</span>
+                        {r.c.est_min != null && (
+                          <span className="text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
+                        )}
                       </span>
                       {isCrowded && (
                         <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
@@ -689,13 +697,19 @@ function FindMode({
           {(() => {
             // Recompute the same best-fit key so we can flag the matching SlotCard.
             let bestKey: string | null = null;
+            let bestScore = Infinity;
             let bestMin = Infinity;
             let bestMiles = Infinity;
             byDay.forEach((day) => {
               day.slots.forEach((c, idx) => {
+                const s = c.score_sec ?? Infinity;
                 const m = detourMinutes(c);
                 const mi = parseFloat(detourMiles(c));
-                if (m < bestMin || (m === bestMin && mi < bestMiles)) {
+                if (
+                  s < bestScore ||
+                  (s === bestScore && (m < bestMin || (m === bestMin && mi < bestMiles)))
+                ) {
+                  bestScore = s;
                   bestMin = m;
                   bestMiles = mi;
                   bestKey = `${day.date}#${idx}`;
@@ -824,10 +838,15 @@ function SlotCard({
         const isDayFull = afterTotal >= DAILY_MAX_STOPS;
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className={`inline-flex items-center gap-2 rounded-md px-3 py-1.5 shadow-sm ${tierPillClasses(c)}`}>
+            <div className={`inline-flex flex-wrap items-center gap-2 rounded-md px-3 py-2 shadow-sm ${tierPillClasses(c)}`}>
               <Target className="w-4 h-4" />
-              <span className="text-[11px] font-bold uppercase tracking-wide opacity-90">Book in</span>
+              <span className="text-xs font-bold uppercase tracking-wide opacity-90">Book in</span>
               <span className="text-sm font-bold">{recLabel}</span>
+              {c.est_min != null && (
+                <span className="text-xs font-semibold opacity-90 border-l border-current/30 pl-2">
+                  ETA ~{fmtTime(c.est_min)}
+                </span>
+              )}
             </div>
             {isCrowded && (
               <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
@@ -894,12 +913,13 @@ function SlotCard({
 
       <div className="mt-3 flex justify-end">
         <Button
-          type="button" size="sm"
+          type="button"
           disabled={!scheduleContext || booking}
           onClick={onSchedule}
+          className="w-full sm:w-auto h-10"
           title={scheduleContext ? "Queue this appointment for office approval" : "Pick a customer + service type above to enable"}
         >
-          <CalendarPlus className="h-3 w-3 mr-1" />
+          <CalendarPlus className="h-3.5 w-3.5 mr-1" />
           {booking ? "Queueing…" : "Schedule (queue for approval)"}
         </Button>
       </div>
@@ -979,7 +999,7 @@ function CheckMode({
               <div className="space-y-2">
                 <Label>Day</Label>
                 <Select value={date} onValueChange={setDate}>
-                  <SelectTrigger className="w-48"><SelectValue placeholder="Pick a day" /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Pick a day" /></SelectTrigger>
                   <SelectContent>
                     {dayOptions.map((d) => (
                       <SelectItem key={d.iso} value={d.iso}>{d.label}</SelectItem>
@@ -990,7 +1010,7 @@ function CheckMode({
               <div className="space-y-2">
                 <Label>Time window</Label>
                 <Select value={window} onValueChange={setWindow}>
-                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       <SelectLabel>4-hour windows</SelectLabel>

@@ -12,38 +12,23 @@
  *   • ConditionsReportSection   — IPM conditions log per visit (severity,
  *                                 action, responsibility, status). Grouped
  *                                 by date. Editable for admin.
- *   • PestTrendingSection       — bar chart of pest sightings by month +
- *                                 a breakdown by pest type.
- *   • DeviceTrendingSection     — chart of non-chem equipment usage per
- *                                 visit so customers see monitoring effort.
- *   • ServiceRecordsSection     — flat sortable table of every completed
- *                                 visit (date / tech / type / outcome).
- *   • MaterialUseLogSection     — flat list of every product applied across
- *                                 all visits with date / area / amount.
+ *   • ConditionUnitPills        — conditions editor embedded on the upcoming
+ *                                 visit card (Route Manager entry point).
  *   • ServiceTeamSection        — service team roster compiled from past
  *                                 visits, with badges for assigned techs.
  *   • BusinessLicenseSection    — license docs (CA/UT/etc.) surfaced from
  *                                 portal_documents with category='license'.
  *   • HelpTutorialSection       — "how to use this portal" content + the
  *                                 Crest support phone.
- *   • DownloadLogbookButton     — one-click print/PDF of the whole logbook
- *                                 (uses window.print after isolating the
- *                                 logbook surface — no new deps required).
- *   • LogbookDateBadge          — small "Logbook · Apr 2024 → today" pill
- *                                 used in the dashboard header bar.
  */
-import { useMemo, useState } from "react";
-import { format, parseISO, startOfMonth } from "date-fns";
+import { useMemo, useState, type ReactNode } from "react";
+import { format, parseISO } from "date-fns";
 import {
-  AlertTriangle, CalendarRange, ChevronDown, FileDown, FlaskConical,
-  HelpCircle, Phone, ShieldCheck, Users, Wrench, Activity, ClipboardList,
-  TrendingUp, FileText, Plus, Trash2, Check, X, ExternalLink, Edit3, Mail,
+  AlertTriangle, ChevronDown, FlaskConical,
+  HelpCircle, Phone, ShieldCheck, Users, Wrench, ClipboardList,
+  FileText, Plus, Trash2, Check, X, ExternalLink, Edit3, Mail,
   Camera, Upload, Lock,
 } from "lucide-react";
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
-  LineChart, Line, Legend,
-} from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,8 +40,6 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { normalizeUsageList } from "@/lib/productCatalog";
-import { APPROVED_COMMERCIAL_MATERIALS } from "@/components/portal/CommercialApprovedMaterials";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared types — kept loose so we don't have to re-derive from supabase types
@@ -72,15 +55,6 @@ export interface SpragueService {
   findings: string | null;
   products_used: any;
   report_data?: any;
-}
-
-export interface SpragueRequest {
-  id: string;
-  created_at: string;
-  pest_type?: string | null;
-  location_type?: string | null;
-  description: string;
-  status: string;
 }
 
 // Condition row stored under service.report_data.conditions
@@ -155,6 +129,182 @@ const fmtDay = (iso: string | null | undefined) => {
   catch { return iso; }
 };
 
+const SEVERITY_DOT: Record<string, string> = {
+  Low:    "bg-emerald-500",
+  Medium: "bg-amber-500",
+  High:   "bg-red-500",
+};
+
+// Normalize stored rows WITHOUT stamping identified_at: legacy rows that
+// predate the field must stay date-less (display falls back to the visit's
+// service_date) — otherwise a cosmetic edit would persist "identified today"
+// on a months-old condition.
+function normalizeConditionRows(raw: any): ConditionRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((r: any) => {
+    const row = { ...newConditionRow(), ...r } as ConditionRow;
+    if (!r?.identified_at) row.identified_at = undefined;
+    return row;
+  });
+}
+
+// ── Office notification on condition add / close ────────────────────────────
+// Shared by ConditionsReportSection AND ConditionUnitPills so the upcoming-visit
+// card (the primary Route Manager surface) sends the same emails as the
+// Conditions tab. The module-level sets dedupe within a session: props are
+// often stale for ~1.5s after a save, so a naive prev-vs-next diff would
+// re-detect (and re-email) the same transition on the next blur.
+const _notifiedNewIds = new Set<string>();
+const _notifiedClosedIds = new Set<string>();
+
+async function notifyConditionChanges(
+  prevRows: ConditionRow[],
+  nextRows: ConditionRow[],
+  s: SpragueService,
+  propertyName?: string,
+  notifyEmail?: string | null,
+) {
+  try {
+    const prevById = new Map(prevRows.map(r => [r.id, r]));
+    const newlyDescribed: ConditionRow[] = [];
+    const newlyClosed: ConditionRow[] = [];
+    for (const r of nextRows) {
+      const p = prevById.get(r.id);
+      const prevDesc = ((p?.condition || "") + (p?.detail || "")).trim();
+      const nextDesc = ((r.condition || "") + (r.detail || "")).trim();
+      if (!prevDesc && nextDesc && !_notifiedNewIds.has(r.id)) newlyDescribed.push(r);
+      if (p && p.status !== "Closed" && r.status === "Closed" && !_notifiedClosedIds.has(r.id)) newlyClosed.push(r);
+    }
+    const visitLabel = `${s.service_date ? fmtDay(s.service_date) : "Upcoming"} · ${s.service_type}`;
+    for (const r of newlyDescribed) {
+      _notifiedNewIds.add(r.id);
+      await supabase.functions.invoke("send-portal-message", {
+        body: {
+          senderName: "Crest Portal — Conditions Log",
+          senderEmail: notifyEmail || undefined,
+          propertyName: propertyName || "Property",
+          subject: `New condition logged — ${propertyName || "Property"}`,
+          message:
+            `A new condition was logged.\n\n` +
+            `Visit: ${visitLabel}\n` +
+            `Area: ${r.area || "—"}\n` +
+            `Severity: ${r.severity}\n` +
+            `Responsible: ${r.responsibility || "—"}\n` +
+            `Status: ${r.status}\n\n` +
+            `Condition:\n${r.condition || r.detail || "—"}\n\n` +
+            `Detail:\n${r.detail || "—"}\n\n` +
+            `Action requested:\n${r.action || "—"}`,
+        },
+      });
+    }
+    for (const r of newlyClosed) {
+      _notifiedClosedIds.add(r.id);
+      await supabase.functions.invoke("send-portal-message", {
+        body: {
+          senderName: "Crest Portal — Conditions Log",
+          senderEmail: notifyEmail || undefined,
+          propertyName: propertyName || "Property",
+          subject: `Condition resolved — ${propertyName || "Property"}`,
+          message:
+            `A condition was marked Closed.\n\n` +
+            `Visit: ${visitLabel}\n` +
+            `Area: ${r.area || "—"}\n` +
+            `Condition:\n${r.condition || r.detail || "—"}\n\n` +
+            `Resolution note:\n${r.resolution_note || "—"}`,
+        },
+      });
+    }
+  } catch (e) {
+    // non-blocking — UI still saved
+    console.warn("[Conditions] notify failed", e);
+  }
+}
+
+// ── Session-surviving condition drafts ──────────────────────────────────────
+// A draft lives in sessionStorage (keyed by service id) so switching tabs or
+// collapsing the card doesn't silently discard typed text + uploaded photos.
+// Nothing photo-less ever reaches the database.
+const conditionDraftKey = (serviceId: string) => `condition-draft-${serviceId}`;
+function readConditionDraft(serviceId: string): ConditionRow | null {
+  try {
+    const raw = sessionStorage.getItem(conditionDraftKey(serviceId));
+    return raw ? (JSON.parse(raw) as ConditionRow) : null;
+  } catch { return null; }
+}
+function writeConditionDraft(serviceId: string, d: ConditionRow | null) {
+  try {
+    if (d) sessionStorage.setItem(conditionDraftKey(serviceId), JSON.stringify(d));
+    else sessionStorage.removeItem(conditionDraftKey(serviceId));
+  } catch { /* storage unavailable — draft is memory-only */ }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONDITION CARD — collapsible card matching the apartment portal's unit-card
+// pattern: colored header bar with a numbered circle + condition title + area /
+// severity / status badges + dates + chevron, expanding to the row editor.
+// Shared by ConditionsReportSection and ConditionUnitPills so the Conditions
+// tab and the upcoming-visit card look identical.
+// ─────────────────────────────────────────────────────────────────────────────
+function ConditionCard({
+  row, index, isOpen, onToggle, serviceDate, children,
+}: {
+  row: ConditionRow;
+  index: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  /** Fallback "identified" date when the row predates identified_at stamping. */
+  serviceDate?: string | null;
+  children?: ReactNode;
+}) {
+  const isClosed = row.status === "Closed";
+  const title = row.condition?.trim() || "Untitled condition";
+  const photoCount = row.photos?.length || 0;
+  const identified = row.identified_at || serviceDate || null;
+  return (
+    <div className={`rounded-xl border-2 bg-card shadow-md overflow-hidden ${
+      isClosed ? "border-emerald-500/50" : "border-amber-500/60"}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 text-left transition-colors ${
+          isClosed
+            ? "bg-emerald-50/80 hover:bg-emerald-100/70 border-b-2 border-emerald-500/40"
+            : "bg-amber-100/70 hover:bg-amber-100 border-b-2 border-amber-500/50"}`}
+      >
+        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+          isClosed ? "bg-emerald-600" : SEVERITY_DOT[row.severity] || "bg-amber-500"}`}>
+          {index + 1}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-foreground truncate">{title}</p>
+          <p className="text-[10px] text-muted-foreground">
+            Identified {fmtDay(identified)}
+            {isClosed && row.closed_at ? ` · Closed ${fmtDay(row.closed_at)}` : ""}
+          </p>
+        </div>
+        {row.area && (
+          <Badge variant="outline" className="hidden sm:inline-flex h-5 text-[10px] bg-background/60">
+            {row.area}
+          </Badge>
+        )}
+        <Badge variant="outline" className={`hidden sm:inline-flex h-5 text-[10px] ${SEVERITY_COLORS[row.severity]}`}>
+          {row.severity}
+        </Badge>
+        <Badge variant="outline" className={`h-5 text-[10px] ${STATUS_COLORS[row.status]}`}>
+          {row.status}
+        </Badge>
+        {photoCount > 0 && (
+          <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Camera className="w-3 h-3" />{photoCount}
+          </span>
+        )}
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+      {isOpen && <div className="bg-background">{children}</div>}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONDITIONS REPORT
 // ─────────────────────────────────────────────────────────────────────────────
@@ -180,76 +330,39 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
     [services, includeUndated]
   );
 
-  const conditionsFor = (s: SpragueService): ConditionRow[] => {
-    const raw = s.report_data?.conditions;
-    if (!Array.isArray(raw)) return [];
-    return raw.map((r: any) => ({ ...newConditionRow(), ...r }));
-  };
+  const conditionsFor = (s: SpragueService): ConditionRow[] => normalizeConditionRows(s.report_data?.conditions);
 
   const save = async (s: SpragueService, rows: ConditionRow[]) => {
     if (!onSaveServiceReportData) return;
-    const next = { ...(s.report_data || {}), conditions: rows };
-    await onSaveServiceReportData(s.id, next);
-    // ── Notify office when a condition gets first real description, or is closed ──
-    try {
-      const prev = conditionsFor(s);
-      const prevById = new Map(prev.map(r => [r.id, r]));
-      const newlyDescribed: ConditionRow[] = [];
-      const newlyClosed: ConditionRow[] = [];
-      for (const r of rows) {
-        const p = prevById.get(r.id);
-        const prevDesc = ((p?.condition || "") + (p?.detail || "")).trim();
-        const nextDesc = ((r.condition || "") + (r.detail || "")).trim();
-        if (!prevDesc && nextDesc) newlyDescribed.push(r);
-        if (p && p.status !== "Closed" && r.status === "Closed") newlyClosed.push(r);
-      }
-      const visitLabel = `${s.service_date ? fmtDay(s.service_date) : "Upcoming"} · ${s.service_type}`;
-      for (const r of newlyDescribed) {
-        await supabase.functions.invoke("send-portal-message", {
-          body: {
-            senderName: "Crest Portal — Conditions Log",
-            senderEmail: notifyEmail || undefined,
-            propertyName: propertyName || "Property",
-            subject: `New condition logged — ${propertyName || "Property"}`,
-            message:
-              `A new condition was logged.\n\n` +
-              `Visit: ${visitLabel}\n` +
-              `Area: ${r.area || "—"}\n` +
-              `Severity: ${r.severity}\n` +
-              `Responsible: ${r.responsibility || "—"}\n` +
-              `Status: ${r.status}\n\n` +
-              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
-              `Detail:\n${r.detail || "—"}\n\n` +
-              `Action requested:\n${r.action || "—"}`,
-          },
-        });
-      }
-      for (const r of newlyClosed) {
-        await supabase.functions.invoke("send-portal-message", {
-          body: {
-            senderName: "Crest Portal — Conditions Log",
-            senderEmail: notifyEmail || undefined,
-            propertyName: propertyName || "Property",
-            subject: `Condition resolved — ${propertyName || "Property"}`,
-            message:
-              `A condition was marked Closed.\n\n` +
-              `Visit: ${visitLabel}\n` +
-              `Area: ${r.area || "—"}\n` +
-              `Condition:\n${r.condition || r.detail || "—"}\n\n` +
-              `Resolution note:\n${r.resolution_note || "—"}`,
-          },
-        });
-      }
-    } catch (e) {
-      // non-blocking — UI still saved
-      console.warn("[Conditions] notify failed", e);
-    }
+    // PATCH, not the whole blob — the persister fetches fresh report_data and
+    // merges, so we never clobber sibling keys saved since our props loaded.
+    await onSaveServiceReportData(s.id, { conditions: rows });
+    await notifyConditionChanges(conditionsFor(s), rows, s, propertyName, notifyEmail);
   };
 
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
   const open = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
   const closed = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
   const [showClosed, setShowClosed] = useState(false);
+  const [openIds, setOpenIds] = useState<Set<string>>(new Set());
+  // Draft-first add: a new condition lives in local state + sessionStorage
+  // until it has a description AND at least one photo — nothing photo-less
+  // ever persists, and a tab switch doesn't lose typed work.
+  const [drafts, setDraftsState] = useState<Record<string, ConditionRow | null>>({});
+
+  const toggleOpen = (id: string) =>
+    setOpenIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  const draftFor = (sid: string) => (sid in drafts ? drafts[sid] : readConditionDraft(sid));
+  const setDraftFor = (sid: string, d: ConditionRow | null) => {
+    setDraftsState(prev => ({ ...prev, [sid]: d }));
+    writeConditionDraft(sid, d);
+  };
+  const draftReady = (d: ConditionRow | null) =>
+    !!d && (d.photos?.length || 0) > 0 && !!d.condition.trim();
 
   // Split each visit's rows into active/closed so each section renders cleanly.
   const visitsWithActive = past
@@ -308,6 +421,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
         ) : (
           visitsWithActive.map(({ s, rows: activeRows }) => {
             const allRows = conditionsFor(s);
+            const draft = draftFor(s.id);
             return (
               <Card key={`active-${s.id}`}>
                 <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
@@ -316,28 +430,60 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                     <span className="text-muted-foreground">{s.service_type}</span>
                     {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
                   </p>
-                  {!readOnly && (
+                  {!readOnly && !draft && (
                     <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
-                      onClick={() => save(s, [...allRows, newConditionRow()])}>
+                      onClick={() => setDraftFor(s.id, newConditionRow())}>
                       <Plus className="w-3 h-3" /> Add Condition
                     </Button>
                   )}
                 </div>
-                <CardContent className="p-0">
-                  <div className="divide-y divide-border">
-                    {activeRows.map((c) => {
-                      const idx = allRows.findIndex(r => r.id === c.id);
-                      return (
+                <CardContent className="p-2 space-y-2">
+                  {draft && !readOnly && (
+                    <ConditionCard row={draft} index={activeRows.length} isOpen onToggle={() => {}} serviceDate={s.service_date}>
+                      <ConditionRowEditor
+                        row={draft}
+                        live
+                        onChange={(next) => setDraftFor(s.id, next)}
+                        onRemove={() => setDraftFor(s.id, null)}
+                      />
+                      <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                        <Button size="sm" disabled={!draftReady(draft)} className="h-8 text-xs gap-1"
+                          onClick={async () => { await save(s, [...allRows, draft]); setDraftFor(s.id, null); }}>
+                          <Check className="w-3.5 h-3.5" /> Save Condition
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 text-xs"
+                          onClick={() => setDraftFor(s.id, null)}>
+                          Cancel
+                        </Button>
+                        {!draftReady(draft) && (
+                          <p className="text-[11px] text-amber-900">
+                            Add a condition description and at least one photo to save.
+                          </p>
+                        )}
+                      </div>
+                    </ConditionCard>
+                  )}
+                  {activeRows.map((c, i) => {
+                    const idx = allRows.findIndex(r => r.id === c.id);
+                    return (
+                      <ConditionCard
+                        key={c.id}
+                        row={c}
+                        index={i}
+                        isOpen={openIds.has(c.id)}
+                        onToggle={() => toggleOpen(c.id)}
+                        serviceDate={s.service_date}
+                      >
                         <ConditionRowEditor
-                          key={c.id}
                           row={c}
                           readOnly={readOnly}
-                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
-                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                          serviceDate={s.service_date}
+                          onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
                         />
-                      );
-                    })}
-                  </div>
+                      </ConditionCard>
+                    );
+                  })}
                 </CardContent>
               </Card>
             );
@@ -372,21 +518,28 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                     {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
                   </p>
                 </div>
-                <CardContent className="p-0">
-                  <div className="divide-y divide-border">
-                    {closedRows.map((c) => {
-                      const idx = allRows.findIndex(r => r.id === c.id);
-                      return (
+                <CardContent className="p-2 space-y-2">
+                  {closedRows.map((c, i) => {
+                    const idx = allRows.findIndex(r => r.id === c.id);
+                    return (
+                      <ConditionCard
+                        key={c.id}
+                        row={c}
+                        index={i}
+                        isOpen={openIds.has(c.id)}
+                        onToggle={() => toggleOpen(c.id)}
+                        serviceDate={s.service_date}
+                      >
                         <ConditionRowEditor
-                          key={c.id}
                           row={c}
                           readOnly={readOnly}
-                          onChange={(next) => save(s, allRows.map((r, i) => i === idx ? next : r))}
-                          onRemove={() => save(s, allRows.filter((_, i) => i !== idx))}
+                          serviceDate={s.service_date}
+                          onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
+                          onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
                         />
-                      );
-                    })}
-                  </div>
+                      </ConditionCard>
+                    );
+                  })}
                 </CardContent>
               </Card>
             );
@@ -398,16 +551,25 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 }
 
 function ConditionRowEditor({
-  row, readOnly, onChange, onRemove,
+  row, readOnly, onChange, onRemove, serviceDate, live,
 }: {
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
+  /** Fallback "identified" date for rows that predate identified_at stamping. */
+  serviceDate?: string | null;
+  /** Draft mode: push every keystroke to onChange (no DB behind it), so the
+   *  parent's Save gate reflects what's typed without waiting for blur. */
+  live?: boolean;
 }) {
   const [local, setLocal] = useState<ConditionRow>(row);
   const [uploading, setUploading] = useState<"id" | "res" | null>(null);
   // Local-then-blur pattern so typing in tables doesn't lose focus mid-keystroke.
   const set = <K extends keyof ConditionRow>(k: K, v: ConditionRow[K]) =>
-    setLocal(prev => ({ ...prev, [k]: v }));
+    setLocal(prev => {
+      const next = { ...prev, [k]: v };
+      if (live) onChange(next);
+      return next;
+    });
   const flush = () => { if (JSON.stringify(local) !== JSON.stringify(row)) onChange(local); };
 
   const photos = local.photos || [];
@@ -470,57 +632,82 @@ function ConditionRowEditor({
 
   if (readOnly) {
     return (
-      <div className="p-3 grid grid-cols-1 sm:grid-cols-5 gap-2 text-sm">
-        <div>
-          <p className="text-[10px] uppercase font-bold text-muted-foreground">Area</p>
-          <p className="font-medium">{row.area || "—"}</p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase font-bold text-muted-foreground">Condition</p>
-          <p>{row.condition || "—"}</p>
-          {row.detail && <p className="text-xs text-muted-foreground mt-0.5">{row.detail}</p>}
-          {(row.photos?.length || 0) > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {row.photos!.slice(0, 4).map((u, i) => (
-                <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded border border-border overflow-hidden block">
-                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
-                </a>
-              ))}
+      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        {/* Left 2/3 — condition details (apartment unit-card layout) */}
+        <div className="md:col-span-2 space-y-3">
+          <div>
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">Condition</p>
+            <p className="font-medium">{row.condition || "—"}</p>
+            {row.detail && <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">{row.detail}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Area</p>
+              <p>{row.area || "—"}</p>
             </div>
-          )}
-        </div>
-        <div>
-          <p className="text-[10px] uppercase font-bold text-muted-foreground">Action</p>
-          <p>{row.action || "—"}</p>
-        </div>
-        <div className="flex flex-col gap-1">
-          <Badge variant="outline" className={`text-[10px] w-fit ${SEVERITY_COLORS[row.severity]}`}>
-            {row.severity}
-          </Badge>
-          <Badge variant="outline" className="text-[10px] w-fit">
-            {row.responsibility} resp.
-          </Badge>
-        </div>
-        <div>
-          <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[row.status]}`}>
-            {row.status}
-          </Badge>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Action Requested</p>
+              <p>{row.action || "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Severity</p>
+              <Badge variant="outline" className={`text-[10px] w-fit ${SEVERITY_COLORS[row.severity]}`}>
+                {row.severity}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Responsibility</p>
+              <p>{row.responsibility || "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-muted-foreground">Identified</p>
+              <p>{fmtDay(row.identified_at || serviceDate)}</p>
+            </div>
+            {row.status === "Closed" && (
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">Closed</p>
+                <p>{fmtDay(row.closed_at)}</p>
+              </div>
+            )}
+          </div>
           {row.comments && (
-            <p className="text-xs text-muted-foreground mt-1">{row.comments}</p>
+            <p className="text-xs text-muted-foreground">{row.comments}</p>
           )}
-          {row.status === "Closed" && (row.resolution_photos?.length || 0) > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {row.resolution_photos!.slice(0, 3).map((u, i) => (
-                <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded border border-emerald-300 overflow-hidden block">
-                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
+          {row.status === "Closed" && (row.resolution_note || (row.resolution_photos?.length || 0) > 0) && (
+            <div className="rounded-lg border border-emerald-300 bg-emerald-50/40 p-2.5 space-y-1.5">
+              <p className="text-[10px] uppercase font-bold text-emerald-900 flex items-center gap-1">
+                <Check className="w-3 h-3" /> Resolution
+              </p>
+              {row.resolution_note && (
+                <p className="text-[11px] text-emerald-900 italic">"{row.resolution_note}"</p>
+              )}
+              {(row.resolution_photos?.length || 0) > 0 && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {row.resolution_photos!.map((u, i) => (
+                    <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="aspect-[4/3] rounded border border-emerald-300 overflow-hidden block bg-muted">
+                      <img src={u} alt="" loading="lazy" className="w-full h-full object-contain" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {/* Right 1/3 — condition photos */}
+        {(row.photos?.length || 0) > 0 && (
+          <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start">
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-2">
+              Condition Photos <span className="text-muted-foreground font-normal normal-case">({row.photos!.length})</span>
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {row.photos!.map((u, i) => (
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="aspect-[4/3] rounded-md border border-border overflow-hidden block bg-muted">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-contain" />
                 </a>
               ))}
             </div>
-          )}
-          {row.status === "Closed" && row.resolution_note && (
-            <p className="text-[11px] text-emerald-900 italic mt-1">"{row.resolution_note}"</p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -535,51 +722,9 @@ function ConditionRowEditor({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* ── Photos as the hero (left, large) ── */}
-        <div className="lg:col-span-7 rounded-md border-2 border-dashed border-border p-2 space-y-2 bg-muted/20">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-[11px] uppercase font-bold text-muted-foreground flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5" /> Condition Photos
-              {needsIdentifyPhoto && (
-                <Badge variant="outline" className="ml-1 text-[9px] border-amber-400 text-amber-900 bg-amber-50">Required</Badge>
-              )}
-            </p>
-            <label className="cursor-pointer">
-              <input type="file" accept="image/*" multiple className="hidden"
-                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
-              <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-[12px] hover:bg-muted">
-                <Upload className="w-3.5 h-3.5" /> {uploading === "id" ? "Uploading…" : "Add Photo"}
-              </span>
-            </label>
-          </div>
-          {photos.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {photos.map((u, i) => (
-                <a key={i} href={u} target="_blank" rel="noopener noreferrer"
-                   className="relative aspect-square rounded-md border border-border overflow-hidden group block bg-background">
-                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
-                  <button type="button"
-                    onClick={(e) => { e.preventDefault(); removePhoto("photos", i); }}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 shadow">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed border-border rounded-md py-10 hover:bg-muted/50">
-              <input type="file" accept="image/*" multiple className="hidden"
-                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
-              <Camera className="w-8 h-8 mb-1.5 opacity-60" />
-              <p className="text-sm font-medium">Add condition photos</p>
-              <p className="text-[11px]">Photos are the primary record of this condition.</p>
-            </label>
-          )}
-        </div>
-
-        {/* ── Supporting fields (right, compact) ── */}
-        <div className="lg:col-span-5 grid grid-cols-2 gap-2 content-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── Fields (left 2/3 — apartment unit-card layout) ── */}
+        <div className="md:col-span-2 grid grid-cols-2 gap-2 content-start">
           <div className="col-span-2">
             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Condition / Detail</Label>
             <Input value={local.condition} onChange={e => set("condition", e.target.value)} onBlur={flush}
@@ -644,6 +789,48 @@ function ConditionRowEditor({
             </Button>
           </div>
         </div>
+
+        {/* ── Photos (right 1/3 — apartment "Unit Photos" panel) ── */}
+        <div className="md:col-span-1 rounded-lg border-2 border-primary/40 bg-primary/[0.04] p-3 self-start space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[10px] uppercase font-bold text-foreground tracking-wide flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" /> Photos
+              {needsIdentifyPhoto && (
+                <Badge variant="outline" className="ml-1 text-[9px] border-amber-400 text-amber-900 bg-amber-50">Required</Badge>
+              )}
+            </p>
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
+              <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] hover:bg-muted">
+                <Upload className="w-3 h-3" /> {uploading === "id" ? "Uploading…" : "Add"}
+              </span>
+            </label>
+          </div>
+          {photos.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2">
+              {photos.map((u, i) => (
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer"
+                   className="relative aspect-[4/3] rounded-md border border-border overflow-hidden group block bg-muted">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-contain" />
+                  <button type="button"
+                    onClick={(e) => { e.preventDefault(); removePhoto("photos", i); }}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 shadow">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <label className="cursor-pointer flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed border-border rounded-md py-8 hover:bg-muted/50">
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={e => { uploadTo("photos", e.target.files); e.currentTarget.value = ""; }} />
+              <Camera className="w-8 h-8 mb-1.5 opacity-60" />
+              <p className="text-sm font-medium">Add condition photos</p>
+              <p className="text-[11px]">Photos are the primary record of this condition.</p>
+            </label>
+          )}
+        </div>
       </div>
 
       {/* ── Resolution (only shown when working toward Closed) ── */}
@@ -669,13 +856,14 @@ function ConditionRowEditor({
           {resPhotos.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {resPhotos.map((u, i) => (
-                <div key={i} className="relative w-16 h-16 rounded border border-emerald-400 overflow-hidden group">
-                  <img src={u} alt="" loading="lazy" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removePhoto("resolution_photos", i)}
+                <a key={i} href={u} target="_blank" rel="noopener noreferrer"
+                   className="relative w-24 aspect-[4/3] rounded border border-emerald-400 overflow-hidden group block bg-muted">
+                  <img src={u} alt="" loading="lazy" className="w-full h-full object-contain" />
+                  <button type="button" onClick={(e) => { e.preventDefault(); removePhoto("resolution_photos", i); }}
                     className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <X className="w-2.5 h-2.5" />
                   </button>
-                </div>
+                </a>
               ))}
             </div>
           )}
@@ -704,35 +892,58 @@ function ConditionRowEditor({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONDITION UNIT PILLS — apartment-unit-style collapsible list, one per
-// condition. Each row shows severity dot + condition name + area + status in
-// the collapsed header, expanding to the full ConditionRowEditor (photos,
-// detail, resolution). Used on the upcoming-visit card.
+// CONDITION UNIT PILLS — apartment-unit-style collapsible condition cards
+// embedded on the upcoming-visit card. Shows ALL non-Closed conditions across
+// the property's services (carry-forward: an open condition follows every
+// subsequent report until it is closed), each saving back to the service it
+// was logged on. New conditions are drafted locally and only persisted once
+// they have a description AND at least one photo.
 // ─────────────────────────────────────────────────────────────────────────────
-const SEVERITY_DOT: Record<string, string> = {
-  Low:    "bg-emerald-500",
-  Medium: "bg-amber-500",
-  High:   "bg-red-500",
-};
-
 export function ConditionUnitPills({
   service,
+  services,
   readOnly,
   onSaveServiceReportData,
+  propertyName,
+  notifyEmail,
 }: {
+  /** The visit this card belongs to — new conditions are logged against it. */
   service: SpragueService;
+  /** All of the property's services. When provided, every non-Closed condition
+   *  across them is surfaced here (open items carry forward to the next report). */
+  services?: SpragueService[];
   readOnly?: boolean;
-  onSaveServiceReportData?: (serviceId: string, nextReportData: any) => Promise<void> | void;
+  /** Persister — receives a PATCH of report_data keys (e.g. { conditions }). */
+  onSaveServiceReportData?: (serviceId: string, patch: any) => Promise<void> | void;
+  /** For office email notifications on add/close (same as ConditionsReportSection). */
+  propertyName?: string;
+  notifyEmail?: string | null;
 }) {
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
-  const rows: ConditionRow[] = Array.isArray(service.report_data?.conditions)
-    ? service.report_data!.conditions
-    : [];
-  const active = rows.filter(r => r.status !== "Closed");
+  // Draft survives tab switches / card collapses via sessionStorage.
+  const [draft, setDraftState] = useState<ConditionRow | null>(() => readConditionDraft(service.id));
+  const setDraft = (d: ConditionRow | null) => {
+    setDraftState(d);
+    writeConditionDraft(service.id, d);
+  };
 
-  const save = async (next: ConditionRow[]) => {
+  const rowsOf = (s: SpragueService): ConditionRow[] => normalizeConditionRows(s.report_data?.conditions);
+
+  // Carry-forward pool: every non-Closed condition on the property, newest
+  // visit first, with this visit's own rows leading.
+  const pool = (services && services.length ? services : [service])
+    .slice()
+    .sort((a, b) => (a.id === service.id ? -1 : b.id === service.id ? 1 : (b.service_date || "").localeCompare(a.service_date || "")))
+    .flatMap(s => rowsOf(s).filter(r => r.status !== "Closed").map(r => ({ owner: s, row: r })));
+
+  const saveFor = async (owner: SpragueService, next: ConditionRow[]) => {
     if (!onSaveServiceReportData) return;
-    await onSaveServiceReportData(service.id, { ...(service.report_data || {}), conditions: next });
+    const prev = rowsOf(owner);
+    // PATCH — persister fetches fresh report_data and merges (no clobber).
+    await onSaveServiceReportData(owner.id, { conditions: next });
+    // Same office emails as the Conditions tab — this card is the primary
+    // Route Manager surface, so adds/closes here must notify too.
+    await notifyConditionChanges(prev, next, owner, propertyName, notifyEmail);
   };
   const toggle = (id: string) =>
     setOpenIds(prev => {
@@ -740,10 +951,12 @@ export function ConditionUnitPills({
       n.has(id) ? n.delete(id) : n.add(id);
       return n;
     });
-  const addNew = async () => {
-    const row = newConditionRow();
-    await save([...rows, row]);
-    setOpenIds(prev => new Set(prev).add(row.id));
+
+  const draftReady = !!draft && (draft.photos?.length || 0) > 0 && !!draft.condition.trim();
+  const saveDraft = async () => {
+    if (!draft || !draftReady) return;
+    await saveFor(service, [...rowsOf(service), draft]);
+    setDraft(null);
   };
 
   return (
@@ -752,348 +965,70 @@ export function ConditionUnitPills({
         <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" />
           Active Conditions
-          {active.length > 0 && (
+          {pool.length > 0 && (
             <Badge variant="outline" className="ml-1 h-4 text-[10px] border-amber-400 text-amber-900 bg-amber-50">
-              {active.length}
+              {pool.length}
             </Badge>
           )}
         </p>
-        {!readOnly && (
-          <Button size="sm" variant="outline" onClick={addNew} className="h-7 text-[11px] gap-1 border-amber-400 text-amber-900 hover:bg-amber-100">
+        {!readOnly && !draft && (
+          <Button size="sm" variant="outline" onClick={() => setDraft(newConditionRow())} className="h-7 text-[11px] gap-1 border-amber-400 text-amber-900 hover:bg-amber-100">
             <Plus className="w-3 h-3" /> Add
           </Button>
         )}
       </div>
 
-      {active.length === 0 ? (
+      {/* Draft — not persisted until it has a description and a photo. */}
+      {draft && !readOnly && (
+        <div className="space-y-1.5">
+          <ConditionCard row={draft} index={pool.length} isOpen onToggle={() => {}} serviceDate={service.service_date}>
+            <ConditionRowEditor
+              row={draft}
+              live
+              onChange={setDraft}
+              onRemove={() => setDraft(null)}
+            />
+            <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+              <Button size="sm" disabled={!draftReady} onClick={saveDraft} className="h-8 text-xs gap-1">
+                <Check className="w-3.5 h-3.5" /> Save Condition
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setDraft(null)} className="h-8 text-xs">
+                Cancel
+              </Button>
+              {!draftReady && (
+                <p className="text-[11px] text-amber-900">
+                  Add a condition description and at least one photo to save.
+                </p>
+              )}
+            </div>
+          </ConditionCard>
+        </div>
+      )}
+
+      {pool.length === 0 && !draft ? (
         <p className="text-xs text-muted-foreground italic px-1">No active conditions.</p>
       ) : (
         <div className="space-y-1.5">
-          {active.map((c) => {
-            const isOpen = openIds.has(c.id);
-            const title = c.condition?.trim() || "Untitled condition";
-            const photoCount = (c.photos?.length || 0);
-            return (
-              <div key={c.id} className="rounded-md border border-amber-500/30 bg-amber-50/60 dark:bg-amber-500/5 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggle(c.id)}
-                  className="w-full flex items-center gap-2 text-left px-2.5 py-2 hover:bg-amber-500/10 transition-colors"
-                >
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${SEVERITY_DOT[c.severity] || "bg-amber-500"}`} />
-                  <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
-                    {title}
-                  </span>
-                  {c.area && (
-                    <Badge variant="outline" className="hidden sm:inline-flex h-5 text-[10px] bg-background/60">
-                      {c.area}
-                    </Badge>
-                  )}
-                  <Badge variant="outline" className={`h-5 text-[10px] ${STATUS_COLORS[c.status]}`}>
-                    {c.status}
-                  </Badge>
-                  {photoCount > 0 && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                      <Camera className="w-3 h-3" />{photoCount}
-                    </span>
-                  )}
-                  <ChevronDown className={`w-4 h-4 text-amber-700/70 dark:text-amber-400/70 transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-                {isOpen && (
-                  <div className="border-t border-amber-500/20 bg-background">
-                    <ConditionRowEditor
-                      row={c}
-                      readOnly={readOnly}
-                      onChange={(next) => save(rows.map(r => r.id === c.id ? next : r))}
-                      onRemove={() => save(rows.filter(r => r.id !== c.id))}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {pool.map(({ owner, row: c }, i) => (
+            <ConditionCard
+              key={c.id}
+              row={c}
+              index={i}
+              isOpen={openIds.has(c.id)}
+              onToggle={() => toggle(c.id)}
+              serviceDate={owner.service_date}
+            >
+              <ConditionRowEditor
+                row={c}
+                readOnly={readOnly}
+                serviceDate={owner.service_date}
+                onChange={(next) => saveFor(owner, rowsOf(owner).map(r => r.id === c.id ? next : r))}
+                onRemove={() => saveFor(owner, rowsOf(owner).filter(r => r.id !== c.id))}
+              />
+            </ConditionCard>
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PEST TRENDING — bar chart of pest sightings by month + pest type breakdown
-// ─────────────────────────────────────────────────────────────────────────────
-export function PestTrendingSection({ requests }: { requests: SpragueRequest[] }) {
-  const byMonth = useMemo(() => {
-    const m = new Map<string, number>();
-    requests.forEach(r => {
-      const d = startOfMonth(new Date(r.created_at));
-      const key = format(d, "MMM yyyy");
-      m.set(key, (m.get(key) || 0) + 1);
-    });
-    return Array.from(m.entries()).map(([month, count]) => ({ month, count })).slice(-12);
-  }, [requests]);
-
-  const byPest = useMemo(() => {
-    const m = new Map<string, number>();
-    requests.forEach(r => {
-      const k = (r.pest_type || "Unspecified").trim() || "Unspecified";
-      m.set(k, (m.get(k) || 0) + 1);
-    });
-    return Array.from(m.entries())
-      .map(([pest, count]) => ({ pest, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8);
-  }, [requests]);
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" /> Pest Trending
-        </h3>
-        <p className="text-xs text-muted-foreground">Sightings over time and the most common pests reported.</p>
-      </div>
-
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3">
-            Sightings per Month
-          </p>
-          {byMonth.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No sightings logged yet.</p>
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byMonth}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3">
-            Top Pests Reported
-          </p>
-          {byPest.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No pest data yet.</p>
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={byPest} layout="vertical" margin={{ left: 16 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <YAxis type="category" dataKey="pest" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
-                  <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.4)" }} />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DEVICE TRENDING — non-chem equipment deployed / serviced per visit
-// ─────────────────────────────────────────────────────────────────────────────
-export function DeviceTrendingSection({ services }: { services: SpragueService[] }) {
-  const data = useMemo(() => {
-    return services
-      .filter(s => s.service_date && s.status === "completed")
-      .sort((a, b) => (a.service_date || "").localeCompare(b.service_date || ""))
-      .slice(-12)
-      .map(s => {
-        const equip: any[] = Array.isArray(s.report_data?.non_chem_equipment)
-          ? s.report_data.non_chem_equipment : [];
-        const total = equip.reduce((sum, e) => sum + (Number(e?.qty) || 0), 0);
-        return {
-          date: s.service_date ? format(parseISO(s.service_date + "T00:00:00"), "MMM d") : "—",
-          devices: total,
-          types: equip.length,
-        };
-      });
-  }, [services]);
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" /> Device Trending
-          <span
-            title="Each point is one completed service visit (last 12). 'Devices' is the total count of monitoring devices and equipment serviced that visit (e.g. snap traps, glue boards, bait stations, ILTs). 'Types' is how many distinct equipment categories were touched. A rising 'Devices' line on a steady 'Types' line usually means heavier activity in the same areas; rising 'Types' means coverage is expanding."
-            className="inline-flex"
-          >
-            <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
-          </span>
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Number of monitoring devices and equipment types deployed / serviced per visit (last 12 visits).
-        </p>
-      </div>
-      <Card>
-        <CardContent className="p-4">
-          {data.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No device data logged yet.
-            </p>
-          ) : (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="devices" stroke="hsl(var(--primary))" strokeWidth={2} dot />
-                  <Line type="monotone" dataKey="types"   stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SERVICE RECORDS — flat table of every completed visit
-// ─────────────────────────────────────────────────────────────────────────────
-export function ServiceRecordsSection({ services }: { services: SpragueService[] }) {
-  const records = useMemo(
-    () => services
-      .filter(s => s.status === "completed" || (s.service_date && s.service_date <= new Date().toISOString().slice(0, 10)))
-      .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || "")),
-    [services]
-  );
-  return (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" /> Service Records
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Every completed service visit at this location.
-        </p>
-      </div>
-      <Card>
-        <CardContent className="p-0">
-          {records.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground text-center">No service records yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/60">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-bold">Date</th>
-                    <th className="text-left px-3 py-2 font-bold">Service</th>
-                    <th className="text-left px-3 py-2 font-bold hidden sm:table-cell">Technician</th>
-                    <th className="text-left px-3 py-2 font-bold hidden md:table-cell">Summary</th>
-                    <th className="text-right px-3 py-2 font-bold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map(r => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2 whitespace-nowrap">{fmtDay(r.service_date)}</td>
-                      <td className="px-3 py-2">{r.service_type}</td>
-                      <td className="px-3 py-2 hidden sm:table-cell">{r.technician || "—"}</td>
-                      <td className="px-3 py-2 hidden md:table-cell max-w-md">
-                        <span className="line-clamp-2 text-muted-foreground">{r.summary || "—"}</span>
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Badge variant="outline" className="text-[10px] capitalize">
-                          {r.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MATERIAL USE LOG — every product applied across every visit
-// ─────────────────────────────────────────────────────────────────────────────
-export function MaterialUseLogSection({ services }: { services: SpragueService[] }) {
-  const rows = useMemo(() => {
-    const out: Array<{ date: string | null; service: string; tech: string | null; name: string; applied: string; undiluted: string }> = [];
-    for (const s of services) {
-      const products = normalizeUsageList(s.products_used);
-      for (const p of products) {
-        out.push({
-          date: s.service_date,
-          service: s.service_type,
-          tech: s.technician,
-          name: p.name,
-          applied: p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit}` : "—",
-          undiluted: p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit}` : "—",
-        });
-      }
-    }
-    return out.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  }, [services]);
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <FlaskConical className="w-5 h-5 text-primary" /> Material Use Log
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          Every product application performed on this site, in compliance with state pesticide-use record-keeping.
-        </p>
-      </div>
-      <Card>
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground text-center">No applications logged yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/60">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-bold">Date</th>
-                    <th className="text-left px-3 py-2 font-bold">Product</th>
-                    <th className="text-left px-3 py-2 font-bold hidden sm:table-cell">Applied</th>
-                    <th className="text-left px-3 py-2 font-bold hidden md:table-cell">Active (Undiluted)</th>
-                    <th className="text-left px-3 py-2 font-bold hidden lg:table-cell">Visit / Tech</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={i} className="border-t border-border">
-                      <td className="px-3 py-2 whitespace-nowrap">{fmtDay(r.date)}</td>
-                      <td className="px-3 py-2 font-medium">{r.name}</td>
-                      <td className="px-3 py-2 hidden sm:table-cell">{r.applied}</td>
-                      <td className="px-3 py-2 hidden md:table-cell">{r.undiluted}</td>
-                      <td className="px-3 py-2 hidden lg:table-cell text-muted-foreground">
-                        {r.service}{r.tech ? ` · ${r.tech}` : ""}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -1243,10 +1178,6 @@ export function HelpTutorialSection() {
       a: "Materials tab → Approved Materials. Every product is listed with active ingredient, EPA registration, and a one-click SDS link. There's also a Download All SDS button.",
     },
     {
-      q: "How do I download my logbook?",
-      a: "Use the Download Logbook button at the top of the Dashboard — it produces a printable PDF of everything Crest has on file for this location.",
-    },
-    {
       q: "Who do I call in an emergency?",
       a: "Call Crest 24/7 at (949) 424-5000. For non-urgent items use the Contact tab — it routes straight to the account manager.",
     },
@@ -1294,51 +1225,21 @@ export function HelpTutorialSection() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DOWNLOAD LOGBOOK BUTTON — uses window.print() against the current portal so
-// no new deps required. A future enhancement could use the existing
-// pdfExport.ts machinery for a styled multi-page PDF.
-// ─────────────────────────────────────────────────────────────────────────────
-export function DownloadLogbookButton({ propertyName }: { propertyName: string }) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      className="h-9 gap-1.5"
-      onClick={() => {
-        // Surface a print dialog that the browser turns into PDF.
-        const original = document.title;
-        document.title = `Crest Logbook — ${propertyName}`;
-        window.print();
-        setTimeout(() => { document.title = original; }, 800);
-        toast({ title: "Logbook ready", description: "Use the print dialog to save as PDF." });
-      }}
-    >
-      <FileDown className="w-4 h-4" /> Download Logbook
-    </Button>
-  );
-}
-
-// Small "Logbook · MMM yyyy → today" chip for the dashboard header.
-export function LogbookDateBadge({ services }: { services: SpragueService[] }) {
-  const oldest = services
-    .filter(s => s.service_date)
-    .reduce((min, s) => (!min || (s.service_date! < min) ? s.service_date! : min), "" as string);
-  if (!oldest) return null;
-  return (
-    <Badge variant="outline" className="gap-1.5 text-[11px]">
-      <CalendarRange className="w-3 h-3" />
-      Logbook · {fmtDay(oldest)} → today
-    </Badge>
-  );
-}
-
-// Helper for admin views: persist report_data patch + toast
-export async function persistServiceReportData(serviceId: string, nextReportData: any) {
+// Helper for admin views: persist a report_data PATCH + toast.
+// Fetches the CURRENT report_data first and merges the patch over it —
+// callers' props are often stale (saves elsewhere don't refresh them), and
+// writing a whole blob built from a stale prop silently deletes sibling keys
+// (e.g. a target_pests save wiping just-added conditions).
+export async function persistServiceReportData(serviceId: string, patch: any) {
+  const { data } = await supabase
+    .from("portal_services")
+    .select("report_data")
+    .eq("id", serviceId)
+    .maybeSingle();
+  const fresh = (data?.report_data as any) || {};
   const { error } = await supabase
     .from("portal_services")
-    .update({ report_data: nextReportData })
+    .update({ report_data: { ...fresh, ...patch } })
     .eq("id", serviceId);
   if (error) {
     toast({ title: "Save failed", description: error.message, variant: "destructive" });

@@ -999,12 +999,10 @@ const PortalAdmin = () => {
             services={propServices as any}
             links={propLinks as any}
             clientName={client?.company || client?.name || ""}
-            onOpenServiceReport={openServiceReport}
             onEditService={(s) => openServiceDialog(s as any)}
             onDeleteService={deleteService}
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
-            onAddUpcomingService={() => createAndOpenReport("scheduled")}
             onRefresh={loadAll}
             onUpdatePropertyImage={updatePropertyImage}
             uploadingPropertyImage={uploadingPropertyImage}
