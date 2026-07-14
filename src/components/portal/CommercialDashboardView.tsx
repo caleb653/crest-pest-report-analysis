@@ -401,6 +401,15 @@ export default function CommercialDashboardView({
     }
     await saveServiceField(id, out);
     setEdits(e => { const n = { ...e }; delete n[id]; return n; });
+    // Quiet confirmation so the RM knows the blur-autosave landed.
+    toast({ title: "Saved", duration: 1200 });
+  };
+
+  // Conditions persister: save, then refresh immediately so the new/edited
+  // condition renders right away instead of waiting on the realtime debounce.
+  const saveConditionsPatch = async (serviceId: string, patch: any) => {
+    await persistServiceReportData(serviceId, patch);
+    onRefresh?.();
   };
 
   const today = todayISO();
@@ -1193,7 +1202,7 @@ export default function CommercialDashboardView({
                           </p>
                           <ConditionsReportSection
                             services={[s as any]}
-                            onSaveServiceReportData={persistServiceReportData}
+                            onSaveServiceReportData={saveConditionsPatch}
                             propertyName={property?.name}
                             readOnly={readOnly}
                           />
@@ -1445,7 +1454,7 @@ export default function CommercialDashboardView({
                         service={s as any}
                         services={services as any}
                         readOnly={readOnly}
-                        onSaveServiceReportData={persistServiceReportData}
+                        onSaveServiceReportData={saveConditionsPatch}
                         propertyName={property?.name}
                       />
 
@@ -1505,7 +1514,18 @@ export default function CommercialDashboardView({
                         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                           <Button
                             size="lg"
-                            onClick={() => saveServiceField(s.id, { status: "completed", service_date: getField(s, "service_date") || today })}
+                            onClick={async () => {
+                              // Capture the date BEFORE flushing (flush clears local edit
+                              // state and the prop won't have refreshed yet), flush any
+                              // un-blurred edits so nothing typed is lost, then complete.
+                              const dateVal = getField(s, "service_date") || today;
+                              await flushEdits(s.id);
+                              await saveServiceField(s.id, { status: "completed", service_date: dateVal });
+                              toast({
+                                title: "Visit marked serviced ✓",
+                                description: "Moved to Previous Services — the customer portal updates automatically.",
+                              });
+                            }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
                           >
                             <CheckCircle2 className="w-5 h-5" /> Mark Serviced
@@ -1698,7 +1718,7 @@ export default function CommercialDashboardView({
             <ConditionsReportSection
               services={services as any}
               includeUndated
-              onSaveServiceReportData={persistServiceReportData}
+              onSaveServiceReportData={saveConditionsPatch}
               propertyName={property?.name}
               readOnly={readOnly}
             />
