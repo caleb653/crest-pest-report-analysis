@@ -382,15 +382,15 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
         <Tabs defaultValue="visits" className="w-full">
           <TabsList className="sticky top-0 z-30 flex w-full flex-wrap h-auto p-1 gap-1 justify-start bg-background/95 backdrop-blur border border-border rounded-lg shadow-sm">
+            {/* Mirrors the Route Manager dashboard's 6-tab grouping so the two
+                portals feel like the same product: map/scope/team live under
+                one "Property" tab, contact lives inside Help. */}
             <TabsTrigger value="visits" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Calendar className="w-3.5 h-3.5" />Visits</TabsTrigger>
-            <TabsTrigger value="map" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Map</TabsTrigger>
             <TabsTrigger value="requests" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ClipboardList className="w-3.5 h-3.5" />Sightings</TabsTrigger>
             <TabsTrigger value="conditions" className="text-[11px] gap-1 flex-1 min-w-[88px]"><AlertTriangle className="w-3.5 h-3.5" />Conditions</TabsTrigger>
-            <TabsTrigger value="services" className="text-[11px] gap-1 flex-1 min-w-[88px]"><Wrench className="w-3.5 h-3.5" />Services</TabsTrigger>
+            <TabsTrigger value="property" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MapPin className="w-3.5 h-3.5" />Property</TabsTrigger>
             <TabsTrigger value="materials" className="text-[11px] gap-1 flex-1 min-w-[88px]"><FlaskIcon className="w-3.5 h-3.5" />SDS</TabsTrigger>
-            <TabsTrigger value="team" className="text-[11px] gap-1 flex-1 min-w-[88px]"><ShieldCheck className="w-3.5 h-3.5" />Team</TabsTrigger>
             <TabsTrigger value="help" className="text-[11px] gap-1 flex-1 min-w-[88px]"><HelpCircle className="w-3.5 h-3.5" />Help</TabsTrigger>
-            <TabsTrigger value="contact" className="text-[11px] gap-1 flex-1 min-w-[88px]"><MessageSquare className="w-3.5 h-3.5" />Contact</TabsTrigger>
           </TabsList>
 
           {/* ─── VISITS ─── */}
@@ -766,11 +766,13 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
           </TabsContent>
 
           {/* ─── SITE MAP ─── */}
-          <TabsContent value="map" className="mt-3">
+          {/* ─── PROPERTY (site map + scope of work + team) — one tab, same
+              grouping as the admin dashboard's "Site Map, Plan & Team" ─── */}
+          <TabsContent value="property" className="space-y-3 mt-3">
             <Card>
               <CardContent className="p-3">
                 {property.map_data || mapUrl ? (
-                  <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "60vh", minHeight: 380 }}>
+                  <div className="w-full bg-background rounded-md overflow-hidden border border-border h-[45vh] min-h-[320px] md:h-[60vh] md:min-h-[380px]">
                     {property.map_data ? (
                       <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} imageFit="contain" />
                     ) : mapUrl ? (
@@ -785,10 +787,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* ─── SERVICES (Scope of Work) ─── */}
-          <TabsContent value="services" className="space-y-3 mt-3">
             <Card>
               <CardContent className="p-4 space-y-1">
                 <p className="text-sm font-bold flex items-center gap-2"><Wrench className="w-4 h-4 text-primary" /> Scope of Work</p>
@@ -814,7 +812,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                         </ul>
                       ) : (
                         <p className="text-sm text-muted-foreground">
-                          Performed at this location on the regular service cadence. Reach out via the Contact tab for details.
+                          Performed at this location on the regular service cadence. Reach out via the Help tab for details.
                         </p>
                       )}
                     </CardContent>
@@ -822,6 +820,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 );
               })
             )}
+            <ServiceTeamSection services={services as any} />
+            <BusinessLicenseSection docs={docs as any} />
           </TabsContent>
 
           {/* ─── REQUESTS ─── */}
@@ -1035,19 +1035,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <CommercialApprovedMaterials />
           </TabsContent>
 
-          {/* ─── TEAM & LICENSING ─── */}
-          <TabsContent value="team" className="mt-3 space-y-6">
-            <ServiceTeamSection services={services as any} />
-            <BusinessLicenseSection docs={docs as any} />
-          </TabsContent>
-
-          {/* ─── HELP ─── */}
-          <TabsContent value="help" className="mt-3">
+          {/* ─── HELP (FAQ + contact form in one place) ─── */}
+          <TabsContent value="help" className="space-y-3 mt-3">
             <HelpTutorialSection />
-          </TabsContent>
-
-          {/* ─── CONTACT ─── */}
-          <TabsContent value="contact" className="space-y-3 mt-3">
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center gap-2">
