@@ -421,6 +421,12 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                       const legacyConcerns: any[] = Array.isArray(rd.concerns) ? rd.concerns : [];
                       const conditions: any[] = [...activeConditionsAll, ...legacyConcerns];
                       const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
+                      // Every report section renders only when it has content;
+                      // when ALL are empty, say so instead of showing a bare card.
+                      const hasReportContent =
+                        recentSightings.length > 0 || !!s.special_notes || !!s.summary ||
+                        targetPests.length > 0 || upProducts.length > 0 ||
+                        equipment.length > 0 || conditions.length > 0 || photos.length > 0;
                       return (
                         <Card key={s.id} className="border-border">
                           <CardContent className="p-3 space-y-3">
@@ -436,6 +442,14 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               </div>
                               <Badge variant="secondary" className="text-[10px] shrink-0">Scheduled</Badge>
                             </div>
+
+                            {!hasReportContent && (
+                              <p className="text-xs italic text-muted-foreground border border-dashed border-border rounded-md p-2.5">
+                                Your service report will appear here as our team prepares this
+                                visit — target pests, products, equipment, active conditions,
+                                and photos all show up the moment they're added.
+                              </p>
+                            )}
 
                             {/* 1. Recent Pest Sightings */}
                             {recentSightings.length > 0 && (
