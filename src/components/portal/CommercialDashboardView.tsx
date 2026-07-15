@@ -1554,6 +1554,7 @@ export default function CommercialDashboardView({
                                   status: "scheduled",
                                   service_date: nextDate,
                                 } as any);
+                                onRefresh?.();
                               }
                               toast({
                                 title: "Visit marked serviced ✓",
