@@ -1565,7 +1565,7 @@ export default function CommercialDashboardView({
                                             <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
                                           </Badge>
                                         ) : !readOnly && (
-                                          <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
+                                          <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any, s.id)}>
                                             <SelectTrigger className="h-7 w-[120px] text-xs shrink-0"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="open">Open</SelectItem>
