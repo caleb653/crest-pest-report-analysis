@@ -449,7 +449,6 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
   const open = uniqueOpen.map(c => ({ s: past[0], c })); // kept for count only
   const closed = uniqueClosed.map(c => ({ s: past[0], c }));
-  const [showClosed, setShowClosed] = useState(false);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   // Draft-first add: a new condition lives in local state + sessionStorage
   // until it has a description AND at least one photo — nothing photo-less
