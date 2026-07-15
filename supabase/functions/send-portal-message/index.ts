@@ -16,8 +16,10 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY not configured");
-      return new Response(JSON.stringify({ error: "Email not configured" }), {
-        status: 500,
+      // Non-fatal: portal notifications are best-effort. Returning 200 keeps
+      // the client UI from surfacing a runtime error when email isn't set up.
+      return new Response(JSON.stringify({ skipped: true, reason: "email_not_configured" }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -55,8 +57,10 @@ serve(async (req) => {
     if (!res.ok) {
       const errText = await res.text();
       console.error("Resend error:", errText);
-      return new Response(JSON.stringify({ error: "Failed to send email" }), {
-        status: 500,
+      // Non-fatal: don't block portal actions (conditions, sightings, etc.)
+      // when the email provider rejects the message.
+      return new Response(JSON.stringify({ skipped: true, reason: "resend_error", detail: errText }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -66,8 +70,8 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500,
+    return new Response(JSON.stringify({ skipped: true, reason: "exception", detail: e.message }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
