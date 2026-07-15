@@ -364,9 +364,13 @@ interface ConditionsProps {
   notifyEmail?: string | null;
   /** Hide the big title/description/Active subheader (for embedded use). */
   compact?: boolean;
+  /** When set, this service is treated as the "current" visit — it renders even
+   * when empty (so the admin can add), and open conditions from other services
+   * carry over into this view. */
+  currentServiceId?: string;
 }
 
-export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated, propertyName, notifyEmail, compact }: ConditionsProps) {
+export function ConditionsReportSection({ services, readOnly, onSaveServiceReportData, includeUndated, propertyName, notifyEmail, compact, currentServiceId }: ConditionsProps) {
   const past = useMemo(
     () => services
       .filter(s => includeUndated || s.service_date)
@@ -409,9 +413,18 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
     !!d && (d.photos?.length || 0) > 0 && !!d.condition.trim();
 
   // Split each visit's rows into active/closed so each section renders cleanly.
+  // Only surface visits that actually have conditions — with one exception:
+  // when a `currentServiceId` is supplied (upcoming-visit card), we keep that
+  // service on-screen even when empty so the admin can add a new condition,
+  // and we float it to the top of the list.
   const visitsWithActive = past
     .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status !== "Closed") }))
-    .filter(v => !readOnly || v.rows.length > 0);
+    .filter(v => v.rows.length > 0 || v.s.id === currentServiceId)
+    .sort((a, b) => {
+      if (a.s.id === currentServiceId) return -1;
+      if (b.s.id === currentServiceId) return 1;
+      return 0;
+    });
   const visitsWithClosed = past
     .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status === "Closed") }))
     .filter(v => v.rows.length > 0);
