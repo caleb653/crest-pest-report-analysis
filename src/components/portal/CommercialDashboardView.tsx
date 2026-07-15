@@ -1534,17 +1534,18 @@ export default function CommercialDashboardView({
                           the Conditions flow. Closed sightings drop off next report. */}
                       {sightingsForService.length > 0 && (
                         <div>
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> Pest Sightings
-                            <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                           <div className="mb-2 flex items-center gap-2 flex-wrap rounded-md bg-gradient-to-r from-amber-200 to-amber-100 border-l-4 border-amber-500 px-3 py-2 shadow-sm">
+                             <AlertTriangle className="w-4 h-4 text-amber-700" />
+                             <h4 className="text-sm font-black uppercase tracking-wider text-amber-950">Pest Sightings</h4>
+                             <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-950 bg-white/70">
                               {recentSightings.length} to resolve
                             </Badge>
                             {closedOnThisDate.length > 0 && (
-                              <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-900 bg-green-50">
+                              <Badge variant="outline" className="text-[10px] border-green-400 text-green-900 bg-green-50">
                                 {closedOnThisDate.length} resolved this visit
                               </Badge>
                             )}
-                          </p>
+                          </div>
                           <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-2">
                             <p className="text-[11px] italic text-amber-800">
                               Crest resolves these. Add a response and set status to <span className="font-semibold">Closed</span> — it will drop off the next report.
@@ -1568,7 +1569,7 @@ export default function CommercialDashboardView({
                                           {sg.description && (
                                             <p className="text-xs text-muted-foreground leading-snug whitespace-pre-wrap">{sg.description}</p>
                                           )}
-                                          {isResolved && sg.response_notes && (
+                                          {isResolved && sg.response_notes && readOnly && (
                                             <p className="text-xs text-green-900 leading-snug mt-1 whitespace-pre-wrap"><span className="font-semibold">Crest response:</span> {sg.response_notes}</p>
                                           )}
                                         </div>
@@ -1587,13 +1588,14 @@ export default function CommercialDashboardView({
                                           </Select>
                                         )}
                                       </div>
-                                      {!readOnly && !isResolved && (
+                                      {!readOnly && (
                                         <Textarea
-                                          value={responseDraft[sg.id] || ""}
+                                          value={responseDraft[sg.id] ?? sg.response_notes ?? ""}
                                           onChange={(e) => setResponseDraft(d => ({ ...d, [sg.id]: e.target.value }))}
                                           onBlur={() => {
-                                            const note = (responseDraft[sg.id] || "").trim();
+                                            const note = (responseDraft[sg.id] ?? sg.response_notes ?? "").trim();
                                             if (!note) return;
+                                            if (note === (sg.response_notes || "").trim()) return;
                                             const prior = Array.isArray((sg as any).crest_comments) ? (sg as any).crest_comments : [];
                                             const last = prior[prior.length - 1];
                                             if (last && last.note === note) return;
