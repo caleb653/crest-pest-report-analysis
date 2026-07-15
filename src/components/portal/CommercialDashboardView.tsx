@@ -365,6 +365,10 @@ export default function CommercialDashboardView({
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [expandedConditions, setExpandedConditions] = useState<Record<string, boolean>>({});
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
+  // IDs of sightings the user just closed from an upcoming-visit card in
+  // this session. We keep them visible on the current card as "Resolved"
+  // instead of yanking them the second the status flips.
+  const [stickyClosedSightings, setStickyClosedSightings] = useState<Set<string>>(new Set());
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
   const [officeNotes, setOfficeNotes] = useState<string>(
@@ -752,6 +756,11 @@ export default function CommercialDashboardView({
     if (error) {
       toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
       return;
+    }
+    if (next === "closed") {
+      // Keep the just-closed sighting visible on the card it was closed
+      // from — it will also show up under Previous Services history.
+      setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
     }
     loadRequests();
   };
@@ -1356,7 +1365,9 @@ export default function CommercialDashboardView({
                     const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                     if (!isClosed) return false;
                     const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
-                    return svcDate && closedAt === svcDate;
+                    // Include if resolved on this visit's date OR the user just
+                    // clicked Close on it from this session (sticky).
+                    return (svcDate && closedAt === svcDate) || stickyClosedSightings.has(r.id);
                   });
                   const sightingsForService = [
                     ...recentSightings,
