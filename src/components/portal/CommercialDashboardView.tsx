@@ -1365,7 +1365,9 @@ export default function CommercialDashboardView({
                     const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                     if (!isClosed) return false;
                     const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
-                    return svcDate && closedAt === svcDate;
+                    // Include if resolved on this visit's date OR the user just
+                    // clicked Close on it from this session (sticky).
+                    return (svcDate && closedAt === svcDate) || stickyClosedSightings.has(r.id);
                   });
                   const sightingsForService = [
                     ...recentSightings,
