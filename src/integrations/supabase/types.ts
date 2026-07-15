@@ -544,6 +544,7 @@ export type Database = {
           prep_sheet_id: string | null
           property_id: string
           request_type: string
+          resolved_service_id: string | null
           response_notes: string | null
           right_to_treat_requested: boolean
           right_to_treat_signature: string | null
@@ -572,6 +573,7 @@ export type Database = {
           prep_sheet_id?: string | null
           property_id: string
           request_type?: string
+          resolved_service_id?: string | null
           response_notes?: string | null
           right_to_treat_requested?: boolean
           right_to_treat_signature?: string | null
@@ -600,6 +602,7 @@ export type Database = {
           prep_sheet_id?: string | null
           property_id?: string
           request_type?: string
+          resolved_service_id?: string | null
           response_notes?: string | null
           right_to_treat_requested?: boolean
           right_to_treat_signature?: string | null
@@ -626,6 +629,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_requests_resolved_service_id_fkey"
+            columns: ["resolved_service_id"]
+            isOneToOne: false
+            referencedRelation: "portal_services"
             referencedColumns: ["id"]
           },
         ]
