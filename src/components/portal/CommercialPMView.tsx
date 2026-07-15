@@ -554,17 +554,18 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 together. Read-only: Crest resolves these. */}
                             {sightingsForService.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> Pest Sightings
-                                  <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                <div className="mb-2 flex items-center gap-2 flex-wrap rounded-md bg-gradient-to-r from-amber-200 to-amber-100 border-l-4 border-amber-500 px-3 py-2 shadow-sm">
+                                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                                  <h4 className="text-sm font-black uppercase tracking-wider text-amber-950">Pest Sightings</h4>
+                                  <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-950 bg-white/70">
                                     {recentSightings.length} being resolved
                                   </Badge>
                                   {closedOnThisDate.length > 0 && (
-                                    <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-900 bg-green-50">
+                                    <Badge variant="outline" className="text-[10px] border-green-400 text-green-900 bg-green-50">
                                       {closedOnThisDate.length} resolved this visit
                                     </Badge>
                                   )}
-                                </p>
+                                </div>
                                 <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
                                   <p className="text-[11px] italic text-amber-800">
                                     Crest is resolving these. They'll drop off once closed.
@@ -682,14 +683,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     const hasFollowUp = !!s.follow_up_recommended;
                     const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                     return (
-                      <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400 ring-2 ring-orange-200/60" : ""}>
+                     <Card key={s.id}>
                         <CardContent className="p-0">
-                          {hasFollowUp && (
-                            <div className="bg-orange-500 text-white px-3 py-2 rounded-t-lg flex items-center gap-2">
-                              <span className="text-base leading-none">⚠️</span>
-                              <p className="font-bold text-xs uppercase tracking-wide">Follow-up Needed</p>
-                            </div>
-                          )}
                           <button
                             type="button"
                             onClick={() => setOpenServiceId(isOpen ? null : s.id)}
@@ -717,12 +712,34 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               : (Array.isArray(rd.concerns) ? rd.concerns : []);
                             return (
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/60">
-                              {hasFollowUp && s.follow_up_notes && (
-                                <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
-                                  <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">Follow-up Notes</p>
-                                  <p className="text-sm text-orange-900 whitespace-pre-wrap leading-relaxed">{s.follow_up_notes}</p>
-                                </div>
-                              )}
+                              {/* Conditions logged during THIS past visit — pinned at
+                                  the top so the visit's most important record leads. */}
+                              {(() => {
+                                const rows = Array.isArray(rd.conditions) ? rd.conditions : [];
+                                if (rows.length === 0) return null;
+                                return (
+                                  <div className="rounded-md border-2 border-red-400 bg-red-50/70 p-2 space-y-1.5">
+                                    <p className="text-[11px] font-bold uppercase tracking-wide text-red-900 flex items-center gap-1">
+                                      <ClipboardList className="w-3 h-3" /> Conditions Added This Visit
+                                      <Badge variant="outline" className="ml-auto text-[10px] border-red-400 text-red-900 bg-white/70">
+                                        {rows.length}
+                                      </Badge>
+                                    </p>
+                                    <div className="space-y-1">
+                                      {rows.map((c: any, i: number) => (
+                                        <div key={c.id || i} className="text-xs text-red-950 leading-snug">
+                                          <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
+                                          {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
+                                          {c.detail && <span> — {c.detail}</span>}
+                                          {c.status && (
+                                            <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">{c.status}</Badge>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Sightings resolved during THIS past visit. */}
                               {(() => {
