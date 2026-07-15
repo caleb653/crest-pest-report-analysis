@@ -394,9 +394,61 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
     await notifyConditionChanges(conditionsFor(s), rows, s, propertyName, notifyEmail);
   };
 
+  // ── Timeline model ─────────────────────────────────────────────────────────
+  // A condition is anchored to the visit it was logged on (its "owner"), and
+  // carries forward across every subsequent visit until it is resolved. On the
+  // visit that resolves it, it shows green. Visits BEFORE the owner or AFTER
+  // the closing visit do NOT show it. This mirrors how pest sightings work:
+  // attached to a visit, but naturally present on any visit where they were
+  // still active at the time.
+  const dateOf = (x?: SpragueService | null) => (x?.service_date || "9999-99-99");
+  type Presence = { c: ConditionRow; owner: SpragueService; state: "open" | "resolved" };
+  const presenceFor = (s: SpragueService): Presence[] => {
+    const sDate = dateOf(s);
+    const rows: Presence[] = [];
+    for (const owner of services) {
+      const ownerDate = dateOf(owner);
+      // Not yet logged at the time of s? (owner service is strictly later)
+      // Exception: same service is always its own owner.
+      if (owner.id !== s.id && ownerDate > sDate) continue;
+      for (const c of conditionsFor(owner)) {
+        if (c.status !== "Closed") {
+          rows.push({ c, owner, state: "open" });
+          continue;
+        }
+        // Closed rows: only surface where it makes sense on the timeline.
+        if (c.closed_on_service_id === s.id) {
+          rows.push({ c, owner, state: "resolved" });
+          continue;
+        }
+        const closingSvc = c.closed_on_service_id
+          ? services.find(x => x.id === c.closed_on_service_id)
+          : null;
+        const closingDate = closingSvc
+          ? dateOf(closingSvc)
+          : (c.closed_at ? c.closed_at.slice(0, 10) : null);
+        // If it was still open at the time of s (resolved on a LATER visit),
+        // show it as active on s. Otherwise it was resolved before s — hide.
+        if (closingDate && closingDate > sDate) {
+          rows.push({ c, owner, state: "open" });
+        } else if (!closingDate) {
+          // Closed but no metadata — defensive: keep visible on owner only.
+          if (owner.id === s.id) rows.push({ c, owner, state: "resolved" });
+        }
+      }
+    }
+    return rows;
+  };
+
+  // Global counts for the Active Conditions banner: unique open rows across
+  // the property (dedup by condition id — same condition present on multiple
+  // visits should only count once).
+  const allRowsProperty = services.flatMap(o => conditionsFor(o));
+  const uniqueOpen = allRowsProperty.filter(c => c.status !== "Closed");
+  const uniqueClosed = allRowsProperty.filter(c => c.status === "Closed");
   const visitsWithAny = past.filter(s => conditionsFor(s).length > 0);
-  const open = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
-  const closed = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
+  const open = uniqueOpen.map(c => ({ s: past[0], c })); // kept for count only
+  const closed = uniqueClosed.map(c => ({ s: past[0], c }));
   const [showClosed, setShowClosed] = useState(false);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
   // Draft-first add: a new condition lives in local state + sessionStorage
@@ -418,22 +470,18 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
   const draftReady = (d: ConditionRow | null) =>
     !!d && (d.photos?.length || 0) > 0 && !!d.condition.trim();
 
-  // Split each visit's rows into active/closed so each section renders cleanly.
-  // Only surface visits that actually have conditions — with one exception:
-  // when a `currentServiceId` is supplied (upcoming-visit card), we keep that
-  // service on-screen even when empty so the admin can add a new condition,
-  // and we float it to the top of the list.
-  const visitsWithActive = past
-    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status !== "Closed") }))
-    .filter(v => v.rows.length > 0 || v.s.id === currentServiceId)
+  // For the standalone Conditions tab: each visit shows every condition that
+  // was present at that visit (carried forward from earlier visits, plus
+  // resolved-on-this-visit rows rendered green inline). Same condition can
+  // therefore appear on multiple visits — that's the desired history view.
+  const visitsTimeline = past
+    .map(s => ({ s, presence: presenceFor(s) }))
+    .filter(v => v.presence.length > 0 || v.s.id === currentServiceId)
     .sort((a, b) => {
       if (a.s.id === currentServiceId) return -1;
       if (b.s.id === currentServiceId) return 1;
       return 0;
     });
-  const visitsWithClosed = past
-    .map(s => ({ s, rows: conditionsFor(s).filter(c => c.status === "Closed") }))
-    .filter(v => v.rows.length > 0);
 
   return (
     <div className={compact ? "space-y-2" : "space-y-4"}>
@@ -451,11 +499,11 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
               <ClipboardList className="w-4 h-4 text-red-700" />
               <h4 className="text-sm font-black uppercase tracking-wider text-red-950">Active Conditions</h4>
               <Badge variant="outline" className="text-[10px] border-red-500 text-red-950 bg-white/70">
-                {open.length} open
+                {uniqueOpen.length} open
               </Badge>
               <div className="ml-auto flex gap-1.5 text-[10px]">
                 <Badge variant="outline" className="border-green-400 text-green-900 bg-green-50">
-                  {closed.length} Closed
+                  {uniqueClosed.length} Closed
                 </Badge>
                 <Badge variant="outline" className="bg-white/70">{visitsWithAny.length} Visits Logged</Badge>
               </div>
@@ -465,24 +513,23 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             </p>
           </div>
         )}
-        {visitsWithActive.length === 0 && !currentServiceId ? (
+        {visitsTimeline.length === 0 && !currentServiceId ? (
           <Card><CardContent className="p-4 text-sm text-muted-foreground text-center italic">
             No active conditions.
           </CardContent></Card>
         ) : currentServiceId ? (() => {
           // Upcoming-visit card: flatten open conditions into a single list with
           // a single Add Condition button targeting the current visit.
-          const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
+          const currentSvc = visitsTimeline.find(v => v.s.id === currentServiceId)?.s
             || past.find(p => p.id === currentServiceId);
-          // Include closed conditions inline (styled green by ConditionCard) —
-          // closing shouldn't hide them on the visit that resolved them. But a
-          // row resolved during a DIFFERENT visit shouldn't carry forward, so
-          // we only surface closed rows whose `closed_on_service_id` matches
-          // this upcoming visit.
-          const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
-          const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })))
-            .filter(({ c }) => c.closed_on_service_id === currentServiceId);
-          const flatRows = [...openFlat, ...closedFlat];
+          // Timeline-based: every condition present at this visit — carried
+          // forward from earlier visits if still open, plus rows resolved on
+          // this visit (green). Conditions resolved on a DIFFERENT past visit
+          // are excluded, so future visits never surface old resolved items.
+          const presence = currentSvc ? presenceFor(currentSvc) : [];
+          const flatRows = presence
+            .sort((a, b) => (a.state === b.state ? 0 : a.state === "open" ? -1 : 1))
+            .map(p => ({ s: p.owner, c: p.c }));
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
           const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
           return (
@@ -548,11 +595,20 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             </Card>
           );
         })() : (
-          visitsWithActive.map(({ s, rows: activeRows }) => {
-            const allRows = conditionsFor(s);
+          // Standalone Conditions tab — one card per past visit that had any
+          // conditions present. Open + resolved-on-this-visit render inline.
+          // Same condition may appear on multiple cards (its history).
+          visitsTimeline.map(({ s, presence }) => {
+            const ownRows = conditionsFor(s);
             const draft = draftFor(s.id);
+            // For the row-edit callbacks we need to target each row's OWNER
+            // service (which is where the condition is persisted), not this
+            // card's service `s`.
+            const rowsSorted = presence
+              .slice()
+              .sort((a, b) => (a.state === b.state ? 0 : a.state === "open" ? -1 : 1));
             return (
-              <Card key={`active-${s.id}`}>
+              <Card key={`visit-${s.id}`}>
                 <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
                   <p className="text-sm font-semibold flex items-center gap-2 flex-wrap">
                     <span>
@@ -570,7 +626,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                 </div>
                 <CardContent className="p-2 space-y-2">
                   {draft && !readOnly && (
-                    <ConditionCard row={draft} index={activeRows.length} isOpen onToggle={() => {}} serviceDate={s.service_date}>
+                    <ConditionCard row={draft} index={rowsSorted.length} isOpen onToggle={() => {}} serviceDate={s.service_date}>
                       <ConditionRowEditor
                         row={draft}
                         live
@@ -579,7 +635,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                       />
                       <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
                         <Button size="sm" disabled={!draftReady(draft)} className="h-8 text-xs gap-1"
-                          onClick={async () => { await save(s, [...allRows, draft]); setDraftFor(s.id, null); }}>
+                          onClick={async () => { await save(s, [...ownRows, draft]); setDraftFor(s.id, null); }}>
                           <Check className="w-3.5 h-3.5" /> Save Condition
                         </Button>
                         <Button size="sm" variant="ghost" className="h-8 text-xs"
@@ -594,11 +650,12 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                       </div>
                     </ConditionCard>
                   )}
-                  {activeRows.map((c, i) => {
-                    const idx = allRows.findIndex(r => r.id === c.id);
+                  {rowsSorted.map(({ c, owner }, i) => {
+                    const ownerRows = conditionsFor(owner);
+                    const idx = ownerRows.findIndex(r => r.id === c.id);
                     return (
                       <ConditionCard
-                        key={c.id}
+                        key={`${owner.id}-${c.id}`}
                         row={c}
                         index={i}
                         isOpen={openIds.has(c.id)}
@@ -609,8 +666,9 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                           row={c}
                           readOnly={readOnly}
                           serviceDate={s.service_date}
-                          onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
-                          onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
+                          closingServiceId={s.id}
+                          onChange={(next) => save(owner, ownerRows.map((r, i2) => i2 === idx ? next : r))}
+                          onRemove={() => save(owner, ownerRows.filter((_, i2) => i2 !== idx))}
                         />
                       </ConditionCard>
                     );
@@ -622,61 +680,8 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
         )}
       </div>
 
-      {/* ─── CLOSED ─── */}
-      {visitsWithClosed.length > 0 && (
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => setShowClosed(v => !v)}
-            className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-green-900 hover:text-green-700 transition"
-          >
-            <span>Former Conditions</span>
-            <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50 text-[10px]">
-              {closed.length}
-            </Badge>
-            <span className="text-[10px] text-muted-foreground normal-case font-normal">
-              ({showClosed ? "hide" : "show"})
-            </span>
-          </button>
-          {showClosed && visitsWithClosed.map(({ s, rows: closedRows }) => {
-            const allRows = conditionsFor(s);
-            return (
-              <Card key={`closed-${s.id}`} className="opacity-90">
-                <div className="bg-green-50/60 border-b border-green-200 px-3 py-2">
-                  <p className="text-sm font-semibold">
-                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
-                    <span className="text-muted-foreground">{s.service_type}</span>
-                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
-                  </p>
-                </div>
-                <CardContent className="p-2 space-y-2">
-                  {closedRows.map((c, i) => {
-                    const idx = allRows.findIndex(r => r.id === c.id);
-                    return (
-                      <ConditionCard
-                        key={c.id}
-                        row={c}
-                        index={i}
-                        isOpen={openIds.has(c.id)}
-                        onToggle={() => toggleOpen(c.id)}
-                        serviceDate={s.service_date}
-                      >
-                        <ConditionRowEditor
-                          row={c}
-                          readOnly={readOnly}
-                          serviceDate={s.service_date}
-                          onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
-                          onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
-                        />
-                      </ConditionCard>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {/* Former Conditions collapsible removed — resolved rows now render
+          green inline on the visit that resolved them (see visitsTimeline). */}
     </div>
   );
 }
