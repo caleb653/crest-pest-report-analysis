@@ -434,6 +434,24 @@ export default function CommercialDashboardView({
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
 
+  // Days-per-cadence lookup used when auto-creating the next commercial visit
+  // after a service is marked serviced.
+  const FREQUENCY_DAYS_MAP: Record<string, number> = {
+    "weekly": 7,
+    "bi-weekly": 14,
+    "monthly": 30,
+    "8-weekly": 56,
+    "bi-monthly": 60,
+    "12-weekly": 84,
+    "quarterly": 90,
+  };
+  const propertyFrequencyDays = FREQUENCY_DAYS_MAP[propertyFrequency] ?? 30;
+  const addDaysISO = (iso: string, days: number): string => {
+    const d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  };
+
   // Re-hydrate only when the property changes — not on every notes prop change,
   // which can clobber characters mid-keystroke after a parent refresh.
   // eslint-disable-next-line react-hooks/exhaustive-deps
