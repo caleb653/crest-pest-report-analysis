@@ -461,6 +461,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                         const st = ((r as any).sighting_status || r.status || "").toLowerCase();
                         const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                         if (!isClosed) return false;
+                        if ((r as any).resolved_service_id) return (r as any).resolved_service_id === s.id;
                         const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
                         return svcDate && closedAt === svcDate;
                       });
