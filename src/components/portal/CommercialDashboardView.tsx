@@ -757,6 +757,11 @@ export default function CommercialDashboardView({
       toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
       return;
     }
+    if (next === "closed") {
+      // Keep the just-closed sighting visible on the card it was closed
+      // from — it will also show up under Previous Services history.
+      setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
+    }
     loadRequests();
   };
 
