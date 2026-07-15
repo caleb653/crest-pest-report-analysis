@@ -40,7 +40,11 @@ import { SERVICE_TYPES, findServiceType, type ServiceType } from "@/lib/serviceT
 
 // ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
 
-type Stop = { customer_name: string; city: string; start_time: string; end_time: string };
+type Stop = {
+  customer_name: string; city: string; start_time: string; end_time: string;
+  /** Modeled clocks from the backend's assumed schedule (may be absent). */
+  est_arrival_min?: number | null; est_depart_min?: number | null;
+};
 
 type WindowCounts = { "8-12"?: number; "10-2"?: number; "1-5"?: number };
 
@@ -75,6 +79,10 @@ type SlotCandidate = {
   insertion_kind?: string;
   detour_min?: number;
   detour_miles?: number;
+  /** Assumed-schedule extras: "stop 3 → stop 4 of 9" + minutes the rest of
+      the day gets pushed back by this insertion. */
+  fits_between?: string | null;
+  push_delay_min?: number | null;
   prev_stop: Stop;
   next_stop: Stop;
   route_snapshot?: RouteSnapshot;
@@ -865,9 +873,15 @@ function SlotCard({
       })()}
 
       <div className="mt-2 text-xs text-muted-foreground">
-        Inserts between <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
+        {c.fits_between ? <span className="font-semibold text-foreground">{c.fits_between}: </span> : "Inserts between "}
+        <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city}
+        {c.prev_stop?.est_depart_min != null ? `, done ~${fmtTime(c.prev_stop.est_depart_min)}` : ""})
         {" → "}
-        <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city})
+        <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city}
+        {c.next_stop?.est_arrival_min != null ? `, ~${fmtTime(c.next_stop.est_arrival_min)}` : ""})
+        {(c.push_delay_min ?? 0) > 0 && (
+          <span className="text-amber-700"> · pushes rest of day ~{c.push_delay_min} min</span>
+        )}
       </div>
 
       {snap && after && (
