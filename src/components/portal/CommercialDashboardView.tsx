@@ -1505,50 +1505,73 @@ export default function CommercialDashboardView({
                             </p>
                             {recentSightings.map((sg: any) => {
                               const currentStatus = (((sg as any).sighting_status as string) || (sg.status === "in_progress" ? "in_progress" : "open"));
+                              const sgPhotos: string[] = Array.isArray(sg.photos)
+                                ? sg.photos.map((p: any) => (typeof p === "string" ? p : p?.url)).filter(Boolean)
+                                : [];
                               return (
-                                <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2 space-y-2">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
-                                      <p className="text-sm font-semibold text-foreground">
-                                        {sg.pest_type || sg.request_type}
-                                        {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
-                                      </p>
-                                      {sg.description && (
-                                        <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
+                                <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
+                                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                                    <div className="min-w-0 space-y-1.5">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <p className="text-sm font-semibold text-foreground">
+                                            {sg.pest_type || sg.request_type}
+                                            {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
+                                          </p>
+                                          {sg.description && (
+                                            <p className="text-xs text-muted-foreground leading-snug whitespace-pre-wrap">{sg.description}</p>
+                                          )}
+                                        </div>
+                                        {!readOnly && (
+                                          <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
+                                            <SelectTrigger className="h-7 w-[120px] text-xs shrink-0"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="open">Open</SelectItem>
+                                              <SelectItem value="in_progress">In Progress</SelectItem>
+                                              <SelectItem value="closed">Closed</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        )}
+                                      </div>
+                                      {!readOnly && (
+                                        <Textarea
+                                          value={responseDraft[sg.id] || ""}
+                                          onChange={(e) => setResponseDraft(d => ({ ...d, [sg.id]: e.target.value }))}
+                                          onBlur={() => {
+                                            const note = (responseDraft[sg.id] || "").trim();
+                                            if (!note) return;
+                                            const prior = Array.isArray((sg as any).crest_comments) ? (sg as any).crest_comments : [];
+                                            const last = prior[prior.length - 1];
+                                            if (last && last.note === note) return;
+                                            supabase.from("portal_requests").update({
+                                              response_notes: note,
+                                              crest_comments: [...prior, { ts: new Date().toISOString(), note }],
+                                              updated_at: new Date().toISOString(),
+                                            } as any).eq("id", sg.id).then(() => loadRequests());
+                                          }}
+                                          placeholder="Crest response…"
+                                          rows={2}
+                                          className="text-xs"
+                                        />
                                       )}
                                     </div>
-                                    {!readOnly && (
-                                      <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
-                                        <SelectTrigger className="h-8 w-[130px] text-xs shrink-0"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="open">Open</SelectItem>
-                                          <SelectItem value="in_progress">In Progress</SelectItem>
-                                          <SelectItem value="closed">Closed</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                    {sgPhotos.length > 0 && (
+                                      <div className="sm:w-28 shrink-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Photos</p>
+                                        <div className="grid grid-cols-2 sm:grid-cols-1 gap-1">
+                                          {sgPhotos.slice(0, 3).map((url, i) => (
+                                            <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                              className="block w-full aspect-square rounded border border-border overflow-hidden bg-muted/30">
+                                              <img src={url} alt={`Sighting ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                            </a>
+                                          ))}
+                                          {sgPhotos.length > 3 && (
+                                            <p className="text-[10px] text-muted-foreground">+{sgPhotos.length - 3} more</p>
+                                          )}
+                                        </div>
+                                      </div>
                                     )}
                                   </div>
-                                  {!readOnly && (
-                                    <>
-                                      <Textarea
-                                        value={responseDraft[sg.id] || ""}
-                                        onChange={(e) => setResponseDraft(d => ({ ...d, [sg.id]: e.target.value }))}
-                                        placeholder="Crest response — what was done to resolve this sighting…"
-                                        rows={3}
-                                        className="text-sm"
-                                      />
-                                      <div className="flex justify-end">
-                                        <Button
-                                          size="sm"
-                                          className="h-8 text-xs gap-1"
-                                          onClick={() => sendResponse(sg.id)}
-                                          disabled={!(responseDraft[sg.id] || "").trim()}
-                                        >
-                                          <CheckCircle2 className="w-3 h-3" /> Send response &amp; close
-                                        </Button>
-                                      </div>
-                                    </>
-                                  )}
                                 </div>
                               );
                             })}

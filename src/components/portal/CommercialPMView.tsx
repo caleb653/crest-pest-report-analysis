@@ -549,17 +549,36 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                   <p className="text-[11px] italic text-amber-800">
                                     Crest is resolving these. They'll drop off once closed.
                                   </p>
-                                  {recentSightings.map((sg: any) => (
-                                    <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
-                                      <p className="text-sm font-semibold text-foreground">
-                                        {sg.pest_type || sg.request_type}
-                                        {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
-                                      </p>
-                                      {sg.description && (
-                                        <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
-                                      )}
-                                    </div>
-                                  ))}
+                                  {recentSightings.map((sg: any) => {
+                                    const sgPhotos: string[] = Array.isArray(sg.photos)
+                                      ? sg.photos.map((p: any) => (typeof p === "string" ? p : p?.url)).filter(Boolean)
+                                      : [];
+                                    return (
+                                      <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                                          <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-foreground">
+                                              {sg.pest_type || sg.request_type}
+                                              {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
+                                            </p>
+                                            {sg.description && (
+                                              <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
+                                            )}
+                                          </div>
+                                          {sgPhotos.length > 0 && (
+                                            <div className="sm:w-24 shrink-0 grid grid-cols-2 sm:grid-cols-1 gap-1">
+                                              {sgPhotos.slice(0, 3).map((url, i) => (
+                                                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                                                  className="block w-full aspect-square rounded border border-border overflow-hidden bg-muted/30">
+                                                  <img src={url} alt={`Sighting ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}

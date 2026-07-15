@@ -418,30 +418,6 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 
   return (
     <div className={compact ? "space-y-2" : "space-y-4"}>
-      {!compact && (
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div>
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-primary" /> Conditions Report
-            </h3>
-            <p className="text-xs text-muted-foreground max-w-prose">
-              Sanitation, structural, and conducive conditions noted during each visit. Items
-              stay <span className="font-semibold">Open</span> until resolved by the responsible
-              party.
-            </p>
-          </div>
-          <div className="flex gap-2 text-xs">
-            <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50">
-              {open.length} Open
-            </Badge>
-            <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50">
-              {closed.length} Closed
-            </Badge>
-            <Badge variant="outline">{visitsWithAny.length} Visits Logged</Badge>
-          </div>
-        </div>
-      )}
-
       {past.length === 0 && !compact && (
         <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">
           No past visits yet — conditions appear here once visits are logged.
@@ -451,11 +427,24 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
       {/* ─── ACTIVE ─── */}
       <div className={compact ? "space-y-2" : "space-y-3"}>
         {!compact && (
-          <div className="flex items-center gap-2">
-            <h4 className="text-sm font-bold uppercase tracking-wide text-red-900">Active Conditions</h4>
-            <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50 text-[10px]">
-              {open.length}
-            </Badge>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 className="text-sm font-bold uppercase tracking-wide text-red-900 flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-primary" /> Active Conditions
+              </h4>
+              <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50 text-[10px]">
+                {open.length}
+              </Badge>
+              <p className="text-[11px] text-muted-foreground max-w-md leading-snug">
+                Sanitation, structural, and conducive conditions noted during each visit. Items stay <span className="font-semibold">Open</span> until resolved by the responsible party.
+              </p>
+            </div>
+            <div className="flex gap-1.5 text-[10px]">
+              <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50">
+                {closed.length} Closed
+              </Badge>
+              <Badge variant="outline">{visitsWithAny.length} Visits Logged</Badge>
+            </div>
           </div>
         )}
         {visitsWithActive.length === 0 ? (
