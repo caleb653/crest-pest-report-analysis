@@ -1368,14 +1368,21 @@ export default function CommercialDashboardView({
                   //   • any sighting whose closed_at falls on this service's date,
                   //     so the report where it got resolved keeps a record of it.
                   const svcDate = (getField(s, "service_date") || "").toString().slice(0, 10);
+                  // A closed sighting belongs on this upcoming card only if:
+                  //   (a) it was explicitly resolved on this service, OR
+                  //   (b) the user just clicked Close on it in this session
+                  //       (sticky, until save/refresh reassigns it).
+                  // Legacy sightings without resolved_service_id fall back to
+                  // matching closed_at === service_date so old data still renders
+                  // somewhere sensible.
                   const closedOnThisDate = requests.filter((r: any) => {
                     const st = (r.sighting_status || r.status || "").toLowerCase();
                     const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                     if (!isClosed) return false;
+                    if (r.resolved_service_id) return r.resolved_service_id === s.id;
+                    if (stickyClosedSightings.has(r.id)) return true;
                     const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
-                    // Include if resolved on this visit's date OR the user just
-                    // clicked Close on it from this session (sticky).
-                    return (svcDate && closedAt === svcDate) || stickyClosedSightings.has(r.id);
+                    return svcDate && closedAt === svcDate;
                   });
                   const sightingsForService = [
                     ...recentSightings,
