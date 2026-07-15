@@ -321,10 +321,11 @@ function ConditionCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-foreground truncate">{title}</p>
-          <p className="text-[10px] text-muted-foreground">
-            Identified {fmtDay(identified)}
-            {isClosed && row.closed_at ? ` · Closed ${fmtDay(row.closed_at)}` : ""}
-          </p>
+          {isClosed && row.closed_at && (
+            <p className="text-[10px] text-muted-foreground">
+              Closed {fmtDay(row.closed_at)}
+            </p>
+          )}
         </div>
         {row.area && (
           <Badge variant="outline" className="hidden sm:inline-flex h-5 text-[10px] bg-background/60">
