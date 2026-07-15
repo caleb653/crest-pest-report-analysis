@@ -693,7 +693,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 }
 
 function ConditionRowEditor({
-  row, readOnly, onChange, onRemove, serviceDate, live,
+  row, readOnly, onChange, onRemove, serviceDate, live, closingServiceId,
 }: {
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
@@ -702,6 +702,9 @@ function ConditionRowEditor({
   /** Draft mode: push every keystroke to onChange (no DB behind it), so the
    *  parent's Save gate reflects what's typed without waiting for blur. */
   live?: boolean;
+  /** Service id to stamp on the row when it flips to Closed (defaults to the
+   *  row's owning service). */
+  closingServiceId?: string | null;
 }) {
   const [local, setLocal] = useState<ConditionRow>(row);
   const [uploading, setUploading] = useState<"id" | "res" | null>(null);
@@ -767,7 +770,8 @@ function ConditionRowEditor({
       return;
     }
     const closedAt = v === "Closed" ? new Date().toISOString() : null;
-    const merged = { ...local, status: v, closed_at: closedAt } as ConditionRow;
+    const closedOn = v === "Closed" ? (closingServiceId ?? local.closed_on_service_id ?? null) : null;
+    const merged = { ...local, status: v, closed_at: closedAt, closed_on_service_id: closedOn } as ConditionRow;
     setLocal(merged);
     onChange(merged);
   };
