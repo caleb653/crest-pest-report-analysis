@@ -744,23 +744,34 @@ export default function CommercialDashboardView({
     loadRequests();
   };
 
-  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed") => {
+  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed", serviceId?: string) => {
     const now = new Date().toISOString();
     const patch: any = {
       sighting_status: next,
       updated_at: now,
       status: next === "closed" ? "completed" : (next === "in_progress" ? "in_progress" : "pending"),
     };
-    if (next === "closed") patch.closed_at = now;
+    if (next === "closed") {
+      patch.closed_at = now;
+      // Pin the resolved sighting to the specific visit it was closed on so
+      // it stays on THAT report and drops off future ones.
+      if (serviceId) patch.resolved_service_id = serviceId;
+    } else {
+      // Re-opening clears the resolution link.
+      patch.resolved_service_id = null;
+    }
     const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
     if (error) {
       toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
       return;
     }
     if (next === "closed") {
-      // Keep the just-closed sighting visible on the card it was closed
-      // from — it will also show up under Previous Services history.
-      setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
+      // Only use the sticky set when we couldn't pin the sighting to a
+      // specific service (Sightings tab has no service context). If we did
+      // pin it, resolved_service_id handles carry-forward permanently.
+      if (!serviceId) {
+        setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
+      }
     }
     loadRequests();
   };
@@ -1099,32 +1110,41 @@ export default function CommercialDashboardView({
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">
-                        {/* Recent Pest Sightings — auto-surfaced at top so the
-                            Route Manager can address open issues during this visit. */}
-                        {recentSightings.length > 0 && (
-                          <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
-                              <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
-                                {recentSightings.length} open
-                              </Badge>
-                            </p>
-                            <div className="space-y-1">
-                              {recentSightings.slice(0, 4).map((sg: any) => (
-                                <p key={sg.id} className="text-xs text-amber-950 leading-snug">
-                                  <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
-                                  {sg.location_type ? ` · ${sg.location_type}` : ""}
-                                  {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
-                                </p>
-                              ))}
-                              {recentSightings.length > 4 && (
-                                <p className="text-[10px] text-amber-800 italic">
-                                  +{recentSightings.length - 4} more in Pest Sightings tab
-                                </p>
-                              )}
+                        {/* Sightings resolved during THIS specific past visit. */}
+                        {(() => {
+                          const svcDate = (s.service_date || "").toString().slice(0, 10);
+                          const resolvedHere = requests.filter((r: any) => {
+                            const st = (r.sighting_status || r.status || "").toLowerCase();
+                            const isClosed = st === "closed" || st === "completed" || st === "cancelled";
+                            if (!isClosed) return false;
+                            if (r.resolved_service_id) return r.resolved_service_id === s.id;
+                            const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
+                            return svcDate && closedAt === svcDate;
+                          });
+                          if (resolvedHere.length === 0) return null;
+                          return (
+                            <div className="rounded-md border-2 border-green-300 bg-green-50/60 p-2 space-y-1.5">
+                              <p className="text-[11px] font-bold uppercase tracking-wide text-green-900 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Pest Sightings Resolved This Visit
+                                <Badge variant="outline" className="ml-auto text-[10px] border-green-300 text-green-900 bg-green-50">
+                                  {resolvedHere.length}
+                                </Badge>
+                              </p>
+                              <div className="space-y-1">
+                                {resolvedHere.map((sg: any) => (
+                                  <div key={sg.id} className="text-xs text-green-950 leading-snug">
+                                    <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                    {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                    {sg.description ? ` — ${sg.description}` : ""}
+                                    {sg.response_notes && (
+                                      <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {sg.response_notes}</div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
@@ -1360,14 +1380,21 @@ export default function CommercialDashboardView({
                   //   • any sighting whose closed_at falls on this service's date,
                   //     so the report where it got resolved keeps a record of it.
                   const svcDate = (getField(s, "service_date") || "").toString().slice(0, 10);
+                  // A closed sighting belongs on this upcoming card only if:
+                  //   (a) it was explicitly resolved on this service, OR
+                  //   (b) the user just clicked Close on it in this session
+                  //       (sticky, until save/refresh reassigns it).
+                  // Legacy sightings without resolved_service_id fall back to
+                  // matching closed_at === service_date so old data still renders
+                  // somewhere sensible.
                   const closedOnThisDate = requests.filter((r: any) => {
                     const st = (r.sighting_status || r.status || "").toLowerCase();
                     const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                     if (!isClosed) return false;
+                    if (r.resolved_service_id) return r.resolved_service_id === s.id;
+                    if (stickyClosedSightings.has(r.id)) return true;
                     const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
-                    // Include if resolved on this visit's date OR the user just
-                    // clicked Close on it from this session (sticky).
-                    return (svcDate && closedAt === svcDate) || stickyClosedSightings.has(r.id);
+                    return svcDate && closedAt === svcDate;
                   });
                   const sightingsForService = [
                     ...recentSightings,
@@ -1550,7 +1577,7 @@ export default function CommercialDashboardView({
                                             <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
                                           </Badge>
                                         ) : !readOnly && (
-                                          <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
+                                          <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any, s.id)}>
                                             <SelectTrigger className="h-7 w-[120px] text-xs shrink-0"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                               <SelectItem value="open">Open</SelectItem>

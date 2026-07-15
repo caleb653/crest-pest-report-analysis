@@ -1,0 +1,1 @@
+ALTER TABLE public.portal_requests ADD COLUMN IF NOT EXISTS resolved_service_id UUID REFERENCES public.portal_services(id) ON DELETE SET NULL;

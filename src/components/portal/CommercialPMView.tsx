@@ -461,6 +461,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                         const st = ((r as any).sighting_status || r.status || "").toLowerCase();
                         const isClosed = st === "closed" || st === "completed" || st === "cancelled";
                         if (!isClosed) return false;
+                        if ((r as any).resolved_service_id) return (r as any).resolved_service_id === s.id;
                         const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
                         return svcDate && closedAt === svcDate;
                       });
@@ -723,26 +724,41 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 1. Recent Pest Sightings */}
-                              {recentSightings.length > 0 && (
-                                <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1">
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
-                                    <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
-                                      {recentSightings.length} open
-                                    </Badge>
-                                  </p>
-                                  <div className="space-y-0.5">
-                                    {recentSightings.slice(0, 4).map((sg: any) => (
-                                      <p key={sg.id} className="text-xs text-amber-950 leading-snug">
-                                        <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
-                                        {sg.location_type ? ` · ${sg.location_type}` : ""}
-                                        {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
-                                      </p>
-                                    ))}
+                              {/* Sightings resolved during THIS past visit. */}
+                              {(() => {
+                                const svcDate = (s.service_date || "").toString().slice(0, 10);
+                                const resolvedHere = requests.filter((r: any) => {
+                                  const st = ((r as any).sighting_status || r.status || "").toLowerCase();
+                                  const isClosed = st === "closed" || st === "completed" || st === "cancelled";
+                                  if (!isClosed) return false;
+                                  if ((r as any).resolved_service_id) return (r as any).resolved_service_id === s.id;
+                                  const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
+                                  return svcDate && closedAt === svcDate;
+                                });
+                                if (resolvedHere.length === 0) return null;
+                                return (
+                                  <div className="rounded-md border-2 border-green-300 bg-green-50/60 p-2 space-y-1">
+                                    <p className="text-[11px] font-bold uppercase tracking-wide text-green-900 flex items-center gap-1">
+                                      <AlertTriangle className="w-3 h-3" /> Pest Sightings Resolved This Visit
+                                      <Badge variant="outline" className="ml-auto text-[10px] border-green-300 text-green-900 bg-green-50">
+                                        {resolvedHere.length}
+                                      </Badge>
+                                    </p>
+                                    <div className="space-y-1">
+                                      {resolvedHere.map((sg: any) => (
+                                        <div key={sg.id} className="text-xs text-green-950 leading-snug">
+                                          <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
+                                          {sg.location_type ? ` · ${sg.location_type}` : ""}
+                                          {sg.description ? ` — ${sg.description}` : ""}
+                                          {sg.response_notes && (
+                                            <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {sg.response_notes}</div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
 
                               {/* 2. Service Notes (summary + findings + notes) */}
                               {(s.summary || s.findings || s.notes) && (
