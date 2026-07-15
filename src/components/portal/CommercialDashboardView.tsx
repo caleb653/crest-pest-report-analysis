@@ -434,6 +434,24 @@ export default function CommercialDashboardView({
   const propertyFrequency: string =
     (property.customer_preferences as any)?.service_frequency || "monthly";
 
+  // Days-per-cadence lookup used when auto-creating the next commercial visit
+  // after a service is marked serviced.
+  const FREQUENCY_DAYS_MAP: Record<string, number> = {
+    "weekly": 7,
+    "bi-weekly": 14,
+    "monthly": 30,
+    "8-weekly": 56,
+    "bi-monthly": 60,
+    "12-weekly": 84,
+    "quarterly": 90,
+  };
+  const propertyFrequencyDays = FREQUENCY_DAYS_MAP[propertyFrequency] ?? 30;
+  const addDaysISO = (iso: string, days: number): string => {
+    const d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  };
+
   // Re-hydrate only when the property changes — not on every notes prop change,
   // which can clobber characters mid-keystroke after a parent refresh.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1521,9 +1539,28 @@ export default function CommercialDashboardView({
                               const dateVal = getField(s, "service_date") || today;
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
+                              // Auto-schedule the next visit based on the property's
+                              // service frequency (e.g. monthly = +30 days from the
+                              // service date). Only creates one if there isn't already
+                              // an upcoming scheduled visit.
+                              const hasUpcoming = services.some(
+                                (x) => x.id !== s.id && x.status === "scheduled"
+                              );
+                              if (!hasUpcoming && propertyFrequencyDays > 0) {
+                                const nextDate = addDaysISO(dateVal, propertyFrequencyDays);
+                                await supabase.from("portal_services").insert({
+                                  property_id: property.id,
+                                  service_type: s.service_type || "Commercial General Pest",
+                                  status: "scheduled",
+                                  service_date: nextDate,
+                                } as any);
+                                onRefresh?.();
+                              }
                               toast({
                                 title: "Visit marked serviced ✓",
-                                description: "Moved to Previous Services — the customer portal updates automatically.",
+                                description: hasUpcoming
+                                  ? "Moved to Previous Services."
+                                  : `Next visit scheduled ${propertyFrequencyDays} days out.`,
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
