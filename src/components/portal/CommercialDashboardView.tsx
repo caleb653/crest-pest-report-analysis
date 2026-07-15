@@ -1488,6 +1488,74 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
+                      {/* Active Pest Sightings — Crest resolves inline. Each
+                          sighting has a big comment box + status dropdown, mirroring
+                          the Conditions flow. Closed sightings drop off next report. */}
+                      {recentSightings.length > 0 && (
+                        <div>
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Active Pest Sightings
+                            <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                              {recentSightings.length} to resolve
+                            </Badge>
+                          </p>
+                          <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-2">
+                            <p className="text-[11px] italic text-amber-800">
+                              Crest resolves these. Add a response and set status to <span className="font-semibold">Closed</span> — it will drop off the next report.
+                            </p>
+                            {recentSightings.map((sg: any) => {
+                              const currentStatus = (((sg as any).sighting_status as string) || (sg.status === "in_progress" ? "in_progress" : "open"));
+                              return (
+                                <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2 space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-foreground">
+                                        {sg.pest_type || sg.request_type}
+                                        {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
+                                      </p>
+                                      {sg.description && (
+                                        <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
+                                      )}
+                                    </div>
+                                    {!readOnly && (
+                                      <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
+                                        <SelectTrigger className="h-8 w-[130px] text-xs shrink-0"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="open">Open</SelectItem>
+                                          <SelectItem value="in_progress">In Progress</SelectItem>
+                                          <SelectItem value="closed">Closed</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  </div>
+                                  {!readOnly && (
+                                    <>
+                                      <Textarea
+                                        value={responseDraft[sg.id] || ""}
+                                        onChange={(e) => setResponseDraft(d => ({ ...d, [sg.id]: e.target.value }))}
+                                        placeholder="Crest response — what was done to resolve this sighting…"
+                                        rows={3}
+                                        className="text-sm"
+                                      />
+                                      <div className="flex justify-end">
+                                        <Button
+                                          size="sm"
+                                          className="h-8 text-xs gap-1"
+                                          onClick={() => sendResponse(sg.id)}
+                                          disabled={!(responseDraft[sg.id] || "").trim()}
+                                        >
+                                          <CheckCircle2 className="w-3 h-3" /> Send response &amp; close
+                                        </Button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" /> Active Conditions
