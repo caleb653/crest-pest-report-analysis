@@ -554,17 +554,18 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 together. Read-only: Crest resolves these. */}
                             {sightingsForService.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> Pest Sightings
-                                  <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                <div className="mb-2 flex items-center gap-2 flex-wrap rounded-md bg-gradient-to-r from-amber-200 to-amber-100 border-l-4 border-amber-500 px-3 py-2 shadow-sm">
+                                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                                  <h4 className="text-sm font-black uppercase tracking-wider text-amber-950">Pest Sightings</h4>
+                                  <Badge variant="outline" className="text-[10px] border-amber-500 text-amber-950 bg-white/70">
                                     {recentSightings.length} being resolved
                                   </Badge>
                                   {closedOnThisDate.length > 0 && (
-                                    <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-900 bg-green-50">
+                                    <Badge variant="outline" className="text-[10px] border-green-400 text-green-900 bg-green-50">
                                       {closedOnThisDate.length} resolved this visit
                                     </Badge>
                                   )}
-                                </p>
+                                </div>
                                 <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
                                   <p className="text-[11px] italic text-amber-800">
                                     Crest is resolving these. They'll drop off once closed.
