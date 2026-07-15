@@ -1579,17 +1579,12 @@ export default function CommercialDashboardView({
                         </div>
                       )}
 
-                      <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Active Conditions
-                        </p>
-                        <ConditionsReportSection
-                          services={[s as any]}
-                          onSaveServiceReportData={saveConditionsPatch}
-                          propertyName={property?.name}
-                          readOnly={readOnly}
-                        />
-                      </div>
+                      <ConditionsReportSection
+                        services={[s as any]}
+                        onSaveServiceReportData={saveConditionsPatch}
+                        propertyName={property?.name}
+                        readOnly={readOnly}
+                      />
 
                       {/* Photos — moved to the bottom, below Active Conditions */}
                       <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-500/5 p-2 space-y-1.5">
