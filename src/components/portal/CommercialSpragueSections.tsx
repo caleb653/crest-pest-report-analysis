@@ -472,8 +472,18 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             || past.find(p => p.id === currentServiceId);
           // Include closed conditions inline (styled green by ConditionCard) —
           // closing shouldn't hide them, matching the pest-sighting flow.
+          // But a condition already resolved BEFORE this visit shouldn't carry
+          // forward to future visits — only surface closed rows whose closed_at
+          // is on/after this visit's service_date (or, when this visit has no
+          // date yet, only conditions closed on this same visit).
+          const cutoff = currentSvc?.service_date || null;
           const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
-          const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
+          const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })))
+            .filter(({ s, c }) => {
+              if (s.id === currentServiceId) return true; // closed on this same visit → keep
+              if (!cutoff) return false;                  // future visit, no date → don't carry closed rows
+              return (c.closed_at || "") >= cutoff;       // closed on/after this visit
+            });
           const flatRows = [...openFlat, ...closedFlat];
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
           const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
