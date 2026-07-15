@@ -1585,8 +1585,8 @@ export default function CommercialDashboardView({
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
                               // Auto-schedule the next visit based on the property's
-                              // service frequency (e.g. monthly = +30 days from the
-                              // service date). Only creates one if there isn't already
+                              // service frequency (e.g. monthly = same day next month).
+                              // Only creates one if there isn't already
                               // an upcoming scheduled visit.
                               const hasUpcoming = services.some(
                                 (x) => x.id !== s.id && x.status === "scheduled"
@@ -1606,7 +1606,7 @@ export default function CommercialDashboardView({
                                 title: "Visit marked serviced ✓",
                                 description: hasUpcoming
                                   ? "Moved to Previous Services."
-                                  : `Next visit scheduled ${propertyFrequencyDays} days out.`,
+                                  : "Next visit scheduled from this service date.",
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
