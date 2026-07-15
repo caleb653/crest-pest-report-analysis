@@ -471,18 +471,23 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
             || past.find(p => p.id === currentServiceId);
           // Include closed conditions inline (styled green by ConditionCard) —
-          // closing shouldn't hide them, matching the pest-sighting flow.
-          // But a condition already resolved BEFORE this visit shouldn't carry
-          // forward to future visits — only surface closed rows whose closed_at
-          // is on/after this visit's service_date (or, when this visit has no
-          // date yet, only conditions closed on this same visit).
-          const cutoff = currentSvc?.service_date || null;
+          // closing shouldn't hide them, matching the pest-sighting flow. A
+          // condition resolved during an EARLIER completed visit shouldn't
+          // carry forward, but one resolved after the most recent completed
+          // visit (i.e. still open/resolving as of this upcoming visit) does.
+          const today = new Date().toISOString().slice(0, 10);
+          const prevCompletedDate = past
+            .filter(s => s.id !== currentServiceId && s.service_date && s.service_date <= today)
+            .map(s => s.service_date as string)
+            .sort()
+            .pop() || null;
           const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
           const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })))
-            .filter(({ s, c }) => {
-              if (s.id === currentServiceId) return true; // closed on this same visit → keep
-              if (!cutoff) return false;                  // future visit, no date → don't carry closed rows
-              return (c.closed_at || "") >= cutoff;       // closed on/after this visit
+            .filter(({ c }) => {
+              // No prior completed visit yet → any closed row is "just resolved" and shows.
+              if (!prevCompletedDate) return true;
+              // Show closed rows resolved after the most recent completed visit.
+              return (c.closed_at || "") > prevCompletedDate;
             });
           const flatRows = [...openFlat, ...closedFlat];
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
