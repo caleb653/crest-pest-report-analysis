@@ -813,9 +813,7 @@ function ConditionRowEditor({
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 flex gap-1">
-            <Input value={local.comments} onChange={e => set("comments", e.target.value)} onBlur={flush}
-              placeholder="Comments" className="h-9 text-xs flex-1" />
+          <div className="col-span-2 flex justify-end">
             <Button size="icon" variant="ghost" onClick={onRemove}
               className="h-9 w-9 text-destructive shrink-0">
               <Trash2 className="w-3.5 h-3.5" />
