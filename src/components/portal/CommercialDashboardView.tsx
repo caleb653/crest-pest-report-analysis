@@ -1431,19 +1431,6 @@ export default function CommercialDashboardView({
                           </Select>
                         </div>
                         <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Prep / Notes for Tech</Label>
-                          <Textarea
-                            value={getField(s, "special_notes") || ""}
-                            readOnly={readOnly}
-                            disabled={readOnly}
-                            onChange={e => setField(s.id, "special_notes", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Access info, prep, things to look for…"
-                            rows={2}
-                            className="text-sm"
-                          />
-                        </div>
-                        <div className="col-span-2">
                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
                           <Textarea
                             value={getField(s, "summary") || ""}
