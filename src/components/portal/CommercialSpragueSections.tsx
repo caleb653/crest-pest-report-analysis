@@ -80,6 +80,10 @@ export interface ConditionRow {
   identified_at?: string;
   /** ISO timestamp when condition was moved to "Closed". */
   closed_at?: string | null;
+  /** Service id of the visit during which the condition was resolved. Lets
+   *  each service card show closed rows only when they were resolved on
+   *  that visit — resolved-elsewhere conditions don't carry forward. */
+  closed_on_service_id?: string | null;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -109,6 +113,7 @@ const newConditionRow = (): ConditionRow => ({
   resolution_note: "",
   identified_at: new Date().toISOString(),
   closed_at: null,
+  closed_on_service_id: null,
 });
 
 const ACTION_OPTIONS = [
