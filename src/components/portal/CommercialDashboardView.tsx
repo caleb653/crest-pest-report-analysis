@@ -451,6 +451,11 @@ export default function CommercialDashboardView({
     d.setDate(d.getDate() + days);
     return d.toISOString().slice(0, 10);
   };
+  const latestScheduledServiceDate = services
+    .filter(s => !!s.service_date && (s.status === "scheduled" || s.status === "completed"))
+    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""))[0]?.service_date || null;
+  const defaultNextServiceDate = (fromDate?: string | null) =>
+    addDaysISO(fromDate || latestScheduledServiceDate || today, propertyFrequencyDays);
 
   // Re-hydrate only when the property changes — not on every notes prop change,
   // which can clobber characters mid-keystroke after a parent refresh.
@@ -518,7 +523,8 @@ export default function CommercialDashboardView({
       property_id: property.id,
       service_type: "Commercial General Pest",
       status,
-      service_date: status === "completed" ? today : null,
+      service_date: status === "completed" ? today : defaultNextServiceDate(),
+      frequency_days: status === "scheduled" ? propertyFrequencyDays : null,
     } as any);
     if (error) {
       toast({ title: "Couldn't add visit", description: error.message, variant: "destructive" });
@@ -1556,12 +1562,13 @@ export default function CommercialDashboardView({
                                 (x) => x.id !== s.id && x.status === "scheduled"
                               );
                               if (!hasUpcoming && propertyFrequencyDays > 0) {
-                                const nextDate = addDaysISO(dateVal, propertyFrequencyDays);
+                                const nextDate = defaultNextServiceDate(dateVal);
                                 await supabase.from("portal_services").insert({
                                   property_id: property.id,
-                                  service_type: s.service_type || "Commercial General Pest",
+                                  service_type: getField(s, "service_type") || "Commercial General Pest",
                                   status: "scheduled",
                                   service_date: nextDate,
+                                  frequency_days: propertyFrequencyDays,
                                 } as any);
                                 onRefresh?.();
                               }
