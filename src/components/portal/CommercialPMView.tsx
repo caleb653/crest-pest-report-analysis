@@ -683,14 +683,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     const hasFollowUp = !!s.follow_up_recommended;
                     const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                     return (
-                      <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400 ring-2 ring-orange-200/60" : ""}>
+                     <Card key={s.id}>
                         <CardContent className="p-0">
-                          {hasFollowUp && (
-                            <div className="bg-orange-500 text-white px-3 py-2 rounded-t-lg flex items-center gap-2">
-                              <span className="text-base leading-none">⚠️</span>
-                              <p className="font-bold text-xs uppercase tracking-wide">Follow-up Needed</p>
-                            </div>
-                          )}
                           <button
                             type="button"
                             onClick={() => setOpenServiceId(isOpen ? null : s.id)}
