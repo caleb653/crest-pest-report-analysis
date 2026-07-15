@@ -365,6 +365,10 @@ export default function CommercialDashboardView({
   const [expandedPrep, setExpandedPrep] = useState<string | null>(null);
   const [expandedConditions, setExpandedConditions] = useState<Record<string, boolean>>({});
   const [responseDraft, setResponseDraft] = useState<Record<string, string>>({});
+  // IDs of sightings the user just closed from an upcoming-visit card in
+  // this session. We keep them visible on the current card as "Resolved"
+  // instead of yanking them the second the status flips.
+  const [stickyClosedSightings, setStickyClosedSightings] = useState<Set<string>>(new Set());
   const [propertyNotes, setPropertyNotes] = useState<string>(property.notes || "");
   const [savingProp, setSavingProp] = useState(false);
   const [officeNotes, setOfficeNotes] = useState<string>(
