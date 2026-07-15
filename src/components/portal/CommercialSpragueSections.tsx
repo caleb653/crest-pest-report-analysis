@@ -476,24 +476,13 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
             || past.find(p => p.id === currentServiceId);
           // Include closed conditions inline (styled green by ConditionCard) —
-          // closing shouldn't hide them, matching the pest-sighting flow. A
-          // condition resolved during an EARLIER completed visit shouldn't
-          // carry forward, but one resolved after the most recent completed
-          // visit (i.e. still open/resolving as of this upcoming visit) does.
-          const today = new Date().toISOString().slice(0, 10);
-          const prevCompletedDate = past
-            .filter(s => s.id !== currentServiceId && s.service_date && s.service_date <= today)
-            .map(s => s.service_date as string)
-            .sort()
-            .pop() || null;
+          // closing shouldn't hide them on the visit that resolved them. But a
+          // row resolved during a DIFFERENT visit shouldn't carry forward, so
+          // we only surface closed rows whose `closed_on_service_id` matches
+          // this upcoming visit.
           const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
           const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })))
-            .filter(({ c }) => {
-              // No prior completed visit yet → any closed row is "just resolved" and shows.
-              if (!prevCompletedDate) return true;
-              // Show closed rows resolved after the most recent completed visit.
-              return (c.closed_at || "") > prevCompletedDate;
-            });
+            .filter(({ c }) => c.closed_on_service_id === currentServiceId);
           const flatRows = [...openFlat, ...closedFlat];
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
           const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
@@ -549,6 +538,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                         row={c}
                         readOnly={readOnly}
                         serviceDate={s.service_date}
+                        closingServiceId={currentServiceId}
                         onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
                         onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
                       />
