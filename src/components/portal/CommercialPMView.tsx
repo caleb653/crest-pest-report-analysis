@@ -454,10 +454,24 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                       const legacyConcerns: any[] = Array.isArray(rd.concerns) ? rd.concerns : [];
                       const conditions: any[] = [...activeConditionsAll, ...legacyConcerns];
                       const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
+                      // Include any sighting resolved on this visit's date so the
+                      // report where it got closed keeps a record of it.
+                      const svcDate = (s.service_date || "").toString().slice(0, 10);
+                      const closedOnThisDate = requests.filter((r: any) => {
+                        const st = ((r as any).sighting_status || r.status || "").toLowerCase();
+                        const isClosed = st === "closed" || st === "completed" || st === "cancelled";
+                        if (!isClosed) return false;
+                        const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
+                        return svcDate && closedAt === svcDate;
+                      });
+                      const sightingsForService = [
+                        ...recentSightings,
+                        ...closedOnThisDate.filter((r: any) => !recentSightings.find((o: any) => o.id === r.id)),
+                      ];
                       // Every report section renders only when it has content;
                       // when ALL are empty, say so instead of showing a bare card.
                       const hasReportContent =
-                        recentSightings.length > 0 || !!s.special_notes || !!s.summary ||
+                        sightingsForService.length > 0 || !!s.special_notes || !!s.summary ||
                         targetPests.length > 0 || upProducts.length > 0 ||
                         equipment.length > 0 || conditions.length > 0 || photos.length > 0;
                       return (
@@ -537,32 +551,49 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* Active Pest Sightings — moved next to Active
                                 Conditions so the customer sees both open items
                                 together. Read-only: Crest resolves these. */}
-                            {recentSightings.length > 0 && (
+                            {sightingsForService.length > 0 && (
                               <div>
                                 <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> Active Pest Sightings
+                                  <AlertTriangle className="w-3 h-3" /> Pest Sightings
                                   <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
                                     {recentSightings.length} being resolved
                                   </Badge>
+                                  {closedOnThisDate.length > 0 && (
+                                    <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-900 bg-green-50">
+                                      {closedOnThisDate.length} resolved this visit
+                                    </Badge>
+                                  )}
                                 </p>
                                 <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
                                   <p className="text-[11px] italic text-amber-800">
                                     Crest is resolving these. They'll drop off once closed.
                                   </p>
-                                  {recentSightings.map((sg: any) => {
+                                  {sightingsForService.map((sg: any) => {
+                                    const status = (((sg as any).sighting_status as string) || (sg.status === "in_progress" ? "in_progress" : sg.status === "completed" || sg.status === "cancelled" ? "closed" : "open"));
+                                    const isResolved = status === "closed";
                                     const sgPhotos: string[] = Array.isArray(sg.photos)
                                       ? sg.photos.map((p: any) => (typeof p === "string" ? p : p?.url)).filter(Boolean)
                                       : [];
                                     return (
-                                      <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
+                                      <div key={sg.id} className={`rounded-md border p-2 ${isResolved ? "border-green-300 bg-green-50/50" : "border-amber-300 bg-background"}`}>
                                         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                                           <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-foreground">
-                                              {sg.pest_type || sg.request_type}
-                                              {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
-                                            </p>
+                                            <div className="flex items-start justify-between gap-2">
+                                              <p className="text-sm font-semibold text-foreground">
+                                                {sg.pest_type || sg.request_type}
+                                                {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
+                                              </p>
+                                              {isResolved && (
+                                                <Badge variant="outline" className="text-[10px] border-green-300 text-green-900 bg-green-50 shrink-0">
+                                                  Resolved
+                                                </Badge>
+                                              )}
+                                            </div>
                                             {sg.description && (
                                               <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
+                                            )}
+                                            {isResolved && sg.response_notes && (
+                                              <p className="text-xs text-green-900 leading-snug mt-1 whitespace-pre-wrap"><span className="font-semibold">Crest response:</span> {sg.response_notes}</p>
                                             )}
                                           </div>
                                           {sgPhotos.length > 0 && (
