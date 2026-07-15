@@ -1636,7 +1636,8 @@ export default function CommercialDashboardView({
                       )}
 
                       <ConditionsReportSection
-                        services={[s as any]}
+                        services={services as any}
+                        currentServiceId={s.id}
                         onSaveServiceReportData={saveConditionsPatch}
                         propertyName={property?.name}
                         readOnly={readOnly}
