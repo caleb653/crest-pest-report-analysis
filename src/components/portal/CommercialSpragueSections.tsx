@@ -478,11 +478,6 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                       <span className="text-muted-foreground">{s.service_type}</span>
                       {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
                     </span>
-                    {currentServiceId && s.id !== currentServiceId && (
-                      <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-900 bg-amber-50">
-                        Carrying over — still open
-                      </Badge>
-                    )}
                   </p>
                   {!readOnly && !draft && (
                     <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
