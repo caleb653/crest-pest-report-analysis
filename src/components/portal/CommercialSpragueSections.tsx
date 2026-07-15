@@ -80,6 +80,10 @@ export interface ConditionRow {
   identified_at?: string;
   /** ISO timestamp when condition was moved to "Closed". */
   closed_at?: string | null;
+  /** Service id of the visit during which the condition was resolved. Lets
+   *  each service card show closed rows only when they were resolved on
+   *  that visit — resolved-elsewhere conditions don't carry forward. */
+  closed_on_service_id?: string | null;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -109,6 +113,7 @@ const newConditionRow = (): ConditionRow => ({
   resolution_note: "",
   identified_at: new Date().toISOString(),
   closed_at: null,
+  closed_on_service_id: null,
 });
 
 const ACTION_OPTIONS = [
@@ -471,24 +476,13 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
             || past.find(p => p.id === currentServiceId);
           // Include closed conditions inline (styled green by ConditionCard) —
-          // closing shouldn't hide them, matching the pest-sighting flow. A
-          // condition resolved during an EARLIER completed visit shouldn't
-          // carry forward, but one resolved after the most recent completed
-          // visit (i.e. still open/resolving as of this upcoming visit) does.
-          const today = new Date().toISOString().slice(0, 10);
-          const prevCompletedDate = past
-            .filter(s => s.id !== currentServiceId && s.service_date && s.service_date <= today)
-            .map(s => s.service_date as string)
-            .sort()
-            .pop() || null;
+          // closing shouldn't hide them on the visit that resolved them. But a
+          // row resolved during a DIFFERENT visit shouldn't carry forward, so
+          // we only surface closed rows whose `closed_on_service_id` matches
+          // this upcoming visit.
           const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
           const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })))
-            .filter(({ c }) => {
-              // No prior completed visit yet → any closed row is "just resolved" and shows.
-              if (!prevCompletedDate) return true;
-              // Show closed rows resolved after the most recent completed visit.
-              return (c.closed_at || "") > prevCompletedDate;
-            });
+            .filter(({ c }) => c.closed_on_service_id === currentServiceId);
           const flatRows = [...openFlat, ...closedFlat];
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
           const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
@@ -544,6 +538,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                         row={c}
                         readOnly={readOnly}
                         serviceDate={s.service_date}
+                        closingServiceId={currentServiceId}
                         onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
                         onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
                       />
@@ -688,7 +683,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 }
 
 function ConditionRowEditor({
-  row, readOnly, onChange, onRemove, serviceDate, live,
+  row, readOnly, onChange, onRemove, serviceDate, live, closingServiceId,
 }: {
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
@@ -697,6 +692,9 @@ function ConditionRowEditor({
   /** Draft mode: push every keystroke to onChange (no DB behind it), so the
    *  parent's Save gate reflects what's typed without waiting for blur. */
   live?: boolean;
+  /** Service id to stamp on the row when it flips to Closed (defaults to the
+   *  row's owning service). */
+  closingServiceId?: string | null;
 }) {
   const [local, setLocal] = useState<ConditionRow>(row);
   const [uploading, setUploading] = useState<"id" | "res" | null>(null);
@@ -762,7 +760,8 @@ function ConditionRowEditor({
       return;
     }
     const closedAt = v === "Closed" ? new Date().toISOString() : null;
-    const merged = { ...local, status: v, closed_at: closedAt } as ConditionRow;
+    const closedOn = v === "Closed" ? (closingServiceId ?? local.closed_on_service_id ?? null) : null;
+    const merged = { ...local, status: v, closed_at: closedAt, closed_on_service_id: closedOn } as ConditionRow;
     setLocal(merged);
     onChange(merged);
   };
