@@ -886,9 +886,6 @@ function SlotCard({
 
       {snap && after && (
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-          <span>
-            Stops: <span className="font-semibold">{snap.stops_excluding_tasks} → {after.stops_excluding_tasks}</span>
-          </span>
           <span className="flex items-center gap-1">
             After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
           </span>
@@ -918,6 +915,9 @@ function SlotCard({
                 : " · no home base on file"}
             </span>
           )}
+          <span>
+            Total stops: <span className="font-semibold">{after.stops_excluding_tasks}</span> (+1 added)
+          </span>
         </div>
       )}
 
@@ -1078,10 +1078,10 @@ function CheckMode({
                     </div>
                     {c.after_insert && (
                       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                        <span>Stops: <span className="font-semibold">{c.route_snapshot?.stops} → {c.after_insert.stops}</span></span>
                         {c.after_insert.est_finish_min != null && (
                           <span>Finishes ~<span className="font-medium">{fmtTime(c.after_insert.est_finish_min)}</span></span>
                         )}
+                        <span>Total stops: <span className="font-semibold">{c.after_insert.stops}</span> (+1 added)</span>
                       </div>
                     )}
                     {c.reasons && c.reasons.length > 0 && (
