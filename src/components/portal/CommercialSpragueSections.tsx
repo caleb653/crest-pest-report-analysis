@@ -470,7 +470,11 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           // a single Add Condition button targeting the current visit.
           const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
             || past.find(p => p.id === currentServiceId);
-          const flatRows = visitsWithActive.flatMap(({ s, rows }) => rows.map(c => ({ s, c })));
+          // Include closed conditions inline (styled green by ConditionCard) —
+          // closing shouldn't hide them, matching the pest-sighting flow.
+          const openFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status !== "Closed").map(c => ({ s, c })));
+          const closedFlat = past.flatMap(s => conditionsFor(s).filter(c => c.status === "Closed").map(c => ({ s, c })));
+          const flatRows = [...openFlat, ...closedFlat];
           const draft = currentSvc ? draftFor(currentSvc.id) : null;
           const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
           return (
