@@ -1202,66 +1202,12 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
-                        <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Findings</Label>
-                          <Textarea
-                            value={getField(s, "findings") || ""}
-                            readOnly={readOnly}
-                            disabled={readOnly}
-                            onChange={e => setField(s.id, "findings", e.target.value)}
-                            onBlur={() => flushEdits(s.id)}
-                            placeholder="Pest activity, conditions found, problem areas…"
-                            rows={3}
-                            className="text-sm"
-                          />
-                        </div>
                         {/* Target Pests — chip editor over report_data.target_pests */}
                         <TargetPestsEditor
                           value={Array.isArray(getReportData(s).target_pests) ? getReportData(s).target_pests : []}
                           onChange={(next) => saveReportData(s, { target_pests: next })}
                           readOnly={readOnly}
                         />
-                        <div className="rounded-md border border-border p-2.5 space-y-2">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="w-4 h-4"
-                              checked={!!getField(s, "follow_up_recommended")}
-                              disabled={readOnly}
-                              onChange={e => {
-                                setField(s.id, "follow_up_recommended", e.target.checked);
-                                saveServiceField(s.id, { follow_up_recommended: e.target.checked });
-                              }}
-                            />
-                            <span className="text-sm font-semibold">Follow-up needed</span>
-                          </label>
-                          {getField(s, "follow_up_recommended") && (
-                            <Textarea
-                              value={getField(s, "follow_up_notes") || ""}
-                              readOnly={readOnly}
-                              disabled={readOnly}
-                              onChange={e => setField(s.id, "follow_up_notes", e.target.value)}
-                              onBlur={() => flushEdits(s.id)}
-                              placeholder="What needs to happen on the follow-up…"
-                              rows={2}
-                              className="text-sm"
-                            />
-                          )}
-                        </div>
-                        {!readOnly && (
-                          <div className="flex flex-wrap gap-1.5">
-                            <Button size="sm" variant="outline" onClick={() => onEditService?.(s)} className="h-9 text-xs gap-1">
-                              <Edit className="w-3 h-3" /> Full Editor (products / photos)
-                            </Button>
-                          </div>
-                        )}
-
-                        {hasFollowUp && s.follow_up_notes && (
-                          <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
-                            <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">Follow-up Notes</p>
-                            <p className="text-sm text-orange-900 whitespace-pre-wrap">{s.follow_up_notes}</p>
-                          </div>
-                        )}
                         {products.length > 0 && (
                           <div>
                             <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
