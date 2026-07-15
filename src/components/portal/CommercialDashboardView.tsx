@@ -1214,17 +1214,9 @@ export default function CommercialDashboardView({
                             readOnly={readOnly}
                           />
                         </div>
-                        <div>
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> Active Conditions
-                          </p>
-                          <ConditionsReportSection
-                            services={[s as any]}
-                            onSaveServiceReportData={saveConditionsPatch}
-                            propertyName={property?.name}
-                            readOnly={readOnly}
-                          />
-                        </div>
+                        {/* Active conditions intentionally omitted here — the
+                            dedicated "Conditions" tab is the single source of
+                            truth so past-visit cards stay uncluttered. */}
                         {(photos.length > 0 || !readOnly) && (
                           <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-500/5 p-2 space-y-1.5">
                             <div className="flex items-center justify-between">
@@ -1647,12 +1639,12 @@ export default function CommercialDashboardView({
             </Card>
             <div>
               <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                <AlertTriangle className="w-3 h-3" /> Open Requests
+                <AlertTriangle className="w-3 h-3" /> Active Pest Sightings
                 <Badge variant="secondary" className="ml-1 text-[10px]">{openRequests.length}</Badge>
               </p>
               {openRequests.length === 0 ? (
                 <Card><CardContent className="p-5 text-sm text-muted-foreground text-center">
-                  No open requests. Submissions from the commercial portal will appear here.
+                  No active pest sightings. Submissions from the commercial portal will appear here.
                 </CardContent></Card>
               ) : (
                 <div className="space-y-2">
@@ -1725,7 +1717,7 @@ export default function CommercialDashboardView({
             {closedRequests.length > 0 && (
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3 h-3" /> Closed Requests
+                  <CheckCircle2 className="w-3 h-3" /> Resolved Pest Sightings
                   <Badge variant="secondary" className="ml-1 text-[10px]">{closedRequests.length}</Badge>
                 </p>
                 <div className="space-y-2">
