@@ -451,6 +451,24 @@ export default function CommercialDashboardView({
     d.setDate(d.getDate() + days);
     return d.toISOString().slice(0, 10);
   };
+  const addMonthsISO = (iso: string, months: number): string => {
+    const [year, month, day] = iso.split("-").map(Number);
+    const d = new Date(year, month - 1 + months, 1);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+    return d.toISOString().slice(0, 10);
+  };
+  const addFrequencyISO = (iso: string): string => {
+    if (propertyFrequency === "monthly") return addMonthsISO(iso, 1);
+    if (propertyFrequency === "bi-monthly") return addMonthsISO(iso, 2);
+    if (propertyFrequency === "quarterly") return addMonthsISO(iso, 3);
+    return addDaysISO(iso, propertyFrequencyDays);
+  };
+  const latestScheduledServiceDate = services
+    .filter(s => !!s.service_date && (s.status === "scheduled" || s.status === "completed"))
+    .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""))[0]?.service_date || null;
+  const defaultNextServiceDate = (fromDate?: string | null) =>
+    addFrequencyISO(fromDate || latestScheduledServiceDate || today);
 
   // Re-hydrate only when the property changes — not on every notes prop change,
   // which can clobber characters mid-keystroke after a parent refresh.
@@ -481,6 +499,23 @@ export default function CommercialDashboardView({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [officeNotes]);
+
+  // Backfill any existing upcoming visit that was created before the default
+  // date logic existed, so the admin/customer portals stop showing a blank
+  // next-service date.
+  useEffect(() => {
+    if (readOnly || propertyFrequencyDays <= 0) return;
+    const missingDateUpcoming = services.filter(s => s.status === "scheduled" && !s.service_date);
+    if (missingDateUpcoming.length === 0) return;
+    const nextDate = defaultNextServiceDate();
+    Promise.all(missingDateUpcoming.map(s =>
+      supabase.from("portal_services").update({
+        service_date: nextDate,
+        frequency_days: propertyFrequencyDays,
+      } as any).eq("id", s.id)
+    )).then(() => onRefresh?.());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readOnly, property.id, propertyFrequencyDays, latestScheduledServiceDate, services]);
 
   // Debounced auto-save for property notes (rich text editor doesn't fire onBlur naturally)
   useEffect(() => {
@@ -518,7 +553,8 @@ export default function CommercialDashboardView({
       property_id: property.id,
       service_type: "Commercial General Pest",
       status,
-      service_date: status === "completed" ? today : null,
+      service_date: status === "completed" ? today : defaultNextServiceDate(),
+      frequency_days: status === "scheduled" ? propertyFrequencyDays : null,
     } as any);
     if (error) {
       toast({ title: "Couldn't add visit", description: error.message, variant: "destructive" });
@@ -1549,19 +1585,20 @@ export default function CommercialDashboardView({
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
                               // Auto-schedule the next visit based on the property's
-                              // service frequency (e.g. monthly = +30 days from the
-                              // service date). Only creates one if there isn't already
+                              // service frequency (e.g. monthly = same day next month).
+                              // Only creates one if there isn't already
                               // an upcoming scheduled visit.
                               const hasUpcoming = services.some(
                                 (x) => x.id !== s.id && x.status === "scheduled"
                               );
                               if (!hasUpcoming && propertyFrequencyDays > 0) {
-                                const nextDate = addDaysISO(dateVal, propertyFrequencyDays);
+                                const nextDate = defaultNextServiceDate(dateVal);
                                 await supabase.from("portal_services").insert({
                                   property_id: property.id,
-                                  service_type: s.service_type || "Commercial General Pest",
+                                  service_type: getField(s, "service_type") || "Commercial General Pest",
                                   status: "scheduled",
                                   service_date: nextDate,
+                                  frequency_days: propertyFrequencyDays,
                                 } as any);
                                 onRefresh?.();
                               }
@@ -1569,7 +1606,7 @@ export default function CommercialDashboardView({
                                 title: "Visit marked serviced ✓",
                                 description: hasUpcoming
                                   ? "Moved to Previous Services."
-                                  : `Next visit scheduled ${propertyFrequencyDays} days out.`,
+                                  : "Next visit scheduled from this service date.",
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
