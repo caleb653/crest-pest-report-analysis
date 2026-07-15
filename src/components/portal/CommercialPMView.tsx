@@ -972,7 +972,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 <>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                      <FileText className="w-3 h-3" /> Open Requests
+                      <FileText className="w-3 h-3" /> Active Pest Sightings
                       {openReqs.length > 0 && (
                         <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-50">
                           {openReqs.length}
@@ -1020,7 +1020,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                   {closedReqs.length > 0 && (
                     <div>
                       <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                        <FileText className="w-3 h-3" /> Closed Requests
+                        <FileText className="w-3 h-3" /> Resolved Pest Sightings
                         <Badge variant="outline" className="ml-1 text-[10px] border-emerald-300 text-emerald-900 bg-emerald-50">
                           {closedReqs.length}
                         </Badge>
