@@ -1346,6 +1346,22 @@ export default function CommercialDashboardView({
                 {upcoming.map(s => {
                   const upProducts = _normUsage(getField(s, "products_used"));
                   const upPhotosRaw: any[] = Array.isArray(getField(s, "photos")) ? getField(s, "photos") : [];
+                  // Sightings on THIS visit's report:
+                  //   • every still-open sighting (carry-forward), PLUS
+                  //   • any sighting whose closed_at falls on this service's date,
+                  //     so the report where it got resolved keeps a record of it.
+                  const svcDate = (getField(s, "service_date") || "").toString().slice(0, 10);
+                  const closedOnThisDate = requests.filter((r: any) => {
+                    const st = (r.sighting_status || r.status || "").toLowerCase();
+                    const isClosed = st === "closed" || st === "completed" || st === "cancelled";
+                    if (!isClosed) return false;
+                    const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
+                    return svcDate && closedAt === svcDate;
+                  });
+                  const sightingsForService = [
+                    ...recentSightings,
+                    ...closedOnThisDate.filter((r: any) => !recentSightings.find((o: any) => o.id === r.id)),
+                  ];
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
@@ -1478,25 +1494,31 @@ export default function CommercialDashboardView({
                       {/* Active Pest Sightings — Crest resolves inline. Each
                           sighting has a big comment box + status dropdown, mirroring
                           the Conditions flow. Closed sightings drop off next report. */}
-                      {recentSightings.length > 0 && (
+                      {sightingsForService.length > 0 && (
                         <div>
                           <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" /> Active Pest Sightings
+                            <AlertTriangle className="w-3 h-3" /> Pest Sightings
                             <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
                               {recentSightings.length} to resolve
                             </Badge>
+                            {closedOnThisDate.length > 0 && (
+                              <Badge variant="outline" className="ml-1 text-[10px] border-green-300 text-green-900 bg-green-50">
+                                {closedOnThisDate.length} resolved this visit
+                              </Badge>
+                            )}
                           </p>
                           <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-2">
                             <p className="text-[11px] italic text-amber-800">
                               Crest resolves these. Add a response and set status to <span className="font-semibold">Closed</span> — it will drop off the next report.
                             </p>
-                            {recentSightings.map((sg: any) => {
+                            {sightingsForService.map((sg: any) => {
                               const currentStatus = (((sg as any).sighting_status as string) || (sg.status === "in_progress" ? "in_progress" : "open"));
+                              const isResolved = currentStatus === "closed";
                               const sgPhotos: string[] = Array.isArray(sg.photos)
                                 ? sg.photos.map((p: any) => (typeof p === "string" ? p : p?.url)).filter(Boolean)
                                 : [];
                               return (
-                                <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
+                                <div key={sg.id} className={`rounded-md border p-2 ${isResolved ? "border-green-300 bg-green-50/50" : "border-amber-300 bg-background"}`}>
                                   <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
                                     <div className="min-w-0 space-y-1.5">
                                       <div className="flex items-start justify-between gap-2">
@@ -1508,8 +1530,15 @@ export default function CommercialDashboardView({
                                           {sg.description && (
                                             <p className="text-xs text-muted-foreground leading-snug whitespace-pre-wrap">{sg.description}</p>
                                           )}
+                                          {isResolved && sg.response_notes && (
+                                            <p className="text-xs text-green-900 leading-snug mt-1 whitespace-pre-wrap"><span className="font-semibold">Crest response:</span> {sg.response_notes}</p>
+                                          )}
                                         </div>
-                                        {!readOnly && (
+                                        {isResolved ? (
+                                          <Badge variant="outline" className="text-[10px] border-green-300 text-green-900 bg-green-50 shrink-0">
+                                            <CheckCircle2 className="w-3 h-3 mr-1" /> Resolved
+                                          </Badge>
+                                        ) : !readOnly && (
                                           <Select value={currentStatus} onValueChange={(v) => setSightingStatus(sg.id, v as any)}>
                                             <SelectTrigger className="h-7 w-[120px] text-xs shrink-0"><SelectValue /></SelectTrigger>
                                             <SelectContent>
@@ -1520,7 +1549,7 @@ export default function CommercialDashboardView({
                                           </Select>
                                         )}
                                       </div>
-                                      {!readOnly && (
+                                      {!readOnly && !isResolved && (
                                         <Textarea
                                           value={responseDraft[sg.id] || ""}
                                           onChange={(e) => setResponseDraft(d => ({ ...d, [sg.id]: e.target.value }))}
