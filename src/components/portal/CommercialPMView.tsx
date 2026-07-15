@@ -484,27 +484,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               </p>
                             )}
 
-                            {/* 1. Recent Pest Sightings */}
-                            {recentSightings.length > 0 && (
-                              <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1">
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1">
-                                  <AlertTriangle className="w-3 h-3" /> Recent Pest Sightings
-                                  <Badge variant="outline" className="ml-auto text-[10px] border-amber-300 text-amber-900 bg-amber-100">
-                                    {recentSightings.length} open
-                                  </Badge>
-                                </p>
-                                <div className="space-y-0.5">
-                                  {recentSightings.slice(0, 4).map((sg: any) => (
-                                    <p key={sg.id} className="text-xs text-amber-950 leading-snug">
-                                      <span className="font-semibold">{sg.pest_type || sg.request_type}</span>
-                                      {sg.location_type ? ` · ${sg.location_type}` : ""}
-                                      {sg.description ? ` — ${sg.description.slice(0, 90)}${sg.description.length > 90 ? "…" : ""}` : ""}
-                                    </p>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
                             {/* 2. Service Notes / Prep */}
                             {(s.special_notes || s.summary) && (
                               <div>
@@ -555,6 +534,35 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 6. Active Conditions — SAME rich cards as the
                                 Route Manager dashboard (badges, photos, dates),
                                 carry-forward pool across all services. */}
+                            {/* Active Pest Sightings — moved next to Active
+                                Conditions so the customer sees both open items
+                                together. Read-only: Crest resolves these. */}
+                            {recentSightings.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-amber-900 mb-1 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> Active Pest Sightings
+                                  <Badge variant="outline" className="ml-1 text-[10px] border-amber-300 text-amber-900 bg-amber-100">
+                                    {recentSightings.length} being resolved
+                                  </Badge>
+                                </p>
+                                <div className="rounded-md border-2 border-amber-300 bg-amber-50/60 p-2 space-y-1.5">
+                                  <p className="text-[11px] italic text-amber-800">
+                                    Crest is resolving these. They'll drop off once closed.
+                                  </p>
+                                  {recentSightings.map((sg: any) => (
+                                    <div key={sg.id} className="rounded-md border border-amber-300 bg-background p-2">
+                                      <p className="text-sm font-semibold text-foreground">
+                                        {sg.pest_type || sg.request_type}
+                                        {sg.location_type && <span className="text-xs font-normal text-muted-foreground"> · {sg.location_type}</span>}
+                                      </p>
+                                      {sg.description && (
+                                        <p className="text-xs text-muted-foreground leading-snug mt-0.5 whitespace-pre-wrap">{sg.description}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             {conditions.length > 0 && (
                               <div>
                                 <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
