@@ -1539,9 +1539,27 @@ export default function CommercialDashboardView({
                               const dateVal = getField(s, "service_date") || today;
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
+                              // Auto-schedule the next visit based on the property's
+                              // service frequency (e.g. monthly = +30 days from the
+                              // service date). Only creates one if there isn't already
+                              // an upcoming scheduled visit.
+                              const hasUpcoming = services.some(
+                                (x) => x.id !== s.id && x.status === "scheduled"
+                              );
+                              if (!hasUpcoming && propertyFrequencyDays > 0) {
+                                const nextDate = addDaysISO(dateVal, propertyFrequencyDays);
+                                await supabase.from("portal_services").insert({
+                                  property_id: property.id,
+                                  service_type: s.service_type || "Commercial General Pest",
+                                  status: "scheduled",
+                                  service_date: nextDate,
+                                } as any);
+                              }
                               toast({
                                 title: "Visit marked serviced ✓",
-                                description: "Moved to Previous Services — the customer portal updates automatically.",
+                                description: hasUpcoming
+                                  ? "Moved to Previous Services."
+                                  : `Next visit scheduled ${propertyFrequencyDays} days out.`,
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
