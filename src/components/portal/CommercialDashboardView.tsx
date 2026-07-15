@@ -766,9 +766,12 @@ export default function CommercialDashboardView({
       return;
     }
     if (next === "closed") {
-      // Keep the just-closed sighting visible on the card it was closed
-      // from — it will also show up under Previous Services history.
-      setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
+      // Only use the sticky set when we couldn't pin the sighting to a
+      // specific service (Sightings tab has no service context). If we did
+      // pin it, resolved_service_id handles carry-forward permanently.
+      if (!serviceId) {
+        setStickyClosedSightings(prev => { const n = new Set(prev); n.add(id); return n; });
+      }
     }
     loadRequests();
   };
