@@ -451,11 +451,24 @@ export default function CommercialDashboardView({
     d.setDate(d.getDate() + days);
     return d.toISOString().slice(0, 10);
   };
+  const addMonthsISO = (iso: string, months: number): string => {
+    const [year, month, day] = iso.split("-").map(Number);
+    const d = new Date(year, month - 1 + months, 1);
+    const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+    return d.toISOString().slice(0, 10);
+  };
+  const addFrequencyISO = (iso: string): string => {
+    if (propertyFrequency === "monthly") return addMonthsISO(iso, 1);
+    if (propertyFrequency === "bi-monthly") return addMonthsISO(iso, 2);
+    if (propertyFrequency === "quarterly") return addMonthsISO(iso, 3);
+    return addDaysISO(iso, propertyFrequencyDays);
+  };
   const latestScheduledServiceDate = services
     .filter(s => !!s.service_date && (s.status === "scheduled" || s.status === "completed"))
     .sort((a, b) => (b.service_date || "").localeCompare(a.service_date || ""))[0]?.service_date || null;
   const defaultNextServiceDate = (fromDate?: string | null) =>
-    addDaysISO(fromDate || latestScheduledServiceDate || today, propertyFrequencyDays);
+    addFrequencyISO(fromDate || latestScheduledServiceDate || today);
 
   // Re-hydrate only when the property changes — not on every notes prop change,
   // which can clobber characters mid-keystroke after a parent refresh.
