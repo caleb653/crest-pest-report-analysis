@@ -452,7 +452,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
       <div className={compact ? "space-y-2" : "space-y-3"}>
         {!compact && (
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-bold uppercase tracking-wide text-red-900">Active</h4>
+            <h4 className="text-sm font-bold uppercase tracking-wide text-red-900">Active Conditions</h4>
             <Badge variant="outline" className="border-red-300 text-red-900 bg-red-50 text-[10px]">
               {open.length}
             </Badge>
@@ -543,7 +543,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             onClick={() => setShowClosed(v => !v)}
             className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-green-900 hover:text-green-700 transition"
           >
-            <span>Closed</span>
+            <span>Former Conditions</span>
             <Badge variant="outline" className="border-green-300 text-green-900 bg-green-50 text-[10px]">
               {closed.length}
             </Badge>
