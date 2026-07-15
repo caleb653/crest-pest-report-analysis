@@ -878,7 +878,12 @@ function ConditionRowEditor({
       </div>
 
       {/* ── Resolution (only shown when working toward Closed) ── */}
-      {(local.status !== "Open" || resPhotos.length > 0 || (local.resolution_note || "").length > 0) && (
+      {/* Always render once the condition itself has been documented (has at
+          least one identifying photo) so techs / managers can upload the
+          resolution photo BEFORE flipping status to Closed. Previously this
+          block was hidden while status was "Open", so users couldn't figure
+          out where to upload the resolution photo the close-out gate required. */}
+      {!needsIdentifyPhoto && (
         <div className="sm:col-span-6 rounded-md border border-emerald-300 bg-emerald-50/40 p-2 space-y-1.5">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <p className="text-[10px] uppercase font-bold text-emerald-900 flex items-center gap-1">
