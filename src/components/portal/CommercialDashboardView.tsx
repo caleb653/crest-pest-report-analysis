@@ -1569,7 +1569,7 @@ export default function CommercialDashboardView({
                                           {sg.description && (
                                             <p className="text-xs text-muted-foreground leading-snug whitespace-pre-wrap">{sg.description}</p>
                                           )}
-                                          {isResolved && sg.response_notes && (
+                                          {isResolved && sg.response_notes && readOnly && (
                                             <p className="text-xs text-green-900 leading-snug mt-1 whitespace-pre-wrap"><span className="font-semibold">Crest response:</span> {sg.response_notes}</p>
                                           )}
                                         </div>
