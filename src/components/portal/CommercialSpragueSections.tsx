@@ -471,10 +471,17 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             return (
               <Card key={`active-${s.id}`}>
                 <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-sm font-semibold">
-                    {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
-                    <span className="text-muted-foreground">{s.service_type}</span>
-                    {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                  <p className="text-sm font-semibold flex items-center gap-2 flex-wrap">
+                    <span>
+                      {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
+                      <span className="text-muted-foreground">{s.service_type}</span>
+                      {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
+                    </span>
+                    {currentServiceId && s.id !== currentServiceId && (
+                      <Badge variant="outline" className="text-[10px] border-amber-400 text-amber-900 bg-amber-50">
+                        Carrying over — still open
+                      </Badge>
+                    )}
                   </p>
                   {!readOnly && !draft && (
                     <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
