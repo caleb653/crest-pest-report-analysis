@@ -736,37 +736,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 6. Active Conditions — same rich cards as the
-                                  Route Manager dashboard, this visit's own log. */}
-                              {conditions.length > 0 && (
-                                <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" /> Active Conditions
-                                  </p>
-                                  {Array.isArray(rd.conditions) ? (
-                                    <ConditionCardsReadOnly services={[s] as any} />
-                                  ) : (
-                                    <ul className="space-y-1.5">
-                                      {conditions.map((c: any, i: number) => (
-                                        <li key={i} className="text-sm bg-muted/40 rounded-md p-2 border border-border/60">
-                                          <p className="font-semibold">{c.condition || c.name || c.area || "Condition"}</p>
-                                          {c.detail && <p className="text-xs text-muted-foreground mt-0.5">{c.detail}</p>}
-                                          {Array.isArray(c.photos) && c.photos.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                              {c.photos.map((url: string, j: number) => (
-                                                <a key={j} href={url} target="_blank" rel="noopener noreferrer"
-                                                  className="block w-full max-w-[180px] aspect-[4/3] rounded border overflow-hidden bg-background">
-                                                  <img src={url} alt="Condition" loading="lazy" className="w-full h-full object-contain bg-muted/30" />
-                                                </a>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </div>
-                              )}
+                              {/* Active Conditions intentionally omitted on
+                                  Previous Services — see the dedicated
+                                  Conditions tab for the single source of truth. */}
 
                               {/* 7. Other Property Images */}
                               {photos.length > 0 && (
