@@ -744,14 +744,22 @@ export default function CommercialDashboardView({
     loadRequests();
   };
 
-  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed") => {
+  const setSightingStatus = async (id: string, next: "open" | "in_progress" | "closed", serviceId?: string) => {
     const now = new Date().toISOString();
     const patch: any = {
       sighting_status: next,
       updated_at: now,
       status: next === "closed" ? "completed" : (next === "in_progress" ? "in_progress" : "pending"),
     };
-    if (next === "closed") patch.closed_at = now;
+    if (next === "closed") {
+      patch.closed_at = now;
+      // Pin the resolved sighting to the specific visit it was closed on so
+      // it stays on THAT report and drops off future ones.
+      if (serviceId) patch.resolved_service_id = serviceId;
+    } else {
+      // Re-opening clears the resolution link.
+      patch.resolved_service_id = null;
+    }
     const { error } = await supabase.from("portal_requests").update(patch).eq("id", id);
     if (error) {
       toast({ title: "Couldn't update status", description: error.message, variant: "destructive" });
