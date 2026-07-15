@@ -461,7 +461,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             </div>
           </div>
         )}
-        {visitsWithActive.length === 0 ? (
+        {visitsWithActive.length === 0 && !currentServiceId ? (
           <Card><CardContent className="p-4 text-sm text-muted-foreground text-center italic">
             No active conditions.
           </CardContent></Card>
