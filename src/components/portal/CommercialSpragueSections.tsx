@@ -465,7 +465,76 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           <Card><CardContent className="p-4 text-sm text-muted-foreground text-center italic">
             No active conditions.
           </CardContent></Card>
-        ) : (
+        ) : currentServiceId ? (() => {
+          // Upcoming-visit card: flatten open conditions into a single list with
+          // a single Add Condition button targeting the current visit.
+          const currentSvc = visitsWithActive.find(v => v.s.id === currentServiceId)?.s
+            || past.find(p => p.id === currentServiceId);
+          const flatRows = visitsWithActive.flatMap(({ s, rows }) => rows.map(c => ({ s, c })));
+          const draft = currentSvc ? draftFor(currentSvc.id) : null;
+          const currentAllRows = currentSvc ? conditionsFor(currentSvc) : [];
+          return (
+            <Card>
+              {!readOnly && currentSvc && !draft && (
+                <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-end">
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
+                    onClick={() => setDraftFor(currentSvc.id, newConditionRow())}>
+                    <Plus className="w-3 h-3" /> Add Condition
+                  </Button>
+                </div>
+              )}
+              <CardContent className="p-2 space-y-2">
+                {draft && !readOnly && currentSvc && (
+                  <ConditionCard row={draft} index={flatRows.length} isOpen onToggle={() => {}} serviceDate={currentSvc.service_date}>
+                    <ConditionRowEditor
+                      row={draft}
+                      live
+                      onChange={(next) => setDraftFor(currentSvc.id, next)}
+                      onRemove={() => setDraftFor(currentSvc.id, null)}
+                    />
+                    <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                      <Button size="sm" disabled={!draftReady(draft)} className="h-8 text-xs gap-1"
+                        onClick={async () => { await save(currentSvc, [...currentAllRows, draft]); setDraftFor(currentSvc.id, null); }}>
+                        <Check className="w-3.5 h-3.5" /> Save Condition
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs"
+                        onClick={() => setDraftFor(currentSvc.id, null)}>
+                        Cancel
+                      </Button>
+                      {!draftReady(draft) && (
+                        <p className="text-[11px] text-amber-900">
+                          Add a condition description and at least one photo to save.
+                        </p>
+                      )}
+                    </div>
+                  </ConditionCard>
+                )}
+                {flatRows.map(({ s, c }, i) => {
+                  const allRows = conditionsFor(s);
+                  const idx = allRows.findIndex(r => r.id === c.id);
+                  return (
+                    <ConditionCard
+                      key={c.id}
+                      row={c}
+                      index={i}
+                      isOpen={openIds.has(c.id)}
+                      onToggle={() => toggleOpen(c.id)}
+                      serviceDate={s.service_date}
+                    >
+                      <ConditionRowEditor
+                        row={c}
+                        readOnly={readOnly}
+                        serviceDate={s.service_date}
+                        onChange={(next) => save(s, allRows.map((r, i2) => i2 === idx ? next : r))}
+                        onRemove={() => save(s, allRows.filter((_, i2) => i2 !== idx))}
+                      />
+                    </ConditionCard>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          );
+        })() : (
           visitsWithActive.map(({ s, rows: activeRows }) => {
             const allRows = conditionsFor(s);
             const draft = draftFor(s.id);
