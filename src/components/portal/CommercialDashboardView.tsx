@@ -1436,6 +1436,19 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
+                        <div className="col-span-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
+                          <Textarea
+                            value={getField(s, "summary") || ""}
+                            readOnly={readOnly}
+                            disabled={readOnly}
+                            onChange={e => setField(s.id, "summary", e.target.value)}
+                            onBlur={() => flushEdits(s.id)}
+                            placeholder="What was performed during this visit…"
+                            rows={3}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
 
                       {/* Target Pests — chip editor over report_data.target_pests */}
@@ -1468,13 +1481,17 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
-                      <ConditionUnitPills
-                        service={s as any}
-                        services={services as any}
-                        readOnly={readOnly}
-                        onSaveServiceReportData={saveConditionsPatch}
-                        propertyName={property?.name}
-                      />
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Active Conditions
+                        </p>
+                        <ConditionsReportSection
+                          services={[s as any]}
+                          onSaveServiceReportData={saveConditionsPatch}
+                          propertyName={property?.name}
+                          readOnly={readOnly}
+                        />
+                      </div>
 
                       {/* Photos — moved to the bottom, below Active Conditions */}
                       <div className="rounded-md border border-sky-500/30 bg-sky-50/60 dark:bg-sky-500/5 p-2 space-y-1.5">
