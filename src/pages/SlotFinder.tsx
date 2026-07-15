@@ -844,6 +844,22 @@ function SlotCard({
         const DAILY_MAX_STOPS = 13;
         const afterTotal = after?.stops_excluding_tasks ?? 0;
         const isDayFull = afterTotal >= DAILY_MAX_STOPS;
+        // Parse "stop 1 → stop 2 of 6" (or similar) so we can render a bold,
+        // scannable "Insert between Stop # and Stop # of N" pill next to
+        // Book in. Falls back gracefully if the backend string changes.
+        const fb = c.fits_between || "";
+        const fbMatch = fb.match(/stop\s*(\d+)\s*[→\-\/]+\s*stop\s*(\d+)\s*(?:of\s*(\d+))?/i);
+        const prevIdx = fbMatch?.[1];
+        const nextIdx = fbMatch?.[2];
+        const totalIdx = fbMatch?.[3];
+        const lastName = (full?: string | null) => {
+          const s = (full || "").trim();
+          if (!s) return "";
+          const parts = s.split(/\s+/);
+          return parts[parts.length - 1];
+        };
+        const prevLast = lastName(c.prev_stop?.customer_name);
+        const nextLast = lastName(c.next_stop?.customer_name);
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className={`inline-flex flex-wrap items-center gap-2 rounded-md px-3 py-2 shadow-sm ${tierPillClasses(c)}`}>
@@ -856,6 +872,19 @@ function SlotCard({
                 </span>
               )}
             </div>
+            {prevIdx && nextIdx && (
+              <div className="inline-flex flex-wrap items-center gap-2 rounded-md border-2 border-foreground/80 bg-background px-3 py-2 shadow-sm">
+                <span className="text-sm font-extrabold uppercase tracking-wide">
+                  Insert between Stop {prevIdx} and Stop {nextIdx}
+                  {totalIdx ? ` of ${totalIdx}` : ""}
+                </span>
+                {(prevLast || nextLast) && (
+                  <span className="text-sm font-bold text-foreground/80 border-l border-foreground/20 pl-2">
+                    {prevLast || "—"} → {nextLast || "—"}
+                  </span>
+                )}
+              </div>
+            )}
             {isCrowded && (
               <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
                 <AlertTriangle className="w-3 h-3 mr-1" />
@@ -873,10 +902,10 @@ function SlotCard({
       })()}
 
       <div className="mt-2 text-xs text-muted-foreground">
-        {c.fits_between ? <span className="font-semibold text-foreground">{c.fits_between}: </span> : "Inserts between "}
+        <span className="font-semibold text-foreground">After stop: </span>
         <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city}
         {c.prev_stop?.est_depart_min != null ? `, done ~${fmtTime(c.prev_stop.est_depart_min)}` : ""})
-        {" → "}
+        {" → before "}
         <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city}
         {c.next_stop?.est_arrival_min != null ? `, ~${fmtTime(c.next_stop.est_arrival_min)}` : ""})
         {(c.push_delay_min ?? 0) > 0 && (
