@@ -712,12 +712,34 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               : (Array.isArray(rd.concerns) ? rd.concerns : []);
                             return (
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/60">
-                              {hasFollowUp && s.follow_up_notes && (
-                                <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
-                                  <p className="text-[11px] font-bold text-orange-800 uppercase tracking-wide mb-0.5">Follow-up Notes</p>
-                                  <p className="text-sm text-orange-900 whitespace-pre-wrap leading-relaxed">{s.follow_up_notes}</p>
-                                </div>
-                              )}
+                              {/* Conditions logged during THIS past visit — pinned at
+                                  the top so the visit's most important record leads. */}
+                              {(() => {
+                                const rows = Array.isArray(rd.conditions) ? rd.conditions : [];
+                                if (rows.length === 0) return null;
+                                return (
+                                  <div className="rounded-md border-2 border-red-400 bg-red-50/70 p-2 space-y-1.5">
+                                    <p className="text-[11px] font-bold uppercase tracking-wide text-red-900 flex items-center gap-1">
+                                      <ClipboardList className="w-3 h-3" /> Conditions Added This Visit
+                                      <Badge variant="outline" className="ml-auto text-[10px] border-red-400 text-red-900 bg-white/70">
+                                        {rows.length}
+                                      </Badge>
+                                    </p>
+                                    <div className="space-y-1">
+                                      {rows.map((c: any, i: number) => (
+                                        <div key={c.id || i} className="text-xs text-red-950 leading-snug">
+                                          <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
+                                          {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
+                                          {c.detail && <span> — {c.detail}</span>}
+                                          {c.status && (
+                                            <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">{c.status}</Badge>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Sightings resolved during THIS past visit. */}
                               {(() => {
