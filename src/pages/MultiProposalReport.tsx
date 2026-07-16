@@ -2504,9 +2504,15 @@ Crest Pest Control`;
     const proposalFindingsValue = proposalFindings[proposalIndex] ?? "";
     const servicesContent = proposalFindingsValue || (isDuplicate ? proposalServicesText : (editableFindings[0] || ""));
     
-    // Each page gets its own map data
-    const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? mapData) : mapData;
-    const currentRenderedMap = isDuplicate ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? renderedMapImage) : renderedMapImage;
+    // Each page gets its own map data. For duplicates, do NOT fall back to
+    // Option A's rendered map — if this duplicate has its own uploaded map
+    // image, using Option A's baked PNG would show the wrong map in the PDF.
+    const dupeHasOwnMap =
+      isDuplicate && dupeIndex !== undefined && !!duplicateCustomMapImages[dupeIndex];
+    const currentMapData = isDuplicate ? (duplicateMapData[dupeIndex ?? 0] ?? (dupeHasOwnMap ? null : mapData)) : mapData;
+    const currentRenderedMap = isDuplicate
+      ? (duplicateRenderedMapImages[dupeIndex ?? 0] ?? (dupeHasOwnMap ? null : renderedMapImage))
+      : renderedMapImage;
     
     const handleDupeMapSave = (data: string | null) => {
       if (isDuplicate && dupeIndex !== undefined) {
@@ -2596,8 +2602,8 @@ Crest Pest Control`;
                 )}
                 {hasMap ? (
                   <div className="relative h-full w-full">
-                    {pdfExportMode && (currentRenderedMap || (isDuplicate && renderedMapImage)) ? (
-                      <img src={currentRenderedMap || renderedMapImage || ''} alt="Property map with annotations" className="w-full h-full object-cover" />
+                {pdfExportMode && currentRenderedMap ? (
+                      <img src={currentRenderedMap} alt="Property map with annotations" className="w-full h-full object-cover" />
                     ) : (
                       <MapCanvas
                         key={isDuplicate ? `dupe-${dupeIndex}-${pageMapImage || mapUrl}` : (pageMapImage ? `custom-${pageMapImage}` : `map-${mapUrl}`)}
