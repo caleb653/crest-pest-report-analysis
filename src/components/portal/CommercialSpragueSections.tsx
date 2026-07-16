@@ -416,24 +416,13 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
           rows.push({ c, owner, state: "open" });
           continue;
         }
-        // Closed rows: only surface where it makes sense on the timeline.
+        // Closed rows: render ONLY on the visit where they were resolved.
+        // Never on prior visits, never on future visits.
         if (c.closed_on_service_id === s.id) {
           rows.push({ c, owner, state: "resolved" });
-          continue;
-        }
-        const closingSvc = c.closed_on_service_id
-          ? services.find(x => x.id === c.closed_on_service_id)
-          : null;
-        const closingDate = closingSvc
-          ? dateOf(closingSvc)
-          : (c.closed_at ? c.closed_at.slice(0, 10) : null);
-        // If it was still open at the time of s (resolved on a LATER visit),
-        // show it as active on s. Otherwise it was resolved before s — hide.
-        if (closingDate && closingDate > sDate) {
-          rows.push({ c, owner, state: "open" });
-        } else if (!closingDate) {
-          // Closed but no metadata — defensive: keep visible on owner only.
-          if (owner.id === s.id) rows.push({ c, owner, state: "resolved" });
+        } else if (!c.closed_on_service_id && owner.id === s.id) {
+          // Closed without a recorded closing service — fall back to owner.
+          rows.push({ c, owner, state: "resolved" });
         }
       }
     }
