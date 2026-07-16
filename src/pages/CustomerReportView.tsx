@@ -687,17 +687,17 @@ export default function CustomerReportView() {
             <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted relative">
               {shouldRenderMapFromData ? (
                 <ReadOnlyMapCanvas mapUrl={proposalMapUrl!} mapData={proposalMapDataString} />
-              ) : proposalRenderedMap ? (
-                <img
-                  src={proposalRenderedMap}
-                  alt={`Property map for ${proposal.name}`}
-                  className="w-full h-full object-contain"
-                />
               ) : duplicateHasOwnMap ? (
                 <img
                   src={duplicateCustomMapUrl!}
                   alt={`Property map for ${proposal.name}`}
                   className="w-full h-full object-cover"
+                />
+              ) : proposalRenderedMap ? (
+                <img
+                  src={proposalRenderedMap}
+                  alt={`Property map for ${proposal.name}`}
+                  className="w-full h-full object-contain"
                 />
               ) : report.rendered_map_url ? (
                 <img
