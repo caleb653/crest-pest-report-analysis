@@ -148,6 +148,7 @@ interface StructuredNotes {
   portalVideoAttached?: boolean;
   duplicatedPages?: number[];
   duplicateMapData?: Record<string, string | null>;
+  duplicateCustomMapImages?: Record<string, string | null>;
   duplicateRenderedMapImages?: Record<string, string | null>;
   proposalFindings?: Record<string, string>;
   guaranteeBoxes?: GuaranteeBox[];
@@ -535,6 +536,7 @@ export default function CustomerReportView() {
   const videoUrl2 = structuredNotes?.videoUrl2 || null;
   const portalVideoAttached = structuredNotes?.portalVideoAttached === true;
   const duplicateMapData = structuredNotes?.duplicateMapData || {};
+  const duplicateCustomMapImages = structuredNotes?.duplicateCustomMapImages || {};
   const duplicateRenderedMapImages = structuredNotes?.duplicateRenderedMapImages || {};
   const proposalFindingsMap = structuredNotes?.proposalFindings || {};
   const proposalGuaranteeBoxesMap = structuredNotes?.proposalGuaranteeBoxes || {};
@@ -667,10 +669,13 @@ export default function CustomerReportView() {
     const duplicateIndex = proposalIndex - 1;
     const duplicateMapDataString = duplicateIndex >= 0 ? getRecordValue(duplicateMapData, duplicateIndex) : null;
     const proposalMapDataString = proposalIndex === 0 ? mainMapDataString : duplicateMapDataString;
+    const duplicateCustomMapUrl = duplicateIndex >= 0 ? getRecordValue(duplicateCustomMapImages, duplicateIndex) : null;
+    const proposalMapUrl = proposalIndex === 0 ? report.custom_map_url : (duplicateCustomMapUrl || report.custom_map_url);
     const proposalRenderedMap = proposalIndex === 0
       ? report.rendered_map_url
       : getRecordValue(duplicateRenderedMapImages, duplicateIndex);
-    const shouldRenderMapFromData = !!report.custom_map_url && !!proposalMapDataString;
+    const shouldRenderMapFromData = !!proposalMapUrl && !!proposalMapDataString;
+    const duplicateHasOwnMap = proposalIndex > 0 && !!duplicateCustomMapUrl;
     const showRecommended = recommendedProposalIndex === proposalIndex;
 
     return (
@@ -681,7 +686,13 @@ export default function CustomerReportView() {
           <div className="grid grid-cols-[2fr_3fr] gap-4">
             <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted relative">
               {shouldRenderMapFromData ? (
-                <ReadOnlyMapCanvas mapUrl={report.custom_map_url!} mapData={proposalMapDataString} />
+                <ReadOnlyMapCanvas mapUrl={proposalMapUrl!} mapData={proposalMapDataString} />
+              ) : duplicateHasOwnMap ? (
+                <img
+                  src={duplicateCustomMapUrl!}
+                  alt={`Property map for ${proposal.name}`}
+                  className="w-full h-full object-cover"
+                />
               ) : proposalRenderedMap ? (
                 <img
                   src={proposalRenderedMap}
