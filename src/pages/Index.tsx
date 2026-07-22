@@ -109,23 +109,12 @@ const reportTypes = [
     hoverBg: "hover:bg-indigo-100",
     border: "hover:border-indigo-300",
   },
-  {
-    id: "ask-me-anything",
-    title: "Ask Me Anything",
-    description: "Ask about customers, scheduling & service data",
-    icon: MessageSquare,
-    path: "/ask-me-anything",
-    color: "text-sky-600",
-    bg: "bg-sky-50",
-    hoverBg: "hover:bg-sky-100",
-    border: "hover:border-sky-300",
-  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
-//         row3 = slot-finder, schedule-review, ask-me-anything
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9];
+//         row3 = slot-finder, schedule-review
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -143,7 +132,7 @@ const Index = () => {
     "Jackson Latham",
     "Nick Stovall",
   ]);
-  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review", "ask-me-anything"]);
+  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review"]);
   const isRestricted = RESTRICTED_USERS.has(currentUser);
   useEffect(() => {
     setIsAdmin(!!localStorage.getItem("admin_session"));
