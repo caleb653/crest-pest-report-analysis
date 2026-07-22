@@ -112,6 +112,7 @@ interface Props {
   onRefresh?: () => void;
   onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
   uploadingPropertyImage?: boolean;
+  onUpdatePropertyMapData?: (propId: string, mapData: string) => Promise<void> | void;
   /** When true, hide ALL edit/save/delete/upload affordances —
    * customer-facing read-only mirror of the admin view. */
   readOnly?: boolean;
@@ -356,6 +357,7 @@ export default function CommercialDashboardView({
   property, services, links, onEditService,
   onDeleteService, onCopyLink, onOpenPortal,
   onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
+  onUpdatePropertyMapData,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
