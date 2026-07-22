@@ -1180,12 +1180,23 @@ export default function CommercialDashboardView({
                               </p>
                               <div className="space-y-1">
                                 {addedRows.map((c: any, i: number) => (
-                                  <div key={c.id || i} className="text-xs text-red-950 leading-snug">
-                                    <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
-                                    {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
-                                    {c.detail && <span> — {c.detail}</span>}
-                                    {c.status && (
-                                      <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">{c.status}</Badge>
+                                  <div key={c.id || i} className="text-xs text-red-950 leading-snug flex items-start gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
+                                      {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
+                                      {c.detail && <span> — {c.detail}</span>}
+                                      {c.status && (
+                                        <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">{c.status}</Badge>
+                                      )}
+                                    </div>
+                                    {Array.isArray(c.photos) && c.photos.length > 0 && (
+                                      <div className="flex gap-1 shrink-0">
+                                        {c.photos.slice(0, 3).map((u: string, pi: number) => (
+                                          <a key={pi} href={u} target="_blank" rel="noreferrer">
+                                            <img src={u} alt="" className="w-10 h-10 object-cover rounded border border-red-300" />
+                                          </a>
+                                        ))}
+                                      </div>
                                     )}
                                   </div>
                                 ))}
@@ -1202,14 +1213,32 @@ export default function CommercialDashboardView({
                               </p>
                               <div className="space-y-1">
                                 {resolvedHere.map((c: any, i: number) => (
-                                  <div key={c.id || i} className="text-xs text-green-950 leading-snug">
-                                    <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
-                                    {c.area && c.condition && <span className="text-green-800"> · {c.area}</span>}
-                                    {c.detail && <span> — {c.detail}</span>}
-                                    <Badge variant="outline" className="ml-1 text-[9px] border-green-300 text-green-900 bg-white/70">Closed</Badge>
-                                    {c.response_notes && (
-                                      <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {c.response_notes}</div>
-                                    )}
+                                  <div key={c.id || i} className="text-xs text-green-950 leading-snug flex items-start gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
+                                      {c.area && c.condition && <span className="text-green-800"> · {c.area}</span>}
+                                      {c.detail && <span> — {c.detail}</span>}
+                                      <Badge variant="outline" className="ml-1 text-[9px] border-green-300 text-green-900 bg-white/70">Closed</Badge>
+                                      {c.response_notes && (
+                                        <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {c.response_notes}</div>
+                                      )}
+                                    </div>
+                                    {(() => {
+                                      const pics: string[] = [
+                                        ...(Array.isArray(c.resolution_photos) ? c.resolution_photos : []),
+                                        ...(Array.isArray(c.photos) ? c.photos : []),
+                                      ];
+                                      if (pics.length === 0) return null;
+                                      return (
+                                        <div className="flex gap-1 shrink-0">
+                                          {pics.slice(0, 3).map((u: string, pi: number) => (
+                                            <a key={pi} href={u} target="_blank" rel="noreferrer">
+                                              <img src={u} alt="" className="w-10 h-10 object-cover rounded border border-green-400" />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 ))}
                               </div>
