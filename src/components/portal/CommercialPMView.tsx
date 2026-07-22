@@ -950,7 +950,6 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 );
               })
             )}
-            <ServiceTeamSection services={services as any} />
             <BusinessLicenseSection docs={docs as any} />
           </TabsContent>
 
