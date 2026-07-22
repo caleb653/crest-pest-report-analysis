@@ -1193,7 +1193,7 @@ export default function CommercialDashboardView({
                                       <div className="flex gap-1 shrink-0">
                                         {c.photos.slice(0, 3).map((u: string, pi: number) => (
                                           <a key={pi} href={u} target="_blank" rel="noreferrer">
-                                            <img src={u} alt="" className="w-10 h-10 object-cover rounded border border-red-300" />
+                                            <img src={u} alt="" className="w-20 h-20 object-cover rounded border border-red-300" />
                                           </a>
                                         ))}
                                       </div>
@@ -1233,7 +1233,7 @@ export default function CommercialDashboardView({
                                         <div className="flex gap-1 shrink-0">
                                           {pics.slice(0, 3).map((u: string, pi: number) => (
                                             <a key={pi} href={u} target="_blank" rel="noreferrer">
-                                              <img src={u} alt="" className="w-10 h-10 object-cover rounded border border-green-400" />
+                                              <img src={u} alt="" className="w-20 h-20 object-cover rounded border border-green-400" />
                                             </a>
                                           ))}
                                         </div>
